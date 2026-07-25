@@ -1,0 +1,69 @@
+{
+  "code": 200,
+  "data": {
+    "data": [
+      {
+        "_source": {
+          "jobTitle": "Customer Service Representative with Banking Domain",
+          "jobCode": 117378,
+          "referenceNumber": "293627",
+          "location": "Augusta, GA",
+          "locAgg": "Augusta, GA",
+          "text6": null,
+          "DepartmentName": "USA Canada",
+          "jobUrl": "associate-team-member-augusta-ga-2026062312015917",
+          "jobLocationRecord": [
+            {
+              "country": "United States",
+              "city": "Augusta",
+              "formattedLocation": "Augusta, Georgia, United States",
+              "location": "Augusta, GA",
+              "state": "Georgia"
+            }
+          ],
+          "mandatorySkills": [
+            "VOICE"
+          ],
+          "createDate": "23-Jun-2026",
+          "shortDescription": "Credit & Debit Card Disputes Specialist",
+          "minYrsOfExperience": "0.0",
+          "maxYrsOfExperience": "2.0"
+        }
+      },
+      {
+        "_source": {
+          "jobTitle": "TECHNICAL LEAD",
+          "jobCode": 108839,
+          "referenceNumber": "275866",
+          "location": "Hyderabad",
+          "locAgg": "Hyderabad",
+          "text6": "India",
+          "DepartmentName": "India FTE",
+          "jobUrl": "senior-technical-lead-hyderabad-2026021819113931",
+          "jobLocationRecord": [
+            {
+              "country": "India",
+              "city": "Hyderabad",
+              "formattedLocation": "Hyderabad, Telangana, India",
+              "location": "Hyderabad",
+              "state": "Telangana"
+            }
+          ],
+          "mandatorySkills": [
+            "SAP C4C",
+            "BI"
+          ],
+          "createDate": "18-Feb-2026",
+          "shortDescription": "Skill set 1 Design, Development and Deployment Design, Development and Deployment of User Stories as per the Sprint Plan",
+          "minYrsOfExperience": "5",
+          "maxYrsOfExperience": "7yrs"
+        }
+      }
+    ],
+    "totalCount": 77,
+    "hasMoreData": true,
+    "facetedSearchConfig": {
+      "paginationHowMuch": "10"
+    }
+  }
+}

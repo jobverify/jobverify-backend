@@ -1,0 +1,138 @@
+export const LINKEDIN_COMPANY_PAGE_URL = 'https://in.linkedin.com/company/campus-sutra'
+export const LINKEDIN_INDIA_JOBS_URL = 'https://www.linkedin.com/jobs/search/?f_C=3032227&geoId=102713980'
+
+const normalizeWhitespace = (value) => {
+  if (value == null) return null
+
+  const normalized = String(value)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized || null
+}
+
+const parseLocation = (location) => {
+  const normalized = normalizeWhitespace(location)
+  const parts = normalized?.split(',').map((part) => normalizeWhitespace(part)).filter(Boolean) || []
+
+  return {
+    location: normalized,
+    city: parts[0] || null,
+    country: parts.at(-1) === 'India' ? 'India' : parts.at(-1) || null,
+  }
+}
+
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value)?.toLowerCase()
+  if (normalized === 'full_time' || normalized === 'full time') return 'Full-time'
+  if (normalized === 'part_time' || normalized === 'part time') return 'Part-time'
+  if (normalized?.includes('contract')) return 'Contract'
+  if (normalized?.includes('intern')) return 'Internship'
+  return normalizeWhitespace(value)
+}
+
+const extractJobPosting = (html) => {
+  const matches = String(html ?? '').matchAll(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/gi)
+
+  for (const [, rawJson] of matches) {
+    try {
+      const parsed = JSON.parse(rawJson)
+      if (parsed?.['@type'] === 'JobPosting') return parsed
+    } catch {
+      // Ignore unrelated or malformed structured data in public job pages.
+    }
+  }
+
+  return null
+}
+
+export const pageIndicatesCampusSutraCompany = (html) => {
+  const normalized = String(html ?? '').toLowerCase()
+  return normalized.includes('campus sutra | linkedin')
+    && normalized.includes('urn:li:organization:3032227')
+}
+
+export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
+  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
+)]
+  .map(([, jobId, href, rawTitle, rawCompany, rawLocation, postingDate]) => {
+    const location = parseLocation(rawLocation)
+    const sourceUrl = normalizeWhitespace(href)
+    const title = normalizeWhitespace(rawTitle)
+
+    if (!jobId || !sourceUrl || !title || location.country !== 'India') return null
+
+    return {
+      title,
+      company: normalizeWhitespace(rawCompany) || 'Campus Sutra',
+      department: null,
+      ...location,
+      jobId,
+      requisitionId: jobId,
+      sourceUrl,
+      applyUrl: sourceUrl,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: normalizeWhitespace(postingDate),
+      closingDate: null,
+      jobDescription: null,
+    }
+  })
+  .filter(Boolean)
+
+export const extractJobDetail = (html) => {
+  const job = extractJobPosting(html)
+  if (!job) return {}
+
+  return {
+    employmentType: normalizeEmploymentType(job.employmentType),
+    jobDescription: normalizeWhitespace(job.description),
+  }
+}
+
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/136.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+  })
+
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+  return response.text()
+}
+
+export const createCampusSutraScraper = ({ maxJobs = null } = {}) => ({
+  async run({ fetchText = defaultFetchText } = {}) {
+    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
+    if (!pageIndicatesCampusSutraCompany(companyHtml)) {
+      throw new Error('Campus Sutra LinkedIn company page no longer matches the expected public organization page')
+    }
+
+    const listings = extractSearchResults(await fetchText(LINKEDIN_INDIA_JOBS_URL))
+    const jobs = maxJobs ? listings.slice(0, maxJobs) : listings
+
+    return Promise.all(jobs.map(async (listing) => {
+      const detail = extractJobDetail(await fetchText(listing.sourceUrl))
+      return {
+        ...listing,
+        ...Object.fromEntries(Object.entries(detail).filter(([, value]) => value != null)),
+        source: 'campussutra',
+        link: listing.applyUrl,
+        scrapedAt: new Date().toISOString(),
+      }
+    }))
+  },
+})
+
+export const run = async () => createCampusSutraScraper().run()

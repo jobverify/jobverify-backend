@@ -1,0 +1,43 @@
+<JobPageVO>
+  <startJobIndex>0</startJobIndex>
+  <maxJobSize>10</maxJobSize>
+  <totalJobCount>229</totalJobCount>
+  <jobVoList>
+    <jobVoList>
+      <jobSeq>887211</jobSeq>
+      <jobTitle>Delivery Project Manager</jobTitle>
+      <jobReqExp>10 - 13 Years</jobReqExp>
+      <jobLocation></jobLocation>
+      <locations>Hyderabad</locations>
+      <jobId>116927-90-1</jobId>
+      <jobTypeCustom3></jobTypeCustom3>
+    </jobVoList>
+    <jobVoList>
+      <jobSeq>887051</jobSeq>
+      <jobTitle>SRE Architect - Thought Leadership &amp; Enterprise Resilience</jobTitle>
+      <jobReqExp>10 - 14 Years</jobReqExp>
+      <jobLocation>USA</jobLocation>
+      <locations>Georgia</locations>
+      <jobId>116753-117-1</jobId>
+      <jobTypeCustom3></jobTypeCustom3>
+    </jobVoList>
+    <jobVoList>
+      <jobSeq>886977</jobSeq>
+      <jobTitle>Trainee Software Engg -Systems</jobTitle>
+      <jobReqExp>0 - 2 Years</jobReqExp>
+      <jobLocation>SGP</jobLocation>
+      <locations>Singapore</locations>
+      <jobId>118377-1-1</jobId>
+      <jobTypeCustom3></jobTypeCustom3>
+    </jobVoList>
+    <jobVoList>
+      <jobSeq>886282</jobSeq>
+      <jobTitle>Java Springboot - Delivery Module Lead</jobTitle>
+      <jobReqExp>5 - 8 Years</jobReqExp>
+      <jobLocation>IND</jobLocation>
+      <locations>Mumbai</locations>
+      <jobId>109984-1-1</jobId>
+      <jobTypeCustom3></jobTypeCustom3>
+    </jobVoList>
+  </jobVoList>
+</JobPageVO>

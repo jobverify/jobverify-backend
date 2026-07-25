@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import {
+  buildScrapers,
+  getScraperCatalog,
+} from '../providers/index.js'
+
+test('getScraperCatalog includes Payatu as an official-careers handoff to a Freshteam board', () => {
+  const provider = getScraperCatalog().find((item) => item.source === 'payatu')
+
+  assert.ok(provider)
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.companyName, 'Payatu')
+  assert.equal(provider.modulePath, '../payatu/script.js')
+  assert.equal(provider.companyCareerPage, 'https://payatu.com/career/')
+  assert.equal(provider.companyDomain, 'payatu.com')
+  assert.equal(provider.atsPlatform, 'freshteam')
+  assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.paginationStrategy, 'official-page-plus-public-board')
+  assert.equal(provider.extractionStrategy, 'official-careers-iframe+public-freshteam-board+detail-page-apply-surface')
+  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.normalizationProfile, 'engineering-default')
+})
+
+test('buildScrapers exposes a runnable Payatu scraper without changing the runner contract', () => {
+  const scraper = buildScrapers().find((item) => item.name === 'payatu')
+
+  assert.ok(scraper)
+  assert.equal(typeof scraper.run, 'function')
+  assert.match(scraper.dryRunFile, /payatu[\\/]jobs\.json$/)
+  assert.equal(scraper.provider.source, 'payatu')
+  assert.equal(scraper.provider.adapter, 'script')
+  assert.equal(scraper.provider.modulePath, '../payatu/script.js')
+  assert.equal(scraper.provider.atsPlatform, 'freshteam')
+  assert.equal(scraper.provider.countryFilter, 'India')
+  assert.equal(scraper.provider.paginationStrategy, 'official-page-plus-public-board')
+  assert.equal(scraper.provider.extractionStrategy, 'official-careers-iframe+public-freshteam-board+detail-page-apply-surface')
+  assert.equal(scraper.provider.parser, 'custom-script')
+  assert.equal(scraper.provider.companyCareerPage, 'https://payatu.com/career/')
+  assert.equal(scraper.provider.companyDomain, 'payatu.com')
+})

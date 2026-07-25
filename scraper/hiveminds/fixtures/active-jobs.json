@@ -1,0 +1,50 @@
+[
+  {
+    "id": 149307,
+    "title": "Motion Graphics Design Specialist",
+    "description": "<div><strong>Job Description</strong></div><div><strong>Experience:</strong> 2 + Years Location: Bengaluru (Work from Office)</div><div>We are looking for a creative and performance-driven <strong>Motion Graphics Designer</strong> to join our team.</div>",
+    "departmentIdentifier": "c0317142-3c79-45c6-9fd9-cae0f238c989",
+    "departmentName": "Creative",
+    "jobLocations": [
+      {
+        "id": 3949,
+        "name": "Bangalore",
+        "city": "Bengaluru",
+        "state": "KA",
+        "countryCode": "IN",
+        "countryName": "India"
+      }
+    ],
+    "jobType": 2,
+    "experience": "2+ years",
+    "publishedOn": "2026-07-02T04:52:40.42Z",
+    "skillNames": [
+      "Creativity / Innovation",
+      "Motion Graphics",
+      "google Ads"
+    ]
+  },
+  {
+    "id": 149999,
+    "title": "US Performance Marketing Lead",
+    "description": "<p>Lead US growth campaigns.</p>",
+    "departmentIdentifier": "2a0c09bc-3505-4609-946f-10409c8d2a8b",
+    "departmentName": "SEM",
+    "jobLocations": [
+      {
+        "id": 4900,
+        "name": "New York",
+        "city": "New York",
+        "state": "NY",
+        "countryCode": "US",
+        "countryName": "United States"
+      }
+    ],
+    "jobType": 2,
+    "experience": "6+ years",
+    "publishedOn": "2026-07-01T10:00:00Z",
+    "skillNames": [
+      "Paid Search"
+    ]
+  }
+]

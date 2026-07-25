@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+
+test('Vimaan is registered as a first-party careers-shell sentinel provider', () => {
+  const provider = getScraperCatalog().find((item) => item.source === 'vimaan')
+
+  assert.ok(provider, 'Expected Vimaan provider to be registered in customProviders.json')
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.companyName, 'Vimaan')
+  assert.equal(provider.companyCareerPage, 'https://vimaan.ai/careers/')
+  assert.equal(provider.atsPlatform, 'official-company-careers-shell')
+  assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-and-careers-shell-validation')
+  assert.equal(provider.extractionStrategy, 'verified-homepage+verified-about-page+verified-contact-page+verified-careers-shell-zero-public-job-listings')
+  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.companyDomain, 'vimaan.ai')
+  assert.match(provider.modulePath, /vimaan[\\/]script\.js$/i)
+})
+
+test('Vimaan and Vimaana Aerospace Technologies match different providers without collapsing into one another', () => {
+  const report = generateCompanyCoverageReport({
+    csvText: 'Vimaan,\nVimaana Aerospace Technologies,\n',
+    catalog: getScraperCatalog(),
+  })
+
+  assert.equal(report.matchedCount, 2)
+  assert.equal(report.unmatchedCount, 0)
+  assert.deepEqual(
+    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
+    [
+      ['Vimaan', 'vimaan', 'Vimaan'],
+      ['Vimaana Aerospace Technologies', 'vimaanaaerospacetechnologies', 'Vimaana Aerospace Technologies'],
+    ],
+  )
+
+  const scraper = buildScrapers().find((item) => item.name === 'vimaan')
+
+  assert.ok(scraper, 'Expected buildScrapers() to return the Vimaan scraper')
+  assert.equal(typeof scraper.run, 'function')
+  assert.equal(scraper.provider.source, 'vimaan')
+  assert.equal(scraper.provider.companyName, 'Vimaan')
+  assert.match(scraper.dryRunFile, /vimaan[\\/]jobs\.json$/i)
+})

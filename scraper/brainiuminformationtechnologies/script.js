@@ -1,0 +1,144 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
+import BRAINIUM_INFORMATION_TECHNOLOGIES_CATALOG from './catalog.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+export const PROVIDER_METADATA = BRAINIUM_INFORMATION_TECHNOLOGIES_CATALOG
+export const SOURCE = PROVIDER_METADATA.source
+export const COMPANY_NAME = PROVIDER_METADATA.companyName
+export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
+export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
+export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+
+const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const slugify = (value) => normalizeWhitespace(value)
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+
+export const hasOfficialBrainiumCareersSignals = (html = '') => {
+  const page = String(html ?? '')
+
+  return /Careers at Brainium \| Join Our Team/i.test(page)
+    && /Build AI-First\. Work with people who care about craft\./i.test(page)
+    && /Open Positions/i.test(page)
+    && /Kolkata(?: Headquarters)?(?:, India)?/i.test(page)
+}
+
+export const extractRoleCards = (html = '') => {
+  const roles = []
+
+  for (const match of String(html ?? '').matchAll(/<article\b[^>]*class=["'][^"']*\bbrainium-role-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)) {
+    const articleHtml = match[1]
+    const title = normalizeWhitespace(articleHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+    const department = normalizeWhitespace(articleHtml.match(/class=["'][^"']*\bdepartment\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
+    const skillsText = normalizeWhitespace(articleHtml.match(/class=["'][^"']*\bskills\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
+    const locationText = normalizeWhitespace(articleHtml.match(/class=["'][^"']*\blocation\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
+    const employmentType = normalizeWhitespace(articleHtml.match(/class=["'][^"']*\bemployment-type\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
+    const applyUrl = normalizeWhitespace(articleHtml.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1])
+    const city = locationText || null
+
+    if (!title || !department || !locationText || !employmentType || !applyUrl) continue
+
+    roles.push({
+      title,
+      department,
+      skills: String(skillsText ?? '')
+        .split('|')
+        .map((item) => normalizeWhitespace(item))
+        .filter(Boolean),
+      location: `${locationText}, India`,
+      city,
+      country: 'India',
+      employmentType,
+      applyUrl,
+      sourceUrl: applyUrl,
+      jobId: slugify(new URL(applyUrl).hash.replace(/^#apply-/, '') || title),
+    })
+  }
+
+  return roles
+}
+
+export const createBrainiumInformationTechnologiesScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
+  async run({ fetchText = defaultFetchText } = {}) {
+    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+
+    if (!hasOfficialBrainiumCareersSignals(careersHtml)) {
+      throw new Error('Brainium Information Technologies verified official careers page no longer matches the verified public surface')
+    }
+
+    const roles = extractRoleCards(careersHtml)
+    if (roles.length === 0) {
+      throw new Error('Brainium Information Technologies verified careers surface no longer exposes open roles')
+    }
+
+    return roles.map((role) => ({
+      title: role.title,
+      company: COMPANY_NAME,
+      department: role.department,
+      location: role.location,
+      city: role.city,
+      country: role.country,
+      jobId: role.jobId,
+      requisitionId: null,
+      sourceUrl: role.sourceUrl,
+      applyUrl: role.applyUrl,
+      employmentType: role.employmentType,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: role.skills,
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      source: SOURCE,
+      link: role.applyUrl,
+      scrapedAt: now(),
+    }))
+  },
+})
+
+export const run = async (options = {}) => createBrainiumInformationTechnologiesScraper(options).run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

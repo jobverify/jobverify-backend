@@ -1,0 +1,33 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+export const KARNIVAL_CATALOG = {
+  source: 'karnival',
+  companyName: 'Karnival',
+  officialBrandName: 'Karnival',
+  adapter: 'script',
+  modulePath: path.join(currentDir, 'script.js'),
+  companyCareerPage: 'https://www.karnival.com/',
+  homepageUrl: 'https://www.karnival.com/',
+  sitemapUrl: 'https://www.karnival.com/sitemap.xml',
+  missingJobsRouteUrls: [
+    'https://www.karnival.com/careers',
+    'https://www.karnival.com/jobs',
+  ],
+  companyDomain: 'karnival.com',
+  atsPlatform: 'official-company-site-no-public-careers',
+  countryFilter: 'India',
+  paginationStrategy: 'verified-homepage-plus-sitemap-without-careers-routes-plus-missing-route-validation',
+  extractionStrategy:
+    'verified-homepage-navigation+verified-sitemap-without-careers-or-jobs-routes+verified-careers-and-jobs-404',
+  parser: 'custom-script',
+  normalizationProfile: 'engineering-default',
+  dryRunFile: 'karnival/jobs.json',
+  verifiedOn: '2026-07-16',
+  verifiedSurfaceSummary:
+    'Verified on Thursday, July 16, 2026 that the official Karnival homepage at https://www.karnival.com/ is a marketing site with navigation for Solutions, Success, Resources, and Contact us plus a Get a demo CTA, while the public sitemap at https://www.karnival.com/sitemap.xml lists only homepage, contact, blogs, and policy URLs with no careers or jobs routes. Also verified that https://www.karnival.com/careers and https://www.karnival.com/jobs return the same first-party 404 shell. There is no trustworthy public jobs surface to scrape.',
+}
+
+export default KARNIVAL_CATALOG

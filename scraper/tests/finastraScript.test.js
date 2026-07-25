@@ -1,0 +1,147 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const loadFinastraModule = async () => {
+  try {
+    return await import('../finastra/script.js')
+  } catch (error) {
+    assert.fail(`Expected Finastra scraper module at ../finastra/script.js: ${error.message}`)
+  }
+}
+
+const discoveryPayload = {
+  total: 151,
+  jobPostings: [],
+  facets: [
+    {
+      facetParameter: 'locationMainGroup',
+      values: [
+        {
+          facetParameter: 'locations',
+          descriptor: 'Location',
+          values: [
+            { descriptor: 'Atlanta', id: 'atlanta-id', count: 31 },
+            { descriptor: 'Bengaluru', id: 'bengaluru-id', count: 22 },
+            { descriptor: 'Pune', id: 'pune-id', count: 17 },
+            { descriptor: 'Virtual - India', id: 'virtual-india-id', count: 1 },
+            { descriptor: 'London', id: 'london-id', count: 14 },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
+const indiaJobsPageOne = {
+  total: 3,
+  jobPostings: [
+    {
+      title: 'Security Analyst',
+      externalPath: '/job/Bengaluru/Security-Analyst_REQ0526_0037213-1',
+      locationsText: 'Bengaluru',
+      postedOn: 'Posted Today',
+      bulletFields: ['REQ0526_0037213'],
+    },
+    {
+      title: 'Senior Reporting/UX Developer',
+      externalPath: '/job/Bengaluru/Report-UX-Developer--Power-BI-_REQ0526_0037350',
+      locationsText: '2 Locations',
+      postedOn: 'Posted 8 Days Ago',
+      bulletFields: ['REQ0526_0037350'],
+    },
+  ],
+}
+
+const indiaJobsPageTwo = {
+  total: 3,
+  jobPostings: [
+    {
+      title: 'Senior QA Engineer',
+      externalPath: '/job/Pune/Senior-QA-Engineer_REQ0326_0036569',
+      locationsText: 'Pune',
+      postedOn: 'Posted 6 Days Ago',
+      bulletFields: ['REQ0326_0036569'],
+    },
+  ],
+}
+
+test('extractIndiaLocationFacetIds keeps the official India location ids from Finastra Workday facets', async () => {
+  const finastra = await loadFinastraModule()
+
+  assert.deepEqual(
+    finastra.extractIndiaLocationFacetIds(discoveryPayload),
+    ['bengaluru-id', 'pune-id', 'virtual-india-id'],
+  )
+})
+
+test('run queries the official Finastra Workday jobs API for India listings and maps the shared job contract', async () => {
+  const finastra = await loadFinastraModule()
+
+  const requests = []
+  const jobs = await finastra.createFinastraScraper({ pageSize: 2 }).run({
+    fetchJson: async (url, options = {}) => {
+      requests.push({ url, options })
+
+      assert.equal(url, finastra.JOBS_API_URL)
+
+      const body = JSON.parse(options.body)
+      if (requests.length === 1) {
+        assert.deepEqual(body, {
+          appliedFacets: {},
+          limit: 2,
+          offset: 0,
+          searchText: '',
+        })
+        return discoveryPayload
+      }
+
+      assert.deepEqual(body.appliedFacets, {
+        locations: ['bengaluru-id', 'pune-id', 'virtual-india-id'],
+      })
+
+      if (body.offset === 0) {
+        return indiaJobsPageOne
+      }
+
+      if (body.offset === 2) {
+        return indiaJobsPageTwo
+      }
+
+      throw new Error(`Unexpected request body: ${options.body}`)
+    },
+  })
+
+  assert.equal(requests.length, 3)
+
+  const { scrapedAt: firstScrapedAt, ...firstJob } = jobs[0]
+  assert.ok(Date.parse(firstScrapedAt))
+  assert.deepEqual(firstJob, {
+    title: 'Security Analyst',
+    company: 'Finastra',
+    department: null,
+    location: 'Bengaluru, India',
+    city: 'Bengaluru',
+    country: 'India',
+    jobId: 'REQ0526_0037213',
+    requisitionId: 'REQ0526_0037213',
+    sourceUrl: 'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Security-Analyst_REQ0526_0037213-1',
+    applyUrl: 'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Security-Analyst_REQ0526_0037213-1',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: 'Posted Today',
+    closingDate: null,
+    jobDescription: null,
+    source: 'finastra',
+    link: 'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Security-Analyst_REQ0526_0037213-1',
+  })
+
+  assert.equal(jobs[1].location, 'Bengaluru, India')
+  assert.equal(jobs[1].city, 'Bengaluru')
+  assert.equal(jobs[1].jobId, 'REQ0526_0037350')
+  assert.equal(jobs[2].location, 'Pune, India')
+  assert.equal(jobs[2].city, 'Pune')
+  assert.equal(jobs[2].jobId, 'REQ0326_0036569')
+})

@@ -1,0 +1,52 @@
+[
+  {
+    "id": 62512,
+    "link": "https://www.estuate.com/jobs/sfdc-admin/",
+    "title": {
+      "rendered": "SFDC Admin"
+    },
+    "content": {
+      "rendered": "<p>Currently, we are looking for a <strong>SFDC Admin</strong> to join our team.</p><h2>Job Description</h2><ul><li>Experience as an SFDC Administrator</li><li>Experience with GitLab</li></ul>"
+    },
+    "class_list": [
+      "type-awsm_job_openings",
+      "relevant-experience-5-years",
+      "job-location-anywhere-in-india",
+      "job-type-full-time",
+      "work-module-remote"
+    ]
+  },
+  {
+    "id": 62511,
+    "link": "https://www.estuate.com/jobs/zuora-revenue-architect/",
+    "title": {
+      "rendered": "Zuora Revenue Architect"
+    },
+    "content": {
+      "rendered": "<p>Currently, we are looking for a <strong>Zuora Revenue Architect</strong> to join our team.</p><h2>Job Description</h2><ul><li>Excellent knowledge of ASC 605 and 606</li><li>Experience in SQL, data analysis, conversion and migration</li></ul>"
+    },
+    "class_list": [
+      "type-awsm_job_openings",
+      "relevant-experience-7-years",
+      "job-location-bengaluru",
+      "job-type-full-time",
+      "work-module-hybrid-remote"
+    ]
+  },
+  {
+    "id": 60836,
+    "link": "https://www.estuate.com/jobs/principal-architect/",
+    "title": {
+      "rendered": "Principal Architect"
+    },
+    "content": {
+      "rendered": "<p>Lead architecture programs from Milpitas.</p>"
+    },
+    "class_list": [
+      "type-awsm_job_openings",
+      "relevant-experience-10-years",
+      "job-location-milpitas-ca",
+      "job-type-full-time"
+    ]
+  }
+]

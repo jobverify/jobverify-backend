@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1114,
+    "date": "2026-03-31T15:20:31",
+    "slug": "generalist",
+    "status": "publish",
+    "type": "tj_job",
+    "link": "https://recruit.datadesign.co.jp/jobs/generalist",
+    "title": {
+      "rendered": "総合職"
+    },
+    "excerpt": {
+      "rendered": "<p>3Dソフトやデジタルツールで企業のものづくりを支援する総合職です。</p>"
+    },
+    "taro_jobs_fields_data": {
+      "values": {
+        "organization_name": "株式会社データ・デザイン",
+        "organization_url": "https://www.datadesign.co.jp/",
+        "job_title": "総合職",
+        "job_description": "<p>3Dソフトやデジタルツールで企業の課題解決を支援します。</p>",
+        "responsibilities": "<ul><li>お客様の課題整理</li><li>PoCや技術検証</li></ul>",
+        "qualifications": "",
+        "skills": "",
+        "job_benefits": "<p>各種社会保険完備</p>",
+        "employment_type": "新卒採用（正社員）",
+        "date_posted": "2026-05-01",
+        "valid_through": "2027-03-30",
+        "job_location_type": "出社（オンサイト）",
+        "job_location": "愛知県, 名古屋市",
+        "salary": "¥245000 / 月給",
+        "cf_salary_description": "<p>月給245,000円</p>",
+        "cf_work_location_detail": "<h3>勤務地の住所</h3><p>愛知県名古屋市中区錦3-4-6</p>",
+        "cf_selection_process": "<h3>ご応募</h3><p>マイナビよりエントリーをお願いします。</p>"
+      }
+    }
+  }
+]

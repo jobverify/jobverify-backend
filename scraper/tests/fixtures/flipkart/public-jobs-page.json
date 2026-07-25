@@ -1,0 +1,52 @@
+{
+  "Total": 2,
+  "Result": [
+    {
+      "JobId": "ef888dcf-c65a-4fd2-a10e-b8dd2b7c131e",
+      "JobIdObfuscated": "fDApw2OOEXQErB1ibb9nbYbCasfF08ZwgGRE2wjxRaFPg7_Sk5mbhfDEBliUkUuE",
+      "JobCode": "FIPL-68646",
+      "JobTitle": "AM for Kerala",
+      "Department": "Projects (D2037)",
+      "PublishedDate": "2026-06-15T07:23:10.588362Z",
+      "ExpiryDates": {
+        "CAREERPAGE": "2026-07-24T00:00:00"
+      },
+      "Location": "[{\"Address\":\"Bengaluru, Karnataka, India\",\"PlaceId\":null,\"Latitude\":0.0,\"Longitude\":0.0}]",
+      "Experience": {
+        "MinExp": 7,
+        "MaxExp": 9
+      },
+      "Skills": [
+        "Project management",
+        "project execution",
+        "MEP",
+        "team lead",
+        "vendor management",
+        "electrical",
+        "mechanical",
+        "design review"
+      ],
+      "JobDescV2": "<p></p><ul><li>Able to lead a team of Engineers and Handle one region/zone</li></ul><ul><li>Project handling from end to end life cycle of project</li></ul><ul><li>Able to read and implement the project execution as per drawings</li></ul>"
+    },
+    {
+      "JobId": "c1afb170-eaae-4969-bd03-c51ccebb29bc",
+      "JobIdObfuscated": "xnjtoEQgDMzgjPU_KihdBVejDQO_jNkzBq7b7bUg4t_EH5sbfPUfNuukGc8VarkZ",
+      "JobCode": "FIPL-41726",
+      "JobTitle": "Tech Lead",
+      "Department": "Flipkart Data Platform",
+      "PublishedDate": "2026-05-24T12:04:18.4624169Z",
+      "ExpiryDates": {
+        "CAREERPAGE": "2026-08-28T00:00:00"
+      },
+      "Location": "[{\"Address\":\"Embassy Tech Village Road, Devarabisanahalli, Bellandur, Bengaluru, Karnataka, India\",\"PlaceId\":null,\"Latitude\":0.0,\"Longitude\":0.0}]",
+      "Experience": {
+        "MinExp": 8,
+        "MaxExp": 12
+      },
+      "Skills": [
+        "Java"
+      ],
+      "JobDescV2": "<p>Java</p>"
+    }
+  ]
+}

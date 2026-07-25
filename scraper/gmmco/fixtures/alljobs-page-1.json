@@ -1,0 +1,39 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "gmmco-001",
+      "title": "Service Engineer",
+      "department_name": "Aftermarket",
+      "locations": "Nagpur, Maharashtra, India",
+      "country": "India",
+      "emp_type_name": "Full Time",
+      "experience": "3 - 5 Years",
+      "posted_on": "09-Jul-2026",
+      "jd": "<p>Support field maintenance and customer uptime.</p>"
+    },
+    {
+      "id": "gmmco-remote-001",
+      "title": "Data Analyst",
+      "department_name": "Digital",
+      "locations": "Remote, India",
+      "country": "India",
+      "emp_type_name": "Full Time",
+      "experience": "2 - 4 Years",
+      "posted_on": "08-Jul-2026",
+      "jd": "<p>Build analytics for service operations.</p>"
+    },
+    {
+      "id": "gmmco-usa-001",
+      "title": "Regional Sales Manager",
+      "department_name": "Sales",
+      "locations": "Dallas, Texas, United States",
+      "country": "United States",
+      "emp_type_name": "Full Time",
+      "experience": "8+ Years",
+      "posted_on": "07-Jul-2026",
+      "jd": "<p>Grow North America revenue.</p>"
+    }
+  ],
+  "job_counts": 3
+}

@@ -1,0 +1,59 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "_id": "6a366a3798dd3e2c4d01f071",
+      "id": "a6a366a37046e4",
+      "experience": "17 - 20 Years",
+      "jd": "",
+      "country": "India",
+      "department_name": "Greenko Security Services",
+      "emp_type_name": "Employee - Regular",
+      "posted_on": "20-Jun-2026",
+      "officelocation_show_arr_list": [
+        "Neemuch, Neemuch, Madhya Pradesh, India "
+      ],
+      "locations": "Neemuch, Neemuch, Madhya Pradesh\r, India",
+      "tool_tip_locations": [
+        "Neemuch, Neemuch, Madhya Pradesh, India"
+      ],
+      "title": "Officer"
+    },
+    {
+      "_id": "6a225d743ecbf65f8300cb72",
+      "id": "a6a225d73da6e0",
+      "experience": "2 - 4 Years",
+      "jd": "&lt;p&gt;&lt;br /&gt;&lt;/p&gt;",
+      "country": "India",
+      "department_name": "Contracts & Procurement",
+      "emp_type_name": "Employee - Regular",
+      "posted_on": "05-Jun-2026",
+      "officelocation_show_arr_list": [
+        "Admin Office - Hyderabad, Hyderabad, Telangana, India "
+      ],
+      "locations": "Admin Office - Hyderabad, Hyderabad, Telangana\r, India",
+      "tool_tip_locations": [
+        "Admin Office - Hyderabad, Hyderabad, Telangana, India"
+      ],
+      "title": "Associate"
+    },
+    {
+      "id": "greenko-us-001",
+      "experience": "5 - 7 Years",
+      "jd": "<p>Coordinate regional operations.</p>",
+      "country": "United States",
+      "department_name": "Operations",
+      "emp_type_name": "Employee - Regular",
+      "posted_on": "01-Jun-2026",
+      "officelocation_show_arr_list": [
+        "Houston, Texas, United States "
+      ],
+      "locations": "Houston, Texas, United States",
+      "tool_tip_locations": [
+        "Houston, Texas, United States"
+      ],
+      "title": "Regional Manager"
+    }
+  ],
+  "job_counts": 2
+}

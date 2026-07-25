@@ -1,0 +1,816 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    
+</head>
+<body>
+    
+    <div class="container body-content">
+        
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>JobEntry - Job Portal Website Template</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="" name="keywords">
+    <meta content="" name="description">
+    
+    <!-- Favicon -->
+    <link href="/rms/img/favicon.ico" rel="icon">
+
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Inter:wght@700;800&display=swap" rel="stylesheet">
+
+
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="/rms/lib/animate/animate.min.css" rel="stylesheet">
+    <link href="/rms/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="/rms/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="/rms/css/style.css" rel="stylesheet">
+
+
+    <script>
+        function openModal(jobid) {
+            $.ajax({
+            url: "/rms/Career/GetPostedJobbyID",
+                type: 'GET',
+                data: { id: jobid },
+                contentType: "application/json; charset=utf-8",
+                dataType: "html",
+                success: function (response) {
+                    $("#ViewModal").find(".modal-body").html(response);
+                    $("#ViewModal").modal('show');
+                },
+                error: function () {
+                    alert('Error occurred while fetching data.');
+                }
+            });
+        }
+    </script>
+
+    
+
+    <style>
+            .counter-box {
+                display: flex;
+                align-items: center;
+                background: white;
+                padding: 15px;
+                border-radius: 10px;
+                color: black;
+                font-size: 15px;
+                font-weight: bold;
+                font-family: 'Courier New', monospace;
+                text-shadow: 0 0 5px black;
+            }
+
+            .counter-icon {
+                width: 50px;
+                height: 50px;
+                margin-right: 15px;
+            }
+        </style>
+
+  
+
+
+    <style>
+        .custom-modal .modal-dialog {
+            max-width: 65% !important; /* Increase width */
+            max-height: 70% !important; /* Increase height */
+        }
+
+        .custom-modal .modal-content {
+            font-size: 18px; /* Larger text for emphasis */
+            padding: 20px; /* More padding */
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="modal fade custom-modal" id="ViewModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <!--<div class="modal-header">-->
+                    
+                    
+                <!--</div>-->
+                <div class="modal-body">
+                
+                </div>
+             
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+    <div class="container-xxl bg-white p-0">
+        <!-- Spinner Start -->
+        <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+        <!-- Spinner End -->
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
+            <a href="/rms/" class="navbar-brand d-flex align-items-center text-center py-0 px-4 px-lg-5">
+                <h1 class="m-0 text-primary">BPL Job Career</h1>
+            </a>
+
+
+
+
+            <button type="button" class="navbar-toggler me-4" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <div class="navbar-nav ms-auto p-4 p-lg-0">
+                    <a href="/rms/" class="nav-item nav-link active">Home</a>
+                    <a href="/rms/Career/About" class="nav-item nav-link">About</a>
+
+                    <a href="/rms/Career/Contact" class="nav-item nav-link active">Contact</a>
+                </div>
+                <a href="/rms/Career" class="btn btn-primary rounded-0 py-4 px-lg-5 d-none d-lg-block">Apply For Job<i class="fa fa-arrow-right ms-3"></i></a>
+            </div>
+        </nav>
+        <!-- Navbar End -->
+        <!-- Carousel Start -->
+        <div class="container-fluid p-0">
+            <div class="owl-carousel header-carousel position-relative">
+                <div class="owl-carousel-item position-relative">
+                    <img class="img-fluid" src="/rms/img/carousel-1.jpg" alt="">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center" style="background: rgba(43, 57, 64, .5);">
+                        <div class="container">
+                            <div class="row justify-content-start">
+                                <div class="col-10 col-lg-8">
+                                    <h1 class="display-3 text-white animated slideInDown mb-4">Find The Perfect Job That You Deserved</h1>
+                                    <p class="fs-5 fw-medium text-white mb-4 pb-2">Helping individuals secure great jobs while guiding businesses to exceptional talent.</p>
+
+                                    <a href="/rms/Career" class="btn btn-primary py-md-3 px-md-5 me-3 animated slideInLeft">Apply for Job</a>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="owl-carousel-item position-relative">
+                    <img class="img-fluid" src="/rms/img/carousel-2.jpg" alt="">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center" style="background: rgba(43, 57, 64, .5);">
+                        <div class="container">
+                            <div class="row justify-content-start">
+                                <div class="col-10 col-lg-8">
+                                    <h1 class="display-3 text-white animated slideInDown mb-4">Find The Best Startup Job That Fit You</h1>
+                                    <p class="fs-5 fw-medium text-white mb-4 pb-2">Connecting Ambitions with Opportunities: We help individuals land the best jobs.</p>
+
+                                    <a href="/rms/Career" class="btn btn-primary py-md-3 px-md-5 me-3 animated slideInLeft">Apply for Job</a>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-xxl py-5">
+            <div class="container">
+                <div class="row g-5 align-items-center">
+                    <div class="col-lg-6 wow fadeIn" data-wow-delay="0.1s">
+                        <div class="row g-0 about-bg rounded overflow-hidden">
+                            <div class="col-6 text-start">
+                                <img class="img-fluid w-100" src="/rms/img/about-1.jpg">
+                            </div>
+                            <div class="col-6 text-start">
+                                <img class="img-fluid" src="/rms/img/about-2.jpg" style="width: 85%; margin-top: 15%;">
+                            </div>
+                            <div class="col-6 text-end">
+                                <img class="img-fluid" src="/rms/img/about-3.jpg" style="width: 85%;">
+                            </div>
+                            <div class="col-6 text-end">
+                                <img class="img-fluid w-100" src="/rms/img/about-4.jpg">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 wow fadeIn" data-wow-delay="0.5s">
+                        <h1 class="mb-4">We Help To Get The Best Job And Find A Talent</h1>
+                        <p class="mb-4">Recruiting talent is the act of finding high-quality candidates to hire, either while working as a recruiter or hiring manager. Organizations generally want to ensure they have the best workforce possible, and finding, hiring and keeping top employees can be a complex process.</p>
+                        <p><i class="fa fa-check text-primary me-3"></i>Create a positive workplace culture</p>
+                        <p><i class="fa fa-check text-primary me-3"></i>Develop effective job descriptions</p>
+                        <p><i class="fa fa-check text-primary me-3"></i>Know your best sources for talent</p>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- About End -->
+        <!-- Jobs Start -->
+        <div class="container-xxl py-5">
+            <div class="container">
+                
+              
+                <h1 class="text-center mb-5 wow fadeInUp" data-wow-delay="0.1s">Opening Jobs</h1>
+                <div class="tab-class text-center wow fadeInUp" data-wow-delay="0.3s">
+                    <ul class="nav nav-pills d-inline-flex justify-content-center border-bottom mb-5">
+
+                        <li class="nav-item">
+                            <a class="d-flex align-items-center text-start mx-3 pb-3" data-bs-toggle="pill" href="#tab-2">
+                                <h6 class="mt-n1 mb-0">Full Time</h6>
+                            </a>
+                        </li>
+
+                    </ul>
+                    <div class="tab-content">
+                        <div id="tab-1" class="tab-pane fade show p-0 active">
+
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">FATP Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-TME</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(34)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">FATP Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-TME</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(35)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">FATP Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-PE</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(36)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">FATP Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-NPI</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(37)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">FATP Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-IE</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(38)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">FATP Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-MES</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(39)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">Production</h5>
+                                                <h7 class="mb-3">Position : <b>GET-Line Leader</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(40)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">Quality</h5>
+                                                <h7 class="mb-3">Position : <b>GET-PQE</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(41)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">Quality</h5>
+                                                <h7 class="mb-3">Position : <b>GET-PQC</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(42)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>01/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Production</h5>
+                                                <h7 class="mb-3">Position : <b>GET-Production</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(43)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-ME</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(44)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-PE</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(45)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-TE</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(46)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-IM</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(47)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-TRC</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(48)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>GET-MES</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(49)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="job-item p-4 mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-sm-12 col-md-8 d-flex align-items-center">
+                                            <img class="flex-shrink-0 img-fluid border rounded" src="/rms/img/Engineer3.png" alt="" style="width: 80px; height: 80px;">
+                                            <div class="text-start ps-4">
+                                                <h5 class="mb-3">SMT-Engineering</h5>
+                                                <h7 class="mb-3">Position : <b>MT</b></h7>
+                                                <span class="text-truncate me-3"><i class="fa fa-map-marker-alt text-primary me-2"></i>Greater Noida</span>
+                                                <span class="text-truncate me-3"><i class="far fa-clock text-primary me-2"></i>Full Time</span>
+                                                <br />
+                                                
+                                                
+                                            </div>
+
+                                        </div>
+                                        <div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">
+                                            <div class="d-flex mb-3">
+                                                <a class="btn btn-light btn-square me-3" href=""><i class="far fa-heart text-primary"></i></a>
+
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" onclick="openModal(50)" data-bs-target="#exampleModal">
+                                                    View
+                                                </button>
+
+                                                
+                                                
+
+                                            </div>
+                                            <small class="text-truncate"><i class="far fa-calendar-alt text-primary me-2"></i>07/07/2026</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                        </div>
+
+                                                <div class="counter-box">
+                                    <img src="/rms/images/Visitperson.jpg" class="counter-icon" />
+                                    <span class="counter">Visitor count : 57317</span>
+                                </div>
+
+                   
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+
+
+    </div>
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/rms/lib/wow/wow.min.js"></script>
+    <script src="/rms/lib/easing/easing.min.js"></script>
+    <script src="/rms/lib/waypoints/waypoints.min.js"></script>
+    <script src="/rms/lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="/rms/js/main.js"></script>
+</body>
+
+</html>
+        <hr />
+        
+    </div>
+
+    
+    
+</body>
+</html>
+

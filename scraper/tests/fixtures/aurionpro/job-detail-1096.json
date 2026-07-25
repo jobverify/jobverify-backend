@@ -1,0 +1,33 @@
+{
+  "code": 1,
+  "data": {
+    "requisitionID": 1096,
+    "requisitionTitle": "Senior Support Engineer ITSM 3_30 Apr 2026_2:52PM",
+    "employementType": "Permanent",
+    "jobTitle": "Senior Support Engineer",
+    "jobDescription": "Aurionpro Solutions Limited is a global leader in providing advanced technology solutions with a focus on Banking, Payments, Transit, Data Center Services, and Government sectors, leveraging Enterprise AI to Make comprehensive technology for our clients worldwide.<br><br><b>Role Overview</b><br>Responsible for managing and optimizing IT Service Management and IT Asset Management platforms, along with supporting enterprise security tools to ensure smooth IT operations and compliance.<br><br><b>Key Responsibilities</b><br><ul><li>Administer and support ITSM tools Zoho ManageEngine ServiceDesk Plus, Zoho ITAM</li><li>Manage end-to-end IT service processes incident, problem, change, asset management</li><li>Configure workflows, automation, and reporting in ITSM platforms</li></ul><br><b>Required Skills</b><br><ul><li>Strong experience in Zoho ManageEngine ServiceDesk Plus and ITAM</li><li>Good understanding of ITIL processes Incident, Change, Problem, Asset Management</li><li>Exposure to security tools like Trend Micro Deep Security and Imperva DAM</li></ul><b>Soft Skills</b><br><ul><li>Strong analytical and troubleshooting skills</li><li>Good communication and stakeholder management</li></ul><b>Qualification</b> - Bachelors degree in computer scienceIT or related field",
+    "requisitionNumber": null,
+    "department": null,
+    "designation": "Senior Support Engineer",
+    "location": "Chennai",
+    "gender": "NA",
+    "rulesAndResponsibility": "",
+    "krAs": "",
+    "skillsAndCompetencies": "",
+    "endDate": null,
+    "country": null,
+    "jdVideo": "",
+    "companyLogo": "https://zinghrprodblob.blob.core.windows.net/aurionpro/Image/Logo/logo.jpg",
+    "qrCodeDetails": {
+      "isQrCodeExist": true,
+      "qrCodeImage": "https://zinghrprodblob.blob.core.windows.net/aurionpro/Documents/Recruitment/QRCodeImage/qrcode_852026_33355480.png",
+      "shortUrl": "https://bit.ly/3PwrpfL",
+      "longUrl": "https://portal.zinghr.com/CandidateAddition/CreateNewCandidate/TopCandidateDetailsMenu?VCode=listing"
+    },
+    "candidateApplyLink": "https://portal.zinghr.com/CandidateAddition/CreateNewCandidate/TopCandidateDetailsMenu?VCode=apply1096",
+    "isCandidateApplyOnBoardingForm": false
+  },
+  "message": "Success",
+  "lastCachedAt": null,
+  "cachedTill": null
+}

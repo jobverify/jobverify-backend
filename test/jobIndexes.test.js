@@ -1,0 +1,64 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { isDeepStrictEqual } from "node:util";
+
+import Job from "../src/models/Job.js";
+
+const getJobIndexes = () => Job.schema.indexes().map(([key, options]) => ({
+  key,
+  options: options ?? {},
+}));
+
+const hasIndex = (expectedKey) => getJobIndexes().some(({ key }) => (
+  isDeepStrictEqual(key, expectedKey)
+));
+
+test("Job schema has a deterministic latest/oldest sort index", () => {
+  assert.equal(
+    hasIndex({ status: 1, postedAt: -1, createdAt: -1, _id: -1 }),
+    true,
+  );
+});
+
+test("Job schema has a deterministic popularity sort index", () => {
+  assert.equal(
+    hasIndex({ status: 1, clickCount: -1, postedAt: -1, _id: -1 }),
+    true,
+  );
+});
+
+test("Job schema can filter by experience year and keep latest ordering stable", () => {
+  assert.equal(
+    hasIndex({ status: 1, experienceYears: 1, postedAt: -1, _id: -1 }),
+    true,
+  );
+});
+
+test("Job schema has equality-key indexes for common company and location filters", () => {
+  assert.equal(
+    hasIndex({ status: 1, companyKey: 1, postedAt: -1, _id: -1 }),
+    true,
+  );
+  assert.equal(
+    hasIndex({ status: 1, locationKeys: 1, postedAt: -1, _id: -1 }),
+    true,
+  );
+  assert.equal(
+    hasIndex({ status: 1, companyKey: 1, locationKeys: 1, postedAt: -1, _id: -1 }),
+    true,
+  );
+});
+
+test("Job text search index covers card search and job-detail text", () => {
+  const textIndex = getJobIndexes().find(({ key }) => (
+    key.title === "text"
+    && key.company === "text"
+    && key.description === "text"
+    && key.minimumQualification === "text"
+    && key.preferredQualification === "text"
+    && key.experienceRequired === "text"
+    && key.requiredSkills === "text"
+  ));
+
+  assert.ok(textIndex);
+});

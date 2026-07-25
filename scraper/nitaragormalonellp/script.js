@@ -1,0 +1,204 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+export const SOURCE = 'nitaragormalonellp'
+export const COMPANY = 'NITARA Gormalone LLP'
+export const HOMEPAGE_URL = 'https://gormalone.com/'
+export const CAREERS_URL = 'https://gormalone.com/careers.html'
+export const APPLY_EMAIL = 'hr@gormalone.com'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const CAREER_TRACKS = [
+  'Early Careers',
+  'Mid-Level Careers',
+  'Experienced Professionals',
+]
+
+const decodeHtml = (value) => String(value ?? '')
+  .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(Number.parseInt(hex, 16)))
+  .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+
+const normalizeWhitespace = (value) => {
+  if (value == null) return null
+
+  const normalized = decodeHtml(value)
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized || null
+}
+
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|\/table|\/section)\b[^>]*>/gi, '\n')
+    .replace(/<(p|div|li|h[1-6]|ul|ol|table|section)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const slugify = (value) => normalizeWhitespace(value)
+  ?.toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '') || null
+
+const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  try {
+    return new URL(normalized, baseUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+const buildJobDescription = ({ title, department }) => normalizeWhitespace(
+  `Official ${COMPANY} opening for ${title}${department ? ` in ${department}` : ''}. Review the first-party job description PDF and email ${APPLY_EMAIL} to apply.`,
+)
+
+const findNearestDepartment = (html, matchIndex) => {
+  const window = String(html ?? '')
+    .slice(Math.max(0, matchIndex - 800), matchIndex)
+    .toLowerCase()
+
+  let bestDepartment = null
+  let bestIndex = -1
+
+  for (const department of CAREER_TRACKS) {
+    const index = window.lastIndexOf(department.toLowerCase())
+    if (index > bestIndex) {
+      bestDepartment = department
+      bestIndex = index
+    }
+  }
+
+  return bestDepartment
+}
+
+export const hasOfficialHomepageSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Gormalone\s*\|\s*Precision Dairy Farming Technology for India\s*<\/title>/i.test(page)
+    && /GormalOne LLP stands as an innovation-driven Agri-tech organization/i.test(page)
+    && /Nitara,\s*the flagship product/i.test(page)
+    && /href=["'](?:https?:\/\/gormalone\.com)?\/careers\.html["']/i.test(page)
+}
+
+export const hasOfficialCareersSignal = (html) => {
+  const page = String(html ?? '')
+  const pdfLinkCount = (page.match(/href=["'][^"']*\/files\/JD\/[^"']+\.pdf["']/gi) || []).length
+
+  return /<title>\s*Careers at Gormalone\s*\|\s*Jobs in Dairy Tech\s*&(?:amp;)?\s*AgriTech India\s*<\/title>/i.test(page)
+    && /Find your next job at GormalOne/i.test(page)
+    && /Send Us Your Resume/i.test(page)
+    && /hr@gormalone\.com/i.test(page)
+    && pdfLinkCount >= 1
+}
+
+export const extractPublicListings = (html) => {
+  if (!hasOfficialCareersSignal(html)) {
+    throw new Error(
+      'NITARA Gormalone LLP careers page no longer matches the verified first-party careers page with public job openings',
+    )
+  }
+
+  const jobs = []
+
+  for (const match of String(html ?? '').matchAll(
+    /<a\b[^>]*href=["']([^"']*\/files\/JD\/[^"']+\.pdf)["'][^>]*>([\s\S]*?)<\/a>/gi,
+  )) {
+    const title = stripTags(match[2])
+    const sourceUrl = toAbsoluteUrl(match[1], CAREERS_URL)
+    const department = findNearestDepartment(html, match.index)
+    const identity = slugify(title)
+
+    if (!title || !sourceUrl || !identity) {
+      throw new Error(
+        'NITARA Gormalone LLP careers page no longer matches the verified first-party careers page with public job openings',
+      )
+    }
+
+    jobs.push({
+      title,
+      company: COMPANY,
+      department,
+      location: null,
+      city: null,
+      country: 'India',
+      jobId: `${SOURCE}-${identity}`,
+      requisitionId: `${SOURCE}-${identity}`,
+      sourceUrl,
+      applyUrl: `mailto:${APPLY_EMAIL}`,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: buildJobDescription({ title, department }),
+    })
+  }
+
+  if (jobs.length === 0) {
+    throw new Error(
+      'NITARA Gormalone LLP careers page no longer matches the verified first-party careers page with public job openings',
+    )
+  }
+
+  return jobs
+}
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+export const createNitaraGormaloneLlpScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    if (!hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('NITARA Gormalone LLP homepage no longer matches the verified official homepage')
+    }
+
+    const careersHtml = await fetchText(CAREERS_URL)
+    const jobs = extractPublicListings(careersHtml)
+
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.sourceUrl || job.applyUrl,
+      scrapedAt: (overrideNow || now)(),
+    }))
+  },
+})
+
+export const run = async (options = {}) => createNitaraGormaloneLlpScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

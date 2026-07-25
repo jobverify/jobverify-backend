@@ -1,0 +1,91 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import SAP_ARIBA_CATALOG from './catalog.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+export const PROVIDER_METADATA = SAP_ARIBA_CATALOG
+export const SOURCE = PROVIDER_METADATA.source
+export const COMPANY = PROVIDER_METADATA.companyName
+export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
+export const CAREERS_URL = PROVIDER_METADATA.careersUrl
+export const PARENT_BRAND_NAME = PROVIDER_METADATA.parentBrandName
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1]) || null
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+const sameUrl = (left, right) => String(left ?? '').replace(/\/$/, '') === String(right ?? '').replace(/\/$/, '')
+
+export const hasGenericSapCareersSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+  const title = (extractTitle(html) || '').toLowerCase()
+
+  return title.includes('jobs at sap')
+    && title.includes('sap careers')
+    && normalized.includes('search by keyword')
+    && normalized.includes('search by location')
+}
+
+export const hasExactSapAribaCareersSignal = (html = '') =>
+  /(careers? at sap ariba|jobs? at sap ariba|join sap ariba|work at sap ariba)/i.test(String(html ?? ''))
+
+export const createSapAribaScraper = () => ({
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const careersPage = await fetchPage(CAREERS_URL)
+
+    if (
+      careersPage.status !== 200
+      || !sameUrl(careersPage.url, CAREERS_URL)
+      || !hasGenericSapCareersSignal(careersPage.html)
+    ) {
+      throw new Error('SAP generic careers surface no longer matches the trusted first-party baseline')
+    }
+
+    if (hasExactSapAribaCareersSignal(careersPage.html)) {
+      throw new Error('SAP careers now exposes an exact-name SAP Ariba public jobs surface and needs a real scraper')
+    }
+
+    return []
+  },
+})
+
+export const run = async (options = {}) => createSapAribaScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

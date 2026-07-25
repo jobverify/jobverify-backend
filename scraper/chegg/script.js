@@ -1,0 +1,87 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { runWorkdayScraper } from '../myworkday/engine.js'
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
+export const SCRAPER_DIR = path.dirname(fileURLToPath(import.meta.url))
+
+export const SOURCE = 'chegg'
+export const COMPANY_NAME = 'Chegg'
+export const CAREERS_PAGE_URL = 'https://www.chegg.com/about/working-at-chegg/jobs/'
+export const WORKDAY_BASE_URL = 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg'
+export const INDIA_LOCATION_COUNTRY = 'c4f78be1a8f14da0ab49ce1162348a5e'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const CAREERS_TITLE_PATTERN = /<title>\s*Jobs(?:\s+at\s+Chegg)?\s*(?:\||-|&ndash;|&mdash;|&#8211;|&#8212;)\s*Chegg\s*<\/title>/i
+const WORKDAY_LINK_PATTERN = /href=["']https:\/\/osv-chegg\.wd5\.myworkdayjobs\.com\/Chegg["'][^>]*>\s*View jobs\s*</i
+
+export const buildScraperOptions = () => ({
+  company: COMPANY_NAME,
+  baseUrl: WORKDAY_BASE_URL,
+  locationCountry: INDIA_LOCATION_COUNTRY,
+  source: SOURCE,
+  scraperDir: SCRAPER_DIR,
+})
+
+export const hasOfficialCareersSignal = (html) => {
+  const page = String(html ?? '')
+  return CAREERS_TITLE_PATTERN.test(page) && WORKDAY_LINK_PATTERN.test(page)
+}
+
+const isVerifiedWorkdayHandoffUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.origin === 'https://osv-chegg.wd5.myworkdayjobs.com'
+      && url.pathname === '/Chegg'
+  } catch {
+    return false
+  }
+}
+
+export const extractVerifiedWorkdayHandoffUrl = (html) => {
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    if (isVerifiedWorkdayHandoffUrl(match[1])) {
+      return new URL(match[1]).toString()
+    }
+  }
+
+  return null
+}
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  attempts: 3,
+  baseDelayMs: 2000,
+  timeoutMs: 20000,
+  label: SOURCE,
+})
+
+export const createCheggScraper = ({
+  fetchText = defaultFetchText,
+  workdayRunner = runWorkdayScraper,
+} = {}) => ({
+  async run() {
+    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Chegg official jobs page changed; refusing to guess the public jobs source')
+    }
+
+    const verifiedWorkdayHandoffUrl = extractVerifiedWorkdayHandoffUrl(careersHtml)
+    if (verifiedWorkdayHandoffUrl !== WORKDAY_BASE_URL) {
+      throw new Error('Chegg verified Workday handoff changed; refusing to guess the public jobs source')
+    }
+
+    return workdayRunner(buildScraperOptions())
+  },
+})
+
+export const run = async ({
+  fetchText = defaultFetchText,
+  workdayRunner = runWorkdayScraper,
+} = {}) => createCheggScraper({ fetchText, workdayRunner }).run()

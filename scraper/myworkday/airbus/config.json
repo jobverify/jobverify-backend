@@ -1,0 +1,6 @@
+{
+  "listingStrategy": "jobs-api",
+  "jobsApiUrl": "https://ag.wd3.myworkdayjobs.com/wday/cxs/ag/Airbus/jobs",
+  "detailUrlBase": "https://ag.wd3.myworkdayjobs.com/en-US/Airbus",
+  "countryFacetParameter": "locationCountry"
+}
