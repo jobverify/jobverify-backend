@@ -1,0 +1,36 @@
+{
+  "items": [
+    {
+      "TotalJobsCount": 441,
+      "Limit": 24,
+      "requisitionList": [
+        {
+          "Id": "4",
+          "Title": "Executive - Accounts",
+          "PostedDate": "2021-08-21",
+          "PostingEndDate": null,
+          "PrimaryLocationCountry": "IN",
+          "ShortDescriptionStr": "Job Profile:\nPreparation of Financial Statements\nBank Reconciliation",
+          "PrimaryLocation": "India",
+          "Category": "General ledger",
+          "secondaryLocations": [
+            {
+              "Name": "Noida, Uttar Pradesh, India",
+              "CountryCode": "IN"
+            }
+          ]
+        },
+        {
+          "Id": "999999",
+          "Title": "US-only role",
+          "PostedDate": "2026-07-01",
+          "PostingEndDate": null,
+          "PrimaryLocationCountry": "US",
+          "ShortDescriptionStr": "Should be filtered out.",
+          "PrimaryLocation": "Dallas, Texas, United States",
+          "secondaryLocations": []
+        }
+      ]
+    }
+  ]
+}

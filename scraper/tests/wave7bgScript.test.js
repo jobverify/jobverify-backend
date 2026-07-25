@@ -1,0 +1,282 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
+
+const loadModule = async (relativePath) => {
+  try {
+    return await import(relativePath)
+  } catch {
+    assert.fail(`Expected scraper module at ${relativePath}`)
+  }
+}
+
+const qualizealChallengeHtml = 'Javascript is required. Please enable javascript before you are allowed to see this page.'
+
+const soleraCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>Revving Up For Growth</h1>
+    <a href="https://solera.wd5.myworkdayjobs.com/Global_Career_Site">See Open Positions</a>
+    <p>Ready to take things to the next level? Start your journey here.</p>
+  </body>
+</html>
+`
+
+const factspanCurrentOpeningsHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>Current Openings</h1>
+    <p>From Data to AI, explore career opportunities at Factspan</p>
+    <p>Reach us at</p>
+    <p>contact@factspan.com</p>
+    <div>Data and AI</div>
+  </body>
+</html>
+`
+
+const pubmaticJobsHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>OPPORTUNITY. DELIVERED.</h1>
+    <p>62 open positions</p>
+    <section>
+      <h4>Gurugram, IN</h4>
+      <a href="https://pubmatic.com/careers/job/senior-performance-advertising-engineer/">Senior Performance Advertising Engineer</a>
+      <a href="https://pubmatic.com/careers/job/director-advertising-solutions-brand-direct/">Director Advertising Solutions, Brand Direct - APAC</a>
+    </section>
+    <section>
+      <h4>Pune, IN</h4>
+      <a href="https://pubmatic.com/careers/job/senior-machine-learning-engineer/">Senior Machine Learning Engineer</a>
+      <a href="https://pubmatic.com/careers/job/principal-software-engineer-data-analytics/">Principal Software Engineer - Data Analytics</a>
+    </section>
+    <section>
+      <h4>Chicago, IL</h4>
+      <a href="https://pubmatic.com/careers/job/account-executive-commerce-media/">Account Executive, Commerce Media</a>
+    </section>
+  </body>
+</html>
+`
+
+const juegoStudioCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h2>OPEN POSITIONS</h2>
+    <section class="job">
+      <h5>3D Artist I / II</h5>
+      <h5>Bangalore</h5>
+      <h6>Department:</h6>
+      <p>Modelling</p>
+      <h6>Position:</h6>
+      <p>3D Artist I, 3D Artist II</p>
+      <h6>Relevant Experience:</h6>
+      <p>2- 4 years</p>
+      <a href="https://jhub.juegostudio.com/jobs/3d-artist">Apply Now</a>
+    </section>
+    <section class="job">
+      <h5>UI UX Designer</h5>
+      <h5>Bangalore</h5>
+      <h6>Department:</h6>
+      <p>UI Design</p>
+      <h6>Position:</h6>
+      <p>Senior UI-Designer</p>
+      <h6>Relevant Experience:</h6>
+      <p>5+ years</p>
+      <a href="https://jhub.juegostudio.com/jobs/ui-ux-designer">Apply Now</a>
+    </section>
+    <section class="job">
+      <h5>Lead Animator</h5>
+      <h5>Bangalore</h5>
+      <h6>Department:</h6>
+      <p>Animation</p>
+      <h6>Position:</h6>
+      <p>Lead Animator</p>
+      <h6>Relevant Experience:</h6>
+      <p>6-8 years</p>
+      <a href="https://jhub.juegostudio.com/jobs/lead-animator">Apply Now</a>
+    </section>
+  </body>
+</html>
+`
+
+test('QualiZeal sentinel validates the anti-bot challenge and returns []', async () => {
+  const qualizeal = await loadModule('../qualizeal/script.js')
+
+  assert.equal(qualizeal.hasChallengePageSignal(qualizealChallengeHtml), true)
+
+  const jobs = await qualizeal.createQualiZealScraper().run({
+    fetchText: async (url) => {
+      assert.equal(url, qualizeal.HOMEPAGE_URL)
+      return qualizealChallengeHtml
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Solera sentinel validates the first-party careers copy and Workday handoff before returning []', async () => {
+  const solera = await loadModule('../solera/script.js')
+
+  assert.equal(solera.hasOfficialCareersSignal(soleraCareersHtml), true)
+  assert.equal(solera.hasWorkdayHandoffSignal(soleraCareersHtml), true)
+  assert.equal(solera.hasInlineJobCards(soleraCareersHtml), false)
+
+  const jobs = await solera.createSoleraScraper().run({
+    fetchText: async (url) => {
+      assert.equal(url, solera.CAREERS_URL)
+      return soleraCareersHtml
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Factspan sentinel validates the current-openings shell and returns [] when no public jobs inventory is present', async () => {
+  const factspan = await loadModule('../factspan/script.js')
+
+  assert.equal(factspan.hasCurrentOpeningsSignal(factspanCurrentOpeningsHtml), true)
+  assert.equal(factspan.hasPublicJobListingsSignal(factspanCurrentOpeningsHtml), false)
+
+  const jobs = await factspan.createFactspanScraper().run({
+    fetchText: async (url) => {
+      assert.equal(url, factspan.CURRENT_OPENINGS_URL)
+      return factspanCurrentOpeningsHtml
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('PubMatic scraper returns normalized India jobs from the verified first-party grouped jobs page', async () => {
+  const pubmatic = await loadModule('../pubmatic/script.js')
+
+  assert.equal(pubmatic.hasOfficialJobsSignal(pubmaticJobsHtml), true)
+  assert.deepEqual(
+    pubmatic.extractLocationGroups(pubmaticJobsHtml).map((group) => group.location),
+    ['Gurugram, IN', 'Pune, IN', 'Chicago, IL'],
+  )
+
+  const jobs = await pubmatic.createPubMaticScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      assert.equal(url, pubmatic.CAREERS_URL)
+      return pubmaticJobsHtml
+    },
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      city: job.city,
+      country: job.country,
+      applyUrl: job.applyUrl,
+      scrapedAt: job.scrapedAt,
+    })),
+    [
+      {
+        title: 'Director Advertising Solutions, Brand Direct - APAC',
+        location: 'Gurugram, Haryana, India',
+        city: 'Gurugram',
+        country: 'India',
+        applyUrl: 'https://pubmatic.com/careers/job/director-advertising-solutions-brand-direct/',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Principal Software Engineer - Data Analytics',
+        location: 'Pune, Maharashtra, India',
+        city: 'Pune',
+        country: 'India',
+        applyUrl: 'https://pubmatic.com/careers/job/principal-software-engineer-data-analytics/',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Senior Machine Learning Engineer',
+        location: 'Pune, Maharashtra, India',
+        city: 'Pune',
+        country: 'India',
+        applyUrl: 'https://pubmatic.com/careers/job/senior-machine-learning-engineer/',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Senior Performance Advertising Engineer',
+        location: 'Gurugram, Haryana, India',
+        city: 'Gurugram',
+        country: 'India',
+        applyUrl: 'https://pubmatic.com/careers/job/senior-performance-advertising-engineer/',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+    ],
+  )
+})
+
+test('Juego Studio scraper returns normalized India openings from the verified first-party careers page', async () => {
+  const juegoStudio = await loadModule('../juegostudio/script.js')
+
+  assert.equal(juegoStudio.hasOfficialCareersSignal(juegoStudioCareersHtml), true)
+  assert.deepEqual(
+    juegoStudio.extractOpenPositions(juegoStudioCareersHtml).map((job) => job.title),
+    ['3D Artist I / II', 'UI UX Designer', 'Lead Animator'],
+  )
+
+  const jobs = await juegoStudio.createJuegoStudioScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      assert.equal(url, juegoStudio.CAREERS_URL)
+      return juegoStudioCareersHtml
+    },
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      city: job.city,
+      country: job.country,
+      department: job.department,
+      experienceRequired: job.experienceRequired,
+      applyUrl: job.applyUrl,
+      scrapedAt: job.scrapedAt,
+    })),
+    [
+      {
+        title: '3D Artist I / II',
+        location: 'Bangalore, Karnataka, India',
+        city: 'Bangalore',
+        country: 'India',
+        department: 'Modelling',
+        experienceRequired: '2- 4 years',
+        applyUrl: 'https://jhub.juegostudio.com/jobs/3d-artist',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Lead Animator',
+        location: 'Bangalore, Karnataka, India',
+        city: 'Bangalore',
+        country: 'India',
+        department: 'Animation',
+        experienceRequired: '6-8 years',
+        applyUrl: 'https://jhub.juegostudio.com/jobs/lead-animator',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'UI UX Designer',
+        location: 'Bangalore, Karnataka, India',
+        city: 'Bangalore',
+        country: 'India',
+        department: 'UI Design',
+        experienceRequired: '5+ years',
+        applyUrl: 'https://jhub.juegostudio.com/jobs/ui-ux-designer',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+    ],
+  )
+  assert.equal(jobs[0].jobId, '3d-artist-i-ii')
+  assert.equal(jobs[2].positionTitle, 'Senior UI-Designer')
+})

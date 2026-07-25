@@ -1,0 +1,6 @@
+{
+  "listingStrategy": "jobs-api",
+  "jobsApiUrl": "https://jll.wd1.myworkdayjobs.com/wday/cxs/jll/jllcareers/jobs",
+  "detailUrlBase": "https://jll.wd1.myworkdayjobs.com/jllcareers",
+  "countryFacetParameter": "locationCountry"
+}

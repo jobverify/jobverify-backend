@@ -1,0 +1,250 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const careersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Neysa | Build the Future of AI Infrastructure</title>
+  </head>
+  <body>
+    <h1>Build the Future of AI Infrastructure</h1>
+    <p>Own the next wave of cloud, AI, and cyber infrastructure with us.</p>
+    <a href="https://neysa.ai/careers/job-openings/">View Job Openings</a>
+  </body>
+</html>
+`
+
+const jobOpeningsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job Opening - Build a Career at Neysa</title>
+  </head>
+  <body>
+    <script>var ajaxAction = "filter_career_listings";</script>
+    <div class="job-section">
+      <h2 class="test">Engineering</h2>
+      <div class="job-card">
+        <h3 class="job-title">Backend Engineer</h3>
+        <div class="job-meta">
+          <div class="meta-row"><span>Minimum Experience</span><span>5 to 7 years</span></div>
+          <div class="meta-row"><span>Location</span><span>Mumbai</span></div>
+        </div>
+        <a class="job-btn" href="https://neysa.ai/careers/job-openings/backend-engineer/">Apply Now</a>
+      </div>
+      <div class="job-card">
+        <h3 class="job-title">Threat Detection Engineer - Cybersecurity</h3>
+        <div class="job-meta">
+          <div class="meta-row"><span>Minimum Experience</span><span>3 to 5 years</span></div>
+          <div class="meta-row"><span>Location</span><span>Chennai</span></div>
+        </div>
+        <a class="job-btn" href="https://neysa.ai/careers/job-openings/threat-detection-engineer-cybersecurity/">Apply Now</a>
+      </div>
+    </div>
+    <div class="job-section">
+      <h2 class="test">Finance &amp; Procurement</h2>
+      <div class="job-card">
+        <h3 class="job-title">Legal Counsel</h3>
+        <div class="job-meta">
+          <div class="meta-row"><span>Minimum Experience</span><span>2 to 5 years</span></div>
+          <div class="meta-row"><span>Location</span><span>Mumbai</span></div>
+        </div>
+        <a class="job-btn" href="https://neysa.ai/careers/job-openings/legal-counsel/">Apply Now</a>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
+const backendDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Backend Engineer - Neysa</title>
+    <meta property="og:title" content="Backend Engineer" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "datePublished": "2026-07-04T06:03:35+00:00"
+      }
+    </script>
+  </head>
+  <body>
+    <h2>Job Description</h2>
+    <div class="job-description">
+      <p>Position – Backend Engineer</p>
+      <p>Experience: 5 to 7 years</p>
+      <p>Primary Focus: Backend development, bug fixing, API/microservice development, production support</p>
+      <p>Project: Overwatch, a NestJS/Nx monorepo with gRPC-based backend microservices</p>
+      <h3>Role Summary</h3>
+      <p>Build and support backend microservices for Neysa cloud products.</p>
+      <h3>Key Responsibilities</h3>
+      <ul>
+        <li>Develop backend APIs and microservices.</li>
+        <li>Support production systems and bug fixes.</li>
+      </ul>
+    </div>
+    <button>Apply Now</button>
+  </body>
+</html>
+`
+
+const legalDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Legal Counsel - Neysa</title>
+    <meta property="og:title" content="Legal Counsel" />
+  </head>
+  <body>
+    <h2>Job Description</h2>
+    <div class="job-description">
+      <p>Position – Legal Counsel</p>
+      <p>Experience: 2 to 5 years</p>
+      <p>Support commercial contracting and regulatory review.</p>
+    </div>
+    <button>Apply Now</button>
+  </body>
+</html>
+`
+
+const loadNeysaModule = async () => {
+  try {
+    return await import('../neysa/script.js')
+  } catch {
+    assert.fail('Expected Neysa scraper module at ../neysa/script.js')
+  }
+}
+
+test('Neysa verifies the official careers page and same-domain job openings signals', async () => {
+  const neysa = await loadNeysaModule()
+
+  assert.equal(neysa.SOURCE, 'neysa')
+  assert.equal(neysa.COMPANY, 'Neysa')
+  assert.equal(neysa.OFFICIAL_BRAND_NAME, 'Neysa')
+  assert.equal(neysa.CAREERS_PAGE_URL, 'https://neysa.ai/careers/')
+  assert.equal(neysa.JOB_OPENINGS_URL, 'https://neysa.ai/careers/job-openings/')
+  assert.equal(neysa.COMPANY_DOMAIN, 'neysa.ai')
+  assert.equal(neysa.VERIFIED_ON, '2026-07-16')
+  assert.equal(neysa.hasOfficialCareersPageSignal(careersPageHtml), true)
+  assert.equal(neysa.hasOfficialJobOpeningsSignal(jobOpeningsHtml), true)
+  assert.equal(
+    neysa.extractOfficialJobOpeningsUrl(careersPageHtml),
+    'https://neysa.ai/careers/job-openings/',
+  )
+})
+
+test('Neysa extracts live job cards and enriches them from detail pages', async () => {
+  const neysa = await loadNeysaModule()
+
+  const listings = neysa.extractJobListings(jobOpeningsHtml)
+  assert.equal(listings.length, 3)
+  assert.deepEqual(
+    listings.map((listing) => ({
+      title: listing.title,
+      department: listing.department,
+      experienceRequired: listing.experienceRequired,
+      location: listing.location,
+      detailUrl: listing.detailUrl,
+    })),
+    [
+      {
+        title: 'Backend Engineer',
+        department: 'Engineering',
+        experienceRequired: '5-7 years',
+        location: 'Mumbai, India',
+        detailUrl: 'https://neysa.ai/careers/job-openings/backend-engineer/',
+      },
+      {
+        title: 'Threat Detection Engineer - Cybersecurity',
+        department: 'Engineering',
+        experienceRequired: '3-5 years',
+        location: 'Chennai, India',
+        detailUrl: 'https://neysa.ai/careers/job-openings/threat-detection-engineer-cybersecurity/',
+      },
+      {
+        title: 'Legal Counsel',
+        department: 'Finance & Procurement',
+        experienceRequired: '2-5 years',
+        location: 'Mumbai, India',
+        detailUrl: 'https://neysa.ai/careers/job-openings/legal-counsel/',
+      },
+    ],
+  )
+
+  const backendJob = neysa.extractJobDetail(backendDetailHtml, listings[0])
+  assert.deepEqual(backendJob, {
+    title: 'Backend Engineer',
+    company: 'Neysa',
+    department: 'Engineering',
+    location: 'Mumbai, India',
+    city: 'Mumbai',
+    country: 'India',
+    jobId: 'backend-engineer',
+    requisitionId: 'backend-engineer',
+    sourceUrl: 'https://neysa.ai/careers/job-openings/backend-engineer/',
+    applyUrl: 'https://neysa.ai/careers/job-openings/backend-engineer/',
+    employmentType: null,
+    experienceRequired: '5-7 years',
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-07-04',
+    closingDate: null,
+    jobDescription:
+      'Position - Backend Engineer Experience: 5 to 7 years Primary Focus: Backend development, bug fixing, API/microservice development, production support Project: Overwatch, a NestJS/Nx monorepo with gRPC-based backend microservices Role Summary Build and support backend microservices for Neysa cloud products. Key Responsibilities Develop backend APIs and microservices. Support production systems and bug fixes.',
+    remoteStatus: 'On-site',
+  })
+})
+
+test('Neysa run verifies the public careers surface before scraping and decorating jobs', async () => {
+  const neysa = await loadNeysaModule()
+  const requestedUrls = []
+
+  const jobs = await neysa.createNeysaScraper({ maxJobs: 2 }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === neysa.CAREERS_PAGE_URL) return careersPageHtml
+      if (url === neysa.JOB_OPENINGS_URL) return jobOpeningsHtml
+      if (url === 'https://neysa.ai/careers/job-openings/backend-engineer/') return backendDetailHtml
+      if (url === 'https://neysa.ai/careers/job-openings/threat-detection-engineer-cybersecurity/') {
+        return backendDetailHtml.replace(/Backend Engineer/g, 'Threat Detection Engineer - Cybersecurity')
+          .replace(/backend-engineer/g, 'threat-detection-engineer-cybersecurity')
+          .replace(/5 to 7 years/g, '3 to 5 years')
+          .replace(/2026-07-04/g, '2026-07-05')
+      }
+      if (url === 'https://neysa.ai/careers/job-openings/legal-counsel/') return legalDetailHtml
+      throw new Error(`Unexpected Neysa fixture URL: ${url}`)
+    },
+    now: () => '2026-07-16T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    neysa.CAREERS_PAGE_URL,
+    neysa.JOB_OPENINGS_URL,
+    'https://neysa.ai/careers/job-openings/backend-engineer/',
+    'https://neysa.ai/careers/job-openings/threat-detection-engineer-cybersecurity/',
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'neysa')
+  assert.equal(jobs[0].company, 'Neysa')
+  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].companyCareerPage, undefined)
+  assert.equal(jobs[0].scrapedAt, '2026-07-16T00:00:00.000Z')
+})
+
+test('Neysa fails closed when the verified job openings page drifts materially', async () => {
+  const neysa = await loadNeysaModule()
+
+  await assert.rejects(
+    neysa.createNeysaScraper().run({
+      fetchText: async (url) => {
+        if (url === neysa.CAREERS_PAGE_URL) return careersPageHtml
+        return '<html><body><h1>Unexpected</h1></body></html>'
+      },
+    }),
+    /verified Neysa job openings page/i,
+  )
+})

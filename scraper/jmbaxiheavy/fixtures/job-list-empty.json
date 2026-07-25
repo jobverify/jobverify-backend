@@ -1,0 +1,15 @@
+{
+  "jobshtml": "<div class=\"col-lg-12 col-md-12 no-data-found\">No data found!!!</div>",
+  "designation_list": "<div class=\"single_field_list\"><input id=\"Technician\" class=\"designationchk\" type=\"checkbox\" name=\"frmrole[]\" value=\"Technician\" > <label class=\"frm_lbl\" for=\"Technician\">Technician</label></div>",
+  "alldesignation_list": "",
+  "department_list": "<div class=\"single_field_list\"><input id=\"Engineering\" class=\"departmentchk\" type=\"checkbox\" name=\"frmdepartment[]\" value=\"Engineering\" > <label class=\"frm_lbl\" for=\"Engineering\">Engineering</label></div>",
+  "alldepartment_list": "",
+  "location_city_list": "<div class=\"single_field_list\"><input id=\"Navi Mumbai\" class=\"locationchk\" type=\"checkbox\" name=\"frmlocation[]\" value=\"Navi Mumbai\" > <label class=\"frm_lbl\" for=\"Navi Mumbai\">Navi Mumbai</label></div>",
+  "alllocation_city_list": "",
+  "totalPages": 0,
+  "totalRecords": null,
+  "offset": 0,
+  "desg_selected_tag_part": "",
+  "dept_selected_tag_part": "",
+  "loc_selected_tag_part": ""
+}

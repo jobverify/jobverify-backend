@@ -1,0 +1,31 @@
+<JobPageVO>
+  <startJobIndex>0</startJobIndex>
+  <maxJobSize>10</maxJobSize>
+  <totalJobCount>50</totalJobCount>
+  <jobVoList>
+    <jobVoList>
+      <jobSeq>640512</jobSeq>
+      <jobTitle>Manager / Asst. Mgr. D&amp;E Process-Steel Making</jobTitle>
+      <jobReqExp>5 - 10 Years</jobReqExp>
+      <jobPostingDate />
+      <locations>Joda, Jamshedpur, Meramandali, Jajpur</locations>
+      <jobId>640512</jobId>
+    </jobVoList>
+    <jobVoList>
+      <jobSeq>640507</jobSeq>
+      <jobTitle>Manager Design &amp; Engineering Coal Beneficiation</jobTitle>
+      <jobReqExp>5 - 10 Years</jobReqExp>
+      <jobPostingDate />
+      <locations>Jamshedpur</locations>
+      <jobId>640507</jobId>
+    </jobVoList>
+    <jobVoList>
+      <jobSeq>640900</jobSeq>
+      <jobTitle>Research Scientist</jobTitle>
+      <jobReqExp>3 - 5 Years</jobReqExp>
+      <jobPostingDate />
+      <locations>Singapore</locations>
+      <jobId>640900</jobId>
+    </jobVoList>
+  </jobVoList>
+</JobPageVO>

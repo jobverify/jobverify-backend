@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+    
+</head>
+<body>
+    
+    <div class="container body-content">
+        
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SelfRegister</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <script src="/rms/Js/jquery-ui.min.js"></script>
+    <script src="/rms/Js/jquery.min.js"></script>
+
+    <link href="/rms/img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Inter:wght@700;800&display=swap" rel="stylesheet">
+
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="/rms/lib/animate/animate.min.css" rel="stylesheet">
+    <link href="/rms/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="/rms/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="/rms/css/style.css" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+<body>
+    <div class="container-xxl bg-white p-0">
+        <!-- Spinner Start -->
+        <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+        <!-- Spinner End -->
+        <!-- Navbar Start -->
+        <nav class="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
+            <a href="/rms/" class="navbar-brand d-flex align-items-center text-center py-0 px-4 px-lg-5">
+                <h1 class="m-0 text-primary">BPL Job Career</h1>
+            </a>
+            <button type="button" class="navbar-toggler me-4" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <div class="navbar-nav ms-auto p-4 p-lg-0">
+                    <a href="/rms/" class="nav-item nav-link active">Home</a>
+                    <a href="/rms/Career/About" class="nav-item nav-link">About</a>
+                    <a href="/rms/Career/Contact" class="nav-item nav-link active">Contact</a>
+                </div>
+                <a href="/rms/Career" class="btn btn-primary rounded-0 py-4 px-lg-5 d-none d-lg-block">Apply for Job<i class="fa fa-arrow-right ms-3"></i></a>
+            </div>
+        </nav>
+
+
+        <form action="/rms/Career/Applied" method="post" enctype="multipart/form-data" class="container" style="padding-top:50px;padding-left:50px;">
+            <div class="container-fluid">
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+
+                    <div>
+                        <input id="txtname" name="Name" maxlength="35" placeholder="Name" class="form-control input-md" required="" type="text" style="font-family:Calibri">
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+
+                    <div>
+                        <input id="txtmob" name="Mobile" maxlength="10" placeholder="Mobile" class="form-control input-md" required="" type="text" style="font-family:Calibri">
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+
+                    <div>
+                        <input id="txtemailId" name="EmailID" maxlength="80" placeholder="Email-ID" class="form-control input-md" required="" type="text" style="font-family:Calibri">
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+                    <div>
+                        <input id="txtapplyposition" name="AppliedPosition" placeholder="Apply for Position" class="form-control input-md" required="" type="text" style="font-family:Calibri">
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+                    <div>
+                        <input id="txtaddress" name="Address" placeholder="Address" class="form-control input-md" required="" type="text" style="font-family:Calibri">
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+                    <div>
+                        <input id="txttotalExp" name="TotalExp" placeholder="Total Exprience" class="form-control input-md" required="" type="text" style="font-family:Calibri">
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+                    <div>
+                        <input id="txtnoticeperiod" name="Noticeperiod" placeholder="Notice period" class="form-control input-md" required="" type="text" style="font-family:Calibri">
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;">
+                    <div>
+                        <textarea id="txtmessage" placeholder="Message" name="Message" class="form-control input-md" required="" type="text" style="font-family:Calibri"></textarea>
+                        <span class="help-block"> </span>
+                    </div>
+                </div>
+
+                <div id="uploadResult" style="padding-left:20px;">Upload Resume</div>
+                <div class="col-md-4" style="margin-bottom: 8px; padding: 10px;padding-left:20px;">
+                    <div class="col-md-2">
+                        <input type="file" name="UploadedFile" id="fileInput" />
+                    </div>
+                </div>
+                <div class="col-md-2" style="padding: 10px; padding-left: 120px;">
+                    <div class="col-md-2" style="display: flex;">
+
+                        <input type="submit" value="Apply" class="btn btn-success" style="font-family: Calibri" />
+                    </div>
+                </div>
+                <br />
+                <br />
+            </div>
+        </form>
+
+        </div>
+
+        <!-- JavaScript Libraries -->
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/rms/lib/wow/wow.min.js"></script>
+        <script src="/rms/lib/easing/easing.min.js"></script>
+        <script src="/rms/lib/waypoints/waypoints.min.js"></script>
+        <script src="/rms/lib/owlcarousel/owl.carousel.min.js"></script>
+
+        <!-- Template Javascript -->
+        <script src="/rms/js/main.js"></script>
+</body>
+
+
+
+
+</html>
+
+        <hr />
+        
+    </div>
+
+    
+    
+</body>
+</html>
+

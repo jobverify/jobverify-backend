@@ -1,0 +1,195 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { STAN_PLUS_CATALOG as PROVIDER_METADATA } from './catalog.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 10000
+const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
+const PUBLIC_JOBS_SIGNAL_PATTERN =
+  /\b(current openings|open positions|job openings|jobs|search jobs|apply|career opportunities)\b/i
+
+export { PROVIDER_METADATA }
+export const SOURCE = PROVIDER_METADATA.source
+export const COMPANY = PROVIDER_METADATA.companyName
+export const COMPANY_DOMAIN = PROVIDER_METADATA.companyDomain
+export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const OFFICIAL_CAREERS_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffUrl
+export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const DARWINBOX_TIMEOUT_ROUTE_URLS = [...PROVIDER_METADATA.darwinboxTimeoutRouteUrls]
+
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&#038;|&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1])
+}
+
+const isTimeoutError = (error) => {
+  if (error?.name === 'AbortError') return true
+
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
+
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(causeCode)
+    || TIMEOUT_ERROR_PATTERN.test(causeMessage)
+    || TIMEOUT_ERROR_PATTERN.test(message)
+}
+
+const isDnsError = (error) => {
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
+
+  return /ENOTFOUND|EAI_AGAIN|getaddrinfo/i.test(causeCode)
+    || /ENOTFOUND|EAI_AGAIN|getaddrinfo/i.test(causeMessage)
+    || /ENOTFOUND|EAI_AGAIN|getaddrinfo/i.test(message)
+}
+
+const isReachableSurface = (surface = {}) =>
+  Number.isInteger(surface?.status) && surface.status > 0
+
+export const extractOfficialDarwinboxUrl = (html = '') => {
+  const match = String(html ?? '').match(/https:\/\/redhealth\.darwinbox\.in\/ms\/candidatev2\/main/i)
+  return match?.[0] ?? null
+}
+
+export const hasOfficialCareersPageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+
+  return extractTitle(page) === 'Ambulance Services | RED.Health Products - Quality Care'
+    && text.includes("WE'RE BUILDING INDIA'S 911")
+    && text.includes('CAN WE COUNT YOU IN?')
+    && text.includes('Discover Roles')
+    && text.includes('HIRING PROCESS')
+    && text.includes('Profile Screening')
+    && text.includes('Panel Interviews')
+    && text.includes('Bar Raiser Round')
+    && text.includes('Offer Discussion')
+}
+
+export const isExpectedTimedOutSurface = (surface = {}) =>
+  surface?.errorKind === 'timeout'
+  && !Number.isInteger(surface?.status)
+  && surface?.html == null
+
+export const hasUnexpectedPublicJobSurface = (surface = {}) =>
+  isReachableSurface(surface) && PUBLIC_JOBS_SIGNAL_PATTERN.test(normalizeWhitespace(surface?.html))
+
+const defaultFetchPage = async (url) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url: response.url,
+      finalUrl: response.url,
+      html: await response.text(),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    if (isTimeoutError(error)) {
+      return {
+        status: null,
+        url,
+        finalUrl: url,
+        html: null,
+        errorKind: 'timeout',
+      }
+    }
+
+    if (isDnsError(error)) {
+      return {
+        status: null,
+        url,
+        finalUrl: url,
+        html: null,
+        errorKind: 'dns',
+      }
+    }
+
+    return {
+      status: null,
+      url,
+      finalUrl: url,
+      html: null,
+      errorKind: 'network',
+      errorMessage: String(error?.message ?? error),
+    }
+  }
+}
+
+export const createStanPlusScraper = () => ({
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const careersPage = await fetchPage(CAREERS_URL)
+
+    if (careersPage.errorKind || careersPage.status !== 200 || !hasOfficialCareersPageSignal(careersPage.html)) {
+      throw new Error('StanPlus verified RED.Health careers page no longer matches the trusted first-party surface')
+    }
+
+    const handoffUrl = extractOfficialDarwinboxUrl(careersPage.html)
+    if (handoffUrl !== OFFICIAL_CAREERS_HANDOFF_URL) {
+      throw new Error('StanPlus verified Darwinbox handoff changed materially')
+    }
+
+    for (const url of DARWINBOX_TIMEOUT_ROUTE_URLS) {
+      const surface = await fetchPage(url)
+
+      if (isExpectedTimedOutSurface(surface)) continue
+
+      if (hasUnexpectedPublicJobSurface(surface)) {
+        throw new Error(
+          `${COMPANY} public Darwinbox jobs surface now appears reachable: ${surface.finalUrl || surface.url}`,
+        )
+      }
+
+      throw new Error(`${COMPANY} verified timed-out Darwinbox surface changed materially: ${surface.finalUrl || surface.url}`)
+    }
+
+    return []
+  },
+})
+
+export const run = async (options = {}) => createStanPlusScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

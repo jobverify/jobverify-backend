@@ -1,0 +1,38 @@
+version: "1"
+services:
+  - type: web
+    name: Jobify-backend
+    runtime: node
+    repo: https://github.com/LitenTechnologies/Jobify-backend
+    region: oregon
+    plan: free
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: Jobify
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: GITHUB_PAT
+        sync: false
+      - key: GITHUB_REPO
+        sync: false
+      - key: SCRAPER_CONCURRENCY
+        sync: false

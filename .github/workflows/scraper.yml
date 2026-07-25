@@ -1,0 +1,36 @@
+name: Jobify Scraper Cron
+
+on:
+  schedule:
+    - cron: '41 17 * * *' # 11:11 PM IST (UTC+5:30)
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: Install Backend Dependencies
+        run: npm ci
+
+      - name: Install Scraper Dependencies
+        run: npm install
+        working-directory: ./scraper
+
+      - name: Run Scraper
+        run: node scraper/runner.js --parallel
+        env:
+          NODE_ENV: production
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          PUPPETEER_DISABLE_SANDBOX: ${{secrets.PUPPETEER_DISABLE_SANDBOX}}
+          SCRAPER_CONCURRENCY: ${{secrets.SCRAPER_CONCURRENCY}}
+          SCRAPER_FAILURE_ABORT_THRESHOLD: '1000'
+          SCRAPER_JOB_POSTED_WITHIN_DAYS: ${{secrets.SCRAPER_JOB_POSTED_WITHIN_DAYS}}

@@ -1,0 +1,35 @@
+{
+  "items": [
+    {
+      "Id": "654953",
+      "Title": "Big Data Lead",
+      "RequisitionType": "Account",
+      "RequisitionId": 300011314830832,
+      "ExternalPostedStartDate": "2026-06-25T09:21:36+00:00",
+      "ExternalPostedEndDate": "2026-07-25T00:00:00+00:00",
+      "ExternalDescriptionStr": "Location: All Hex Locations Work Model: Hybrid Shift: 2-11 PM Microsoft Fabric Data Engineer Job Description Looking for a candidate with 6+ to 9 years of hands-on experience in Data Engineering with Azure/ Microsoft Fabric. The candidate should have good knowledge on Market data. The candidate will be responsible for designing, building, maintaining scalable data solutions and reporting using Fabric. Key Responsibilities Experience in financial services, particularly with market data platforms, vendor data ingestion (Bloomberg, MSCI, LSEG, ICE), and entitlement management. Design and implement a Medallion Architecture (Landing/Bronze, Conformed/Silver, Data Products/Gold) with delta tables using either Azure services (ADLS, Azure Databricks, Azure Synapse Analytics) or Microsoft Fabric Lakehouse. Implement SCD Type 2 patterns for slowly changing dimension tracking across conformed and product layers. Contribute to the design and integration of a Data Quality (DQ) Studio framework, including push-down execution, rule catalogs (Technical, Business, Custom Business, Monitoring), and API-first resilience patterns. Support BCDR (Business Continuity & Disaster Recovery) strategies, in either Azure (Databricks, Azure Synapse Analytics, Azure SQL, Azure CosmosDB) or in Fabric (workspace replication patterns for Fabric Warehouse, Fabric SQL Database via SqlPackage, and Mirrored Cosmos DB.) Collaborate with Stakeholders and gather the requirements. Design and implement data pipelines in Azure or Microsoft Fabric. Ingest data from multiple data sources using Azure or Microsoft Fabric. Required Skills Experience in market data platforms, vendor data ingestion (Bloomberg, MSCI, LSEG, ICE), and entitlement management Experience with Azure ETL tools or Microsoft Fabric Knowledge of PySpark/Python/T-SQL Power BI exposure",
+      "ShortDescriptionStr": "",
+      "PrimaryLocation": "India",
+      "PrimaryLocationCountry": "IN",
+      "ExternalQualificationsStr": "",
+      "ExternalResponsibilitiesStr": "",
+      "Department": null,
+      "JobFunction": null,
+      "skills": [
+        { "SectionName": "Job Skills", "Skill": "Amazon Redshift" },
+        { "SectionName": "Job Skills", "Skill": "Apache Spark" },
+        { "SectionName": "Job Skills", "Skill": "Azure Data Factory" },
+        { "SectionName": "Job Skills", "Skill": "BigData -Hadoop" },
+        { "SectionName": "Job Skills", "Skill": "BigData -Hive" },
+        { "SectionName": "Job Skills", "Skill": "Databricks" },
+        { "SectionName": "Job Skills", "Skill": "Google Cloud Platform" },
+        { "SectionName": "Job Skills", "Skill": "Scala" },
+        { "SectionName": "Job Skills", "Skill": "Snowflake" }
+      ]
+    }
+  ],
+  "count": 1,
+  "hasMore": false,
+  "limit": 499,
+  "offset": 0
+}

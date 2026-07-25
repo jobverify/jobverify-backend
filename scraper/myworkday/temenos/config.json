@@ -1,0 +1,8 @@
+{
+  "listingStrategy": "jobs-api",
+  "jobsApiUrl": "https://temenos.wd103.myworkdayjobs.com/wday/cxs/temenos/Temenoscareers/jobs",
+  "detailUrlBase": "https://temenos.wd103.myworkdayjobs.com/en-US/Temenoscareers",
+  "locationCountry": null,
+  "searchText": "India",
+  "locationPattern": "india|bangalore|bengaluru|hyderabad|chennai|perungudi|pune|gurgaon|gurugram|mumbai|noida"
+}

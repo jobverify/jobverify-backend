@@ -1,0 +1,138 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+export const SOURCE = 'aadinathconsultancy'
+export const COMPANY = 'Aadinath Consultancy'
+export const VERIFIED_AT = '2026-07-14'
+export const HOMEPAGE_URL = 'https://aadinathconsultants.com/'
+export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
+  'https://aadinathconsultants.com/careers',
+  'https://aadinathconsultants.com/careers/',
+  'https://aadinathconsultants.com/career',
+  'https://aadinathconsultants.com/jobs',
+  'https://aadinathconsultants.com/jobs/',
+  'https://aadinathconsultants.com/join-us',
+  'https://aadinathconsultants.com/work-with-us',
+  'https://aadinathconsultants.com/openings',
+]
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const PUBLIC_JOBS_SIGNAL_PATTERNS = [
+  /\bwe(?:'|’)re hiring\b/i,
+  /\bjoin our team\b/i,
+  /\bopen positions\b/i,
+  /\bcurrent openings\b/i,
+  /\bjob openings\b/i,
+  /\bapply now\b/i,
+  /\bjobs at\b/i,
+  /\bwork with us\b/i,
+  /\blever\.co\b/i,
+  /\bgreenhouse\.io\b/i,
+  /\bashbyhq\.com\b/i,
+  /\bworkdayjobs\.com\b/i,
+  /\bmyworkdayjobs\.com\b/i,
+  /\bsmartrecruiters\.com\b/i,
+  /\bjobvite\.com\b/i,
+  /\bbreezy\.hr\b/i,
+]
+
+const CAREER_ROUTE_LINK_PATTERN =
+  /href=["'][^"']*\/(?:careers?|jobs?|join-us|work-with-us|openings)(?:[\/"'?#]|$)/i
+
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+export const hasOfficialHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+
+  return /<title>\s*Index of \/\s*<\/title>/i.test(page)
+    && /href=["']\/_autoindex\/assets\/css\/autoindex\.css["']/i.test(page)
+    && /src=["']\/_autoindex\/assets\/js\/tablesort\.js["']/i.test(page)
+    && /src=["']\/_autoindex\/assets\/js\/tablesort\.number\.js["']/i.test(page)
+    && /<h1[^>]*>\s*Index of \/\s*<\/h1>/i.test(page)
+    && text.includes('Proudly Served by LiteSpeed Web Server at aadinathconsultants.com Port 443')
+}
+
+export const hasPublicJobsSignal = (html = '') =>
+  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+export const hasCareerRouteLinkSignal = (html = '') =>
+  CAREER_ROUTE_LINK_PATTERN.test(String(html ?? ''))
+
+export const isVerifiedMissingCareerRoute = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const text = normalizeWhitespace(html)
+
+  return Number(page?.status) === 404
+    && /<title>\s*404 Not Found\s*<\/title>/i.test(html)
+    && text.includes('The resource requested could not be found on this server!')
+    && text.includes('Proudly powered by LiteSpeed Web Server')
+    && text.includes('Please be advised that LiteSpeed Technologies Inc. is not a web hosting company')
+    && !hasPublicJobsSignal(html)
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+export const createAadinathConsultancyScraper = () => ({
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+      throw new Error('Aadinath Consultancy verified official homepage no longer matches the trusted first-party surface')
+    }
+
+    if (hasPublicJobsSignal(homepage.html) || hasCareerRouteLinkSignal(homepage.html)) {
+      throw new Error('Aadinath Consultancy homepage now appears to expose a public jobs surface')
+    }
+
+    for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
+      const routePage = await fetchPage(routeUrl)
+      if (!isVerifiedMissingCareerRoute(routePage)) {
+        throw new Error(`Aadinath Consultancy verified no-public-careers surface changed: ${routePage.url || routeUrl}`)
+      }
+    }
+
+    return []
+  },
+})
+
+export const run = async (options = {}) => createAadinathConsultancyScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

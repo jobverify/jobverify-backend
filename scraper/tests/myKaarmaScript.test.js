@@ -1,0 +1,187 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const verifiedCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at myKaarma | Join a Leader in Automotive Software</title>
+  </head>
+  <body>
+    <main>
+      <section class="careers-hero">
+        <h1>Join the myKaarma team</h1>
+        <p>Available positions</p>
+      </section>
+      <div id="rr-job-board" data-job-board-id="mykaarma"></div>
+      <script src="https://static-assets.ripplingcdn.com/ats/embeds/job-board.v1.js"></script>
+      <a href="https://ats.rippling.com/mykaarma/jobs/cc7fea19-dda7-496c-9f5f-6b89dec0f6eb">Future openings</a>
+    </main>
+  </body>
+</html>
+`
+
+const verifiedEmbedHtml = `
+<!doctype html>
+<html lang="en">
+  <head><title>myKaarma Jobs</title></head>
+  <body>
+    <script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: {
+        pageProps: {
+          apiData: {
+            jobBoard: {
+              slug: 'mykaarma',
+              companyName: 'myKaarma',
+              boardURL: 'https://ats.rippling.com/mykaarma/jobs',
+            },
+          },
+          dehydratedState: {
+            queries: [
+              {
+                queryKey: ['board', 'mykaarma', 'job-posts', { page: 1 }],
+                state: {
+                  data: {
+                    totalItems: 2,
+                    items: [
+                      {
+                        id: '811e76a4-8ba4-4921-8ced-94a901dde48a',
+                        name: 'Finance and Accounting Executive',
+                        url: 'https://ats.rippling.com/mykaarma/jobs/811e76a4-8ba4-4921-8ced-94a901dde48a',
+                        department: { name: 'Admin' },
+                        locations: [
+                          {
+                            name: 'NOIDA, India',
+                            city: 'NOIDA',
+                            country: 'India',
+                            countryCode: 'IN',
+                            workplaceType: 'ONSITE',
+                          },
+                        ],
+                      },
+                      {
+                        id: 'us-only-role',
+                        name: 'Customer Success Manager',
+                        url: 'https://ats.rippling.com/mykaarma/jobs/us-only-role',
+                        department: { name: 'Customer Success' },
+                        locations: [
+                          {
+                            name: 'Long Beach, CA',
+                            city: 'Long Beach',
+                            country: 'United States',
+                            countryCode: 'US',
+                            workplaceType: 'REMOTE',
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    })}</script>
+  </body>
+</html>
+`
+
+const loadMyKaarmaModule = async () => {
+  try {
+    return await import('../mykaarma/script.js')
+  } catch {
+    assert.fail('Expected MyKaarma scraper module at ../mykaarma/script.js')
+  }
+}
+
+test('MyKaarma verifies the official careers page and extracts India jobs from the Rippling embed payload', async () => {
+  const myKaarma = await loadMyKaarmaModule()
+
+  assert.equal(myKaarma.CAREERS_URL, 'https://mykaarma.com/careers/')
+  assert.equal(myKaarma.JOB_BOARD_SLUG, 'mykaarma')
+  assert.equal(
+    myKaarma.buildEmbedUrl(),
+    'https://ats.rippling.com/embed/mykaarma/jobs?s=https%3A%2F%2Fmykaarma.com%2Fcareers%2F',
+  )
+  assert.equal(myKaarma.hasVerifiedCareersPageSignal(verifiedCareersHtml), true)
+  assert.deepEqual(myKaarma.extractEmbeddedJobBoard(verifiedCareersHtml), {
+    slug: 'mykaarma',
+    embedUrl: 'https://ats.rippling.com/embed/mykaarma/jobs?s=https%3A%2F%2Fmykaarma.com%2Fcareers%2F',
+  })
+
+  const jobs = myKaarma.extractIndiaJobsFromEmbed(verifiedEmbedHtml, {
+    scrapedAt: '2026-07-16T00:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Finance and Accounting Executive',
+      company: 'MyKaarma',
+      department: 'Admin',
+      location: 'NOIDA, India',
+      city: 'NOIDA',
+      country: 'India',
+      workplaceType: 'ONSITE',
+      jobId: '811e76a4-8ba4-4921-8ced-94a901dde48a',
+      requisitionId: '811e76a4-8ba4-4921-8ced-94a901dde48a',
+      sourceUrl: 'https://ats.rippling.com/mykaarma/jobs/811e76a4-8ba4-4921-8ced-94a901dde48a',
+      applyUrl: 'https://ats.rippling.com/mykaarma/jobs/811e76a4-8ba4-4921-8ced-94a901dde48a',
+      link: 'https://ats.rippling.com/mykaarma/jobs/811e76a4-8ba4-4921-8ced-94a901dde48a',
+      source: 'mykaarma',
+      scrapedAt: '2026-07-16T00:00:00.000Z',
+    },
+  ])
+})
+
+test('MyKaarma run validates the verified careers page before returning India jobs from the Rippling embed', async () => {
+  const myKaarma = await loadMyKaarmaModule()
+  const requestedUrls = []
+
+  const jobs = await myKaarma.createMyKaarmaScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === myKaarma.CAREERS_URL) return verifiedCareersHtml
+      if (url === myKaarma.buildEmbedUrl()) return verifiedEmbedHtml
+      throw new Error(`Unexpected MyKaarma fixture URL: ${url}`)
+    },
+    now: () => '2026-07-16T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    myKaarma.CAREERS_URL,
+    'https://ats.rippling.com/embed/mykaarma/jobs?s=https%3A%2F%2Fmykaarma.com%2Fcareers%2F',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Finance and Accounting Executive')
+  assert.equal(jobs[0].source, 'mykaarma')
+})
+
+test('MyKaarma fails closed when the verified careers or Rippling board contract drifts', async () => {
+  const myKaarma = await loadMyKaarmaModule()
+
+  await assert.rejects(
+    myKaarma.createMyKaarmaScraper().run({
+      fetchText: async (url) => {
+        if (url === myKaarma.CAREERS_URL) {
+          return verifiedCareersHtml.replace('data-job-board-id="mykaarma"', 'data-job-board-id="other-board"')
+        }
+        throw new Error(`Unexpected MyKaarma fixture URL: ${url}`)
+      },
+    }),
+    /verified careers page/i,
+  )
+
+  await assert.rejects(
+    myKaarma.createMyKaarmaScraper().run({
+      fetchText: async (url) => {
+        if (url === myKaarma.CAREERS_URL) return verifiedCareersHtml
+        if (url === myKaarma.buildEmbedUrl()) {
+          return verifiedEmbedHtml.replace('"companyName":"myKaarma"', '"companyName":"Another Company"')
+        }
+        throw new Error(`Unexpected MyKaarma fixture URL: ${url}`)
+      },
+    }),
+    /verified Rippling embed/i,
+  )
+})

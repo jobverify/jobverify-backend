@@ -1,0 +1,22 @@
+node_modules/
+scraper/node_modules/
+
+.env
+.env.cloud
+
+.cache/
+.codex/
+.superpowers/
+coverage/
+playwright-report/
+test-results/
+tmp/
+tmp-*.js
+
+# Ignore scraper output files, but not config.json
+scraper/**/jobs.json
+scraper/archive/
+scraper/tests/fixtures/tmp*/
+
+# Logs
+*.log

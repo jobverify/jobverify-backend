@@ -1,0 +1,130 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const loadModule = async () => {
+  try {
+    return await import('./script.js')
+  } catch {
+    return null
+  }
+}
+
+const careersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Graycommit Careers</title>
+    </head>
+    <body>
+      <main>
+        <h1>Careers at Graycommit</h1>
+        <p>Build AI products with Graycommit.</p>
+
+        <article>
+          <h2>GTM Sales Exec - AI</h2>
+          <p>Bangalore</p>
+          <p>Own outbound AI sales and partnerships for India growth.</p>
+          <a href="https://forms.gle/JRRyEqayaV32F3xC7">Apply Now</a>
+        </article>
+
+        <article>
+          <h2>Founding Engineer</h2>
+          <p>San Francisco</p>
+          <p>Build full-stack AI systems from zero to one.</p>
+          <a href="https://forms.gle/JRRyEqayaV32F3xC7">Apply Now</a>
+        </article>
+
+        <article>
+          <h2>Founding AI Researcher</h2>
+          <p>San Francisco</p>
+          <p>Work on frontier model evaluation and productization.</p>
+          <a href="https://forms.gle/JRRyEqayaV32F3xC7">Apply Now</a>
+        </article>
+      </main>
+    </body>
+  </html>
+`
+
+test('Graycommit scraper extracts the verified India opening from the official careers page', async () => {
+  const graycommit = await loadModule()
+  assert.ok(graycommit, 'Graycommit scraper module should load')
+
+  assert.equal(graycommit.CAREERS_URL, 'https://www.graycommit.com/careers')
+  assert.equal(graycommit.hasOfficialCareersSignal(careersHtml), true)
+
+  assert.deepEqual(graycommit.extractJobCards(careersHtml), [{
+    title: 'GTM Sales Exec - AI',
+    company: 'Graycommit',
+    department: null,
+    location: 'Bangalore, India',
+    city: 'Bangalore',
+    country: 'India',
+    jobId: 'graycommit-gtm-sales-exec-ai-bangalore',
+    requisitionId: 'graycommit-gtm-sales-exec-ai-bangalore',
+    sourceUrl: 'https://www.graycommit.com/careers',
+    applyUrl: 'https://forms.gle/JRRyEqayaV32F3xC7',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: 'Own outbound AI sales and partnerships for India growth.',
+  }])
+})
+
+test('Graycommit scraper run decorates the verified India opening', async () => {
+  const graycommit = await loadModule()
+  assert.ok(graycommit, 'Graycommit scraper module should load')
+
+  const requestedUrls = []
+  const jobs = await graycommit.createGraycommitScraper({
+    now: () => '2026-07-12T10:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return careersHtml
+    },
+  })
+
+  assert.deepEqual(requestedUrls, ['https://www.graycommit.com/careers'])
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(
+    {
+      title: jobs[0].title,
+      source: jobs[0].source,
+      company: jobs[0].company,
+      location: jobs[0].location,
+      link: jobs[0].link,
+      scrapedAt: jobs[0].scrapedAt,
+    },
+    {
+      title: 'GTM Sales Exec - AI',
+      source: 'graycommit',
+      company: 'Graycommit',
+      location: 'Bangalore, India',
+      link: 'https://forms.gle/JRRyEqayaV32F3xC7',
+      scrapedAt: '2026-07-12T10:00:00.000Z',
+    },
+  )
+})
+
+test('Graycommit scraper fails closed when the official careers surface changes materially', async () => {
+  const graycommit = await loadModule()
+  assert.ok(graycommit, 'Graycommit scraper module should load')
+
+  await assert.rejects(
+    graycommit.createGraycommitScraper().run({
+      fetchText: async () => `
+        <html>
+          <body>
+            <h1>Graycommit</h1>
+            <p>Product updates only.</p>
+          </body>
+        </html>
+      `,
+    }),
+    /Graycommit official careers surface changed/i,
+  )
+})

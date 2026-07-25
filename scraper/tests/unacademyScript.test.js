@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const loadUnacademyModule = async () => {
+  try {
+    return await import('../unacademy/script.js')
+  } catch {
+    assert.fail('Expected Unacademy scraper module at ../scraper/unacademy/script.js')
+  }
+}
+
+test('createUnacademyScraper targets the Unacademy Darwinbox host', async () => {
+  const { createUnacademyScraper } = await loadUnacademyModule()
+  const scraper = createUnacademyScraper()
+
+  assert.equal(
+    scraper.buildCareersPageUrl(),
+    'https://unacademy.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
+  assert.equal(
+    scraper.buildListingApiUrl(),
+    'https://unacademy.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+  )
+  assert.equal(
+    scraper.buildJobDetailUrl('a67de6108bb994'),
+    'https://unacademy.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a67de6108bb994',
+  )
+})
+
+test('run keeps Unacademy jobs on the hosted Darwinbox routes and decorates the shared runner fields', async () => {
+  const { createUnacademyScraper } = await loadUnacademyModule()
+  const scraper = createUnacademyScraper()
+  const requestedPages = []
+
+  const jobs = await scraper.run({
+    fetchListingPage: async ({ page }) => {
+      requestedPages.push(page)
+
+      return {
+        status: 'success',
+        data: [
+          {
+            id: 'a67de6108bb994',
+            title: 'Lead, Community Management',
+            department_name: 'Graphy - Business (GLPL_Graphy-Bus)',
+            locations: 'Bangalore, Karnataka\r, India',
+            country: 'India',
+            emp_type_name: 'FTE',
+            experience: '',
+            posted_on: '22-Mar-2025',
+            jd: 'Please enter job description',
+          },
+        ],
+        job_counts: 1,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedPages, [1])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].company, 'Unacademy')
+  assert.equal(jobs[0].source, 'unacademy')
+  assert.equal(
+    jobs[0].applyUrl,
+    'https://unacademy.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a67de6108bb994',
+  )
+  assert.equal(
+    jobs[0].link,
+    'https://unacademy.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a67de6108bb994',
+  )
+  assert.equal(jobs[0].location, 'Bangalore, Karnataka , India')
+})

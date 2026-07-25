@@ -1,0 +1,218 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const loadModule = async () => {
+  try {
+    return await import('./script.js')
+  } catch {
+    return null
+  }
+}
+
+const listingPageData = {
+  url: 'https://careers.envestnet.com/search/jobs/in/country/india',
+  title: 'India Careers',
+  text: `
+    Careers Home Search Jobs Saved Jobs
+    Job Search Results
+    Showing 1-2 of 2 result(s)
+    Set up job alerts
+    Showing 1-2 of 2 results
+    Data Privacy Advisor II
+    Trivandrum, KL, India
+    Jul 7, 2026
+    Senior Enterprise Applications Engineer - ZScaler
+    Trivandrum, KL, India
+    Jul 6, 2026
+  `,
+  links: [
+    {
+      text: 'Data Privacy Advisor II',
+      href: 'https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii',
+    },
+    {
+      text: 'Senior Enterprise Applications Engineer - ZScaler',
+      href: 'https://careers.envestnet.com/jobs/17961049-senior-enterprise-applications-engineer-zscaler',
+    },
+    {
+      text: 'View more jobs',
+      href: 'https://careers.envestnet.com/search/jobs/in/country/india?page=2',
+    },
+  ],
+}
+
+const detailPageData = {
+  url: 'https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii',
+  title: 'Data Privacy Advisor II in Trivandrum, KL, India',
+  text: `
+    Back to Search Results
+    Data Privacy Advisor II
+    Location: Trivandrum, KL, India
+    Date Posted: Jul 7, 2026
+    Share:
+    Apply Now
+    Save Job
+    Description
+    Job Location
+    The primary work location for this role is Trivandrum with a hybrid work model.
+    About Envestnet
+    Envestnet is an adaptive WealthTech company.
+    How You'll Contribute
+    Build privacy processes across the organization.
+    What You'll Need to Bring
+    Minimum 5+ years of experience in Data Privacy.
+    Why You'll Enjoy Working at Envestnet
+  `,
+  links: [
+    {
+      text: 'Apply Now',
+      href: 'javascript: CareerSite.Apply.launchApplicantJob(17868789, );',
+    },
+  ],
+}
+
+test('Envestnet scraper validates and extracts India listing links from the verified public listing surface', async () => {
+  const envestnet = await loadModule()
+  assert.ok(envestnet, 'Envestnet scraper module should load')
+
+  const {
+    INDIA_SEARCH_URL,
+    SOURCE,
+    VERIFIED_LISTING_TITLE,
+    extractListingJobLinks,
+    hasVerifiedIndiaListingSurface,
+  } = envestnet
+
+  assert.equal(SOURCE, 'envestnet')
+  assert.equal(INDIA_SEARCH_URL, 'https://careers.envestnet.com/search/jobs/in/country/india')
+  assert.equal(VERIFIED_LISTING_TITLE, 'India Careers')
+  assert.equal(hasVerifiedIndiaListingSurface(listingPageData), true)
+  assert.deepEqual(extractListingJobLinks(listingPageData), [
+    {
+      title: 'Data Privacy Advisor II',
+      url: 'https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii',
+    },
+    {
+      title: 'Senior Enterprise Applications Engineer - ZScaler',
+      url: 'https://careers.envestnet.com/jobs/17961049-senior-enterprise-applications-engineer-zscaler',
+    },
+  ])
+})
+
+test('Envestnet scraper normalizes an India job detail page', async () => {
+  const envestnet = await loadModule()
+  assert.ok(envestnet, 'Envestnet scraper module should load')
+
+  const { extractJobFromDetailPage } = envestnet
+
+  const job = extractJobFromDetailPage(detailPageData)
+
+  assert.equal(job.title, 'Data Privacy Advisor II')
+  assert.equal(job.company, 'Envestnet')
+  assert.equal(job.location, 'Trivandrum, KL, India')
+  assert.equal(job.city, 'Trivandrum')
+  assert.equal(job.country, 'India')
+  assert.equal(job.jobId, '17868789')
+  assert.equal(job.requisitionId, '17868789')
+  assert.equal(job.sourceUrl, 'https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii')
+  assert.equal(job.applyUrl, job.sourceUrl)
+  assert.equal(job.postingDate, 'Jul 7, 2026')
+  assert.match(job.jobDescription, /Envestnet is an adaptive WealthTech company/i)
+})
+
+test('Envestnet scraper runs through listing and detail pages and decorates final jobs', async () => {
+  const envestnet = await loadModule()
+  assert.ok(envestnet, 'Envestnet scraper module should load')
+
+  const { createEnvestnetScraper, INDIA_SEARCH_URL } = envestnet
+
+  const requestedUrls = []
+  const pageMap = new Map([
+    [INDIA_SEARCH_URL, listingPageData],
+    ['https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii', detailPageData],
+  ])
+
+  const jobs = await createEnvestnetScraper({ maxJobs: 1 }).run({
+    collectPageDataImpl: async (_page, url) => {
+      requestedUrls.push(url)
+      const pageData = pageMap.get(url)
+      if (!pageData) throw new Error(`Unexpected URL: ${url}`)
+      return pageData
+    },
+    launchBrowserImpl: async () => ({ close: async () => {} }),
+    createOptimizedPageImpl: async () => ({}),
+  })
+
+  assert.deepEqual(requestedUrls, [
+    INDIA_SEARCH_URL,
+    'https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'envestnet')
+  assert.equal(jobs[0].link, jobs[0].sourceUrl)
+  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+})
+
+test('Envestnet default page collector works with optimized pages that omit waitForTimeout', async () => {
+  const envestnet = await loadModule()
+  assert.ok(envestnet, 'Envestnet scraper module should load')
+
+  const { createEnvestnetScraper, INDIA_SEARCH_URL } = envestnet
+  const requestedUrls = []
+  const fakePages = [
+    {
+      goto: async (url) => {
+        requestedUrls.push(url)
+      },
+      waitForSelector: async () => {},
+      evaluate: async () => listingPageData,
+    },
+    {
+      goto: async (url) => {
+        requestedUrls.push(url)
+      },
+      waitForSelector: async () => {},
+      evaluate: async () => detailPageData,
+    },
+  ]
+
+  const jobs = await createEnvestnetScraper({ maxJobs: 1 }).run({
+    launchBrowserImpl: async () => ({ close: async () => {} }),
+    createOptimizedPageImpl: async () => fakePages.shift(),
+  })
+
+  assert.deepEqual(requestedUrls, [
+    INDIA_SEARCH_URL,
+    'https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'envestnet')
+})
+
+test('Envestnet scraper rejects unsupported listing or detail page changes', async () => {
+  const envestnet = await loadModule()
+  assert.ok(envestnet, 'Envestnet scraper module should load')
+
+  const { createEnvestnetScraper, extractJobFromDetailPage } = envestnet
+
+  await assert.rejects(
+    createEnvestnetScraper().run({
+      collectPageDataImpl: async () => ({
+        title: 'Jobs',
+        text: 'Open roles',
+        links: [],
+      }),
+      launchBrowserImpl: async () => ({ close: async () => {} }),
+      createOptimizedPageImpl: async () => ({}),
+    }),
+    /verified public surface/i,
+  )
+
+  assert.throws(
+    () => extractJobFromDetailPage({
+      ...detailPageData,
+      text: 'Apply Now',
+    }),
+    /verified public surface/i,
+  )
+})

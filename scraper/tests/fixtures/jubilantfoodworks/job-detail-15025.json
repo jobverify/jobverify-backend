@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "Id": "15025",
+      "Title": "Lead - AI Security & Data Governance | M06 | IT | Security & Audit",
+      "RequisitionType": "Corporate",
+      "ExternalPostedStartDate": "2026-07-07T05:02:05+00:00",
+      "JobSchedule": "Full time",
+      "ExternalPostedEndDate": "2026-07-20T18:30:00+00:00",
+      "ExternalDescriptionStr": "<p>Lead AI Security &amp; Data Governance</p>",
+      "ShortDescriptionStr": "",
+      "PrimaryLocation": "India",
+      "PrimaryLocationCountry": "IN",
+      "ExternalQualificationsStr": "",
+      "ExternalResponsibilitiesStr": "",
+      "BusinessUnitId": 300000003654014,
+      "OrganizationId": 1,
+      "secondaryLocations": [],
+      "workLocation": [
+        {
+          "LocationName": "CORPORATE OFFICE",
+          "TownOrCity": "Noida",
+          "PostalCode": "201304",
+          "Country": "IN",
+          "Region2": "Uttar Pradesh"
+        }
+      ],
+      "skills": []
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+const homepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Gameberry Labs | Makers of Ludo STAR &amp; Parchisi STAR</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/our-team">Our Team</a>
+      <a href="/our-story">Our Story</a>
+      <a href="/jobs">CAREERS</a>
+      <a href="https://blog.gameberrylabs.com/">BLOG</a>
+    </nav>
+    <main>
+      <h1>WE BUILD GAMES THAT PLAYERS LOVE TO GROW OLD WITH</h1>
+      <h2>Build Your Dream Career With Us</h2>
+      <p>Join our passion for gaming as we build the future of Indian mobile gaming studios - together.</p>
+      <p>We are an agile team of go-getters filled with people who want to build Great Games.</p>
+      <a href="/jobs">JOIN US!</a>
+      <p>No.78/9, Ground Floor, Vaishnavi Signature, Outer Ring Road, Bellandur Village</p>
+      <p>© 2022 Gameberry Labs</p>
+    </main>
+  </body>
+</html>
+`
+
+const loadGameberryLabsModule = async () => {
+  try {
+    return await import('../gameberrylabs/script.js')
+  } catch {
+    assert.fail('Expected Gameberry Labs scraper module at ../gameberrylabs/script.js')
+  }
+}
+
+test('Gameberry Labs sentinel constants stay pinned to the verified homepage and Keka handoff contract', async () => {
+  const gameberryLabs = await loadGameberryLabsModule()
+
+  assert.equal(gameberryLabs.SOURCE, 'gameberrylabs')
+  assert.equal(gameberryLabs.COMPANY, 'Gameberry Labs')
+  assert.equal(gameberryLabs.OFFICIAL_BRAND_NAME, 'Gameberry Labs')
+  assert.equal(gameberryLabs.VERIFIED_ON, '2026-07-15')
+  assert.equal(gameberryLabs.HOMEPAGE_URL, 'https://gameberrylabs.com/')
+  assert.equal(gameberryLabs.CAREERS_URL, 'https://gameberrylabs.com/jobs')
+  assert.equal(gameberryLabs.EXTERNAL_HANDOFF_URL, 'https://gameberry.keka.com/careers')
+  assert.match(gameberryLabs.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
+
+  assert.equal(gameberryLabs.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(gameberryLabs.extractCareersRouteUrl(homepageHtml), 'https://gameberrylabs.com/jobs')
+  assert.deepEqual(gameberryLabs.extractFirstPartyJobRecordUrls(homepageHtml), [])
+  assert.equal(gameberryLabs.hasPublicJobsSignal(homepageHtml), false)
+  assert.equal(
+    gameberryLabs.hasPublicJobsSignal('<a href="https://jobs.lever.co/gameberrylabs">Open positions</a>'),
+    true,
+  )
+  assert.equal(
+    gameberryLabs.isExpectedCareersRedirect({
+      status: 302,
+      url: 'https://gameberrylabs.com/jobs',
+      location: 'https://gameberry.keka.com/careers',
+    }),
+    true,
+  )
+})
+
+test('Gameberry Labs sentinel returns [] only while the verified homepage still hands off to the unreachable external Keka board', async () => {
+  const gameberryLabs = await loadGameberryLabsModule()
+  const requestedCalls = []
+
+  const jobs = await gameberryLabs.createGameberryLabsScraper().run({
+    fetchPage: async (url, options = {}) => {
+      requestedCalls.push({ url, options })
+
+      if (url === gameberryLabs.HOMEPAGE_URL) {
+        return {
+          ok: true,
+          status: 200,
+          url,
+          location: null,
+          text: homepageHtml,
+        }
+      }
+
+      if (url === gameberryLabs.CAREERS_URL) {
+        return {
+          ok: false,
+          status: 302,
+          url,
+          location: 'https://gameberry.keka.com/careers',
+          text: '',
+        }
+      }
+
+      throw new Error(`Unexpected Gameberry Labs URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedCalls, [
+    {
+      url: gameberryLabs.HOMEPAGE_URL,
+      options: {},
+    },
+    {
+      url: gameberryLabs.CAREERS_URL,
+      options: { redirectMode: 'manual' },
+    },
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Gameberry Labs sentinel fails closed when the verified homepage shell or external handoff changes', async () => {
+  const gameberryLabs = await loadGameberryLabsModule()
+
+  await assert.rejects(
+    gameberryLabs.createGameberryLabsScraper().run({
+      fetchPage: async (url) => {
+        if (url === gameberryLabs.HOMEPAGE_URL) {
+          return {
+            ok: true,
+            status: 200,
+            url,
+            location: null,
+            text: homepageHtml.replaceAll('/jobs', '/careers'),
+          }
+        }
+
+        throw new Error(`Unexpected Gameberry Labs URL: ${url}`)
+      },
+    }),
+    /verified official homepage no longer matches the trusted careers handoff/i,
+  )
+
+  await assert.rejects(
+    gameberryLabs.createGameberryLabsScraper().run({
+      fetchPage: async (url, options = {}) => {
+        if (url === gameberryLabs.HOMEPAGE_URL) {
+          return {
+            ok: true,
+            status: 200,
+            url,
+            location: null,
+            text: `${homepageHtml}<a href="https://gameberrylabs.com/jobs/backend-engineer">Backend Engineer</a>`,
+          }
+        }
+
+        return {
+          ok: false,
+          status: 302,
+          url,
+          location: 'https://gameberry.keka.com/careers',
+          text: '',
+          options,
+        }
+      },
+    }),
+    /first-party homepage now exposes public job records/i,
+  )
+
+  await assert.rejects(
+    gameberryLabs.createGameberryLabsScraper().run({
+      fetchPage: async (url) => {
+        if (url === gameberryLabs.HOMEPAGE_URL) {
+          return {
+            ok: true,
+            status: 200,
+            url,
+            location: null,
+            text: homepageHtml,
+          }
+        }
+
+        return {
+          ok: false,
+          status: 302,
+          url,
+          location: 'https://gameberry.keka.com/careers/openings',
+          text: '',
+        }
+      },
+    }),
+    /verified careers redirect no longer matches the pinned external handoff/i,
+  )
+})

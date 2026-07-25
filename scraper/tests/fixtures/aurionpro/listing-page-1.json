@@ -1,0 +1,43 @@
+{
+  "code": 1,
+  "data": {
+    "totalCount": 4,
+    "careerJobPostings": [
+      {
+        "requisitionId": 1096,
+        "requisitionNumber": 1,
+        "jobTitle": "Senior Support Engineer",
+        "minExp": 4,
+        "maxExp": 10,
+        "eT_Desc": "Permanent",
+        "minAge": 22,
+        "maxAge": 32,
+        "description": "Aurionpro Solutions Limited is a global leader in providing advanced technology solutions.<br><br><b>Required Skills</b><br><ul><li>Strong experience in Zoho ManageEngine ServiceDesk Plus and ITAM</li><li>Good understanding of ITIL processes Incident, Change, Problem, Asset Management</li></ul>",
+        "minSalary": 1,
+        "maxSalary": 50,
+        "startDate": "2026-05-07T00:00:00",
+        "endDate": "2026-07-31T00:00:00",
+        "careerAttribute": ""
+      },
+      {
+        "requisitionId": 1095,
+        "requisitionNumber": 1,
+        "jobTitle": "Support Engineer",
+        "minExp": 1,
+        "maxExp": 8,
+        "eT_Desc": "Permanent",
+        "minAge": 22,
+        "maxAge": 31,
+        "description": "Entry-level role responsible for supporting IT service management and security tools.",
+        "minSalary": 1,
+        "maxSalary": 50,
+        "startDate": "2026-05-07T00:00:00",
+        "endDate": "2026-07-31T00:00:00",
+        "careerAttribute": ""
+      }
+    ]
+  },
+  "message": "Success",
+  "lastCachedAt": null,
+  "cachedTill": null
+}
