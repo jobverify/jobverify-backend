@@ -87,3 +87,24 @@ test('run fetches Cafe Coffee Day openings and decorates jobs for the runner', a
   assert.equal(jobs[0].company, 'Cafe Coffee Day')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })
+
+test('run can recover Cafe Coffee Day openings with a browser-backed fetch when direct requests fail certificate validation', async () => {
+  const cafeCoffeeDay = await loadCafeCoffeeDayModule()
+  assert.ok(cafeCoffeeDay)
+
+  const browserUrls = []
+  const scraper = cafeCoffeeDay.createCafeCoffeeDayScraper()
+  const jobs = await scraper.run({
+    fetchText: async () => {
+      throw new Error('fetch failed | unable to verify the first certificate')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return openingsHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [cafeCoffeeDay.OPENINGS_URL])
+  assert.equal(jobs.length, 6)
+  assert.equal(jobs[0].source, 'cafecoffeeday')
+})

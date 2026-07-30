@@ -23,6 +23,20 @@ const careersHtml = `
 </html>
 `
 
+const careersHtmlWithoutTrailingSlash = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | HealthAsyst</title>
+  </head>
+  <body>
+    <h1>Careers</h1>
+    <p>Check out the open positions</p>
+    <a href="https://healthasyst.keka.com/careers">Click here</a>
+  </body>
+</html>
+`
+
 const portalInfo = {
   name: 'HealthAsyst',
   shortName: 'HealthAsyst',
@@ -39,6 +53,32 @@ test('HealthAsyst validates the verified official careers handoff and exact port
     'https://healthasyst.keka.com/careers/',
   )
   assert.equal(healthAsyst.hasExpectedPortalIdentity(portalInfo), true)
+})
+
+test('HealthAsyst accepts the live Keka handoff URL even when the careers link omits the trailing slash', async () => {
+  const healthAsyst = await loadModule()
+
+  assert.equal(healthAsyst.hasOfficialCareersPageSignal(careersHtmlWithoutTrailingSlash), true)
+  assert.equal(
+    healthAsyst.extractExternalHandoffUrl(careersHtmlWithoutTrailingSlash),
+    'https://healthasyst.keka.com/careers',
+  )
+})
+
+test('HealthAsyst run accepts the live Keka handoff URL even when the careers link omits the trailing slash', async () => {
+  const healthAsyst = await loadModule()
+
+  const jobs = await healthAsyst.createHealthAsystScraper().run({
+    fetchText: async () => careersHtmlWithoutTrailingSlash,
+    fetchJson: async (url) => {
+      if (url === healthAsyst.CAREER_PORTAL_INFO_URL) return portalInfo
+      if (url === healthAsyst.ACTIVE_JOBS_URL) return []
+      throw new Error(`Unexpected JSON URL: ${url}`)
+    },
+    now: () => '2026-07-18T00:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('HealthAsyst keeps only India jobs from the verified Keka payload and maps them to the shared shape', async () => {

@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 
 import User from "../src/models/User.js";
 import Job from "../src/models/Job.js";
+import JobDatasetSummary from "../src/models/JobDatasetSummary.js";
 import AdminAudit from "../src/models/AdminAudit.js";
 import ScraperRun from "../src/models/ScraperRun.js";
 import ScraperStatus from "../src/models/ScraperStatus.js";
@@ -14,9 +15,11 @@ import {
 import {
   getScrapeStatus,
   triggerScrapeAdmin,
+  updateJobStatus,
   updateUserAccess,
 } from "../src/controllers/adminController.js";
 import { getScraperCatalog } from "../scraper/providers/index.js";
+import { getDiskBackedScraperSources } from "../scraper/providers/sourceInventory.js";
 
 const createResponseDouble = () => {
   const result = {
@@ -55,6 +58,63 @@ const setReadyState = (value) => {
     delete mongoose.connection.readyState;
   };
 };
+
+const getDiskBackedCatalogSources = () => getDiskBackedScraperSources({
+  catalog: getScraperCatalog(),
+});
+
+test("updateJobStatus refreshes the public filter summary after hiding a job", async () => {
+  const originalFindById = Job.findById;
+  const originalAggregate = Job.aggregate;
+  const originalAdminAuditCreate = AdminAudit.create;
+  const originalSummaryFindOneAndUpdate = JobDatasetSummary.findOneAndUpdate;
+
+  const activeJob = {
+    _id: "507f1f77bcf86cd799439011",
+    status: "active",
+    async save() {
+      return this;
+    },
+  };
+  const summaryWrites = [];
+
+  Job.findById = async () => activeJob;
+  Job.aggregate = () => ({
+    exec: async () => (activeJob.status === "active" ? [{
+      totalJobs: 1,
+      companies: ["Example Labs"],
+      cities: ["Pune, India"],
+      jobTypes: ["Full-time"],
+    }] : []),
+  });
+  AdminAudit.create = async () => ({});
+  JobDatasetSummary.findOneAndUpdate = (_filter, update) => {
+    summaryWrites.push(update.$set);
+    return { lean: () => ({ exec: async () => update.$set }) };
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await updateJobStatus({
+      params: { id: "507f1f77bcf86cd799439011" },
+      body: { status: "hidden" },
+      user: { _id: "admin-1" },
+    }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(summaryWrites.length, 1);
+    assert.equal(summaryWrites[0].totalJobs, 0);
+    assert.equal(summaryWrites[0].totalCompanies, 0);
+    assert.deepEqual(summaryWrites[0].companies, []);
+    assert.deepEqual(summaryWrites[0].cities, []);
+  } finally {
+    Job.findById = originalFindById;
+    Job.aggregate = originalAggregate;
+    AdminAudit.create = originalAdminAuditCreate;
+    JobDatasetSummary.findOneAndUpdate = originalSummaryFindOneAndUpdate;
+  }
+});
 
 test("updateUserAccess lets an admin set a premium plan with a manual expiry override", async () => {
   const originalFindById = User.findById;
@@ -118,7 +178,8 @@ test("getScrapeStatus backfills newly added catalog scrapers before building the
   const originalScraperRunFindOne = ScraperRun.findOne;
   const originalAdminAuditFindOne = AdminAudit.findOne;
 
-  const catalogSources = [...new Set(getScraperCatalog().map((provider) => provider.source))];
+  const catalogSources = getDiskBackedCatalogSources();
+  const allCatalogSources = [...new Set(getScraperCatalog().map((provider) => provider.source))];
   const [firstSource] = catalogSources;
   const recordsBySource = new Map([
     [firstSource, {
@@ -179,13 +240,294 @@ test("getScrapeStatus backfills newly added catalog scrapers before building the
 
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.sources.length, catalogSources.length);
-    assert.equal(recordsBySource.size, catalogSources.length);
+    assert.equal(recordsBySource.size, allCatalogSources.length);
 
     const seededSource = res.body.sources.find((source) => source.source !== firstSource);
     assert.ok(seededSource);
     assert.equal(seededSource.isActive, true);
     assert.equal(seededSource.lastSuccess, true);
     assert.equal(seededSource.consecutiveFailures, 0);
+  } finally {
+    ScraperStatus.find = originalFind;
+    ScraperStatus.findOne = originalFindOne;
+    ScraperStatus.bulkWrite = originalBulkWrite;
+    Job.countDocuments = originalJobCountDocuments;
+    ScraperRun.findOne = originalScraperRunFindOne;
+    AdminAudit.findOne = originalAdminAuditFindOne;
+    restoreReadyState();
+  }
+});
+
+test("getScrapeStatus excludes stale statuses that are not in the scraper catalog", async () => {
+  const restoreReadyState = setReadyState(1);
+  const originalFind = ScraperStatus.find;
+  const originalFindOne = ScraperStatus.findOne;
+  const originalBulkWrite = ScraperStatus.bulkWrite;
+  const originalJobCountDocuments = Job.countDocuments;
+  const originalScraperRunFindOne = ScraperRun.findOne;
+  const originalAdminAuditFindOne = AdminAudit.findOne;
+
+  const [catalogSource] = getDiskBackedCatalogSources();
+  const createQueryDouble = (value) => ({
+    sort() {
+      return this;
+    },
+    lean() {
+      return this;
+    },
+    exec: async () => value,
+  });
+
+  ScraperStatus.find = () => ({
+    lean() {
+      return {
+        exec: async () => [
+          {
+            _id: `status-${catalogSource}`,
+            source: catalogSource,
+            isActive: true,
+            lastRanAt: new Date("2026-07-10T00:00:00.000Z"),
+            lastSuccess: true,
+            consecutiveFailures: 0,
+          },
+          {
+            _id: "status-F1",
+            source: "F1",
+            companyName: "F1",
+            isActive: true,
+            lastRanAt: new Date("2026-07-10T00:00:00.000Z"),
+            lastSuccess: false,
+            consecutiveFailures: 6,
+            lastError: "Simulated failure for F1",
+          },
+        ],
+      };
+    },
+  });
+  ScraperStatus.findOne = () => createQueryDouble(null);
+  ScraperStatus.bulkWrite = async () => {};
+  Job.countDocuments = async () => 0;
+  ScraperRun.findOne = () => createQueryDouble(null);
+  AdminAudit.findOne = () => createQueryDouble(null);
+
+  try {
+    const res = createResponseDouble();
+
+    await getScrapeStatus({}, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.sources.some((source) => source.source === "F1"), false);
+  } finally {
+    ScraperStatus.find = originalFind;
+    ScraperStatus.findOne = originalFindOne;
+    ScraperStatus.bulkWrite = originalBulkWrite;
+    Job.countDocuments = originalJobCountDocuments;
+    ScraperRun.findOne = originalScraperRunFindOne;
+    AdminAudit.findOne = originalAdminAuditFindOne;
+    restoreReadyState();
+  }
+});
+
+test("getScrapeStatus normalizes legacy soft-failure rows before building alerts", async () => {
+  const restoreReadyState = setReadyState(1);
+  const originalFind = ScraperStatus.find;
+  const originalFindOne = ScraperStatus.findOne;
+  const originalBulkWrite = ScraperStatus.bulkWrite;
+  const originalJobCountDocuments = Job.countDocuments;
+  const originalScraperRunFindOne = ScraperRun.findOne;
+  const originalAdminAuditFindOne = AdminAudit.findOne;
+
+  const [catalogSource] = getDiskBackedCatalogSources();
+  const createQueryDouble = (value) => ({
+    sort() {
+      return this;
+    },
+    lean() {
+      return this;
+    },
+    exec: async () => value,
+  });
+
+  ScraperStatus.find = () => ({
+    lean() {
+      return {
+        exec: async () => [
+          {
+            _id: `status-${catalogSource}`,
+            source: catalogSource,
+            companyName: "Legacy Soft Source",
+            isActive: true,
+            lastRanAt: new Date("2026-07-10T00:00:00.000Z"),
+            lastSuccess: false,
+            consecutiveFailures: 3,
+            lastError: `[${catalogSource}] All 3 attempts failed. Last error: HTTP 503 for https://example.com/jobs`,
+          },
+        ],
+      };
+    },
+  });
+  ScraperStatus.findOne = () => createQueryDouble(null);
+  ScraperStatus.bulkWrite = async () => {};
+  Job.countDocuments = async () => 0;
+  ScraperRun.findOne = () => createQueryDouble(null);
+  AdminAudit.findOne = () => createQueryDouble(null);
+
+  try {
+    const res = createResponseDouble();
+
+    await getScrapeStatus({}, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body.summary.sourcesInAlertState, []);
+    const normalizedSource = res.body.sources.find((source) =>
+      source.softFailure === true
+      && source.upstreamOutage === true
+      && source.failureKind === "network_or_timeout");
+    assert.ok(normalizedSource);
+    assert.equal(normalizedSource.lastSuccess, true);
+    assert.equal(normalizedSource.softFailure, true);
+    assert.equal(normalizedSource.upstreamOutage, true);
+    assert.equal(normalizedSource.failureKind, "network_or_timeout");
+  } finally {
+    ScraperStatus.find = originalFind;
+    ScraperStatus.findOne = originalFindOne;
+    ScraperStatus.bulkWrite = originalBulkWrite;
+    Job.countDocuments = originalJobCountDocuments;
+    ScraperRun.findOne = originalScraperRunFindOne;
+    AdminAudit.findOne = originalAdminAuditFindOne;
+    restoreReadyState();
+  }
+});
+
+test("getScrapeStatus normalizes remediated legacy implementation failures before returning admin rows", async () => {
+  const restoreReadyState = setReadyState(1);
+  const originalFind = ScraperStatus.find;
+  const originalFindOne = ScraperStatus.findOne;
+  const originalBulkWrite = ScraperStatus.bulkWrite;
+  const originalJobCountDocuments = Job.countDocuments;
+  const originalScraperRunFindOne = ScraperRun.findOne;
+  const originalAdminAuditFindOne = AdminAudit.findOne;
+
+  const catalogSource = getScraperCatalog().find((source) => source.source === "eoxvantage").source;
+  const createQueryDouble = (value) => ({
+    sort() {
+      return this;
+    },
+    lean() {
+      return this;
+    },
+    exec: async () => value,
+  });
+
+  ScraperStatus.find = () => ({
+    lean() {
+      return {
+        exec: async () => [
+          {
+            _id: `status-${catalogSource}`,
+            source: catalogSource,
+            companyName: "EOX Vantage",
+            isActive: true,
+            lastRanAt: new Date("2026-07-20T10:00:00.000Z"),
+            lastSuccess: false,
+            consecutiveFailures: 1,
+            lastError: `[${catalogSource}] All 3 attempts failed. Last error: fetchText is not a function`,
+          },
+        ],
+      };
+    },
+  });
+  ScraperStatus.findOne = () => createQueryDouble(null);
+  ScraperStatus.bulkWrite = async () => {};
+  Job.countDocuments = async () => 0;
+  ScraperRun.findOne = () => createQueryDouble(null);
+  AdminAudit.findOne = () => createQueryDouble(null);
+
+  try {
+    const res = createResponseDouble();
+
+    await getScrapeStatus({}, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body.summary.sourcesInAlertState, []);
+    assert.equal(res.body.sources[0].lastSuccess, true);
+    assert.equal(res.body.sources[0].consecutiveFailures, 0);
+    assert.equal(res.body.sources[0].softFailure, true);
+    assert.equal(res.body.sources[0].failureKind, "remediated_legacy_failure");
+  } finally {
+    ScraperStatus.find = originalFind;
+    ScraperStatus.findOne = originalFindOne;
+    ScraperStatus.bulkWrite = originalBulkWrite;
+    Job.countDocuments = originalJobCountDocuments;
+    ScraperRun.findOne = originalScraperRunFindOne;
+    AdminAudit.findOne = originalAdminAuditFindOne;
+    restoreReadyState();
+  }
+});
+
+test("getScrapeStatus treats a legacy pipeline error as idle once source failures normalize away", async () => {
+  const restoreReadyState = setReadyState(1);
+  const originalFind = ScraperStatus.find;
+  const originalFindOne = ScraperStatus.findOne;
+  const originalBulkWrite = ScraperStatus.bulkWrite;
+  const originalJobCountDocuments = Job.countDocuments;
+  const originalScraperRunFindOne = ScraperRun.findOne;
+  const originalAdminAuditFindOne = AdminAudit.findOne;
+
+  const catalogSource = getScraperCatalog().find((source) => source.source === "eoxvantage").source;
+  const completedAt = new Date("2026-07-20T10:30:00.000Z");
+  const createQueryDouble = (value) => ({
+    sort() {
+      return this;
+    },
+    lean() {
+      return this;
+    },
+    exec: async () => value,
+  });
+
+  ScraperStatus.find = () => ({
+    lean() {
+      return {
+        exec: async () => [
+          {
+            _id: `status-${catalogSource}`,
+            source: catalogSource,
+            companyName: "EOX Vantage",
+            isActive: true,
+            lastRanAt: completedAt,
+            lastSuccess: false,
+            consecutiveFailures: 1,
+            lastError: `[${catalogSource}] All 3 attempts failed. Last error: fetchText is not a function`,
+          },
+        ],
+      };
+    },
+  });
+  ScraperStatus.findOne = ({ source }) => createQueryDouble(
+    source === "__pipeline__"
+      ? {
+          source: "__pipeline__",
+          pipelineState: "error",
+          lastTriggeredAt: new Date("2026-07-20T10:00:00.000Z"),
+          lastCompletedAt: completedAt,
+          lastError: "Pipeline aborted due to too many scraper errors.",
+        }
+      : null,
+  );
+  ScraperStatus.bulkWrite = async () => {};
+  Job.countDocuments = async () => 0;
+  ScraperRun.findOne = () => createQueryDouble({ ranAt: completedAt, overall: { totalJobs: 0 } });
+  AdminAudit.findOne = () => createQueryDouble(null);
+
+  try {
+    const res = createResponseDouble();
+
+    await getScrapeStatus({}, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.sources[0].lastSuccess, true);
+    assert.equal(res.body.summary.pipeline.status, "idle");
   } finally {
     ScraperStatus.find = originalFind;
     ScraperStatus.findOne = originalFindOne;
@@ -216,22 +558,23 @@ test("getScrapeStatus prefers the live pipeline status document while a run is a
     exec: async () => value,
   });
 
+  const [activeSource, inactiveSource] = getDiskBackedCatalogSources();
   const sources = [
     {
-      _id: "status-abb",
-      source: "abb",
-      companyName: "ABB",
-      url: "https://example.com/abb",
+      _id: `status-${activeSource}`,
+      source: activeSource,
+      companyName: "Active Source",
+      url: `https://example.com/${activeSource}`,
       isActive: true,
       lastRanAt: new Date("2026-07-10T00:00:00.000Z"),
       lastSuccess: true,
       consecutiveFailures: 0,
     },
     {
-      _id: "status-airbus",
-      source: "airbus",
-      companyName: "Airbus",
-      url: "https://example.com/airbus",
+      _id: `status-${inactiveSource}`,
+      source: inactiveSource,
+      companyName: "Inactive Source",
+      url: `https://example.com/${inactiveSource}`,
       isActive: false,
       lastRanAt: new Date("2026-07-10T00:00:00.000Z"),
       lastSuccess: true,
@@ -492,6 +835,36 @@ test("triggerScrapeAdmin marks the pipeline as running immediately after GitHub 
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate;
     process.env.GITHUB_PAT = originalGithubPat;
     process.env.GITHUB_REPO = originalGithubRepo;
+  }
+});
+
+test("triggerScrapeAdmin reports missing GitHub dispatch configuration", async () => {
+  const originalGithubPat = process.env.GITHUB_PAT;
+  const originalGithubRepo = process.env.GITHUB_REPO;
+  const originalFetch = global.fetch;
+  let fetchCalled = false;
+
+  process.env.GITHUB_PAT = "";
+  process.env.GITHUB_REPO = "";
+  global.fetch = async () => {
+    fetchCalled = true;
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await triggerScrapeAdmin({ user: { _id: "admin-1" } }, res);
+
+    assert.equal(res.statusCode, 503);
+    assert.deepEqual(res.body, {
+      success: false,
+      message: "Scraper pipeline dispatch is not configured. Set GITHUB_PAT and GITHUB_REPO.",
+    });
+    assert.equal(fetchCalled, false);
+  } finally {
+    process.env.GITHUB_PAT = originalGithubPat;
+    process.env.GITHUB_REPO = originalGithubRepo;
+    global.fetch = originalFetch;
   }
 });
 

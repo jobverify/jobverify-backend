@@ -20,6 +20,25 @@ const careersHtml = `
 </html>
 `
 
+const careersHtmlWithEncodedDash = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers &#8211; Klaus IT Solutions</title>
+    <link rel="stylesheet" href="https://klausit.com/wp-content/plugins/MyApiPage/css/responsive.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Careers</h1>
+      <p>Explore Opportunities</p>
+      <div>Below are the list of opportunities at Klaus which you can explore.</div>
+      <input id="txtsearch" type="text" />
+      <input id="txtcity" type="text" />
+    </main>
+  </body>
+</html>
+`
+
 const structuredJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -64,6 +83,13 @@ test('Klaus IT Solutions returns [] only while the verified MyApiPage shell expo
 
   assert.deepEqual(requestedUrls, ['https://klausit.com/careers/'])
   assert.deepEqual(jobs, [])
+})
+
+test('Klaus IT Solutions accepts the live encoded en-dash title and current MyApiPage shell markers', async () => {
+  const klaus = await loadModule()
+
+  assert.equal(klaus.hasOfficialKlausCareersSignals(careersHtmlWithEncodedDash), true)
+  assert.equal(klaus.pageExposesStructuredJobListings(careersHtmlWithEncodedDash), false)
 })
 
 test('Klaus IT Solutions fails closed when structured public jobs appear on the careers shell', async () => {

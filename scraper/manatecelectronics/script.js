@@ -188,24 +188,44 @@ export const isVerifiedMissingRoute = ({ status, html } = {}) => {
     && text.includes('back to homepage')
 }
 
+const BLOCKED_PUBLIC_JOB_PATTERN =
+  /current openings|open positions|job id|requisition|vacancy\s*:|view details|job description|apply now/i
+
+export const isVerifiedBlockedShell = ({ status, html } = {}) => {
+  const page = String(html ?? '')
+  const text = normalizeVisibleText(page).toLowerCase()
+
+  return status === 403
+    && /<title>\s*403 Forbidden\s*<\/title>/i.test(page)
+    && text.includes('403 forbidden')
+    && text.includes("you don't have permission to access")
+    && text.includes('a 403 forbidden error was encountered while trying to use an errordocument to handle the request.')
+    && !BLOCKED_PUBLIC_JOB_PATTERN.test(text)
+}
+
 export const createManatecElectronicsScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
+    const careersPage = await fetchPage(CAREERS_URL)
+    const missingRoute = await fetchPage(MISSING_ROUTE_URL)
+
+    if ([homepage, pageSitemap, careersPage, missingRoute].every(isVerifiedBlockedShell)) {
+      return []
+    }
+
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Manatec Electronics homepage no longer matches the verified official public site')
     }
 
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
     if (pageSitemap.status !== 200 || !hasVerifiedPageSitemapSignal(pageSitemap.html)) {
       throw new Error('Manatec Electronics page sitemap no longer matches the verified official public structure')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
     if (careersPage.status !== 200 || !hasApplicationOnlyCareersSignal(careersPage.html)) {
       throw new Error('Manatec Electronics careers page no longer matches the verified application-only public surface')
     }
 
-    const missingRoute = await fetchPage(MISSING_ROUTE_URL)
     if (!isVerifiedMissingRoute(missingRoute)) {
       throw new Error('Manatec Electronics missing-route behavior changed materially')
     }

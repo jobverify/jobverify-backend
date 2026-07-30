@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { loadConfig } from '../utils/loadConfig.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
@@ -24,6 +25,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: 'arcihyd',
   timeoutMs: 15000,
 })
+
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const hasCareersPageSignal = (html) =>
   CAREERS_PAGE_SIGNAL_PATTERN.test(String(html || ''))
@@ -53,16 +58,50 @@ export const createArciHydScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
+    const fetchBrowserText = options.fetchBrowserText
+    let browserSession = null
 
-    if (!hasCareersPageSignal(careersPageHtml)) {
-      return []
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const vacanciesPageHtml = await fetchText(VACANCIES_PAGE_URL)
-    const jobs = extractOpenings(vacanciesPageHtml)
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const careersPageHtml = await fetchPageText(CAREERS_PAGE_URL)
+
+      if (!hasCareersPageSignal(careersPageHtml)) {
+        return []
+      }
+
+      const vacanciesPageHtml = await fetchPageText(VACANCIES_PAGE_URL)
+      const jobs = extractOpenings(vacanciesPageHtml)
+
+      return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

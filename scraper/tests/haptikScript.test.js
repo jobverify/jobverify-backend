@@ -12,6 +12,17 @@ const careersHtml = `
 </html>
 `
 
+const careersHtmlWithTrackedFreshteamLink = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>Work at Haptik!</h1>
+    <p>Our Values: Ownership, Perseverance, Agility, Impact, Integrity</p>
+    <a href="https://haptik.freshteam.com/jobs?utm_source=haptik&amp;hsCtaTracking=abc123">Explore All Open Positions</a>
+  </body>
+</html>
+`
+
 const boardHtml = `
 <!doctype html>
 <html lang="en">
@@ -120,6 +131,10 @@ test('Haptik verifies the official careers handoff and Freshteam board constants
   )
   assert.equal(haptik.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(haptik.extractFreshteamJobsUrl(careersHtml), haptik.LISTING_URL)
+  assert.equal(
+    haptik.extractFreshteamJobsUrl(careersHtmlWithTrackedFreshteamLink),
+    haptik.LISTING_URL,
+  )
   assert.equal(haptik.hasOfficialJobsBoardSignal(boardHtml), true)
 })
 

@@ -27,6 +27,24 @@ const EMPTY_KEKA_SHELL_HTML = `
 </html>
 `
 
+const BOOTSTRAP_KEKA_SHELL_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="robots" content="noindex">
+    <script>
+      window.isCareersPage = true;
+    </script>
+  </head>
+  <body>
+    <div id="content-container"></div>
+    <script>
+      fetch('/ats/documents/a6d6f744-09bc-4a25-8a31-edb4868b09bc/careerportal/50951899fde2472ba9b69ebb60f3938e.html')
+    </script>
+  </body>
+</html>
+`
+
 const PUBLIC_JOBS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -63,12 +81,21 @@ test('SmartCoin sentinel helpers stay pinned to the verified Olyv page, Keka han
   )
   assert.equal(smartcoin.pageExposesPublicJobListings(OFFICIAL_ABOUT_HTML), false)
   assert.equal(smartcoin.pageExposesPublicJobListings(EMPTY_KEKA_SHELL_HTML), false)
+  assert.equal(smartcoin.pageExposesPublicJobListings(BOOTSTRAP_KEKA_SHELL_HTML), false)
   assert.equal(smartcoin.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
   assert.equal(
     smartcoin.matchesVerifiedOpaqueKekaState({
       status: 200,
       url: smartcoin.OFFICIAL_CAREERS_HANDOFF_URL,
       html: EMPTY_KEKA_SHELL_HTML,
+    }),
+    true,
+  )
+  assert.equal(
+    smartcoin.matchesVerifiedOpaqueKekaState({
+      status: 200,
+      url: smartcoin.OFFICIAL_CAREERS_HANDOFF_URL,
+      html: BOOTSTRAP_KEKA_SHELL_HTML,
     }),
     true,
   )

@@ -356,6 +356,10 @@ const fetchTextOrThrowUpstream = async (fetchText, url) => {
   }
 }
 
+export const isExpectedVerifiedBoardOutage = (error, url = LISTING_URL) =>
+  new RegExp(`HTTP\\s+500\\b[\\s\\S]*${String(url).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
+    .test(String(error?.message ?? error ?? ''))
+
 export const createAisleScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
@@ -373,7 +377,17 @@ export const createAisleScraper = ({
       throw new Error('Verified official homepage handoff no longer points to the known Aisle Freshteam board')
     }
 
-    const listingHtml = await fetchTextOrThrowUpstream(fetchText, listingUrl)
+    let listingHtml
+    try {
+      listingHtml = await fetchTextOrThrowUpstream(fetchText, listingUrl)
+    } catch (error) {
+      if (listingUrl === LISTING_URL && isExpectedVerifiedBoardOutage(error, listingUrl)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!hasOfficialJobsBoardSignal(listingHtml)) {
       throw new Error('Aisle verified public Freshteam board no longer matches the known public surface')
     }

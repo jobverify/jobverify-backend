@@ -5,11 +5,12 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Balaji Telefilms</title>
+    <title>Balaji Telefilms Limited : Television, Motion Pictures</title>
   </head>
   <body>
     <nav>
-      <a href="https://www.balajitelefilms.com/career-opportunity.php">Working at Balaji</a>
+      <!--<a href="http://www.careers.balajitelefilms.com/" target="_blank">Current Openings</a>-->
+      <a href="career-opportunity.php">Working at Balaji</a>
     </nav>
     <main>
       <h1>Balaji Telefilms</h1>
@@ -22,27 +23,28 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Career Opportunities | Balaji Telefilms</title>
-    <link rel="canonical" href="https://www.balajitelefilms.com/career-opportunity.php" />
+    <title>Balaji Telefilms Limited : Television, Motion Pictures</title>
   </head>
   <body>
     <main>
-      <h1>Career Opportunities</h1>
+      <nav>
+        <a href="career-opportunity.php">Working at Balaji</a>
+      </nav>
+      <!--<header>CURRENT JOB OPENINGS</header>-->
       <p>Please send your resume to <a href="mailto:careers@balajitelefilms.com">careers@balajitelefilms.com</a>.</p>
+      <p>For a career with Balaji Telefilms Ltd. please send your resume to careers@balajitelefilms.com.</p>
     </main>
   </body>
 </html>
 `
 
 const missingRouteHtml = `
-<!doctype html>
-<html lang="en">
+<html>
   <head>
-    <title>404 Not Found</title>
+    <script language="Javascript">var _skz_pid = "9POBEX80W";</script>
   </head>
   <body>
-    <h1>Not Found</h1>
-    <p>The requested URL was not found on this server.</p>
+    <div class="loader" id="sk-loader"></div>
   </body>
 </html>
 `
@@ -69,6 +71,7 @@ test('Balaji Telefilms verifies the official homepage, email-only careers page, 
   assert.equal(balaji.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(balaji.hasEmailOnlyCareersSignal(careersHtml), true)
   assert.equal(balaji.isVerifiedMissingRoute({ status: 404, html: missingRouteHtml }), true)
+  assert.equal(balaji.hasUnexpectedPublicJobsSignal(careersHtml), false)
 })
 
 test('Balaji Telefilms returns an honest zero-job result while the careers surface remains email-only', async () => {
@@ -112,4 +115,29 @@ test('Balaji Telefilms fails closed if the careers surface turns into a public j
     }),
     /public jobs surface/i,
   )
+})
+
+test('Balaji Telefilms can recover with browser-backed pages when direct requests fail', async () => {
+  const balaji = await loadBalajiTelefilmsModule()
+  const browserUrls = []
+
+  const jobs = await balaji.createBalajiTelefilmsScraper().run({
+    fetchPage: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserPage: async (url) => {
+      browserUrls.push(url)
+      if (url === balaji.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === balaji.CAREERS_URL) return { status: 200, url, html: careersHtml }
+      return { status: 404, url, html: missingRouteHtml }
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    balaji.HOMEPAGE_URL,
+    balaji.CAREERS_URL,
+    'https://www.balajitelefilms.com/careers',
+    'https://www.balajitelefilms.com/career',
+  ])
+  assert.deepEqual(jobs, [])
 })

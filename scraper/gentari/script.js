@@ -84,8 +84,8 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
   return /Join Gentari/i.test(normalized)
-    && /Discover fulfilling career paths at Gentari/i.test(normalized)
-    && /pioneering the next wave of clean energy/i.test(normalized)
+    && /career (paths|opportunities)/i.test(normalized)
+    && /clean energy/i.test(normalized)
 }
 
 export const hasTrustedLinkedInJobsHandoff = (html = '') =>
@@ -116,8 +116,6 @@ export const isVerifiedIndiaCareersNotFoundRoute = ({ status, url, html } = {}) 
 
   const normalized = normalizeWhitespace(html)
   return /Not Found/i.test(normalized)
-    && /Page not found/i.test(normalized)
-    && /404/i.test(normalized)
     && /404-page-not-found\.webp/i.test(String(html ?? ''))
   }
 

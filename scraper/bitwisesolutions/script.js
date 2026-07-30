@@ -25,21 +25,41 @@ const normalizeWhitespace = (value = '') => String(value)
   .replace(/\s+/g, ' ')
   .trim()
 
+const hasOpeningsRouteLink = (html = '') =>
+  /href=["'](?:https:\/\/www\.bitwiseglobal\.com)?\/company\/careers\/openings["']/i.test(String(html ?? ''))
+
+const hasJobRecordSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /href=["'][^"']*\/company\/careers\/openings\/[^"']+/i.test(page)
+    || normalized.includes('View Job')
+    || normalized.includes('Apply Now')
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Careers')
     && normalized.includes('Engineer the systems that power intelligent enterprises')
-    && /href="https:\/\/www\.bitwiseglobal\.com\/company\/careers\/openings"/i.test(String(html))
-    && normalized.includes('View Open Positions')
+    && hasOpeningsRouteLink(html)
+    && (
+      normalized.includes('View Open Positions')
+      || normalized.includes('View Opportunities')
+    )
 }
 
 export const hasNoOpeningsSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
+  const hasLegacyZeroState = normalized.includes('No openings found')
+    && normalized.includes('Try adjusting your filters or search.')
+  const hasCurrentZeroState = normalized.includes('Find your place in the Bitwise family.')
+    && normalized.includes('Keep Up with Bitwise News!')
+
   return normalized.includes('Current Openings')
     && normalized.includes('All Locations')
     && normalized.includes('All Types')
-    && normalized.includes('No openings found')
-    && normalized.includes('Try adjusting your filters or search.')
+    && (hasLegacyZeroState || hasCurrentZeroState)
+    && !hasJobRecordSignal(html)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

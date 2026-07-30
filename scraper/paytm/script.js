@@ -139,12 +139,13 @@ export const hasOfficialLeverBoardSignal = (html) => {
   const rawHtml = String(html ?? '')
   const text = normalizeText(rawHtml)
 
-  return /paytm/i.test(rawHtml)
+  return /<title>\s*Paytm\s*<\/title>/i.test(rawHtml)
+    && /job openings at paytm/i.test(rawHtml)
     && text.includes('location type')
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
+    && /jobs\.lever\.co\/paytm/i.test(rawHtml)
 }
 
 export const extractLeverJobs = (leverJobs = []) => {

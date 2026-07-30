@@ -74,6 +74,56 @@ const COMPANY_HIRING_HTML = `
 </html>
 `
 
+const CURRENT_ABOUT_PAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About Saarthi - AI Career Coach for Freshers</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/explore">Explore</a>
+      <a href="/students">Students</a>
+      <a href="/employers">Employers</a>
+      <a href="/colleges">Colleges</a>
+      <a href="/jobs">Jobs</a>
+      <a href="/drives">Drives</a>
+      <a href="/blog">Blog</a>
+    </nav>
+    <h1>About Us</h1>
+    <h2>🎯 Saarthi — AI Career Coach for Early Talent</h2>
+    <p>We built Saarthi because finding your first job is unnecessarily painful.</p>
+    <p>Saarthi tracks 15,000+ companies every day and pulls together every fresher job, walk-in drive, and off-campus opportunity we can find, including the ones that never make it to LinkedIn or Naukri.</p>
+    <p>We put deadlines on everything so you don’t find out about a drive the day after it closed.</p>
+    <footer>
+      <a href="/campus-ambassador">Become Campus Ambassador</a>
+    </footer>
+  </body>
+</html>
+`
+
+const CURRENT_MARKETPLACE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Saarthi — Best App for Fresher Jobs &amp; Internships in India</title>
+  </head>
+  <body>
+    <h1>Land Your First Fresher Job or Internship in India — Without Stress</h1>
+    <p>Saarthi brings every fresher job in India, internship, off campus drive, and hybrid opportunity to one place — for IT and non-IT graduates from the 2024, 2025 &amp; 2026 batch.</p>
+    <p>10,000+ students have already found fresher jobs and internships using Saarthi.</p>
+    <p>10,000+ verified jobs · IT &amp; Non-IT roles · Remote + Hybrid + On-site · Off campus drives · Pan India</p>
+    <h2>The Struggle is Real</h2>
+    <h2>No Fake Listings. No Ghost Jobs. Ever.</h2>
+    <h3>Remote Internships</h3>
+    <h3>Off Campus Drives</h3>
+    <h3>Walk-in Interviews</h3>
+    <h3>IT Fresher Jobs</h3>
+    <h2>AI Resume Builder That Beats ATS</h2>
+  </body>
+</html>
+`
+
 const loadScriptModule = async () => {
   try {
     return await import('../saarthi/script.js')
@@ -98,6 +148,14 @@ test('Saarthi sentinel helpers stay pinned to the verified official about page a
   assert.equal(saarthi.hasExactCompanyHiringSignal(ABOUT_PAGE_HTML), false)
   assert.equal(saarthi.hasExactCompanyHiringSignal(HOMEPAGE_MARKETPLACE_HTML), false)
   assert.equal(saarthi.hasExactCompanyHiringSignal(COMPANY_HIRING_HTML), true)
+})
+
+test('Saarthi accepts the current about-page messaging and marketplace positioning', async () => {
+  const saarthi = await loadScriptModule()
+
+  assert.equal(saarthi.hasOfficialAboutPageSignal(CURRENT_ABOUT_PAGE_HTML), true)
+  assert.equal(saarthi.hasOfficialMarketplaceSignal(CURRENT_MARKETPLACE_HTML), true)
+  assert.equal(saarthi.hasThirdPartyMarketplaceSignal(CURRENT_MARKETPLACE_HTML), true)
 })
 
 test('Saarthi returns [] only while the exact-name first-party surface remains a third-party fresher-jobs marketplace', async () => {

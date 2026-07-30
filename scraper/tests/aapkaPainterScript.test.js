@@ -164,6 +164,40 @@ test('Aapka Painter sentinel returns [] only while the verified no-public-jobs s
   assert.deepEqual(jobs, [])
 })
 
+test('Aapka Painter treats the current broken Zimyo widget TLS host as the same dead no-public-jobs state', async () => {
+  const aapkaPainter = await loadModule()
+
+  const jobs = await aapkaPainter.createAapkaPainterScraper().run({
+    fetchPage: async (url) => {
+      if (url === aapkaPainter.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === aapkaPainter.CAREER_URL) {
+        return { status: 200, url, html: careerHtml }
+      }
+
+      if (url === aapkaPainter.WIDGET_SCRIPT_URL) {
+        const error = new TypeError('fetch failed')
+        error.cause = {
+          code: 'ERR_TLS_CERT_ALTNAME_INVALID',
+          message:
+            "Hostname/IP does not match certificate's altnames: Host: ats.zimyo.com. is not in the cert's altnames: DNS:apiserver.zimyo.com, DNS:hrms.zimyo.com, DNS:sandbox.zimyo.com",
+        }
+        throw error
+      }
+
+      if (aapkaPainter.NO_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
+        return { status: 404, url, html: '<html><body>Not Found</body></html>' }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Aapka Painter sentinel fails closed when the homepage handoff, career shell, widget state, or adjacent routes drift into a public jobs surface', async () => {
   const aapkaPainter = await loadModule()
 

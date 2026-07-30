@@ -70,10 +70,10 @@ const defaultFetchPage = async (url) => {
 
 export const extractOfficialPyjamaHandoffUrl = (html = '') => {
   const match = String(html ?? '').match(
-    /https:\/\/app\.pyjamahr\.com\/careers\?company=smallcase&company_uuid=2615584222/i,
+    /https:\/\/app\.pyjamahr\.com\/careers\?company=smallcase(?:&|&amp;)company_uuid=2615584222/i,
   )
 
-  return match?.[0] ?? null
+  return match?.[0]?.replace(/&amp;/gi, '&') ?? null
 }
 
 export const pageExposesPublicJobListings = (html = '') =>

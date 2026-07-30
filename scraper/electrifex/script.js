@@ -50,9 +50,15 @@ const extractTitleFromBlock = (block) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /Electrifex/i.test(page)
+  const hasLegacyHomepageMarkers = /Electrifex/i.test(page)
     && /innovative solutions for automotive, embedded, and cloud technologies/i.test(page)
     && /talents\.electrifex\.com/i.test(page)
+  const hasSpaHomepageShell = /<title>\s*Electrifex\s*<\/title>/i.test(page)
+    && /Electrifex:\s*Engineering innovative solutions for automotive, embedded, and cloud technologies/i.test(page)
+    && /<div[^>]+id=["']root["'][^>]*>/i.test(page)
+    && /\/assets\/index-[^"']+\.(?:js|css)/i.test(page)
+
+  return hasLegacyHomepageMarkers || hasSpaHomepageShell
 }
 
 export const hasOfficialCareersSignal = (html) => {

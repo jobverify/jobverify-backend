@@ -26,6 +26,7 @@ const homepageHtml = `
           <li>Edu-Career</li>
         </ul>
       </section>
+      <a href="http://edu-versity.in/join-our-community/">Join our community</a>
       <footer>
         <a href="https://www.linkedin.com/company/edu-versity">Linkedin</a>
         <a href="mailto:admin@edu-versity.in">admin@edu-versity.in</a>
@@ -82,6 +83,7 @@ test('official page helpers recognize Edu-versity site and community signup form
 
   assert.equal(eduversity.hasOfficialSiteSignal(homepageHtml), true)
   assert.equal(eduversity.hasContactSignal(homepageHtml), true)
+  assert.equal(eduversity.hasPinnedCommunityLinkSignal(homepageHtml), true)
   assert.equal(eduversity.hasCommunityFormSignal(communityHtml), true)
   assert.equal(eduversity.hasPublicJobsSignal(communityHtml), false)
 })
@@ -133,4 +135,53 @@ test('run fails closed when Edu-versity starts exposing public job listings', as
     }),
     /Edu-versity site now exposes public job listings; scraper needs an update/,
   )
+})
+
+test('run returns no jobs when the pinned Edu-versity community handoff has become a branded 404', async () => {
+  const eduversity = await loadEduversityModule()
+  assert.ok(eduversity)
+
+  const jobs = await eduversity.createEduversityScraper().run({
+    fetchText: async (url) => {
+      if (url === eduversity.HOMEPAGE_URL) {
+        return homepageHtml
+      }
+
+      if (url === eduversity.COMMUNITY_URL) {
+        const error = new Error(`HTTP 404 for ${url}`)
+        error.status = 404
+        throw error
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('run returns no jobs when the branded 404 is wrapped by retry metadata', async () => {
+  const eduversity = await loadEduversityModule()
+  assert.ok(eduversity)
+
+  const jobs = await eduversity.createEduversityScraper().run({
+    fetchText: async (url) => {
+      if (url === eduversity.HOMEPAGE_URL) {
+        return homepageHtml
+      }
+
+      if (url === eduversity.COMMUNITY_URL) {
+        const http404 = new Error(`HTTP 404 for ${url}`)
+        http404.status = 404
+
+        const retryError = new Error(`[eduversity] All 3 attempts failed. Last error: HTTP 404 for ${url}`)
+        retryError.cause = http404
+        throw retryError
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

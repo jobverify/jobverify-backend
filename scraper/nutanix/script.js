@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 import { normalizeCity } from '../utils/cityNormalizer.js'
 import NUTANIX_CATALOG from './catalog.js'
@@ -138,9 +139,16 @@ const extractDescriptionSection = (html) => {
 export const hasOfficialCareersSurfaceSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
-
-  return /careers\.nutanix\.com/i.test(page)
+  const hasLegacySignal =
+    /careers\.nutanix\.com/i.test(page)
     && /\b(search all jobs|open vacancies|our people power nutanix)\b/i.test(normalized)
+  const hasCurrentBoardSignal =
+    /<title>\s*Find your place at Nutanix\.\s*\|\s*Nutanix Careers\s*<\/title>/i.test(page)
+    && /class=["'][^"']*\bjs-template-jobBoard\b/i.test(page)
+    && /Job Seeker Alert: Fraudulent Activity/i.test(normalized)
+    && /Current Openings|Life At Nutanix/i.test(normalized)
+
+  return hasLegacySignal || hasCurrentBoardSignal
 }
 
 export const isCloudflareChallengePage = (html) => {
@@ -280,43 +288,80 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createNutanixScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = defaultNow } = {}) {
-    const officialHtml = await fetchText(OFFICIAL_CAREERS_URL)
-    if (!isCloudflareChallengePage(officialHtml) && !hasOfficialCareersSurfaceSignal(officialHtml)) {
-      throw new Error('Nutanix verified official careers page no longer matches the trusted surface')
+  async run({ fetchText = defaultFetchText, fetchBrowserText, now = defaultNow } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const jobviteHomeHtml = await fetchText(JOBVITE_HOME_URL)
-    if (!hasJobviteHomeSignal(jobviteHomeHtml)) {
-      throw new Error('Nutanix verified Jobvite home no longer matches the trusted public jobs bridge')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    if (extractOfficialCareersUrlFromJobviteHome(jobviteHomeHtml) !== OFFICIAL_CAREERS_URL) {
-      throw new Error('Nutanix Jobvite home no longer points back to the verified official current openings page')
+    try {
+      const officialHtml = await fetchPageText(OFFICIAL_CAREERS_URL)
+      if (!isCloudflareChallengePage(officialHtml) && !hasOfficialCareersSurfaceSignal(officialHtml)) {
+        throw new Error('Nutanix verified official careers page no longer matches the trusted surface')
+      }
+
+      const jobviteHomeHtml = await fetchPageText(JOBVITE_HOME_URL)
+      if (!hasJobviteHomeSignal(jobviteHomeHtml)) {
+        throw new Error('Nutanix verified Jobvite home no longer matches the trusted public jobs bridge')
+      }
+
+      if (extractOfficialCareersUrlFromJobviteHome(jobviteHomeHtml) !== OFFICIAL_CAREERS_URL) {
+        throw new Error('Nutanix Jobvite home no longer points back to the verified official current openings page')
+      }
+
+      const listingsHtml = await fetchPageText(JOB_LISTINGS_URL)
+      if (!hasJobListingsSignal(listingsHtml)) {
+        throw new Error('Nutanix verified Jobvite listings no longer match the trusted public jobs surface')
+      }
+
+      const listings = extractJobListings(listingsHtml)
+      const jobs = []
+
+      for (const listing of listings) {
+        const detailHtml = await fetchPageText(listing.detailUrl)
+        jobs.push(extractJobDetail(detailHtml, listing))
+      }
+
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    const listingsHtml = await fetchText(JOB_LISTINGS_URL)
-    if (!hasJobListingsSignal(listingsHtml)) {
-      throw new Error('Nutanix verified Jobvite listings no longer match the trusted public jobs surface')
-    }
-
-    const listings = extractJobListings(listingsHtml)
-    const jobs = []
-
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.detailUrl)
-      jobs.push(extractJobDetail(detailHtml, listing))
-    }
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
   },
 })
 

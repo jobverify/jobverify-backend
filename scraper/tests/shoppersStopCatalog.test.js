@@ -37,7 +37,7 @@ test('Shoppers Stop local catalog captures the verified first-party about-page D
   assert.equal(provider.officialBrandName, 'Shoppers Stop Limited')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.shoppersstop.com/')
-  assert.equal(provider.companyCareerPage, 'https://ssladmin.shoppersstop.com/aboutus')
+  assert.equal(provider.companyCareerPage, 'https://beta.shoppersstop.com/miscs/aboutus')
   assert.equal(
     provider.officialCareersHandoffUrl,
     'https://ss-people.darwinbox.in/ms/candidate/careers',
@@ -54,11 +54,11 @@ test('Shoppers Stop local catalog captures the verified first-party about-page D
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-27')
   assert.match(provider.dryRunFile, /shoppersstop[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, expectedModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/ssladmin\.shoppersstop\.com\/aboutus/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, July 27, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/beta\.shoppersstop\.com\/miscs\/aboutus/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/ss-people\.darwinbox\.in\/ms\/candidate\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /live official Shoppers Stop about page/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Shoppers Stop'), false)

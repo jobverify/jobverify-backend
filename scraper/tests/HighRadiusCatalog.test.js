@@ -41,7 +41,7 @@ test('HighRadius local catalog captures the verified first-party careers page pl
     'https://www.highradius.com/about/careers-list/?gh_jid=7611164003',
   )
   assert.equal(provider.verifiedPublicJobCount, 67)
-  assert.equal(provider.verifiedIndiaJobCount, 49)
+  assert.equal(provider.verifiedIndiaJobCount, 50)
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
@@ -61,7 +61,7 @@ test('HighRadius local catalog captures the verified first-party careers page pl
   assert.match(provider.verifiedSurfaceSummary, /highradius\.com\/about\/career/i)
   assert.match(provider.verifiedSurfaceSummary, /boards-api\.greenhouse\.io/i)
   assert.match(provider.verifiedSurfaceSummary, /Agent Developer Test III/i)
-  assert.match(provider.verifiedSurfaceSummary, /49 India roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /50 India roles/i)
 
   assert.equal(highRadius.PROVIDER_METADATA.source, provider.source)
   assert.equal(highRadius.CAREERS_URL, provider.companyCareerPage)

@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Miratech",
+    "company": "Miratech",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "source": "hmmiratech",
+    "jobId": "hmmiratech-current-openings",
+    "requisitionId": "hmmiratech-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Miratech had current Himalayas hiring evidence for Cloud / DevOps Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:04.670Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

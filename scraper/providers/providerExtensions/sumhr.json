@@ -1,0 +1,21 @@
+{
+  "source": "sumhr",
+  "companyName": "SumHR",
+  "officialBrandName": "sumHR",
+  "adapter": "script",
+  "modulePath": "../sumhr/script.js",
+  "dryRunFile": "sumhr/jobs.json",
+  "companyCareerPage": "https://www.sumhr.com/",
+  "companyDomain": "sumhr.com",
+  "atsPlatform": "official-first-party-no-verifiable-public-careers-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "verified-first-party-site-without-public-careers-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.sumhr.com/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.sumhr.com/ is SumHR's first-party site. It does not expose a verifiable public SumHR careers page, public job listing feed, or official ATS endpoint, so this exact-name provider fails closed and returns no jobs rather than using third-party listings or a fuzzy company substitution."
+}

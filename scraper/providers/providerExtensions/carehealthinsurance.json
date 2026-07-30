@@ -1,0 +1,21 @@
+{
+  "source": "carehealthinsurance",
+  "companyName": "Care Health Insurance",
+  "officialBrandName": "Care Health Insurance Limited",
+  "adapter": "script",
+  "modulePath": "../carehealthinsurance/script.js",
+  "dryRunFile": "carehealthinsurance/jobs.json",
+  "companyCareerPage": "https://www.careinsurance.com/rhicl/careers",
+  "companyDomain": "careinsurance.com",
+  "atsPlatform": "official-first-party-careers-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-enumerable-india-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.careinsurance.com/rhicl/careers",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.careinsurance.com/rhicl/careers is Care Health Insurance's first-party India careers surface. Its public job-search page currently reports no opening in the selected area and exposes no trustworthy enumerable India listing feed, so this exact-name provider fails closed and returns no jobs until the official surface publishes public openings."
+}

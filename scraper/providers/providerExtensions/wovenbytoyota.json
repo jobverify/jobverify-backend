@@ -1,0 +1,21 @@
+{
+  "source": "wovenbytoyota",
+  "companyName": "Woven by Toyota",
+  "officialBrandName": "Woven by Toyota",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../wovenbytoyota/script.js",
+  "dryRunFile": "wovenbytoyota/jobs.json",
+  "companyCareerPage": "https://woven.toyota/en/careers/",
+  "companyDomain": "woven.toyota",
+  "atsPlatform": "official-first-party-careers-page-fail-closed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+return-empty-when-public-search-has-no-matching-roles",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://woven.toyota/en/careers/ is Woven by Toyota's first-party careers page. The live public careers surface currently shows an Open roles section with the message No matching roles found, so this exact-name provider fails closed and returns no jobs instead of inventing openings from other Toyota entities or third-party listings."
+}

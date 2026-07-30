@@ -1,0 +1,22 @@
+{
+  "source": "tatacliq",
+  "companyName": "Tata CLiQ",
+  "officialBrandName": "Tata Unistore Limited",
+  "adapter": "script",
+  "modulePath": "../tatacliq/script.js",
+  "dryRunFile": "tatacliq/jobs.json",
+  "companyCareerPage": "https://www.tatacliq.com/careers",
+  "companyDomain": "tatacliq.com",
+  "atsPlatform": "Darwinbox",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-page-linked-ats-without-verified-enumerable-listings",
+  "extractionStrategy": "official-careers-page-and-linked-ats-without-verified-enumerable-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.tatacliq.com/careers",
+  "officialAtsUrl": "https://cliqonnect.darwinbox.in/ms/candidate/careers",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that Tata CLiQ's first-party careers page identifies Tata Unistore Limited and links applicants to its Darwinbox candidate portal. The publicly verifiable surface exposes no trustworthy enumerable job feed, so this exact-name provider fails closed and returns no jobs until Tata CLiQ publishes a verified public listing interface."
+}

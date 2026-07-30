@@ -22,6 +22,29 @@ const officialCareersHtml = `
 </html>
 `
 
+const currentOfficialCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title data-react-helmet="true">Join the Planful Team | Planful Jobs</title>
+    <meta name="description" content="Planful is hiring! Join the team building the future of financial performance management." />
+  </head>
+  <body>
+    <main>
+      <h2>A Team of Champions</h2>
+      <p>Your ideas. Your actions. Your spirit.</p>
+      <section>
+        <h3>We Take Care of Our People</h3>
+      </section>
+      <section>
+        <h2>Your Planful Journey Begins Today</h2>
+        <a href="/jobs/careers-list/">Explore Careers</a>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const careersListHtml = `
 <!doctype html>
 <html lang="en">
@@ -33,6 +56,22 @@ const careersListHtml = `
       <h1>Join Our Journey</h1>
       <div id="grnhse_app"></div>
       <a href="/jobs/">Careers</a>
+    </main>
+  </body>
+</html>
+`
+
+const currentCareersListHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title data-react-helmet="true">Careers List - Planful</title>
+  </head>
+  <body>
+    <main>
+      <h1>Your Planful Journey Begins Today</h1>
+      <p>Get Started with Planful</p>
+      <div id="grnhse_app"></div>
     </main>
   </body>
 </html>
@@ -99,6 +138,13 @@ test('Planful helpers stay pinned to the verified first-party careers pages and 
     ),
     'https://planful.com/jobs/careers-list/?gh_jid=8627819002',
   )
+})
+
+test('Planful accepts the current July 26, 2026 first-party careers shells', async () => {
+  const planful = await loadPlanfulModule()
+
+  assert.equal(planful.hasOfficialCareersSignal(currentOfficialCareersHtml), true)
+  assert.equal(planful.hasVerifiedJobListingSignal(currentCareersListHtml), true)
 })
 
 test('Planful extracts the current India Greenhouse payload and preserves the first-party detail URL', async () => {
@@ -209,6 +255,23 @@ test('Planful fails closed when the verified first-party careers pages or Greenh
         jobs: [{
           ...greenhousePayload.jobs[0],
           company_name: 'Different Company',
+        }],
+      }),
+    }),
+    /company identity/i,
+  )
+
+  await assert.rejects(
+    planful.createPlanfulScraper().run({
+      fetchText: async (url) => {
+        if (url === planful.CAREERS_URL) return officialCareersHtml
+        if (url === planful.JOB_LISTING_URL) return careersListHtml
+        throw new Error(`Unexpected Planful fixture URL: ${url}`)
+      },
+      fetchJson: async () => ({
+        jobs: [{
+          ...greenhousePayload.jobs[0],
+          company_name: undefined,
         }],
       }),
     }),

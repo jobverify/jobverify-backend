@@ -34,21 +34,34 @@ const WORKABLE_BOARD_HTML = `
 </html>
 `
 
-const CURRENT_NON_INDIA_JOBS_MARKDOWN = `# Seeq - Current Openings
+const CURRENT_NON_INDIA_JOBS_MARKDOWN = `# Seeq — All Open Positions
 
-2 current openings
+> Last updated: 2026-07-26
 
-- [Staff Software Engineer - Platform](https://apply.workable.com/seeq/j/FD4C7FD4F3/) - Remote, United States
-- [Principal Customer Success Manager](https://apply.workable.com/seeq/j/DD468C75CA/) - United Kingdom, Ireland, France, Germany
+| Title | Department | Location | Type | Salary | Posted | Details |
+|-------|-----------|----------|------|--------|--------|---------|
+| Staff Software Engineer - Platform | Software Engineering | United States (Remote) | Full-time | USD 170,000–170,000 | 2026-06-25 | [View](https://apply.workable.com/seeq/jobs/view/FD4C7FD4F3.md) |
+| Principal Customer Success Manager | Customer Success | United Kingdom (Remote) | Full-time | EUR 146,000–146,000 | 2026-04-13 | [View](https://apply.workable.com/seeq/jobs/view/DD468C75CA.md) |
 
 Powered by [Workable](https://www.workable.com)
 `
 
-const FUTURE_INDIA_JOBS_MARKDOWN = `# Seeq - Current Openings
+const FUTURE_INDIA_JOBS_MARKDOWN = `# Seeq — All Open Positions
+
+> Last updated: 2026-07-26
+
+| Title | Department | Location | Type | Salary | Posted | Details |
+|-------|-----------|----------|------|--------|--------|---------|
+| Solutions Engineer | Solutions Engineering | Bengaluru, Karnataka, India | Full-time | INR 3,000,000–3,000,000 | 2026-07-25 | [View](https://apply.workable.com/seeq/jobs/view/ABC123DEF4.md) |
+
+Powered by [Workable](https://www.workable.com)
+`
+
+const LEGACY_INDIA_JOBS_MARKDOWN = `# Seeq - Current Openings
 
 1 current opening
 
-- [Solutions Engineer](https://apply.workable.com/seeq/j/ABC123DEF4/) - Bengaluru, Karnataka, India
+- [Solutions Engineer](https://apply.workable.com/seeq/j/LEGACY1234/) - Bengaluru, Karnataka, India
 
 Powered by [Workable](https://www.workable.com)
 `
@@ -88,6 +101,29 @@ test('Seeq helper exports stay pinned to the verified careers handoff, Workable 
       requisitionId: 'ABC123DEF4',
       sourceUrl: 'https://apply.workable.com/seeq/j/ABC123DEF4/',
       applyUrl: 'https://apply.workable.com/seeq/j/ABC123DEF4/apply',
+      department: 'Solutions Engineering',
+      employmentType: 'Full-time',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: '2026-07-25',
+      closingDate: null,
+      jobDescription: null,
+    },
+  ])
+  assert.deepEqual(seeq.extractJobsFromMarkdown(LEGACY_INDIA_JOBS_MARKDOWN), [
+    {
+      title: 'Solutions Engineer',
+      company: 'Seeq',
+      location: 'Bengaluru, Karnataka, India',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      country: 'India',
+      jobId: 'LEGACY1234',
+      requisitionId: 'LEGACY1234',
+      sourceUrl: 'https://apply.workable.com/seeq/j/LEGACY1234/',
+      applyUrl: 'https://apply.workable.com/seeq/j/LEGACY1234/apply',
       department: null,
       employmentType: null,
       experienceRequired: null,

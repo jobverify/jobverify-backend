@@ -30,6 +30,10 @@ test('hasPortalBlockedSignal stays true when the linked Canon careers portal cur
     canonIndia.hasPortalBlockedSignal({ status: 200, html: 'No Access' }),
     true,
   )
+  assert.equal(
+    canonIndia.hasPortalBlockedSignal({ status: 403, html: 'No Access' }),
+    true,
+  )
 })
 
 test('run returns no jobs when Canon India careers point to a currently inaccessible external portal', async () => {
@@ -52,6 +56,36 @@ test('run returns no jobs when Canon India careers point to a currently inaccess
   })
 
   assert.deepEqual(requestedUrls, [
+    canonIndia.CAREER_PAGE_URL,
+    canonIndia.EXTERNAL_PORTAL_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('run can recover Canon India pages with a browser-backed fetch when direct requests fail certificate validation', async () => {
+  const canonIndia = await loadCanonIndiaModule()
+  const browserUrls = []
+
+  const jobs = await canonIndia.createCanonIndiaScraper().run({
+    fetchPage: async () => {
+      throw new Error('fetch failed | unable to verify the first certificate')
+    },
+    fetchBrowserPage: async (url) => {
+      browserUrls.push(url)
+
+      if (url === canonIndia.CAREER_PAGE_URL) {
+        return { status: 200, url, html: careerPageHtml }
+      }
+
+      if (url === canonIndia.EXTERNAL_PORTAL_URL) {
+        return { status: 403, url, html: 'No Access' }
+      }
+
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
     canonIndia.CAREER_PAGE_URL,
     canonIndia.EXTERNAL_PORTAL_URL,
   ])

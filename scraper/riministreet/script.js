@@ -64,21 +64,26 @@ export const extractVerifiedWorkdayHandoffUrl = (html = '') => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
 })
 
 export const createRiminiStreetScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  async run() {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ signal } = {}) {
+    const careersHtml = await (
+      signal === undefined
+        ? fetchText(CAREERS_URL)
+        : fetchText(CAREERS_URL, { signal })
+    )
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Rimini Street verified first-party careers page no longer matches the trusted surface')
@@ -89,14 +94,18 @@ export const createRiminiStreetScraper = ({
       throw new Error('Rimini Street verified Workday handoff changed; refusing to guess the public jobs source')
     }
 
-    return workdayRunner(buildScraperOptions())
+    return workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
   },
 })
 
 export const run = async ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
-} = {}) => createRiminiStreetScraper({ fetchText, workdayRunner }).run()
+  signal,
+} = {}) => createRiminiStreetScraper({ fetchText, workdayRunner }).run({ signal })
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')

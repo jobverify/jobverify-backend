@@ -57,11 +57,9 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 
 export const hasOfficialBajajElectricalsCareersSignals = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
 
-  return /^Careers (?:\||-) Bajaj Electricals(?: India)?$/i.test(extractTitle(page) || '')
+  return /^Careers (?:(?:\||-|–|—)) Bajaj Electricals(?: India)?$/i.test(extractTitle(page) || '')
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.bajajelectricals\.com\/pages\/careers["']/i.test(page)
-    && text.toLowerCase().includes('careers at bajaj electricals')
     && extractOfficialDarwinboxUrl(page) === PUBLIC_PORTAL_URL
 }
 

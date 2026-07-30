@@ -5,16 +5,19 @@ const OFFICIAL_ABOUT_PAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Us | Online Retailer | Shoppers Stop | Shoppers Stop</title>
+    <title>About Us</title>
   </head>
   <body>
     <main>
       <h1>About Us</h1>
-      <p>Start Something New with Shoppers Stop.</p>
+      <p>Shoppers Stop is home to a multitude of leading international and national luxury, prestige and premium brands.</p>
       <section>
         <h2>Join our team</h2>
         <p>Want to be a part of our super creative and highly motivated team?</p>
-        <a href="https://ss-people.darwinbox.in/ms/candidate/careers">Careers</a>
+        <p>
+          You can apply here at
+          <a class="career">https://ss-people.darwinbox.in/ms/candidate/careers</a>
+        </p>
       </section>
     </main>
   </body>
@@ -36,9 +39,9 @@ test('Shoppers Stop pins the verified first-party about page and Darwinbox tenan
   assert.equal(shoppersStop.SOURCE, 'shoppersstop')
   assert.equal(shoppersStop.COMPANY, 'Shoppers Stop')
   assert.equal(shoppersStop.OFFICIAL_BRAND_NAME, 'Shoppers Stop Limited')
-  assert.equal(shoppersStop.VERIFIED_ON, '2026-07-17')
+  assert.equal(shoppersStop.VERIFIED_ON, '2026-07-27')
   assert.equal(shoppersStop.HOMEPAGE_URL, 'https://www.shoppersstop.com/')
-  assert.equal(shoppersStop.ABOUT_PAGE_URL, 'https://ssladmin.shoppersstop.com/aboutus')
+  assert.equal(shoppersStop.ABOUT_PAGE_URL, 'https://beta.shoppersstop.com/miscs/aboutus')
   assert.equal(
     shoppersStop.DARWINBOX_HANDOFF_URL,
     'https://ss-people.darwinbox.in/ms/candidate/careers',

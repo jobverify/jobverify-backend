@@ -11,17 +11,17 @@ export const SMART_SOFTWARE_SERVICES_CATALOG = {
   modulePath: path.join(currentDir, 'script.js'),
   homepageUrl: 'https://smartsoftwareservices.com/',
   companyCareerPage: 'https://smartsoftwareservices.com/careers',
-  atsPlatform: 'official-company-careers-page-no-public-apply-links',
+  atsPlatform: 'first-party-careers-site',
   countryFilter: 'India',
-  paginationStrategy: 'verified-first-party-careers-page-with-open-role-count-return-empty',
-  extractionStrategy: 'verified-first-party-careers-page+role-family-signals-without-trustworthy-public-detail-urls',
+  paginationStrategy: 'single-first-party-careers-page-with-visible-role-cards',
+  extractionStrategy: 'verified-first-party-role-cards+in-page-application-modal',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'smartsoftwareservices.com',
   dryRunFile: 'smartsoftwareservices/jobs.json',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-27',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://smartsoftwareservices.com/careers was the live first-party Smart Software Services careers page, that it advertised 4 open roles, and that the public page exposed role-family signals such as QA, FE, BE, and Design without trustworthy public detail or apply URLs to scrape directly.',
+    'Verified on Monday, July 27, 2026 that https://smartsoftwareservices.com/careers was the live first-party Smart Software Services careers page, that it rendered 4 open roles as visible role cards, that those cards included QA Automation Engineer, Frontend Developer (React / Next.js), Backend Developer (Node.js), and UI/UX Designer, and that candidate applications opened through an in-page application modal on the same first-party careers surface.',
 }
 
 export default SMART_SOFTWARE_SERVICES_CATALOG

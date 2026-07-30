@@ -17,7 +17,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   return /ELEATION/i.test(page)
     && /CAD-CAE Training\s*&amp;\s*CAE Services|CAD-CAE Training\s*&\s*CAE Services/i.test(page)
-    && /href=["']https?:\/\/www\.eleation\.com\/career\/["']|href=["']https?:\/\/eleation\.com\/career\/["']/i.test(page)
+    && /href=["']https?:\/\/(?:www\.)?eleation\.com\/career\/?["']/i.test(page)
 }
 
 export const hasApplicationOnlyCareersSignal = (html) => {
@@ -35,7 +35,8 @@ export const hasPlacementProcedureSignal = (html) => {
   const page = String(html ?? '')
   return /placement procedure/i.test(page)
     && /Submit your placement enquiry from the career page/i.test(page)
-    && /suitable roles based on current requirements/i.test(page)
+    && /current requirements/i.test(page)
+    && /suitable roles/i.test(page)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Aindra Systems local catalog captures the verified first-party homepage careers surface', async () => {
+test('Aindra Systems local catalog captures the verified first-party host outage contract for the homepage careers surface', async () => {
   const { AINDRA_SYSTEMS_CATALOG } = await loadCatalogModule()
   const scriptModule = await loadScriptModule()
 
@@ -40,18 +40,20 @@ test('Aindra Systems local catalog captures the verified first-party homepage ca
   assert.equal(AINDRA_SYSTEMS_CATALOG.countryFilter, 'India')
   assert.equal(
     AINDRA_SYSTEMS_CATALOG.paginationStrategy,
-    'single-homepage-careers-section',
+    'single-homepage-careers-section-or-unavailable-first-party-host-fail-closed',
   )
   assert.equal(
     AINDRA_SYSTEMS_CATALOG.extractionStrategy,
-    'verified-homepage-careers-section+inline-role-modals+mailto-apply',
+    'verified-homepage-careers-section+inline-role-modals+first-party-host-unavailable-fail-closed',
   )
   assert.equal(AINDRA_SYSTEMS_CATALOG.parser, 'custom-script')
   assert.equal(AINDRA_SYSTEMS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AINDRA_SYSTEMS_CATALOG.verifiedOn, '2026-07-14')
+  assert.equal(AINDRA_SYSTEMS_CATALOG.verifiedOn, '2026-07-28')
   assert.match(AINDRA_SYSTEMS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.aindra\.in\//i)
-  assert.match(AINDRA_SYSTEMS_CATALOG.verifiedSurfaceSummary, /Join us at Aindra/i)
-  assert.match(AINDRA_SYSTEMS_CATALOG.verifiedSurfaceSummary, /contactus@aindra\.in/i)
+  assert.match(AINDRA_SYSTEMS_CATALOG.verifiedSurfaceSummary, /https:\/\/aindra\.in\//i)
+  assert.match(AINDRA_SYSTEMS_CATALOG.verifiedSurfaceSummary, /no longer resolves in dns/i)
+  assert.match(AINDRA_SYSTEMS_CATALOG.verifiedSurfaceSummary, /fails tls verification/i)
+  assert.match(AINDRA_SYSTEMS_CATALOG.verifiedSurfaceSummary, /stays fail-closed/i)
   assert.equal(AINDRA_SYSTEMS_CATALOG.modulePath, scriptModulePath)
 
   assert.equal(scriptModule.PROVIDER_METADATA.source, AINDRA_SYSTEMS_CATALOG.source)

@@ -15,6 +15,25 @@ const loadKidventoModule = async () => {
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const homepageHtml = fs.readFileSync(path.join(currentDir, 'fixtures/homepage.html'), 'utf8')
 const careersHtml = fs.readFileSync(path.join(currentDir, 'fixtures/careers.html'), 'utf8')
+const currentCareersHtml = `
+  <html>
+    <head>
+      <title>Careers</title>
+      <meta property="og:url" content="https://www.kidvento.com/careers">
+    </head>
+    <body>
+      <nav>
+        <a aria-selected="true" href="/careers">Careers</a>
+      </nav>
+      <main>
+        <h1>Kidvento Careers</h1>
+        <p>Dubai</p>
+        <p>Bengaluru</p>
+        <p>Mysuru</p>
+      </main>
+    </body>
+  </html>
+`
 
 test('Kidvento scraper validates the verified first-party homepage and careers zero-job surface', async () => {
   const kidvento = await loadKidventoModule()
@@ -25,6 +44,7 @@ test('Kidvento scraper validates the verified first-party homepage and careers z
   assert.equal(kidvento.CAREERS_URL, 'https://www.kidvento.com/careers')
   assert.equal(kidvento.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(kidvento.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(kidvento.hasOfficialCareersSignal(currentCareersHtml), true)
   assert.deepEqual(kidvento.extractSuspiciousPublicJobLinks(careersHtml), [])
 })
 

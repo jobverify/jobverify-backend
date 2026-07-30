@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { AIRTEL_PAYMENTS_BANK_CATALOG } from './catalog.js'
@@ -93,8 +94,8 @@ export const hasOfficialAboutPageSignal = (html = '') => {
   return /<title>\s*About Us\s*\|\s*Airtel Payments Bank\s*<\/title>/i.test(page)
     && text.includes('About Airtel Payments Bank')
     && text.includes("Bharti Airtel's Banking Venture")
-    && text.includes('As India’s first Payments Bank, we aim to give every Indian access to an equal, effective, and trustworthy banking experience.')
-    && text.includes('Airtel Payments Bank was launched in January 2017, by Bharti Airtel, India’s largest telecom provider.')
+    && /As India['’]s first Payments Bank, we aim to give every Indian access to an equal, effective, and trustworthy banking experience\./i.test(text)
+    && /Airtel Payments Bank was launched in January 2017, by Bharti Airtel/i.test(text)
     && text.includes('Meet our board of directors')
 }
 
@@ -150,60 +151,97 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createAirtelPaymentsBankScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Airtel Payments Bank verified homepage no longer matches the known public surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (hasPublicJobsSignal(homepageHtml)) {
-      throw new Error('Airtel Payments Bank homepage now appears to expose public jobs')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    if (hasCareersHandoffLink(homepageHtml)) {
-      throw new Error('Airtel Payments Bank homepage now exposes a careers handoff')
+    try {
+      const homepageHtml = await fetchPageText(HOMEPAGE_URL)
+
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Airtel Payments Bank verified homepage no longer matches the known public surface')
+      }
+
+      if (hasPublicJobsSignal(homepageHtml)) {
+        throw new Error('Airtel Payments Bank homepage now appears to expose public jobs')
+      }
+
+      if (hasCareersHandoffLink(homepageHtml)) {
+        throw new Error('Airtel Payments Bank homepage now exposes a careers handoff')
+      }
+
+      const aboutPageHtml = await fetchPageText(ABOUT_PAGE_URL)
+
+      if (!hasOfficialAboutPageSignal(aboutPageHtml)) {
+        throw new Error('Airtel Payments Bank verified about page no longer matches the known public surface')
+      }
+
+      if (hasPublicJobsSignal(aboutPageHtml)) {
+        throw new Error('Airtel Payments Bank about page now appears to expose public jobs')
+      }
+
+      if (hasCareersHandoffLink(aboutPageHtml)) {
+        throw new Error('Airtel Payments Bank about page now exposes a careers handoff')
+      }
+
+      const careersShellHtml = await fetchPageText(PARENT_CAREERS_URL)
+
+      if (!hasSharedAirtelCareersShellSignal(careersShellHtml)) {
+        throw new Error('Airtel Payments Bank verified shared Airtel careers shell no longer matches the public surface')
+      }
+
+      const bundleUrl = extractMainBundleUrl(careersShellHtml)
+      const bundleText = await fetchPageText(bundleUrl)
+
+      if (hasDistinctAirtelPaymentsBankCareerRoute(bundleText)) {
+        throw new Error('Airtel Payments Bank verified shared bundle now exposes a distinct Airtel Payments Bank public jobs route')
+      }
+
+      if (!hasVerifiedSharedBundleSignal(bundleText)) {
+        throw new Error('Airtel Payments Bank verified shared Airtel careers bundle no longer matches the public surface')
+      }
+
+      const darwinboxShellHtml = await fetchPageText(SHARED_DARWINBOX_URL)
+
+      if (!hasSharedDarwinboxShellSignal(darwinboxShellHtml)) {
+        throw new Error('Airtel Payments Bank verified shared Darwinbox shell no longer matches the public surface')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    const aboutPageHtml = await fetchText(ABOUT_PAGE_URL)
-
-    if (!hasOfficialAboutPageSignal(aboutPageHtml)) {
-      throw new Error('Airtel Payments Bank verified about page no longer matches the known public surface')
-    }
-
-    if (hasPublicJobsSignal(aboutPageHtml)) {
-      throw new Error('Airtel Payments Bank about page now appears to expose public jobs')
-    }
-
-    if (hasCareersHandoffLink(aboutPageHtml)) {
-      throw new Error('Airtel Payments Bank about page now exposes a careers handoff')
-    }
-
-    const careersShellHtml = await fetchText(PARENT_CAREERS_URL)
-
-    if (!hasSharedAirtelCareersShellSignal(careersShellHtml)) {
-      throw new Error('Airtel Payments Bank verified shared Airtel careers shell no longer matches the public surface')
-    }
-
-    const bundleUrl = extractMainBundleUrl(careersShellHtml)
-    const bundleText = await fetchText(bundleUrl)
-
-    if (hasDistinctAirtelPaymentsBankCareerRoute(bundleText)) {
-      throw new Error('Airtel Payments Bank verified shared bundle now exposes a distinct Airtel Payments Bank public jobs route')
-    }
-
-    if (!hasVerifiedSharedBundleSignal(bundleText)) {
-      throw new Error('Airtel Payments Bank verified shared Airtel careers bundle no longer matches the public surface')
-    }
-
-    const darwinboxShellHtml = await fetchText(SHARED_DARWINBOX_URL)
-
-    if (!hasSharedDarwinboxShellSignal(darwinboxShellHtml)) {
-      throw new Error('Airtel Payments Bank verified shared Darwinbox shell no longer matches the public surface')
-    }
-
-    return []
   },
 })
 

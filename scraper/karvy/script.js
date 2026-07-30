@@ -58,19 +58,24 @@ export const hasParkedHomepageSignal = (html = '') => {
 export const hasContaminatedLegacyRootSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
   return normalized.includes('kembangtoto')
-    && normalized.includes('olah data togel')
-    && normalized.includes('ember-spirit.co')
+    && (
+      normalized.includes('olah data togel')
+      || normalized.includes('data akurat karvyonline')
+    )
     && !hasPublicJobsSignal(html)
 }
 
 export const hasStaleCareerPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
+  const hasResumeContact = normalized.includes('careers@karvy.com')
+    || /email resume to[\s\S]*__cf_email__/i.test(page)
+    || (/email resume to/i.test(page) && /\[email(?:&#160;|&nbsp;|\s)*protected\]/i.test(page))
 
   return /<title>\s*Career\s*<\/title>/i.test(page)
     && normalized.includes('interested to join us?')
     && normalized.includes('apply')
-    && normalized.includes('careers@karvy.com')
+    && hasResumeContact
     && normalized.includes('sebi')
     && !hasPublicJobsSignal(page)
 }

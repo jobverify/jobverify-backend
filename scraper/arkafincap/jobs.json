@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Data Architect",
+    "company": "Arka Fincap",
+    "department": null,
+    "location": "Maharashtra, India",
+    "city": null,
+    "country": "India",
+    "jobId": "89006000003963368",
+    "requisitionId": "89006000003963368",
+    "sourceUrl": "https://arkafincap.zohorecruit.in/jobs/Careers/89006000003963368/Data-Architect?source=CareerSite",
+    "applyUrl": "https://arkafincap.zohorecruit.in/jobs/Careers/89006000003963368/Data-Architect?source=CareerSite",
+    "employmentType": "Full-time",
+    "experienceRequired": "5-10 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2025-06-19T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Key Responsibilities: Design, develop, and maintain robust and scalable data architectures to meet business and technical requirements. Define data models, data flow diagrams, and metadata management strategies. Collaborate with data engineers, analysts, and business stakeholders to ensure data solutions align with company goals. Develop and enforce data governance, quality, and security policies. Evaluate and recommend new data technologies, tools, and frameworks. Optimize storage and retrieval systems for structured, semi-structured, and unstructured data. Lead migration projects from legacy systems to modern cloud-based platforms. Ensure compliance with regulatory requirements (GDPR, CCPA, etc.) related to data storage and processing. Mentor and guide junior data engineers and analysts in best practices.",
+    "remoteStatus": "On-site",
+    "source": "arkafincap",
+    "link": "https://arkafincap.zohorecruit.in/jobs/Careers/89006000003963368/Data-Architect?source=CareerSite",
+    "scrapedAt": "2026-07-26T18:59:55.231Z",
+    "companyCareerPage": "https://www.arkafincap.com/life-at-arka",
+    "companyDomain": "arkafincap.com",
+    "atsPlatform": "zohorecruit"
+  }
+]

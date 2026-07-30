@@ -15,6 +15,70 @@ const readHtmlFixture = (name) => readFileSync(path.join(fixturesDir, name), 'ut
 
 const verifiedHomepageHtml = readHtmlFixture('homepage.html')
 const verifiedCareersHtml = readHtmlFixture('careers.html')
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Manastu Space | Green Propulsion Systems for Satellites &amp; Space Missions</title>
+  </head>
+  <body>
+    <header>
+      <a href="/">Home</a>
+      <a href="/careers">Careers</a>
+    </header>
+    <main>
+      <h1>Manastu Space</h1>
+      <p>Green propulsion systems for satellites and space missions.</p>
+      <p>Debris collision avoidance maneuvers keep satellites safe in orbit.</p>
+      <a href="/careers">Life at Manastu</a>
+    </main>
+  </body>
+</html>
+`
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Manastu Space | Join a Green Satellite Propulsion Startup</title>
+  </head>
+  <body>
+    <section>
+      <h2>Hiring Process</h2>
+      <p>We keep it professional, clear and talent-focused.</p>
+    </section>
+    <section id="open-roles">
+      <h2>Open Roles</h2>
+      <p>Email: careers@manastuspace.com</p>
+      <div class="open-roles_wrapper w-dyn-list">
+        <div role="list" class="open-roles_list w-dyn-items">
+          <div role="listitem" class="open-roles_item w-dyn-item">
+            <div class="heading-style-h5 text-weight-semibold">Propellant Research Chemist/ Engineer</div>
+            <div class="text-size-small text-weight-medium text-size">Full time</div>
+            <div class="text-size-small text-weight-medium">Navi Mumbai</div>
+            <a href="mailto:careers@manastuspace.com" class="open-roles-cta_wrapper w-inline-block">Apply</a>
+            <div class="open-roles_details">
+              <div class="w-richtext">
+                <p>Role overview for propellant systems.</p>
+              </div>
+            </div>
+          </div>
+          <div role="listitem" class="open-roles_item w-dyn-item">
+            <div class="heading-style-h5 text-weight-semibold">Embedded Firmware Developer</div>
+            <div class="text-size-small text-weight-medium text-size">Full time</div>
+            <div class="text-size-small text-weight-medium">Navi Mumbai</div>
+            <a href="mailto:careers@manastuspace.com" class="open-roles-cta_wrapper w-inline-block">Apply</a>
+            <div class="open-roles_details">
+              <div class="w-richtext">
+                <p>Role overview for embedded systems.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
+`
 
 const loadManastuSpaceModule = async () => {
   try {
@@ -34,6 +98,25 @@ test('Manastu Space scraper validates the verified homepage and current careers 
   assert.equal(manastu.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(manastu.hasOfficialCareersSignal(verifiedCareersHtml), true)
   assert.ok(manastu.extractPublicJobs(verifiedCareersHtml).length > 0)
+})
+
+test('Manastu Space accepts the current homepage surface when careers links are relative', async () => {
+  const manastu = await loadManastuSpaceModule()
+
+  assert.equal(manastu.hasOfficialHomepageSignal(currentHomepageHtml), true)
+})
+
+test('Manastu Space extracts only actual open roles from the current careers layout', async () => {
+  const manastu = await loadManastuSpaceModule()
+  const jobs = manastu.extractPublicJobs(currentCareersHtml)
+
+  assert.deepEqual(
+    jobs.map((job) => job.title),
+    [
+      'Embedded Firmware Developer',
+      'Propellant Research Chemist/ Engineer',
+    ],
+  )
 })
 
 test('Manastu Space provider is registered in the scraper catalog', () => {

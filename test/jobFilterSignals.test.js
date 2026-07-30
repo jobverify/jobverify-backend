@@ -1,7 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { WORK_ARRANGEMENT_OPTIONS } from "../src/constants/jobFilterTaxonomy.js";
 import { extractJobFilterSignals } from "../src/utils/jobFilterSignals.js";
+
+test("work arrangement taxonomy and extraction exclude Flexible", () => {
+  const signals = extractJobFilterSignals({
+    title: "Operations Specialist",
+    workArrangement: "Flexible",
+  });
+
+  assert.ok(!WORK_ARRANGEMENT_OPTIONS.includes("Flexible"));
+  assert.equal(signals.workArrangement, "Not specified");
+});
 
 test("extractJobFilterSignals classifies required and preferred skills with domain, seniority, and experience signals", () => {
   const signals = extractJobFilterSignals({

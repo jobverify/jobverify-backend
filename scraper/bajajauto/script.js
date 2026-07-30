@@ -53,6 +53,9 @@ const stripTagsToText = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const extractTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+
 const toAbsoluteUrl = (value, baseUrl = SEARCH_RESULTS_URL) => {
   if (!value) return null
 
@@ -113,16 +116,18 @@ const buildLocationParts = (...values) => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
+  const title = extractTitle(page)
 
-  return /<title>\s*Bajaj Auto - Bikes, Scooters, Three Wheelers (?:&|&amp;) Qute/i.test(page)
+  return /^Bajaj Auto - Bikes, Scooters, Three Wheelers & Qute(?: \(2026\))?$/i.test(title || '')
     && /href=["'](?:https:\/\/www\.bajajauto\.com)?\/careers["']/i.test(page)
 }
 
 export const hasOfficialCareersHubSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTagsToText(page)
+  const title = extractTitle(page)
 
-  return /<title>\s*Why Work With Bajaj Auto/i.test(page)
+  return /^Why Work With Bajaj Auto(?:\s*[-–—]\s*Careers & Opportunities)?$/i.test(title || '')
     && /Select your preferences to find a job/i.test(text || '')
     && /href=["'](?:https:\/\/www\.bajajauto\.com)?\/careers\/search-result["']/i.test(page)
 }
@@ -130,8 +135,9 @@ export const hasOfficialCareersHubSignal = (html = '') => {
 export const hasSearchResultsSurfaceSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTagsToText(page)
+  const title = extractTitle(page)
 
-  return /<title>\s*Bajaj Auto Careers/i.test(page)
+  return /^Bajaj Auto Careers(?:\s*[-–—]\s*Explore Latest Job Openings)?$/i.test(title || '')
     && /id=["']div_jobRequisitions["']/i.test(page)
     && /id=["']pagin["']/i.test(page)
     && /career-header\.js\?v=\d+/i.test(page)

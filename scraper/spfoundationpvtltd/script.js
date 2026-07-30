@@ -62,8 +62,10 @@ const normalizeWhitespace = (value) =>
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&#39;|&apos;|&rsquo;|&lsquo;|&#x27;/gi, "'")
+    .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, '-')
     .replace(/&quot;/gi, '"')
     .replace(/&amp;/gi, '&')
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -120,10 +122,9 @@ export const hasOfficialContactSignal = (html) => {
 
   return /<title>\s*Contact - SP Foundation\s*<\/title>/i.test(rawHtml)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']SP Foundation["']/i.test(rawHtml)
-    && normalized.includes('Plot No. 284/1,2 & 3 GIDC Estate, Makarpura, Vadodara ? 390010, Gujarat ? India.')
-    && normalized.includes('mili.patel@spfoundation.in')
-    && /mailto:info@spfoundation\.in/i.test(rawHtml)
-    && /aria-label=["']Contact form["']/i.test(rawHtml)
+    && normalized.includes('Plot No. 284/1,2 & 3 GIDC Estate, Makarpura, Vadodara - 390010, Gujarat - India.')
+    && normalized.includes('info@spfoundation.in')
+    && normalized.includes('MONDAY - SATURDAY : 9:00AM TO 6:00PM')
     && normalized.includes('Copyright 2022 by SP Foundation')
 }
 

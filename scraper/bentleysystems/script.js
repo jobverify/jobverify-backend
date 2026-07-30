@@ -67,9 +67,10 @@ const extractJobIdFromUrl = (value) => {
 
 export const hasOfficialJobsHostSignal = (html = '') => {
   const page = String(html ?? '')
-  return /<title>\s*Careers \| Bentley Systems/i.test(page)
+  return /<title>\s*(?:Careers \| )?Bentley Systems/i.test(page)
     && /https:\/\/www\.bentley\.com\/company\/careers\//i.test(page)
-    && /https:\/\/jobs\.bentley\.com\/search\/\?searchby=location&amp;q=&amp;locationsearch=&amp;geolocation=/i.test(page)
+    && /https:\/\/jobs\.bentley\.com\/search\/\?searchby=location/i.test(page)
+    && /locationsearch=/i.test(page)
 }
 
 export const hasIndiaSearchResultsSignal = (html = '') => {

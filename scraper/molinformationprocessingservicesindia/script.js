@@ -87,12 +87,16 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 export const hasOfficialMolItCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page) || ''
+  const title = extractTitle(page)
 
-  return extractTitle(page) === 'Careers at MOL-IT'
+  return ['Careers at MOL-IT', 'MOL IT | Careers @ MOL IT'].includes(title)
     && text.includes('Careers at MOL-IT')
     && text.includes('Join Our Team')
     && text.includes('Current Vacancies')
-    && text.includes('Find your next role and grow with us.')
+    && (
+      text.includes('Find your next role and grow with us.')
+      || text.includes('Reimagine Your Future')
+    )
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 

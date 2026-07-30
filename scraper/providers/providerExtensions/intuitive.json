@@ -1,0 +1,23 @@
+{
+  "source": "intuitive",
+  "companyName": "Intuitive",
+  "officialBrandName": "Intuitive Surgical, Inc.",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../intuitive/script.js",
+  "dryRunFile": "intuitive/jobs.json",
+  "companyCareerPage": "https://careers.intuitive.com/en/jobs",
+  "companyDomain": "careers.intuitive.com",
+  "atsPlatform": "smartrecruiters",
+  "countryFilter": "India",
+  "paginationStrategy": "official-smartrecruiters-api-offset-pagination",
+  "extractionStrategy": "pinned-intuitive-smartrecruiters-tenant+public-india-filter+first-party-application-url",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "officialCareersPageUrl": "https://careers.intuitive.com/en/jobs",
+  "smartRecruitersCompanyIdentifier": "Intuitive",
+  "smartRecruitersListingApiUrl": "https://api.smartrecruiters.com/v1/companies/Intuitive/postings",
+  "smartRecruitersDetailApiUrlTemplate": "https://api.smartrecruiters.com/v1/companies/Intuitive/postings/{{jobId}}",
+  "verifiedSurfaceSummary": "Verified on July 25, 2026 that https://careers.intuitive.com/en/jobs is Intuitive Surgical, Inc.'s official careers site and its public SmartRecruiters tenant identifier is Intuitive. The provider accepts only PUBLIC India postings whose detail records retain that exact tenant identifier and whose application URLs remain on careers.intuitive.com; it fails closed if either contract changes."
+}

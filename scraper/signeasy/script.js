@@ -54,8 +54,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return title === 'careers at signeasy | signeasy'
     && text.includes('join our tribe')
-    && text.includes('at signeasy, we are on a mission')
-    && text.includes('apply now')
+    && (text.includes('apply now') || text.includes('apply here'))
     && text.includes('our principles')
     && text.includes('perks and benefits')
 }

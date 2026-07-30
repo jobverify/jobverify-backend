@@ -18,8 +18,19 @@ import {
   normalizeStoredLocations,
 } from '../../src/utils/jobLocations.js'
 import { buildJobSearchKeys } from '../../src/utils/jobSearchKeys.js'
+import { buildJobDerivedFields } from '../../src/utils/jobDerivedFields.js'
+import {
+  buildJobPostedAtCutoff,
+  normalizeLifecycleDate,
+  resolveJobMissesBeforeExpiry,
+  resolveJobPostedAt,
+  resolveJobRetentionDays,
+  startOfUtcDay,
+} from '../../src/utils/jobLifecycle.js'
 import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
-import { enqueueJobAlertsForJobs } from '../../src/services/jobAlertService.js'
+import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
+import { jobAlertService } from '../../src/services/jobAlertService.js'
+import { refreshJobDatasetSummary } from '../../src/services/jobDatasetSummaryService.js'
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') })
 
@@ -40,31 +51,7 @@ const ensureConnected = async () => {
   }
 }
 
-const parsePositiveInteger = (value, fallback) => {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
-
-const jobRetentionDays = () =>
-  parsePositiveInteger(process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS, 10)
-
-const startOfDay = (date) => {
-  const value = new Date(date)
-  value.setHours(0, 0, 0, 0)
-  return value
-}
-
-const daysAgoCutoff = (date, days) => {
-  const cutoff = startOfDay(date)
-  cutoff.setDate(cutoff.getDate() - days)
-  return cutoff
-}
-
-const normalizeDate = (value) => {
-  if (value == null) return null
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? null : date
-}
+const hasLiveDatabaseHandle = () => mongoose.connection.readyState === 1 && mongoose.connection.db != null
 
 /**
  * Generates a stable fingerprint for a job based on its semantic identity.
@@ -93,7 +80,7 @@ export const generateFingerprint = (job) => {
  * Saves an array of scraped jobs to MongoDB.
  *
  * - Upserts the latest scraped set for the scraper source first.
- * - Deletes stale jobs for that source only after the replacement write succeeds.
+ * - Soft-expires unseen jobs only after consecutive successful scraper misses.
  * - Keeps jobs with no posted date, because the scraper cannot prove they are stale.
  * - Drops scraped jobs whose posted date is older than the retention window.
  *
@@ -129,15 +116,19 @@ export const saveToDB = async (jobs, source, options = {}) => {
   await ensureConnected()
   const JobModel = await getJobModel()
 
-  const now = new Date()
-  const retentionDays = parsePositiveInteger(
+  const now = normalizeLifecycleDate(options.now) || new Date()
+  const retentionDays = resolveJobRetentionDays(
     options.retentionDays ?? process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS,
-    jobRetentionDays(),
   )
-  const postedAtCutoff = daysAgoCutoff(now, retentionDays)
+  const missesBeforeExpiry = resolveJobMissesBeforeExpiry(
+    options.missesBeforeExpiry ?? process.env.SCRAPER_JOB_MISSES_BEFORE_EXPIRY,
+  )
+  const postedAtCutoff = buildJobPostedAtCutoff(now, retentionDays)
+  const today = startOfUtcDay(now)
   const filterCounts = {
     nonIndia: 0,
     old: 0,
+    closed: 0,
     senior: 0,
     invalidUrl: 0,
   }
@@ -154,30 +145,46 @@ export const saveToDB = async (jobs, source, options = {}) => {
       filterCounts.invalidUrl++
       return false
     }
-    const postedAt = normalizeDate(job.postedAt)
-    if (postedAt && startOfDay(postedAt) < postedAtCutoff) {
+    const postedAt = resolveJobPostedAt(job)
+    if (postedAt && startOfUtcDay(postedAt) < postedAtCutoff) {
       filterCounts.old++
+      return false
+    }
+    const closingDate = normalizeLifecycleDate(job.closingDate)
+    if (closingDate && startOfUtcDay(closingDate) < today) {
+      filterCounts.closed++
       return false
     }
     return true
   })
 
-  const operations = eligibleJobs.map((job) => {
+  const jobsForPersistence = options.enrichPublicExperience === false
+    ? eligibleJobs
+    : await enrichJobsWithPublicExperience(eligibleJobs, {
+        fetchText: options.fetchText,
+        concurrency: options.experienceEnrichmentConcurrency,
+      })
+
+  const operations = jobsForPersistence.map((job) => {
     const normalizedJob = normalizeScrapedJob(job, { source })
     const fingerprint = generateFingerprint(normalizedJob)
     const sourceUrl = normalizeHttpUrl(normalizedJob.sourceUrl)
     const applyUrl = normalizeHttpUrl(normalizedJob.applyUrl) || sourceUrl
-    const postedAt = normalizeDate(normalizedJob.postingDate)
-    const closingDate = normalizeDate(normalizedJob.closingDate)
+    const postedAt = resolveJobPostedAt(normalizedJob)
+    const closingDate = normalizeLifecycleDate(normalizedJob.closingDate)
     const locations = normalizeStoredLocations(normalizedJob)
     const locationLabel = formatStoredLocationLabel(normalizedJob)
     const finalCity = getValidIndiaCityForJob(normalizedJob)
-    const searchKeys = buildJobSearchKeys({
+    const persistedJob = {
       ...normalizedJob,
       location: locationLabel || normalizedJob.location || null,
       locations,
       city: finalCity,
-    })
+      postedAt,
+      scrapedAt: normalizedJob.scrapedTimestamp || now,
+    }
+    const searchKeys = buildJobSearchKeys(persistedJob)
+    const derivedFields = buildJobDerivedFields(persistedJob)
 
     return {
       updateOne: {
@@ -199,6 +206,9 @@ export const saveToDB = async (jobs, source, options = {}) => {
             city: finalCity,
             cityKey: searchKeys.cityKey,
             locationKeys: searchKeys.locationKeys,
+            sortDate: derivedFields.sortDate,
+            isPublicIndia: derivedFields.isPublicIndia,
+            publicCityKey: derivedFields.publicCityKey,
             state: normalizedJob.state,
             country: normalizedJob.country,
             remoteStatus: normalizedJob.remoteStatus,
@@ -221,6 +231,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
             preferredSkillIds: normalizedJob.preferredSkillIds || [],
             jobSkills: normalizedJob.jobSkills || [],
             experienceBucket: normalizedJob.experienceBucket || 'unspecified',
+            experienceYears: normalizedJob.experienceYears || [],
             experienceProfile: normalizedJob.experienceProfile || {},
             seniority: normalizedJob.seniority || 'Unknown',
             primaryRoleDomain: normalizedJob.primaryRoleDomain || 'Other',
@@ -254,12 +265,14 @@ export const saveToDB = async (jobs, source, options = {}) => {
     deleted: 0,
     filteredNonIndia: filterCounts.nonIndia,
     filteredOld: filterCounts.old,
+    filteredClosed: filterCounts.closed,
     filteredSenior: filterCounts.senior,
     filteredInvalidUrl: filterCounts.invalidUrl,
     missed: 0,
     expired: 0,
     eligibleJobs: eligibleJobs.length,
     retentionDays,
+    missesBeforeExpiry,
     postedAtCutoff: postedAtCutoff.toISOString(),
     staleCheckSkipped: false,
     staleCheckReason: null,
@@ -287,22 +300,59 @@ export const saveToDB = async (jobs, source, options = {}) => {
         .lean()
         .exec()
 
-      enqueueJobAlertsForJobs(insertedJobs)
+      jobAlertService.enqueueJobAlertsForJobs(insertedJobs)
     }
   }
 
-  if (options.replaceExisting !== false && currentFingerprints.length === 0) {
+  let shouldRefreshDatasetSummary = operations.length > 0
+  const authoritativeEmpty = currentFingerprints.length === 0
+    && options.authoritativeEmpty === true
+
+  if (
+    options.replaceExisting !== false
+    && currentFingerprints.length === 0
+    && !authoritativeEmpty
+  ) {
     result.staleCheckSkipped = true
-    result.staleCheckReason = 'No eligible jobs survived filtering; preserved previous source jobs.'
-    return result
+    result.staleCheckReason =
+      'No eligible jobs survived filtering; previous source jobs were preserved without recording lifecycle misses.'
   }
 
-  if (options.replaceExisting !== false) {
-    const deleteFilter = options.replaceAllJobs
-      ? { fingerprint: { $nin: currentFingerprints } }
-      : { source, fingerprint: { $nin: currentFingerprints } }
-    const deleteResult = await JobModel.deleteMany(deleteFilter)
-    result.deleted = deleteResult.deletedCount ?? 0
+  if (
+    options.replaceExisting !== false
+    && (currentFingerprints.length > 0 || authoritativeEmpty)
+  ) {
+    const unseenFilter = options.replaceAllJobs
+      ? { status: 'active' }
+      : { source, status: 'active' }
+
+    if (currentFingerprints.length > 0) {
+      unseenFilter.fingerprint = { $nin: currentFingerprints }
+    }
+
+    const expireResult = await JobModel.updateMany(
+      {
+        ...unseenFilter,
+        missedScrapeCount: { $gte: missesBeforeExpiry - 1 },
+      },
+      {
+        $inc: { missedScrapeCount: 1 },
+        $set: { status: 'expired' },
+      },
+    ).exec()
+
+    const missResult = await JobModel.updateMany(
+      unseenFilter,
+      { $inc: { missedScrapeCount: 1 } },
+    ).exec()
+
+    result.expired = expireResult.modifiedCount ?? 0
+    result.missed = result.expired + (missResult.modifiedCount ?? 0)
+    shouldRefreshDatasetSummary = shouldRefreshDatasetSummary || result.expired > 0
+  }
+
+  if (shouldRefreshDatasetSummary && options.refreshDatasetSummary !== false && hasLiveDatabaseHandle()) {
+    await refreshJobDatasetSummary()
   }
 
   return result
@@ -322,7 +372,9 @@ export const deleteAllJobsFromDB = async () => {
  * @param {string}   filePath  Absolute path to the output JSON file
  */
 export const saveToFile = (jobs, filePath) => {
-  const indiaJobs = filterIndiaJobs(jobs)
+  const indiaJobs = filterIndiaJobs(jobs).map((job) => normalizeScrapedJob(job, {
+    source: job?.source || null,
+  }))
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
   fs.writeFileSync(filePath, JSON.stringify(indiaJobs, null, 2), 'utf-8')
 }

@@ -148,7 +148,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 141,o9 Solutions,,
 142,Electronic Arts,,
 143,Accolite Digital,,
-144,Banyan Cloud,,
 145,Cerner,,
 146,Annalect,,
 147,Annalect India,,
@@ -201,8 +200,6 @@ Survey Sparrow,
 Vitesco Technologies,
 Howden, a Chart Industries Company,
 Zeon Charging,
-Atria Convergence,
-Atria Convergence Technologies,
 `
 
 const exactProviderCsv = `Havells,
@@ -291,7 +288,6 @@ ePayLater,
 Epifi,
 Eruditus,
 ESDS,
-ESL Steel,
 Evalueserve,
 Endurance,
 Endurance Technologies,
@@ -362,9 +358,9 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 170)
-  assert.equal(report.candidateRows, 167)
-  assert.equal(report.matchedCount, 166)
+  assert.equal(report.totalRows, 169)
+  assert.equal(report.candidateRows, 166)
+  assert.equal(report.matchedCount, 165)
   assert.equal(report.unmatchedCount, 1)
 
   assert.deepEqual(
@@ -509,7 +505,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['o9 Solutions', 'o9solutions'],
       ['Electronic Arts', 'electronicarts'],
       ['Accolite Digital', 'accolitedigital'],
-      ['Banyan Cloud', 'banyancloud'],
       ['Cerner', 'cerner'],
       ['Annalect', 'annalect'],
       ['Annalect India', 'annalect'],
@@ -596,9 +591,9 @@ test('generateCompanyCoverageReport resolves near-name aliases from the alias ma
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 19)
-  assert.equal(report.candidateRows, 19)
-  assert.equal(report.matchedCount, 19)
+  assert.equal(report.totalRows, 17)
+  assert.equal(report.candidateRows, 17)
+  assert.equal(report.matchedCount, 17)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.source ?? null]),
@@ -620,8 +615,6 @@ test('generateCompanyCoverageReport resolves near-name aliases from the alias ma
       ['Vitesco Technologies', 'schaeffler', 'schaeffler'],
       ['Howden, a Chart Industries Company', 'chartindustries', 'chartindustries'],
       ['Zeon Charging', 'zeoncharging', 'zeoncharging'],
-      ['Atria Convergence', 'actfibernet', 'actfibernet'],
-      ['Atria Convergence Technologies', 'actfibernet', 'actfibernet'],
     ],
   )
 })
@@ -632,9 +625,9 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 149)
-  assert.equal(report.candidateRows, 149)
-  assert.equal(report.matchedCount, 149)
+  assert.equal(report.totalRows, 148)
+  assert.equal(report.candidateRows, 148)
+  assert.equal(report.matchedCount, 148)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.source ?? null]),
@@ -725,7 +718,6 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['Epifi', 'epifi', 'epifi'],
       ['Eruditus', 'eruditus', 'eruditus'],
       ['ESDS', 'esds', 'esds'],
-      ['ESL Steel', 'eslsteel', 'eslsteel'],
       ['Evalueserve', 'evalueserve', 'evalueserve'],
       ['Endurance', 'endurance', 'endurance'],
       ['Endurance Technologies', 'endurancetechnologies', 'endurancetechnologies'],

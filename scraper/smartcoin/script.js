@@ -87,10 +87,25 @@ export const hasOfficialCareersSignal = (html = '') => {
     && extractOfficialKekaHandoffUrl(html) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
+const hasLegacyOpaqueKekaShellSignal = (html = '') =>
+  /<title[^>]*>\s*careers\s*<\/title>/i.test(String(html ?? ''))
+
+const hasBootstrapOpaqueKekaShellSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /window\.isCareersPage\s*=\s*true/i.test(page)
+    && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex["']/i.test(page)
+    && /id=["']content-container["']/i.test(page)
+    && /careerportal\/[a-z0-9-]+\.html/i.test(page)
+}
+
 export const matchesVerifiedOpaqueKekaState = ({ status, url, html } = {}) =>
   Number(status) === 200
   && matchesExpectedUrl(url, OFFICIAL_CAREERS_HANDOFF_URL)
-  && /<title[^>]*>\s*careers\s*<\/title>/i.test(String(html ?? ''))
+  && (
+    hasLegacyOpaqueKekaShellSignal(html)
+    || hasBootstrapOpaqueKekaShellSignal(html)
+  )
   && !pageExposesPublicJobListings(html)
 
 export const createSmartCoinScraper = () => ({

@@ -19,6 +19,11 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK = HOMEPAGE_HTML.replaceAll(
+  'https://deepintent.com/careers',
+  '/careers',
+)
+
 const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -66,6 +71,16 @@ test('DeepIntent sentinel constants stay pinned to the verified homepage and car
   assert.equal(deepIntent.extractLikelyJobLinks(CAREERS_HTML).length, 0)
 })
 
+test('DeepIntent homepage sentinel accepts a relative first-party careers handoff', async () => {
+  const deepIntent = await loadDeepIntentModule()
+
+  assert.equal(deepIntent.hasOfficialHomepageSignal(HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK), true)
+  assert.equal(
+    deepIntent.extractCareersUrl(HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK),
+    deepIntent.CAREERS_URL,
+  )
+})
+
 test('DeepIntent sentinel returns [] only while the verified careers shell stays a no-public-jobs surface', async () => {
   const deepIntent = await loadDeepIntentModule()
   const requestedUrls = []
@@ -87,6 +102,26 @@ test('DeepIntent sentinel returns [] only while the verified careers shell stays
   })
 
   assert.deepEqual(requestedUrls, [deepIntent.HOMEPAGE_URL, deepIntent.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('DeepIntent sentinel returns [] when the verified homepage uses a relative careers handoff', async () => {
+  const deepIntent = await loadDeepIntentModule()
+
+  const jobs = await deepIntent.createDeepIntentScraper().run({
+    fetchPage: async (url) => {
+      if (url === deepIntent.HOMEPAGE_URL) {
+        return { status: 200, url, html: HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK }
+      }
+
+      if (url === deepIntent.CAREERS_URL) {
+        return { status: 200, url, html: CAREERS_HTML }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

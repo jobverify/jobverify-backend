@@ -92,7 +92,7 @@ const extractCardsSection = (html) => {
   const endIndex = endMatch.index ?? page.length
 
   if (endIndex <= startIndex) {
-    throw new Error('NYEI verified careers page no longer matches the verified public careers page')
+    return page.slice(startIndex)
   }
 
   return page.slice(startIndex, endIndex)

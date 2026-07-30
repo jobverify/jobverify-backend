@@ -118,6 +118,37 @@ test('Airtel Digital returns no jobs while the only trustworthy public surface i
   assert.deepEqual(jobs, [])
 })
 
+test('Airtel Digital can recover with browser-backed shared Airtel surfaces when direct requests fail', async () => {
+  const airtelDigital = await loadAirtelDigitalModule()
+  const attempts = []
+
+  const jobs = await airtelDigital.createAirtelDigitalScraper().run({
+    fetchText: async (url) => {
+      attempts.push(`http:${url}`)
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      attempts.push(`browser:${url}`)
+
+      if (url === airtelDigital.CAREERS_URL) return careersShellHtml
+      if (url === 'https://careers.airtel.com/static/js/main.57023176.js') return verifiedBundleText
+      if (url === airtelDigital.SHARED_DARWINBOX_URL) return darwinboxShellHtml
+
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(attempts, [
+    `http:${airtelDigital.CAREERS_URL}`,
+    `browser:${airtelDigital.CAREERS_URL}`,
+    'http:https://careers.airtel.com/static/js/main.57023176.js',
+    'browser:https://careers.airtel.com/static/js/main.57023176.js',
+    `http:${airtelDigital.SHARED_DARWINBOX_URL}`,
+    `browser:${airtelDigital.SHARED_DARWINBOX_URL}`,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
 test('Airtel Digital fails closed when the shared Airtel surface drifts or becomes distinct', async () => {
   const airtelDigital = await loadAirtelDigitalModule()
 

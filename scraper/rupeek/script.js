@@ -98,12 +98,19 @@ const isIndiaLocation = (location) => {
 export const hasOfficialRupeekCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const title = extractTitle(page)
+  const text = normalizeWhitespace(page) || ''
+  const hasLegacyContentSignals = /Why join Us/i.test(text)
+    && /Engineering at Rupeek/i.test(text)
+    && /Open Positions/i.test(text)
+  const hasCurrentValueSignals = text.includes('Excellent Growth')
+    && text.includes('Wealth creation')
+    && text.includes('Work that matters')
+    && text.includes('Passionate, Energetic People')
+    && text.includes('Innovation')
 
   return title === 'Join our team | Rupeek | Careers'
     && new RegExp(`href=["']${OFFICIAL_CAREERS_CANONICAL_URL}["']`, 'i').test(page)
-    && /Why join Us/i.test(page)
-    && /Engineering at Rupeek/i.test(page)
-    && /Open Positions/i.test(page)
+    && (hasLegacyContentSignals || hasCurrentValueSignals)
     && /https:\/\/www\.linkedin\.com\/jobs\/view\//i.test(page)
 }
 

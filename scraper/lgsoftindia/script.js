@@ -60,10 +60,20 @@ export const hasOfficialHomepageSignal = (html = '') => {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return extractTitle(page) === 'LG Soft India Private Limited'
-    && /<base href="\/ms\/candidate\/">/i.test(page)
-    && /<app-root\b/i.test(page)
-    && /\/ms\/bot\/candidateweb\/assets\/bot\.js/i.test(page)
+  return (
+    (
+      extractTitle(page) === 'LG Soft India Private Limited'
+      && /<base href="\/ms\/candidate\/">/i.test(page)
+      && /<app-root\b/i.test(page)
+      && /\/ms\/bot\/candidateweb\/assets\/bot\.js/i.test(page)
+    )
+    || (
+      /<base href="\/ms\/candidatev2\/">/i.test(page)
+      && /<app-root\b/i.test(page)
+      && /db-components\.esm\.js/i.test(page)
+      && /https:\/\/challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/i.test(page)
+    )
+  )
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

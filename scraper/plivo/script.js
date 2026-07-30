@@ -15,7 +15,7 @@ export const OFFICIAL_BRAND_NAME = PLIVO_CATALOG.officialBrandName
 export const HOMEPAGE_URL = PLIVO_CATALOG.homepageUrl
 export const CAREERS_URL = PLIVO_CATALOG.companyCareerPage
 export const LEVER_BOARD_URL = PLIVO_CATALOG.officialLeverBoardUrl
-export const LEVER_API_URL = PLIVO_CATALOG.leverApiUrl
+export const LEVER_API_URL = 'https://api.lever.co/v0/postings/plivo?mode=json'
 export const VERIFIED_ON = PLIVO_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PLIVO_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = PLIVO_CATALOG
@@ -121,12 +121,21 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const text = normalizeText(rawHtml)
 
-  return extractTitle(rawHtml) === 'Plivo'
-    && /Job openings at Plivo/i.test(rawHtml)
-    && text.includes('location type')
+  const hasVerifiedTitle = extractTitle(rawHtml) === 'Plivo'
+  const hasVerifiedBranding = /Job openings at Plivo/i.test(rawHtml)
+  const hasLegacyLayout = text.includes('location type')
     && text.includes('team')
     && text.includes('work type')
-  }
+  const hasCurrentEmptyLayout = hasEmptyLeverBoardSignal(rawHtml)
+    && text.includes('plivo home page')
+    && text.includes('privacy notice')
+    && text.includes('artificial intelligence (ai) tools')
+    && text.includes('jobs powered by')
+
+  return hasVerifiedTitle
+    && hasVerifiedBranding
+    && (hasLegacyLayout || hasCurrentEmptyLayout)
+}
 
 export const hasEmptyLeverBoardSignal = (html = '') =>
   /No job postings currently open\.\s*Check back later!/i.test(String(html ?? ''))

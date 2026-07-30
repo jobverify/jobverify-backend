@@ -25,6 +25,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 const stripTags = (value) => normalizeWhitespace(String(value ?? ''))
+const hasCareersLink = (html) =>
+  /href=["'](?:https:\/\/manastuspace\.com)?\/careers\/?["']/i.test(String(html ?? ''))
 
 const slugify = (value) => stripTags(value)
   .toLowerCase()
@@ -38,7 +40,7 @@ export const hasOfficialHomepageSignal = (html) => {
   return /manastu space/i.test(text)
     && /green propulsion/i.test(text)
     && /debris collision avoidance/i.test(text)
-    && /href=["']https:\/\/manastuspace\.com\/careers["']/i.test(page)
+    && hasCareersLink(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -54,6 +56,7 @@ export const hasOfficialCareersSignal = (html) => {
 const SECTION_PATTERN = /<section\b[^>]*>([\s\S]*?)<\/section>/gi
 const HEADING_PATTERN = /<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i
 const JOB_LINK_PATTERN = /mailto:careers@manastuspace\.com/i
+const OPEN_ROLE_CARD_PATTERN = /class="heading-style-h5[^"]*">([\s\S]*?)<\/div>[\s\S]*?class="text-size-small text-weight-medium text-size">([\s\S]*?)<\/div>[\s\S]*?class="text-size-small text-weight-medium">([\s\S]*?)<\/div>[\s\S]*?href="(mailto:careers@manastuspace\.com[^"]*)"/gi
 
 const parseLocation = (value) => {
   const normalized = stripTags(value)
@@ -66,6 +69,10 @@ const parseLocation = (value) => {
       state: 'Maharashtra',
       country: 'India',
     }
+  }
+
+  if (normalized.length > 120) {
+    return { location: null, city: null, state: null, country: null }
   }
 
   return {
@@ -94,12 +101,63 @@ const extractApplyUrl = (sectionHtml, title) => {
   return CAREERS_URL
 }
 
+const buildJob = ({
+  title,
+  location,
+  employmentType,
+  applyUrl,
+}) => ({
+  title,
+  company: COMPANY,
+  ...location,
+  jobId: `manastuspace-${slugify(title)}-${slugify(location.city || location.location)}`,
+  requisitionId: null,
+  sourceUrl: CAREERS_URL,
+  applyUrl,
+  department: null,
+  employmentType,
+  experienceRequired: null,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  postingDate: null,
+  closingDate: null,
+  jobDescription: null,
+})
+
+const extractOpenRoleCardJobs = (html) => {
+  const page = String(html ?? '')
+  const jobs = []
+
+  for (const match of page.matchAll(OPEN_ROLE_CARD_PATTERN)) {
+    const title = stripTags(match[1])
+    const employmentType = /full\s*time/i.test(stripTags(match[2])) ? 'Full-time' : null
+    const location = parseLocation(match[3])
+
+    if (!title || !location.location) continue
+
+    jobs.push(buildJob({
+      title,
+      location,
+      employmentType,
+      applyUrl: `mailto:careers@manastuspace.com?subject=${encodeURIComponent(title)}`,
+    }))
+  }
+
+  return jobs
+}
+
 export const extractPublicJobs = (html) => {
   if (!hasOfficialCareersSignal(html)) {
     throw new Error('Manastu Space verified first-party careers page no longer matches the known public surface')
   }
 
   const page = String(html ?? '')
+  const cardJobs = extractOpenRoleCardJobs(page)
+  if (cardJobs.length > 0) {
+    return cardJobs.sort((left, right) => left.title.localeCompare(right.title))
+  }
+
   const jobs = []
 
   for (const match of page.matchAll(SECTION_PATTERN)) {
@@ -115,24 +173,12 @@ export const extractPublicJobs = (html) => {
 
     const applyUrl = extractApplyUrl(sectionHtml, title)
 
-    jobs.push({
+    jobs.push(buildJob({
       title,
-      company: COMPANY,
-      ...location,
-      jobId: `manastuspace-${slugify(title)}-${slugify(location.city || location.location)}`,
-      requisitionId: null,
-      sourceUrl: CAREERS_URL,
-      applyUrl,
-      department: null,
+      location,
       employmentType,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-    })
+      applyUrl,
+    }))
   }
 
   if (jobs.length === 0) {

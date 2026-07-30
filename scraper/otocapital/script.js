@@ -38,6 +38,21 @@ const EXPECTED_SITEMAP_ROUTES = [
   'https://www.otocapital.in/lending-partners',
 ]
 
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&#x27;|&apos;|&rsquo;|&lsquo;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const extractTitle = (html) =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null)
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -57,13 +72,15 @@ const normalizeUrl = (value) => String(value ?? '').replace(/\/+$/, '') || null
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+  const title = extractTitle(page)
 
-  return /<title>\s*Buy Bikes, Scooters, Electric Scooters In India - OTO\s*<\/title>/i.test(page)
-    && /India's No 1 platform for Bike & Scooter Loans/i.test(page)
-    && /FREQUENTLY ASKED QUESTIONS/i.test(page)
-    && /What is OTO\?/i.test(page)
-    && /OTO Capital also provides/i.test(page)
-    && /22\+ cities across India/i.test(page)
+  return title === 'Buy Bikes, Scooters, Electric Scooters In India - OTO'
+    && /India's No 1 platform for Bike & Scooter Loans/i.test(normalized)
+    && /FREQUENTLY ASKED QUESTIONS/i.test(normalized)
+    && /What is OTO\?/i.test(normalized)
+    && /OTO Capital also provides/i.test(normalized)
+    && /22\+ cities across India/i.test(normalized)
 }
 
 const extractSitemapLocs = (xml) =>
@@ -85,12 +102,13 @@ const sitemapIncludesExpectedCoreRoutes = (xml) => {
 }
 
 export const hasVerifiedNotFoundSignal = (html) => {
-  const page = String(html ?? '')
+  const title = extractTitle(html)
+  const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*OTO Capital - Not Found\s*<\/title>/i.test(page)
-    && /Visit OTO Capital/i.test(page)
-    && /Explore new bikes/i.test(page)
-    && /Explore bike plans/i.test(page)
+  return title === 'OTO Capital - Not Found'
+    && /Visit OTO Capital/i.test(normalized)
+    && /Explore new bikes/i.test(normalized)
+    && /Explore bike plans/i.test(normalized)
 }
 
 export const hasPublicJobsSignal = (html) =>

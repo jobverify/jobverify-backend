@@ -186,6 +186,21 @@ test('extractFountainApiJobs keeps and normalizes public Fountain API India open
   ])
 })
 
+test('extractFountainApiJobs does not mistake a role prefix for an India city', () => {
+  const [job] = extractFountainApiJobs({
+    openings: [{
+      id: 'role-without-city',
+      title: 'Assistant Manager - Operations',
+      location: 'Karnataka',
+      apply_url: 'https://ap-1.fountain.com/cms/apply/assistant-manager-operations',
+    }],
+    current_city: 'Chennai',
+  })
+
+  assert.equal(job.city, null)
+  assert.equal(job.location, 'Karnataka, India')
+})
+
 test('run validates CMS before loading the public Fountain openings API and adds scraper metadata', async () => {
   const events = []
   const scraper = createCmsComputersScraper({ maxJobs: 1 })

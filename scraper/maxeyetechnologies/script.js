@@ -19,6 +19,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const hasContactRoute = (html) =>
+  /href=["'](?:https:\/\/maxeye\.com)?\/contact\/["']/i.test(String(html ?? ''))
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -36,8 +39,8 @@ const defaultFetchText = async (url) => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = normalizeWhitespace(html)
-  return /Professional and Reliable Active Stylus Solution Provider/i.test(page)
-    && /maxeye\.com\/contact\//i.test(page)
+  return /Professional and Reliable Active Stylus (?:Solution )?Provider/i.test(page)
+    && hasContactRoute(html)
     && /Maxeye/i.test(page)
 }
 

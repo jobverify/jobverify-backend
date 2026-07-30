@@ -1,4 +1,5 @@
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { resolveJobPostedAt } from '../../src/utils/jobLifecycle.js'
 
 const normalizeString = (value) => {
   if (value == null) return null
@@ -109,7 +110,6 @@ const SKILL_NAME_FILTER_SOURCES = new Set([
   'acciojob',
   'americanchase',
   'arisinfra',
-  'banyancloud',
   'bhanzu',
   'c3ihub',
   'cloudthat',
@@ -547,6 +547,19 @@ const normalizeDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
+export const inferMissingExperienceRequired = (job = {}, experienceRequired, experienceProfile = {}) => {
+  const explicitExperience = normalizeString(experienceRequired)
+  if (explicitExperience) return explicitExperience
+
+  if (job.jobType === 'Internship' || job.employmentType === 'Internship') {
+    return 'No experience required'
+  }
+
+  return experienceProfile.confidence === 'high'
+    ? normalizeString(experienceProfile.evidence)
+    : null
+}
+
 export const normalizeScrapedJob = (job = {}, provider = {}) => {
   const originalTitle = normalizeString(job.originalTitle || job.title)
   const normalizedTitle = normalizeTitle(originalTitle)
@@ -583,7 +596,7 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     salary: normalizeString(job.salary),
     jobId: normalizeString(job.jobId),
     requisitionId: normalizeString(job.requisitionId || job.reqId),
-    postingDate: normalizeDate(job.postingDate || job.postedAt),
+    postingDate: resolveJobPostedAt(job),
     closingDate: normalizeDate(job.closingDate),
     applyUrl,
     sourceUrl: sourceUrl || applyUrl,
@@ -593,8 +606,14 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     scrapedTimestamp: normalizeDate(job.scrapedTimestamp || job.scrapedAt) || new Date(),
   }
 
+  const signals = extractJobFilterSignals(normalizedJob)
   return {
     ...normalizedJob,
-    ...extractJobFilterSignals(normalizedJob),
+    experienceRequired: inferMissingExperienceRequired(
+      normalizedJob,
+      normalizedJob.experienceRequired,
+      signals.experienceProfile,
+    ),
+    ...signals,
   }
 }

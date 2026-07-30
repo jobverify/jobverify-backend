@@ -10,7 +10,8 @@ const careersHtml = `
   <body>
     <main>
       <h1>Join the mix</h1>
-      <p>Make an impact.</p>
+      <p>Think you are the magic ingredient?</p>
+      <a href="mailto:careers@licious.com">careers@licious.com</a>
       <a href="https://licious.darwinbox.in/ms/candidate/careers">Open Roles</a>
     </main>
   </body>

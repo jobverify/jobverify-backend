@@ -32,6 +32,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
+  .replace(/Â©|©/g, 'Â©')
+  .replace(/(\d{4})\s+\./g, '$1.')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -76,6 +78,15 @@ export const extractWorkWithUsUrl = (html = '') => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
+
+  if (
+    normalized.includes('Godrej Properties')
+    && normalized.includes('Crafting spaces that spark joy, one community, one family, one home at a time.')
+    && /Copyright\s*(?:Â©|©|&copy;)?\s*2026\s*\.?\s*Godrej Properties/i.test(normalized)
+    && extractWorkWithUsUrl(html) === SHARED_CAREERS_URL
+  ) {
+    return true
+  }
 
   return normalized.includes('Godrej Properties')
     && normalized.includes('Crafting spaces that spark joy, one community, one family, one home at a time.')

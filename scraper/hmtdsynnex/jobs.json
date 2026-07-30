@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at TD SYNNEX",
+    "company": "TD SYNNEX",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-development",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-development",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-development",
+    "source": "hmtdsynnex",
+    "jobId": "hmtdsynnex-current-openings",
+    "requisitionId": "hmtdsynnex-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "TD SYNNEX had current Himalayas hiring evidence for Developer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:12.612Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
+    "companyDomain": "himalayas.app"
+  }
+]

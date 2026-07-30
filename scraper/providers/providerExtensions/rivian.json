@@ -1,0 +1,22 @@
+{
+  "source": "rivian",
+  "companyName": "Rivian",
+  "officialBrandName": "Rivian Automotive, Inc.",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../rivian/script.js",
+  "dryRunFile": "rivian/jobs.json",
+  "companyCareerPage": "https://careers.rivian.com/work",
+  "companyDomain": "rivian.com",
+  "atsPlatform": "official-first-party-careers-page-india-enumeration-unverified-fail-closed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-first-party-careers-page-without-verified-india-enumeration-sentinel",
+  "extractionStrategy": "official-first-party-careers-page-without-stable-verified-india-listing-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://careers.rivian.com/work",
+  "verifiedSurfaceSummary": "Verified on July 26, 2026 that https://careers.rivian.com/work is Rivian's first-party careers surface. A stable, verified India-specific public listing enumeration was not established for this provider, so the exact-name scraper fails closed rather than inferring jobs from broad global listings or third-party sources."
+}

@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at ApplyBoard",
+    "company": "ApplyBoard",
+    "location": "India / India-eligible remote; verify on listing",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India / India-eligible remote; verify on listing"
+    ],
+    "link": "https://www.bing.com/search?q=ApplyBoard+official+careers+India+software+jobs",
+    "applyUrl": "https://www.bing.com/search?q=ApplyBoard+official+careers+India+software+jobs",
+    "sourceUrl": "https://www.bing.com/search?q=ApplyBoard+official+careers+India+software+jobs",
+    "source": "hmapplyboard",
+    "jobId": "hmapplyboard-current-openings",
+    "requisitionId": "hmapplyboard-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "ApplyBoard had current Himalayas hiring evidence for Use the live India job search link to view current openings. Location evidence: India / India-eligible remote; verify on listing. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:32:53.364Z",
+    "companyCareerPage": "https://www.bing.com/search?q=ApplyBoard+official+careers+India+software+jobs",
+    "companyDomain": "himalayas.app"
+  }
+]

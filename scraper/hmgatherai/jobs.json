@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Gather AI",
+    "company": "Gather AI",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "source": "hmgatherai",
+    "jobId": "hmgatherai-current-openings",
+    "requisitionId": "hmgatherai-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Gather AI had current Himalayas hiring evidence for Data Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:29:54.415Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

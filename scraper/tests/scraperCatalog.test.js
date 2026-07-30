@@ -37,7 +37,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   const inmobi = catalog.find((provider) => provider.source === 'inmobi')
   const intel = catalog.find((provider) => provider.source === 'intel')
   const intuit = catalog.find((provider) => provider.source === 'intuit')
-  const jio = catalog.find((provider) => provider.source === 'jio')
   const kpmg = catalog.find((provider) => provider.source === 'kpmg')
   const ltimindtree = catalog.find((provider) => provider.source === 'ltimindtree')
   const lenovo = catalog.find((provider) => provider.source === 'lenovo')
@@ -57,7 +56,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   const google = catalog.find((provider) => provider.source === 'google')
   const cgi = catalog.find((provider) => provider.source === 'cgi')
   const hcltech = catalog.find((provider) => provider.source === 'hcltech')
-  const mahindra = catalog.find((provider) => provider.source === 'mahindra')
   const mphasis = catalog.find((provider) => provider.source === 'mphasis')
   const nokia = catalog.find((provider) => provider.source === 'nokia')
   const questglobal = catalog.find((provider) => provider.source === 'questglobal')
@@ -271,12 +269,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(intuit.companyCareerPage, /jobs\.intuit\.com\/location\/india-jobs\/27595\/1269750\/2/i)
   assert.equal(intuit.companyDomain, 'jobs.intuit.com')
 
-  assert.ok(jio)
-  assert.equal(jio.adapter, 'script')
-  assert.equal(jio.atsPlatform, 'official-company-careers')
-  assert.match(jio.companyCareerPage, /careers\.jio\.com/i)
-  assert.equal(jio.companyDomain, 'careers.jio.com')
-
   assert.ok(kpmg)
   assert.equal(kpmg.adapter, 'script')
   assert.equal(kpmg.atsPlatform, 'oracle-cloud')
@@ -320,12 +312,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.equal(motorolasolutions.atsPlatform, 'workday')
   assert.match(motorolasolutions.companyCareerPage, /careers\.motorolasolutions\.com/i)
   assert.equal(motorolasolutions.companyDomain, 'careers.motorolasolutions.com')
-
-  assert.ok(mahindra)
-  assert.equal(mahindra.adapter, 'script')
-  assert.equal(mahindra.atsPlatform, 'successfactors')
-  assert.match(mahindra.companyCareerPage, /jobs\.mahindracareers\.com/i)
-  assert.equal(mahindra.companyDomain, 'jobs.mahindracareers.com')
 
   assert.ok(mphasis)
   assert.equal(mphasis.adapter, 'script')
@@ -538,7 +524,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   const inmobi = scrapers.find((scraper) => scraper.name === 'inmobi')
   const intel = scrapers.find((scraper) => scraper.name === 'intel')
   const intuit = scrapers.find((scraper) => scraper.name === 'intuit')
-  const jio = scrapers.find((scraper) => scraper.name === 'jio')
   const kpmg = scrapers.find((scraper) => scraper.name === 'kpmg')
   const ltimindtree = scrapers.find((scraper) => scraper.name === 'ltimindtree')
   const lenovo = scrapers.find((scraper) => scraper.name === 'lenovo')
@@ -570,7 +555,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   const mastercard = scrapers.find((scraper) => scraper.name === 'mastercard')
   const meta = scrapers.find((scraper) => scraper.name === 'meta')
   const motorolasolutions = scrapers.find((scraper) => scraper.name === 'motorolasolutions')
-  const mahindra = scrapers.find((scraper) => scraper.name === 'mahindra')
   const mphasis = scrapers.find((scraper) => scraper.name === 'mphasis')
   const nokia = scrapers.find((scraper) => scraper.name === 'nokia')
   const nvidia = scrapers.find((scraper) => scraper.name === 'nvidia')
@@ -650,12 +634,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(intuit.provider.source, 'intuit')
   assert.equal(intuit.provider.atsPlatform, 'avature')
   assert.match(intuit.provider.companyCareerPage, /jobs\.intuit\.com\/location\/india-jobs\/27595\/1269750\/2/i)
-
-  assert.ok(jio)
-  assert.equal(typeof jio.run, 'function')
-  assert.match(jio.dryRunFile, /jio[\\/]jobs\.json$/)
-  assert.equal(jio.provider.source, 'jio')
-  assert.equal(jio.provider.atsPlatform, 'official-company-careers')
 
   assert.ok(kpmg)
   assert.equal(typeof kpmg.run, 'function')
@@ -840,12 +818,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.match(motorolasolutions.dryRunFile, /myworkday[\\/]motorolasolutions[\\/]jobs\.json$/)
   assert.equal(motorolasolutions.provider.source, 'motorolasolutions')
   assert.equal(motorolasolutions.provider.companyDomain, 'careers.motorolasolutions.com')
-
-  assert.ok(mahindra)
-  assert.equal(typeof mahindra.run, 'function')
-  assert.match(mahindra.dryRunFile, /mahindra[\\/]jobs\.json$/)
-  assert.equal(mahindra.provider.source, 'mahindra')
-  assert.equal(mahindra.provider.atsPlatform, 'successfactors')
 
   assert.ok(mphasis)
   assert.equal(typeof mphasis.run, 'function')

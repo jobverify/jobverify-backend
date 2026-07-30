@@ -61,6 +61,50 @@ const pubmaticJobsHtml = `
 </html>
 `
 
+const currentPubmaticJobsHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <div class="search-bar">
+      <form id="job-search-form">
+        <select id="job-location">
+          <option value="all">All Locations</option>
+          <option value="Pune, IN">Pune, IN</option>
+          <option value="Gurugram, IN">Gurugram, IN</option>
+        </select>
+        <div class="actions">
+          <a href="https://pubmatic.com/careers/job-search-engineering/">View Engineering Jobs</a>
+        </div>
+      </form>
+    </div>
+    <div class="container postings-results">
+      <h4 class="postings-count">66 open positions</h4>
+      <hr>
+      <h4 class="location-name">Gurugram, IN</h4>
+      <div class="postings">
+        <div class="postings-left">
+          <a href="/job/?gh_jid=5348226008" class="posting">Customer Success Operations Manager - Spanish Language Expert</a>
+        </div>
+        <div class="postings-right">
+          <a href="/job/?gh_jid=5282036008" class="posting">Senior Performance Advertising Engineer</a>
+        </div>
+      </div>
+      <hr>
+      <h4 class="location-name">Pune, IN</h4>
+      <div class="postings">
+        <div class="postings-left">
+          <a href="/job/?gh_jid=5166449008" class="posting">Principal Software Engineer - Data Analytics</a>
+          <a href="/job/?gh_jid=5121514008" class="posting">Senior Machine Learning Engineer</a>
+        </div>
+        <div class="postings-right">
+          <a href="/job/?gh_jid=5368771008" class="posting">Senior Software Engineer - Java API</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
 const juegoStudioCareersHtml = `
 <!doctype html>
 <html lang="en">
@@ -210,6 +254,35 @@ test('PubMatic scraper returns normalized India jobs from the verified first-par
         country: 'India',
         applyUrl: 'https://pubmatic.com/careers/job/senior-performance-advertising-engineer/',
         scrapedAt: FIXED_SCRAPED_AT,
+      },
+    ],
+  )
+})
+
+test('PubMatic scraper accepts the current grouped postings layout and updated job count', async () => {
+  const pubmatic = await loadModule('../pubmatic/script.js')
+
+  assert.equal(pubmatic.hasOfficialJobsSignal(currentPubmaticJobsHtml), true)
+  assert.deepEqual(
+    pubmatic.extractLocationGroups(currentPubmaticJobsHtml).map((group) => ({
+      location: group.location,
+      titles: group.jobs.map((job) => job.title),
+    })),
+    [
+      {
+        location: 'Gurugram, IN',
+        titles: [
+          'Customer Success Operations Manager - Spanish Language Expert',
+          'Senior Performance Advertising Engineer',
+        ],
+      },
+      {
+        location: 'Pune, IN',
+        titles: [
+          'Principal Software Engineer - Data Analytics',
+          'Senior Machine Learning Engineer',
+          'Senior Software Engineer - Java API',
+        ],
       },
     ],
   )

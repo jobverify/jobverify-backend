@@ -7,7 +7,6 @@ import { getScraperCatalog } from '../providers/index.js'
 const aliasBacklogCsv = `Robert Bosch,
 L&T Technology Services,
 L&T Infotech Ltd (LTI),
-Jio Platforms,
 TCS Atlas,
 TCS Design,
 TCS Digital,
@@ -25,9 +24,9 @@ test('company alias backlog resolves high-confidence brand and legacy names to e
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 13)
-  assert.equal(report.candidateRows, 13)
-  assert.equal(report.matchedCount, 13)
+  assert.equal(report.totalRows, 12)
+  assert.equal(report.candidateRows, 12)
+  assert.equal(report.matchedCount, 12)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source]),
@@ -35,7 +34,6 @@ test('company alias backlog resolves high-confidence brand and legacy names to e
       ['Robert Bosch', 'boschglobalsoftwaretechnologies'],
       ['L&T Technology Services', 'ltts'],
       ['L&T Infotech Ltd (LTI)', 'ltimindtree'],
-      ['Jio Platforms', 'jio'],
       ['TCS Atlas', 'tcs'],
       ['TCS Design', 'tcs'],
       ['TCS Digital', 'tcs'],

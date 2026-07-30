@@ -5,13 +5,13 @@ const OFFICIAL_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers - The product lifecycle management platform</title>
+    <title>Careers &#8211; The product lifecycle management platform</title>
   </head>
   <body>
     <main>
-      <h1>Make Great Things Happen. Join Servify.</h1>
+      <h1>Make Great Things Happen. <span>Join Servify.</span></h1>
       <p>Present across 3 continents, Servify has a diverse workforce and are committed to building a workspace that promotes growth, both personally & professionally.</p>
-      <h2>Apply now and shape your future</h2>
+      <h2>Apply now and <span>shape your future</span></h2>
       <p>Share your eye-catching application to careers@servify.com</p>
     </main>
   </body>

@@ -24,6 +24,12 @@ const departmentsPayload = [
   { departmentIdentifier: 'sales', departmentName: 'Sales' },
 ]
 
+const liveDepartmentsPayload = [
+  { identifier: 'application-support', name: 'Application Support' },
+  { identifier: 'engineering', name: 'Engineering' },
+  { identifier: 'sales', name: 'Sales' },
+]
+
 const activeJobsPayload = [
   {
     id: 134349,
@@ -132,6 +138,7 @@ test('LambdaTest pins the verified first-party careers shell and JSON API helper
     false,
   )
   assert.equal(lambdaTest.hasExpectedDepartmentPayload(departmentsPayload), true)
+  assert.equal(lambdaTest.hasExpectedDepartmentPayload(liveDepartmentsPayload), true)
   assert.equal(lambdaTest.hasExpectedDepartmentPayload([{ departmentName: 'Support' }]), false)
 })
 

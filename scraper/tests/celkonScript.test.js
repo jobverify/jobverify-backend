@@ -33,6 +33,20 @@ const aboutHtml = `
 </html>
 `
 
+const currentAboutHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About Us &#8211; Celkon Group</title>
+  </head>
+  <body>
+    <h1>Why we are the best</h1>
+    <p>At Celkon Group, we combine innovation, engineering excellence, and large-scale manufacturing to deliver world-class electronic solutions for India’s growing digital ecosystem.</p>
+    <p>Today, Celkon stands as the No.1 supplier of Mobile Phones, Tablets, and Interactive Flat Panel Displays for Government initiatives in India.</p>
+  </body>
+</html>
+`
+
 const contactHtml = `
 <!doctype html>
 <html lang="en">
@@ -83,7 +97,6 @@ const loadCelkonModule = async () => {
 
 test('Celkon sentinel pins the verified first-party no-public-careers surface from July 14, 2026', async () => {
   const celkon = await loadCelkonModule()
-  const currentAboutHtml = aboutHtml.replace('About Us - Celkon Group', 'About Us &#8211; Celkon Group')
   const currentContactHtml = contactHtml.replace('Contacts - Celkon Group', 'Contacts &#8211; Celkon Group')
 
   assert.equal(celkon.SOURCE, 'celkon')

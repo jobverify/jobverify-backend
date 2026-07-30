@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at ConverseNow.ai",
+    "company": "ConverseNow.ai",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "source": "hmconversenowai",
+    "jobId": "hmconversenowai-current-openings",
+    "requisitionId": "hmconversenowai-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "ConverseNow.ai had current Himalayas hiring evidence for Backend / AI Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:27:58.886Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

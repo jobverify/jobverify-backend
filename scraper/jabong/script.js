@@ -72,9 +72,13 @@ export const pageExposesPublicJobListings = (html = '') =>
 
 export const hasVerifiedBrokenParentShellSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
-
-  return normalized.includes('Oops! Something went wrong')
+  const hasBrokenShell = normalized.includes('Oops! Something went wrong')
     && normalized.includes('Please contact your administrator')
+  const hasCurrentMyntraHomepageShell = normalized.includes('Online Shopping for Women, Men, Kids Fashion & Lifestyle - Myntra')
+    && normalized.includes('Topwear')
+    && normalized.includes('Indian & Festive Wear')
+
+  return (hasBrokenShell || hasCurrentMyntraHomepageShell)
     && !pageExposesPublicJobListings(html)
 }
 

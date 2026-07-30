@@ -8,15 +8,16 @@ import test from 'node:test'
 import mongoose from 'mongoose'
 
 import Job from '../src/models/Job.js'
+import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
 import { ACCESS_ROLES, PLAN_IDS } from '../src/constants/accessPlans.js'
 import {
+  JOB_LIST_CARD_PROJECTION,
   getAllJobs,
   getJobById,
   getJobMeta,
   getJobStats,
 } from '../src/controllers/jobController.js'
 import {
-  applyPublicJobLocationScope,
   buildPublicJobLocationScope,
   getValidIndiaCityForJob,
   isJobInPublicLocationScope,
@@ -40,6 +41,103 @@ const createResponseDouble = () => ({
     return this
   },
 })
+
+const createAggregateExecStub = (handler) => (pipeline) => ({
+  exec: async () => handler(pipeline),
+})
+
+const createSummaryFindOneStub = (summary) => () => ({
+  lean() {
+    return this
+  },
+  exec: async () => summary,
+})
+
+const stripPublishedDateScope = (scope = {}) => {
+  const { $expr, ...remainingScope } = scope
+  return remainingScope
+}
+
+const assertHasPublishedDateScope = (scope) => {
+  const [
+    postedLowerBound,
+    postedUpperBound,
+    closingLowerBound,
+    lastSeenLowerBound,
+  ] = scope?.$expr?.$and ?? []
+  const postedCutoff = postedLowerBound?.$gte?.[1]
+  const postedCutoffFallback = postedLowerBound?.$gte?.[0]?.$ifNull?.[1]
+  const now = postedUpperBound?.$lte?.[1]
+  const nowFallback = postedUpperBound?.$lte?.[0]?.$ifNull?.[1]
+  const today = closingLowerBound?.$gte?.[1]
+  const todayFallback = closingLowerBound?.$gte?.[0]?.$ifNull?.[1]
+  const lastSeenCutoff = lastSeenLowerBound?.$gte?.[1]
+  const lastSeenCutoffFallback = lastSeenLowerBound?.$gte?.[0]?.$ifNull?.[1]
+
+  assert.ok(postedCutoff instanceof Date)
+  assert.ok(now instanceof Date)
+  assert.ok(today instanceof Date)
+  assert.ok(lastSeenCutoff instanceof Date)
+  assert.equal(postedCutoffFallback?.getTime(), postedCutoff.getTime())
+  assert.equal(nowFallback?.getTime(), now.getTime())
+  assert.equal(todayFallback?.getTime(), today.getTime())
+  assert.equal(lastSeenCutoffFallback?.getTime(), lastSeenCutoff.getTime())
+  assert.equal(lastSeenCutoff.getTime(), postedCutoff.getTime())
+  assert.equal(today.getUTCHours(), 0)
+  assert.equal(today.getUTCMinutes(), 0)
+  assert.ok(postedCutoff.getTime() <= now.getTime())
+  assert.equal(JSON.stringify(scope).includes('$$NOW'), false)
+  assert.deepEqual(scope.$expr, {
+    $and: [
+      {
+        $gte: [
+          { $ifNull: ['$postedAt', postedCutoff] },
+          postedCutoff,
+        ],
+      },
+      {
+        $lte: [
+          { $ifNull: ['$postedAt', now] },
+          now,
+        ],
+      },
+      {
+        $gte: [
+          { $ifNull: ['$closingDate', today] },
+          today,
+        ],
+      },
+      {
+        $gte: [
+          { $ifNull: ['$lastSeenAt', lastSeenCutoff] },
+          lastSeenCutoff,
+        ],
+      },
+    ],
+  })
+}
+
+const assertMatchesPublicJobScope = (scope, expectedFilters = {}) => {
+  assert.ok(scope)
+  assert.deepEqual(stripPublishedDateScope(scope), {
+    ...expectedFilters,
+    isPublicIndia: true,
+  })
+  assertHasPublishedDateScope(scope)
+}
+
+const setConnectionReadyState = (readyState) => {
+  const originalReadyState = mongoose.connection.readyState
+  mongoose.connection.readyState = readyState
+  return () => {
+    mongoose.connection.readyState = originalReadyState
+  }
+}
+
+const flushAsyncWork = async () => {
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+}
 
 test('getValidIndiaCityForJob keeps city-only India jobs outside the legacy city allowlist', () => {
   const job = {
@@ -82,14 +180,43 @@ test('getValidIndiaCityForJob rejects foreign cities when the country field is m
   assert.equal(isJobInPublicLocationScope(job), false)
 })
 
-test('buildPublicJobLocationScope relies on stored city and location fields', () => {
+test('buildPublicJobLocationScope relies on the stored public-visibility flag', () => {
   const scope = buildPublicJobLocationScope()
 
-  assert.equal(Array.isArray(scope.$or), true)
-  assert.deepEqual(
-    scope.$or.map((clause) => Object.keys(clause)[0]).sort(),
-    ['city', 'location', 'locations'],
+  assert.equal(scope.isPublicIndia, true)
+})
+
+test('buildPublicJobLocationScope excludes stale, future, past-closing, and long-unverified jobs while preserving missing dates', () => {
+  const now = new Date('2026-07-25T12:00:00.000Z')
+  const scope = buildPublicJobLocationScope(now, { retentionDays: 10 })
+
+  assertMatchesPublicJobScope(scope)
+  assert.equal(
+    scope.$expr.$and[0].$gte[1].toISOString(),
+    '2026-07-15T00:00:00.000Z',
   )
+  assert.equal(
+    scope.$expr.$and[1].$lte[1].toISOString(),
+    '2026-07-25T12:00:00.000Z',
+  )
+  assert.equal(
+    scope.$expr.$and[2].$gte[1].toISOString(),
+    '2026-07-25T00:00:00.000Z',
+  )
+  assert.equal(
+    scope.$expr.$and[3].$gte[1].toISOString(),
+    '2026-07-15T00:00:00.000Z',
+  )
+})
+
+test('job list projection includes fields required to compute application availability', () => {
+  const projectedFields = new Set(JOB_LIST_CARD_PROJECTION.split(/\s+/))
+
+  assert.equal(projectedFields.has('applyUrl'), true)
+  assert.equal(projectedFields.has('sourceUrl'), true)
+  assert.equal(projectedFields.has('workdayApplicationStatus'), true)
+  assert.equal(projectedFields.has('workdayApplicationStatusReason'), true)
+  assert.equal(projectedFields.has('workdayApplicationStatusCheckedAt'), true)
 })
 
 // Verifies that the public location scope is applied to job search queries.
@@ -97,15 +224,25 @@ test('getAllJobs applies the public location scope to the jobs query', async () 
   const originalCountDocuments = Job.countDocuments
   const originalDistinct = Job.distinct
   const originalFind = Job.find
+  const originalSummaryFindOne = JobDatasetSummary.findOne
 
   let countFilter = null
   let findFilter = null
+  let distinctCalled = false
 
   Job.countDocuments = async (filter) => {
     countFilter = filter
     return 1
   }
-  Job.distinct = async () => ['Example Corp']
+  Job.distinct = async () => {
+    distinctCalled = true
+    return ['Example Corp']
+  }
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    totalJobs: 14,
+    totalCompanies: 7,
+  })
 
   Job.find = (filter) => {
     findFilter = filter
@@ -142,15 +279,85 @@ test('getAllJobs applies the public location scope to the jobs query', async () 
 
     await getAllJobs({ query: {}, user: null }, res)
 
-    const expectedFilter = applyPublicJobLocationScope({ status: 'active' })
-    assert.deepEqual(countFilter, expectedFilter)
-    assert.deepEqual(findFilter, expectedFilter)
+    assertMatchesPublicJobScope(findFilter, { status: 'active' })
+    assert.equal(countFilter, null)
+    assert.equal(distinctCalled, false)
     assert.equal(res.statusCode, 200)
     assert.equal(res.body.data.length, 1)
+    assert.equal(res.body.pagination.total, 14)
+    assert.equal(res.body.pagination.totalCompanies, 7)
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
     Job.find = originalFind
+    JobDatasetSummary.findOne = originalSummaryFindOne
+  }
+})
+
+test('getAllJobs reuses persisted summary totals for unfiltered recommended sorting', async () => {
+  const originalCountDocuments = Job.countDocuments
+  const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
+  const originalSummaryFindOne = JobDatasetSummary.findOne
+
+  let capturedMatch = null
+  let countCalled = false
+  let distinctCalled = false
+
+  Job.countDocuments = async () => {
+    countCalled = true
+    return 12
+  }
+  Job.distinct = async () => {
+    distinctCalled = true
+    return ['Example Corp']
+  }
+  Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    capturedMatch = pipeline[0].$match
+    return [
+      {
+        _id: new mongoose.Types.ObjectId(),
+        title: 'Recommended Software Engineer',
+        company: 'Example Corp',
+        city: 'Bangalore',
+        location: 'Bengaluru, India',
+      },
+    ]
+  })
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    totalJobs: 21,
+    totalCompanies: 8,
+  })
+
+  try {
+    const res = createResponseDouble()
+
+    await getAllJobs({
+      query: { sort: 'recommended' },
+      user: {
+        role: 'user',
+        accessRole: ACCESS_ROLES.MONTHLY,
+        premium: {
+          planId: PLAN_IDS.MONTHLY,
+          status: 'active',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      },
+    }, res)
+
+    assertMatchesPublicJobScope(capturedMatch, { status: 'active' })
+    assert.equal(countCalled, false)
+    assert.equal(distinctCalled, false)
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.pagination.total, 21)
+    assert.equal(res.body.pagination.totalCompanies, 8)
+    assert.equal(res.body.data.length, 1)
+  } finally {
+    Job.countDocuments = originalCountDocuments
+    Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    JobDatasetSummary.findOne = originalSummaryFindOne
   }
 })
 
@@ -263,7 +470,7 @@ test('getAllJobs applies oldest chronological sorting when requested', async () 
     }, res)
 
     assert.equal(res.statusCode, 200)
-    assert.deepEqual(capturedSort, { postedAt: 1, createdAt: 1, _id: 1 })
+    assert.deepEqual(capturedSort, { sortDate: 1, _id: 1 })
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
@@ -287,10 +494,7 @@ test('getJobById applies the public location scope to the detail query', async (
 
     await getJobById({ params: { id: jobId } }, res)
 
-    assert.deepEqual(
-      capturedFilter,
-      applyPublicJobLocationScope({ _id: jobId, status: 'active' }),
-    )
+    assertMatchesPublicJobScope(capturedFilter, { _id: jobId, status: 'active' })
     assert.equal(res.statusCode, 404)
   } finally {
     Job.findOne = originalFindOne
@@ -357,11 +561,13 @@ test('getJobById corrects stale fresher labels when explicit experience shows an
   }
 })
 
-test('getJobById flags Workday applications that currently redirect to a maintenance page', async () => {
+test('getJobById returns before a Workday availability refresh completes', async () => {
   const originalFindOne = Job.findOne
   const originalFetch = global.fetch
+  const originalUpdateOne = Job.updateOne
   const jobId = new mongoose.Types.ObjectId().toString()
-  const workdayJobUrl = 'https://allstate.wd5.myworkdayjobs.com/en-US/allstate_careers/job/Ind--Blr-Sez-1-3Rd-6Th--7Th-Floor/Full-Stack-Developer-Consultant-I-Consultant-II_R30908'
+  const workdayJobUrl = 'https://allstate.wd5.myworkdayjobs.com/en-US/allstate_careers/job/non-blocking-refresh'
+  let releaseFetch
 
   Job.findOne = async () => ({
     _id: jobId,
@@ -373,9 +579,15 @@ test('getJobById flags Workday applications that currently redirect to a mainten
     atsPlatform: 'workday',
   })
 
-  global.fetch = async () => ({
-    url: 'https://community.workday.com/maintenance-page?d=5&s=1&e=1&o=',
-    text: async () => '<html><head><title>Workday is currently unavailable.</title></head><body>maintenance-page</body></html>',
+  Job.updateOne = () => ({
+    exec: async () => ({ matchedCount: 1, modifiedCount: 1 }),
+  })
+
+  global.fetch = () => new Promise((resolve) => {
+    releaseFetch = () => resolve({
+      url: 'https://community.workday.com/maintenance-page?d=5&s=1&e=1&o=',
+      text: async () => '<html><head><title>Workday is currently unavailable.</title></head><body>maintenance-page</body></html>',
+    })
   })
 
   try {
@@ -385,52 +597,332 @@ test('getJobById flags Workday applications that currently redirect to a mainten
 
     assert.equal(res.statusCode, 200)
     assert.equal(res.body.data.applicationUrl, workdayJobUrl)
-    assert.equal(res.body.data.applicationStatus, 'temporarily_unavailable')
+    assert.equal(res.body.data.applicationStatus, 'available')
+    assert.equal(res.body.data.applicationStatusReason, null)
+
+    releaseFetch()
+    await flushAsyncWork()
+  } finally {
+    Job.findOne = originalFindOne
+    global.fetch = originalFetch
+    Job.updateOne = originalUpdateOne
+  }
+})
+
+test('getJobById serves cached Workday outage status after an async refresh', async () => {
+  const originalFindOne = Job.findOne
+  const originalFetch = global.fetch
+  const originalUpdateOne = Job.updateOne
+  const jobId = new mongoose.Types.ObjectId().toString()
+  const workdayJobUrl = 'https://allstate.wd5.myworkdayjobs.com/en-US/allstate_careers/job/cached-maintenance-refresh'
+  let persistedUpdate = null
+
+  Job.findOne = async () => ({
+    _id: jobId,
+    title: 'Software Engineer Consultant II',
+    company: 'Allstate',
+    jobType: 'Full-time Experienced',
+    applyUrl: workdayJobUrl,
+    sourceUrl: workdayJobUrl,
+    atsPlatform: 'workday',
+  })
+
+  Job.updateOne = (_filter, update) => {
+    persistedUpdate = update
+    return {
+      exec: async () => ({ matchedCount: 1, modifiedCount: 1 }),
+    }
+  }
+
+  global.fetch = async () => ({
+    url: 'https://community.workday.com/maintenance-page?d=5&s=1&e=1&o=',
+    text: async () => '<html><head><title>Workday is currently unavailable.</title></head><body>maintenance-page</body></html>',
+  })
+
+  try {
+    const firstResponse = createResponseDouble()
+
+    await getJobById({ params: { id: jobId } }, firstResponse)
+
+    assert.equal(firstResponse.statusCode, 200)
+    assert.equal(firstResponse.body.data.applicationStatus, 'available')
+
+    await flushAsyncWork()
+
+    const secondResponse = createResponseDouble()
+    await getJobById({ params: { id: jobId } }, secondResponse)
+
+    assert.equal(secondResponse.statusCode, 200)
+    assert.equal(secondResponse.body.data.applicationUrl, workdayJobUrl)
+    assert.equal(secondResponse.body.data.applicationStatus, 'temporarily_unavailable')
+    assert.equal('workdayApplicationStatus' in secondResponse.body.data, false)
+    assert.equal('workdayApplicationStatusReason' in secondResponse.body.data, false)
+    assert.equal('workdayApplicationStatusCheckedAt' in secondResponse.body.data, false)
     assert.match(
-      res.body.data.applicationStatusReason,
+      secondResponse.body.data.applicationStatusReason,
       /workday.+temporarily unavailable/i,
+    )
+    assert.equal(persistedUpdate.$set.workdayApplicationStatus, 'temporarily_unavailable')
+    assert.equal(
+      persistedUpdate.$set.workdayApplicationStatusReason,
+      'Applications on this Workday portal are temporarily unavailable because Workday is showing a maintenance page. Please try again later.',
+    )
+    assert.ok(persistedUpdate.$set.workdayApplicationStatusCheckedAt instanceof Date)
+  } finally {
+    Job.findOne = originalFindOne
+    global.fetch = originalFetch
+    Job.updateOne = originalUpdateOne
+  }
+})
+
+test('getJobById marks a Workday application unavailable after a conclusive 404 probe', async () => {
+  const originalFindOne = Job.findOne
+  const originalFetch = global.fetch
+  const originalUpdateOne = Job.updateOne
+  const jobId = new mongoose.Types.ObjectId().toString()
+  const workdayJobUrl = 'https://example.wd5.myworkdayjobs.com/en-US/careers/job/removed-role'
+  let persistedUpdate = null
+
+  Job.findOne = async () => ({
+    _id: jobId,
+    title: 'Removed Software Engineer',
+    company: 'Example',
+    jobType: 'Full-time Fresher',
+    applyUrl: workdayJobUrl,
+    sourceUrl: workdayJobUrl,
+    atsPlatform: 'workday',
+  })
+
+  Job.updateOne = (_filter, update) => {
+    persistedUpdate = update
+    return {
+      exec: async () => ({ matchedCount: 1, modifiedCount: 1 }),
+    }
+  }
+
+  global.fetch = async () => ({
+    ok: false,
+    status: 404,
+    url: workdayJobUrl,
+    text: async () => '<html><body>Job not found</body></html>',
+  })
+
+  try {
+    const firstResponse = createResponseDouble()
+    await getJobById({ params: { id: jobId } }, firstResponse)
+
+    assert.equal(firstResponse.statusCode, 200)
+    assert.equal(firstResponse.body.data.applicationStatus, 'available')
+
+    await flushAsyncWork()
+
+    const secondResponse = createResponseDouble()
+    await getJobById({ params: { id: jobId } }, secondResponse)
+
+    assert.equal(secondResponse.statusCode, 200)
+    assert.equal(secondResponse.body.data.applicationStatus, 'unavailable')
+    assert.match(secondResponse.body.data.applicationStatusReason, /no longer available/i)
+    assert.equal(persistedUpdate.$set.workdayApplicationStatus, 'unavailable')
+    assert.match(
+      persistedUpdate.$set.workdayApplicationStatusReason,
+      /no longer available/i,
     )
   } finally {
     Job.findOne = originalFindOne
     global.fetch = originalFetch
+    Job.updateOne = originalUpdateOne
+  }
+})
+
+test('getJobById marks a Workday application unavailable when its bootstrap reports no posting', async () => {
+  const originalFindOne = Job.findOne
+  const originalFetch = global.fetch
+  const originalUpdateOne = Job.updateOne
+  const jobId = new mongoose.Types.ObjectId().toString()
+  const workdayJobUrl = 'https://boeing.wd1.myworkdayjobs.com/EXTERNAL_CAREERS/job/IND---Bangalore-India/removed-role/apply'
+  let persistedUpdate = null
+
+  Job.findOne = async () => ({
+    _id: jobId,
+    title: 'Removed Structural Analysis Engineer',
+    company: 'Boeing India',
+    jobType: 'Full-time Experienced',
+    applyUrl: workdayJobUrl,
+    sourceUrl: workdayJobUrl,
+    atsPlatform: 'talentbrew-radancy',
+  })
+
+  Job.updateOne = (_filter, update) => {
+    persistedUpdate = update
+    return {
+      exec: async () => ({ matchedCount: 1, modifiedCount: 1 }),
+    }
+  }
+
+  global.fetch = async () => ({
+    ok: true,
+    status: 200,
+    url: workdayJobUrl,
+    text: async () => '<script>window.workday = { postingAvailable: false };</script>',
+  })
+
+  try {
+    const firstResponse = createResponseDouble()
+    await getJobById({ params: { id: jobId } }, firstResponse)
+    assert.equal(firstResponse.body.data.applicationStatus, 'available')
+
+    await flushAsyncWork()
+
+    const secondResponse = createResponseDouble()
+    await getJobById({ params: { id: jobId } }, secondResponse)
+
+    assert.equal(secondResponse.body.data.applicationStatus, 'unavailable')
+    assert.match(secondResponse.body.data.applicationStatusReason, /no longer available/i)
+    assert.equal(persistedUpdate.$set.workdayApplicationStatus, 'unavailable')
+  } finally {
+    Job.findOne = originalFindOne
+    global.fetch = originalFetch
+    Job.updateOne = originalUpdateOne
+  }
+})
+
+test('getJobById prefers a newer stored Workday unavailability status over an available cache entry', async () => {
+  const originalFindOne = Job.findOne
+  const originalFetch = global.fetch
+  const originalUpdateOne = Job.updateOne
+  const jobId = new mongoose.Types.ObjectId().toString()
+  const workdayJobUrl = 'https://example.wd5.myworkdayjobs.com/en-US/careers/job/stale-cache'
+  let requestCount = 0
+
+  Job.findOne = async () => {
+    requestCount += 1
+    return {
+      _id: jobId,
+      title: 'Removed Software Engineer',
+      company: 'Example',
+      jobType: 'Full-time Experienced',
+      applyUrl: workdayJobUrl,
+      sourceUrl: workdayJobUrl,
+      ...(requestCount > 1 ? {
+        workdayApplicationStatus: 'unavailable',
+        workdayApplicationStatusReason: 'This Workday application is no longer available.',
+        workdayApplicationStatusCheckedAt: new Date(Date.now() + 60_000),
+      } : {}),
+    }
+  }
+  global.fetch = async () => ({
+    status: 200,
+    url: workdayJobUrl,
+    text: async () => '<html><body>Job page</body></html>',
+  })
+  Job.updateOne = () => ({
+    exec: async () => ({ matchedCount: 1, modifiedCount: 1 }),
+  })
+
+  try {
+    await getJobById({ params: { id: jobId } }, createResponseDouble())
+    await flushAsyncWork()
+
+    const res = createResponseDouble()
+    await getJobById({ params: { id: jobId } }, res)
+
+    assert.equal(res.body.data.applicationStatus, 'unavailable')
+  } finally {
+    Job.findOne = originalFindOne
+    global.fetch = originalFetch
+    Job.updateOne = originalUpdateOne
   }
 })
 
 // Verifies that the public location scope is applied to all metadata queries.
 test('getJobMeta applies the public location scope to metadata queries', async () => {
   const originalDistinct = Job.distinct
-  const capturedFilters = []
+  const originalAggregate = Job.aggregate
+  const originalCountDocuments = Job.countDocuments
+  const capturedFilters = new Map()
+  let capturedCompanyPipeline = null
 
   // Mocks Job.distinct to capture the filters applied.
-  Job.distinct = async (_field, filter) => {
-    capturedFilters.push(filter)
+  Job.distinct = async (field, filter) => {
+    capturedFilters.set(field, filter)
     return []
   }
+  Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    capturedCompanyPipeline = pipeline
+    return []
+  })
+  Job.countDocuments = async () => 1
 
   try {
     const res = createResponseDouble()
 
-    await getJobMeta({}, res)
+    await getJobMeta({
+      query: { company: 'Example Corp' },
+      user: {
+        role: 'user',
+        accessRole: ACCESS_ROLES.MONTHLY,
+        premium: {
+          planId: PLAN_IDS.MONTHLY,
+          status: 'active',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      },
+    }, res)
 
-    const expectedFilter = applyPublicJobLocationScope({ status: 'active' })
-    assert.equal(capturedFilters.length, 3)
-    assert.deepEqual(capturedFilters[0], expectedFilter)
-    assert.deepEqual(
-      capturedFilters[1],
-      applyPublicJobLocationScope({ status: 'active', city: { $ne: null } }),
-    )
-    assert.deepEqual(
-      capturedFilters[2],
-      applyPublicJobLocationScope({ status: 'active', jobType: { $ne: null } }),
-    )
+    const expectedCompanyFilter = {
+      status: 'active',
+      company: { $ne: null },
+    }
+    const expectedCityFilter = {
+      status: 'active',
+      companyKey: 'example corp',
+      city: { $ne: null },
+    }
+    const expectedJobTypeFilter = {
+      status: 'active',
+      companyKey: 'example corp',
+      jobType: { $ne: null },
+    }
+    const expectedExperienceFilter = {
+      status: 'active',
+      companyKey: 'example corp',
+    }
+    const expectedRoleDomainFilter = {
+      status: 'active',
+      companyKey: 'example corp',
+      primaryRoleDomain: { $ne: null },
+    }
+    const expectedWorkArrangementFilter = {
+      status: 'active',
+      companyKey: 'example corp',
+      workArrangement: { $ne: null },
+    }
+
+    if (capturedCompanyPipeline) {
+      assertMatchesPublicJobScope(capturedCompanyPipeline[0].$match, expectedCompanyFilter)
+      assertMatchesPublicJobScope(capturedFilters.get('city'), expectedCityFilter)
+      assertMatchesPublicJobScope(capturedFilters.get('jobType'), expectedJobTypeFilter)
+    } else {
+      assertMatchesPublicJobScope(capturedFilters.get('company'), expectedCompanyFilter)
+      assertMatchesPublicJobScope(capturedFilters.get('city'), expectedCityFilter)
+      assertMatchesPublicJobScope(capturedFilters.get('jobType'), expectedJobTypeFilter)
+    }
+    assertMatchesPublicJobScope(capturedFilters.get('experienceYears'), expectedExperienceFilter)
+    assertMatchesPublicJobScope(capturedFilters.get('primaryRoleDomain'), expectedRoleDomainFilter)
+    assertMatchesPublicJobScope(capturedFilters.get('workArrangement'), expectedWorkArrangementFilter)
+
     assert.equal(res.statusCode, 200)
   } finally {
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    Job.countDocuments = originalCountDocuments
   }
 })
 
 test('getJobMeta omits unsupported part-time job types from metadata responses', async () => {
   const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
+  const originalCountDocuments = Job.countDocuments
 
   Job.distinct = async (field) => {
     if (field === 'company') return ['Example Corp']
@@ -438,34 +930,201 @@ test('getJobMeta omits unsupported part-time job types from metadata responses',
     if (field === 'jobType') return ['Part-time', 'Contract', 'Full-time']
     return []
   }
+  Job.aggregate = createAggregateExecStub(async () => [{ company: 'Example Corp' }])
+  Job.countDocuments = async () => 1
 
   try {
     const res = createResponseDouble()
 
-    await getJobMeta({}, res)
+    await getJobMeta({
+      query: { company: 'Example Corp' },
+      user: {
+        role: 'user',
+        accessRole: ACCESS_ROLES.MONTHLY,
+        premium: {
+          planId: PLAN_IDS.MONTHLY,
+          status: 'active',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      },
+    }, res)
 
     assert.equal(res.statusCode, 200)
     assert.deepEqual(res.body.data.jobTypes, ['Contract', 'Full-time Experienced'])
   } finally {
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    Job.countDocuments = originalCountDocuments
   }
 })
 
-// Verifies that the public location scope is applied to database stats queries.
-test('getJobStats applies the public location scope to the counts query', async () => {
+// Verifies that public stats are served from the persisted summary when available.
+test('getJobStats returns the persisted dataset summary without re-counting jobs', async () => {
+  const originalFindOne = JobDatasetSummary.findOne
+
+  JobDatasetSummary.findOne = () => ({
+    lean() {
+      return this
+    },
+    exec: async () => ({
+      key: 'public-active',
+      totalJobs: 14,
+      totalCompanies: 1,
+    }),
+  })
+
+  try {
+    const res = createResponseDouble()
+
+    await getJobStats({}, res)
+
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.data.totalJobs, 14)
+    assert.equal(res.body.data.totalCompanies, 1)
+  } finally {
+    JobDatasetSummary.findOne = originalFindOne
+  }
+})
+
+test('getJobStats rebuilds a current-day summary from the previous lifecycle scope', async () => {
+  const originalFindOne = JobDatasetSummary.findOne
+  const originalFindOneAndUpdate = JobDatasetSummary.findOneAndUpdate
+  const originalAggregate = Job.aggregate
+  const restoreReadyState = setConnectionReadyState(1)
+  let aggregateCalled = false
+
+  JobDatasetSummary.findOne = () => ({
+    lean() {
+      return this
+    },
+    exec: async () => ({
+      key: 'public-active',
+      totalJobs: 999,
+      totalCompanies: 99,
+      refreshedAt: new Date(),
+    }),
+  })
+  Job.aggregate = createAggregateExecStub(async () => {
+    aggregateCalled = true
+    return [{
+      totalJobs: 8,
+      companies: ['Example Corp'],
+      cities: ['Bangalore'],
+      jobTypes: ['Full-time Fresher'],
+    }]
+  })
+  JobDatasetSummary.findOneAndUpdate = (_filter, update) => ({
+    lean() {
+      return this
+    },
+    exec: async () => update.$set,
+  })
+
+  try {
+    const res = createResponseDouble()
+
+    await getJobStats({}, res)
+
+    assert.equal(aggregateCalled, true)
+    assert.equal(res.body.data.totalJobs, 8)
+  } finally {
+    restoreReadyState()
+    JobDatasetSummary.findOne = originalFindOne
+    JobDatasetSummary.findOneAndUpdate = originalFindOneAndUpdate
+    Job.aggregate = originalAggregate
+  }
+})
+
+test('getJobStats rebuilds a summary created before the current lifecycle day', async () => {
+  const originalFindOne = JobDatasetSummary.findOne
+  const originalFindOneAndUpdate = JobDatasetSummary.findOneAndUpdate
+  const originalAggregate = Job.aggregate
+  const restoreReadyState = setConnectionReadyState(1)
+  let aggregateCalled = false
+
+  JobDatasetSummary.findOne = () => ({
+    lean() {
+      return this
+    },
+    exec: async () => ({
+      key: 'public-active',
+      totalJobs: 999,
+      totalCompanies: 99,
+      refreshedAt: new Date(Date.now() - (36 * 60 * 60 * 1000)),
+    }),
+  })
+  Job.aggregate = createAggregateExecStub(async () => {
+    aggregateCalled = true
+    return [{
+      totalJobs: 7,
+      companies: ['Example Corp'],
+      cities: ['Bangalore'],
+      jobTypes: ['Full-time Fresher'],
+    }]
+  })
+  JobDatasetSummary.findOneAndUpdate = (_filter, update) => ({
+    lean() {
+      return this
+    },
+    exec: async () => update.$set,
+  })
+
+  try {
+    const res = createResponseDouble()
+
+    await getJobStats({}, res)
+
+    assert.equal(aggregateCalled, true)
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.data.totalJobs, 7)
+    assert.equal(res.body.data.totalCompanies, 1)
+  } finally {
+    restoreReadyState()
+    JobDatasetSummary.findOne = originalFindOne
+    JobDatasetSummary.findOneAndUpdate = originalFindOneAndUpdate
+    Job.aggregate = originalAggregate
+  }
+})
+
+test('getJobStats rebuilds the persisted dataset summary before falling back to live counts', async () => {
+  const originalFindOne = JobDatasetSummary.findOne
+  const originalFindOneAndUpdate = JobDatasetSummary.findOneAndUpdate
+  const originalAggregate = Job.aggregate
   const originalCountDocuments = Job.countDocuments
   const originalDistinct = Job.distinct
-  let countFilter = null
-  let distinctFilter = null
+  const restoreReadyState = setConnectionReadyState(1)
+  let countCalled = false
+  let distinctCalled = false
+  let capturedSummaryUpdate = null
 
-  Job.countDocuments = async (filter) => {
-    countFilter = filter
-    return 14
+  JobDatasetSummary.findOne = () => ({
+    lean() {
+      return this
+    },
+    exec: async () => null,
+  })
+  JobDatasetSummary.findOneAndUpdate = (_filter, update) => {
+    capturedSummaryUpdate = update.$set
+    return {
+      lean() {
+        return this
+      },
+      exec: async () => update.$set,
+    }
   }
-
-  Job.distinct = async (_field, filter) => {
-    distinctFilter = filter
-    return ['Example']
+  Job.aggregate = createAggregateExecStub(async () => [{
+    totalJobs: 22,
+    companies: ['Example Corp', 'Another Corp'],
+    cities: ['Bangalore', 'Pune'],
+    jobTypes: ['Intern', 'Full-time Experienced'],
+  }])
+  Job.countDocuments = async () => {
+    countCalled = true
+    return 0
+  }
+  Job.distinct = async () => {
+    distinctCalled = true
+    return []
   }
 
   try {
@@ -473,13 +1132,77 @@ test('getJobStats applies the public location scope to the counts query', async 
 
     await getJobStats({}, res)
 
-    const expectedFilter = applyPublicJobLocationScope({ status: 'active' })
-    assert.deepEqual(countFilter, expectedFilter)
-    assert.deepEqual(distinctFilter, expectedFilter)
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.data.totalJobs, 14)
+    assert.equal(res.body.data.totalJobs, 22)
+    assert.equal(res.body.data.totalCompanies, 2)
+    assert.equal(countCalled, false)
+    assert.equal(distinctCalled, false)
+    assert.deepEqual(capturedSummaryUpdate?.companies, ['Another Corp', 'Example Corp'])
+    assert.deepEqual(capturedSummaryUpdate?.cities, ['Bangalore', 'Pune'])
   } finally {
+    restoreReadyState()
+    JobDatasetSummary.findOne = originalFindOne
+    JobDatasetSummary.findOneAndUpdate = originalFindOneAndUpdate
+    Job.aggregate = originalAggregate
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
+  }
+})
+
+test('getJobStats rebuilds the dataset summary when the persisted snapshot is missing', async () => {
+  const originalFindOne = JobDatasetSummary.findOne
+  const originalFindOneAndUpdate = JobDatasetSummary.findOneAndUpdate
+  const originalAggregate = Job.aggregate
+  const restoreReadyState = setConnectionReadyState(1)
+  let capturedMatch = null
+  let findOneCalls = 0
+
+  JobDatasetSummary.findOne = () => ({
+    lean() {
+      return this
+    },
+    exec: async () => {
+      findOneCalls += 1
+      return null
+    },
+  })
+  Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    capturedMatch = pipeline[0].$match
+    return [{
+      totalJobs: 5,
+      companies: ['Acme Labs', 'CloudWorks'],
+      cities: ['Bangalore'],
+      jobTypes: ['Internship'],
+    }]
+  })
+  JobDatasetSummary.findOneAndUpdate = () => ({
+    lean() {
+      return this
+    },
+    exec: async () => ({
+      key: 'public-active',
+      totalJobs: 5,
+      totalCompanies: 2,
+      companies: ['Acme Labs', 'CloudWorks'],
+      cities: ['Bangalore'],
+      jobTypes: ['Internship'],
+    }),
+  })
+
+  try {
+    const res = createResponseDouble()
+
+    await getJobStats({}, res)
+
+    assert.equal(findOneCalls, 1)
+    assertMatchesPublicJobScope(capturedMatch, { status: 'active' })
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.data.totalJobs, 5)
+    assert.equal(res.body.data.totalCompanies, 2)
+  } finally {
+    restoreReadyState()
+    JobDatasetSummary.findOne = originalFindOne
+    JobDatasetSummary.findOneAndUpdate = originalFindOneAndUpdate
+    Job.aggregate = originalAggregate
   }
 })

@@ -11,7 +11,8 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const COMPANY_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const PORTAL_ORIGIN = PROVIDER_METADATA.portalOrigin
 export const JOB_LISTINGS_URL = PROVIDER_METADATA.jobListingsUrl
-export const DEFAULT_PAGE_SIZE = 20
+export const EXPECTED_TOP_LEVEL_COMPANY = 'Bajaj Finance Limited'
+export const DEFAULT_PAGE_SIZE = 99
 export const DEFAULT_SEARCH_BODY = {}
 
 const USER_AGENT =
@@ -98,6 +99,12 @@ const flattenSkills = (skills = {}) => {
       .filter(Boolean),
   )]
 }
+
+export const extractTopLevelCompany = (record = {}) => firstNonEmpty(
+  record.companyName,
+  record.legalEntity,
+  String(record.organizationUnitComplete || '').split('>')[0],
+)
 
 export const buildApiUrl = ({ offset = 0, limit = DEFAULT_PAGE_SIZE } = {}) => (
   `${PORTAL_ORIGIN}/api/cp/rest/altone/cp/jobs/v1?offset=${offset}&limit=${limit}`
@@ -243,7 +250,16 @@ export const createBajajFinanceScraper = ({
         body: JSON.stringify(DEFAULT_SEARCH_BODY),
       })
 
-      const pageJobs = extractSearchResults(payload)
+      const rawRecords = Array.isArray(payload?.response) ? payload.response : []
+      const pageCompanies = new Set(rawRecords.map((record) => extractTopLevelCompany(record)).filter(Boolean))
+      if (page === 0 && rawRecords.length > 0 && !pageCompanies.has(EXPECTED_TOP_LEVEL_COMPANY)) {
+        return []
+      }
+
+      const pageJobs = extractSearchResults({
+        ...payload,
+        response: rawRecords.filter((record) => extractTopLevelCompany(record) === EXPECTED_TOP_LEVEL_COMPANY),
+      })
       jobs.push(...pageJobs.map((job) => ({
         ...job,
         source: SOURCE,
@@ -251,7 +267,7 @@ export const createBajajFinanceScraper = ({
         scrapedAt: now(),
       })))
 
-      const responseCount = Array.isArray(payload?.response) ? payload.response.length : 0
+      const responseCount = rawRecords.length
       const totalRecords = Number.parseInt(String(payload?.totalRecords ?? ''), 10)
 
       if (responseCount === 0) break

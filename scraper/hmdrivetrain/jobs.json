@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Drivetrain",
+    "company": "Drivetrain",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "source": "hmdrivetrain",
+    "jobId": "hmdrivetrain-current-openings",
+    "requisitionId": "hmdrivetrain-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Drivetrain had current Himalayas hiring evidence for Backend Engineer / Data Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:28:12.185Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

@@ -29,6 +29,84 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Open Positions (Careers): Cybage</title>
+    <link rel="canonical" href="https://www.cybage.com/careers/open-positions" />
+  </head>
+  <body class="post-type-archive-jobpost">
+    <h1>Open Positions</h1>
+    <span class="result-summary">9 Results</span>
+    <div class="table-responsive">
+      <table class="table table-hover table-striped views-table views-view-table cols-4 sticky-enabled">
+        <tbody>
+          <tr>
+            <td class="views-field views-field-title"><a href="/careers/open-positions/current-openings/cyber-security-operations-analyst">Cyber Security Operations Analyst</a></td>
+            <td class="views-field views-field-field-department">Engineering</td>
+            <td class="views-field views-field-field-location">Pune</td>
+            <td class="views-field views-field-field-work-experience">6+ years</td>
+          </tr>
+          <tr>
+            <td class="views-field views-field-title"><a href="/careers/open-positions/current-openings/senior-net-developer">Senior .Net Developer</a></td>
+            <td class="views-field views-field-field-department">Engineering</td>
+            <td class="views-field views-field-field-location">Pune</td>
+            <td class="views-field views-field-field-work-experience">8 to 12 years</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
+`
+
+const currentDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Cyber Security Operations Analyst | Cybage</title>
+    <link rel="canonical" href="https://www.cybage.com/careers/open-positions/current-openings/cyber-security-operations-analyst" />
+  </head>
+  <body>
+    <h1 class="display-3 mb-3"> Job Description </h1>
+    <div class="job_details">
+      <div class="job_info">
+        <h4 class="job_info__heading">Job Title</h4>
+        <div class="job_info__desc"><span class="field field--name-title field--type-string field--label-hidden">Cyber Security Operations Analyst</span></div>
+      </div>
+      <div class="job_info">
+        <h4 class="job_info__heading">Department</h4>
+        <div class="job_info__desc">Engineering</div>
+      </div>
+      <div class="job_info">
+        <h4 class="job_info__heading">Location</h4>
+        <div class="job_info__desc">Pune</div>
+      </div>
+      <div class="job_info">
+        <h4 class="job_info__heading">Work Experience</h4>
+        <div class="job_info__desc">6+ years</div>
+      </div>
+      <div class="mt-link cybage-link-button apply_now">
+        <a href="https://careers.cybage.com/PublicPages/UserLogin.aspx" target="_blank" class="btn-colour-first">Apply Now</a>
+      </div>
+    </div>
+    <div class="job-description">
+      <div class="about-position" id="about-the-position">
+        <h4>About The Position</h4>
+        <div><p>The Senior Security Operations Analyst will be responsible for monitoring security alerts and investigating incidents.</p></div>
+      </div>
+      <div class="job_requirement">
+        <div id="technical-and-professional-requirements">
+          <h4>Technical and Professional Requirements</h4>
+          <div><p>Experience in SIEM tooling and security operations.</p></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
 const detailHtml = `
 <!doctype html>
 <html lang="en">
@@ -66,6 +144,7 @@ test('Cybage validates the verified first-party open positions page', async () =
   assert.equal(cybage.CAREERS_URL, 'https://www.cybage.com/careers/open-positions')
   assert.equal(cybage.APPLY_LOGIN_URL, 'https://careers.cybage.com/PublicPages/UserLogin.aspx')
   assert.equal(cybage.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(cybage.hasOfficialCareersSignal(currentCareersHtml), true)
 })
 
 test('Cybage extracts the verified first-party jobs table into listing records', async () => {
@@ -93,6 +172,40 @@ test('Cybage extracts the verified first-party jobs table into listing records',
     closingDate: null,
     jobDescription: null,
   })
+})
+
+test('Cybage accepts the current Drupal jobs table and detail cards', async () => {
+  const cybage = await loadModule()
+  const listings = cybage.extractListings(currentCareersHtml)
+
+  assert.equal(listings.length, 2)
+  assert.deepEqual(listings[0], {
+    title: 'Cyber Security Operations Analyst',
+    company: 'Cybage',
+    department: 'Engineering',
+    location: 'Pune, India',
+    city: 'Pune',
+    country: 'India',
+    jobId: 'cyber-security-operations-analyst',
+    requisitionId: 'cyber-security-operations-analyst',
+    sourceUrl: 'https://www.cybage.com/careers/open-positions/current-openings/cyber-security-operations-analyst',
+    applyUrl: 'https://www.cybage.com/careers/open-positions/current-openings/cyber-security-operations-analyst',
+    employmentType: null,
+    experienceRequired: '6+ years',
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+  })
+
+  const detail = cybage.extractJobDetail(currentDetailHtml, listings[0])
+  assert.equal(detail.title, 'Cyber Security Operations Analyst')
+  assert.equal(detail.department, 'Engineering')
+  assert.equal(detail.location, 'Pune, India')
+  assert.equal(detail.applyUrl, 'https://careers.cybage.com/PublicPages/UserLogin.aspx')
+  assert.match(detail.jobDescription, /monitoring security alerts/i)
 })
 
 test('Cybage detail parsing keeps the ASP.NET login handoff as the apply URL', async () => {

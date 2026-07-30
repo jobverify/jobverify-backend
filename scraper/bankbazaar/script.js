@@ -14,7 +14,6 @@ const USER_AGENT =
 const PUBLIC_JOB_LISTING_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bjob openings\b/i,
-  /\bopen positions\b/i,
   /\bvacanc(?:y|ies)\b/i,
   /\bjob description\b/i,
   /"@type"\s*:\s*"JobPosting"/i,
@@ -40,7 +39,8 @@ const normalizeWhitespace = (value) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /https:\/\/www\.bankbazaar\.com\/careers\.html/i.test(page)
+  return /(?:https:\/\/www\.bankbazaar\.com\/careers\.html|href=["']\/careers\.html["'])/i.test(page)
+    && /<title>\s*BankBazaar\s*<\/title>/i.test(page)
     && /\b(?:join our team|careers)\b/i.test(page)
 }
 

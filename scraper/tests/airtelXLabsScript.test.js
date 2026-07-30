@@ -168,6 +168,61 @@ test('Airtel X Labs returns no jobs only while the branded surface still collaps
   assert.deepEqual(jobs, [])
 })
 
+test('Airtel X Labs can recover with browser-backed page fetches when direct requests are blocked', async () => {
+  const airtelXLabs = await loadAirtelXLabsModule()
+  const attempts = []
+
+  const jobs = await airtelXLabs.createAirtelXLabsScraper().run({
+    fetchPage: async (url) => {
+      attempts.push(`http:${url}`)
+      return {
+        status: 403,
+        url,
+        html: '<html><body>Forbidden</body></html>',
+      }
+    },
+    fetchBrowserPage: async (url) => {
+      attempts.push(`browser:${url}`)
+
+      if (url === airtelXLabs.BRANDED_HOMEPAGE_URL) {
+        return { status: 200, url, html: brandedHomepageHtml }
+      }
+
+      if (url === airtelXLabs.CAREERS_HANDOFF_URL) {
+        return {
+          status: 200,
+          url: airtelXLabs.GENERIC_AIRTEL_CAREERS_URL,
+          html: currentGenericAirtelCareersShellHtml,
+        }
+      }
+
+      if (airtelXLabs.NO_PUBLIC_BRANDED_ROUTE_URLS.includes(url)) {
+        return { status: 404, url, html: notFoundHtml }
+      }
+
+      if (airtelXLabs.GENERIC_XLABS_ROUTE_URLS.includes(url)) {
+        return {
+          status: 200,
+          url: airtelXLabs.GENERIC_AIRTEL_CAREERS_URL,
+          html: currentGenericAirtelCareersShellHtml,
+        }
+      }
+
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(attempts, [
+    `http:${airtelXLabs.BRANDED_HOMEPAGE_URL}`,
+    `browser:${airtelXLabs.BRANDED_HOMEPAGE_URL}`,
+    `http:${airtelXLabs.CAREERS_HANDOFF_URL}`,
+    `browser:${airtelXLabs.CAREERS_HANDOFF_URL}`,
+    ...airtelXLabs.NO_PUBLIC_BRANDED_ROUTE_URLS.flatMap((url) => [`http:${url}`, `browser:${url}`]),
+    ...airtelXLabs.GENERIC_XLABS_ROUTE_URLS.flatMap((url) => [`http:${url}`, `browser:${url}`]),
+  ])
+  assert.deepEqual(jobs, [])
+})
+
 test('Airtel X Labs fails closed when the branded homepage, Airtel handoff, branded missing routes, or generic x-labs routes drift', async () => {
   const airtelXLabs = await loadAirtelXLabsModule()
 

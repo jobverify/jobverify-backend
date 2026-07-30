@@ -146,3 +146,62 @@ test('run keeps Alstom jobs on the public India search route and decorates share
     'https://jobsearch.alstom.com/job/Bangalore-HRO-Admin-Manager-India%2C-Std-Countries-%26amp%3B-L%26amp%3BD/1407243033/',
   )
 })
+
+test('run fetches Alstom detail pages concurrently within a listing page', async () => {
+  const { createAlstomScraper } = await loadAlstomModule()
+  const scraper = createAlstomScraper()
+  const listingHtml = `
+    <span class="paginationLabel">1 - 2 of 2 Jobs</span>
+    <span class="srHelp">Page 1 of 1</span>
+    <table>
+      <tr class="data-row">
+        <td><a class="jobTitle-link" href="/job/Bangalore-Role/1001/">Role One</a></td>
+        <td><span class="jobLocation">Bangalore, KA, IN, 560066</span></td>
+      </tr>
+      <tr class="data-row">
+        <td><a class="jobTitle-link" href="/job/Hyderabad-Role/1002/">Role Two</a></td>
+        <td><span class="jobLocation">Hyderabad, TS, IN, 500081</span></td>
+      </tr>
+    </table>
+  `
+  const detailPages = new Map([
+    ['https://jobsearch.alstom.com/job/Bangalore-Role/1001/', `
+      <span itemprop="title">Role One</span>
+      <span itemprop="description"><span><span>Own the Bangalore program<ul><li>Skill One</li></ul></span></span></span>
+      <meta itemprop="datePosted" content="2026-07-01" />
+      <meta itemprop="addressLocality" content="Bangalore" />
+      <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/apply/1001/?locale=en_GB">Apply</a>
+    `],
+    ['https://jobsearch.alstom.com/job/Hyderabad-Role/1002/', `
+      <span itemprop="title">Role Two</span>
+      <span itemprop="description"><span><span>Support the Hyderabad team<ul><li>Skill Two</li></ul></span></span></span>
+      <meta itemprop="datePosted" content="2026-07-02" />
+      <meta itemprop="addressLocality" content="Hyderabad" />
+      <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/apply/1002/?locale=en_GB">Apply</a>
+    `],
+  ])
+  let activeDetailRequests = 0
+  let maxActiveDetailRequests = 0
+
+  const jobs = await scraper.run({
+    maxPages: 1,
+    fetchText: async (url) => {
+      if (url.includes('/search/')) {
+        return listingHtml
+      }
+
+      if (!detailPages.has(url)) {
+        throw new Error(`Unexpected Alstom URL: ${url}`)
+      }
+
+      activeDetailRequests += 1
+      maxActiveDetailRequests = Math.max(maxActiveDetailRequests, activeDetailRequests)
+      await new Promise((resolve) => setTimeout(resolve, 25))
+      activeDetailRequests -= 1
+      return detailPages.get(url)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.equal(maxActiveDetailRequests, 2)
+})

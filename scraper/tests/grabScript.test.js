@@ -64,6 +64,36 @@ const indiaLocationHtml = `
 </html>
 `
 
+const indiaLocationHtmlWithLiveCardLayout = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Welcome to India!</h1>
+      <p>Bangalore</p>
+      <h2>Join our team in India</h2>
+      <a href="/en/jobs/?orderby=0&amp;pagesize=20&amp;page=1&amp;location=Bengaluru&amp;country=India">See all jobs</a>
+
+      <div class="grid job-listing">
+        <div class="card card-job" data-id="744000109177995">
+          <div class="card-body">
+            <h2 class="card-title">
+              <a class="stretched-link js-view-job" href="/en/jobs/744000109177995/senior-techno-functional-oracle-integration-specialist/">
+                Senior Techno-Functional Oracle Integration Specialist
+              </a>
+            </h2>
+            <ul class="list-inline job-meta">
+              <li class="list-inline-item">Bengaluru, India</li>
+              <li class="list-inline-item">Technology Solutions</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../grab/script.js')
@@ -172,6 +202,42 @@ test('Grab extracts India roles from the verified first-party jobs board and Ind
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
+})
+
+test('Grab extracts India roles from the live card layout used on the India location page', async () => {
+  const grab = await loadModule()
+
+  assert.deepEqual(
+    grab.extractJobsFromIndiaLocationHtml(indiaLocationHtmlWithLiveCardLayout, {
+      scrapedAt: FIXED_SCRAPED_AT,
+    }),
+    [
+      {
+        title: 'Senior Techno-Functional Oracle Integration Specialist',
+        company: 'Grab',
+        department: 'Technology Solutions',
+        location: 'Bengaluru, India',
+        city: 'Bengaluru',
+        country: 'India',
+        link: 'https://www.grab.careers/en/jobs/744000109177995/senior-techno-functional-oracle-integration-specialist/',
+        applyUrl: 'https://www.grab.careers/en/jobs/744000109177995/senior-techno-functional-oracle-integration-specialist/',
+        sourceUrl: 'https://www.grab.careers/en/jobs/744000109177995/senior-techno-functional-oracle-integration-specialist/',
+        source: 'grab',
+        jobId: '744000109177995',
+        requisitionId: '744000109177995',
+        employmentType: null,
+        experienceRequired: null,
+        jobDescription: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        remoteStatus: null,
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+    ],
+  )
 })
 
 test('Grab run validates the verified first-party pages and returns normalized India jobs', async () => {

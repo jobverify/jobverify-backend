@@ -43,6 +43,27 @@ const sampleRecords = [
   },
 ]
 
+const careerPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <script defer="defer" src="/static/js/main.1e784ffe.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+`
+
+const bundleJs = `
+  window.__env = {
+    jobsApiUrl: "https://uh2nqa8l04.execute-api.ca-central-1.amazonaws.com/prod/joblist"
+  };
+  axios.get("https://uh2nqa8l04.execute-api.ca-central-1.amazonaws.com/prod/joblist",{
+    headers:{authorizationToken:"frontend-bundle-token"}
+  });
+`
+
 test('BCE Global Tech scraper constants stay pinned to the public careers and jobs API surfaces', async () => {
   const bceglobaltech = await loadBceGlobalTechModule()
 
@@ -58,6 +79,19 @@ test('BCE Global Tech scraper constants stay pinned to the public careers and jo
       Accept: 'application/json,text/plain,*/*',
       authorizationToken: 'frontend-token',
     },
+  )
+})
+
+test('BCE Global Tech can resolve the public React bundle URL and extract the shipped authorization token', async () => {
+  const bceglobaltech = await loadBceGlobalTechModule()
+
+  assert.equal(
+    bceglobaltech.extractBundleScriptUrl(careerPageHtml, bceglobaltech.CAREER_PAGE_URL),
+    'https://bceglobaltech.com/static/js/main.1e784ffe.js',
+  )
+  assert.equal(
+    bceglobaltech.extractAuthorizationToken(bundleJs),
+    'frontend-bundle-token',
   )
 })
 
@@ -140,4 +174,42 @@ test('run fetches the official BCE Global Tech jobs API with an injectable autho
     'https://bceglobaltech.zohorecruit.in/jobs/Careers/147575000033601315/Desktop-Engineer?source=CareerSite&$apply=true',
   )
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+})
+
+test('run can discover the public authorization token from the BCE Global Tech careers bundle when no secret is injected', async () => {
+  const bceglobaltech = await loadBceGlobalTechModule()
+  const requests = []
+  const textRequests = []
+  const scraper = bceglobaltech.createBceGlobalTechScraper({ authorizationToken: null, maxJobs: 1 })
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      textRequests.push(url)
+      if (url === bceglobaltech.CAREER_PAGE_URL) return careerPageHtml
+      if (url === 'https://bceglobaltech.com/static/js/main.1e784ffe.js') return bundleJs
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async (url, options = {}) => {
+      requests.push({ url, options })
+      return buildWrappedPayload(sampleRecords)
+    },
+  })
+
+  assert.deepEqual(textRequests, [
+    'https://bceglobaltech.com/career',
+    'https://bceglobaltech.com/static/js/main.1e784ffe.js',
+  ])
+  assert.deepEqual(requests, [
+    {
+      url: bceglobaltech.JOBS_API_URL,
+      options: {
+        headers: {
+          Accept: 'application/json,text/plain,*/*',
+          authorizationToken: 'frontend-bundle-token',
+        },
+      },
+    },
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'bceglobaltech')
 })

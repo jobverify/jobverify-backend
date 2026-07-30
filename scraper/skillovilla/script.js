@@ -13,9 +13,6 @@ const SOURCE = 'skillovilla'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-const HOMEPAGE_TITLE_PATTERN = /<title>\s*Data Analytics\s*&\s*Data Science Courses Online\s*\|\s*SkilloVilla\s*<\/title>/i
-const HOMEPAGE_TAGLINE_PATTERN = />\s*Land your dream job by learning from the top 1%\s*</i
-const HOMEPAGE_SUPPORT_PATTERN = />\s*Your upskilling partner\s*</i
 const HTTP_404_PATTERN = /HTTP 404\b/i
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -27,11 +24,23 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&#x27;/gi, "'")
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return HOMEPAGE_TITLE_PATTERN.test(page)
-    && HOMEPAGE_TAGLINE_PATTERN.test(page)
-    && HOMEPAGE_SUPPORT_PATTERN.test(page)
+  const normalized = normalizeWhitespace(page)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
+
+  return /^Data Analytics & Data Science Courses Online \| SkilloVilla$/i.test(title)
+    && normalized.includes('Your upskilling partner')
+    && normalized.includes('Land your dream job by learning from the top 1%')
 }
 
 export const isVerifiedMissingRouteError = (error, url) =>

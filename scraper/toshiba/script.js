@@ -44,12 +44,32 @@ const toAbsoluteUrl = (value, baseUrl) => {
   }
 }
 
+const isVerifiedHrmosBoardUrl = (value) => {
+  if (!value) return false
+
+  try {
+    const url = new URL(value)
+    const normalizedPath = url.pathname.replace(/\/+$/, '').toLowerCase()
+
+    return url.hostname.toLowerCase() === 'hrmos.co'
+      && (
+        normalizedPath === '/pages/toshiba'
+        || normalizedPath === '/pages/toshiba/jobs'
+      )
+  } catch {
+    return false
+  }
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
 
   return normalized.includes('we turn on the promise of a new day.')
-    && normalized.includes('toshiba is not currently accepting applications.')
     && normalized.includes('job openings & apply')
+    && (
+      normalized.includes('toshiba is not currently accepting applications.')
+      || normalized.includes('life at toshiba')
+    )
 }
 
 export const extractHandoffUrl = (html) => {
@@ -125,11 +145,11 @@ export const createToshibaScraper = () => ({
     }
 
     const hrmosBoardUrl = extractHrmosBoardUrl(handoffHtml)
-    if (hrmosBoardUrl !== HRMOS_BOARD_URL) {
+    if (!isVerifiedHrmosBoardUrl(hrmosBoardUrl)) {
       throw new Error('Toshiba official jobs handoff no longer points to the verified public HRMOS board')
     }
 
-    const hrmosBoardHtml = await fetchText(HRMOS_BOARD_URL)
+    const hrmosBoardHtml = await fetchText(hrmosBoardUrl)
     if (!hasHrmosBoardSignal(hrmosBoardHtml)) {
       throw new Error('Toshiba public HRMOS board no longer matches the verified public board surface')
     }

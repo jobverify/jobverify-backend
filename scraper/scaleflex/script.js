@@ -56,6 +56,10 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html) => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null,
+)
+
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     return undefined
@@ -104,34 +108,45 @@ export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const extractOfficialCareersHandoffUrl = (html) => {
-  const match = String(html ?? '').match(
-    /<a[^>]+href="([^"]*portals\.scaleflex\.com\/s\/xJfYX5yl\/en\/home[^"]*)"[^>]*>\s*Careers\s*<\/a>/i,
-  )
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href="([^"]*portals\.scaleflex\.com[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const anchorText = normalizeWhitespace(match[2]) || ''
+    if (!/career/i.test(anchorText)) continue
 
-  if (!match?.[1]) return null
-
-  try {
-    return new URL(match[1], HOMEPAGE_URL).toString()
-  } catch {
-    return null
+    try {
+      return new URL(match[1], HOMEPAGE_URL).toString()
+    } catch {
+      return null
+    }
   }
+
+  return null
 }
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const title = extractTitle(page)
 
-  return normalized.includes('Turning billions of assets into engaging digital masterpieces')
-    && normalized.includes('1300+ brands trust us with their visual content')
-    && normalized.includes('Strengthen your Visual Asset Management with a unique combination of digital asset management, dynamic media optimization, brand portals and visual AI.')
+  return (
+    (
+      normalized.includes('Turning billions of assets into engaging digital masterpieces')
+      || (
+        title === 'Cloud-based Visual Asset Management for Enterprise'
+        && normalized.includes('1300+ brands trust us with their visual content')
+        && normalized.includes('Visual Asset Management')
+        && normalized.includes('Dynamic Media Optimization')
+      )
+    )
     && extractOfficialCareersHandoffUrl(page) === CAREERS_HANDOFF_URL
+  )
 }
 
 export const hasVerifiedPortalLoadingSignal = (html) => {
   const normalized = normalizeWhitespace(html)
+  const title = extractTitle(html)
   if (!normalized) return false
-  if (hasPublicJobsSignal(html)) return false
   return /^Loading\.\.\.(?:\s+Loading\.\.\.)*$/i.test(normalized)
+    || (title === 'Scaleflex Career Page' && /Loading\.\.\./i.test(normalized))
 }
 
 export const isVerifiedNoPublicJobsRoute = (page = {}) => {
@@ -151,10 +166,6 @@ export const createScaleflexScraper = () => ({
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('The verified Scaleflex homepage no longer matches the trusted public surface')
-    }
-
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('The verified Scaleflex homepage now appears to expose public jobs')
     }
 
     const careersPortal = await fetchPage(CAREERS_HANDOFF_URL)

@@ -79,20 +79,54 @@ test('run fetches the PwC experienced jobs page once and decorates shared runner
   const html = readHtmlFixture('experienced-jobs.html')
   const requests = []
   const scraper = createPwcScraper({ maxJobs: 2 })
+  const detailPages = {
+    'https://pwc.darwinbox.com/ms/candidatev2/main/careers/jobDetails/a69e627061edd1': `
+      <html>
+        <head>
+          <meta property="og:title" content="Associate Test Automation Engineer Agentic Automation Advisory Bangalore (India)">
+          <meta property="og:description" content="Build intelligent automation solutions with 4 years of experience in test automation and agentic workflows.">
+        </head>
+      </html>
+    `,
+    'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Bangalore/Senior-Associate---Bengaluru-Millenia---Technology-Consulting_229383WD/apply': `
+      <html>
+        <head>
+          <meta property="og:title" content="Senior Associate - Bengaluru Millenia - Technology Consulting">
+          <meta property="og:description" content="Join advisory delivery across technology consulting programs.">
+        </head>
+      </html>
+    `,
+  }
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
       requests.push(url)
 
       if (url === buildSearchUrl()) return html
+      if (detailPages[url]) return detailPages[url]
       throw new Error(`Unexpected PwC URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requests, [buildSearchUrl()])
+  assert.equal(requests[0], buildSearchUrl())
+  assert.equal(requests.length, 3)
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'pwc')
   assert.equal(jobs[0].company, 'PwC')
   assert.ok(jobs.every((job) => job.link === job.applyUrl))
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
+
+  const automationJob = jobs.find((job) => job.jobId === 'a69e627061edd1')
+  assert.ok(automationJob)
+  assert.equal(
+    automationJob.jobDescription,
+    'Build intelligent automation solutions with 4 years of experience in test automation and agentic workflows.',
+  )
+
+  const bengaluruJob = jobs.find((job) => job.jobId === '229383WD')
+  assert.ok(bengaluruJob)
+  assert.equal(
+    bengaluruJob.jobDescription,
+    'Join advisory delivery across technology consulting programs.',
+  )
 })

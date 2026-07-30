@@ -160,6 +160,10 @@ test('Aisle constants stay pinned to the verified homepage handoff and public Fr
     aisle.DETAIL_URL_PATTERN,
     'https://aisle.freshteam.com/jobs/{opaque_id}/{slug}',
   )
+  assert.equal(
+    aisle.isExpectedVerifiedBoardOutage(new Error(`HTTP 500 for ${aisle.LISTING_URL}`)),
+    true,
+  )
   assert.equal(aisle.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(
     aisle.extractFreshteamJobsUrl(officialHomepageHtml),
@@ -307,15 +311,33 @@ test('Aisle scraper fails closed when the verified homepage handoff or Freshteam
   )
 })
 
-test('Aisle scraper marks official Freshteam 5xx responses as upstream soft failures', async () => {
+test('Aisle scraper stays fail-closed when the verified public Freshteam board returns the known generic 500 outage', async () => {
+  const aisle = await loadModule()
+
+  const jobs = await aisle.createAisleScraper().run({
+    fetchText: async (url) => {
+      if (url === aisle.OFFICIAL_HOMEPAGE_URL) return officialHomepageHtml
+      if (url === aisle.LISTING_URL) {
+        throw new Error(`HTTP 500 for ${aisle.LISTING_URL}`)
+      }
+
+      throw new Error(`Unexpected Aisle fixture URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Aisle scraper still marks downstream Freshteam detail 5xx responses as upstream soft failures', async () => {
   const aisle = await loadModule()
 
   await assert.rejects(
-    aisle.createAisleScraper().run({
+    aisle.createAisleScraper({ maxJobs: 5 }).run({
       fetchText: async (url) => {
         if (url === aisle.OFFICIAL_HOMEPAGE_URL) return officialHomepageHtml
-        if (url === aisle.LISTING_URL) {
-          throw new Error(`HTTP 500 for ${aisle.LISTING_URL}`)
+        if (url === aisle.LISTING_URL) return listingHtml
+        if (url === 'https://aisle.freshteam.com/jobs/AbCd1234/product-manager') {
+          throw new Error('HTTP 500 for https://aisle.freshteam.com/jobs/AbCd1234/product-manager')
         }
 
         throw new Error(`Unexpected Aisle fixture URL: ${url}`)

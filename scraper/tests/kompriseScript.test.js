@@ -7,7 +7,7 @@ const CAREERS_HTML = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <title>Careers @ Komprise</title>
+    <title>Careers at Komprise | Help Change How the World Manages Data</title>
     <link rel="canonical" href="https://www.komprise.com/careers/" />
   </head>
   <body>

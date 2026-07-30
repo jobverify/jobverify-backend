@@ -146,6 +146,143 @@ const productMarketingLeadHtml = `
 </html>
 `
 
+const genericDetailShellHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Current Openings | Simplify Healthcare</title>
+  </head>
+  <body>
+    <main>
+      <h1>New Thinking. New Opportunities.</h1>
+      <h2>About Simplify Healthcare</h2>
+      <p>Simplify Healthcare is always looking to expand our team with versatile professionals.</p>
+      <p>Contact us at info@simplifyhealthcare.com.</p>
+    </main>
+  </body>
+</html>
+`
+
+const liveLikeCurrentOpeningsHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Current Openings | Simplify Healthcare</title>
+  </head>
+  <body>
+    <main>
+      <h1>New Thinking. New Opportunities.</h1>
+      <a href="https://simplifyhealthcare.com/careers/current-openings/india/director-product-management/">Apply Now</a>
+      <a href="https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/">Apply Now</a>
+      <a href="https://simplifyhealthcare.com/careers/current-openings/india/project-manager-2/">Apply Now</a>
+    </main>
+  </body>
+</html>
+`
+
+const liveLikeIndiaArchiveHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Current Openings | Simplify Healthcare</title>
+  </head>
+  <body>
+    <main>
+      <h1>Current Openings</h1>
+      <p>New Thinking. New Opportunities.</p>
+      <a href="https://simplifyhealthcare.com/careers/current-openings/india/director-product-management/">Apply Now</a>
+      <a href="https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/">Apply Now</a>
+      <a href="https://simplifyhealthcare.com/careers/current-openings/india/project-manager-2/">Apply Now</a>
+    </main>
+  </body>
+</html>
+`
+
+const directorProductManagementWordPressPayload = [{
+  id: 52449,
+  date: '2026-06-23T07:19:07',
+  slug: 'director-product-management',
+  link: 'https://simplifyhealthcare.com/careers/current-openings/india/director-product-management/',
+  title: {
+    rendered: 'Director – Product Management',
+  },
+  content: {
+    rendered: `
+      <div>
+        <h2>About Simplify Healthcare</h2>
+        <p>Simplify Healthcare, a Simplify Group company, is a leading healthcare technology company focused on transforming how U.S. health plans operate.</p>
+        <p>We continue to invest in applied AI, platform modernization, and leadership talent to shape the future of payer technology.</p>
+        <h2>About the Role</h2>
+        <p>We are looking for a strategic and execution-focused product leader to shape, scale, and modernize our healthcare payer product portfolio.</p>
+        <p>If you have any questions, please direct your inquiries to careers@simplifyhealthcare.com.</p>
+      </div>
+    `,
+  },
+}]
+
+const projectManagerWordPressPayload = [{
+  id: 52426,
+  date: '2026-06-22T09:12:32',
+  slug: 'project-manager-2',
+  link: 'https://simplifyhealthcare.com/careers/current-openings/india/project-manager-2/',
+  title: {
+    rendered: 'Project Manager',
+  },
+  content: {
+    rendered: `
+      <div>
+        <h2>About Simplify Healthcare</h2>
+        <p>Simplify Healthcare is one of the fastest-growing healthcare technology solutions providers to the US Health Insurance industry.</p>
+        <p>Headquartered in Chicago with a Global Delivery Centre in Pune and 800+ FTEs.</p>
+        <h2>Role Overview</h2>
+        <p>Lead projects across healthcare initiatives and compliance driven data management solutions.</p>
+        <p>8-12 years of experience leading enterprise software programs.</p>
+        <p>If you have any questions, please direct your inquiries to careers@simplifyhealthcare.com.</p>
+      </div>
+    `,
+  },
+}]
+
+const productManagerWordPressPayload = [{
+  id: 52442,
+  date: '2026-06-23T07:05:23',
+  slug: 'product-manager-3',
+  link: 'https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/',
+  title: {
+    rendered: 'Product Manager',
+  },
+  content: {
+    rendered: `
+      <div>
+        <p>Role: Simplify Healthcare is looking for a Product Manager to define the product vision and roadmap aligned with business goals.</p>
+        <p>Drive product innovation objectives and release content following Agile best practices.</p>
+        <p>If you have any questions, please direct your inquiries to careers@simplifyhealthcare.com.</p>
+      </div>
+    `,
+  },
+}]
+
+const productMarketingLeadWordPressPayload = [{
+  id: 52390,
+  date: '2026-04-10T09:00:00',
+  slug: 'product-marketing-lead',
+  link: 'https://simplifyhealthcare.com/careers/current-openings/india/product-marketing-lead/',
+  title: {
+    rendered: 'Product Marketing Lead',
+  },
+  content: {
+    rendered: `
+      <div>
+        <h2>About Simplify Healthcare</h2>
+        <p>Join our healthcare product marketing team.</p>
+        <h2>Role Overview</h2>
+        <p>Shape go-to-market strategy for payer-facing products from our Pune team.</p>
+        <p>If you have any questions, please direct your inquiries to careers@simplifyhealthcare.com.</p>
+      </div>
+    `,
+  },
+}]
+
 test('Simplify Healthcare validates the verified official careers surfaces and extracts India detail URLs', async () => {
   const simplifyHealthcare = await loadSimplifyHealthcareModule()
   assert.ok(simplifyHealthcare, 'Expected Simplify Healthcare scraper module at ./script.js')
@@ -202,6 +339,22 @@ test('Simplify Healthcare extracts India jobs from official current-opening deta
       remoteStatus: 'Hybrid',
     },
   )
+})
+
+test('Simplify Healthcare can extract an India job from the official WordPress post payload when the rendered detail URL serves a generic shell', async () => {
+  const simplifyHealthcare = await loadSimplifyHealthcareModule()
+  assert.ok(simplifyHealthcare, 'Expected Simplify Healthcare scraper module at ./script.js')
+
+  const job = simplifyHealthcare.extractJobFromWordPressPostPayload({
+    url: 'https://simplifyhealthcare.com/careers/current-openings/india/project-manager-2/',
+    payload: projectManagerWordPressPayload,
+  })
+
+  assert.equal(job.title, 'Project Manager')
+  assert.equal(job.location, 'India')
+  assert.equal(job.city, null)
+  assert.equal(job.postingDate, '2026-06-22')
+  assert.match(job.jobDescription, /lead projects across healthcare initiatives/i)
 })
 
 test('Simplify Healthcare run fetches both verified official listing surfaces, crawls same-domain India detail pages, and decorates jobs', async () => {
@@ -273,6 +426,66 @@ test('Simplify Healthcare run fetches both verified official listing surfaces, c
     ],
   )
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+})
+
+test('Simplify Healthcare run falls back to the official WordPress post API when India detail URLs resolve to the generic openings shell', async () => {
+  const simplifyHealthcare = await loadSimplifyHealthcareModule()
+  assert.ok(simplifyHealthcare, 'Expected Simplify Healthcare scraper module at ./script.js')
+
+  const payloadBySlug = new Map([
+    ['director-product-management', directorProductManagementWordPressPayload],
+    ['project-manager-2', projectManagerWordPressPayload],
+    ['product-manager-3', productManagerWordPressPayload],
+  ])
+
+  const jobs = await simplifyHealthcare.createSimplifyHealthcareScraper().run({
+    fetchText: async (url) => {
+      if (url === simplifyHealthcare.CAREERS_URL) return liveLikeCurrentOpeningsHtml
+      if (url === simplifyHealthcare.INDIA_ARCHIVE_URL) return liveLikeIndiaArchiveHtml
+      if (
+        url === 'https://simplifyhealthcare.com/careers/current-openings/india/director-product-management/'
+        || url === 'https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/'
+        || 
+        url === 'https://simplifyhealthcare.com/careers/current-openings/india/project-manager-2/'
+      ) {
+        return genericDetailShellHtml
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      const slug = new URL(url).searchParams.get('slug')
+      const payload = payloadBySlug.get(slug)
+      if (!payload) {
+        throw new Error(`Unexpected API URL: ${url}`)
+      }
+      return payload
+    },
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      postingDate: job.postingDate,
+    })),
+    [
+      {
+        title: 'Director - Product Management',
+        location: 'India',
+        postingDate: '2026-06-23',
+      },
+      {
+        title: 'Product Manager',
+        location: 'India',
+        postingDate: '2026-06-23',
+      },
+      {
+        title: 'Project Manager',
+        location: 'India',
+        postingDate: '2026-06-22',
+      },
+    ],
+  )
 })
 
 test('Simplify Healthcare fails closed when the verified official careers surface changes', async () => {

@@ -67,7 +67,7 @@ export const hasOfficialSnapdealCareersSignals = (html = '') => {
   const text = (normalizeWhitespace(page) || '').toLowerCase()
   const title = (extractTitle(page) || '').toLowerCase()
 
-  return title === 'shop online for men, women & kids clothing, shoes, home decor items'
+  return title === 'online shopping for men, women & kids fashion, home decor, lifestyle & more'
     && text.includes('snapdeal is india\'s leading pure-play value ecommerce platform.')
     && text.includes('snapdeal\'s vision is to enable the shoppers of bharat')
     && text.includes('company')

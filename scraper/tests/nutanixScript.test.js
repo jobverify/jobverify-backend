@@ -24,6 +24,25 @@ const OFFICIAL_CAREERS_CHALLENGE_HTML = `
 </html>
 `
 
+const OFFICIAL_CAREERS_LIVE_BOARD_HTML = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Find your place at Nutanix. | Nutanix Careers</title>
+    <link rel="canonical" href="https://careers.nutanix.com/en/jobs/">
+  </head>
+  <body class="js-template-jobBoard">
+    <div class="site-message">
+      <p><strong>Job Seeker Alert: Fraudulent Activity</strong></p>
+      <a href="https://careers.nutanix.com/en/jobs/">Current Openings</a>
+    </div>
+    <nav>
+      <a href="https://www.nutanix.com/company/careers">Life At Nutanix</a>
+    </nav>
+  </body>
+</html>
+`
+
 const JOBVITE_HOME_HTML = `
 <!doctype html>
 <html lang="en">
@@ -162,6 +181,7 @@ test('Nutanix helpers recognize the verified Cloudflare-blocked official page an
     'https://jobs.jobvite.com/nutanix/job/{jobvite_id}',
   )
   assert.equal(nutanix.isCloudflareChallengePage(OFFICIAL_CAREERS_CHALLENGE_HTML), true)
+  assert.equal(nutanix.hasOfficialCareersSurfaceSignal(OFFICIAL_CAREERS_LIVE_BOARD_HTML), true)
   assert.equal(nutanix.hasJobviteHomeSignal(JOBVITE_HOME_HTML), true)
   assert.equal(nutanix.hasJobListingsSignal(JOBVITE_LISTINGS_HTML), true)
 
@@ -315,6 +335,41 @@ test('Nutanix run tolerates the official Cloudflare challenge and returns India 
       ],
     ],
   )
+})
+
+test('Nutanix can recover with browser-backed pages when direct requests are blocked', async () => {
+  const nutanix = await loadNutanixModule()
+  const browserUrls = []
+
+  const jobs = await nutanix.createNutanixScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => {
+      throw new Error(`HTTP 403 for ${nutanix.OFFICIAL_CAREERS_URL}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+
+      if (url === nutanix.OFFICIAL_CAREERS_URL) return OFFICIAL_CAREERS_CHALLENGE_HTML
+      if (url === nutanix.JOBVITE_HOME_URL) return JOBVITE_HOME_HTML
+      if (url === nutanix.JOB_LISTINGS_URL) return JOBVITE_LISTINGS_HTML
+      if (url === 'https://jobs.jobvite.com/nutanix/job/oAcct1') return ACCOUNTANT_DETAIL_HTML
+      if (url === 'https://jobs.jobvite.com/nutanix/job/oMark1') return MARKETING_DETAIL_HTML
+
+      throw new Error(`Unexpected Nutanix browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    nutanix.OFFICIAL_CAREERS_URL,
+    nutanix.JOBVITE_HOME_URL,
+    nutanix.JOB_LISTINGS_URL,
+    'https://jobs.jobvite.com/nutanix/job/oAcct1',
+    'https://jobs.jobvite.com/nutanix/job/oMark1',
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].title, 'Accountant')
+  assert.equal(jobs[1].title, 'Director of Field Marketing, India')
 })
 
 test('Nutanix fails closed when the public Jobvite bridge stops matching the verified surface', async () => {

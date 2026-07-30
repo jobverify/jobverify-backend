@@ -26,6 +26,20 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 const homepageHtml = readFixture('homepage.html')
 const careersHtml = readFixture('careers.html')
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Non-invasive electromagnetic platform</h1>
+      <p>Pursuing hearing with steerable electromagnetic fields</p>
+      <p>Backyard Creators is developing a non-invasive approach to restore hearing for severe-to-profound loss without surgery and without an internal implant.</p>
+      <a href="/talk">Talk to us</a>
+    </main>
+  </body>
+</html>
+`
+
 test('Backyard Creators validates the verified official homepage and first-party careers page', async () => {
   const backyardCreators = await loadBackyardCreatorsModule()
 
@@ -34,6 +48,7 @@ test('Backyard Creators validates the verified official homepage and first-party
   assert.equal(backyardCreators.HOMEPAGE_URL, 'https://www.backyardcreators.com/')
   assert.equal(backyardCreators.CAREERS_URL, 'https://www.backyardcreators.com/careers')
   assert.equal(backyardCreators.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(backyardCreators.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(backyardCreators.hasOfficialCareersSignal(careersHtml), true)
 
   assert.deepEqual(backyardCreators.extractPublicJobs(careersHtml), [
@@ -69,8 +84,15 @@ test('Backyard Creators run fetches the verified homepage and careers page and r
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === backyardCreators.HOMEPAGE_URL) return homepageHtml
-      if (url === backyardCreators.CAREERS_URL) return careersHtml
       throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === backyardCreators.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
     },
     now: () => '2026-07-11T00:00:00.000Z',
   })
@@ -93,6 +115,27 @@ test('Backyard Creators run fetches the verified homepage and careers page and r
   assert.equal(jobs[0].sourceUrl, 'https://www.backyardcreators.com/careers')
   assert.equal(jobs[0].applyUrl, 'https://www.backyardcreators.com/careers')
   assert.equal(jobs[0].scrapedTimestamp?.toISOString(), '2026-07-11T00:00:00.000Z')
+})
+
+test('Backyard Creators returns [] when the current first-party homepage is live and the legacy careers route is now a 404', async () => {
+  const backyardCreators = await loadBackyardCreatorsModule()
+
+  const jobs = await backyardCreators.createBackyardCreatorsScraper().run({
+    fetchText: async () => '<html><body><script src="app.js"></script></body></html>',
+    fetchPage: async (url) => {
+      if (url === backyardCreators.CAREERS_URL) {
+        return { status: 404, url, html: '' }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      assert.equal(url, backyardCreators.HOMEPAGE_URL)
+      return { status: 200, url, html: currentHomepageHtml }
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Backyard Creators provider registration covers the exact CSV company name without alias churn', () => {
@@ -129,26 +172,40 @@ test('Backyard Creators fails closed when the verified homepage or careers surfa
         }
         return careersHtml
       },
+      fetchPage: async (url) => ({
+        status: 200,
+        url,
+        html: careersHtml,
+      }),
+      fetchBrowserPage: async () => ({
+        status: 200,
+        url: backyardCreators.HOMEPAGE_URL,
+        html: homepageHtml.replace('Redefining Hearing Through', 'Unexpected Homepage'),
+      }),
     }),
     /verified official homepage/i,
   )
 
   await assert.rejects(
     backyardCreators.createBackyardCreatorsScraper().run({
-      fetchText: async (url) => {
-        if (url === backyardCreators.HOMEPAGE_URL) return homepageHtml
-        return careersHtml.replace('Research &amp; Development', 'Engineering')
-      },
+      fetchText: async () => homepageHtml,
+      fetchPage: async (url) => ({
+        status: 200,
+        url,
+        html: careersHtml.replace('Research &amp; Development', 'Engineering'),
+      }),
     }),
     /verified first-party careers page/i,
   )
 
   await assert.rejects(
     backyardCreators.createBackyardCreatorsScraper().run({
-      fetchText: async (url) => {
-        if (url === backyardCreators.HOMEPAGE_URL) return homepageHtml
-        return careersHtml.replace(/border rounded-lg p-4 shadow hover:shadow-lg cursor-pointer transition duration-200 ease-in-out/g, 'career-card')
-      },
+      fetchText: async () => homepageHtml,
+      fetchPage: async (url) => ({
+        status: 200,
+        url,
+        html: careersHtml.replace(/border rounded-lg p-4 shadow hover:shadow-lg cursor-pointer transition duration-200 ease-in-out/g, 'career-card'),
+      }),
     }),
     /verified first-party careers page/i,
   )

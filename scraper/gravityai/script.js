@@ -58,12 +58,18 @@ const normalizeWhitespace = (value) =>
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
+    .replace(/&#39;|&#x27;|&apos;|&rsquo;|&#8217;|\u2019|â€™/gi, "'")
     .replace(/&amp;/gi, '&')
+    .replace(/Â©/g, '©')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
 const normalizeUrl = (value) => String(value ?? '').trim().replace(/\/+$/, '/') || '/'
+
+const hasGravityCopyright = (normalized, years = []) =>
+  years.some((year) => normalized.includes(`© 2019-${year} gravityAI. All rights reserved.`))
+  || years.some((year) => normalized.includes(`2019-${year} gravityAI. All rights reserved.`))
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -85,11 +91,10 @@ export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const hasOfficialHomepageSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const normalized = normalizeWhitespace(html)
 
   return normalized.includes('Build and Deploy AI. Every Team. Every Model. Fully Governed.')
-    && normalized.includes("Stop managing AI chaos across tools and teams.")
+    && normalized.includes('Stop managing AI chaos across tools and teams.')
     && normalized.includes("gravityAI gives everyone a shared workspace, with governance that doesn't slow you down.")
     && normalized.includes('Trusted by 50,000+ developers and enterprises:')
     && normalized.includes('Pricing')
@@ -97,18 +102,18 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('Documentation')
     && normalized.includes('Sign In')
     && normalized.includes('About us')
-    && normalized.includes('© 2019-2026 gravityAI. All rights reserved.')
-  }
+    && hasGravityCopyright(normalized, ['2026'])
+}
 
 export const hasOfficialAboutSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('gravityAI is an enterprise AI platform for building, deploying, and governing multi-model workflows.')
     && normalized.includes('Securely and at scale.')
-    && normalized.includes('We’re the team behind gravityAI')
+    && normalized.includes("We're the team behind gravityAI")
     && normalized.includes('An AI infrastructure platform built by people who got tired of cool models going nowhere.')
     && normalized.includes('We wanted something that adds gravity')
-  }
+}
 
 export const hasVerifiedSitemapIndexSignal = (xml) =>
   /<sitemapindex[\s\S]*<loc>https:\/\/www\.gravity-ai\.com\/sitemap-0\.xml<\/loc>[\s\S]*<\/sitemapindex>/i.test(
@@ -135,23 +140,6 @@ export const hasVerifiedSitemapSignal = (xml) => {
     && !hasUnexpectedCareerLikeSitemapUrl(xml)
 }
 
-const VERIFIED_ROLE_PAGE_SIGNALS = {
-  [ROLE_PAGE_URLS[0]]: [
-    'Data Scientist',
-    'https://www.gravity-ai.com/data-scientist/',
-    'About us',
-    '© 2019-2026 gravityAI. All rights reserved.',
-  ],
-  [ROLE_PAGE_URLS[1]]: [
-    'Standardize AI deployments',
-    'gravityAI gives platform teams a private, internal AI marketplace',
-    'Book a demo',
-    'You package the model as a container.',
-    'Trust that scales',
-    '© 2019-2026 gravityAI. All rights reserved.',
-  ],
-}
-
 export const hasVerifiedRolePageSignal = (url, html) => {
   const normalizedUrl = normalizeUrl(url)
   const normalized = normalizeWhitespace(html)
@@ -176,9 +164,9 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
 
   return Number(page?.status) === 404
     && normalized.includes('404: This page could not be found')
-    && normalized.includes('This page could not be found.')
+    && normalized.includes('This page could not be found')
     && normalized.includes('Sign In')
-    && normalized.includes('© 2019-2025 gravityAI. All rights reserved.')
+    && hasGravityCopyright(normalized, ['2025'])
     && !hasPublicJobsSignal(page?.html)
 }
 

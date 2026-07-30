@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 
 import PRAMATA_KNOWLEDGE_SOLUTIONS_CATALOG from './catalog.js'
 
@@ -26,6 +27,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isExpectedCareers403Error = (error, url) =>
+  /HTTP 403/i.test(String(error?.message || error || ''))
+  && String(url ?? '') === CAREERS_URL
+
 export const hasVerifiedCloudflareChallengeSignal = (html = '') => {
   const page = String(html ?? '')
   return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
@@ -39,19 +44,74 @@ export const exposesStructuredPublicJobs = (html = '') =>
   || /Solution Architect\s*-\s*Contract AI/i.test(String(html ?? ''))
   || /Current Openings/i.test(String(html ?? ''))
 
+export const hasVerifiedNotFoundNoJobsSignal = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return Number(page?.status) === 404
+    && String(page?.url || '') === CAREERS_URL
+    && /<title>\s*Page not found - Pramata\s*<\/title>/i.test(html)
+    && /We value your privacy/i.test(text)
+    && /Reject All/i.test(text)
+    && /Accept All/i.test(text)
+    && /Necessary Always Active/i.test(text)
+    && !exposesStructuredPublicJobs(html)
+}
+
 export const createPramataKnowledgeSolutionsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserPage = null } = {}) {
+    let browserSession = null
+    const getBrowserPage = async (url) => {
+      if (typeof fetchBrowserPage === 'function') {
+        return fetchBrowserPage(url)
+      }
 
-    if (!hasVerifiedCloudflareChallengeSignal(careersHtml)) {
-      throw new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+      browserSession ??= await createBrowserFetchSession({ userAgent: USER_AGENT })
+      return browserSession.fetchPage(url)
     }
 
-    if (exposesStructuredPublicJobs(careersHtml)) {
-      throw new Error('Pramata Knowledge Solutions careers page now exposes scraper-visible public jobs')
-    }
+    try {
+      let careersHtml
+      try {
+        careersHtml = await fetchText(CAREERS_URL)
+      } catch (error) {
+        if (!isExpectedCareers403Error(error, CAREERS_URL)) {
+          throw error
+        }
 
-    return []
+        const browserPage = await getBrowserPage(CAREERS_URL)
+        if (hasVerifiedNotFoundNoJobsSignal(browserPage)) {
+          return []
+        }
+
+        if (hasVerifiedCloudflareChallengeSignal(browserPage.html)) {
+          if (exposesStructuredPublicJobs(browserPage.html)) {
+            throw new Error('Pramata Knowledge Solutions careers page now exposes scraper-visible public jobs')
+          }
+          return []
+        }
+
+        throw new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+      }
+
+      if (!hasVerifiedCloudflareChallengeSignal(careersHtml)) {
+        throw new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+      }
+
+      if (exposesStructuredPublicJobs(careersHtml)) {
+        throw new Error('Pramata Knowledge Solutions careers page now exposes scraper-visible public jobs')
+      }
+
+      return []
+    } finally {
+      await browserSession?.close?.()
+    }
   },
 })
 

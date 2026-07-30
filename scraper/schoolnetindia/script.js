@@ -47,6 +47,13 @@ const normalizeHtmlText = (value) => normalizeWhitespace(
     .replace(/<style[\s\S]*?<\/style>/gi, ' '),
 )
 
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null,
+)
+
+const extractCanonicalUrl = (html = '') =>
+  String(html ?? '').match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1] ?? null
+
 const normalizeRoleLine = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -54,6 +61,17 @@ const normalizeRoleLine = (value) => {
   if (/^(image\s*)+$/i.test(normalized) || /^imageimage$/i.test(normalized)) return null
   return normalized
 }
+
+const toRoleCardText = (html = '') => String(html ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/(p|div|li|article|section|h[1-6]|button|a)>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .split(/\r?\n/)
+  .map((line) => normalizeRoleLine(line))
+  .filter(Boolean)
+  .join('\n')
 
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
@@ -110,25 +128,37 @@ const extractTextBetweenMarkers = (value, startMarker, endMarker) => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeHtmlText(rawHtml) || '').toLowerCase()
+  const canonicalUrl = extractCanonicalUrl(rawHtml)
 
-  return /<title>\s*Digitising Education \| ICT Labs & English Language Training\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.schoolnetindia\.com\/careers\/["']/i.test(rawHtml)
+  return extractTitle(rawHtml) === 'Digitising Education | ICT Labs & English Language Training'
+    && (
+      canonicalUrl === 'https://www.schoolnetindia.com/careers/'
+      || canonicalUrl === 'https://www.schoolnetindia.com/more'
+    )
     && normalized.includes('unlock your potential with our team of visionaries')
     && normalized.includes('browse jobs')
     && normalized.includes('job openings')
-  }
+}
 
 export const hasOfficialRecruitmentPortalSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeHtmlText(rawHtml) || '').toLowerCase()
 
-  return /<title>\s*hms\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('welcome back')
-    && normalized.includes('sign in to your hms account')
-    && normalized.includes('hiring management system')
-    && normalized.includes('browse jobs')
-    && normalized.includes('schoolnet india ltd., india')
-  }
+  return extractTitle(rawHtml)?.toLowerCase() === 'hms'
+    && (
+      (
+        normalized.includes('welcome back')
+        && normalized.includes('sign in to your hms account')
+        && normalized.includes('hiring management system')
+        && normalized.includes('browse jobs')
+        && normalized.includes('schoolnet india ltd., india')
+      )
+      || (
+        /<div[^>]+id=["']root["'][^>]*><\/div>/i.test(rawHtml)
+        && /\/assets\/index-[^"']+\.(?:js|css)/i.test(rawHtml)
+      )
+    )
+}
 
 export const parseRoleCardText = (text = '', urls = {}) => {
   const lines = String(text ?? '')
@@ -151,16 +181,18 @@ export const parseRoleCardText = (text = '', urls = {}) => {
   const description = normalizeWhitespace(lines.slice(metadataLineIndex + 1).join(' '))
   const detailUrl = urls.detailUrl || CAREERS_URL
   const applyUrl = urls.applyUrl || detailUrl
-  const jobIdFromUrl = slugify(
-    (() => {
-      try {
-        const pathname = new URL(detailUrl).pathname
-        return pathname.split('/').filter(Boolean).at(-1) || title
-      } catch {
-        return title
-      }
-    })(),
-  )
+  const jobIdFromUrl = urls.detailUrl
+    ? slugify(
+      (() => {
+        try {
+          const pathname = new URL(detailUrl).pathname
+          return pathname.split('/').filter(Boolean).at(-1) || title
+        } catch {
+          return title
+        }
+      })(),
+    )
+    : null
   const jobId = jobIdFromUrl || slugify(title)
 
   if (!jobId) return null
@@ -208,6 +240,78 @@ export const buildJobsFromRoleCards = (cards = [], { scrapedAt } = {}) => {
       link: job.sourceUrl,
       scrapedAt,
     }))
+}
+
+export const extractRoleCardsFromCareersHtml = (html = '') => {
+  const cards = Array.from(
+    String(html ?? '').matchAll(/<article[^>]*class=["'][^"']*job-card[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi),
+    (match) => ({
+      text: toRoleCardText(match[1]),
+      detailUrl: match[1].match(/href=["']([^"']+)["'][^>]*>\s*View Details/i)?.[1] || null,
+      applyUrl: match[1].match(/href=["']([^"']+)["'][^>]*>\s*Apply/i)?.[1] || null,
+    }),
+  ).filter((card) => card.text && /experience:/i.test(card.text) && /posted:/i.test(card.text))
+
+  if (cards.length > 0) {
+    return cards
+  }
+
+  const jobOpeningsText = normalizeHtmlText(html)
+  if (!jobOpeningsText?.includes('Job Openings')) {
+    return []
+  }
+
+  const [, afterJobOpenings] = jobOpeningsText.split('Job Openings')
+  if (!afterJobOpenings) {
+    return []
+  }
+
+  const employmentTypes = [
+    'Contract/ Full-time',
+    'Full-time',
+    'Part-time',
+    'Internship',
+  ]
+
+  const toFallbackRoleCard = (segment) => {
+    const normalized = normalizeWhitespace(segment)
+    if (!normalized) return null
+
+    const metadataMatch = normalized.match(/Experience:\s*([^|]+)\|\s*Posted:\s*(\d{2}-\d{2}-\d{4})/i)
+    if (!metadataMatch?.index) return null
+
+    const header = normalized.slice(0, metadataMatch.index).trim()
+    const description = normalized.slice(metadataMatch.index + metadataMatch[0].length).trim()
+    const employmentType = employmentTypes.find((value) => header.endsWith(value))
+    if (!employmentType) return null
+
+    const titleAndLocation = header.slice(0, header.length - employmentType.length).trim()
+    const locationMatch = titleAndLocation.match(
+      /(Remote\s*\/\s*[A-Za-z ]+|As per requirement|Noida|Kolkata|Mumbai|Delhi|Gurgaon|Gurugram|Bangalore|Bengaluru|Pune|Hyderabad|Chennai)$/i,
+    )
+    if (!locationMatch?.index && locationMatch?.index !== 0) return null
+
+    const location = locationMatch[0].trim()
+    const title = titleAndLocation.slice(0, locationMatch.index).trim()
+    if (!title || !location) return null
+
+    return {
+      text: [
+        title,
+        location,
+        employmentType,
+        metadataMatch[0].trim(),
+        description,
+      ].join('\n'),
+      detailUrl: null,
+      applyUrl: null,
+    }
+  }
+
+  return afterJobOpenings
+    .split(/View Details\s+Apply/gi)
+    .map((segment) => toFallbackRoleCard(segment))
+    .filter(Boolean)
 }
 
 export const createBrowserRoleCardsLoader = ({
@@ -310,11 +414,17 @@ export const createSchoolnetIndiaScraper = ({
       throw new Error('The official Schoolnet India recruitment portal no longer matches the verified public surface')
     }
 
-    if (!loadRoleCards) {
-      loadRoleCards = createBrowserRoleCardsLoader().load
+    let resolvedRoleCards
+    if (loadRoleCards) {
+      resolvedRoleCards = await loadRoleCards()
+    } else {
+      resolvedRoleCards = extractRoleCardsFromCareersHtml(careersHtml)
+      if (resolvedRoleCards.length === 0) {
+        resolvedRoleCards = await createBrowserRoleCardsLoader().load()
+      }
     }
 
-    const jobs = buildJobsFromRoleCards(await loadRoleCards(), { scrapedAt: now() })
+    const jobs = buildJobsFromRoleCards(resolvedRoleCards, { scrapedAt: now() })
     if (jobs.length === 0) {
       throw new Error('Schoolnet India public role cards no longer match the verified official careers surface')
     }

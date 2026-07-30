@@ -40,6 +40,35 @@ const BLANK_DARWINBOX_SHELL_HTML = `
 </html>
 `
 
+const HANDOFF_DARWINBOX_SHELL_HTML = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <base href="/ms/candidate/" />
+    <title>mfine Careers</title>
+    <script src="https://mfine.darwinbox.in/candidateweb/assets/bot.js"></script>
+  </head>
+  <body>
+    <noscript>Please enable Javascript!</noscript>
+  </body>
+</html>
+`
+
+const ACTIVE_DARWINBOX_SHELL_HTML = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <base href="/ms/candidatev2/" />
+    <title>mfine Careers</title>
+    <script src="https://mfine.darwinbox.in/candidateweb/assets/bot.js"></script>
+    <script>window.pendo = { initialize() {} }</script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>
+`
+
 const PUBLIC_JOBS_HTML = `
 <!doctype html>
 <html lang="en-US">
@@ -92,6 +121,8 @@ test('Mfine sentinel constants stay pinned to the verified contact-page handoff 
   assert.equal(mfine.hasOfficialMfineCareersSignal(CONTACT_PAGE_HTML), true)
   assert.equal(mfine.hasOfficialMfineCareersSignal('<html><body>unexpected</body></html>'), false)
   assert.equal(mfine.hasBlankDarwinboxShellSignal(BLANK_DARWINBOX_SHELL_HTML), true)
+  assert.equal(mfine.hasBlankDarwinboxShellSignal(HANDOFF_DARWINBOX_SHELL_HTML), true)
+  assert.equal(mfine.hasBlankDarwinboxShellSignal(ACTIVE_DARWINBOX_SHELL_HTML), true)
   assert.equal(mfine.hasBlankDarwinboxShellSignal(PUBLIC_JOBS_HTML), false)
   assert.equal(
     mfine.hasDarwinboxTenantInfoError({
@@ -102,7 +133,7 @@ test('Mfine sentinel constants stay pinned to the verified contact-page handoff 
   )
 })
 
-test('Mfine sentinel returns [] only while the verified first-party contact-page handoff still lands on the blank public Darwinbox shell', async () => {
+test('Mfine sentinel returns [] only while the verified first-party contact-page handoff still lands on the verified Darwinbox public shell', async () => {
   const mfine = await loadModule()
   const requestedPages = []
   const requestedApis = []
@@ -119,12 +150,12 @@ test('Mfine sentinel returns [] only while the verified first-party contact-page
         return {
           status: 200,
           url: mfine.DARWINBOX_CAREERS_URL,
-          html: BLANK_DARWINBOX_SHELL_HTML,
+          html: HANDOFF_DARWINBOX_SHELL_HTML,
         }
       }
 
       if (mfine.DARWINBOX_SHELL_ROUTE_URLS.includes(url)) {
-        return { status: 200, url, html: BLANK_DARWINBOX_SHELL_HTML }
+        return { status: 200, url, html: ACTIVE_DARWINBOX_SHELL_HTML }
       }
 
       throw new Error(`Unexpected Mfine URL: ${url}`)
@@ -175,7 +206,7 @@ test('Mfine sentinel fails closed when the contact page, handoff target, shell r
         return {
           status: 200,
           url: 'https://example.com/jobs',
-          html: BLANK_DARWINBOX_SHELL_HTML,
+          html: HANDOFF_DARWINBOX_SHELL_HTML,
         }
       },
       probeListingApi: async () => ({
@@ -197,7 +228,7 @@ test('Mfine sentinel fails closed when the contact page, handoff target, shell r
           return {
             status: 200,
             url: mfine.DARWINBOX_CAREERS_URL,
-            html: BLANK_DARWINBOX_SHELL_HTML,
+            html: HANDOFF_DARWINBOX_SHELL_HTML,
           }
         }
 
@@ -222,11 +253,11 @@ test('Mfine sentinel fails closed when the contact page, handoff target, shell r
           return {
             status: 200,
             url: mfine.DARWINBOX_CAREERS_URL,
-            html: BLANK_DARWINBOX_SHELL_HTML,
+            html: HANDOFF_DARWINBOX_SHELL_HTML,
           }
         }
 
-        return { status: 200, url, html: BLANK_DARWINBOX_SHELL_HTML }
+        return { status: 200, url, html: ACTIVE_DARWINBOX_SHELL_HTML }
       },
       probeListingApi: async () => ({
         status: 200,

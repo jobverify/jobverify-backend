@@ -240,16 +240,24 @@ export const extractEmbeddedWorkdayItems = (html) => {
   return candidates.sort((left, right) => right.length - left.length)[0]
 }
 
+const hasEmbeddedWorkdayItemsPayload = (html) =>
+  /"workday"\s*:\s*\{\s*"items"\s*:\s*\[/i.test(String(html ?? ''))
+
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const items = extractEmbeddedWorkdayItems(page)
+  const hasExplicitEmptyItemsState = hasEmbeddedWorkdayItemsPayload(page) && items.length === 0
 
   return /<title>\s*Explore Jobs\b[\s\S]*Careers at Acronis\s*<\/title>/i.test(page)
     && /HEAD_SITE_MAIN_PUBLIC_BASE_URL_WORKDAY/i.test(page)
-    && /acronis\.wd502\.myworkdayjobs\.com\/acronis_careers\/job\//i.test(page)
     && /JobPosting/i.test(page)
     && /Explore Jobs/i.test(normalized)
-    && extractEmbeddedWorkdayItems(page).length > 0
+    && (
+      /acronis\.wd502\.myworkdayjobs\.com\/acronis_careers\/job\//i.test(page)
+      || hasExplicitEmptyItemsState
+    )
+    && (items.length > 0 || hasExplicitEmptyItemsState)
 }
 
 export const extractIndiaJobsFromWorkdayItems = (items = []) =>

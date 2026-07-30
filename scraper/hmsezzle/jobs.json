@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Sezzle",
+    "company": "Sezzle",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "source": "hmsezzle",
+    "jobId": "hmsezzle-current-openings",
+    "requisitionId": "hmsezzle-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Sezzle had current Himalayas hiring evidence for Data / Software Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:09.488Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

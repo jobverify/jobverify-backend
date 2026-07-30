@@ -1,0 +1,8 @@
+{
+  "listingStrategy": "jobs-api",
+  "jobsApiUrl": "https://philips.wd3.myworkdayjobs.com/wday/cxs/philips/jobs-and-careers/jobs",
+  "detailUrlBase": "https://philips.wd3.myworkdayjobs.com/en-US/jobs-and-careers",
+  "locationCountry": null,
+  "searchText": "India",
+  "locationPattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|gurgaon|gurugram|chennai|kolkata|noida"
+}

@@ -10,7 +10,6 @@ const exactNameCareersHtml = `
   <body>
     <main>
       <h1>Reimagine how the world learns</h1>
-      <a href="https://jobs.lever.co/Wayground">See all open roles</a>
       <p>2025 Quizizz Inc. (DBA Wayground)</p>
     </main>
   </body>
@@ -22,6 +21,7 @@ const officialLeverBoardHtml = `
 <html lang="en">
   <head>
     <title>Wayground (formerly Quizizz)</title>
+    <meta property="og:description" content="Job openings at Wayground (formerly Quizizz)" />
   </head>
   <body>
     <h1>Wayground (formerly Quizizz)</h1>
@@ -31,7 +31,6 @@ const officialLeverBoardHtml = `
     <section>Work type</section>
     <a href="https://jobs.lever.co/Wayground/1f96f79c-0168-4a33-b0ae-f8fb649e69f2">Customer Success Manager</a>
     <a href="https://jobs.lever.co/Wayground/aae8a38e-404a-4c1f-8b26-3c356154bb01">Intern- Strategic Partnership</a>
-    <p>Jobs powered by Lever</p>
   </body>
 </html>
 `

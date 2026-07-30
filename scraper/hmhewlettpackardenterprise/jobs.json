@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Hewlett Packard Enterprise",
+    "company": "Hewlett Packard Enterprise",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "source": "hmhewlettpackardenterprise",
+    "jobId": "hmhewlettpackardenterprise-current-openings",
+    "requisitionId": "hmhewlettpackardenterprise-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Hewlett Packard Enterprise had current Himalayas hiring evidence for Software Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:29:56.464Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "companyDomain": "himalayas.app"
+  }
+]

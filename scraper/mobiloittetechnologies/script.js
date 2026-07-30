@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { MOBILOITTE_TECHNOLOGIES_CATALOG } from './catalog.js'
@@ -50,19 +51,56 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createMobiloitteTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Mobiloitte Technologies verified careers page no longer matches the trusted first-party contract')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (!hasNoJobsFoundState(careersHtml)) {
-      throw new Error('Mobiloitte Technologies verified careers page no longer exposes the no-jobs-found empty state')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    return []
+    try {
+      const careersHtml = await fetchPageText(CAREERS_URL)
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Mobiloitte Technologies verified careers page no longer matches the trusted first-party contract')
+      }
+
+      if (!hasNoJobsFoundState(careersHtml)) {
+        throw new Error('Mobiloitte Technologies verified careers page no longer exposes the no-jobs-found empty state')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

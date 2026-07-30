@@ -76,3 +76,21 @@ test('Asteria Aerospace fails closed when the careers page changes materially or
     /now exposes public jobs/i,
   )
 })
+
+test('Asteria Aerospace can recover with a browser-backed careers page when direct requests fail', async () => {
+  const asteria = await loadAsteriaModule()
+  const browserUrls = []
+
+  const jobs = await asteria.createAsteriaAerospaceScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return careersHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [asteria.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})

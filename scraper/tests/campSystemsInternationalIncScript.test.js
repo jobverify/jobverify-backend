@@ -28,6 +28,24 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers</title>
+  </head>
+  <body>
+    <main>
+      <h1>Careers</h1>
+      <h2>Innovative, forward-thinkers wanted.</h2>
+      <p>CAMP Systems is a SaaS company delivering groundbreaking aircraft health management solutions and market data to the business aviation industry worldwide.</p>
+      <p>We are comprised of talented and passionate people with skillsets in: Software Development, Product Management, IT Infrastructure, and Business Operations.</p>
+      <p>At CAMP Systems, we embrace a healthy, collaborative and diverse work environment.</p>
+    </main>
+  </body>
+</html>
+`
+
 test('CAMP Systems International, Inc. sentinel pins the verified first-party careers landing page', async () => {
   const campSystems = await loadModule()
 
@@ -37,6 +55,7 @@ test('CAMP Systems International, Inc. sentinel pins the verified first-party ca
   assert.equal(campSystems.CAREERS_URL, 'https://www.campsystems.com/careers')
   assert.equal(campSystems.VERIFIED_ON, '2026-07-17')
   assert.equal(campSystems.hasVerifiedCareersSignal(careersHtml), true)
+  assert.equal(campSystems.hasVerifiedCareersSignal(currentCareersHtml), true)
 })
 
 test('CAMP Systems International, Inc. returns [] while the verified first-party careers landing exposes no inline public jobs', async () => {
@@ -45,7 +64,7 @@ test('CAMP Systems International, Inc. returns [] while the verified first-party
   const jobs = await campSystems.createCampSystemsInternationalIncScraper().run({
     fetchText: async (url) => {
       assert.equal(url, campSystems.CAREERS_URL)
-      return careersHtml
+      return currentCareersHtml
     },
   })
 

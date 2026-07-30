@@ -61,6 +61,9 @@ export const isTrustedIndiaIframeFailure = (error) => {
     || message.includes('ssl/tls')
     || message.includes('secure channel')
     || message.includes('could not connect')
+    || message.includes('connect timeout error')
+    || message.includes('timeout:')
+    || message.includes('timeout error')
     || message.includes('timed out')
     || message.includes('certificate')
 }

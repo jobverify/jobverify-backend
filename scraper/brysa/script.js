@@ -100,10 +100,19 @@ export const hasOfficialHomepageSignal = (html) => {
   const raw = normalizeEncodingArtifacts(html)
   const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*Brysa AI \| Salesforce Consulting, AI &amp; Digital Transformation Experts\s*<\/title>/i.test(raw)
+  const hasCurrentSignal =
+    /<title>\s*Brysa AI \| Salesforce Consulting, AI &amp; Digital Transformation Experts\s*<\/title>/i.test(raw)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/brysa\.ai\/?["']/i.test(raw)
     && normalized.includes('Helping you find your flow')
     && normalized.includes('Salesforce Consulting Services')
+
+  const hasVerifiedLegacySignal =
+    /<title>\s*Digital Transformation Consultancy &amp; implementation service in London, UK \| Brysa\s*<\/title>/i.test(raw)
+    && raw.includes('Brysa is a UK-based Salesforce partner specializing in management services.')
+    && normalized.includes('We are a UK-based digital transformation consultant')
+    && normalized.includes('Our Teams, Values & Mission')
+
+  return hasCurrentSignal || hasVerifiedLegacySignal
 }
 
 export const hasOfficialAboutSignal = (html) => {
@@ -111,7 +120,10 @@ export const hasOfficialAboutSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return /<title>\s*About Brysa \| Salesforce, AI &amp; Digital Transformation Experts\s*<\/title>/i.test(raw)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/brysa\.ai\/about-us\/?["']/i.test(raw)
+    && (
+      /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/brysa\.ai\/about-us\/?["']/i.test(raw)
+      || /<h1>\s*About Brysa\s*<\/h1>/i.test(raw)
+    )
     && (
       normalized.includes('We are a people-first Salesforce Consulting Company.')
       || normalized.includes("unlock your team's true potential")
@@ -123,7 +135,10 @@ export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return /<title>\s*Get in Touch with Brysa for Crm and Salesforce Support Today\s*<\/title>/i.test(raw)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/brysa\.ai\/contact-us\/?["']/i.test(raw)
+    && (
+      /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/brysa\.ai\/contact-us\/?["']/i.test(raw)
+      || /<h1>\s*Get in touch\s*<\/h1>/i.test(raw)
+    )
     && /Get in touch/i.test(normalized)
     && normalized.includes('Contact Us')
 }

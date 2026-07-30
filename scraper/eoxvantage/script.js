@@ -1,7 +1,12 @@
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
 export const SOURCE = 'eoxvantage'
 export const COMPANY = 'EOX Vantage'
 export const HOMEPAGE_URL = 'https://eoxvantage.com/'
 export const CAREERS_URL = 'https://eoxvantage.com/careers/'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
@@ -25,6 +30,15 @@ export const PROVIDER_METADATA = {
 }
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -60,7 +74,7 @@ export const extractOpenings = (html = '') => {
 
 const isIndiaLocation = (location) => /\bindia\b/i.test(String(location ?? ''))
 
-export const run = async ({ fetchText } = {}) => {
+export const run = async ({ fetchText = defaultFetchText } = {}) => {
   const careersHtml = await fetchText(CAREERS_URL)
   if (!hasOfficialCareersSignal(careersHtml)) {
     throw new Error('EOX Vantage verified first-party careers page changed materially')

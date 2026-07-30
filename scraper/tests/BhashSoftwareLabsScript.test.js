@@ -40,9 +40,11 @@ test('Bhash Software Labs validators stay pinned to the verified homepage and ca
 test('Bhash Software Labs run validates the homepage and careers 404 and stays fail-closed', async () => {
   const bhash = await loadModule()
   const jobs = await bhash.createBhashSoftwareLabsScraper().run({
-    fetchText: async (url) => (
-      url === bhash.HOMEPAGE_URL ? homepageHtml : careers404Html
-    ),
+    fetchPage: async (url) => ({
+      status: url === bhash.HOMEPAGE_URL ? 200 : 404,
+      url,
+      html: url === bhash.HOMEPAGE_URL ? homepageHtml : careers404Html,
+    }),
   })
 
   assert.deepEqual(jobs, [])

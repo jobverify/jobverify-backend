@@ -20,9 +20,9 @@ export const ORDERHIVE_CATALOG = {
     'verified-orderhive-homepage-redirect+verified-generic-cin7-careers-without-orderhive-jobs+verified-missing-orderhive-careers-route-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-25',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://orderhive.com/ and https://www.orderhive.com/ resolve to the generic Cin7 marketing site at https://www.cin7.com/, that https://orderhive.com/careers returns a first-party 404, and that https://www.cin7.com/careers/ is only the generic parent Cin7 careers page. There is no trustworthy public jobs surface for the exact-name Orderhive brand because the verified exact-name domain no longer exposes Orderhive-specific public openings.',
+    'Verified on Saturday, July 25, 2026 that https://orderhive.com/ and https://www.orderhive.com/ resolve to the generic Cin7 marketing site at https://www.cin7.com/, that https://orderhive.com/careers returns a first-party 404, and that https://www.cin7.com/careers/ is only the generic parent Cin7 careers page. There is no trustworthy public jobs surface for the exact-name Orderhive brand because the verified exact-name domain no longer exposes Orderhive-specific public openings.',
   dryRunFile: 'orderhive/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

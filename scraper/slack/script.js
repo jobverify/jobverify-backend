@@ -60,6 +60,16 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractLocationOptions = (html = '') => {
   const page = String(html ?? '')
+  const selectLocationsBlock = page.match(
+    /<select[^>]*(?:jobs-filter--mobile--location|mobile-location-selected|data-default-value=["']all-locations["'])[^>]*>([\s\S]*?)<\/select>/i,
+  )?.[1]
+
+  if (selectLocationsBlock) {
+    return [...selectLocationsBlock.matchAll(/<option[^>]*>([\s\S]*?)<\/option>/gi)]
+      .map((match) => normalizeWhitespace(match[1]))
+      .filter((value) => value && !/^all locations$/i.test(value))
+  }
+
   const locationsBlock = page.match(
     /all locations[\s\S]*?<ul[^>]*data-filter-name=["']locations["'][^>]*>([\s\S]*?)<\/ul>/i,
   )?.[1]

@@ -48,9 +48,9 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('Financial services companies | Vivriti Capital')
     && normalized.includes('Vivriti Capital Limited')
+    && normalized.includes('Public Notice')
     && normalized.includes('Careers All the hot jobs that are open at Vivriti Capital')
     && normalized.includes('sales@vivriticapital.com')
-    && /https:\/\/vivriti\.darwinbox\.in/i.test(String(html ?? ''))
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -59,8 +59,8 @@ export const hasOfficialCareersSignal = (html) => {
   return normalized.includes('Career | Vivriti Capital')
     && normalized.includes('People Are at the Heart of What We Do')
     && normalized.includes('Join Our Team')
-    && normalized.includes("one of India's top-rated employers")
-    && /APPLY NOW/i.test(String(html ?? ''))
+    && normalized.includes('Discover roles across various departments')
+    && normalized.includes('Use our filters to find opportunities')
 }
 
 export const hasOfficialAboutSignal = (html) => {

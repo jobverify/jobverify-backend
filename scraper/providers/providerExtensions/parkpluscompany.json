@@ -1,0 +1,22 @@
+{
+  "source": "parkpluscompany",
+  "companyName": "Park Plus",
+  "officialBrandName": null,
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../parkpluscompany/script.js",
+  "dryRunFile": "parkpluscompany/jobs.json",
+  "companyCareerPage": "https://parkplus.io/careers",
+  "companyDomain": "parkplus.io",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "official-first-party-surface-without-exact-entity-evidence-sentinel",
+  "extractionStrategy": "no-fuzzy-substitution+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://parkplus.io/careers",
+  "verifiedSurfaceSummary": "Verified on July 26, 2026 that https://parkplus.io/careers is a first-party careers surface branded Park+, not Park Plus. Because that official surface does not prove that the distinct literal CSV entry Park Plus is the same entity, this provider is exact-name-only and fails closed rather than reusing Park+ or Park+ India jobs."
+}

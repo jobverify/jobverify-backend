@@ -16,6 +16,25 @@ const CAREERS_HTML = `
 </html>
 `
 
+const CURRENT_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | Invenger</title>
+    <meta property="og:site_name" content="Invenger"/>
+  </head>
+  <body>
+    <nav>
+      <a href="/jobs">Careers</a>
+    </nav>
+    <main>
+      <h1>Careers</h1>
+      <a href="/jobs">Careers</a>
+    </main>
+  </body>
+</html>
+`
+
 const JOBS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -128,6 +147,7 @@ test('Invenger verifies the first-party careers page, jobs page, and detail/appl
   assert.equal(invenger.CAREERS_PAGE_URL, 'https://www.invenger.com/careers')
   assert.equal(invenger.JOBS_PAGE_URL, 'https://www.invenger.com/jobs')
   assert.equal(invenger.hasOfficialCareersSignal(CAREERS_HTML), true)
+  assert.equal(invenger.hasOfficialCareersSignal(CURRENT_CAREERS_HTML), true)
   assert.equal(invenger.hasOfficialJobsPageSignal(JOBS_HTML), true)
 })
 

@@ -10,8 +10,9 @@ const isEnabled = () =>
 
 const createMockProvider = () => ({
   name: "mock",
-  async sendTemplateMessage({ to, body }) {
+  async sendTextMessage({ to, body }) {
     return {
+      providerName: "mock",
       providerMessageId: `mock_whatsapp_${Date.now()}`,
       to,
       body,
@@ -21,7 +22,7 @@ const createMockProvider = () => ({
 
 const createMetaProvider = () => ({
   name: "meta",
-  async sendTemplateMessage({ to, body }) {
+  async sendTextMessage({ to, body, signal }) {
     if (!isEnabled()) {
       throw new Error("WhatsApp delivery is disabled.");
     }
@@ -49,6 +50,7 @@ const createMetaProvider = () => ({
             body,
           },
         }),
+        signal,
       },
     );
 
@@ -58,6 +60,7 @@ const createMetaProvider = () => ({
     }
 
     return {
+      providerName: "meta",
       providerMessageId: data?.messages?.[0]?.id || null,
       raw: data,
     };

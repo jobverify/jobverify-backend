@@ -23,7 +23,6 @@ export const normalizeCity = (raw) => {
   const cleanLower = lower
     .replace(/^dgs india\s*-\s*/, '')
     .replace(/^ind\s*-\s*/, '')
-    .replace(/^ind-?/, '')
     .replace(/india,? ?/g, '')
     .replace(/,\s*\d{6}/, '')
     .trim();

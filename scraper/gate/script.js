@@ -31,16 +31,12 @@ const OFFICIAL_CAREERS_SIGNALS = [
   'internship',
 ]
 
-const OFFICIAL_CAREERS_LINK_SIGNALS = [
-  'https://jobs.lever.co/gate',
-]
-
 const LEVER_BOARD_SIGNALS = [
-  '<title>Gate</title>',
-  'Job openings at Gate',
+  'location type',
+  'work type',
+  'location all',
+  'team all',
   'Gate Home Page',
-  'Jobs powered by Lever',
-  'https://jobs.lever.co/gate/',
 ]
 
 const decodeHtmlEntities = (value) => String(value ?? '')
@@ -132,17 +128,17 @@ const requireField = (value, fieldName) => {
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const markup = String(html ?? '')
   const text = stripTags(html)?.toLowerCase() || ''
 
   return OFFICIAL_CAREERS_SIGNALS.every((signal) => text.includes(signal))
-    && OFFICIAL_CAREERS_LINK_SIGNALS.every((signal) => markup.includes(signal))
 }
 
 export const hasLeverBoardSignal = (html) => {
   const markup = String(html ?? '')
+  const text = stripTags(html)?.toLowerCase() || ''
 
-  return LEVER_BOARD_SIGNALS.every((signal) => markup.includes(signal))
+  return /<title>\s*Gate\s*<\/title>/i.test(markup)
+    && LEVER_BOARD_SIGNALS.every((signal) => text.includes(signal.toLowerCase()))
 }
 
 export const extractLeverJobs = (leverJobs = []) => (Array.isArray(leverJobs) ? leverJobs : [])

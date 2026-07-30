@@ -31,14 +31,14 @@ test('SoftProdigy System Solutions exports local provider metadata for the verif
     companyCareerPage: 'https://softprodigy.keka.com/careers/',
     atsPlatform: 'official-homepage-plus-keka-board',
     countryFilter: 'India',
-    paginationStrategy: 'homepage-handoff-plus-single-keka-board-page',
-    extractionStrategy: 'verified-homepage-keka-link+verified-keka-board-shell+same-board-job-cards',
+    paginationStrategy: 'homepage-handoff-plus-keka-board-shell-plus-active-jobs-api',
+    extractionStrategy: 'verified-homepage-keka-link+verified-keka-board-shell+keka-active-jobs-api',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'softprodigy.com',
-    verifiedOn: '2026-07-17',
+    verifiedOn: '2026-07-27',
     verifiedSurfaceSummary:
-      'Verified on Friday, July 17, 2026 that https://softprodigy.com/ linked candidates to the public board at https://softprodigy.keka.com/careers/, and that the live Keka surface rendered the SoftProdigy System Solutions Pvt. Ltd. hiring shell with a Browse all jobs prompt.',
+      'Verified on Monday, July 27, 2026 that https://softprodigy.com/ linked candidates to the public board at https://softprodigy.keka.com/careers/, that the live Keka shell still rendered the SoftProdigy System Solutions Pvt. Ltd. hiring surface with a Browse all jobs prompt, and that the public active-jobs API at https://softprodigy.keka.com/careers/api/jobs/default/active exposed three openings including Software Developer, Internship cum Job Opportunity - Hiring Interns (2025 & 2026 Batch), and PPC Analyst.',
     dryRunFile: 'softprodigysystemsolutions/jobs.json',
   })
 

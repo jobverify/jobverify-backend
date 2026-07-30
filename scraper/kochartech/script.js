@@ -95,7 +95,8 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Careers\s*-\s*KocharTech\s*<\/title>/i.test(page)
+  return /<title>\s*Careers\b[^<]*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.kochartech\.com\/careers\/["']/i.test(page)
     && /\bOpen Positions\b/i.test(page)
     && /https:\/\/www\.kochartech\.com\/career\/senior-manager-sales-2\//i.test(page)
     && /https:\/\/www\.kochartech\.com\/career\/inside-sales-executive-sales\//i.test(page)

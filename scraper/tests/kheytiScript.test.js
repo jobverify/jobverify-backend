@@ -7,13 +7,17 @@ const joinPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Join Us | Kheyti</title>
+    <title>We bring innovation in Indian agriculture | Join Kheyti</title>
+    <link rel="canonical" href="https://www.kheyti.com/join-us" />
+    <meta
+      name="description"
+      content="Build a career that powers smallholder farming and climate-smart agriculture innovation in India. Help us scale impact from 7,000+ to 1 million farmers. Apply now."
+    />
   </head>
   <body>
     <main>
-      <h1>Join Us</h1>
-      <p>Build farmer-first climate-smart agriculture with us.</p>
-      <a href="https://jobs.kheyti.com/careers">Apply Now</a>
+      <h2>Employee testimonials</h2>
+      <a href="/join-us">Join Us</a>
     </main>
   </body>
 </html>
@@ -86,7 +90,7 @@ test('Kheyti helpers stay pinned to the verified join page and public jobs table
   assert.equal(kheyti.OFFICIAL_BRAND_NAME, 'Kheyti')
   assert.equal(kheyti.VERIFIED_ON, '2026-07-16')
   assert.equal(kheyti.HOMEPAGE_URL, 'https://www.kheyti.com/')
-  assert.equal(kheyti.JOIN_PAGE_URL, 'https://www.kheyti.com/join/')
+  assert.equal(kheyti.JOIN_PAGE_URL, 'https://www.kheyti.com/join-us')
   assert.equal(kheyti.JOBS_PAGE_URL, 'https://jobs.kheyti.com/careers')
   assert.equal(kheyti.hasOfficialJoinPageSignal(joinPageHtml), true)
   assert.equal(kheyti.hasOfficialJobsPageSignal(jobsPageHtml), true)

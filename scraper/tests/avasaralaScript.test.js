@@ -50,3 +50,22 @@ test('run fetches the Avasarala careers page and returns an empty job list when 
   assert.deepEqual(requestedTexts, [avasarala.CAREER_PAGE_URL])
   assert.deepEqual(jobs, [])
 })
+
+test('run can recover with a browser-backed Avasarala careers page when direct requests fail', async () => {
+  const avasarala = await loadAvasaralaModule()
+  assert.ok(avasarala)
+
+  const browserUrls = []
+  const jobs = await avasarala.createAvasaralaScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return careerPageHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [avasarala.CAREER_PAGE_URL])
+  assert.deepEqual(jobs, [])
+})

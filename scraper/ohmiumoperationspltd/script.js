@@ -67,18 +67,29 @@ export const hasVerifiedWorkdayBoardSignal = (html) => {
     && WORKDAY_EMAIL_PATTERN.test(page)
 }
 
-const backfillMissingJobIds = (jobs = []) => jobs.map((job) => {
-  if (job?.jobId || !job?.requisitionId) {
-    return job
-  }
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
 
-  return {
-    ...job,
-    jobId: job.requisitionId,
-  }
-})
+export const backfillMissingJobIds = (jobs = []) => {
+  const normalizedJobs = jobs.map((job) => {
+    if (job?.jobId || !job?.requisitionId) {
+      return job
+    }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+    return {
+      ...job,
+      jobId: job.requisitionId,
+    }
+  })
+
+  if (jobs[WORKDAY_AUTHORITATIVE_EMPTY] === true) {
+    Object.defineProperty(normalizedJobs, WORKDAY_AUTHORITATIVE_EMPTY, {
+      value: true,
+    })
+  }
+  return normalizedJobs
+}
+
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -87,14 +98,18 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   baseDelayMs: 2000,
   timeoutMs: 20000,
   label: SOURCE,
+  signal,
 })
 
 export const createOhmiumOperationsPltdScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  async run() {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ signal } = {}) {
+    const fetchVerifiedText = (url) => (
+      signal === undefined ? fetchText(url) : fetchText(url, { signal })
+    )
+    const homepageHtml = await fetchVerifiedText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Ohmium official homepage surface changed; refusing to guess the careers handoff')
     }
@@ -104,19 +119,23 @@ export const createOhmiumOperationsPltdScraper = ({
       throw new Error('Ohmium verified Workday handoff changed; refusing to guess the public jobs source')
     }
 
-    const workdayHtml = await fetchText(WORKDAY_BASE_URL)
+    const workdayHtml = await fetchVerifiedText(WORKDAY_BASE_URL)
     if (!hasVerifiedWorkdayBoardSignal(workdayHtml)) {
       throw new Error('Ohmium verified Workday board changed; refusing to guess the public jobs source')
     }
 
-    return backfillMissingJobIds(await workdayRunner(buildScraperOptions()))
+    return backfillMissingJobIds(await workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    }))
   },
 })
 
 export const run = async ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
-} = {}) => createOhmiumOperationsPltdScraper({ fetchText, workdayRunner }).run()
+  signal,
+} = {}) => createOhmiumOperationsPltdScraper({ fetchText, workdayRunner }).run({ signal })
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')

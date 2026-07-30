@@ -57,9 +57,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Empower Your Sales with AI \| Salesken\.ai\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Empower Your Sales with AI \| Salesken\.ai\s*<\/title>/i.test(page)
     && normalized.includes('Empower Your Sales with AI')
-    && normalized.includes('Book a demo')
+    && /(?:Book|Request) a Demo/i.test(normalized)
     && normalized.includes('Pricing')
     && normalized.includes('Privacy Policy')
     && !/\bcareers\b/i.test(normalized)

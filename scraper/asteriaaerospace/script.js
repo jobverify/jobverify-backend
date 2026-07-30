@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'asteriaaerospace'
@@ -58,6 +60,10 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const extractApplicationEmail = (html) => {
   const match = String(html ?? '').match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i)
   return match?.[0]?.toLowerCase() ?? null
@@ -79,22 +85,55 @@ export const hasUnexpectedPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const createAsteriaAerospaceScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasVerifiedCareersPageSignal(careersHtml)) {
-      throw new Error('Asteria Aerospace verified email-only careers surface no longer matches the known public page')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (extractApplicationEmail(careersHtml) !== 'careers@asteria.co.in') {
-      throw new Error('Asteria Aerospace verified careers application email changed')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    if (hasUnexpectedPublicJobsSignal(careersHtml)) {
-      throw new Error('Asteria Aerospace careers page now exposes public jobs')
-    }
+    try {
+      const careersHtml = await fetchPageText(CAREERS_URL)
 
-    return []
+      if (!hasVerifiedCareersPageSignal(careersHtml)) {
+        throw new Error('Asteria Aerospace verified email-only careers surface no longer matches the known public page')
+      }
+
+      if (extractApplicationEmail(careersHtml) !== 'careers@asteria.co.in') {
+        throw new Error('Asteria Aerospace verified careers application email changed')
+      }
+
+      if (hasUnexpectedPublicJobsSignal(careersHtml)) {
+        throw new Error('Asteria Aerospace careers page now exposes public jobs')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

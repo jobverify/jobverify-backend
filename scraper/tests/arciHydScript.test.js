@@ -70,3 +70,28 @@ test('run fetches the official ARCI careers pages and returns an honest zero-ope
   ])
   assert.deepEqual(jobs, [])
 })
+
+test('run can recover with browser-backed ARCI careers pages when direct requests fail', async () => {
+  const arcihyd = await loadArciHydModule()
+  const browserUrls = []
+
+  const jobs = await arcihyd.createArciHydScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+
+      if (url === arcihyd.CAREERS_PAGE_URL) return careersPageHtml
+      if (url === arcihyd.VACANCIES_PAGE_URL) return vacanciesPageHtml
+
+      throw new Error(`Unexpected browser URL ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    arcihyd.CAREERS_PAGE_URL,
+    arcihyd.VACANCIES_PAGE_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})

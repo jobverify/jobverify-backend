@@ -178,33 +178,47 @@ Primary files:
 
 Important behavior:
 
-- `GET /api/jobs`, `GET /api/jobs/meta`, `GET /api/jobs/seo-feed`, `GET /api/jobs/:id`, and `POST /api/jobs/:id/click` are all protected.
-- Only `GET /api/jobs/stats` is public.
-- Public job visibility is still scoped by `applyPublicJobLocationScope()`, which only exposes allowed India cities and approved India-offsite labels.
+- Public read paths are open, with optional auth used only to unlock premium filters and personalized recommended sorting.
+- Public job visibility is enforced through the materialized `isPublicIndia` flag applied by `applyPublicJobLocationScope()`.
+- Unscoped metadata and landing-page stats are served from the persisted `JobDatasetSummary` document when available.
 
 Endpoints:
 
 - `GET /api/jobs`
-  - supports `page`, `limit`, `sort`, `query`, `company`, `city`, `location`, `jobType`, `batch`, `branch`, and `skills`
+  - compatibility route for offset pagination and premium `recommended` sorting
+  - supports `page`, `limit`, `sort`, `query`, `company`, `city`, `location`, `jobType`, `batch`, `branch`, `skills`, and enrichment filters
   - always filters to `status: "active"`
-  - applies public location scope
+  - applies public location scope through `isPublicIndia`
   - supports:
+    - `all`
     - `latest`
+    - `oldest`
     - `popularity`
     - `recommended`
+  - caps page size at 2000 cards
   - `recommended` uses `req.user.profile` to score jobs by skills, branch keywords, location preference, and Graduation Year
 
+- `GET /api/jobs/search`
+- `POST /api/jobs/search`
+  - canonical cursor-search path for `latest`, `oldest`, and `popularity`
+  - returns `hasNextPage` and `nextCursor` instead of offset totals
+  - uses `sortDate` and `_id` for stable cursor boundaries, with `clickCount` added for popularity sorting
+
 - `GET /api/jobs/meta`
-  - returns distinct companies, merged city/location options, and job types
-  - sets a private cache header
+  - unscoped reads return summary-backed companies, cities, job types, and static taxonomy options
+  - scoped reads stay live and query-shaped for premium users
+
+- `GET /api/jobs/meta/companies`
+  - bounded company autocomplete for the filter UI
+  - applies the current scoped filters when premium users narrow the dataset
 
 - `GET /api/jobs/stats`
   - public endpoint for landing-page counts
-  - returns total active jobs and total companies
+  - returns summary-backed total active jobs and total companies
   - sets a public cache header
 
 - `GET /api/jobs/seo-feed`
-  - protected feed of active jobs with frontend URLs and SEO metadata
+  - public feed of active jobs with frontend URLs and SEO metadata
 
 - `GET /api/jobs/:id`
   - returns one active job within the public location scope

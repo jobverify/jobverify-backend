@@ -49,10 +49,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-  return normalized.includes('Advance your career as we evolve')
+  return (
+    normalized.includes('Advance your career as we evolve')
     && normalized.includes('Explore Open Positions')
+  ) || title === 'Metayb | AI-Native Digital Consultancy for Enterprise Transformation'
 }
 
 export const hasPublicJobsSignal = (html = '') => {

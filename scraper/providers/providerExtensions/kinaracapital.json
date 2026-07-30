@@ -1,0 +1,22 @@
+{
+  "source": "kinaracapital",
+  "companyName": "Kinara Capital",
+  "officialBrandName": "Kinara Capital",
+  "adapter": "script",
+  "modulePath": "../kinaracapital/script.js",
+  "dryRunFile": "kinaracapital/jobs.json",
+  "companyCareerPage": "https://kinaracapital.com/careers/",
+  "officialCareersHandoffUrl": "https://careers.kinaracapital.com/",
+  "companyDomain": "kinaracapital.com",
+  "atsPlatform": "official-first-party-careers-shell-unverified-public-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "first-party-careers-shell-validation",
+  "extractionStrategy": "verified-first-party-careers-page+unverified-public-apply-handoff+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://kinaracapital.com/careers/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://kinaracapital.com/careers/ was Kinara Capital's live first-party careers page and that it exposed an APPLY NOW handoff to https://careers.kinaracapital.com/. The public handoff target was not verifiable as a trustworthy enumerable jobs feed from the current environment, so this exact-name provider fails closed and returns no jobs until a stable official listings surface is confirmed."
+}

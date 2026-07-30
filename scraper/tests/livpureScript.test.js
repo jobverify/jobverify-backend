@@ -146,7 +146,7 @@ test('Livpure returns [] while the verified homepage and PeopleStrong shell stay
       }
 
       if (url === livpure.JOB_LISTINGS_URL) {
-        return { status: 200, url, html: portalShellHtml }
+        return { status: 404, url, html: portalShellHtml }
       }
 
       throw new Error(`Unexpected Livpure page URL: ${url}`)

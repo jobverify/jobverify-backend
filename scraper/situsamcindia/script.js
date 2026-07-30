@@ -129,14 +129,14 @@ const normalizeRemoteStatus = (value) => {
 }
 
 export const hasOfficialJobSearchSignal = (html = '') => {
-  const rawHtml = String(html ?? '').toLowerCase()
   const normalized = (normalizeWhitespace(html) || '').toLowerCase()
 
-  return normalized.includes('search open jobs worldwide')
-    && normalized.includes('in - bengaluru')
-    && normalized.includes('in - gurgaon')
-    && rawHtml.includes('/work-at-situsamc/corporate-careers/job-opportunities')
-    && rawHtml.includes('/work-at-situsamc/residential-real-estate-careers/job-opportunities')
+  return normalized.includes('search open jobs at situsamc and apply today!')
+    && normalized.includes('work at situsamc')
+    && (normalized.includes("how you'll work") || normalized.includes('how you’ll work'))
+    && normalized.includes('career areas')
+    && normalized.includes('locations')
+    && normalized.includes('search jobs')
   }
 
 export const hasCorporateJobsPageSignal = (html = '') => {
@@ -144,8 +144,7 @@ export const hasCorporateJobsPageSignal = (html = '') => {
 
   return normalized.includes('corporate current job opportunities')
     && normalized.includes('showing')
-    && normalized.includes('in - haryana - gurgaon')
-    && normalized.includes('jr02278')
+    && extractIndiaJobCardsFromAreaPage(html).length > 0
   }
 
 export const hasResidentialJobsPageSignal = (html = '') => {
@@ -153,8 +152,7 @@ export const hasResidentialJobsPageSignal = (html = '') => {
 
   return normalized.includes('residential real estate current job opportunities')
     && normalized.includes('showing')
-    && normalized.includes('in - maharashtra - navi mumbai')
-    && normalized.includes('jr01749')
+    && extractIndiaJobCardsFromAreaPage(html).length > 0
   }
 
 export const hasOfficialJobDetailSignal = (html = '') => {

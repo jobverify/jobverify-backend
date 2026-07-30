@@ -21,6 +21,26 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Credgenics | Debt Collections &amp; Resolution Platform | Loan Collections Platform | Debt Recovery Software</title>
+  </head>
+  <body>
+    <h1>Supercharge debt collections with AI-driven full-stack platform</h1>
+    <p>India’s Best Selling AI-powered Loan Collections Platform - three times winner for 2022 -2024.</p>
+    <section>
+      <h2>Company</h2>
+      <a href="/about-us">About Us</a>
+      <a href="https://www.linkedin.com/jobs/search/?f_C=14634991&amp;geoId=92000000">LinkedIn jobs</a>
+    </section>
+    <p>support@credgenics.com</p>
+    <p>© 2026 Analog Legalhub Technology Solutions Pvt. Ltd. All Rights Reserved.</p>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../credgenics/script.js')
@@ -43,6 +63,17 @@ test('Credgenics sentinel validates the verified official homepage with no publi
   assert.equal(credgenics.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(credgenics.extractLinkedInJobsUrl(homepageHtml), null)
   assert.equal(credgenics.pageExposesFirstPartyJobsSignal(homepageHtml), false)
+})
+
+test('Credgenics sentinel accepts the current homepage punctuation and LinkedIn handoff shape', async () => {
+  const credgenics = await loadModule()
+
+  assert.equal(credgenics.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(
+    credgenics.extractLinkedInJobsUrl(currentHomepageHtml),
+    'https://www.linkedin.com/jobs/search/?f_C=14634991&geoId=92000000',
+  )
+  assert.equal(credgenics.pageExposesFirstPartyJobsSignal(currentHomepageHtml), false)
 })
 
 test('Credgenics sentinel returns no jobs while the verified homepage exposes no public jobs surface', async () => {

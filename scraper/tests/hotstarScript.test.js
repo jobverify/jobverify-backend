@@ -17,6 +17,11 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = homepageHtml.replace(
+  /content="JioHotstar is [\s\S]*?global sporting event"/,
+  'content="JioHotstar is India’s largest premium streaming platform with more than 100,000 hours of drama and movies in 17 languages, and coverage of every major global sporting event"',
+)
+
 const careersPageHtml = `
 <!doctype html>
 <html lang="en-US">
@@ -130,7 +135,7 @@ test('Hotstar pins the verified JioHotstar homepage, JioStar careers handoff, an
     'https://jiostar.wd102.myworkdayjobs.com/wday/cxs/jiostar/JioStar/jobs',
   )
   assert.equal(hotstar.VERIFIED_KEYWORD, 'JioHotstar')
-  assert.equal(hotstar.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(hotstar.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(hotstar.hasOfficialCareersSignal(careersPageHtml), true)
   assert.equal(
     hotstar.extractVerifiedWorkdayBoardUrl(careersPageHtml),
@@ -219,7 +224,7 @@ test('Hotstar run validates the verified handoff and paginates keyworded Workday
       requestedPages.push(url)
 
       if (url === hotstar.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
+        return { status: 200, url: 'https://www.hotstar.com/in', html: currentHomepageHtml }
       }
 
       if (url === hotstar.CAREERS_URL) {

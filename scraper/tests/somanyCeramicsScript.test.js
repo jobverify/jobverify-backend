@@ -21,7 +21,10 @@ const CAREERS_PAGE_HTML = `
         <p>Agra</p>
         <p>Work Type</p>
         <p>Remote</p>
-        <a href="https://v2.app.goodfit.so/jobs/somany-ceramics-tiles/Area-Sales-Manager-Agra?id=8e35b993-a160-4816-bb19-2414c5a518b4">Know More</a>
+        <a href="https://v2.app.goodfit.so/jobs/somany-ceramics-tiles/Area-Sales-Manager-Agra?id=8e35b993-a160-4816-bb19-2414c5a518b4">
+          Know More
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"></svg>
+        </a>
       </article>
 
       <article class="career-card">
@@ -77,7 +80,7 @@ test('Somany Ceramics helpers stay pinned to the verified first-party page and e
   assert.equal(somanyCeramics.SOURCE, 'somanyceramics')
   assert.equal(somanyCeramics.COMPANY_NAME, 'Somany Ceramics')
   assert.equal(somanyCeramics.OFFICIAL_BRAND_NAME, 'Somany Ceramics Limited')
-  assert.equal(somanyCeramics.VERIFIED_ON, '2026-07-17')
+  assert.equal(somanyCeramics.VERIFIED_ON, '2026-07-27')
   assert.equal(somanyCeramics.CAREERS_URL, 'https://www.somanyceramics.com/work-with-us')
   assert.equal(somanyCeramics.GOODFIT_HOST, 'https://v2.app.goodfit.so')
   assert.equal(somanyCeramics.hasOfficialCareersPageSignal(CAREERS_PAGE_HTML), true)

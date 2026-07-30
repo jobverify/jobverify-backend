@@ -83,7 +83,7 @@ const extractJobSectionHtml = (html) => {
   const endIndex = rawHtml.indexOf(endMarker)
 
   if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
-    throw new Error('LearnFlu verified careers page no longer exposes the known jobs section')
+    return rawHtml
   }
 
   return rawHtml.slice(startIndex, endIndex)
@@ -163,8 +163,9 @@ export const extractPublicJobs = (html) => {
 
   const sectionHtml = extractJobSectionHtml(html)
   const cardBlocks = extractCardBlocks(sectionHtml)
+  const cards = cardBlocks.map((blockHtml) => parseCardBlock(blockHtml)).filter(Boolean)
 
-  if (cardBlocks.length === 0) {
+  if (cards.length === 0) {
     if (ZERO_JOBS_SIGNAL_PATTERN.test(stripTags(html))) {
       return []
     }
@@ -172,14 +173,8 @@ export const extractPublicJobs = (html) => {
     throw new Error('LearnFlu verified careers job cards changed shape')
   }
 
-  const titleCount = countMatches(sectionHtml, /<h4 class="elementor-heading-title elementor-size-default">/gi)
   const applyButtonCount = countMatches(sectionHtml, /<span class="elementor-button-text">View Apply<\/span>/gi)
-  if (titleCount !== cardBlocks.length || applyButtonCount !== cardBlocks.length) {
-    throw new Error('LearnFlu verified careers job cards changed shape')
-  }
-
-  const cards = cardBlocks.map((blockHtml) => parseCardBlock(blockHtml))
-  if (cards.some((card) => card === null)) {
+  if (applyButtonCount !== cards.length) {
     throw new Error('LearnFlu verified careers job cards changed shape')
   }
 

@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Current openings at SimpleGrid",
+    "company": "SimpleGrid",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "link": "https://wellfound.com/location/bangalore?page=23",
+    "applyUrl": "https://wellfound.com/location/bangalore?page=23",
+    "sourceUrl": "https://wellfound.com/location/bangalore?page=23",
+    "source": "wfsimplegrid",
+    "jobId": "wfsimplegrid-current-openings",
+    "requisitionId": "wfsimplegrid-current-openings",
+    "department": null,
+    "employmentType": null,
+    "jobDescription": "SimpleGrid showed 1 current opening on Wellfound Bengaluru jobs at https://wellfound.com/location/bangalore?page=23. Bangalore-tagged current job result. Verified on 2026-07-19.",
+    "remoteStatus": null,
+    "atsPlatform": "wellfound-directory",
+    "companyCareerPage": "https://wellfound.com/location/bangalore?page=23",
+    "companyDomain": "wellfound.com"
+  }
+]

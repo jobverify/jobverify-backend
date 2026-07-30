@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper/providers/index.js'
+import { run } from '../scraper/truemeds/script.js'
+
+test('Truemeds resolves only the exact CSV company name to its first-party sentinel provider', () => {
+  const report = generateCompanyCoverageReport({
+    csvText: 'company_name\nTruemeds\nTruemeds India\n',
+    catalog: getScraperCatalog(),
+    aliasMap: {},
+  })
+
+  const provider = getScraperCatalog().find((item) => item.source === 'truemeds')
+
+  assert.ok(provider)
+  assert.equal(provider.companyName, 'Truemeds')
+  assert.equal(provider.companyDomain, 'truemeds.in')
+  assert.equal(provider.exactCompanyMatchOnly, true)
+  assert.deepEqual(
+    report.matched.map((item) => [item.companyName, item.source]),
+    [['Truemeds', 'truemeds']],
+  )
+  assert.deepEqual(
+    report.unmatched.map((item) => item.companyName),
+    ['Truemeds India'],
+  )
+})
+
+test('Truemeds fails closed without a verified first-party public careers feed', async () => {
+  assert.deepEqual(await run(), [])
+})

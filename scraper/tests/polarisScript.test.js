@@ -129,6 +129,9 @@ test('Polaris validates the accepted careers shell and then delegates to the sha
 
 test('Polaris also accepts an unblocked first-party careers shell when it is directly fetchable', async () => {
   const polaris = await loadPolarisModule()
+  const authoritativeEmpty = Symbol.for('jobify.workday.authoritative-empty')
+  const confirmedEmpty = []
+  Object.defineProperty(confirmedEmpty, authoritativeEmpty, { value: true })
 
   const jobs = await polaris.createPolarisScraper().run({
     fetchText: async (url) => {
@@ -136,10 +139,11 @@ test('Polaris also accepts an unblocked first-party careers shell when it is dir
       if (url === polaris.WORKDAY_BOARD_URL) return WORKDAY_BOARD_HTML
       throw new Error(`Unexpected Polaris URL: ${url}`)
     },
-    workdayRunner: async () => [],
+    workdayRunner: async () => confirmedEmpty,
   })
 
   assert.deepEqual(jobs, [])
+  assert.equal(jobs[authoritativeEmpty], true)
 })
 
 test('Polaris accepts the verified first-party 403 block shape that happens before challenge HTML is returned', async () => {

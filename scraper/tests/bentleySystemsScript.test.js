@@ -4,7 +4,7 @@ import test from 'node:test'
 const JOBS_HOST_HTML = `
 <!doctype html>
 <html>
-  <head><title>Careers | Bentley Systems</title></head>
+  <head><title>Bentley Systems</title></head>
   <body>
     <a href="https://www.bentley.com/company/careers/">Careers</a>
     <a href="https://jobs.bentley.com/search/?searchby=location&amp;q=&amp;locationsearch=&amp;geolocation=">Search Jobs</a>

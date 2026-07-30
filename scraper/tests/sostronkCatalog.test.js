@@ -12,7 +12,7 @@ const loadSostronkCatalog = async () => {
   }
 }
 
-test('Sostronk catalog metadata captures the verified timeout-only exact-name routes with branded changelog evidence', async () => {
+test('Sostronk catalog metadata captures the verified blocked exact-name routes with branded changelog evidence', async () => {
   const { SOSTRONK_CATALOG } = await loadSostronkCatalog()
   const provider = hydrateProviderCatalogEntry(SOSTRONK_CATALOG)
 
@@ -26,15 +26,15 @@ test('Sostronk catalog metadata captures the verified timeout-only exact-name ro
   assert.equal(provider.coFounderName, 'Karan')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'exact-name-first-party-route-timeout-validation')
+  assert.equal(provider.paginationStrategy, 'exact-name-first-party-route-blocked-surface-validation')
   assert.equal(
     provider.extractionStrategy,
-    'search-indexed-first-party-changelog-plus-exact-name-first-party-routes-timeout-return-empty',
+    'search-indexed-first-party-changelog-plus-exact-name-first-party-routes-tls-blocked-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'sostronk.com')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-27')
   assert.deepEqual(provider.firstPartyTimeoutUrls, [
     'https://www.sostronk.com/',
     'https://www.sostronk.com/about',
@@ -45,11 +45,12 @@ test('Sostronk catalog metadata captures the verified timeout-only exact-name ro
   ])
   assert.match(provider.modulePath, /sostronk[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /sostronk[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, July 27, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/changelog\.sostronk\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /SoStronk release notes/i)
   assert.match(provider.verifiedSurfaceSummary, /Karan, Co-Founder & CTO/i)
-  assert.match(provider.verifiedSurfaceSummary, /Connect Timeout Error/i)
+  assert.match(provider.verifiedSurfaceSummary, /ECONNRESET/i)
+  assert.match(provider.verifiedSurfaceSummary, /secure connection is established/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 })
 

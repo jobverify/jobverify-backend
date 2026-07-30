@@ -62,11 +62,18 @@ export const hasOfficialCareersSignal = (html = '') => {
   }
 
 export const extractOpenPositionsUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*See open positions\s*<\/a>/i,
-  )
+  for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const linkText = normalizeWhitespace(match[2]).toLowerCase()
+    const absoluteUrl = toAbsoluteUrl(match[1], CAREERS_URL)
 
-  return toAbsoluteUrl(match?.[1], CAREERS_URL)
+    if (!absoluteUrl) continue
+
+    if (absoluteUrl === OPEN_POSITIONS_URL || linkText.includes('open positions')) {
+      return absoluteUrl
+    }
+  }
+
+  return null
 }
 
 const hasVerifiedOpenPositionsShellSignal = (html = '') => {

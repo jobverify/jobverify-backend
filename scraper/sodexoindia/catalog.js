@@ -14,14 +14,14 @@ export const SODEXO_INDIA_CATALOG = {
   companyDomain: 'sodexo.in',
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
-  paginationStrategy: 'verified-careers-page-plus-accesshr-login-or-timeout-validation',
+  paginationStrategy: 'verified-careers-page-plus-accesshr-login-js-shell-or-timeout-validation',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-accesshr-jobs-link+verified-login-shell-or-timeout-return-empty',
+    'verified-first-party-careers-page+verified-accesshr-jobs-link+verified-login-shell-js-shell-or-timeout-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-27',
   verifiedSurfaceSummary:
-    'Verified on July 17, 2026 that https://www.sodexo.in/careers is the live Sodexo India careers page and its raw first-party HTML links candidates to https://accesshr.in.sodexo.com/#/jobs. The linked AccessHr surface on https://accesshr.in.sodexo.com/ remained only a login shell in search-indexed first-party snippets and timed out during direct HTTP probes, so there is no trustworthy public jobs surface that can be extracted automatically at the verified date.',
+    'Verified on Monday, July 27, 2026 that https://www.sodexo.in/careers is the live Sodexo India careers page and its raw first-party HTML links candidates to https://accesshr.in.sodexo.com/#/jobs. The linked AccessHr surface on https://accesshr.in.sodexo.com/ now responds as a JavaScript app shell titled AccessHr with the same first-party base href and app-root bootstrap, while still exposing no trustworthy public jobs listing in fetched HTML; timeout-only probes remain acceptable fallback behavior for this non-public surface.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

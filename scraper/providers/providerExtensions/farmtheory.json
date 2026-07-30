@@ -1,0 +1,22 @@
+{
+  "source": "farmtheory",
+  "companyName": "FarmTheory",
+  "officialBrandName": "Farmtheory",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../farmtheory/script.js",
+  "dryRunFile": "farmtheory/jobs.json",
+  "companyCareerPage": "https://www.farmtheory.in/",
+  "companyDomain": "farmtheory.in",
+  "atsPlatform": "official-first-party-storefront-no-verified-careers-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-storefront-sentinel",
+  "extractionStrategy": "no-verified-official-careers-or-ats-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.farmtheory.in/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.farmtheory.in/ is Farmtheory's first-party storefront and that no public careers page, official ATS endpoint, or enumerable job feed is exposed. This exact-name provider fails closed and returns no jobs rather than substituting LinkedIn, third-party listings, or similarly named companies."
+}

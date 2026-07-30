@@ -94,8 +94,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 export const hasOfficialPaycorBoardSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('Algonomy')
-    && normalized.includes('Job Search')
+  return normalized.includes('Job Search')
     && normalized.includes("homeUrl = 'https://algonomy.com/careers/'")
     && GROUP_HEADER_PATTERN.test(String(html ?? ''))
 }

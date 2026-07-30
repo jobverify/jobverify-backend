@@ -3,12 +3,15 @@
  * @module controllers/jobController
  */
 
+import { randomUUID } from "node:crypto";
 import mongoose from "mongoose";
 import Job from "../models/Job.js";
 import Click from "../models/Click.js";
 import { getPreferredJobTypeMatches } from "../constants/preferredJobTypes.js";
 import {
+  DATE_POSTED_NA_VALUE,
   DATE_POSTED_OPTIONS,
+  DATE_POSTED_WINDOW_OPTIONS,
   EXPERIENCE_BUCKET_OPTIONS,
   EXPERIENCE_BUCKET_VALUES,
   ROLE_DOMAIN_OPTIONS,
@@ -29,12 +32,26 @@ import {
 } from "../utils/jobLocations.js";
 import { normalizeJobSearchKey } from "../utils/jobSearchKeys.js";
 import { getValidIndiaCityForJob } from "../utils/publicJobLocationScope.js";
+import { normalizeLifecycleDate, startOfUtcDay } from "../utils/jobLifecycle.js";
 import { hasWorkdayOutageSignal } from "../../scraper/myworkday/engine.js";
+import {
+  SearchInputError,
+  buildJobSearchRequest,
+  decodeJobSearchCursor,
+  encodeJobSearchCursor,
+} from "../services/jobSearchContract.js";
+import {
+  JOB_DATASET_LIFECYCLE_VERSION,
+  refreshJobDatasetSummary,
+  readJobDatasetSummary,
+} from "../services/jobDatasetSummaryService.js";
+import { buildJobFilterConditions } from "../services/jobFilterMatcher.js";
 
 const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_TEXT_QUERY_LENGTH = 200;
 const MAX_RECOMMENDATION_TERMS = 20;
-const MAX_PAGE = 500;
+// Keep the controller clamp aligned with the public request validator.
+const MAX_PAGE = 2000;
 const CLICK_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_REASONABLE_EXPERIENCE_YEARS = 40;
 const PUBLIC_CACHE_HEADER =
@@ -42,14 +59,22 @@ const PUBLIC_CACHE_HEADER =
 const PRIVATE_CACHE_HEADER = "private, max-age=120, must-revalidate";
 const FALLBACK_JOB_SLUG = "job";
 const JOB_CARD_PAGE_LIMIT = 12;
-const MAX_JOB_CARD_PAGE_LIMIT = 100;
+const MAX_JOB_CARD_PAGE_LIMIT = 2000;
 const MAX_EXPERIENCE_FILTER_YEAR = 15;
+const MAX_QUERY_EXECUTION_MS = 800;
+const DEFAULT_COMPANY_META_LIMIT = 24;
+const MAX_COMPANY_AUTOCOMPLETE_RESULTS = 2000;
 const EXPERIENCE_UNSPECIFIED_VALUE = "unspecified";
 const WORKDAY_APPLICATION_PROBE_TIMEOUT_MS = 5000;
+const WORKDAY_APPLICATION_CACHE_TTL_MS = 30 * 60 * 1000;
+const WORKDAY_APPLICATION_CACHE_MAX_ENTRIES = 250;
 const APPLICATION_UNAVAILABLE_MESSAGE =
   "The original application link is unavailable for this listing.";
 const WORKDAY_APPLICATION_UNAVAILABLE_MESSAGE =
   "Applications on this Workday portal are temporarily unavailable because Workday is showing a maintenance page. Please try again later.";
+const WORKDAY_APPLICATION_GONE_MESSAGE =
+  "This Workday application is no longer available.";
+const WORKDAY_POSTING_UNAVAILABLE_PATTERN = /\bpostingAvailable\s*[:=]\s*false\b/i;
 const PREMIUM_FILTER_KEYS = [
   "query",
   "company",
@@ -83,10 +108,19 @@ const JOB_LIST_CARD_FIELDS = Object.freeze([
   "branches",
   "postedAt",
   "jobSkills",
+  "applyUrl",
+  "sourceUrl",
+  "workdayApplicationStatus",
+  "workdayApplicationStatusReason",
+  "workdayApplicationStatusCheckedAt",
 ]);
-const JOB_LIST_CARD_PROJECTION = JOB_LIST_CARD_FIELDS.join(" ");
+const JOB_LIST_CURSOR_FIELDS = Object.freeze(["sortDate", "clickCount"]);
+const JOB_LIST_QUERY_FIELDS = Object.freeze([
+  ...new Set([...JOB_LIST_CARD_FIELDS, ...JOB_LIST_CURSOR_FIELDS]),
+]);
+const JOB_LIST_CARD_PROJECTION = JOB_LIST_QUERY_FIELDS.join(" ");
 const JOB_LIST_CARD_TEXT_PROJECTION = Object.freeze(
-  Object.fromEntries(JOB_LIST_CARD_FIELDS.map((field) => [field, 1])),
+  Object.fromEntries(JOB_LIST_QUERY_FIELDS.map((field) => [field, 1])),
 );
 const JOB_LIST_CARD_AGGREGATE_PROJECT = JOB_LIST_CARD_TEXT_PROJECTION;
 
@@ -140,15 +174,153 @@ const mergeCompanyOptions = (...lists) => {
   return companies.sort((left, right) => left.localeCompare(right, "en", { sensitivity: "base" }));
 };
 
-let _scraperCatalogCompanies = null;
-const getScraperCatalogCompanies = async () => {
-  if (_scraperCatalogCompanies === null) {
-    const { getScraperCatalog } = await import("../../scraper/providers/index.js");
-    _scraperCatalogCompanies = getScraperCatalog()
-      .map((provider) => normalizeCompanyOption(provider.companyName))
-      .filter(Boolean);
+const toValidDate = (value) => {
+  const next = value == null ? null : new Date(value);
+  return Number.isFinite(next?.getTime?.()) ? next : null;
+};
+
+const resolvePublicJobDatasetSummary = async () => {
+  const summary = await readJobDatasetSummary();
+  const refreshedAt = normalizeLifecycleDate(summary?.refreshedAt);
+  const isCurrentLifecycleDay = !refreshedAt
+    || refreshedAt >= startOfUtcDay(new Date());
+  const isCurrentLifecycleScope = !refreshedAt
+    || summary?.lifecycleVersion === JOB_DATASET_LIFECYCLE_VERSION;
+
+  if (
+    (summary != null && isCurrentLifecycleDay && isCurrentLifecycleScope)
+    || mongoose.connection.readyState !== 1
+  ) {
+    return summary;
   }
-  return _scraperCatalogCompanies;
+
+  return refreshJobDatasetSummary();
+};
+
+const resolvePublicJobDatasetTotals = async () => {
+  const summary = await resolvePublicJobDatasetSummary();
+
+  if (!summary) return null;
+
+  return {
+    total: Number(summary.totalJobs ?? 0),
+    totalCompanies: Number(summary.totalCompanies ?? 0),
+  };
+};
+
+const isDefaultPublicJobListFilter = (filters = {}) => (
+  filters?.status === "active"
+  && filters?.isPublicIndia === true
+  && Object.keys(filters).length === 3
+  && Object.hasOwn(filters, "$expr")
+);
+
+const workdayApplicationStatusCache = new Map();
+const workdayApplicationRefreshes = new Map();
+
+const buildEffectiveSortDateExpression = () => ({
+  $ifNull: ["$sortDate", { $ifNull: ["$postedAt", { $ifNull: ["$createdAt", "$scrapedAt"] }] }],
+});
+
+const buildCompanySearchMatch = (searchTerm = "") => {
+  const normalizedSearch = normalizeFilterText(searchTerm).toLowerCase();
+  if (!normalizedSearch) return null;
+
+  const rawRegex = buildSafeRegex(searchTerm);
+  const normalizedRegex = new RegExp(escapeRegex(normalizedSearch));
+
+  return {
+    $or: [
+      { company: { $regex: rawRegex } },
+      { companyKey: { $regex: normalizedRegex } },
+    ],
+  };
+};
+
+const buildCompanyOptionPipeline = (
+  baseFilter,
+  {
+    searchTerm = "",
+    limit = DEFAULT_COMPANY_META_LIMIT,
+    maximumLimit = DEFAULT_COMPANY_META_LIMIT,
+  } = {},
+) => {
+  const safeLimit = Math.max(1, Math.min(limit, maximumLimit));
+  const searchMatch = buildCompanySearchMatch(searchTerm);
+  const pipeline = [{ $match: baseFilter }];
+
+  if (searchMatch) {
+    pipeline.push({ $match: searchMatch });
+  }
+
+  pipeline.push(
+    {
+      $group: {
+        _id: "$companyKey",
+        company: { $first: "$company" },
+        activeJobCount: { $sum: 1 },
+        latestSortDate: { $max: buildEffectiveSortDateExpression() },
+      },
+    },
+    {
+      $match: {
+        company: { $exists: true, $ne: null },
+      },
+    },
+    {
+      $sort: {
+        activeJobCount: -1,
+        latestSortDate: -1,
+        company: 1,
+      },
+    },
+    {
+      $limit: safeLimit,
+    },
+    {
+      $project: {
+        _id: 0,
+        company: 1,
+      },
+    },
+  );
+
+  return pipeline;
+};
+
+const resolveActiveCompanyOptions = async (
+  queryParams = {},
+  {
+    excludedKeys = [],
+    searchTerm = "",
+    limit = DEFAULT_COMPANY_META_LIMIT,
+    maximumLimit = DEFAULT_COMPANY_META_LIMIT,
+  } = {},
+) => {
+  const baseFilter = buildJobMetaFilter(queryParams, excludedKeys, { company: { $ne: null } });
+  const safeLimit = Math.max(1, Math.min(limit, maximumLimit));
+
+  if (mongoose.connection.readyState !== 1) {
+    const companies = await Job.distinct("company", baseFilter);
+    const normalizedSearch = normalizeFilterText(searchTerm).toLowerCase();
+
+    return mergeCompanyOptions(companies)
+      .filter((company) => (
+        !normalizedSearch
+        || company.toLowerCase().includes(normalizedSearch)
+      ))
+      .slice(0, safeLimit);
+  }
+
+  const results = await Job.aggregate(
+    buildCompanyOptionPipeline(baseFilter, {
+      searchTerm,
+      limit: safeLimit,
+      maximumLimit,
+    }),
+  ).exec();
+
+  return mergeCompanyOptions(results.map((entry) => entry.company));
 };
 
 const normalizeList = (value, { maxItems = 20, maxLength = MAX_REGEX_FILTER_LENGTH } = {}) => {
@@ -182,8 +354,13 @@ const normalizeOptionValues = (value, options = []) => [...new Set(
 )];
 
 const normalizeDatePostedDays = (value) => {
-  const normalized = Number.parseInt(String(value ?? "").trim(), 10);
-  return DATE_POSTED_OPTIONS.includes(normalized) ? normalized : null;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === DATE_POSTED_NA_VALUE) return DATE_POSTED_NA_VALUE;
+
+  if (!/^\d+$/u.test(normalized)) return null;
+
+  const days = Number(normalized);
+  return DATE_POSTED_OPTIONS.includes(days) ? days : null;
 };
 
 const normalizeDatePostedDaysValues = (value) => [...new Set(
@@ -192,11 +369,29 @@ const normalizeDatePostedDaysValues = (value) => [...new Set(
     .filter((item) => item != null)
 )];
 
-const buildDatePostedCutoff = (days) => {
-  const cutoff = new Date();
-  cutoff.setHours(0, 0, 0, 0);
-  cutoff.setDate(cutoff.getDate() - days);
-  return cutoff;
+const buildDatePostedRange = (days) => {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - days);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
+  return { $gte: start, $lt: end };
+};
+
+const buildDatePostedFilter = (values) => {
+  const clauses = values.map((value) => (
+    value === DATE_POSTED_NA_VALUE
+      ? { postedAt: null }
+      : { postedAt: buildDatePostedRange(value) }
+  ));
+
+  if (clauses.length === 1) {
+    return clauses[0];
+  }
+
+  return { $or: clauses };
 };
 
 const normalizeSkillMatchMode = (value) => (
@@ -324,10 +519,86 @@ const normalizeResponseJobType = (job = {}) => {
 const getSafeExternalApplicationUrl = (value) => {
   try {
     const url = new URL(String(value || "").trim());
-    return ["http:", "https:"].includes(url.protocol) ? url.href : null;
+    return url.protocol === "https:" ? url.href : null;
   } catch {
     return null;
   }
+};
+
+const trimWorkdayApplicationStatusCache = () => {
+  while (workdayApplicationStatusCache.size > WORKDAY_APPLICATION_CACHE_MAX_ENTRIES) {
+    const oldestKey = workdayApplicationStatusCache.keys().next().value;
+    if (!oldestKey) return;
+    workdayApplicationStatusCache.delete(oldestKey);
+  }
+};
+
+const getCachedWorkdayApplicationState = (applicationUrl = "") => {
+  const cachedEntry = workdayApplicationStatusCache.get(applicationUrl);
+  if (!cachedEntry) return null;
+
+  if (Date.now() - cachedEntry.checkedAt.getTime() > WORKDAY_APPLICATION_CACHE_TTL_MS) {
+    workdayApplicationStatusCache.delete(applicationUrl);
+    return null;
+  }
+
+  workdayApplicationStatusCache.delete(applicationUrl);
+  workdayApplicationStatusCache.set(applicationUrl, cachedEntry);
+  return cachedEntry;
+};
+
+const setCachedWorkdayApplicationState = (applicationUrl = "", state = {}) => {
+  if (!applicationUrl) return null;
+
+  const checkedAt = toValidDate(state.checkedAt) ?? new Date();
+  const applicationStatus = state.applicationStatus === "temporarily_unavailable"
+    ? "temporarily_unavailable"
+    : state.applicationStatus === "unavailable"
+      ? "unavailable"
+      : "available";
+  const normalizedState = {
+    applicationStatus,
+    applicationStatusReason: applicationStatus === "temporarily_unavailable"
+      ? state.applicationStatusReason || WORKDAY_APPLICATION_UNAVAILABLE_MESSAGE
+      : applicationStatus === "unavailable"
+        ? state.applicationStatusReason || WORKDAY_APPLICATION_GONE_MESSAGE
+        : null,
+    checkedAt,
+  };
+
+  workdayApplicationStatusCache.delete(applicationUrl);
+  workdayApplicationStatusCache.set(applicationUrl, normalizedState);
+  trimWorkdayApplicationStatusCache();
+  return normalizedState;
+};
+
+const getStoredWorkdayApplicationState = (job = {}, applicationUrl = "") => {
+  const checkedAt = toValidDate(job.workdayApplicationStatusCheckedAt);
+  if (!checkedAt) return null;
+
+  if (Date.now() - checkedAt.getTime() > WORKDAY_APPLICATION_CACHE_TTL_MS) {
+    return null;
+  }
+
+  return {
+    applicationStatus: job.workdayApplicationStatus,
+    applicationStatusReason: job.workdayApplicationStatusReason,
+    checkedAt,
+  };
+};
+
+const getFreshWorkdayApplicationState = (job = {}, applicationUrl = "") => {
+  const cachedState = getCachedWorkdayApplicationState(applicationUrl);
+  const storedState = getStoredWorkdayApplicationState(job, applicationUrl);
+  const resolvedState = storedState && (
+    !cachedState || storedState.checkedAt > cachedState.checkedAt
+  )
+    ? storedState
+    : cachedState || storedState;
+
+  return resolvedState && resolvedState === storedState
+    ? setCachedWorkdayApplicationState(applicationUrl, storedState)
+    : resolvedState;
 };
 
 const buildApplicationState = (job = {}) => {
@@ -342,19 +613,24 @@ const buildApplicationState = (job = {}) => {
     };
   }
 
+  const resolvedWorkdayState = isWorkdayApplication(job, applicationUrl)
+    ? getFreshWorkdayApplicationState(job, applicationUrl)
+    : null;
+
   return {
     applicationUrl,
-    applicationStatus: "available",
-    applicationStatusReason: null,
+    applicationStatus: resolvedWorkdayState?.applicationStatus ?? "available",
+    applicationStatusReason: resolvedWorkdayState?.applicationStatusReason ?? null,
   };
 };
 
 const isWorkdayApplication = (job = {}, applicationUrl = "") => {
-  if (String(job?.atsPlatform || "").toLowerCase() === "workday") return true;
-
   try {
     const hostname = new URL(applicationUrl).hostname.toLowerCase();
-    return hostname.includes("myworkdayjobs.com") || hostname.includes("workdayjobs.com");
+    return hostname === "myworkdayjobs.com"
+      || hostname.endsWith(".myworkdayjobs.com")
+      || hostname === "workdayjobs.com"
+      || hostname.endsWith(".workdayjobs.com");
   } catch {
     return false;
   }
@@ -372,7 +648,7 @@ const withAbortTimeout = (timeoutMs) => {
   };
 };
 
-const annotateWorkdayApplicationAvailability = async (job = {}) => {
+const probeWorkdayApplicationAvailability = async (job = {}) => {
   if (
     !job
     || job.applicationStatus !== "available"
@@ -386,37 +662,135 @@ const annotateWorkdayApplicationAvailability = async (job = {}) => {
 
   try {
     const response = await fetch(job.applicationUrl, {
-      redirect: "follow",
+      redirect: "error",
       signal,
     });
     const html = await response.text().catch(() => "");
 
+    if (
+      response.status === 404
+      || response.status === 410
+      || WORKDAY_POSTING_UNAVAILABLE_PATTERN.test(html)
+    ) {
+      return {
+        applicationStatus: "unavailable",
+        applicationStatusReason: WORKDAY_APPLICATION_GONE_MESSAGE,
+      };
+    }
+
     if (hasWorkdayOutageSignal({ html, url: response.url })) {
       return {
-        ...job,
         applicationStatus: "temporarily_unavailable",
         applicationStatusReason: WORKDAY_APPLICATION_UNAVAILABLE_MESSAGE,
       };
     }
   } catch {
-    return job;
+    return null;
   } finally {
     clear();
   }
 
-  return job;
+  return {
+    applicationStatus: "available",
+    applicationStatusReason: null,
+  };
 };
 
-const normalizeResponseJob = (job) => (
-  job
-    ? {
-      ...job,
-      experienceLevel: normalizeResponseExperienceLevel(job),
-      jobType: normalizeResponseJobType(job),
-      ...buildApplicationState(job),
+const persistWorkdayApplicationAvailability = async (job = {}, state = {}) => {
+  if (!job?._id || !job.applicationUrl) return;
+
+  const checkedAt = toValidDate(state.checkedAt) ?? new Date();
+
+  await Job.updateOne(
+    {
+      _id: job._id,
+      $or: [
+        { applyUrl: job.applicationUrl },
+        { sourceUrl: job.applicationUrl },
+      ],
+    },
+    {
+      $set: {
+        workdayApplicationStatus: state.applicationStatus,
+        workdayApplicationStatusReason: state.applicationStatusReason ?? null,
+        workdayApplicationStatusCheckedAt: checkedAt,
+      },
+    },
+  ).exec();
+};
+
+const scheduleWorkdayApplicationAvailabilityRefresh = (job = {}) => {
+  if (
+    !job
+    || job.applicationStatus !== "available"
+    || !job.applicationUrl
+    || !isWorkdayApplication(job, job.applicationUrl)
+    || getFreshWorkdayApplicationState(job, job.applicationUrl)
+  ) {
+    return null;
+  }
+
+  const existingRefresh = workdayApplicationRefreshes.get(job.applicationUrl);
+  if (existingRefresh) return existingRefresh;
+
+  const refreshPromise = (async () => {
+    const probedState = await probeWorkdayApplicationAvailability(job);
+    if (!probedState) return null;
+
+    const nextState = setCachedWorkdayApplicationState(job.applicationUrl, {
+      ...probedState,
+      checkedAt: new Date(),
+    });
+
+    try {
+      await persistWorkdayApplicationAvailability(job, nextState);
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Unable to persist Workday application availability", error);
+      }
     }
-    : job
-);
+
+    return nextState;
+  })().finally(() => {
+    workdayApplicationRefreshes.delete(job.applicationUrl);
+  });
+
+  workdayApplicationRefreshes.set(job.applicationUrl, refreshPromise);
+  return refreshPromise;
+};
+
+const normalizeResponseJob = (job) => {
+  if (!job) return job;
+
+  const {
+    workdayApplicationStatus: _workdayApplicationStatus,
+    workdayApplicationStatusReason: _workdayApplicationStatusReason,
+    workdayApplicationStatusCheckedAt: _workdayApplicationStatusCheckedAt,
+    ...publicJob
+  } = job;
+
+  return {
+    ...publicJob,
+    experienceLevel: normalizeResponseExperienceLevel(job),
+    jobType: normalizeResponseJobType(job),
+    ...buildApplicationState(job),
+  };
+};
+
+const normalizeJobListResponseJob = (job) => {
+  const normalized = normalizeResponseJob(job);
+  if (!normalized) return normalized;
+
+  const {
+    clickCount: _clickCount,
+    createdAt: _createdAt,
+    sortDate: _sortDate,
+    _cursorDate: _cursorDate,
+    ...responseJob
+  } = normalized;
+
+  return responseJob;
+};
 
 const normalizeJobTypeFilters = (value) => {
   const jobTypes = normalizeList(value);
@@ -441,7 +815,6 @@ const EXPERIENCE_MINIMUM_PATTERN = /(?:at least|min(?:imum)?(?: of)?|minimum|req
 const EXPERIENCE_VALUE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i;
 const EXPERIENCE_YEAR_UNIT_REGEX_SOURCE = "(?:years?|yrs?)";
 const EXPERIENCE_TEXT_HINT_PATTERN = /(^|[^0-9.])(?:\d+(?:\.\d+)?\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?(?:(?:\+|plus)\s*)?(?:years?|yrs?)\b|\d+(?:\.\d+)?\s*(?:years?|yrs?)\s*(?:and above|or above)\b|(?:at least|min(?:imum)?(?: of)?|minimum|required|preferred)\s*\d+(?:\.\d+)?\s*(?:years?|yrs?)\b|no prior experience required|no experience required|freshers? can apply|freshers?|entry[- ]level applicants are encouraged)/i;
-
 const clampExperienceYear = (value) => {
   const normalized = Number.parseFloat(value);
   if (!Number.isFinite(normalized)) return null;
@@ -511,66 +884,6 @@ const hasUnspecifiedExperienceFilter = (value) => (
     .some((item) => item.toLowerCase() === EXPERIENCE_UNSPECIFIED_VALUE)
 );
 
-const experienceNumberRegexSource = (year) => `${year}(?:\\.0+)?`;
-
-const buildExperienceRequiredRegex = (years = []) => {
-  const alternatives = new Set();
-
-  for (const year of years) {
-    const selectedYear = Number.parseInt(String(year), 10);
-    if (!Number.isFinite(selectedYear)) continue;
-
-    const selectedYearPattern = experienceNumberRegexSource(selectedYear);
-    alternatives.add(`${selectedYearPattern}\\s*${EXPERIENCE_YEAR_UNIT_REGEX_SOURCE}\\b`);
-
-    for (let start = 0; start <= selectedYear; start += 1) {
-      const startPattern = experienceNumberRegexSource(start);
-      alternatives.add(`${startPattern}\\s*(?:\\+|plus)\\s*${EXPERIENCE_YEAR_UNIT_REGEX_SOURCE}\\b`);
-      alternatives.add(`${startPattern}\\s*${EXPERIENCE_YEAR_UNIT_REGEX_SOURCE}\\s*(?:and above|or above)\\b`);
-      alternatives.add(`(?:at least|min(?:imum)?(?: of)?|minimum|required|preferred)\\s*${startPattern}\\s*${EXPERIENCE_YEAR_UNIT_REGEX_SOURCE}\\b`);
-
-      for (let end = selectedYear; end <= MAX_EXPERIENCE_FILTER_YEAR; end += 1) {
-        alternatives.add(`${startPattern}\\s*(?:-|to)\\s*${experienceNumberRegexSource(end)}\\s*${EXPERIENCE_YEAR_UNIT_REGEX_SOURCE}\\b`);
-      }
-    }
-
-    if (selectedYear === 0) {
-      alternatives.add("no prior experience required");
-      alternatives.add("no experience required");
-      alternatives.add("freshers? can apply");
-      alternatives.add("freshers?");
-      alternatives.add("entry[- ]level applicants are encouraged");
-    }
-  }
-
-  if (alternatives.size === 0) return null;
-
-  return new RegExp(`(^|[^0-9.])(?:${[...alternatives].join("|")})`, "i");
-};
-
-const buildExperienceRequiredTextGuard = (years = []) => {
-  const matchRegex = buildExperienceRequiredRegex(years);
-  if (!matchRegex) return null;
-
-  return {
-    $or: [
-      { experienceRequired: { $exists: false } },
-      { experienceRequired: null },
-      { experienceRequired: "" },
-      { experienceRequired: { $not: EXPERIENCE_TEXT_HINT_PATTERN } },
-      { experienceRequired: { $regex: matchRegex } },
-    ],
-  };
-};
-
-const buildMissingExperienceYearsCondition = () => ({
-  $or: [
-    { experienceYears: { $exists: false } },
-    { experienceYears: null },
-    { experienceYears: { $size: 0 } },
-  ],
-});
-
 const buildFresherJobTypeConstraint = () => {
   const fresherJobTypes = getPreferredJobTypeMatches("Full-time Fresher");
 
@@ -586,26 +899,15 @@ const buildFresherJobTypeConstraint = () => {
 };
 
 const buildExperienceYearMatchConstraint = (years = []) => {
-  const matchRegex = buildExperienceRequiredRegex(years);
-  if (!matchRegex) return null;
+  const normalizedYears = [...new Set(
+    years
+      .map((year) => Number.parseInt(String(year), 10))
+      .filter((year) => Number.isFinite(year)),
+  )];
 
-  const storedYearsCondition = { experienceYears: { $in: years } };
-  const storedYearsTextGuard = buildExperienceRequiredTextGuard(years);
-  const storedYearsBranch = storedYearsTextGuard
-    ? { $and: [storedYearsCondition, storedYearsTextGuard] }
-    : storedYearsCondition;
-
-  return {
-    $or: [
-      storedYearsBranch,
-      {
-        $and: [
-          buildMissingExperienceYearsCondition(),
-          { experienceRequired: { $regex: matchRegex } },
-        ],
-      },
-    ],
-  };
+  return normalizedYears.length > 0
+    ? { experienceYears: { $in: normalizedYears } }
+    : null;
 };
 
 const buildExperienceYearConstraint = (years = []) => {
@@ -676,7 +978,7 @@ const sendJobsResponse = (res, jobs, pageNum, limitNum, total, totalCompanies) =
     code: 200,
     success: true,
     message: "Jobs retrieved successfully",
-    data: jobs.map(normalizeResponseJob),
+    data: jobs.map(normalizeJobListResponseJob),
     pagination: {
       total,
       totalCompanies,
@@ -697,193 +999,22 @@ const applyJobListProjection = (query, { includeTextScore = false } = {}) => (
 
 const resolveJobListSortOption = ({ sort, hasTextSearch = false } = {}) => {
   if (sort === "popularity") {
-    return { clickCount: -1, postedAt: -1, _id: -1 };
+    return { clickCount: -1, sortDate: -1, _id: -1 };
   }
 
   if (sort === "latest") {
-    return { postedAt: -1, createdAt: -1, _id: -1 };
+    return { sortDate: -1, _id: -1 };
   }
 
   if (sort === "oldest") {
-    return { postedAt: 1, createdAt: 1, _id: 1 };
+    return { sortDate: 1, _id: 1 };
   }
 
   if (hasTextSearch) {
-    return { score: { $meta: "textScore" }, postedAt: -1, _id: -1 };
+    return { score: { $meta: "textScore" }, sortDate: -1, _id: -1 };
   }
 
-  return { postedAt: -1, createdAt: -1, _id: -1 };
-};
-
-// Generates database query filters based on query parameters.
-const buildJobFilterConditions = (queryParams = {}, { includeExperienceYear = true } = {}) => {
-  const {
-    query,
-    location,
-    company,
-    city,
-    jobType,
-    batch,
-    branch,
-    skills,
-    skillMatchMode,
-    skillScope,
-    experienceYear,
-    experienceBucket,
-    roleDomain,
-    seniority,
-    workArrangement,
-    datePostedDays,
-  } = queryParams;
-  const filters = { status: "active" };
-
-  if (company) {
-    const companyList = normalizeExactList(company);
-    const companyKeys = companyList
-      .map((value) => normalizeJobSearchKey(value))
-      .filter(Boolean);
-
-    if (companyKeys.length === 1) {
-      filters.companyKey = companyKeys[0];
-    } else if (companyKeys.length > 1) {
-      filters.companyKey = { $in: companyKeys };
-    }
-  }
-
-  if (city) {
-    const cityList = normalizeList(city);
-    const hasNone = cityList.some((c) => c.toLowerCase() === 'none');
-    if (!hasNone) {
-      const cityKeys = cityList
-        .map((value) => normalizeJobSearchKey(value))
-        .filter(Boolean);
-
-      if (cityKeys.length === 1) {
-        filters.locationKeys = cityKeys[0];
-      } else if (cityKeys.length > 1) {
-        filters.locationKeys = { $in: cityKeys };
-      }
-    }
-  }
-
-  if (location) {
-    const locationKeys = normalizeList(location)
-      .map((value) => normalizeJobSearchKey(value))
-      .filter(Boolean);
-    if (locationKeys.length > 0 && !filters.locationKeys) {
-      filters.locationKeys = { $in: locationKeys };
-    }
-  }
-
-  if (jobType) {
-    const jobTypes = normalizeJobTypeFilters(jobType);
-    if (jobTypes.length > 0) {
-      filters.jobType = { $in: jobTypes };
-    }
-  }
-
-  if (batch) {
-    const batchValues = normalizeList(batch)
-      .map((b) => Number(b))
-      .filter(Number.isFinite);
-
-    if (batchValues.length > 0) {
-      filters.eligibleBatches = { $in: batchValues };
-    }
-  }
-
-  if (branch) {
-    const branches = normalizeList(branch);
-
-    if (branches.length > 0) {
-      filters.branches = { $in: branches };
-    }
-  }
-
-  if (skills) {
-    const skillsArray = resolveSkillTokens(
-      normalizeList(skills, { maxItems: 8, maxLength: MAX_REGEX_FILTER_LENGTH }),
-    );
-
-    if (skillsArray.length > 0) {
-      const matchMode = normalizeSkillMatchMode(skillMatchMode);
-      const scope = normalizeSkillScope(skillScope);
-      const fieldName = scope === "required" ? "requiredSkillIds" : "skillIds";
-      filters[fieldName] = matchMode === "all"
-        ? { $all: skillsArray }
-        : { $in: skillsArray };
-    }
-  }
-
-  if (includeExperienceYear) {
-    const normalizedExperienceYears = normalizeExperienceYearFilters(experienceYear);
-    const experienceConstraints = [];
-
-    if (normalizedExperienceYears.length > 0) {
-      experienceConstraints.push(buildExperienceYearConstraint(normalizedExperienceYears));
-    }
-
-    if (hasUnspecifiedExperienceFilter(experienceYear)) {
-      experienceConstraints.push(buildUnspecifiedExperienceConstraint());
-    }
-
-    const activeExperienceConstraints = experienceConstraints.filter(Boolean);
-    if (activeExperienceConstraints.length === 1) {
-      appendFilterConstraint(filters, activeExperienceConstraints[0]);
-    } else if (activeExperienceConstraints.length > 1) {
-      appendFilterConstraint(filters, { $or: activeExperienceConstraints });
-    }
-  }
-
-  if (experienceBucket) {
-    const normalizedExperienceBuckets = normalizeOptionValues(experienceBucket, EXPERIENCE_BUCKET_VALUES);
-    if (normalizedExperienceBuckets.length === 1) {
-      filters.experienceBucket = normalizedExperienceBuckets[0];
-    } else if (normalizedExperienceBuckets.length > 1) {
-      filters.experienceBucket = { $in: normalizedExperienceBuckets };
-    }
-  }
-
-  if (roleDomain) {
-    const normalizedRoleDomains = normalizeOptionValues(roleDomain, ROLE_DOMAIN_OPTIONS);
-    if (normalizedRoleDomains.length === 1) {
-      filters.primaryRoleDomain = normalizedRoleDomains[0];
-    } else if (normalizedRoleDomains.length > 1) {
-      filters.primaryRoleDomain = { $in: normalizedRoleDomains };
-    }
-  }
-
-  if (seniority) {
-    const normalizedSeniority = normalizeOptionValue(seniority, SENIORITY_LEVELS);
-    if (normalizedSeniority) {
-      filters.seniority = normalizedSeniority;
-    }
-  }
-
-  if (workArrangement) {
-    const normalizedWorkArrangements = normalizeOptionValues(workArrangement, WORK_ARRANGEMENT_OPTIONS);
-    if (normalizedWorkArrangements.length === 1) {
-      filters.workArrangement = normalizedWorkArrangements[0];
-    } else if (normalizedWorkArrangements.length > 1) {
-      filters.workArrangement = { $in: normalizedWorkArrangements };
-    }
-  }
-
-  if (datePostedDays) {
-    const normalizedDatePostedDays = normalizeDatePostedDaysValues(datePostedDays);
-    if (normalizedDatePostedDays.length > 0) {
-      filters.postedAt = { $gte: buildDatePostedCutoff(Math.max(...normalizedDatePostedDays)) };
-    }
-  }
-
-  if (query) {
-    const cleanQuery = normalizeFilterText(query, MAX_TEXT_QUERY_LENGTH);
-    if (cleanQuery) {
-      filters.$text = { $search: cleanQuery };
-    }
-  }
-
-  return filters;
+  return { sortDate: -1, _id: -1 };
 };
 
 const jobFilters = (queryParams, options) => applyPublicJobLocationScope(
@@ -965,11 +1096,11 @@ const resolveScopedDatePostedOptions = async (queryParams = {}) => {
   const baseConditions = buildJobFilterConditions(withoutQueryKeys(queryParams, ["datePostedDays"]));
 
   const matchesByWindow = await Promise.all(
-    DATE_POSTED_OPTIONS.map(async (days) => {
+    DATE_POSTED_WINDOW_OPTIONS.map(async (days) => {
       const count = await Job.countDocuments(
         applyPublicJobLocationScope({
           ...baseConditions,
-          postedAt: { $gte: buildDatePostedCutoff(days) },
+          ...buildDatePostedFilter([days]),
         }),
       );
 
@@ -1204,9 +1335,8 @@ const buildRecommendationPipeline = (filters, profile = {}, { skip = 0, limit = 
     {
       $sort: {
         recommendationScore: -1,
-        postedAt: -1,
+        sortDate: -1,
         clickCount: -1,
-        createdAt: -1,
         _id: -1,
       },
     },
@@ -1231,6 +1361,8 @@ const buildRecommendationPipeline = (filters, profile = {}, { skip = 0, limit = 
 export const getAllJobs = async (req, res) => {
   try {
     res.set("Cache-Control", req.user ? PRIVATE_CACHE_HEADER : PUBLIC_CACHE_HEADER);
+    res.set("Deprecation", "true");
+    res.set("Link", '</api/jobs/search>; rel="successor-version"');
     const { page, limit, sort } = req.query;
     const hasPremiumAccess = canUsePremiumFilters(req.user);
 
@@ -1252,21 +1384,42 @@ export const getAllJobs = async (req, res) => {
 
     let pageNum = Math.min(MAX_PAGE, Math.max(1, parseInt(page) || DEFAULT_PAGE));
     let limitNum = Math.min(MAX_LIMIT, Math.max(1, parseInt(limit) || DEFAULT_LIMIT));
+    if (sort === "recommended") {
+      limitNum = Math.min(limitNum, JOB_CARD_PAGE_LIMIT);
+    }
     const skip = (pageNum - 1) * limitNum;
 
     const sortOption = resolveJobListSortOption({ sort, hasTextSearch });
-
+    const canUseSummaryTotals = isDefaultPublicJobListFilter(filters);
     if (sort === "recommended") {
       const recommendationPipeline = buildRecommendationPipeline(
         filters,
         req.user?.profile,
         { skip, limit: limitNum },
       );
+      const summaryTotalsPromise = canUseSummaryTotals
+        ? resolvePublicJobDatasetTotals().catch(() => null)
+        : Promise.resolve(null);
+      const jobsPromise = Job.aggregate(recommendationPipeline).exec();
+      const summaryTotals = await summaryTotalsPromise;
+
+      if (summaryTotals) {
+        const jobs = await jobsPromise;
+
+        return sendJobsResponse(
+          res,
+          jobs,
+          pageNum,
+          limitNum,
+          summaryTotals.total,
+          summaryTotals.totalCompanies,
+        );
+      }
 
       const [total, companies, jobs] = await Promise.all([
         Job.countDocuments(filters),
         Job.distinct("company", filters),
-        Job.aggregate(recommendationPipeline).exec(),
+        jobsPromise,
       ]);
 
       return sendJobsResponse(
@@ -1291,6 +1444,23 @@ export const getAllJobs = async (req, res) => {
       .lean()
       .exec();
 
+    if (canUseSummaryTotals) {
+      const summaryTotals = await resolvePublicJobDatasetTotals().catch(() => null);
+
+      if (summaryTotals) {
+        const jobs = await jobsPromise;
+
+        return sendJobsResponse(
+          res,
+          jobs,
+          pageNum,
+          limitNum,
+          summaryTotals.total,
+          summaryTotals.totalCompanies,
+        );
+      }
+    }
+
     const [total, companies, jobs] = await Promise.all([
       Job.countDocuments(filters),
       Job.distinct("company", filters),
@@ -1312,6 +1482,141 @@ export const getAllJobs = async (req, res) => {
       success: false,
       message: "Server error while fetching jobs",
     });
+  }
+};
+
+const buildCursorBoundary = (cursor, sort) => {
+  if (!cursor) return null;
+
+  if (sort === "popularity") {
+    return {
+      $or: [
+        { clickCount: { $lt: cursor.clickCount } },
+        { clickCount: cursor.clickCount, sortDate: { $lt: cursor.cursorDate } },
+        { clickCount: cursor.clickCount, sortDate: cursor.cursorDate, _id: { $lt: cursor.id } },
+      ],
+    };
+  }
+
+  const comparison = sort === "oldest" ? "$gt" : "$lt";
+  return {
+    $or: [
+      { sortDate: { [comparison]: cursor.cursorDate } },
+      { sortDate: cursor.cursorDate, _id: { [comparison]: cursor.id } },
+    ],
+  };
+};
+
+const buildCursorSort = (sort) => {
+  if (sort === "oldest") {
+    return { sortDate: 1, _id: 1 };
+  }
+
+  if (sort === "popularity") {
+    return { clickCount: -1, sortDate: -1, _id: -1 };
+  }
+
+  return { sortDate: -1, _id: -1 };
+};
+
+const buildCursorSearchPipeline = ({ filters, boundary, sort, pageSize }) => {
+  const pipeline = [{ $match: filters }];
+
+  if (boundary) {
+    pipeline.push({ $match: boundary });
+  }
+
+  pipeline.push(
+    { $sort: buildCursorSort(sort) },
+    { $limit: pageSize + 1 },
+    { $project: JOB_LIST_CARD_AGGREGATE_PROJECT },
+  );
+
+  return pipeline;
+};
+
+/**
+ * Cursor-based JSON search. The database receives one composed predicate and
+ * returns at most pageSize + 1 documents, so application work is O(pageSize).
+ */
+export const getJobSearch = async (req, res) => {
+  const startedAt = performance.now();
+  const requestId = String(req.headers?.["x-request-id"] || "").trim() || randomUUID();
+  try {
+    res.set("Cache-Control", req.user ? PRIVATE_CACHE_HEADER : PUBLIC_CACHE_HEADER);
+    res.set("X-Request-Id", requestId);
+    const searchInput = req.method === "GET" ? req.query : req.body;
+    const request = buildJobSearchRequest(searchInput);
+    const hasPremiumAccess = canUsePremiumFilters(req.user);
+
+    if (!hasPremiumAccess && Object.keys(request.filters).length > 0) {
+      return res.status(403).json({
+        success: false,
+        premiumRequired: true,
+        feature: "job_filters",
+        message: "Filters are available on Jobify Premium.",
+      });
+    }
+
+    const cursor = searchInput?.cursor ? decodeJobSearchCursor(searchInput.cursor, request) : null;
+    const filters = jobFilters(request.filters);
+    const boundary = buildCursorBoundary(cursor, request.sort);
+    const pipeline = buildCursorSearchPipeline({
+      filters,
+      boundary,
+      sort: request.sort,
+      pageSize: request.pageSize,
+    });
+    const aggregate = Job.aggregate(pipeline);
+    if (typeof aggregate.option === "function") {
+      aggregate.option({ maxTimeMS: MAX_QUERY_EXECUTION_MS });
+    }
+    const rows = await aggregate.exec();
+    const hasNextPage = rows.length > request.pageSize;
+    const data = hasNextPage ? rows.slice(0, request.pageSize) : rows;
+    const last = data.at(-1);
+    const queryMs = Math.max(0, Math.round((performance.now() - startedAt) * 100) / 100);
+    const nextCursor = hasNextPage && last
+      ? encodeJobSearchCursor({
+        filterHash: request.filterHash,
+        sort: request.sort,
+        cursorDate: last.sortDate,
+        id: String(last._id),
+        clickCount: last.clickCount,
+      })
+      : null;
+
+    res.set("Server-Timing", `total;dur=${queryMs}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.info(JSON.stringify({
+        event: "job_search",
+        requestId,
+        queryShape: request.filterHash.slice(0, 12),
+        durationMs: queryMs,
+        returnedRows: data.length,
+        pageSize: request.pageSize,
+        hasNextPage,
+      }));
+    }
+    return res.status(200).json({
+      code: 200,
+      success: true,
+      data: data.map(normalizeJobListResponseJob),
+      pagination: { limit: request.pageSize, hasNextPage, nextCursor },
+      meta: {
+        requestId,
+        queryMs,
+      },
+    });
+  } catch (error) {
+    if (error instanceof SearchInputError) {
+      return res.status(422).json({ success: false, ...error.toResponse() });
+    }
+    if (error?.name === "MongoServerError" && error?.code === 50) {
+      return res.status(408).json({ code: "QUERY_TIMEOUT", success: false, message: "The search took too long. Narrow the filters and try again." });
+    }
+    console.error("Error in getJobSearch:", error);
+    return res.status(500).json({ code: 500, success: false, message: "Server error while searching jobs" });
   }
 };
 
@@ -1341,8 +1646,8 @@ export const getJobById = async (req, res) => {
       });
     }
 
-    const normalizedJob = normalizeResponseJob(job.toObject ? job.toObject() : job);
-    const responseJob = await annotateWorkdayApplicationAvailability(normalizedJob);
+    const responseJob = normalizeResponseJob(job.toObject ? job.toObject() : job);
+    void scheduleWorkdayApplicationAvailabilityRefresh(responseJob);
 
     return res.status(200).json({
       code: 200,
@@ -1463,10 +1768,56 @@ export const getJobMeta = async (req, res) => {
       });
     }
 
-    const [companies, cities, jobTypes, experienceYears, roleDomains, workArrangements, datePostedOptions] = await Promise.all([
+    if (!hasScopedFilters) {
+      const summary = await resolvePublicJobDatasetSummary().catch(() => null);
+
+      if (summary != null) {
+        return res.status(200).json({
+        code: 200,
+        success: true,
+        message: "Job metadata retrieved successfully",
+        data: {
+          // The jobs page already has a dedicated autocomplete endpoint for companies.
+          // Keep the base metadata payload compact and let the async loader fetch suggestions.
+          companies: [],
+          cities: normalizePublicCityOptions(summary?.cities ?? []),
+          jobTypes: [...new Set(
+            (summary?.jobTypes ?? [])
+                .map((jobTypeValue) => normalizeResponseJobType({ jobType: jobTypeValue }))
+                .filter(Boolean)
+            )].sort(),
+            experienceYears: [...EXPERIENCE_FILTER_OPTIONS],
+            experienceBuckets: EXPERIENCE_BUCKET_OPTIONS,
+            skillMatchModes: SKILL_MATCH_MODE_OPTIONS,
+            skillScopes: SKILL_SCOPE_OPTIONS,
+            skills: SKILL_OPTIONS,
+            roleDomains: ROLE_DOMAIN_OPTIONS,
+            seniorityLevels: SENIORITY_LEVELS,
+            workArrangements: WORK_ARRANGEMENT_OPTIONS,
+            datePostedOptions: DATE_POSTED_WINDOW_OPTIONS,
+          },
+        });
+      }
+    }
+
+    const [
+      companies,
+      cities,
+      jobTypes,
+      experienceYears,
+      roleDomains,
+      workArrangements,
+      datePostedOptions,
+    ] = await Promise.all([
       hasScopedFilters
-        ? resolveScopedDistinctValues(queryParams, "company", ["company"])
-        : Job.distinct("company", applyPublicJobLocationScope({ status: "active" })),
+        ? resolveActiveCompanyOptions(
+          queryParams,
+          {
+            excludedKeys: ["company"],
+            limit: DEFAULT_COMPANY_META_LIMIT,
+          },
+        )
+        : Promise.resolve([]),
       hasScopedFilters
         ? resolveScopedDistinctValues(queryParams, "city", ["city", "location"], { city: { $ne: null } })
         : Job.distinct("city", applyPublicJobLocationScope({ status: "active", city: { $ne: null } })),
@@ -1494,7 +1845,7 @@ export const getJobMeta = async (req, res) => {
         : Promise.resolve(WORK_ARRANGEMENT_OPTIONS),
       hasScopedFilters
         ? resolveScopedDatePostedOptions(queryParams)
-        : Promise.resolve(DATE_POSTED_OPTIONS),
+        : Promise.resolve(DATE_POSTED_WINDOW_OPTIONS),
     ]);
 
     return res.status(200).json({
@@ -1502,12 +1853,10 @@ export const getJobMeta = async (req, res) => {
       success: true,
       message: "Job metadata retrieved successfully",
       data: {
-        companies: hasScopedFilters
-          ? mergeCompanyOptions(companies)
-          : mergeCompanyOptions(companies, await getScraperCatalogCompanies()),
+        companies,
         cities: normalizePublicCityOptions(cities),
         jobTypes: [...new Set(
-          jobTypes
+        jobTypes
             .map((jobTypeValue) => normalizeResponseJobType({ jobType: jobTypeValue }))
             .filter(Boolean)
         )].sort(),
@@ -1536,10 +1885,97 @@ export const getJobMeta = async (req, res) => {
   }
 };
 
+export const getJobCompanySuggestions = async (req, res) => {
+  try {
+    const queryParams = req.query ?? {};
+    const hasScopedFilters = hasScopedJobMetaFilters(queryParams);
+
+    res.set("Cache-Control", hasScopedFilters ? PRIVATE_CACHE_HEADER : PUBLIC_CACHE_HEADER);
+
+    if (hasScopedFilters && !canUsePremiumFilters(req.user)) {
+      return res.status(403).json({
+        success: false,
+        premiumRequired: true,
+        feature: "job_filters",
+        message: "Filters are available on Jobify Premium.",
+      });
+    }
+
+    const summary = !hasScopedFilters
+      ? await resolvePublicJobDatasetSummary().catch(() => null)
+      : null;
+    const summaryCompanies = mergeCompanyOptions(summary?.companies ?? []);
+    const normalizedSearch = normalizeFilterText(queryParams.q).toLowerCase();
+    const companies = summaryCompanies.length > 0
+      ? summaryCompanies
+        .filter((company) => !normalizedSearch || company.toLowerCase().includes(normalizedSearch))
+        .slice(0, MAX_COMPANY_AUTOCOMPLETE_RESULTS)
+      : await resolveActiveCompanyOptions(queryParams, {
+        excludedKeys: ["company"],
+        searchTerm: queryParams.q,
+        limit: MAX_COMPANY_AUTOCOMPLETE_RESULTS,
+        maximumLimit: MAX_COMPANY_AUTOCOMPLETE_RESULTS,
+      });
+
+    return res.status(200).json({
+      code: 200,
+      success: true,
+      data: {
+        companies,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getJobCompanySuggestions:", error);
+    return res.status(500).json({
+      code: 500,
+      success: false,
+      message: "Server error while fetching company suggestions",
+    });
+  }
+};
+
+export const getLiveHiringCompanies = async (_req, res) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const companies = await Job.distinct(
+      "company",
+      applyPublicJobLocationScope({ status: "active" }),
+    );
+
+    return res.status(200).json({
+      code: 200,
+      success: true,
+      data: {
+        companies: mergeCompanyOptions(companies),
+      },
+    });
+  } catch (error) {
+    console.error("Error in getLiveHiringCompanies:", error);
+    return res.status(500).json({
+      code: 500,
+      success: false,
+      message: "Server error while fetching live hiring companies",
+    });
+  }
+};
+
 // Returns public summary counts for the landing page stats bar.
 export const getJobStats = async (req, res) => {
   try {
     res.set("Cache-Control", PUBLIC_CACHE_HEADER);
+    const summary = await resolvePublicJobDatasetSummary().catch(() => null);
+
+    if (summary != null) {
+      return res.status(200).json({
+        code: 200,
+        success: true,
+        data: {
+          totalJobs: Number(summary?.totalJobs ?? 0),
+          totalCompanies: Number(summary?.totalCompanies ?? 0),
+        },
+      });
+    }
+
     const [totalJobs, companies] = await Promise.all([
       Job.countDocuments(applyPublicJobLocationScope({ status: "active" })),
       Job.distinct("company", applyPublicJobLocationScope({ status: "active" })),
@@ -1574,7 +2010,7 @@ export const getJobSeoFeed = async (_req, res) => {
         sourceUrl: { $exists: true, $ne: null },
       }),
     )
-      .sort({ postedAt: -1, createdAt: -1 })
+      .sort({ sortDate: -1, _id: -1 })
       .select("title company postedAt updatedAt closingDate city location locations jobType")
       .lean()
       .exec();

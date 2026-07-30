@@ -8,7 +8,7 @@ const homepageHtml = `
     <title>BYJU'S Online learning Programs For K3, K10, K12, NEET, JEE, UPSC &amp; Bank Exams</title>
     <meta property="og:url" content="https://byjus.com/">
   </head>
-  <body>
+  <body class="home page-template page-template-home page-template-index page-template-homeindex-php">
     <main>
       <h1>BYJU'S Online learning Programs</h1>
       <p>For K3, K10, K12, NEET, JEE, UPSC &amp; Bank Exams</p>
@@ -40,10 +40,10 @@ const salesApplyHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>sales-apply</title>
+    <title>e Learning for Online Courses like UPSC, K3, K10, K12, CBSE NCERT, ICSE, NEET &amp; JEE</title>
     <link rel="canonical" href="https://byjus.com/sales-apply/">
   </head>
-  <body>
+  <body class="page-template page-template-sales-apply page-template-sales-apply-php">
     <main>
       <h1>career in Sales</h1>
       <p>Unprecedented Job Perks</p>
@@ -71,10 +71,10 @@ const technetiumHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Technetium</title>
+    <title></title>
     <meta property="og:url" content="https://byjus.com/chemistry/technetium/">
   </head>
-  <body>
+  <body class="post-template-default single single-post slug-technetium">
     <main>
       <h1>Technetium</h1>
       <p>Learn about the chemical element technetium.</p>

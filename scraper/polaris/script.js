@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { runWorkdayScraper } from '../myworkday/engine.js'
+import { composeAbortSignals } from '../utils/fetch.js'
 
 import POLARIS_CATALOG from './catalog.js'
 
@@ -19,6 +20,21 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
+
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -73,13 +89,15 @@ export const buildScraperOptions = () => ({
   scraperDir: SCRAPER_DIR,
 })
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
+  const requestSignal = composeAbortSignals(signal, createTimeoutSignal(15000))
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: requestSignal,
   })
 
   const html = await response.text()
@@ -96,10 +114,14 @@ export const createPolarisScraper = ({
   async run({
     fetchText = defaultFetchText,
     workdayRunner = runWorkdayScraper,
+    signal,
   } = {}) {
+    const fetchVerifiedText = (url) => (
+      signal === undefined ? fetchText(url) : fetchText(url, { signal })
+    )
     let careersHtml = null
     try {
-      careersHtml = await fetchText(CAREERS_URL)
+      careersHtml = await fetchVerifiedText(CAREERS_URL)
     } catch (error) {
       if (!isExpectedFirstPartyBlockError(error)) {
         throw error
@@ -116,15 +138,24 @@ export const createPolarisScraper = ({
       throw new Error('Polaris verified first-party careers shell changed materially')
     }
 
-    const workdayBoardHtml = await fetchText(WORKDAY_BOARD_URL)
+    const workdayBoardHtml = await fetchVerifiedText(WORKDAY_BOARD_URL)
     if (!hasOfficialWorkdayBoardSignal(workdayBoardHtml)) {
       throw new Error('Polaris verified public Workday board changed materially')
     }
 
-    const jobs = await workdayRunner(buildScraperOptions())
-    return Array.isArray(jobs)
+    const jobs = await workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
+    const normalizedJobs = Array.isArray(jobs)
       ? jobs.map((job) => (job?.scrapedAt ? job : { ...job, scrapedAt: now() }))
       : []
+    if (jobs?.[WORKDAY_AUTHORITATIVE_EMPTY] === true) {
+      Object.defineProperty(normalizedJobs, WORKDAY_AUTHORITATIVE_EMPTY, {
+        value: true,
+      })
+    }
+    return normalizedJobs
   },
 })
 

@@ -13,7 +13,7 @@ const homepageHtml = `
     <link rel="canonical" href="https://www.otocapital.in" />
   </head>
   <body>
-    <h1>India's No 1 platform for Bike & Scooter Loans</h1>
+    <h1>India&#x27;s No 1 platform for Bike &amp; Scooter Loans</h1>
     <section>
       <h2>FREQUENTLY ASKED QUESTIONS</h2>
       <h3>What is OTO?</h3>
@@ -46,7 +46,7 @@ const notFoundHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>OTO Capital - Not Found</title>
+    <title data-rh="true">OTO Capital - Not Found</title>
   </head>
   <body>
     <p>Visit OTO Capital</p>
@@ -79,7 +79,7 @@ test('OTO Capital sentinel pins the verified homepage, sitemap, and not-found ca
   assert.equal(otoCapital.SOURCE, 'otocapital')
   assert.equal(otoCapital.COMPANY, 'OTO Capital')
   assert.equal(otoCapital.OFFICIAL_BRAND_NAME, 'OTO')
-  assert.equal(otoCapital.VERIFIED_ON, '2026-07-17')
+  assert.equal(otoCapital.VERIFIED_ON, '2026-07-25')
   assert.equal(otoCapital.HOMEPAGE_URL, 'https://www.otocapital.in/')
   assert.equal(otoCapital.SITEMAP_URL, 'https://www.otocapital.in/sitemap.xml')
   assert.equal(otoCapital.CAREERS_URL, 'https://www.otocapital.in/careers')

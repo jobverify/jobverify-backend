@@ -1,0 +1,22 @@
+{
+  "source": "cruise",
+  "companyName": "Cruise",
+  "officialBrandName": "Cruise",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../cruise/script.js",
+  "dryRunFile": "cruise/jobs.json",
+  "companyCareerPage": "https://www.getcruise.com/careers/",
+  "companyDomain": "getcruise.com",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-stable-public-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "officialCareersPageUrl": "https://www.getcruise.com/careers/",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "verifiedSurfaceSummary": "Cruise is registered as an exact-name provider, but this repository does not have a verified stable public extraction contract for its first-party careers surface. The provider therefore fails closed and returns no jobs until that contract is verified."
+}

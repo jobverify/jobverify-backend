@@ -52,6 +52,24 @@ const careersHtml = `
 </html>
 `
 
+const liveCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career | Vivriti Capital</title>
+  </head>
+  <body>
+    <main>
+      <h3>People Are at the Heart of What We Do</h3>
+      <h3>Join Our Team</h3>
+      <p>Discover roles across various departments, tailored to your expertise and aspirations.</p>
+      <p>Use our filters to find opportunities that match your skills, location preferences, and experience level.</p>
+      <a href="https://vivriti.darwinbox.in/ms/candidate/careers">Apply Now</a>
+    </main>
+  </body>
+</html>
+`
+
 const aboutHtml = `
 <!doctype html>
 <html lang="en">
@@ -102,6 +120,7 @@ test('Vivriti Capital validates the verified homepage, careers page, about page,
   assert.equal(vivriti.DARWINBOX_HANDOFF_URL, 'https://vivriti.darwinbox.in')
   assert.equal(vivriti.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(vivriti.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(vivriti.hasOfficialCareersSignal(liveCareersHtml), true)
   assert.equal(vivriti.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(vivriti.hasOfficialContactSignal(contactHtml), true)
   assert.equal(vivriti.extractOfficialDarwinboxUrl(careersHtml), 'https://vivriti.darwinbox.in')

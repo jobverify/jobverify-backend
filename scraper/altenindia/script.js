@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { fetchTextWithRetry } from '../utils/fetch.js'
 import { loadConfig } from '../utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -165,21 +166,22 @@ export const extractJobDetail = (html) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: 'altenindia',
+  timeoutMs: 15000,
+})
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const mergeListingWithDetail = (listing, detail = {}) => ({
+  ...listing,
+  ...Object.fromEntries(
+    Object.entries(detail).filter(([, value]) => value != null),
+  ),
+})
 
 export const createAltenIndiaScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -198,15 +200,15 @@ export const createAltenIndiaScraper = ({
     const enrichedJobs = []
 
     for (const listing of selectedJobs) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml)
+      try {
+        const detailHtml = await fetchText(listing.sourceUrl)
+        const detail = extractJobDetail(detailHtml)
 
-      enrichedJobs.push({
-        ...listing,
-        ...Object.fromEntries(
-          Object.entries(detail).filter(([, value]) => value != null),
-        ),
-      })
+        enrichedJobs.push(mergeListingWithDetail(listing, detail))
+      } catch (error) {
+        console.warn(`  [altenindia] Failed to enrich LinkedIn detail for ${listing.sourceUrl}: ${error.message}`)
+        enrichedJobs.push(listing)
+      }
     }
 
     return enrichedJobs.map((job) => ({

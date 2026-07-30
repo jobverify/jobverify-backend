@@ -89,6 +89,30 @@ test('Deqode returns public jobs from the verified first-party careers page and 
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })
 
+test('Deqode ignores non-job /career asset paths when collecting detail URLs', async () => {
+  const deqode = await loadModule()
+
+  const careersPageWithAssets = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Welcome to your team - Deqode Solutions</title>
+  </head>
+  <body>
+    <h1>Current Openings</h1>
+    <img src="/career/people/people_img1.png" alt="People" />
+    <img src="/career/people/people_img2.png" alt="People" />
+    <a href="/career/python-developer-1">Python Developer</a>
+  </body>
+</html>
+`
+
+  assert.deepEqual(
+    deqode.extractJobDetailUrls(careersPageWithAssets),
+    ['https://deqode.com/career/python-developer-1'],
+  )
+})
+
 test('Deqode fails closed when the verified careers page or detail page drifts', async () => {
   const deqode = await loadModule()
 

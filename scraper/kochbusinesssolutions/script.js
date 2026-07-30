@@ -1,8 +1,15 @@
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
 export const SOURCE = 'kochbusinesssolutions'
 export const COMPANY = 'Koch Business Solutions'
 export const HOMEPAGE_URL = 'https://www.kochinc.com/'
 export const CAREERS_URL = 'https://www.kochinc.com/career-opportunities/koch'
 export const SEARCH_JOBS_URL = 'https://koch.avature.net/en_US/careers/SearchJobs?732=26082375&tags=rm.kcm.web.kcm-004'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const KNOWN_INDIA_LOCATION_PATTERN = /\b(?:india|bangalore|bengaluru|gurgaon|gurugram|hyderabad|pune|mumbai|chennai|delhi|noida|kolkata|karnataka|maharashtra|tamil nadu|telangana|haryana)\b/i
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
@@ -28,6 +35,15 @@ export const PROVIDER_METADATA = {
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
 
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   return /Empowering Koch companies with shared expertise/i.test(page)
@@ -38,17 +54,20 @@ export const hasOfficialCareersSignal = (html) => {
 export const extractJobsFromSearchHtml = (html) => {
   const page = String(html ?? '')
   const jobs = []
-  const titlePattern = /<a href="(https:\/\/koch\.avature\.net\/en_US\/careers\/JobDetail\/[^"]+)">([^<]+)<\/a>/gi
-  let match
 
-  while ((match = titlePattern.exec(page)) !== null) {
-    const remainder = page.slice(match.index)
-    const locationMatch = remainder.match(/article__header__text__location">([^<]+)</i)
-    const title = normalizeWhitespace(match[2])
-    const sourceUrl = normalizeWhitespace(match[1])
+  for (const match of page.matchAll(/<article\b[^>]*class="[^"]*\barticle--result\b[^"]*"[^>]*>[\s\S]*?<\/article>/gi)) {
+    const articleHtml = match[0]
+    const titleMatch = articleHtml.match(
+      /<h3[^>]*class="[^"]*\barticle__header__text__title\b[^"]*"[^>]*>\s*<a href="(https:\/\/koch\.avature\.net\/en_US\/careers\/JobDetail\/[^"]+)">\s*([\s\S]*?)\s*<\/a>/i,
+    )
+    const locationMatch = articleHtml.match(
+      /article__content__field__label">\s*Location:\s*<\/div>\s*<div class="article__content__field__value">\s*([^<]+)\s*<\/div>/i,
+    )
+    const title = normalizeWhitespace(titleMatch?.[2])
+    const sourceUrl = normalizeWhitespace(titleMatch?.[1])
     const location = normalizeWhitespace(locationMatch?.[1])
 
-    if (!title || !sourceUrl || !location || !/india/i.test(location)) {
+    if (!title || !sourceUrl || !location || !KNOWN_INDIA_LOCATION_PATTERN.test(location)) {
       continue
     }
 
@@ -63,7 +82,7 @@ export const extractJobsFromSearchHtml = (html) => {
   return jobs
 }
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const careersPage = await fetchText(CAREERS_URL)
   if (!hasOfficialCareersSignal(careersPage)) {
     throw new Error('Koch Business Solutions verified careers page changed materially')

@@ -73,3 +73,34 @@ test('IVY SOFTWARE DEVELOPMENT SERVICES fails closed when a public jobs page bec
     /public job listings/i,
   )
 })
+
+test('IVY SOFTWARE DEVELOPMENT SERVICES can recover with browser-backed shared surface checks when direct requests fail', async () => {
+  const ivySoftware = await loadModule()
+  const browserTextUrls = []
+  const browserPageUrls = []
+
+  const jobs = await ivySoftware.createIvySoftwareDevelopmentServicesScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+
+      if (url === ivySoftware.HOMEPAGE_URL) return homepageHtml
+      if (url === ivySoftware.CONTACT_URL) return contactHtml
+
+      throw new Error(`Unexpected fetchBrowserText URL: ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      browserPageUrls.push(url)
+      return {
+        status: 403,
+        html: '<html><body>Forbidden</body></html>',
+      }
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [ivySoftware.HOMEPAGE_URL, ivySoftware.CONTACT_URL])
+  assert.deepEqual(browserPageUrls, ivySoftware.BLOCKED_ROUTE_URLS)
+  assert.deepEqual(jobs, [])
+})

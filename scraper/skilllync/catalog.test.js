@@ -4,17 +4,17 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('Skill-Lync is registered as a first-party current-openings shell sentinel provider', () => {
+test('Skill-Lync is registered as a first-party unavailable-careers sentinel provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'skilllync')
 
   assert.ok(provider, 'Expected Skill-Lync provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Skill-Lync')
   assert.equal(provider.companyCareerPage, 'https://skill-lync.com/careers/jobs')
-  assert.equal(provider.atsPlatform, 'official-company-careers-shell')
+  assert.equal(provider.atsPlatform, 'official-company-careers-unavailable')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-current-openings-shell-validation')
-  assert.equal(provider.extractionStrategy, 'verified-careers-page-plus-current-openings-shell-without-rendered-job-cards')
+  assert.equal(provider.paginationStrategy, 'first-party-careers-503-unavailable-validation')
+  assert.equal(provider.extractionStrategy, 'verified-careers-and-jobs-503-shell-return-empty')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'skill-lync.com')
   assert.match(provider.modulePath, /skilllync[\\/]script\.js$/i)

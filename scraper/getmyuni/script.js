@@ -50,34 +50,42 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
+
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const title = extractTitle(rawHtml)
 
-  return /<title>\s*Getmyuni\s*-\s*Discover Colleges, Courses, Exams, and More\s*<\/title>/i.test(rawHtml)
-    && /\bGetmyuni\b/i.test(normalized)
-    && /Discover Colleges,\s*Courses,\s*Exams,\s*and More/i.test(normalized)
+  return /^GetMyUni\s*-\s*(Discover Colleges, Courses, Exams, and More|Explore Top Colleges, Courses, Fees and Exams)$/i.test(title)
+    && /\bGetMyUni\b/i.test(normalized)
+    && /\bTop Colleges\b/i.test(normalized)
+    && /\bTop Courses\b/i.test(normalized)
+    && /\bEntrance Exams\b/i.test(normalized)
 }
 
 export const hasContactUsWorkWithUsSignal = (html) => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const normalized = normalizeWhitespace(String(html ?? ''))
 
-  return /<title>\s*Contact Us\s*\|\s*Getmyuni\s*<\/title>/i.test(rawHtml)
-    && /\bGet in Touch\b/i.test(normalized)
+  return /\bDrop Us A Line\b/i.test(normalized)
+    && /\bCounselling Related Queries\b/i.test(normalized)
     && /Want to work with us\?\s*contact@getmyuni\.com/i.test(normalized)
 }
 
 export const hasInformationalCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const title = extractTitle(rawHtml)
 
-  return /<title>\s*Careers\s*\|\s*Getmyuni\s*<\/title>/i.test(rawHtml)
-    && /\bCareers\b/i.test(normalized)
-    && /(Explore careers after|career options|education planning)/i.test(normalized)
+  return /^Career Options in India \d{4}:/i.test(title)
+    && /Career Guidance/i.test(title)
+    && /Highest Paying Jobs/i.test(title)
+    && /\bTrending Careers\b/i.test(normalized)
+    && /\bHow to Become\b/i.test(normalized)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

@@ -190,6 +190,30 @@ test('Cars24 run scrapes the verified first-party jobs API and enriches jobs fro
   assert.equal(jobs[0].scrapedAt, '2026-07-14T00:00:00.000Z')
 })
 
+test('Cars24 keeps listing-level jobs when transient detail API rate limits block enrichment', async () => {
+  const cars24 = await loadCars24Module()
+
+  const jobs = await cars24.createCars24Scraper({
+    now: () => '2026-07-14T00:00:00.000Z',
+    detailConcurrency: 1,
+  }).run({
+    fetchText: async () => officialJobsSiteHtml,
+    fetchJson: async (url) => {
+      if (url === cars24.JOBS_API_URL) return jobsPayload
+      if (url === cars24.buildJobDetailApiUrl('a6a06e00534853')) {
+        throw new Error(`HTTP 429 for ${url}`)
+      }
+      throw new Error(`Unexpected JSON fixture URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Product Manager')
+  assert.equal(jobs[0].source, 'cars24')
+  assert.equal(jobs[0].jobDescription, null)
+  assert.deepEqual(jobs[0].requiredSkills, [])
+})
+
 test('Cars24 fails closed when the verified careers shell or public API contracts change', async () => {
   const cars24 = await loadCars24Module()
 

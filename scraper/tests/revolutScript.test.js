@@ -8,12 +8,13 @@ const careersHtml = `
 <html lang="en">
   <head>
     <title>Careers | Revolut India</title>
+    <meta name="description" content="Join the people creating a one-stop shop for financial freedom">
   </head>
   <body>
     <main>
       <h1>Careers</h1>
       <p>We have 610 open positions</p>
-      <p>Only apply through official Revolut channels</p>
+      <p>Join the people creating a one-stop shop for financial freedom</p>
     </main>
   </body>
 </html>

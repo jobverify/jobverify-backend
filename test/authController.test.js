@@ -68,7 +68,7 @@ test("redirectVerifyEmail forwards legacy verification links into the frontend f
   }
 });
 
-test("register rejects duplicate accounts with a sign-in prompt", async () => {
+test("register does not disclose that an account already exists", async () => {
   const originalUserFindOne = User.findOne;
   const originalPendingFindOne = PendingUser.findOne;
 
@@ -100,16 +100,57 @@ test("register rejects duplicate accounts with a sign-in prompt", async () => {
     );
 
     assert.deepEqual(queriedFilter, { email: "student@example.com" });
-    assert.equal(res.statusCode, 409);
+    assert.equal(res.statusCode, 201);
     assert.deepEqual(res.body, {
-      code: 409,
-      success: false,
-      accountExists: true,
-      message: "An account for this email already exists. Please sign in.",
+      code: 201,
+      success: true,
+      pending: true,
+      email: "student@example.com",
+      message: "If this email can be registered, a verification email will be sent.",
     });
   } finally {
     User.findOne = originalUserFindOne;
     PendingUser.findOne = originalPendingFindOne;
+  }
+});
+
+test("register stores a normalized pending phone number without changing the generic response", async () => {
+  const originalFrontendOrigin = process.env.FRONTEND_ORIGIN;
+  const originalUserFindOne = User.findOne;
+  const originalPendingFindOne = PendingUser.findOne;
+  const originalPendingSave = PendingUser.prototype.save;
+
+  let savedPending = null;
+  process.env.FRONTEND_ORIGIN = "http://localhost:5173";
+  User.findOne = async () => null;
+  PendingUser.findOne = async () => null;
+  PendingUser.prototype.save = async function savePendingDouble() {
+    savedPending = this;
+    return this;
+  };
+
+  try {
+    const res = createResponseDouble();
+    await register(
+      {
+        body: {
+          name: "Student",
+          email: "student@example.com",
+          password: "StrongerPass123",
+          phoneE164: "9876543210",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.message, "If this email can be registered, a verification email will be sent.");
+    assert.equal(savedPending.profile.phoneE164, "+919876543210");
+  } finally {
+    process.env.FRONTEND_ORIGIN = originalFrontendOrigin;
+    User.findOne = originalUserFindOne;
+    PendingUser.findOne = originalPendingFindOne;
+    PendingUser.prototype.save = originalPendingSave;
   }
 });
 
@@ -220,6 +261,8 @@ test("resetPassword updates the stored password and clears the reset token", asy
     assert.equal(await bcrypt.compare("ResetPass123", user.password), true);
     assert.equal(user.resetPasswordTokenHash, null);
     assert.equal(user.resetPasswordExpiresAt, null);
+    assert.equal(user.passwordChangedAt instanceof Date, true);
+    assert.equal(user.sessionVersion, 1);
   } finally {
     User.findOne = originalUserFindOne;
   }
@@ -304,6 +347,45 @@ test("verifyEmail creates the account only after password submission", async () 
     User.findOne = originalUserFindOne;
     User.prototype.save = originalUserSave;
     process.env.FRONTEND_ORIGIN = originalFrontendOrigin;
+  }
+});
+
+test("verifyEmail copies the pending phone number into the verified user contact", async () => {
+  const originalFrontendOrigin = process.env.FRONTEND_ORIGIN;
+  const originalPendingFindOne = PendingUser.findOne;
+  const originalPendingDeleteOne = PendingUser.deleteOne;
+  const originalUserFindOne = User.findOne;
+  const originalUserSave = User.prototype.save;
+
+  const pendingUser = {
+    email: "student@example.com",
+    profile: { name: "Student", phoneE164: "+919876543210" },
+  };
+  let savedUser = null;
+  process.env.FRONTEND_ORIGIN = "http://localhost:5173";
+  PendingUser.findOne = async () => pendingUser;
+  PendingUser.deleteOne = async () => ({ deletedCount: 1 });
+  User.findOne = async () => null;
+  User.prototype.save = async function saveUserDouble() {
+    savedUser = this;
+    return this;
+  };
+
+  try {
+    const res = createResponseDouble();
+    await verifyEmail(
+      { body: { token: "raw-verification-token", password: "StrongerPass123" } },
+      res,
+    );
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(savedUser.contact.phoneE164, "+919876543210");
+  } finally {
+    process.env.FRONTEND_ORIGIN = originalFrontendOrigin;
+    PendingUser.findOne = originalPendingFindOne;
+    PendingUser.deleteOne = originalPendingDeleteOne;
+    User.findOne = originalUserFindOne;
+    User.prototype.save = originalUserSave;
   }
 });
 

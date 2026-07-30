@@ -5,7 +5,7 @@ const SHAZAM_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Shazam - Music Discovery, Charts & Song Lyrics</title>
+    <title>Shazam - Music Discovery, Charts &amp; Song Lyrics</title>
   </head>
   <body>
     <main>
@@ -15,7 +15,7 @@ const SHAZAM_HTML = `
     <footer>
       <h2>Shazam Footer</h2>
       <h3>Company</h3>
-      <a href="https://jobs.apple.com/en-us/search?product=apple-music-APPMU">Careers</a>
+      <a href="https://jobs.apple.com/en-us/search?sort=relevance&amp;search=shazam">Careers</a>
       <a href="https://www.shazam.com/en-us/about">About Us</a>
       <p>Copyright 2026 Apple Inc. and its affiliates</p>
     </footer>
@@ -56,14 +56,14 @@ test('Shazam? no pins the verified noisy-row contract to the Shazam brand page a
   assert.equal(shazamNo.SOURCE, 'shazamno')
   assert.equal(shazamNo.COMPANY, 'Shazam? no')
   assert.equal(shazamNo.OFFICIAL_BRAND_NAME, 'Shazam')
-  assert.equal(shazamNo.VERIFIED_ON, '2026-07-17')
+  assert.equal(shazamNo.VERIFIED_ON, '2026-07-26')
   assert.equal(shazamNo.HOMEPAGE_URL, 'https://www.shazam.com/en-us')
-  assert.equal(shazamNo.APPLE_CAREERS_SEARCH_URL, 'https://jobs.apple.com/en-us/search?product=apple-music-APPMU')
+  assert.equal(shazamNo.APPLE_CAREERS_SEARCH_URL, 'https://jobs.apple.com/en-us/search?sort=relevance&search=shazam')
   assert.equal(shazamNo.hasVerifiedShazamBrandPageSignal(SHAZAM_HTML), true)
   assert.equal(shazamNo.hasVerifiedAppleCareersSignal(APPLE_CAREERS_HTML), true)
   assert.equal(
     shazamNo.extractAppleCareersSearchUrl(SHAZAM_HTML),
-    'https://jobs.apple.com/en-us/search?product=apple-music-APPMU',
+    'https://jobs.apple.com/en-us/search?sort=relevance&search=shazam',
   )
   assert.equal(shazamNo.containsLiteralBacklogRow(SHAZAM_HTML), false)
 })
@@ -106,7 +106,7 @@ test('Shazam? no fails closed when the Shazam page, Apple careers handoff, or ex
             status: 200,
             url,
             html: SHAZAM_HTML.replace(
-              'https://jobs.apple.com/en-us/search?product=apple-music-APPMU',
+              'https://jobs.apple.com/en-us/search?sort=relevance&amp;search=shazam',
               'https://www.shazam.com/en-us/careers',
             ),
           }

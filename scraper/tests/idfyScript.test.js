@@ -24,6 +24,23 @@ const boardHtml = `
   </html>
 `
 
+const careersWrapperHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>IDfy Careers</title>
+    </head>
+    <body>
+      <main>
+        <p>Life at IDfy : Unscripted.</p>
+        <p>Expect the Unexpected</p>
+        <p>Helping a billion people move through life with trust.</p>
+        <a href="https://idfy.turbohire.co/careerpage/e73676a8-bc5a-4b43-b9c6-d3fc7a60b572">Open roles →</a>
+      </main>
+    </body>
+  </html>
+`
+
 const sampleTurboHirePayload = {
   Total: 2,
   Result: [
@@ -101,6 +118,8 @@ test('IDfy helpers stay pinned to the verified official TurboHire handoff and pu
   )
   assert.equal(idfy.isVerifiedBoardUrl(idfy.BOARD_URL), true)
   assert.equal(idfy.hasOfficialBoardSignal(boardHtml), true)
+  assert.equal(idfy.extractOfficialBoardUrl(careersWrapperHtml), idfy.BOARD_URL)
+  assert.equal(idfy.hasOfficialCareersWrapperSignal(careersWrapperHtml), true)
   assert.deepEqual(JSON.parse(idfy.buildFilteredJobsRequestBody()), {
     SortByV2: { Key: 'PostedDate', Order: 2 },
     BunitIds: { Value: null, FilterType: 0 },
@@ -184,6 +203,51 @@ test('run validates the official IDfy handoff before reading the public TurboHir
   assert.equal(jobs[0].company, 'IDfy')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-16T00:00:00.000Z')
+})
+
+test('run accepts the current branded careers wrapper when it still hands off to the verified TurboHire board', async () => {
+  const idfy = await loadIdfyModule()
+  const requested = []
+
+  const jobs = await idfy.createIdfyScraper({ maxJobs: 1 }).run({
+    fetchPage: async (url) => {
+      requested.push({ type: 'page', url })
+
+      if (url === idfy.OFFICIAL_CAREERS_URL) {
+        return {
+          status: 200,
+          url: idfy.OFFICIAL_CAREERS_URL,
+          html: careersWrapperHtml,
+        }
+      }
+
+      if (url === idfy.BOARD_URL) {
+        return {
+          status: 200,
+          url: idfy.BOARD_URL,
+          html: boardHtml,
+        }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+    fetchJson: async (url, options = {}) => {
+      requested.push({ type: 'json', url, method: options.method || 'GET' })
+      if (url === idfy.NOAUTH_TOKEN_URL) return { access_token: 'public-token' }
+      if (url === idfy.FILTERED_JOBS_URL) return sampleTurboHirePayload
+      throw new Error(`Unexpected json URL: ${url}`)
+    },
+    now: () => '2026-07-16T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requested, [
+    { type: 'page', url: idfy.OFFICIAL_CAREERS_URL },
+    { type: 'page', url: idfy.BOARD_URL },
+    { type: 'json', url: idfy.NOAUTH_TOKEN_URL, method: 'GET' },
+    { type: 'json', url: idfy.FILTERED_JOBS_URL, method: 'POST' },
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'idfy')
 })
 
 test('run fails closed when the verified IDfy handoff changes', async () => {

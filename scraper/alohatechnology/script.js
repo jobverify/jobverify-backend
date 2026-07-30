@@ -59,9 +59,13 @@ const buildJobDescription = ({ experienceRequired, requiredSkills }) => {
 export const pageIndicatesAlohaTechnologyCareers = (html) => {
   const page = String(html ?? '')
   return (
-    /JOIN\s+OUR\s+TEAM/i.test(page)
+    (/JOIN\s+OUR\s+TEAM/i.test(page) || /Careers\s+at\s+Aloha\s+Technology/i.test(page))
     && /hr@alohatechnology\.com/i.test(page)
-    && /current\s+openings\s+at\s+Aloha/i.test(page)
+    && (
+      /current\s+openings\s+at\s+Aloha/i.test(page)
+      || /Open\s+Roles/i.test(page)
+      || /Explore\s+Current\s+Opportunities/i.test(page)
+    )
   )
 }
 

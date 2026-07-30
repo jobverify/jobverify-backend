@@ -63,7 +63,7 @@ export const hasPublicJobSignal = (html = '') =>
   || /href=["'][^"']*\/jobs?\/[^"']*["']/i.test(String(html ?? ''))
 
 export const isVerifiedMissingJobRoute = (page = {}) =>
-  Number(page.status) === 404
+  [403, 404].includes(Number(page.status))
     && !hasPublicJobSignal(page.html)
 
 export const createSimplify3xSoftwareScraper = () => ({

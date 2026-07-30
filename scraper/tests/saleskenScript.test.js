@@ -5,13 +5,13 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Empower Your Sales with AI | Salesken.ai</title>
+    <title data-wf-page="home">Empower Your Sales with AI | Salesken.ai</title>
   </head>
   <body>
     <header>
       <a href="/product/ai-sales-assistant">Product</a>
       <a href="/pricing">Pricing</a>
-      <a href="/book-a-demo">Book a demo</a>
+      <a href="/book-a-demo">Request a Demo</a>
       <a href="/legal/privacy-policy">Privacy Policy</a>
       <a href="/legal/terms-conditions">Terms &amp; Conditions</a>
     </header>
@@ -22,6 +22,8 @@ const HOMEPAGE_HTML = `
   </body>
 </html>
 `
+
+const LEGACY_HOMEPAGE_HTML = HOMEPAGE_HTML.replace('Request a Demo', 'Book a demo')
 
 const MISSING_ROUTE_HTML = `
 <!doctype html>
@@ -69,6 +71,7 @@ test('Salesken sentinel helpers stay pinned to the verified homepage and missing
   assert.equal(salesken.CAREERS_PAGE_URL, 'https://www.salesken.ai/careers')
   assert.equal(salesken.JOBS_PAGE_URL, 'https://www.salesken.ai/jobs')
   assert.equal(salesken.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(salesken.hasOfficialHomepageSignal(LEGACY_HOMEPAGE_HTML), true)
   assert.equal(salesken.hasPublicJobsSignal(HOMEPAGE_HTML), false)
   assert.equal(
     salesken.isVerifiedMissingRouteResponse({ status: 404, html: MISSING_ROUTE_HTML }),

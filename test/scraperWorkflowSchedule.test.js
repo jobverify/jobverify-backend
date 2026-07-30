@@ -26,3 +26,9 @@ test('scraper workflow does not abort the full batch after only a few source fai
 
   assert.match(workflow, /SCRAPER_FAILURE_ABORT_THRESHOLD:\s*['"]1000['"]/)
 })
+
+test('scraper workflow runs the scraper with system CA support enabled', () => {
+  const workflow = readScraperWorkflow()
+
+  assert.match(workflow, /NODE_OPTIONS:\s*['"]--use-system-ca['"]/)
+})

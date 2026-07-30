@@ -25,6 +25,22 @@ const aboutPageHtml = `
 </html>
 `
 
+const currentAboutPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About Us - Oben Electric</title>
+  </head>
+  <body>
+    <main>
+      <h1>About Us</h1>
+      <p>Purpose-built electric motorcycles for India.</p>
+      <a href="https://careers.obenelectric.com/jobs/Careers">Explore Careers</a>
+    </main>
+  </body>
+</html>
+`
+
 const portalHtml = `
 <!doctype html>
 <html lang="en">
@@ -120,6 +136,7 @@ test('Oben Electric helper exports stay pinned to the verified about page, custo
     'https://careers.obenelectric.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
   )
   assert.equal(obenElectric.hasOfficialAboutPageSignal(aboutPageHtml), true)
+  assert.equal(obenElectric.hasOfficialAboutPageSignal(currentAboutPageHtml), true)
   assert.equal(
     obenElectric.extractOfficialCareersPortalUrl(aboutPageHtml),
     'https://careers.obenelectric.com/jobs/Careers',

@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'manycontradingandcontracting'
@@ -37,31 +35,49 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
+  .replace(/&#39;|&apos;|&rsquo;|&#x27;|[\u2018\u2019]|â€™/gi, "'")
   .replace(/&quot;/gi, '"')
-  .replace(/&amp;/gi, '&')
+  .replace(/&amp;|&#038;/gi, '&')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
 const normalizeLower = (value) => normalizeWhitespace(value).toLowerCase()
 
-const defaultFetchPage = async (url) => {
-  const html = await fetchTextWithRetry(url, {
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
+export const fetchPageWithStatus = async (url, {
+  fetchImpl = fetch,
+  timeoutMs = 15000,
+} = {}) => {
+  const response = await fetchImpl(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    label: SOURCE,
-    timeoutMs: 15000,
+    signal: createTimeoutSignal(timeoutMs),
   })
 
   return {
-    status: 200,
-    url,
-    html,
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
   }
 }
+
+const defaultFetchPage = (url) => fetchPageWithStatus(url)
 
 const hasUnexpectedCareersSignal = (html) => {
   const page = String(html ?? '')
@@ -85,7 +101,10 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*Home - Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services\s*<\/title>/i.test(page)
     && /<link rel="canonical" href="https:\/\/manycon\.com\/"\s*\/?>/i.test(page)
     && text.includes('welcome to manycon')
-    && text.includes('qatar & saudi arabia leading fireproofing services')
+    && (
+      text.includes('qatar & saudi arabia leading fireproofing services')
+      || text.includes('manycon delivers qcdd-certified passive firestopping')
+    )
     && text.includes("qatar & saudi arabia's qcdd-approved certified experts")
     && text.includes("proudly serving qatar's & saudi arabia's top companies and organizations")
     && /href=["']https:\/\/manycon\.com\/about\/["']/i.test(page)
@@ -98,12 +117,16 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialAboutSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeLower(page)
+  const hasLegacyAboutSummary = text.includes('mega manycon brings unmatched regional experience to every project')
+    && /completed(?:\s+\d+\+?)?\s+major commercial and industrial projects\s+(?:in|across)\s+qatar and saudi arabia/.test(text)
+  const hasCurrentAboutSummary = text.includes('building trust, delivering certified fire safety across qatar & saudi arabia')
+    && text.includes('mega manycon')
+    && text.includes('most trusted passive fire protection and firestop contractor')
 
   return /<title>\s*About Us - Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services\s*<\/title>/i.test(page)
     && /<link rel="canonical" href="https:\/\/manycon\.com\/about\/"\s*\/?>/i.test(page)
     && text.includes('3,200+ firestop projects in qatar | 100+ in saudi arabia')
-    && text.includes('mega manycon brings unmatched regional experience to every project')
-    && text.includes('completed major commercial and industrial projects across qatar and saudi arabia')
+    && (hasLegacyAboutSummary || hasCurrentAboutSummary)
     && !hasUnexpectedCareersSignal(page)
 }
 
@@ -119,22 +142,26 @@ export const hasOfficialSitemapIndexSignal = (xml) => {
 export const hasOfficialPageSitemapSignal = (xml) => {
   const sitemap = String(xml ?? '')
 
-  return /<loc>https:\/\/manycon\.com\/<\/loc>/i.test(sitemap)
-    && /<loc>https:\/\/manycon\.com\/about\/<\/loc>/i.test(sitemap)
-    && /<loc>https:\/\/manycon\.com\/contact\/<\/loc>/i.test(sitemap)
-    && /<loc>https:\/\/manycon\.com\/fireproofing-services\/<\/loc>/i.test(sitemap)
-    && /<loc>https:\/\/manycon\.com\/construction-solutions\/<\/loc>/i.test(sitemap)
+  return /<loc>(?:<!\[CDATA\[)?https:\/\/manycon\.com\/(?:\]\]>)?<\/loc>/i.test(sitemap)
+    && /<loc>(?:<!\[CDATA\[)?https:\/\/manycon\.com\/about\/(?:\]\]>)?<\/loc>/i.test(sitemap)
+    && /<loc>(?:<!\[CDATA\[)?https:\/\/manycon\.com\/contact\/(?:\]\]>)?<\/loc>/i.test(sitemap)
+    && /<loc>(?:<!\[CDATA\[)?https:\/\/manycon\.com\/fireproofing-services\/(?:\]\]>)?<\/loc>/i.test(sitemap)
+    && /<loc>(?:<!\[CDATA\[)?https:\/\/manycon\.com\/construction-solutions\/(?:\]\]>)?<\/loc>/i.test(sitemap)
     && !hasUnexpectedCareersSignal(sitemap)
 }
 
 export const isVerifiedMissingRoute = ({ status, html }) => {
   const page = String(html ?? '')
   const text = normalizeLower(page)
+  const hasLegacy404Copy = text.includes("oops! that page can't be found")
+    && text.includes('it looks like nothing was found at this location')
+  const hasCurrent404Copy = text.includes('oops! page not found')
+    && text.includes('slipped through a time portal')
+    && text.includes('journey back to our homepage')
 
   return status === 404
-    && /<title>\s*Page not found - Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services\s*<\/title>/i.test(page)
-    && text.includes('oops! that page can’t be found')
-    && text.includes('it looks like nothing was found at this location')
+    && /<title>\s*Page not found\s*(?:&#8211;|&ndash;|–|-)\s*Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services\s*<\/title>/i.test(page)
+    && (hasLegacy404Copy || hasCurrent404Copy)
     && !hasUnexpectedJobsContent(page)
 }
 

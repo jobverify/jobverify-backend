@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Internship Program",
+    "company": "MaxEd",
+    "department": "Internship",
+    "location": "India",
+    "city": null,
+    "country": "India",
+    "jobId": "maxed-internship-program",
+    "requisitionId": "maxed-internship2025",
+    "sourceUrl": "https://maxed.in/internship2025/",
+    "applyUrl": "https://docs.google.com/forms/d/e/1FAIpQLSdxey-T9eLNQxKTxrORZ7A4kOSRa1kls0rZQIyXlV8KDXUUfw/viewform",
+    "employmentType": "Internship",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": null,
+    "closingDate": null,
+    "jobDescription": "Launch your career with the MaxEd Internship Program across market research, data analytics, and HR operations. The verified public program highlights hands-on learning, mentorship, diverse exposure, networking opportunities, and career development.",
+    "remoteStatus": null,
+    "source": "maxed",
+    "link": "https://docs.google.com/forms/d/e/1FAIpQLSdxey-T9eLNQxKTxrORZ7A4kOSRa1kls0rZQIyXlV8KDXUUfw/viewform",
+    "scrapedAt": "2026-07-26T20:06:29.644Z",
+    "companyCareerPage": "https://maxed.in/internship2025/",
+    "companyDomain": "maxed.in",
+    "atsPlatform": "official-company-careers"
+  }
+]

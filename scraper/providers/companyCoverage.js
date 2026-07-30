@@ -1,4 +1,39 @@
-import aliases from './companyAliases.json' with { type: 'json' }
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import baseAliases from './companyAliases.json' with { type: 'json' }
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+export const DEFAULT_COMPANY_ALIAS_EXTENSION_DIR = path.join(currentDir, 'companyAliasExtensions')
+
+export const loadCompanyAliasExtensions = (extensionDir = DEFAULT_COMPANY_ALIAS_EXTENSION_DIR) => {
+  if (!existsSync(extensionDir)) return {}
+
+  return readdirSync(extensionDir)
+    .filter((fileName) => fileName.toLowerCase().endsWith('.json'))
+    .sort((left, right) => left.localeCompare(right))
+    .reduce((aliasMap, fileName) => {
+      const filePath = path.join(extensionDir, fileName)
+      const parsed = JSON.parse(readFileSync(filePath, 'utf8'))
+
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        Object.assign(aliasMap, parsed)
+      }
+
+      return aliasMap
+    }, {})
+}
+
+export const getCompanyAliasMap = ({
+  baseAliasMap = baseAliases,
+  extensionDir = DEFAULT_COMPANY_ALIAS_EXTENSION_DIR,
+} = {}) => ({
+  ...baseAliasMap,
+  ...loadCompanyAliasExtensions(extensionDir),
+})
+
+const aliases = getCompanyAliasMap()
 
 const NOISE_PATTERNS = [
   /\bcompanies listed\b/i,
@@ -140,9 +175,11 @@ export const buildCompanyLookup = ({ catalog, aliasMap = aliases }) => {
         registerLookup(exactLookup, exactNormalized, provider.source)
       }
 
-      const fuzzyNormalized = normalizeCompanyName(candidate)
-      if (fuzzyNormalized) {
-        registerLookup(fuzzyLookup, fuzzyNormalized, provider.source)
+      if (!provider.exactCompanyMatchOnly) {
+        const fuzzyNormalized = normalizeCompanyName(candidate)
+        if (fuzzyNormalized) {
+          registerLookup(fuzzyLookup, fuzzyNormalized, provider.source)
+        }
       }
     }
   }
@@ -184,9 +221,12 @@ export const generateCompanyCoverageReport = ({
     const normalizedCompanyName = normalizeCompanyName(row.companyName)
     if (!exactNormalizedCompanyName || !normalizedCompanyName) continue
 
-    const source = exactLookup.get(exactNormalizedCompanyName)
-      || fuzzyLookup.get(normalizedCompanyName)
-    if (!source) {
+    const exactSource = exactLookup.get(exactNormalizedCompanyName)
+    const fuzzySource = fuzzyLookup.get(normalizedCompanyName)
+    const source = exactSource || fuzzySource
+    const provider = providersBySource.get(source)
+    const requiresExactSourceMatch = provider?.exactCompanyMatchOnly && !exactSource
+    if (!source || requiresExactSourceMatch) {
       unmatched.push({
         row: row.row,
         companyName: row.companyName,
@@ -200,7 +240,7 @@ export const generateCompanyCoverageReport = ({
       companyName: row.companyName,
       normalizedCompanyName,
       source,
-      provider: providersBySource.get(source) || null,
+      provider: provider || null,
     })
   }
 

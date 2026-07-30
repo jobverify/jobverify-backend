@@ -39,8 +39,8 @@ const GLOBAL_CAREERS_HTML = `
     <body>
       <main>
         <h1>Join Gentari</h1>
-        <p>Discover fulfilling career paths at Gentari. Join our team and be part of our mission to revolutionise sustainable energy.</p>
-        <div>We are seeking passionate talents to embark with us on pioneering the next wave of clean energy</div>
+        <p>Discover exciting career opportunities at Gentari. Join our team and be part of our mission to revolutionise sustainable energy.</p>
+        <div>We are seeking passionate talents to embark with us on the next wave of clean energy</div>
         <a href="https://www.linkedin.com/company/gentari/jobs/" target="_self">Browse career openings</a>
       </main>
     </body>
@@ -77,8 +77,7 @@ const INDIA_CAREERS_NOT_FOUND_HTML = `
     </head>
     <body>
       <main>
-        <h1>404</h1>
-        <p>Page not found</p>
+        <h1>Not Found</h1>
         <img src="/images/404-page-not-found.webp" alt="">
       </main>
     </body>

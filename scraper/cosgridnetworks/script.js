@@ -183,7 +183,7 @@ export const hasOfficialCareersLandingSignal = (html) => {
   const text = stripTags(page) || ''
 
   return /<title>\s*Join the COSGrid Team: Build a Brighter Digital Future\s*<\/title>/i.test(page)
-    && /<h1>\s*Join the COSGrid Team\s*<\/h1>/i.test(page)
+    && /<h1>\s*(?:Join the COSGrid Team|Join Our Team)\s*<\/h1>/i.test(page)
     && /Take a look at our latest job opportunities/i.test(text)
     && /ng-reflect-router-link=["']openings["']/i.test(page)
     && /mailto:careers@cosgrid\.com/i.test(page)

@@ -15,6 +15,20 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const CURRENT_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Godrej Properties</h1>
+      <p>Crafting spaces that spark joy, one community, one family, one home at a time.</p>
+      <a href="https://careers.godrejindustries.com/in/en/godrejproperties">Work with us</a>
+      <p>Copyright © 2026 . Godrej Properties</p>
+    </main>
+  </body>
+</html>
+`
+
 const ABOUT_HTML = `
 <!doctype html>
 <html lang="en">
@@ -81,6 +95,7 @@ test('Godrej Properties sentinel helpers stay pinned to the verified first-party
   assert.equal(godrejProperties.extractWorkWithUsUrl(HOMEPAGE_HTML), godrejProperties.SHARED_CAREERS_URL)
   assert.equal(godrejProperties.extractWorkWithUsUrl(ABOUT_HTML), godrejProperties.SHARED_CAREERS_URL)
   assert.equal(godrejProperties.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(godrejProperties.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
   assert.equal(godrejProperties.hasAboutUsSignal(ABOUT_HTML), true)
   assert.equal(godrejProperties.hasSharedCareersShellSignal(SHARED_CAREERS_HTML), true)
   assert.equal(godrejProperties.pageExposesPublicJobListings(HOMEPAGE_HTML), false)

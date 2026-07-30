@@ -58,17 +58,17 @@ test('Panasonic local catalog captures the verified corporate India route and pu
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-25')
   assert.match(provider.dryRunFile, /panasonic[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, panasonicModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.panasonic\.com\/in\/corporate\.html/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/careers\.na\.panasonic\.com\/corporate\/jobs\/locations\/country\/India/i,
   )
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.na\.panasonic\.com\/api\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /25 India jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /21 India jobs/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /Line Maintenance Manager - India|Software Engineer III - Fullstack \+ Kubernetes \+ Devops/i,

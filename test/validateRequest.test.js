@@ -14,6 +14,7 @@ import {
   resetPasswordValidation,
   userProfileValidation,
   verifyEmailValidation,
+  whatsappAlertsValidation,
 } from "../src/validation/requestValidators.js";
 
 const createResponseDouble = () => ({
@@ -190,10 +191,10 @@ test("jobQueryValidation accepts the oldest sort option", async () => {
   assert.equal(res.body, null);
 });
 
-test("jobQueryValidation accepts the 100-card job page size", async () => {
+test("jobQueryValidation accepts the 2000-card job page size", async () => {
   const req = {
     query: {
-      limit: "100",
+      limit: "2000",
     },
   };
   const res = createResponseDouble();
@@ -209,10 +210,121 @@ test("jobQueryValidation accepts the 100-card job page size", async () => {
   assert.equal(res.body, null);
 });
 
-test("jobQueryValidation rejects job page limits above the 100-card page size", async () => {
+test("registerValidation accepts an optional normalized phone number", async () => {
+  const req = {
+    body: {
+      name: "Student",
+      email: "Student@example.com",
+      password: "StrongerPass123",
+      phoneE164: "+919876543210",
+    },
+  };
+  await runValidationChain(registerValidation, req);
+  validateRequest(req, createResponseDouble(), () => {});
+  assert.equal(req.body.phoneE164, "+919876543210");
+});
+
+test("registerValidation rejects a malformed optional phone number", async () => {
+  const req = {
+    body: {
+      name: "Student",
+      email: "Student@example.com",
+      password: "StrongerPass123",
+      phoneE164: "abcdefgh",
+    },
+  };
+  const res = createResponseDouble();
+  let nextCalled = false;
+
+  await runValidationChain(registerValidation, req);
+  validateRequest(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, false);
+  assert.equal(res.statusCode, 400);
+});
+
+test("whatsappAlertsValidation allows enabling alerts with a persisted phone", async () => {
+  const req = { body: { enabled: true } };
+  const res = createResponseDouble();
+  let nextCalled = false;
+
+  await runValidationChain(whatsappAlertsValidation, req);
+  validateRequest(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, true);
+  assert.equal(res.statusCode, 200);
+});
+
+test("whatsappAlertsValidation normalizes accepted string booleans", async () => {
+  const req = { body: { enabled: "1" } };
+  const res = createResponseDouble();
+  let nextCalled = false;
+
+  await runValidationChain(whatsappAlertsValidation, req);
+  validateRequest(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, true);
+  assert.equal(req.body.enabled, true);
+  assert.equal(res.statusCode, 200);
+});
+
+test("whatsappAlertsValidation rejects non-normalized phone numbers", async () => {
+  const req = { body: { enabled: true, phoneE164: "9876543210" } };
+  const res = createResponseDouble();
+  let nextCalled = false;
+
+  await runValidationChain(whatsappAlertsValidation, req);
+  validateRequest(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, false);
+  assert.equal(res.statusCode, 400);
+});
+
+test("whatsappAlertsValidation rejects invalid phone numbers", async () => {
+  const req = { body: { enabled: true, phoneE164: "abcdefgh" } };
+  const res = createResponseDouble();
+  let nextCalled = false;
+
+  await runValidationChain(whatsappAlertsValidation, req);
+  validateRequest(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, false);
+  assert.equal(res.statusCode, 400);
+});
+
+test("jobQueryValidation accepts a reachable high-numbered job page", async () => {
   const req = {
     query: {
-      limit: "101",
+      page: "722",
+    },
+  };
+  const res = createResponseDouble();
+  let nextCalled = false;
+
+  await runValidationChain(jobQueryValidation, req);
+  validateRequest(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, true);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body, null);
+});
+
+test("jobQueryValidation rejects job page limits above the 2000-card page size", async () => {
+  const req = {
+    query: {
+      limit: "2001",
     },
   };
   const res = createResponseDouble();
@@ -227,7 +339,7 @@ test("jobQueryValidation rejects job page limits above the 100-card page size", 
   assert.equal(res.statusCode, 400);
   assert.deepEqual(
     res.body.errors.map((error) => error.msg),
-    ["Limit must be between 1 and 100."],
+    ["Limit must be between 1 and 2000."],
   );
 });
 
@@ -319,9 +431,24 @@ test("jobQueryValidation accepts repeated multiselect job filter params", async 
       experienceBucket: ["3-5", "5-8"],
       roleDomain: ["Data Science & AI", "Sales & Customer Success"],
       workArrangement: ["Remote", "Hybrid"],
-      datePostedDays: ["7", "14"],
+      datePostedDays: ["7", "na"],
     },
   };
+  const res = createResponseDouble();
+  let nextCalled = false;
+
+  await runValidationChain(jobQueryValidation, req);
+  validateRequest(req, res, () => {
+    nextCalled = true;
+  });
+
+  assert.equal(nextCalled, true);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body, null);
+});
+
+test("jobQueryValidation accepts zero as the Today date-posted filter", async () => {
+  const req = { query: { datePostedDays: "0" } };
   const res = createResponseDouble();
   let nextCalled = false;
 

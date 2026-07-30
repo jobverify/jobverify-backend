@@ -10,24 +10,29 @@ const officialCareersHtml = `
     <title>Panasonic Corporate Careers</title>
   </head>
   <body>
-    <h1>Panasonic Corporation of North America Careers</h1>
+    <h1>See jobs by: Categories Locations</h1>
     <script>
       window.currentContext = 'corporate';
       window.currentContextValue = 'corporate';
       window.searchConfig = {
         "query": {
-          "country": "India",
-          "internal": "false",
-          "allLangs": "true",
-          "dedupeLang": "en-us|en-us",
-          "separator": "|",
-          "facetField": "tags1|tags2|tags3|tags4"
+          "country": "India"
         },
         "path": "/corporate/jobs/locations/country/India",
         "numRowsPerPage": 10,
         "contextSettings": {
-          "currentContext": "corporate"
-        }
+          "currentContext": "corporate",
+          "contextDefinitions": [
+            {
+              "name": "corporate",
+              "metadata": {
+                "title": "Panasonic Corporate Careers"
+              }
+            }
+          ]
+        },
+        "pageTitle": "Panasonic Corporate Careers",
+        "searchPageHeader": "corporate Job Search"
       };
     </script>
   </body>
@@ -125,17 +130,22 @@ test('Panasonic scraper pins the verified corporate India route and Jibe API con
   assert.deepEqual(extractOfficialSearchConfig(officialCareersHtml), {
     query: {
       country: 'India',
-      internal: 'false',
-      allLangs: 'true',
-      dedupeLang: 'en-us|en-us',
-      separator: '|',
-      facetField: 'tags1|tags2|tags3|tags4',
     },
     path: '/corporate/jobs/locations/country/India',
     numRowsPerPage: 10,
     contextSettings: {
       currentContext: 'corporate',
+      contextDefinitions: [
+        {
+          name: 'corporate',
+          metadata: {
+            title: 'Panasonic Corporate Careers',
+          },
+        },
+      ],
     },
+    pageTitle: 'Panasonic Corporate Careers',
+    searchPageHeader: 'corporate Job Search',
   })
   assert.equal(hasOfficialPanasonicCareersSignals(officialCareersHtml), true)
   assert.equal(

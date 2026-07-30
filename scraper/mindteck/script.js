@@ -37,7 +37,6 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(page).toLowerCase()
 
   return normalized.includes('mindteck | ai, iot & product engineering solutions')
-    && /href=["']https:\/\/careers\.mindteck\.com\/?["']/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {

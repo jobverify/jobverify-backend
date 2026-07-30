@@ -137,7 +137,7 @@ const resolveIndiaLocation = (rawLocation, applyUrl) => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Careers\s*@\s*Komprise\s*<\/title>/i.test(page)
+  return /<title>\s*Careers\s*(?:@|at)\s*Komprise\b[^<]*<\/title>/i.test(page)
     && /\bCAREERS @ KOMPRISE\b/i.test(page)
     && /\bOpen Positions\b/i.test(page)
     && /job_manager_ajax_filters/i.test(page)

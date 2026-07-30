@@ -43,8 +43,8 @@ test('SocGen local catalog captures the verified Societe Generale public careers
   assert.equal(provider.companyDomain, 'careers.societegenerale.com')
   assert.equal(provider.atsPlatform, 'oracle-taleo')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.verifiedLiveOfferCount, 688)
-  assert.equal(provider.verifiedIndiaSampleTitle, 'Product owner - Payments')
+  assert.equal(provider.verifiedLiveOfferCount, 702)
+  assert.equal(provider.verifiedIndiaSampleTitle, 'Senior Analyst')
   assert.equal(provider.paginationStrategy, 'single-public-listing-page-plus-detail-pages')
   assert.equal(
     provider.extractionStrategy,
@@ -52,11 +52,12 @@ test('SocGen local catalog captures the verified Societe Generale public careers
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-07-27')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.societegenerale\.com\/en\/Technical\/all-job-offers/i)
-  assert.match(provider.verifiedSurfaceSummary, /688 offre\(s\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /Product owner - Payments/i)
+  assert.match(provider.verifiedSurfaceSummary, /702 offre\(s\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Analyst/i)
   assert.match(provider.verifiedSurfaceSummary, /Bangalore, India/i)
+  assert.match(provider.verifiedSurfaceSummary, /Delivery Manager/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /socgen[\\/]jobs\.json$/i)
 

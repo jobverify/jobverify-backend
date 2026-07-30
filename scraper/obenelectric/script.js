@@ -74,8 +74,11 @@ const hasInputWithId = (html, id) =>
 
 export const hasOfficialAboutPageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const hasVerifiedTitle = /<title>\s*About Us\s*(?:[-|]\s*Oben Electric)?\s*<\/title>/i.test(page)
 
-  return /Be a part of the future at Oben Electric/i.test(page)
+  return hasVerifiedTitle
+    && /Oben Electric/i.test(normalized)
     && /Explore Careers/i.test(page)
     && /https:\/\/careers\.obenelectric\.com\/jobs\/Careers/i.test(page)
 }

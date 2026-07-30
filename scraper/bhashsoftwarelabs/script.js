@@ -15,7 +15,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = async (url) => {
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -24,11 +24,11 @@ const defaultFetchText = async (url) => {
     redirect: 'follow',
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
   }
-
-  return response.text()
 }
 
 export const hasOfficialHomepageSignal = (html = '') => {
@@ -49,14 +49,14 @@ export const hasMissingCareersRouteSignal = (html = '') => {
 }
 
 export const createBhashSoftwareLabsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Bhash Software Labs homepage no longer matches the verified first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasMissingCareersRouteSignal(careersHtml)) {
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (careersPage.status !== 404 || !hasMissingCareersRouteSignal(careersPage.html)) {
       throw new Error('Bhash Software Labs careers route no longer matches the verified missing-page surface')
     }
 

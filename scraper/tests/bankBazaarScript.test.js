@@ -13,7 +13,7 @@ const homepageHtml = `
   <html>
     <head><title>BankBazaar</title></head>
     <body>
-      <a href="https://www.bankbazaar.com/careers.html">Careers</a>
+      <a href="/careers.html">Careers</a>
     </body>
   </html>
 `

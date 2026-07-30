@@ -24,8 +24,9 @@ const homepageHtml = `
       </nav>
     </header>
     <main>
-      <h1>We’re the trusted legal service for separating couples.</h1>
-      <p>Our approach is unique in helping couples navigate separation together.</p>
+      <h1>We're the trusted legal service for couples.</h1>
+      <p>Whether you're moving in together, separating or getting divorced, we help you navigate change together.</p>
+      <p>Book your free advice consultation to find out how we can help you.</p>
     </main>
   </body>
 </html>
@@ -59,26 +60,28 @@ const careersHtml = `
 </html>
 `
 
-const staleScreenloopBoardHtml = `
+const screenloopBoardHtml = `
 <!doctype html>
 <html lang="en">
   <head>
     <title>Screenloop</title>
+    <meta property="og:title" content="amicable Careers">
+    <meta property="og:url" content="https://app.screenloop.com/careers/amicable">
   </head>
   <body>
     <script>
-      window.__SCREENLOOP__ = "{&quot;jobPosts&quot;:[{&quot;id&quot;:8602,&quot;name&quot;:&quot;Marketing Director &quot;,&quot;location&quot;:{&quot;name&quot;:&quot;33 Holborn, London&quot;,&quot;country&quot;:&quot;United Kingdom of Great Britain and Northern Ireland&quot;}},{&quot;id&quot;:8610,&quot;name&quot;:&quot;Negotiation Divorce Specialist&quot;,&quot;location&quot;:{&quot;name&quot;:&quot;Remote&quot;,&quot;country&quot;:&quot;United Kingdom of Great Britain and Northern Ireland&quot;}},{&quot;id&quot;:8626,&quot;name&quot;:&quot;Entry level roles (Tech, Customer support, Legal admin, Finance)&quot;,&quot;location&quot;:{&quot;name&quot;:&quot;London&quot;,&quot;country&quot;:&quot;United Kingdom of Great Britain and Northern Ireland&quot;}}]}";
+      window.__SCREENLOOP__ = "{&quot;jobPosts&quot;:[{&quot;id&quot;:8610,&quot;name&quot;:&quot;Negotiation Divorce Specialist&quot;,&quot;location&quot;:{&quot;name&quot;:&quot;Remote&quot;,&quot;country&quot;:&quot;United Kingdom of Great Britain and Northern Ireland&quot;}},{&quot;id&quot;:8626,&quot;name&quot;:&quot;Entry level roles (Tech, Customer support, Legal admin, Finance)&quot;,&quot;location&quot;:{&quot;name&quot;:&quot;London&quot;,&quot;country&quot;:&quot;United Kingdom of Great Britain and Northern Ireland&quot;}},{&quot;id&quot;:8700,&quot;name&quot;:&quot;Revenue Operations Lead&quot;,&quot;location&quot;:{&quot;name&quot;:&quot;Remote&quot;,&quot;country&quot;:&quot;United Kingdom of Great Britain and Northern Ireland&quot;}},{&quot;id&quot;:3483,&quot;name&quot;:&quot;Join our Talent Pool&quot;,&quot;location&quot;:{&quot;name&quot;:&quot;London&quot;,&quot;address&quot;:&quot;Holborn&quot;,&quot;country&quot;:&quot;United Kingdom of Great Britain and Northern Ireland&quot;}}]}";
     </script>
   </body>
 </html>
 `
 
-test('Amicable AI sentinel helpers stay pinned to the verified homepage, no-openings careers page, and stale Screenloop board', async () => {
+test('Amicable AI sentinel helpers stay pinned to the verified homepage, no-openings careers page, and non-India Screenloop board', async () => {
   const amicableAi = await loadAmicableAiModule()
 
   assert.equal(amicableAi.SOURCE, 'amicableai')
   assert.equal(amicableAi.COMPANY, 'Amicable AI')
-  assert.equal(amicableAi.VERIFIED_AT, '2026-07-15')
+  assert.equal(amicableAi.VERIFIED_AT, '2026-07-28')
   assert.equal(amicableAi.HOMEPAGE_URL, 'https://amicable.io/')
   assert.equal(amicableAi.CAREERS_URL, 'https://amicable.io/careers')
   assert.equal(amicableAi.SCREENLOOP_BOARD_URL, 'https://app.screenloop.com/careers/amicable')
@@ -94,16 +97,23 @@ test('Amicable AI sentinel helpers stay pinned to the verified homepage, no-open
     amicableAi.extractScreenloopBoardUrl(careersHtml),
     'https://app.screenloop.com/careers/amicable',
   )
-  assert.deepEqual(amicableAi.extractStaleScreenloopJobTitles(staleScreenloopBoardHtml), [
-    'Marketing Director',
+  assert.equal(
+    amicableAi.extractScreenloopCanonicalUrl(screenloopBoardHtml),
+    'https://app.screenloop.com/careers/amicable',
+  )
+  assert.deepEqual(amicableAi.extractScreenloopJobTitles(screenloopBoardHtml), [
     'Negotiation Divorce Specialist',
     'Entry level roles (Tech, Customer support, Legal admin, Finance)',
+    'Revenue Operations Lead',
+    'Join our Talent Pool',
   ])
-  assert.equal(amicableAi.screenloopBoardHasIndiaRoles(staleScreenloopBoardHtml), false)
-  assert.equal(amicableAi.hasStaleScreenloopBoardSignal(staleScreenloopBoardHtml), true)
+  assert.equal(amicableAi.extractStaleScreenloopJobTitles(screenloopBoardHtml).length, 4)
+  assert.equal(amicableAi.screenloopBoardHasIndiaRoles(screenloopBoardHtml), false)
+  assert.equal(amicableAi.hasVerifiedScreenloopBoardSignal(screenloopBoardHtml), true)
+  assert.equal(amicableAi.hasStaleScreenloopBoardSignal(screenloopBoardHtml), true)
 })
 
-test('Amicable AI returns no jobs only while the verified careers page says there are no open positions and the hidden Screenloop board remains stale', async () => {
+test('Amicable AI returns no jobs only while the verified careers page says there are no open positions and the hidden Screenloop board remains non-India', async () => {
   const amicableAi = await loadAmicableAiModule()
   const requestedUrls = []
 
@@ -120,7 +130,7 @@ test('Amicable AI returns no jobs only while the verified careers page says ther
       }
 
       if (url === amicableAi.SCREENLOOP_BOARD_URL) {
-        return { status: 200, url, html: staleScreenloopBoardHtml }
+        return { status: 200, url, html: screenloopBoardHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -135,7 +145,7 @@ test('Amicable AI returns no jobs only while the verified careers page says ther
   assert.deepEqual(jobs, [])
 })
 
-test('Amicable AI fails closed when the verified homepage, careers copy, or stale Screenloop board drift', async () => {
+test('Amicable AI fails closed when the verified homepage, careers copy, or Screenloop board drift', async () => {
   const amicableAi = await loadAmicableAiModule()
 
   await assert.rejects(
@@ -190,10 +200,10 @@ test('Amicable AI fails closed when the verified homepage, careers copy, or stal
           return {
             status: 200,
             url,
-            html: staleScreenloopBoardHtml.replace(
+            html: screenloopBoardHtml.replace(
               'United Kingdom of Great Britain and Northern Ireland',
               'India',
-            ).replace('33 Holborn, London', 'Bengaluru, India'),
+            ).replace('Remote', 'Bengaluru, India'),
           }
         }
 

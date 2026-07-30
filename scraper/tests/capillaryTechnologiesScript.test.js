@@ -35,3 +35,20 @@ test('returns no jobs while Capillary Technologies has no public job records', a
   assert.deepEqual(requestedUrls, [CAREER_PAGE_URL])
   assert.deepEqual(jobs, [])
 })
+
+test('falls back to a browser-backed Capillary Technologies careers fetch when the direct request is blocked', async () => {
+  const browserUrls = []
+
+  const jobs = await createCapillaryTechnologiesScraper().run({
+    fetchText: async () => {
+      throw new Error(`HTTP 403 for ${CAREER_PAGE_URL}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return pendingCareersHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [CAREER_PAGE_URL])
+  assert.deepEqual(jobs, [])
+})

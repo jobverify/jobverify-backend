@@ -163,6 +163,31 @@ test("verifyAndActivatePurchase is idempotent for already paid purchases", async
   }
 });
 
+test("verifyAndActivatePurchase rejects an order ID that belongs to a different purchase", async () => {
+  const originalPlanPurchaseFindOne = PlanPurchase.findOne;
+  PlanPurchase.findOne = async () => ({
+    _id: "expensive-purchase",
+    user: "buyer-1",
+    providerOrderId: "order-expensive",
+    status: "pending",
+  });
+
+  try {
+    await assert.rejects(
+      verifyAndActivatePurchase({
+        purchaseId: "expensive-purchase",
+        providerOrderId: "order-cheap",
+        providerPaymentId: "payment-cheap",
+        providerSignature: "signature-cheap",
+        userId: "buyer-1",
+      }),
+      /order does not match/i,
+    );
+  } finally {
+    PlanPurchase.findOne = originalPlanPurchaseFindOne;
+  }
+});
+
 test("activateWebhookPurchase counts three unique semester referrals and issues one free semester reward", async () => {
   const originalPlanPurchaseFindOne = PlanPurchase.findOne;
   const originalPlanPurchaseCreate = PlanPurchase.create;

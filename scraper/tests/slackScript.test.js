@@ -21,20 +21,20 @@ const OFFICIAL_CAREERS_HTML = `
       <section aria-label="Job filters">
         <h3>Filter job listings</h3>
         <div>
-          <span>All locations</span>
-          <ul data-filter-name="locations">
-            <li>California - Remote</li>
-            <li>California - San Francisco</li>
-            <li>Georgia - Atlanta</li>
-            <li>Netherlands - Amsterdam</li>
-            <li>New York - New York</li>
-            <li>Texas - Dallas</li>
-            <li>United Kingdom - London</li>
-            <li>Virginia - Herndon</li>
-            <li>Virginia - Mclean</li>
-            <li>Washington - Seattle</li>
-            <li>Washington - Seattle Metro - Remote</li>
-          </ul>
+          <select class="jobs-filter--mobile--location jobs-filter--mobile__selection mobile-location-selected" data-default-value="all-locations">
+            <option value="all-locations" selected>All locations</option>
+            <option value="california-remote">California - Remote</option>
+            <option value="california-san-francisco">California - San Francisco</option>
+            <option value="georgia-atlanta">Georgia - Atlanta</option>
+            <option value="netherlands-amsterdam">Netherlands - Amsterdam</option>
+            <option value="new-york-new-york">New York - New York</option>
+            <option value="texas-dallas">Texas - Dallas</option>
+            <option value="united-kingdom-london">United Kingdom - London</option>
+            <option value="virginia-herndon">Virginia - Herndon</option>
+            <option value="virginia-mclean">Virginia - Mclean</option>
+            <option value="washington-seattle">Washington - Seattle</option>
+            <option value="washington-seattle-metro-remote">Washington - Seattle Metro - Remote</option>
+          </select>
         </div>
         <div>
           <span>All departments</span>
@@ -76,11 +76,11 @@ const INDIA_LOCATION_HTML = `
       <section aria-label="Job filters">
         <h3>Filter job listings</h3>
         <div>
-          <span>All locations</span>
-          <ul data-filter-name="locations">
-            <li>India - Hyderabad</li>
-            <li>United Kingdom - London</li>
-          </ul>
+          <select class="jobs-filter--mobile--location jobs-filter--mobile__selection mobile-location-selected" data-default-value="all-locations">
+            <option value="all-locations" selected>All locations</option>
+            <option value="india-hyderabad">India - Hyderabad</option>
+            <option value="united-kingdom-london">United Kingdom - London</option>
+          </select>
         </div>
       </section>
       <section aria-label="Open positions">

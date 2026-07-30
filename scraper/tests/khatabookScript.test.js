@@ -6,7 +6,9 @@ const FIXED_SCRAPED_AT = '2026-07-16T12:00:00.000Z'
 const officialCareersHtml = `
   <html lang="en">
     <head>
-      <title>Careers at Khatabook | Khatabook Jobs | Latest Khatabook Openings</title>
+      <meta name="title" content="Careers at Khatabook | Khatabook Jobs | Latest Khatabook Openings">
+      <meta property="og:title" content="Careers at Khatabook | Khatabook Jobs | Latest Khatabook Openings">
+      <link rel="canonical" href="https://khatabook.com/hiring/" />
     </head>
     <body>
       <main>

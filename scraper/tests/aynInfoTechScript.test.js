@@ -12,6 +12,21 @@ const compromisedHomepageHtml = `
 </html>
 `
 
+const currentCompromisedHomepageHtml = `
+<!doctype html>
+<html lang="id">
+  <head>
+    <link rel="canonical" href="https://www.bigskyworldview.org/contact" />
+    <link rel="amphtml" href="https://view.bigskyworldview.org/" />
+    <title>Deposit Indosat ! Gabung Bareng Slot Pulsa Indosat Dan Platform Slot Deposit Pulsa Indosat 5000 Pasti JP Terus</title>
+  </head>
+  <body>
+    <p>Platform slot pulsa indosat yang menghadirkan permainan slot deposit pulsa indosat dan pulsa tri paling top pasti gacor.</p>
+    <footer>Powered by Shopify</footer>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../ayninfotech/script.js')
@@ -28,6 +43,20 @@ test('AYN InfoTech sentinel stays pinned to the verified untrusted-domain signal
   assert.equal(aynInfotech.VERIFIED_ON, '2026-07-17')
   assert.equal(aynInfotech.HOMEPAGE_URL, 'https://www.ayninfotech.com/')
   assert.equal(aynInfotech.hasCompromisedHomepageSignal(compromisedHomepageHtml), true)
+})
+
+test('AYN InfoTech sentinel recognizes the current bigskyworldview compromised redirect variant', async () => {
+  const aynInfotech = await loadModule()
+
+  assert.equal(aynInfotech.hasCompromisedHomepageSignal(currentCompromisedHomepageHtml), true)
+  assert.equal(
+    aynInfotech.isVerifiedUntrustedRoute({
+      status: 200,
+      url: 'https://www.bigskyworldview.org/contact',
+      html: currentCompromisedHomepageHtml,
+    }),
+    true,
+  )
 })
 
 test('AYN InfoTech sentinel returns [] only while every checked first-party route remains untrusted', async () => {

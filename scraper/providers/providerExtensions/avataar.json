@@ -1,0 +1,22 @@
+{
+  "source": "avataar",
+  "companyName": "Avataar",
+  "officialBrandName": "Avataar",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../avataar/script.js",
+  "dryRunFile": "avataar/jobs.json",
+  "companyCareerPage": "https://www.avataar.ai/",
+  "companyDomain": "avataar.ai",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "official-site-without-careers-or-ats-feed-sentinel",
+  "extractionStrategy": "official-first-party-site-without-public-job-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.avataar.ai/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.avataar.ai/ is Avataar's official first-party site. Its navigation exposes only Home, Platform & Technology, Use Cases, About, and Contact; no careers page, public job listings, or official ATS feed is available. This exact-name provider therefore fails closed and returns no jobs until Avataar publishes a verifiable official hiring surface."
+}

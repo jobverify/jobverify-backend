@@ -16,9 +16,21 @@ const fixturesDir = path.join(
 const readFixture = (name) =>
   JSON.parse(readFileSync(path.join(fixturesDir, name), 'utf8'))
 
-test('runApiPortalScraper maps Microsoft India Eightfold jobs and paginates by start offset', async () => {
+test('runApiPortalScraper maps Microsoft India Eightfold jobs with the expanded first-page contract', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'microsoft')
   assert.ok(provider)
+  const firstPage = readFixture('search-page-1.json')
+  const secondPage = readFixture('search-page-2.json')
+  const combinedFirstPage = {
+    ...firstPage,
+    data: {
+      ...firstPage.data,
+      positions: [
+        ...(firstPage.data?.positions ?? []),
+        ...(secondPage.data?.positions ?? []),
+      ],
+    },
+  }
 
   const requests = []
   const jobs = await runApiPortalScraper({
@@ -26,16 +38,12 @@ test('runApiPortalScraper maps Microsoft India Eightfold jobs and paginates by s
     fetchJson: async (url) => {
       requests.push(url)
 
-      if (url === 'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=0&limit=10') {
-        return readFixture('search-page-1.json')
+      if (url === 'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=0&limit=50') {
+        return combinedFirstPage
       }
 
       if (url === 'https://apply.careers.microsoft.com/api/pcsx/position_details?position_id=1970393556911730&domain=microsoft.com&hl=en&queried_location=India') {
         return readFixture('position-details-1970393556911730.json')
-      }
-
-      if (url === 'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=10&limit=10') {
-        return readFixture('search-page-2.json')
       }
 
       if (url === 'https://apply.careers.microsoft.com/api/pcsx/position_details?position_id=1970393556750481&domain=microsoft.com&hl=en&queried_location=India') {
@@ -47,9 +55,8 @@ test('runApiPortalScraper maps Microsoft India Eightfold jobs and paginates by s
   })
 
   assert.deepEqual(requests, [
-    'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=0&limit=10',
+    'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=0&limit=50',
     'https://apply.careers.microsoft.com/api/pcsx/position_details?position_id=1970393556911730&domain=microsoft.com&hl=en&queried_location=India',
-    'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=10&limit=10',
     'https://apply.careers.microsoft.com/api/pcsx/position_details?position_id=1970393556750481&domain=microsoft.com&hl=en&queried_location=India',
   ])
 

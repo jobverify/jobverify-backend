@@ -1,0 +1,28 @@
+[
+  {
+    "title": "AI/ML Lead",
+    "company": "Open Financial Technologies Private Limited",
+    "department": "Engineering",
+    "location": "Bengaluru, KA, India",
+    "city": "Bengaluru",
+    "country": "India",
+    "jobId": "72143",
+    "requisitionId": "72143",
+    "sourceUrl": "https://openfinancial.keka.com/careers/jobdetails/72143",
+    "applyUrl": "https://openfinancial.keka.com/careers/jobdetails/72143",
+    "employmentType": "Full Time",
+    "experienceRequired": "4+",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-05-18",
+    "closingDate": null,
+    "jobDescription": "About Open: OPEN is a leading connected finance platform that empowers finance teams to manage their cash flow better by integrating all business finance systems—from banking to accounting ERP, payments, CRM, HRMS, and more—into one unified platform. Recognized as India's 100th Unicorn, OPEN was awarded ‘Best Workplace 2024’ by IEEE and has been featured among the 'Top 10 companies' by Forbes India and D Globalist's list of 200, and in IDFC FIRST Private Hurun India's Top 200 Self-made Entrepreneurs of the Millennia 2023. OPEN has consistently demonstrated innovation, having won 'Best Digital Banking Solution' at the Global Fintech Fest in 2022, 'Most Innovative Neo Bank' in 2021, and 'Most Innovative Digital Bank' by the Internet and Mobile Association of India (IAMAI). With a team of over 200+ talented professionals, OPEN is a Series D-funded startup supported by global leaders like Temasek, Google, Tiger Global, IIFLFinance Ltd., SBI Holdings Japan, 3one4 Capital, and others. To build and strengthen our superpower, we’re on the lookout for an exceptional AI/ ML Lead Experience:- 4+ Years Location:- Bangalore Responsibilities: Build and ship • Design and implement AI-powered features end to end — from prototype to production — using commercial LLMs and foundation models (e.g. OpenAI, Anthropic, Google, open-weight models). • Architect the systems around the models: retrieval-augmented generation (RAG), agentic workflows, tool use, prompt pipelines, caching, and fallback strategies. • Own model selection — evaluate trade-offs between providers and model tiers on quality, latency, cost, and reliability, and make clear recommendations. • Stay hands-on in the codebase; you will be writing and reviewing production code regularly, not just directing. Quality, evaluation, and reliability • Build evaluation harnesses and test sets so AI features can be measured, monitored, and improved over time rather than judged by vibes. • Put guardrails in place for safety, hallucination, prompt injection, and cost control. • Instrument AI features with logging and observability so failures are visible and debuggable. Lead and set direction • Set the technical direction and roadmap for AI/ML across the product, and translate ambiguous product goals into concrete technical plans. • Mentor engineers, raise the bar on AI engineering practices, and grow the team as the company scales. • Partner closely with product, design, and leadership to identify where AI creates real user value — and where it does not. • Decide when to use a commercial model off the shelf, when to fine-tune, and when (rarely) to build something custom — and justify the call. Requirements • Experience: 4+ years of software engineering experience, with 2+ years building AI/ML-powered products that have shipped to real users. • Commercial models: Deep, practical experience working with commercial LLMs and foundation model APIs — you know their strengths, limits, failure modes, and pricing. • AI architecture: Strong understanding of AI system architecture: RAG, embeddings and vector search, agents and tool use, orchestration frameworks, context management, and prompt engineering. • Evaluation mindset: A rigorous approach to evaluating AI outputs — you build eval sets and measure quality rather than relying on intuition. • Engineering: Solid general engineering skills: comfortable in a modern backend stack (e.g. Python and/or TypeScript), APIs, cloud infrastructure, and CI/CD. • Hands-on leadership: You enjoy being hands-on and can lead by doing — setting direction through code, design docs, and example, not just meetings. • Startup fit: Comfortable with ambiguity and the pace of an early-stage startup; able to scope, prioritize, and ship. • Communication: Can explain AI trade-offs clearly to non-technical stakeholders and make pragmatic recommendations. Why work at Open? • You will be part of the early tribe that is changing the way business banking rolls. • Every atom of your work will impact the way millions of businesses are run. • You will work with some of the brightest minds who will celebrate your quirks. • You will find growth & fun to be two-way streets - how you thrive and the way you jive, in turn drives Open.",
+    "source": "openfinancialtechnologies",
+    "link": "https://openfinancial.keka.com/careers/jobdetails/72143",
+    "scrapedAt": "2026-07-26T20:17:22.808Z",
+    "companyCareerPage": "https://openfinancial.keka.com/careers/",
+    "companyDomain": "open.money",
+    "atsPlatform": "keka-embed-api"
+  }
+]

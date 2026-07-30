@@ -51,6 +51,18 @@ const extractTitle = (html) => {
   return normalizeWhitespace(match?.[1])
 }
 
+const normalizeComparableUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return String(value ?? '').replace(/\/$/, '')
+  }
+}
+
+const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
+
 const toAbsoluteUrl = (value, baseUrl) => {
   if (!value) return null
 
@@ -96,6 +108,20 @@ export const hasUpstreamCareersSignal = (html) => {
 
 export const extractSearchResults = (payload) => extractExotelSearchResults(payload)
 
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -104,6 +130,23 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: createTimeoutSignal(30000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 const defaultFetchJson = async (url) => {
   const response = await fetch(url, {
@@ -120,21 +163,28 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
+export const hasExpectedHomepageOutageSignal = ({ status, url, html } = {}) =>
+  Number(status) === 522
+  && sameUrl(url, HOMEPAGE_URL)
+  && /kinsta\.cloud\s*\|\s*522:\s*connection timed out|error code:\s*522|cf-error-details/i.test(String(html ?? ''))
+
 export const createAmeyoScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
+    fetchPage = defaultFetchPage,
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    const homepagePage = await fetchPage(HOMEPAGE_URL)
+    const homepageHtml = homepagePage.html
 
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    if (!hasOfficialHomepageSignal(homepageHtml) && !hasExpectedHomepageOutageSignal(homepagePage)) {
       throw new Error('Ameyo verified homepage handoff no longer matches the trusted public surface')
     }
 
-    if (extractCareersUrl(homepageHtml) !== OFFICIAL_CAREERS_HANDOFF_URL) {
+    if (hasOfficialHomepageSignal(homepageHtml) && extractCareersUrl(homepageHtml) !== OFFICIAL_CAREERS_HANDOFF_URL) {
       throw new Error('Ameyo verified homepage handoff no longer points to the trusted Exotel careers route')
     }
 

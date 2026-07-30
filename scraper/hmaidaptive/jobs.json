@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Aidaptive",
+    "company": "Aidaptive",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "source": "hmaidaptive",
+    "jobId": "hmaidaptive-current-openings",
+    "requisitionId": "hmaidaptive-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Aidaptive had current Himalayas hiring evidence for Machine Learning Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:26:59.116Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

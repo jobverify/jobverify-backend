@@ -52,6 +52,8 @@ const normalizeWhitespace = (value) =>
     .replace(/[“”]/g, '"')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
     .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -74,7 +76,7 @@ export const hasVerifiedGoldcastHomepageSignals = (html) => {
 
   return /<title>\s*Goldcast \| The AI-first Video Content Platform for B2B Videos, Webinars, and Events\s*<\/title>/i.test(page)
     && normalized.includes("You're invisible without video")
-    && normalized.includes("Goldcast's agentic workflows put it at the heart of your GTM strategy.")
+    && normalized.includes("Goldcast's agentic workflows put it at the heart of your GTM strategy")
     && /<a[^>]+href=["']\/company\/careers["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
     && normalized.includes('Stay In Touch')
     && normalized.includes('Copyright Goldcast, Inc. All rights reserved.')

@@ -40,11 +40,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialKlausCareersSignals = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title[^>]*>\s*Careers\s*[-–]\s*Klaus IT Solutions\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Careers\s*(?:-|&#8211;|&ndash;|â€“|–)\s*Klaus IT Solutions\s*<\/title>/i.test(page)
     && /MyApiPage/i.test(page)
     && /id=["']txtsearch["']/i.test(page)
     && /id=["']txtcity["']/i.test(page)
-  }
+}
 
 export const pageExposesStructuredJobListings = (html = '') =>
   /\bjob-card\b/i.test(String(html ?? ''))

@@ -43,6 +43,35 @@ const verifiedCareersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Join our team | Rupeek | Careers</title>
+    <link rel="canonical" href="https://rupeek.com/careers"/>
+  </head>
+  <body>
+    <div>loading...</div>
+    <section>
+      <div>Excellent Growth</div>
+      <div>Wealth creation</div>
+      <div>Work that matters</div>
+      <div>Passionate, Energetic People</div>
+      <div>Innovation</div>
+    </section>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 mt-7 text-left">
+      <a href="https://www.linkedin.com/jobs/view/assistant-manager-taxation-at-rupeek-4440699084" target="_blank">
+        <div>
+          <p>Assistant Manager - Taxation</p>
+          <p>Location: Bengaluru, Karnataka, India</p>
+          <p>13 hours ago</p>
+        </div>
+      </a>
+    </div>
+  </body>
+</html>
+`
+
 const loadRupeekModule = async () => {
   try {
     return await import('../rupeek/script.js')
@@ -91,6 +120,12 @@ test('Rupeek helpers stay pinned to the verified official careers page structure
       postingDate: '6 days ago',
     },
   ])
+})
+
+test('Rupeek accepts the current official careers page value-prop copy', async () => {
+  const rupeek = await loadRupeekModule()
+
+  assert.equal(rupeek.hasOfficialRupeekCareersSignals(currentCareersHtml), true)
 })
 
 test('Rupeek run validates the official careers page before returning the verified India subset', async () => {

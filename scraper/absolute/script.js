@@ -125,9 +125,16 @@ const buildDetailUrl = (jobviteId) => DETAIL_URL_PATTERN.replace('{jobvite_id}',
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasLegacyOrCurrentHeroSignal =
+    /Absolute Security Cyber Resilience Platform/i.test(normalized)
+    || (
+      /Detect\.\s*Remediate\.\s*Rehydrate\.\s*Recover\.\s*Autonomously\b/i.test(normalized)
+      && /THE AUTONOMOUS CYBER RESILIENCE PLATFORM/i.test(normalized)
+      && /We Stop Downtime/i.test(normalized)
+    )
 
   return /<title>\s*Stop Downtime (?:&|&amp;) Business Disruption \| Absolute Security\s*<\/title>/i.test(page)
-    && /Absolute Security Cyber Resilience Platform/i.test(normalized)
+    && hasLegacyOrCurrentHeroSignal
     && /href=["'](?:https:\/\/www\.absolute\.com)?\/company\/careers\/?["']/i.test(page)
     && /Absolute Security/i.test(normalized)
 }

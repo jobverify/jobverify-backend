@@ -45,6 +45,44 @@ const careersHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>AlphaGrep | Global Quantitative Trading, Market Making &amp; Investment Firm</title>
+    <link rel="canonical" href="/" />
+  </head>
+  <body>
+    <h1>AlphaGrep</h1>
+    <a href="/career/">Join our Team</a>
+    <a href="/career/">Careers</a>
+  </body>
+</html>
+`
+
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Quantitative Trading Careers | Quant Research &amp; Trading Jobs at AlphaGrep</title>
+    <link rel="canonical" href="/career/" />
+  </head>
+  <body>
+    <main>
+      <h1>Join our Team</h1>
+      <p>Find your next role at Alphagrep</p>
+      <p>Apply for open positions at our offices in</p>
+      <input type="search" placeholder="search by job title" />
+      <ul class="jobResults">
+        <li><a href='/career-opportunity/?jid=8642299002'><div><h5 role="heading" aria-level="3">Accountant</h5></div><span class='jobLocation'>Bangalore<strong class='symLoc'><i class='fa fa-chevron-circle-right' aria-hidden='true'></i></strong></span></a></li>
+        <li><a href='/career-opportunity/?jid=8176611002'><div><h5 role="heading" aria-level="3">Quantitative Developer Intern</h5></div><span class='jobLocation'>Mumbai<strong class='symLoc'><i class='fa fa-chevron-circle-right' aria-hidden='true'></i></strong></span></a></li>
+        <li><a href='/career-opportunity/?jid=8622004002'><div><h5 role="heading" aria-level="3">Quantitative Trading Intern</h5></div><span class='jobLocation'>India<strong class='symLoc'><i class='fa fa-chevron-circle-right' aria-hidden='true'></i></strong></span></a></li>
+      </ul>
+    </main>
+  </body>
+</html>
+`
+
 const devopsDetailHtml = `
 <!doctype html>
 <html lang="en">
@@ -132,6 +170,35 @@ const quantTradingDetailHtml = `
     </div>
     <div class="contentJD">
       <p>Research and implement trading ideas for global markets.</p>
+    </div>
+    <div id="jobApply">
+      <h2>Apply for this Job</h2>
+      <form action="" method="post" enctype="multipart/form-data">
+        <input type="text" name="first_name" />
+        <input type="file" name="resume" />
+        <input type="submit" value="Submit Application" />
+      </form>
+    </div>
+  </body>
+</html>
+`
+
+const currentDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career Opportunity - AlphaGrep</title>
+    <link rel="canonical" href="/career-opportunity/" />
+  </head>
+  <body>
+    <div class="jobDet">
+      <h6><i class="fa fa-angle-right" aria-hidden="true"></i> Finance</h6>
+      <h2>Accountant</h2>
+      <h6 class="location">AlphaGrep India - Bangalore, Bangalore </h6>
+      <a class="eut-btn" href="#jobApply">Apply for this job</a>
+    </div>
+    <div class="contentJD">
+      <p>Support the accounting and reporting team.</p>
     </div>
     <div id="jobApply">
       <h2>Apply for this Job</h2>
@@ -306,6 +373,64 @@ test('AlphaGrep constants and parsers stay pinned to the verified first-party ca
     closingDate: null,
     jobDescription: 'Research and implement trading ideas for global markets.',
   })
+})
+
+test('AlphaGrep accepts the current relative canonical tags and li-first careers list markup', async () => {
+  const alphaGrep = await loadModule()
+
+  assert.equal(alphaGrep.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(alphaGrep.hasOfficialCareersPageSignal(currentCareersHtml), true)
+  assert.deepEqual(alphaGrep.extractListingJobs(currentCareersHtml), [
+    {
+      title: 'Accountant',
+      location: 'Bangalore, India',
+      city: 'Bangalore',
+      country: 'India',
+      jobId: '8642299002',
+      requisitionId: '8642299002',
+      sourceUrl: 'https://www.alpha-grep.com/career-opportunity/?jid=8642299002',
+      applyUrl: 'https://www.alpha-grep.com/career-opportunity/?jid=8642299002#jobApply',
+      employmentType: null,
+      postingDate: null,
+      closingDate: null,
+      department: null,
+      jobDescription: null,
+    },
+    {
+      title: 'Quantitative Developer Intern',
+      location: 'Mumbai, India',
+      city: 'Mumbai',
+      country: 'India',
+      jobId: '8176611002',
+      requisitionId: '8176611002',
+      sourceUrl: 'https://www.alpha-grep.com/career-opportunity/?jid=8176611002',
+      applyUrl: 'https://www.alpha-grep.com/career-opportunity/?jid=8176611002#jobApply',
+      employmentType: null,
+      postingDate: null,
+      closingDate: null,
+      department: null,
+      jobDescription: null,
+    },
+    {
+      title: 'Quantitative Trading Intern',
+      location: 'India',
+      city: null,
+      country: 'India',
+      jobId: '8622004002',
+      requisitionId: '8622004002',
+      sourceUrl: 'https://www.alpha-grep.com/career-opportunity/?jid=8622004002',
+      applyUrl: 'https://www.alpha-grep.com/career-opportunity/?jid=8622004002#jobApply',
+      employmentType: null,
+      postingDate: null,
+      closingDate: null,
+      department: null,
+      jobDescription: null,
+    },
+  ])
+  assert.equal(
+    alphaGrep.hasOfficialJobDetailSignal(currentDetailHtml, alphaGrep.extractListingJobs(currentCareersHtml)[0]),
+    true,
+  )
 })
 
 test('run validates the verified homepage handoff, keeps only India jobs, and decorates runner fields', async () => {

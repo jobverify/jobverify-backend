@@ -388,6 +388,13 @@ export const verifyAndActivatePurchase = async ({
     throw new Error("Purchase does not belong to this user.");
   }
 
+  if (
+    providerOrderId
+    && String(purchase.providerOrderId) !== String(providerOrderId)
+  ) {
+    throw new Error("Payment order does not match this purchase.");
+  }
+
   if (purchase.status === "paid" || purchase.status === "free_referral") {
     return finalizeVerifiedPurchase({
       purchase,

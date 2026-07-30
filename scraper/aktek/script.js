@@ -98,7 +98,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml)
 
   return /<title>\s*Advanced Intelligence &amp; Technology Solutions \| AKTEK\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/aktek\.io\/["']/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.)?aktek\.io\/["']/i.test(rawHtml)
     && /href=["']https:\/\/aktek\.io\/software\/["']/i.test(rawHtml)
     && /href=["']https:\/\/aktek\.io\/intelligence\/["']/i.test(rawHtml)
     && /href=["']https:\/\/aktek\.io\/integrated-services\/["']/i.test(rawHtml)

@@ -233,3 +233,33 @@ test('Bharat Electronics fails closed when the official job notifications surfac
     /job notifications page no longer matches the verified official surface/i,
   )
 })
+
+test('Bharat Electronics falls back to a browser fetch when certificate verification fails', async () => {
+  const bel = await loadBharatElectronicsModule()
+  const requestedUrls = []
+
+  const jobs = await bel.createBharatElectronicsScraper().run({
+    fetchText: async () => {
+      throw new Error('fetch failed | unable to verify the first certificate')
+    },
+    fetchBrowserText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === bel.HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === bel.JOB_NOTIFICATIONS_URL) return JOB_NOTIFICATIONS_HTML
+      if (url === bel.buildJobNotificationsPageUrl(2)) return DUPLICATE_PAGE_HTML
+
+      throw new Error(`Unexpected Bharat Electronics browser URL: ${url}`)
+    },
+    now: () => '2026-07-15T12:00:00.000Z',
+    maxPages: 4,
+  })
+
+  assert.deepEqual(requestedUrls, [
+    'https://bel-india.in/',
+    'https://bel-india.in/job-notifications/',
+    'https://bel-india.in/job-notifications/page/2/',
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'bharatelectronics')
+})

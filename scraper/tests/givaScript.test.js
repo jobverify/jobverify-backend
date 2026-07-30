@@ -21,11 +21,48 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Buy Gold &amp; Lab Grown Diamond Jewellery | Silver Jewellery &ndash; GIVA</title>
+  </head>
+  <body>
+    <section>
+      <h2>Quick links</h2>
+      <a href="/pages/careers">Join Us</a>
+    </section>
+    <section>
+      <h2>Contact us</h2>
+      <p>Indiejewel Fashions Private Limited</p>
+      <p>Third Floor, Magnum Vista, Raghuvanahalli, Bangalore 560062</p>
+    </section>
+  </body>
+</html>
+`
+
 const careersHtml = `
 <!doctype html>
 <html>
   <head>
     <title>Careers at GIVA | Explore Job Opportunities & Join Our Team - GIVA</title>
+  </head>
+  <body>
+    <section>
+      <h2>Why GIVA?</h2>
+      <p>Hear from the #GemsofGIVA</p>
+      <p>Indiejewel Fashions Private Limited</p>
+      <a href="/pages/about-us">About Us</a>
+    </section>
+  </body>
+</html>
+`
+
+const currentCareersHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Careers at GIVA | Explore Job Opportunities &amp; Join Our Team &ndash; GIVA</title>
   </head>
   <body>
     <section>
@@ -60,7 +97,9 @@ test('GIVA sentinel constants stay pinned to the verified homepage and careers s
   assert.equal(giva.VERIFIED_ON, '2026-07-16')
   assert.match(giva.VERIFIED_SURFACE_SUMMARY, /Join Us/i)
   assert.equal(giva.hasVerifiedGivaHomepageSignals(homepageHtml), true)
+  assert.equal(giva.hasVerifiedGivaHomepageSignals(currentHomepageHtml), true)
   assert.equal(giva.hasVerifiedGivaCareersSignals(careersHtml), true)
+  assert.equal(giva.hasVerifiedGivaCareersSignals(currentCareersHtml), true)
   assert.equal(giva.hasPublicGivaJobSignals(careersHtml), false)
   assert.equal(
     giva.hasPublicGivaJobSignals(

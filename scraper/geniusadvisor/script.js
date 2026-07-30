@@ -76,7 +76,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
   return extractTitle(page) === 'The Genius Advisors | Homepage'
     && text.includes('Building Brands. Creating Value.')
-    && text.includes('We help retail and consumer businesses build clarity, strong systems, and sustainable growth.')
+    && text.includes('We help retail and consumer businesses build clarity, strong systems, and sustainable growth')
     && text.includes('Who We Are?')
     && text.includes('Start a Conversation')
 }
@@ -113,6 +113,16 @@ export const isExpectedTimedOutSurface = (surface = {}) =>
 
 export const isUnexpectedReachableSurface = (surface = {}) =>
   isReachableSurface(surface) && PUBLIC_JOBS_SIGNAL_PATTERN.test(normalizeWhitespace(surface?.html))
+
+export const isVerifiedBrochureFallbackSurface = (surface = {}) => {
+  if (!isReachableSurface(surface) || typeof surface?.html !== 'string') {
+    return false
+  }
+
+  return hasOfficialHomepageSignal(surface.html)
+    || hasOfficialAboutSignal(surface.html)
+    || hasOfficialContactSignal(surface.html)
+}
 
 const createBrowserFetchSession = async () => {
   const browser = await launchBrowser()
@@ -193,7 +203,11 @@ const defaultProbeUrl = async (url) => {
   }
 }
 
-const assertChangedCareerRoute = (surface) => {
+const assertExpectedCareerRouteSurface = (surface) => {
+  if (isExpectedTimedOutSurface(surface) || isVerifiedBrochureFallbackSurface(surface)) {
+    return
+  }
+
   if (isUnexpectedReachableSurface(surface)) {
     throw new Error(`${COMPANY} public jobs surface now appears reachable: ${surface.finalUrl || surface.url}`)
   }
@@ -240,8 +254,7 @@ export const createGeniusAdvisorScraper = () => ({
 
       for (const url of FIRST_PARTY_CAREER_ROUTES) {
         const surface = await probeUrl(url)
-        if (isExpectedTimedOutSurface(surface)) continue
-        assertChangedCareerRoute(surface)
+        assertExpectedCareerRouteSurface(surface)
       }
 
       return []

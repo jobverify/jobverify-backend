@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env') })
 
-import { saveToDB, saveToFile } from './utils/saveToDB.js'
+import { deleteAllJobsFromDB, saveToDB, saveToFile } from './utils/saveToDB.js'
 import { filterIndiaJobs } from './utils/indiaLocationFilter.js'
 import { withRetry } from './utils/retry.js'
 import {
@@ -20,12 +20,28 @@ import {
   markPipelineRunStarted,
   markPipelineRunFinished,
 } from './utils/scraperPersistence.js'
+export { classifyScraperError } from './utils/failureClassification.js'
+import { classifyScraperError } from './utils/failureClassification.js'
+import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
 import { buildScrapers } from './providers/index.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
 const DEFAULT_SCRAPER_TIMEOUT_MS = 5 * 60 * 1000
+const DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS = 210 * 1000
+const DEFAULT_ABORT_GRACE_MS = 5 * 1000
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
+
+export class ScraperSourceTimeoutError extends Error {
+  constructor(scraperName, timeoutMs) {
+    super(`[${scraperName}] timed out after ${timeoutMs}ms`)
+    this.name = 'ScraperSourceTimeoutError'
+    this.localTimeout = true
+    this.abortRetries = true
+    this.failureKind = 'runner_timeout'
+  }
+}
 
 const isLatePuppeteerTargetClose = (reason) => {
   const message = String(reason?.message || reason || '')
@@ -114,30 +130,106 @@ export const selectScrapersForRun = (
   }
 }
 
+export const shouldClearExistingJobsBeforeRun = ({
+  onlySources = process.env.SCRAPER_ONLY,
+  startAt = process.env.SCRAPER_START_AT,
+  startAfter = process.env.SCRAPER_START_AFTER,
+} = {}) => {
+  const hasOnlySources = String(onlySources || '')
+    .split(',')
+    .map((source) => source.trim())
+    .filter(Boolean)
+    .length > 0
+  const hasStartAt = String(startAt || '').trim() !== ''
+  const hasStartAfter = String(startAfter || '').trim() !== ''
+
+  return !(hasOnlySources || hasStartAt || hasStartAfter)
+}
+
+const isWorkdayScraper = (scraper) => (
+  scraper?.provider?.adapter === 'workday'
+  || scraper?.provider?.atsPlatform === 'workday'
+)
+
+export const isAuthoritativeEmptyScrape = (scraper, jobs) => (
+  Array.isArray(jobs)
+  && jobs.length === 0
+  && isWorkdayScraper(scraper)
+  && Object.prototype.hasOwnProperty.call(jobs, WORKDAY_AUTHORITATIVE_EMPTY)
+  && jobs[WORKDAY_AUTHORITATIVE_EMPTY] === true
+)
+
+export const resolveScraperRetryAttempts = (scraper) => (
+  isWorkdayScraper(scraper) ? 1 : 3
+)
+
 export const resolveScraperTimeoutMs = (
   value = process.env.SCRAPER_SOURCE_TIMEOUT_MS,
+  scraper = null,
+  workdayValue = process.env.WORKDAY_SCRAPER_TIMEOUT_MS,
 ) => {
-  if (value == null || value === '') return DEFAULT_SCRAPER_TIMEOUT_MS
+  const isWorkday = isWorkdayScraper(scraper)
+  const parsedWorkdayTimeout = Number.parseInt(workdayValue, 10)
+  const defaultTimeout = isWorkday
+    ? (
+        Number.isFinite(parsedWorkdayTimeout) && parsedWorkdayTimeout >= 0
+          ? parsedWorkdayTimeout
+          : DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS
+      )
+    : DEFAULT_SCRAPER_TIMEOUT_MS
+
+  if (value == null || value === '') return defaultTimeout
 
   const parsed = Number.parseInt(value, 10)
-  if (!Number.isFinite(parsed) || parsed < 0) return DEFAULT_SCRAPER_TIMEOUT_MS
+  if (!Number.isFinite(parsed) || parsed < 0) return defaultTimeout
 
   return parsed
 }
 
-export const runScraperWithTimeout = async (scraper, timeoutMs = resolveScraperTimeoutMs()) => {
+const waitForAbortCleanup = async (runPromise, abortGraceMs) => {
+  if (!Number.isFinite(abortGraceMs) || abortGraceMs <= 0) return
+
+  let graceTimeoutId
+  try {
+    await Promise.race([
+      runPromise.catch(() => undefined),
+      new Promise((resolve) => {
+        graceTimeoutId = setTimeout(resolve, abortGraceMs)
+      }),
+    ])
+  } finally {
+    clearTimeout(graceTimeoutId)
+  }
+}
+
+export const runScraperWithTimeout = async (
+  scraper,
+  timeoutMs = resolveScraperTimeoutMs(undefined, scraper),
+  { abortGraceMs = DEFAULT_ABORT_GRACE_MS } = {},
+) => {
   if (!timeoutMs) return scraper.run()
 
   let timeoutId
+  let timeoutError = null
+  const controller = new AbortController()
+  const runPromise = Promise.resolve().then(() => scraper.run({ signal: controller.signal }))
+
   try {
     return await Promise.race([
-      scraper.run(),
+      runPromise,
       new Promise((_, reject) => {
         timeoutId = setTimeout(() => {
-          reject(new Error(`[${scraper.name}] timed out after ${timeoutMs}ms`))
+          timeoutError = new ScraperSourceTimeoutError(scraper.name, timeoutMs)
+          controller.abort(timeoutError)
+          reject(timeoutError)
         }, timeoutMs)
       }),
     ])
+  } catch (error) {
+    if (error === timeoutError) {
+      await waitForAbortCleanup(runPromise, abortGraceMs)
+    }
+    throw error
   } finally {
     clearTimeout(timeoutId)
   }
@@ -149,10 +241,19 @@ const formatPersistenceSummary = (result) => {
   const nonIndia = result.filteredNonIndia
     ? ` | ${result.filteredNonIndia} outside India removed`
     : ''
+  const closed = result.filteredClosed
+    ? ` | ${result.filteredClosed} past closing date`
+    : ''
+  const lifecycle = result.missed
+    ? ` | ${result.missed} lifecycle misses`
+    : ''
+  const expired = result.expired
+    ? ` | ${result.expired} expired`
+    : ''
   const staleCheck = result.staleCheckSkipped
     ? ` | stale cleanup skipped: ${result.staleCheckReason || 'previous source jobs preserved'}`
     : ''
-  return `${base}${updated}${nonIndia} | ${result.filteredOld || 0} older than ${result.retentionDays || 10}d removed${staleCheck}`
+  return `${base}${updated}${nonIndia}${closed}${lifecycle}${expired} | ${result.filteredOld || 0} older than ${result.retentionDays || 10}d removed${staleCheck}`
 }
 
 export const isFailureCountedForAbort = (result = {}) => (
@@ -160,77 +261,6 @@ export const isFailureCountedForAbort = (result = {}) => (
   && result.skipped !== true
   && result.softFailure !== true
 )
-
-const getErrorText = (error = {}) => [
-  error?.message,
-  error?.cause?.message,
-  error?.cause?.code,
-  error?.code,
-]
-  .filter((value) => value != null && value !== '')
-  .join(' ')
-
-const BLOCKED_OR_ACCESS_DENIED_PATTERN =
-  /http[\s_:-]*(?:401|403|429)\b|\b403\b|forbidden|blocked html|blocked response|captcha|challenge|unauthorized|access denied|too many requests|authorizationtoken/i
-
-const NETWORK_OR_TIMEOUT_PATTERN =
-  /http[\s_:-]*5\d\d\b|timeout|timed out|targetclose|target closed|socket|econn|enotfound|eai_again|fetch failed|\bnetwork\b|tls|und_err_connect_timeout/i
-
-const SURFACE_DRIFT_OR_FAIL_CLOSED_PATTERN =
-  /http[\s_:-]*3\d\d\b|http[\s_:-]*404\b|no longer|changed|drift|verified|no-jobs contract|no jobs contract|does not match|no longer matches|no longer exposes|now appears|now exposes|publicly enumerable|needs a structured scraper|no structured public job cards|emerged|reachable again|must be revalidated|validation failed|unable to validate|unable to find .* context|unable to resolve .* keka embed configuration/i
-
-const PARSER_OR_CONTRACT_PATTERN =
-  /http[\s_:-]*(?:400|422)\b|bad request|unprocessable|selector|parse|expected json|cannot read|undefined|not a function|not iterable/i
-
-export const classifyScraperError = (error = {}) => {
-  if (error.softFailure === true) {
-    return {
-      softFailure: true,
-      upstreamOutage: error.upstreamOutage === true,
-      failureKind: error.failureKind || (error.upstreamOutage === true ? 'upstream_outage' : 'soft_failure'),
-    }
-  }
-
-  const text = getErrorText(error)
-
-  if (BLOCKED_OR_ACCESS_DENIED_PATTERN.test(text)) {
-    return {
-      softFailure: true,
-      upstreamOutage: true,
-      failureKind: 'blocked_or_access_denied',
-    }
-  }
-
-  if (NETWORK_OR_TIMEOUT_PATTERN.test(text)) {
-    return {
-      softFailure: true,
-      upstreamOutage: true,
-      failureKind: 'network_or_timeout',
-    }
-  }
-
-  if (SURFACE_DRIFT_OR_FAIL_CLOSED_PATTERN.test(text)) {
-    return {
-      softFailure: true,
-      upstreamOutage: false,
-      failureKind: 'surface_drift_or_fail_closed',
-    }
-  }
-
-  if (PARSER_OR_CONTRACT_PATTERN.test(text)) {
-    return {
-      softFailure: false,
-      upstreamOutage: false,
-      failureKind: 'parser_or_contract_error',
-    }
-  }
-
-  return {
-    softFailure: false,
-    upstreamOutage: false,
-    failureKind: 'hard_failure',
-  }
-}
 
 export const resolveFailureAbortThreshold = (value = process.env.SCRAPER_FAILURE_ABORT_THRESHOLD) => {
   const normalized = Number.parseInt(String(value ?? '').trim(), 10)
@@ -257,6 +287,13 @@ export const runAll = async () => {
   console.log(`  Started: ${new Date().toISOString()}`)
   console.log(`${'='.repeat(60)}\n`)
   if (resumeMessage) console.log(`[runner] ${resumeMessage}\n`)
+
+  if (!isDryRun && shouldClearExistingJobsBeforeRun()) {
+    const deletedCount = await deleteAllJobsFromDB()
+    console.log(`[runner] Cleared ${deletedCount} existing job record(s) before scraping.\n`)
+  } else if (!isDryRun) {
+    console.log('[runner] Selective run detected. Preserving existing jobs and refreshing only the chosen sources.\n')
+  }
 
   // Ensure active scrapers are seeded in the database
   if (!isDryRun) {
@@ -305,7 +342,7 @@ export const runAll = async () => {
       const jobs = await withRetry(
         () => runScraperWithTimeout(scraper),
         {
-          attempts: 3,
+          attempts: resolveScraperRetryAttempts(scraper),
           baseDelayMs: 2000,
           label: scraper.name,
         },
@@ -325,7 +362,10 @@ export const runAll = async () => {
         }
         console.log(`  ✓ [${scraper.name}] ${indiaJobs.length} India jobs → ${scraper.dryRunFile}`)
       } else {
-        result = await saveToDB(jobs, scraper.name)
+        result = await saveToDB(jobs, scraper.name, {
+          refreshDatasetSummary: false,
+          authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
+        })
         result.jobs = indiaJobs.length
         result.cities = cities
         console.log(
@@ -376,6 +416,14 @@ export const runAll = async () => {
 
   if (!isDryRun) {
     try {
+      await refreshJobDatasetSummary()
+    } catch (summaryErr) {
+      console.error(`  [pipeline] Failed to refresh dataset summary:`, summaryErr.message)
+    }
+  }
+
+  if (!isDryRun) {
+    try {
       await writeScraperRun(new Date(startTime), summary)
     } catch (dbErr) {
       console.error(`  ✗ Failed to save run history to DB:`, dbErr.message)
@@ -422,7 +470,11 @@ const runScraper = async (scraper, progressStr = '') => {
   try {
     const jobs = await withRetry(
       () => runScraperWithTimeout(scraper),
-      { attempts: 3, baseDelayMs: 2000, label: scraper.name },
+      {
+        attempts: resolveScraperRetryAttempts(scraper),
+        baseDelayMs: 2000,
+        label: scraper.name,
+      },
     )
     const indiaJobs = filterIndiaJobs(jobs)
     const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
@@ -439,7 +491,10 @@ const runScraper = async (scraper, progressStr = '') => {
       }
       console.log(`  ✓ [${scraper.name}] ${indiaJobs.length} India jobs → ${scraper.dryRunFile}`)
     } else {
-      result = await saveToDB(jobs, scraper.name)
+      result = await saveToDB(jobs, scraper.name, {
+        refreshDatasetSummary: false,
+        authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
+      })
       result.jobs = indiaJobs.length
       result.cities = cities
       console.log(
@@ -537,6 +592,14 @@ const runAllParallel = async (startedAt = new Date()) => {
 
   // Wait for all workers to finish draining the queue
   await Promise.all(activeWorkers)
+
+  if (!isDryRun) {
+    try {
+      await refreshJobDatasetSummary()
+    } catch (summaryErr) {
+      console.error(`  [pipeline] Failed to refresh dataset summary:`, summaryErr.message)
+    }
+  }
 
   if (!isDryRun) {
     try {

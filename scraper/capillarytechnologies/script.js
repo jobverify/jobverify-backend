@@ -1,6 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREER_PAGE_URL = 'https://www.capillarytech.com/careers/'
@@ -22,18 +24,58 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const isCareersExperiencePending = (html) => PENDING_CAREERS_PATTERN.test(html || '')
 
 export const createCapillaryTechnologiesScraper = () => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const careersHtml = await fetchText(CAREER_PAGE_URL)
+    const fetchBrowserText = options.fetchBrowserText
+    let browserSession = null
 
-    if (!isCareersExperiencePending(careersHtml)) {
-      throw new Error('Capillary Technologies careers page changed; scraper needs an update')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+        })
+      }
+
+      return browserSession
     }
 
-    return []
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchCareersText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const careersHtml = await fetchCareersText(CAREER_PAGE_URL)
+
+      if (!isCareersExperiencePending(careersHtml)) {
+        throw new Error('Capillary Technologies careers page changed; scraper needs an update')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

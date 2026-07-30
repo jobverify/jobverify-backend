@@ -47,6 +47,36 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   return match ? transform(match) : null
 }
 
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let firstError = null
+
+  const worker = async () => {
+    while (!firstError) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+
+      if (currentIndex >= items.length) return
+
+      try {
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  )
+
+  if (firstError) throw firstError
+  return results
+}
+
 export const buildIndiaSearchUrl = (startRow = null) => {
   const url = new URL(SEARCH_PATH, BASE_URL)
   if (Number.isInteger(startRow) && startRow > 0) {
@@ -190,6 +220,9 @@ export const createAlstomScraper = () => {
   const run = async ({
     maxPages = config.maxPages,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+    detailConcurrency = Number.isInteger(config.detailFetchConcurrency)
+      ? config.detailFetchConcurrency
+      : 4,
     fetchText = defaultFetchText,
   } = {}) => {
     const jobs = []
@@ -204,39 +237,54 @@ export const createAlstomScraper = () => {
 
       if (listings.length === 0) break
 
+      const remainingSlots = maxJobs == null
+        ? Number.POSITIVE_INFINITY
+        : Math.max(0, maxJobs - jobs.length)
+      const pageListings = []
+
       for (const listing of listings) {
+        if (pageListings.length >= remainingSlots) break
         if (seenJobIds.has(listing.jobId)) continue
         seenJobIds.add(listing.jobId)
+        pageListings.push(listing)
+      }
 
-        const detailHtml = await fetchText(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
+      const pageJobs = await mapWithConcurrency(
+        pageListings,
+        detailConcurrency,
+        async (listing) => {
+          const detailHtml = await fetchText(listing.sourceUrl)
+          const detail = extractJobDetail(detailHtml, listing)
 
-        jobs.push({
-          jobId: detail.jobId || listing.jobId,
-          requisitionId: detail.requisitionId || listing.requisitionId,
-          title: detail.title || listing.title,
-          company: 'Alstom',
-          department: null,
-          location: detail.location || listing.location,
-          city: detail.city || listing.city,
-          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-          applyUrl: detail.applyUrl || listing.sourceUrl,
-          sourceUrl: detail.sourceUrl || listing.sourceUrl,
-          source: 'alstom',
-          employmentType: detail.employmentType,
-          experienceRequired: detail.experienceRequired,
-          jobDescription: detail.jobDescription,
-          minimumQualification: detail.minimumQualification,
-          preferredQualification: detail.preferredQualification,
-          requiredSkills: detail.requiredSkills,
-          postingDate: detail.postingDate || listing.postingDate,
-          closingDate: detail.closingDate || null,
-          scrapedAt: new Date().toISOString(),
-        })
+          return {
+            jobId: detail.jobId || listing.jobId,
+            requisitionId: detail.requisitionId || listing.requisitionId,
+            title: detail.title || listing.title,
+            company: 'Alstom',
+            department: null,
+            location: detail.location || listing.location,
+            city: detail.city || listing.city,
+            link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+            applyUrl: detail.applyUrl || listing.sourceUrl,
+            sourceUrl: detail.sourceUrl || listing.sourceUrl,
+            source: 'alstom',
+            employmentType: detail.employmentType,
+            experienceRequired: detail.experienceRequired,
+            jobDescription: detail.jobDescription,
+            minimumQualification: detail.minimumQualification,
+            preferredQualification: detail.preferredQualification,
+            requiredSkills: detail.requiredSkills,
+            postingDate: detail.postingDate || listing.postingDate,
+            closingDate: detail.closingDate || null,
+            scrapedAt: new Date().toISOString(),
+          }
+        },
+      )
 
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
+      jobs.push(...pageJobs)
+
+      if (maxJobs && jobs.length >= maxJobs) {
+        return jobs
       }
 
       if (!summary.totalPages || pageNumber >= summary.totalPages) break

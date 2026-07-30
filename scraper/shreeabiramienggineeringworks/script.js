@@ -19,11 +19,23 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&quot;/gi, '"')
+  .replace(/&amp;/gi, '&')
+  .replace(/\s+/g, ' ')
+  .trim()
 
 const isNxDomainMessage = (value, hostname) => {
   const normalized = String(value ?? '').toLowerCase()
-  return normalized.includes('could not be resolved')
-    && normalized.includes(String(hostname ?? '').toLowerCase())
+  return (
+    normalized.includes('could not be resolved')
+    || normalized.includes('enotfound')
+    || normalized.includes('getaddrinfo')
+  ) && normalized.includes(String(hostname ?? '').toLowerCase())
 }
 
 export const isVerifiedNoResolvableFirstPartyDomain = (result) => {
@@ -52,7 +64,8 @@ export const isVerifiedNoFirstPartySearchResult = (page) => {
   }
 
   const html = String(page?.text ?? '')
-  if (!/<title>\s*"SHREE ABIRAMI ENGGINEERING WORKS"\s*-\s*Search\s*<\/title>/i.test(html)) {
+  const normalized = normalizeWhitespace(html)
+  if (!/^"SHREE ABIRAMI ENGGINEERING WORKS"\s*-\s*Search\b/i.test(normalized)) {
     return false
   }
 
@@ -84,7 +97,9 @@ const defaultProbeUrl = async (url) => {
     return {
       url,
       ok: false,
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage: error instanceof Error
+        ? String(error.cause?.message || error.message || error)
+        : String(error),
     }
   }
 }

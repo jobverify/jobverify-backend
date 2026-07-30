@@ -26,6 +26,10 @@ export const VERIFIED_INDIA_LOCATION_FACET_IDS =
   PROVIDER_METADATA.verifiedIndiaLocationFacetIds
 
 const WORKDAY_BOARD_ACCEPTED_URLS = [WORKDAY_BOARD_URL]
+const WORKDAY_BOARD_ACCEPTED_CANONICAL_URLS = [
+  WORKDAY_BOARD_URL,
+  'https://propertyguru.wd105.myworkdayjobs.com/PropertyGuru',
+]
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -86,6 +90,12 @@ const defaultFetchJson = (url, body) => fetchJsonWithRetry(url, {
 
 const isAcceptedWorkdayBoardUrl = (value) =>
   WORKDAY_BOARD_ACCEPTED_URLS.some((candidate) => sameUrl(value, candidate))
+
+const isAcceptedWorkdayBoardCanonicalUrl = (value) =>
+  WORKDAY_BOARD_ACCEPTED_CANONICAL_URLS.some((candidate) => sameUrl(value, candidate))
+
+const extractCanonicalUrl = (html = '') =>
+  String(html ?? '').match(/rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1] || null
 
 const shouldContinueJobsPagination = ({
   jobsCount = 0,
@@ -219,12 +229,12 @@ export const extractVerifiedWorkdayBoardUrl = (html = '') => {
 export const hasOfficialWorkdayBoardSignal = (page = {}) => {
   const finalUrl = getFinalUrl(page, WORKDAY_BOARD_URL)
   const html = String(page.html ?? '')
+  const canonicalUrl = extractCanonicalUrl(html)
 
   return Number(page.status) === 200
     && isAcceptedWorkdayBoardUrl(finalUrl)
-    && /rel=["']canonical["'][^>]*href=["']https:\/\/propertyguru\.wd105\.myworkdayjobs\.com\/en-US\/PropertyGuru\/["']/i.test(html)
+    && isAcceptedWorkdayBoardCanonicalUrl(canonicalUrl || finalUrl)
     && /PropertyGuru/i.test(html)
-    && /Careers/i.test(html)
   }
 
 export const isPropertyGuruIndiaLocationDescriptor = (value) => {

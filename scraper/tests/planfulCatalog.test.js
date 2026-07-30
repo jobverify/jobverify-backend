@@ -42,12 +42,12 @@ test('Planful local catalog captures the verified first-party Planful careers pa
   assert.equal(provider.companyCareerPage, 'https://planful.com/jobs/careers-list/')
   assert.equal(provider.officialCareersLandingUrl, 'https://planful.com/jobs/')
   assert.equal(provider.greenhouseJobsApiUrl, 'https://boards-api.greenhouse.io/v1/boards/hostanalytics/jobs')
-  assert.equal(provider.verifiedPublicJobCount, 8)
-  assert.equal(provider.verifiedIndiaJobCount, 1)
-  assert.equal(provider.verifiedSampleJobTitle, 'Senior NOC Engineer')
+  assert.equal(provider.verifiedPublicJobCount, 11)
+  assert.equal(provider.verifiedIndiaJobCount, 2)
+  assert.equal(provider.verifiedSampleJobTitle, 'Product Manager, Planning')
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://planful.com/jobs/careers-list/?gh_jid=8627819002',
+    'https://planful.com/jobs/careers-list/?gh_jid=8617451002',
   )
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
@@ -59,10 +59,10 @@ test('Planful local catalog captures the verified first-party Planful careers pa
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'planful.com')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-26')
   assert.equal(provider.modulePath, planfulModulePath)
   assert.match(provider.dryRunFile, /planful[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/planful\.com\/jobs\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/planful\.com\/jobs\/careers-list\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/hostanalytics\/jobs\?content=true/i)

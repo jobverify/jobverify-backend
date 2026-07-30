@@ -96,10 +96,12 @@ export const pageHasOfficialItiliteSignals = (html) => {
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
   return /<title>\s*Careers at ITILITE India \| Join Our Team\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.itilite\.com\/in\/careers["']/i.test(page)
-    && normalized.includes('join the #itilite revolution')
     && normalized.includes('view jobs')
     && normalized.includes('open positions at itilite')
+    && (
+      normalized.includes('join the #itilite revolution')
+      || normalized.includes('500+ 5-star g2 reviews')
+    )
     && /car_job-card/i.test(page)
     && /linkedin\.com\/jobs\/view\/\d+/i.test(page)
   }

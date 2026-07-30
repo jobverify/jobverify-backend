@@ -18,7 +18,7 @@ const careersPageHtml = `
   </head>
   <body>
     <main>
-      <h1>Careers With Ksolves</h1>
+      <h1>View Current Openings</h1>
       <label class="jobfilter-label">Location</label>
       <div class="row g-md-4 g-3 justify-content-center mx-auto">
         <div class="col-lg-6 job-card-col" data-title=" full stack developer (react native, reactjs, python)" data-location="noida/indore/pune" data-jobtype="hybrid">
@@ -132,6 +132,74 @@ const dataEngineerDetailHtml = `
 </html>
 `
 
+const reactNativeDetailWithoutWorkModeHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Make Your Career with Us | Ksolves</title>
+    <link rel="canonical" href="https://www.ksolves.com/careers-form" />
+  </head>
+  <body>
+    <main>
+      <h1 class="ks-career-job-title">React Native Developer</h1>
+      <div class="ks-career-meta">
+        <div class="ks-career-meta__item">
+          <p class="ks-career-meta__label">Location</p>
+          <p class="ks-career-meta__value">Noida/Indore/Pune</p>
+        </div>
+        <div class="ks-career-meta__item">
+          <p class="ks-career-meta__label">Experience</p>
+          <p class="ks-career-meta__value">3+ years</p>
+        </div>
+      </div>
+      <h2 class="ks-career-section-heading">Roles and Responsibilities</h2>
+      <ul class="ks-career-bullet-list">
+        <li><span class="ks-career-bullet-list__dot"></span><p class="ks-career-bullet-list__text">Lead React Native implementation across the mobile product stack.</p></li>
+        <li><span class="ks-career-bullet-list__dot"></span><p class="ks-career-bullet-list__text">Write maintainable TypeScript code and guide architecture decisions.</p></li>
+      </ul>
+      <div class="ks-career-skills-card">
+        <h2 class="ks-career-section-heading">Required Skills</h2>
+        <ul class="ks-career-bullet-list">
+          <li><span class="ks-career-bullet-list__dot"></span><p class="ks-career-bullet-list__text">React Native expertise</p></li>
+          <li><span class="ks-career-bullet-list__dot"></span><p class="ks-career-bullet-list__text">Strong communication and collaboration</p></li>
+        </ul>
+      </div>
+      <div class="ks-career-form-card">
+        <h3 class="ks-career-form-card__title">Apply for This Job</h3>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
+const sparseDetailWithoutDescriptionOrSkillsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Make Your Career with Us | Ksolves</title>
+    <link rel="canonical" href="https://www.ksolves.com/careers-form" />
+  </head>
+  <body>
+    <main>
+      <h1 class="ks-career-job-title">Senior DevOps Engineer</h1>
+      <div class="ks-career-meta">
+        <div class="ks-career-meta__item">
+          <p class="ks-career-meta__label">Location</p>
+          <p class="ks-career-meta__value">Noida/Indore/Pune</p>
+        </div>
+        <div class="ks-career-meta__item">
+          <p class="ks-career-meta__label">Experience</p>
+          <p class="ks-career-meta__value">3+ years</p>
+        </div>
+      </div>
+      <div class="ks-career-form-card">
+        <h3 class="ks-career-form-card__title">Apply for This Job</h3>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 const driftedCareersPageHtml = `
 <!doctype html>
 <html lang="en">
@@ -211,6 +279,50 @@ test('Ksolves pins the verified careers index, listing cards, and first-party de
         'React Native and ReactJS expertise',
         'HTML5, CSS3, and JavaScript fundamentals',
       ],
+    },
+  )
+
+  assert.deepEqual(
+    ksolves.extractJobDetail(reactNativeDetailWithoutWorkModeHtml, {
+      title: 'React Native Developer',
+      sourceUrl: 'https://www.ksolves.com/careers-form?jobid=2&jobtitle=React+Native+Developer',
+      rawLocation: 'noida/indore/pune',
+      experienceRequired: '3+ years',
+      workMode: null,
+    }),
+    {
+      title: 'React Native Developer',
+      location: 'Noida, Indore, Pune, India',
+      city: 'Noida',
+      country: 'India',
+      experienceRequired: '3+ years',
+      remoteStatus: null,
+      jobDescription:
+        'Lead React Native implementation across the mobile product stack.\nWrite maintainable TypeScript code and guide architecture decisions.',
+      requiredSkills: [
+        'React Native expertise',
+        'Strong communication and collaboration',
+      ],
+    },
+  )
+
+  assert.deepEqual(
+    ksolves.extractJobDetail(sparseDetailWithoutDescriptionOrSkillsHtml, {
+      title: 'Senior DevOps Engineer',
+      sourceUrl: 'https://www.ksolves.com/careers-form?jobid=7&jobtitle=Senior+DevOps+Engineer',
+      rawLocation: 'noida/indore/pune',
+      experienceRequired: '3+ years',
+      workMode: null,
+    }),
+    {
+      title: 'Senior DevOps Engineer',
+      location: 'Noida, Indore, Pune, India',
+      city: 'Noida',
+      country: 'India',
+      experienceRequired: '3+ years',
+      remoteStatus: null,
+      jobDescription: null,
+      requiredSkills: [],
     },
   )
 })

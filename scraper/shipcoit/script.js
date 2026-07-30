@@ -24,14 +24,18 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const hasVerifiedCareersShellSignal = (html = '') => {
+  const page = String(html ?? '')
   const normalized = normalizeWhitespace(html)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-  return normalized.includes('Apply for a job')
+  return (
+    normalized.includes('Apply for a job')
     && normalized.includes('Title')
     && normalized.includes('Office')
     && normalized.includes('Job Type')
     && normalized.includes('Date Of Publishing')
     && normalized.includes('Description')
+  ) || title === 'Shipco'
 }
 
 export const hasServerRenderedJobCards = (html = '') =>

@@ -70,6 +70,20 @@ const toAbsoluteUrl = (value, baseUrl = LISTING_URL) => {
   }
 }
 
+const normalizeFreshteamJobsUrl = (value) => {
+  const absoluteUrl = toAbsoluteUrl(value, CAREERS_URL)
+  if (!absoluteUrl) return null
+
+  try {
+    const url = new URL(absoluteUrl)
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return null
+  }
+}
+
 const extractJobPathParts = (value) => {
   try {
     const pathname = new URL(value).pathname.replace(/\/+$/, '')
@@ -163,9 +177,9 @@ export const buildDetailUrl = (opaqueId, slug) =>
     .replace('{slug}', slug)
 
 export const extractFreshteamJobsUrl = (html) =>
-  toAbsoluteUrl(firstMatch(html, [
+  normalizeFreshteamJobsUrl(firstMatch(html, [
     /<a[^>]+href="([^"]*freshteam\.com\/jobs[^"]*)"/i,
-  ]), CAREERS_URL)
+  ]))
 
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html) || ''

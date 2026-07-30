@@ -198,6 +198,118 @@ fetch("/resume");
 const careersState={jobListings:${JSON.stringify(VERIFIED_JOB_LISTINGS)}};
 `
 
+const currentBundleJs = `
+href:"careers",children:"Careers";
+"We're hiring";
+"Open Positions";
+"Search by job role";
+"Select Department";
+"City, State, or country/region";
+filteredJobListing.map((job)=>job);
+to:{pathname:"/jobdescription",state:e},className:"applyNow",children:"Apply Now →";
+fetch("/resume");
+const careersState={jobListings:${JSON.stringify([
+  {
+    id: 1,
+    role: 'Project Manager – Communications & Defense Systems',
+    type: 'Full Time',
+    location: 'Hyderabad',
+    city: 'Hyderabad',
+    qualification: 'B.Tech / M.Tech in Electronics & Communication Engineering (ECE)',
+    experience: '8 to 15 years',
+    companyprofile: 'AVANTEL LIMITED is a technology-driven public limited company focused on defense electronics.',
+    skills: [
+      { key: 1, point: 'Strong knowledge in Java – primary development language for project deliverables' },
+      { key: 2, point: 'Very good knowledge of Spring Boot Framework and front-end technologies' },
+    ],
+    responsibilities: [
+      { key: 1, point: 'Lead end-to-end software project delivery for communications and Defense electronics systems.' },
+    ],
+    preferable: [
+      { key: 1, point: 'Familiarity in IEEE 12207, DO 178 and DO 254 is a plus' },
+    ],
+  },
+  {
+    id: 2,
+    role: 'Embedded Project Manager (Xilinx FPGA is mandatory)',
+    type: 'Full Time',
+    location: 'Vishakhapatnam / Hyderabad',
+    city: 'Hyderabad/Vishakhapatnam',
+    qualification: 'B.Tech / M.Tech',
+    experience: '10 to 18 years',
+    skills: [
+      { key: 1, point: 'Mandatory experience with Xilinx FPGA programs' },
+    ],
+    responsibilities: [],
+    preferable: [],
+  },
+  {
+    id: 3,
+    role: 'ITI Technicians – Mechanical Trades (05 Positions)',
+    type: 'Full Time',
+    location: 'E-City, Tukkuguda, Hyderabad',
+    city: 'Hyderabad',
+    qualification: 'ITI Mechanical',
+    experience: '2 to 5 years',
+    skills: [
+      { key: 1, point: 'Assembly and mechanical fitment support' },
+    ],
+    responsibilities: [],
+    preferable: [],
+  },
+  {
+    id: 3,
+    role: 'ITI Technicians – Electronics Trades (10 Positions)',
+    type: 'Full Time',
+    location: 'E-City, Tukkuguda, Hyderabad',
+    city: 'Hyderabad',
+    qualification: 'ITI Electronics',
+    experience: '2 to 5 years',
+    skills: [
+      { key: 1, point: 'Soldering and electronics manufacturing support' },
+    ],
+    responsibilities: [],
+    preferable: [],
+  },
+  {
+    id: 5,
+    role: 'RF Manager / Senior Manager',
+    type: 'Full Time',
+    location: 'Vishakhapatnam',
+    city: 'Vishakhapatnam',
+    qualification: 'B.Tech / M.Tech (Electronics)',
+    experience: '8 to 12 years',
+    skills: [],
+    responsibilities: [],
+    preferable: [],
+  },
+  {
+    id: 6,
+    role: 'Project Manager',
+    type: 'Full Time',
+    location: 'Hyderabad (Tukkuguda) - Near E-City (FAB CITY)',
+    city: 'Hyderabad',
+    qualification: 'MSC/MCA/BTech/MTech',
+    experience: '10 to 20 years',
+    skills: [],
+    responsibilities: [],
+    preferable: [],
+  },
+  {
+    id: 7,
+    role: 'Senior Manager / DGM - Quality',
+    type: 'Full Time',
+    location: 'Hyderabad (Tukkuguda) - Near E-City (FAB CITY)',
+    city: 'Hyderabad',
+    qualification: 'B.Tech in Electronics & Communication Engineering (ECE) or M.Sc in Electronics is mandatory.',
+    experience: '15+ years',
+    skills: [],
+    responsibilities: [],
+    preferable: [],
+  },
+] )};
+`
+
 const loadAvantelModule = async () => {
   try {
     return await import('../avantel/script.js')
@@ -452,6 +564,66 @@ test('Avantel run returns the seven verified first-party jobs from the embedded 
   assert.match(jobs[3].jobDescription, /Relevant Industry: Defence, Electronics Manufacturing and Satellite communication/i)
 })
 
+test('Avantel accepts the current live-style bundle with object skill points and duplicate numeric ids', async () => {
+  const avantel = await loadAvantelModule()
+
+  const extracted = avantel.extractEmbeddedJobListings(currentBundleJs)
+  assert.equal(extracted.length, 7)
+  assert.deepEqual(Array.from(extracted[0].skills), [
+    'Strong knowledge in Java – primary development language for project deliverables',
+    'Very good knowledge of Spring Boot Framework and front-end technologies',
+  ])
+  assert.deepEqual(Array.from(extracted[0].responsibilities), [
+    'Lead end-to-end software project delivery for communications and Defense electronics systems.',
+  ])
+  assert.deepEqual(Array.from(extracted[0].preferable), [
+    'Familiarity in IEEE 12207, DO 178 and DO 254 is a plus',
+  ])
+
+  const jobs = await avantel.createAvantelScraper({
+    now: () => '2026-07-25T00:00:00.000Z',
+  }).run({
+    fetchPage: async (url) => {
+      if (url === avantel.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml.replace('main.bc2d10f8.js', 'main.41673755.js') }
+      }
+
+      if (url === avantel.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml.replace('main.bc2d10f8.js', 'main.41673755.js') }
+      }
+
+      if (url === 'https://www.avantel.in/static/js/main.41673755.js') {
+        return { status: 200, url, html: currentBundleJs }
+      }
+
+      throw new Error(`Unexpected Avantel URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 7)
+  assert.deepEqual(
+    jobs.map((job) => job.jobId),
+    [
+      '1',
+      '2',
+      '3-iti-technicians-mechanical-trades-05-positions',
+      '3-iti-technicians-electronics-trades-10-positions',
+      '5',
+      '6',
+      '7',
+    ],
+  )
+  assert.equal(jobs[0].title, 'Project Manager – Communications & Defense Systems')
+  assert.deepEqual(jobs[0].requiredSkills, [
+    'Strong knowledge in Java – primary development language for project deliverables',
+    'Very good knowledge of Spring Boot Framework and front-end technologies',
+  ])
+  assert.equal(
+    jobs[2].minimumQualification,
+    'ITI Mechanical',
+  )
+})
+
 test('Avantel fails closed when the shell, exact bundle URL, bundle signals, or embedded job topology drifts', async () => {
   const avantel = await loadAvantelModule()
 
@@ -525,7 +697,7 @@ test('Avantel fails closed when the shell, exact bundle URL, bundle signals, or 
           return {
             status: 200,
             url,
-            html: bundleJs.replace('Senior Manager / DGM - Quality', 'Changed Role Title'),
+            html: bundleJs.replace('Senior Manager / DGM - Quality', ''),
           }
         }
 

@@ -22,6 +22,22 @@ const loadMaxEyeTechnologiesModule = async () => {
 
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedContactHtml = readFixture('contact.html')
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Maxeye | Professional and Reliable Active Stylus Provider</title>
+  </head>
+  <body>
+    <h1>Professional and Reliable Active Stylus Provider</h1>
+    <a href="/contact/">contact us</a>
+    <section>
+      <h2>Why market-leading brands choose Maxeye</h2>
+      <p>Maxeye specializes in offering comprehensive solutions for capacitive active styluses.</p>
+    </section>
+  </body>
+</html>
+`
 
 test('MaxEye Technologies recognizes the verified homepage and hiring contact surface', async () => {
   const maxEyeTechnologies = await loadMaxEyeTechnologiesModule()
@@ -33,6 +49,12 @@ test('MaxEye Technologies recognizes the verified homepage and hiring contact su
   assert.equal(maxEyeTechnologies.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(maxEyeTechnologies.hasHiringContactSignal(verifiedContactHtml), true)
   assert.equal(maxEyeTechnologies.hasPublicJobsSignal(verifiedHomepageHtml), false)
+})
+
+test('MaxEye Technologies accepts the current homepage wording and relative contact route', async () => {
+  const maxEyeTechnologies = await loadMaxEyeTechnologiesModule()
+
+  assert.equal(maxEyeTechnologies.hasOfficialHomepageSignal(currentHomepageHtml), true)
 })
 
 test('MaxEye Technologies returns no jobs while the verified homepage and hiring contact stay unchanged', async () => {

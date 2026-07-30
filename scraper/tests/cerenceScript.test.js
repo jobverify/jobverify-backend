@@ -6,7 +6,7 @@ const VERIFIED_CAREERS_HTML = `
 <html lang="en">
   <head><title>Careers at Cerence AI | Help Shape the Future of Voice AI Experiences</title></head>
   <body>
-    <h1>Building AI-Powered Experiences</h1>
+    <h1>Building <pint-text-gradient>AI-Powered Experiences</pint-text-gradient></h1>
     <p>Join Our Movement</p>
     <p>We have 16 offices around the globe.</p>
     <p>Pune</p>

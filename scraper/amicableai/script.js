@@ -13,11 +13,6 @@ export const HOMEPAGE_URL = AMICABLE_AI_CATALOG.officialHomepageUrl
 export const CAREERS_URL = AMICABLE_AI_CATALOG.companyCareerPage
 export const SCREENLOOP_BOARD_URL = AMICABLE_AI_CATALOG.officialScreenloopBoardUrl
 export const SPECULATIVE_APPLY_EMAIL = AMICABLE_AI_CATALOG.officialSpeculativeApplyEmail
-export const STALE_SCREENLOOP_TITLES = [
-  'Marketing Director',
-  'Negotiation Divorce Specialist',
-  'Entry level roles (Tech, Customer support, Legal admin, Finance)',
-]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -169,9 +164,12 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const normalized = normalizeText(page)
 
   return /<title>\s*amicable \| Relationships, divorce, separation, co-parenting\s*<\/title>/i.test(page)
-    && /href=["']\/careers\/?["'][^>]*>\s*Careers\s*</i.test(page)
-    && normalized.includes("we're the trusted legal service for separating couples")
-  }
+    && sameUrl(extractHomepageCareerUrl(page), CAREERS_URL)
+    && (
+      normalized.includes("we're the trusted legal service for separating couples")
+      || normalized.includes("we're the trusted legal service for couples")
+    )
+}
 
 export const extractHomepageCareerUrl = (html = '') => {
   for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
@@ -205,7 +203,12 @@ export const extractScreenloopBoardUrl = (html = '') => {
   return match?.[1]?.replace(/\/$/, '') || null
 }
 
-export const extractStaleScreenloopJobTitles = (html = '') =>
+export const extractScreenloopCanonicalUrl = (html = '') =>
+  String(html ?? '').match(
+    /<meta\s+property=["']og:url["']\s+content=["'](https:\/\/app\.screenloop\.com\/careers\/amicable\/?)["']/i,
+  )?.[1]?.replace(/\/$/, '') || null
+
+export const extractScreenloopJobTitles = (html = '') =>
   extractScreenloopJobPosts(html)
     .map((job) => normalizeWhitespace(job?.name))
     .filter(Boolean)
@@ -228,15 +231,15 @@ export const hasStaleScreenloopBoardSignal = (html = '') => {
   }
 
   try {
-    const titles = extractStaleScreenloopJobTitles(page)
-
-    return STALE_SCREENLOOP_TITLES.every((expectedTitle) =>
-      titles.includes(expectedTitle),
-    ) && !screenloopBoardHasIndiaRoles(page)
+    return sameUrl(extractScreenloopCanonicalUrl(page), SCREENLOOP_BOARD_URL)
+      && extractScreenloopJobTitles(page).length > 0
   } catch {
     return false
   }
 }
+
+export const extractStaleScreenloopJobTitles = extractScreenloopJobTitles
+export const hasVerifiedScreenloopBoardSignal = hasStaleScreenloopBoardSignal
 
 export const createAmicableAiScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
@@ -265,9 +268,9 @@ export const createAmicableAiScraper = () => ({
     if (
       screenloopBoardPage.status !== 200
       || !sameUrl(screenloopBoardPage.url, SCREENLOOP_BOARD_URL)
-      || !hasStaleScreenloopBoardSignal(screenloopBoardPage.html)
+      || !hasVerifiedScreenloopBoardSignal(screenloopBoardPage.html)
     ) {
-      throw new Error('Amicable AI verified stale Screenloop board changed materially')
+      throw new Error('Amicable AI verified Screenloop board changed materially')
     }
 
     if (screenloopBoardHasIndiaRoles(screenloopBoardPage.html)) {

@@ -6,6 +6,7 @@ import {
   buildJobsPageUrl,
   createGeVernovaScraper,
   extractIndiaJobs,
+  pageHasOfficialJobsListing,
 } from '../gevernova/script.js'
 
 const listingHtml = `
@@ -43,6 +44,13 @@ test('extractIndiaJobs keeps India listings from the official GE Vernova listing
     applyUrl: 'https://careers.gevernova.com/lead-sourcing-specialist-supplier-quality-engineering/job/R5012345',
     postingDate: '2026-07-02',
   }])
+})
+
+test('pageHasOfficialJobsListing accepts the current GE Vernova template counter markup', () => {
+  assert.equal(
+    pageHasOfficialJobsListing('<main><h2>Open jobs</h2><div>Showing {start_job}-{end_job} of {total} jobs</div></main>'),
+    true,
+  )
 })
 
 test('run returns runner-ready GE Vernova India jobs and validates the official listings surface', async () => {

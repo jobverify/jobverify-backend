@@ -110,7 +110,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const shouldUseBrowserFallback = (error) =>
-  /HTTP 403\b/i.test(String(error?.message ?? ''))
+  /HTTP (?:403|429)\b/i.test(String(error?.message ?? ''))
 
 const createBrowserFetchSession = async () => {
   const browser = await launchBrowser()

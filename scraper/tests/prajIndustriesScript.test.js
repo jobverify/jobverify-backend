@@ -252,6 +252,58 @@ test('Praj Industries validates the official careers page before returning India
   ])
 })
 
+test('Praj Industries falls back to browser-backed Darwinbox API fetches when direct API requests return HTTP 403', async () => {
+  const {
+    OFFICIAL_CAREERS_URL,
+    createPrajIndustriesScraper,
+  } = await loadPrajIndustriesModule()
+  const requests = []
+  const browserRequests = []
+
+  const jobs = await createPrajIndustriesScraper({
+    now: () => FIXED_SCRAPED_AT,
+    maxPages: 1,
+  }).run({
+    fetchText: async (url) => {
+      requests.push({ url, type: 'text' })
+      if (url === OFFICIAL_CAREERS_URL) return officialCareersHtml
+      throw new Error(`Unexpected text URL ${url}`)
+    },
+    fetchJson: async (url) => {
+      requests.push({ url, type: 'json' })
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      browserRequests.push(url)
+      if (url === 'https://praj.darwinbox.in/ms/candidateapi/job?page=1') return listingPayload
+      if (url === 'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880') return detailPayload
+      throw new Error(`Unexpected browser JSON URL ${url}`)
+    },
+  })
+
+  assert.deepEqual(requests, [
+    {
+      url: 'https://www.praj.net/careers/',
+      type: 'text',
+    },
+    {
+      url: 'https://praj.darwinbox.in/ms/candidateapi/job?page=1',
+      type: 'json',
+    },
+    {
+      url: 'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880',
+      type: 'json',
+    },
+  ])
+  assert.deepEqual(browserRequests, [
+    'https://praj.darwinbox.in/ms/candidateapi/job?page=1',
+    'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'a6a55a83432880')
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})
+
 test('Praj Industries fails closed when the verified official careers handoff drifts', async () => {
   const { createPrajIndustriesScraper } = await loadPrajIndustriesModule()
   const scraper = createPrajIndustriesScraper({

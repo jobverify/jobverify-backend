@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -10,6 +10,7 @@ export const SOURCE = 'simplifyhealthcare'
 export const COMPANY = 'Simplify Healthcare'
 export const CAREERS_URL = 'https://simplifyhealthcare.com/careers/current-openings/'
 export const INDIA_ARCHIVE_URL = 'https://simplifyhealthcare.com/category/careers/current-openings/india/'
+export const WORDPRESS_POSTS_API_URL = 'https://simplifyhealthcare.com/wp-json/wp/v2/posts'
 
 const BASE_URL = 'https://simplifyhealthcare.com'
 const INDIA_DETAIL_PATH_PATTERN = /^\/careers\/current-openings\/india\/[^/?#]+\/?$/i
@@ -55,6 +56,7 @@ const normalizeWhitespace = (value) => {
 
 const stripTagsToLines = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/\r/g, '')
+  .replace(/\[(?:\/)?[^\]]+\]/g, ' ')
   .replace(/<(br|\/p|\/div|\/li|\/section|\/article|\/main|\/nav|\/h[1-6]|\/a|\/ul|\/ol)\b[^>]*>/gi, '\n')
   .replace(/<(p|div|li|section|article|main|nav|h[1-6]|a|ul|ol)\b[^>]*>/gi, '\n')
   .replace(/<[^>]+>/g, ' ')
@@ -93,6 +95,13 @@ const getJobSlugFromUrl = (value) => {
   } catch {
     return null
   }
+}
+
+export const buildWordPressPostApiUrl = (value) => {
+  const slug = getJobSlugFromUrl(value)
+  if (!slug) return null
+
+  return `${WORDPRESS_POSTS_API_URL}?slug=${encodeURIComponent(slug)}&_fields=id,date,date_gmt,link,slug,title,content,status`
 }
 
 const normalizeLocation = (value) => {
@@ -184,6 +193,38 @@ const extractDescription = (lines) => {
   return normalizeWhitespace(descriptionLines.join(' '))
 }
 
+const hasVerifiedWordPressPostSignal = (payload, { url } = {}) => {
+  if (!Array.isArray(payload) || payload.length !== 1) {
+    return false
+  }
+
+  const [post] = payload
+  const slug = getJobSlugFromUrl(url)
+  const normalizedLink = toAbsoluteUrl(post?.link)
+  const renderedContent = String(post?.content?.rendered ?? '')
+
+  return normalizeWhitespace(post?.slug) === slug
+    && normalizedLink === toAbsoluteUrl(url)
+    && Boolean(normalizeWhitespace(post?.title?.rendered))
+    && /careers@simplifyhealthcare\.com/i.test(renderedContent)
+    && /(About Simplify Healthcare|About the Role|Role Overview|Role:)/i.test(renderedContent)
+}
+
+const extractWordPressDescription = (renderedContent) => {
+  const lines = stripTagsToLines(renderedContent)
+  return normalizeWhitespace(lines.join(' '))
+}
+
+const toPostingDateFromWordPressPost = (post = {}) => {
+  const value = normalizeWhitespace(post?.date_gmt) || normalizeWhitespace(post?.date)
+  if (!value) return null
+
+  const date = new Date(value.endsWith('Z') ? value : `${value}Z`)
+  if (Number.isNaN(date.getTime())) return null
+
+  return date.toISOString().slice(0, 10)
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTagsToLines(page).join(' ')
@@ -257,6 +298,43 @@ export const extractJobFromDetailHtml = ({ url, html }) => {
   }
 }
 
+export const extractJobFromWordPressPostPayload = ({ url, payload }) => {
+  if (!hasVerifiedWordPressPostSignal(payload, { url })) {
+    throw new Error('Simplify Healthcare detail page no longer matches the verified official public careers surface')
+  }
+
+  const [post] = payload
+  const title = normalizeWhitespace(post?.title?.rendered)
+  const slug = getJobSlugFromUrl(url)
+  const jobDescription = extractWordPressDescription(post?.content?.rendered)
+
+  if (!title || !slug || !jobDescription) {
+    throw new Error('Simplify Healthcare detail page no longer exposes the verified public job fields')
+  }
+
+  return {
+    jobId: `${SOURCE}-${slug}`,
+    requisitionId: `${SOURCE}-${slug}`,
+    title,
+    company: COMPANY,
+    department: null,
+    location: 'India',
+    city: null,
+    country: 'India',
+    sourceUrl: url,
+    applyUrl: url,
+    employmentType: null,
+    experienceRequired: extractExperienceRequired(jobDescription),
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: toPostingDateFromWordPressPost(post),
+    closingDate: null,
+    jobDescription,
+    remoteStatus: inferRemoteStatus(jobDescription),
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -266,8 +344,21 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
 export const createSimplifyHealthcareScraper = ({ maxDetails = 50 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    now = () => new Date().toISOString(),
+  } = {}) {
     const detailQueue = []
     const discoveredUrls = new Set()
 
@@ -293,9 +384,15 @@ export const createSimplifyHealthcareScraper = ({ maxDetails = 50 } = {}) => ({
     while (detailQueue.length > 0 && jobs.length < maxDetails) {
       const url = detailQueue.shift()
       const html = await fetchText(url)
+      const extractedJob = hasOfficialJobDetailSignal(html)
+        ? extractJobFromDetailHtml({ url, html })
+        : extractJobFromWordPressPostPayload({
+            url,
+            payload: await fetchJson(buildWordPressPostApiUrl(url)),
+          })
 
       jobs.push({
-        ...extractJobFromDetailHtml({ url, html }),
+        ...extractedJob,
         source: SOURCE,
         link: url,
         scrapedAt: now(),

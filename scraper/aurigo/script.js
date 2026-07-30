@@ -23,6 +23,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const decodeHref = (value) => String(value ?? '').replace(/&amp;/gi, '&')
+
 const toAbsoluteUrl = (value) => {
   try {
     const url = new URL(value, SEARCH_RESULTS_URL)
@@ -75,14 +77,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
-  return normalized.includes('Search results for "".')
+  return /<title>\s*Aurigo Software Technologies Jobs\s*<\/title>/i.test(page)
+    && normalized.includes('Search results for "".')
     && normalized.includes('Results')
-    && page.includes('https://careers.aurigo.com/job/')
+    && (
+      page.includes('https://careers.aurigo.com/job/')
+      || page.includes('href="/job/')
+    )
+    && /id=["']searchresults["']|class=["'][^"']*searchResults[^"']*["']/i.test(page)
 }
 
 export const extractNextPageUrl = (html = '') => {
   for (const match of String(html ?? '').matchAll(/href=["']([^"']*startrow=\d+[^"']*)["']/gi)) {
-    const url = toAbsoluteUrl(match[1])
+    const url = toAbsoluteUrl(decodeHref(match[1]))
     if (url) return url
   }
   return null
@@ -91,9 +98,50 @@ export const extractNextPageUrl = (html = '') => {
 export const extractJobs = (html = '') => {
   const jobs = []
 
+  for (const match of String(html ?? '').matchAll(/<tr[^>]*class=["'][^"']*data-row[^"']*["'][^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const block = match[1]
+    const url = toAbsoluteUrl(decodeHref(block.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1]))
+    const title = normalizeWhitespace(block.match(/<a[^>]*class=["'][^"']*jobTitle-link[^"']*["'][^>]*>([\s\S]*?)<\/a>/i)?.[1])
+    const region = normalizeWhitespace(block.match(/<td[^>]*class=["'][^"']*colLocation[^"']*["'][^>]*>[\s\S]*?<span[^>]*class=["'][^"']*jobLocation[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1])
+    const postingDate = parsePostingDate(
+      block.match(/<span[^>]*class=["'][^"']*jobDate[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1],
+    )
+
+    if (!url || !title || region !== 'IN') continue
+
+    const urlParts = new URL(url).pathname.split('/').filter(Boolean)
+    const derivedId = slugify(`${urlParts[urlParts.length - 2] || title}-${urlParts[urlParts.length - 1] || ''}`)
+
+    jobs.push({
+      title,
+      company: COMPANY,
+      department: null,
+      location: 'India',
+      city: null,
+      country: 'India',
+      jobId: derivedId,
+      requisitionId: derivedId,
+      sourceUrl: url,
+      applyUrl: url,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate,
+      closingDate: null,
+      jobDescription: null,
+      remoteStatus: 'On-site',
+    })
+  }
+
+  if (jobs.length > 0) {
+    return jobs
+  }
+
   for (const match of String(html ?? '').matchAll(/<div[^>]*class=["'][^"']*job[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi)) {
     const block = match[1]
-    const url = toAbsoluteUrl(block.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1])
+    const url = toAbsoluteUrl(decodeHref(block.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1]))
     const title = normalizeWhitespace(block.match(/<a[^>]*>([\s\S]*?)<\/a>/i)?.[1])
     const spans = [...block.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)].map((item) => normalizeWhitespace(item[1]))
     const region = spans[0] || null

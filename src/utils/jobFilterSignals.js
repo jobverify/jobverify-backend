@@ -177,6 +177,18 @@ const normalizeNumberWords = (value) => value.replace(
   (match) => String(NUMBER_WORDS.get(match.toLowerCase())),
 );
 
+const formatExperienceYears = (value, { openEnded = false } = {}) => {
+  const numericValue = Number.parseFloat(value);
+  if (!Number.isFinite(numericValue)) return null;
+
+  const normalizedValue = Number.isInteger(numericValue)
+    ? String(numericValue)
+    : String(numericValue).replace(/(?:\.0+|(\.\d*?)0+)$/, "$1");
+  const unit = numericValue === 1 && !openEnded ? "year" : "years";
+
+  return `${normalizedValue}${openEnded ? "+" : ""} ${unit}`;
+};
+
 const bucketFromYears = (minimumYears, maximumYears) => {
   if (minimumYears == null && maximumYears == null) return "unspecified";
   const anchor = minimumYears ?? maximumYears ?? 0;
@@ -322,6 +334,7 @@ const collectStructuredSkillMatches = (values, options) => {
 };
 
 const parseExperienceProfile = (job = {}) => {
+  const titleText = normalizeText(job.title);
   const explicitText = normalizeText(
     [job.experienceRequired, job.minimumQualification, job.preferredQualification]
       .filter(Boolean)
@@ -332,14 +345,19 @@ const parseExperienceProfile = (job = {}) => {
       .filter(Boolean)
       .join(" "),
   );
+  const titleAndExplicitText = normalizeNumberWords(
+    [titleText, explicitText]
+      .filter(Boolean)
+      .join(" "),
+  );
   const combinedText = normalizeNumberWords(
-    [explicitText, descriptiveText]
+    [titleText, explicitText, descriptiveText]
       .filter(Boolean)
       .join(" "),
   );
 
   const baseProfile = {
-    rawText: explicitText || descriptiveText || null,
+    rawText: explicitText || descriptiveText || titleText || null,
     minimumYears: null,
     maximumYears: null,
     isOpenEnded: false,
@@ -413,23 +431,45 @@ const parseExperienceProfile = (job = {}) => {
     };
   }
 
-  const singleValueMatch = combinedText.match(
+  const contextualSingleValueMatch = (
+    combinedText.match(
+      /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s+(?:of\s+)?(?:overall\s+|relevant\s+|professional\s+|hands[- ]on\s+)?(?:experience|exp\.?)\b/i,
+    )
+    || combinedText.match(
+      /\b(?:experience|exp\.?)\s*(?::|of|required:?|-)?\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i,
+    )
+  );
+  if (contextualSingleValueMatch) {
+    const exactYears = Number.parseFloat(contextualSingleValueMatch[1]);
+    const evidence = formatExperienceYears(exactYears);
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const explicitSingleValueMatch = titleAndExplicitText.match(
     /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i,
   );
-  if (singleValueMatch) {
-    const exactYears = Number.parseFloat(singleValueMatch[1]);
+  if (explicitSingleValueMatch) {
+    const exactYears = Number.parseFloat(explicitSingleValueMatch[1]);
+    const evidence = formatExperienceYears(exactYears);
     return {
       ...baseProfile,
       minimumYears: exactYears,
       maximumYears: exactYears,
       hasExplicitExperience: true,
       confidence: "medium",
-      evidence: singleValueMatch[0],
+      evidence,
       experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
     };
   }
 
-  const titleText = normalizeText(job.title);
   if (/\b(graduate|new grad|entry[- ]level|fresher)\b/i.test(`${titleText} ${combinedText}`)) {
     return {
       ...baseProfile,
@@ -563,7 +603,7 @@ const detectWorkArrangement = (job = {}) => {
     if (/hybrid/i.test(explicit)) return "Hybrid";
     if (/remote/i.test(explicit)) return "Remote";
     if (/on[- ]site/i.test(explicit)) return "On-site";
-    if (/flexible/i.test(explicit)) return "Flexible";
+    if (/flexible/i.test(explicit)) return "Not specified";
   }
 
   const locationText = normalizeText(
@@ -577,7 +617,6 @@ const detectWorkArrangement = (job = {}) => {
   if (/\bhybrid\b/.test(combined)) return "Hybrid";
   if (/\bremote\b/.test(locationText.toLowerCase()) || /\bremote\b/.test(combined)) return "Remote";
   if (/\bon[- ]site\b|\bonsite\b|\bin[- ]office\b/.test(combined)) return "On-site";
-  if (/\bflexible\b/.test(combined)) return "Flexible";
   if (locationText) return "On-site";
   return "Not specified";
 };

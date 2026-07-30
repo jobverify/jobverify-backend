@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { AIRTEL_X_LABS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -49,6 +50,10 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout/i
+    .test(String(error?.message ?? error ?? ''))
+
 const getFinalUrl = (page, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
 
 export const hasBrandedHomepageSignal = (html) => {
@@ -83,32 +88,70 @@ const isGenericAirtelCareersHandoff = (page, fallbackUrl) =>
   && hasGenericAirtelCareersSignal(page?.html)
 
 export const createAirtelXLabsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const brandedHomepage = await fetchPage(BRANDED_HOMEPAGE_URL)
-    if (brandedHomepage.status !== 200 || !hasBrandedHomepageSignal(brandedHomepage.html)) {
-      throw new Error('Airtel X Labs verified branded homepage no longer matches the known public surface')
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const careersHandoff = await fetchPage(CAREERS_HANDOFF_URL)
-    if (!isGenericAirtelCareersHandoff(careersHandoff, CAREERS_HANDOFF_URL)) {
-      throw new Error('Airtel X Labs verified Airtel careers handoff no longer matches the known public surface')
-    }
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
 
-    for (const routeUrl of NO_PUBLIC_BRANDED_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isMissingBrandedCareerRoute(routePage)) {
-        throw new Error(`Airtel X Labs verified missing branded route changed: ${routePage.url || routeUrl}`)
+    const fetchVerifiedPage = async (url) => {
+      try {
+        const page = await fetchPage(url)
+        if ([403, 429].includes(Number(page?.status))) {
+          return browserPageFetcher(url)
+        }
+
+        return page
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserPageFetcher(url)
       }
     }
 
-    for (const routeUrl of GENERIC_XLABS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isGenericAirtelCareersHandoff(routePage, routeUrl)) {
-        throw new Error('Airtel X Labs verified generic Airtel x-labs route no longer matches the known public surface')
+    try {
+      const brandedHomepage = await fetchVerifiedPage(BRANDED_HOMEPAGE_URL)
+      if (brandedHomepage.status !== 200 || !hasBrandedHomepageSignal(brandedHomepage.html)) {
+        throw new Error('Airtel X Labs verified branded homepage no longer matches the known public surface')
+      }
+
+      const careersHandoff = await fetchVerifiedPage(CAREERS_HANDOFF_URL)
+      if (!isGenericAirtelCareersHandoff(careersHandoff, CAREERS_HANDOFF_URL)) {
+        throw new Error('Airtel X Labs verified Airtel careers handoff no longer matches the known public surface')
+      }
+
+      for (const routeUrl of NO_PUBLIC_BRANDED_ROUTE_URLS) {
+        const routePage = await fetchVerifiedPage(routeUrl)
+        if (!isMissingBrandedCareerRoute(routePage)) {
+          throw new Error(`Airtel X Labs verified missing branded route changed: ${routePage.url || routeUrl}`)
+        }
+      }
+
+      for (const routeUrl of GENERIC_XLABS_ROUTE_URLS) {
+        const routePage = await fetchVerifiedPage(routeUrl)
+        if (!isGenericAirtelCareersHandoff(routePage, routeUrl)) {
+          throw new Error('Airtel X Labs verified generic Airtel x-labs route no longer matches the known public surface')
+        }
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
       }
     }
-
-    return []
   },
 })
 

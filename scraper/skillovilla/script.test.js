@@ -31,11 +31,30 @@ const officialHomepageHtml = `
   </html>
 `
 
+const liveLikeHomepageHtml = `
+  <html lang="en">
+    <head>
+      <title>Data Analytics &amp; Data Science Courses Online | SkilloVilla</title>
+    </head>
+    <body>
+      <main>
+        <p>Your upskilling partner</p>
+        <h1>
+          Land your
+          dream job
+          by learning from the top 1%
+        </h1>
+      </main>
+    </body>
+  </html>
+`
+
 test('SkilloVilla scraper recognizes the verified official homepage and missing-route errors', () => {
   assert.equal(CAREER_PAGE_URL, 'https://www.skillovilla.com/')
   assert.equal(CAREERS_ROUTE_URL, 'https://www.skillovilla.com/careers')
   assert.equal(JOBS_ROUTE_URL, 'https://www.skillovilla.com/jobs')
   assert.equal(hasOfficialHomepageSignal(officialHomepageHtml), true)
+  assert.equal(hasOfficialHomepageSignal(liveLikeHomepageHtml), true)
   assert.equal(hasOfficialHomepageSignal('<html><title>Placeholder</title></html>'), false)
   assert.equal(isVerifiedMissingRouteError(new Error(`HTTP 404 for ${CAREERS_ROUTE_URL}`), CAREERS_ROUTE_URL), true)
   assert.equal(isVerifiedMissingRouteError(new Error(`HTTP 404 for ${JOBS_ROUTE_URL}`), JOBS_ROUTE_URL), true)

@@ -106,13 +106,6 @@ const stripHtmlToText = (html) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const normalizeShellHtml = (html) => normalizeWhitespace(
-  String(html ?? '')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' '),
-)
-
 const extractTitle = (html) =>
   normalizeWhitespace(String(html ?? '').match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '')
 
@@ -204,7 +197,8 @@ export const sitemapHasCareerLikeUrl = (xml) => {
 }
 
 export const isVerifiedRouteFallbackShell = (pageHtml, homepageHtml, baseUrl) =>
-  normalizeShellHtml(pageHtml) === normalizeShellHtml(homepageHtml)
+  extractTitle(pageHtml) === extractTitle(homepageHtml)
+  && stripHtmlToText(pageHtml) === stripHtmlToText(homepageHtml)
   && !hasPublicJobsTextSignal(pageHtml)
   && !hasUnexpectedCareerOrAtsLink(pageHtml, baseUrl)
 

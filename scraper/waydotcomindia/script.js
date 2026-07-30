@@ -7,6 +7,8 @@ export const SOURCE = 'waydotcomindia'
 export const COMPANY = 'Way Dot Com India Private Limited'
 export const COMPANY_DOMAIN = 'way.com'
 export const CAREERS_URL = 'https://www.way.com/careers'
+export const JOBS_JSON_URL = 'https://www.way.com/assets/jobs.json'
+export const APPLICATION_EMAIL = 'careers@way.com'
 export const DETAIL_URL_PATTERN = /^https:\/\/www\.way\.com\/careers\/(\d+)\/[^?#]+(?:\?[^#]+)?$/i
 export const VERIFIED_CAREERS_SIGNALS = [
   'Join our Team of Innovators and Creators',
@@ -84,6 +86,12 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const slugify = (value) => normalizeWhitespace(value)
+  ?.toLowerCase()
+  .replace(/&/g, 'and')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '') || 'job'
+
 const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const uniqueBy = (items, getKey) => {
@@ -101,6 +109,50 @@ const uniqueBy = (items, getKey) => {
 }
 
 const extractCity = (location) => normalizeWhitespace(String(location ?? '').split(',')[0])
+
+export const buildJobDetailUrl = (job = {}) =>
+  `${CAREERS_URL}/${encodeURIComponent(String(job.id))}/${slugify(job.title)}?from=profile`
+
+const hasIndiaCountryMarker = (job = {}) =>
+  String(job.countryCode ?? '').toLowerCase() === 'in' || isIndiaLocation(job.location)
+
+export const extractJobsFromJson = (payload = [], { scrapedAt = new Date().toISOString() } = {}) => (
+  (Array.isArray(payload) ? payload : [])
+    .filter((job) => job?.id != null && job?.title && hasIndiaCountryMarker(job))
+    .map((job) => {
+      const sourceUrl = buildJobDetailUrl(job)
+      const location = normalizeWhitespace(job.location)
+      const normalizedLocation = /india/i.test(location || '')
+        ? location
+        : `${location}, India`
+
+      return {
+        title: normalizeWhitespace(job.title),
+        company: COMPANY,
+        department: normalizeWhitespace(job.department),
+        location: normalizedLocation,
+        city: extractCity(location),
+        country: 'India',
+        jobId: String(job.id),
+        requisitionId: String(job.id),
+        sourceUrl,
+        applyUrl: `mailto:${APPLICATION_EMAIL}`,
+        employmentType: normalizeWhitespace(job.jobType),
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: Array.isArray(job.skills) ? job.skills.map(normalizeWhitespace).filter(Boolean) : [],
+        postingDate: normalizeWhitespace(job.date),
+        closingDate: null,
+        jobDescription: stripTags(job.description),
+        source: SOURCE,
+        companyDomain: COMPANY_DOMAIN,
+        companyCareerPage: CAREERS_URL,
+        link: sourceUrl,
+        scrapedAt,
+      }
+    })
+)
 
 let browserUtilsPromise
 
@@ -244,7 +296,6 @@ const ensureListingsExpanded = async (page) => {
 const browseCareersSurface = async ({
   launchBrowserImpl,
   createOptimizedPageImpl,
-  maxJobs = null,
 } = {}) => {
   if (!launchBrowserImpl || !createOptimizedPageImpl) {
     const browserUtils = await loadBrowserUtils()
@@ -265,56 +316,24 @@ const browseCareersSurface = async ({
       throw new Error('Way.com official careers surface no longer matches the verified first-party shell')
     }
 
-    await ensureListingsExpanded(page)
-
-    const expandedHtml = await page.content()
-    const listingCards = extractJobCards(expandedHtml)
-    if (listingCards.length === 0) {
-      throw new Error('Way.com careers page no longer exposes the verified public job cards')
-    }
-
-    const selectedCards = Number.isInteger(maxJobs)
-      ? listingCards.slice(0, maxJobs)
-      : listingCards
-
-    const listings = []
-
-    for (let index = 0; index < selectedCards.length; index += 1) {
-      await ensureListingsExpanded(page)
-
-      await page.evaluate((buttonIndex) => {
-        const buttons = Array.from(document.querySelectorAll('button.outline-btn-grn'))
-        const target = buttons[buttonIndex]
-        if (!target) {
-          throw new Error(`Missing Way.com Apply Now button at index ${buttonIndex}`)
-        }
-
-        target.click()
-      }, index)
-
-      await page.waitForFunction(
-        () => /^\/careers\/\d+\/[^/]+/i.test(window.location.pathname),
-        { timeout: NAVIGATION_TIMEOUT_MS },
-      )
-      await waitForPageSettle(page)
-
-      listings.push({
-        ...selectedCards[index],
-        sourceUrl: page.url(),
-        detailHtml: await page.content(),
+    const jobsJson = await page.evaluate(async (jobsJsonUrl) => {
+      const response = await fetch(jobsJsonUrl, {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
       })
 
-      await page.goBack({ waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
-      await page.waitForFunction(
-        () => /\/careers\/?$/.test(window.location.pathname),
-        { timeout: NAVIGATION_TIMEOUT_MS },
-      )
-      await waitForPageSettle(page)
-    }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for ${jobsJsonUrl}`)
+      }
+
+      return response.json()
+    }, JOBS_JSON_URL)
 
     return {
       careersHtml,
-      listings,
+      jobsJson,
     }
   } finally {
     await browser.close()
@@ -323,6 +342,7 @@ const browseCareersSurface = async ({
 
 export const createWayDotComIndiaScraper = ({
   maxJobs = null,
+  now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
     browseCareersSurfaceImpl = browseCareersSurface,
@@ -333,28 +353,16 @@ export const createWayDotComIndiaScraper = ({
       throw new Error('Way.com official careers surface no longer matches the verified first-party shell')
     }
 
-    const listings = uniqueBy(
-      Array.isArray(careersSurface?.listings) ? careersSurface.listings : [],
-      (listing) => `${normalizeWhitespace(listing?.title)}::${normalizeWhitespace(listing?.location)}::${normalizeWhitespace(listing?.sourceUrl)}`,
+    const jobs = uniqueBy(
+      extractJobsFromJson(careersSurface?.jobsJson, { scrapedAt: now() }),
+      (job) => `${normalizeWhitespace(job?.title)}::${normalizeWhitespace(job?.location)}::${normalizeWhitespace(job?.sourceUrl)}`,
     )
 
-    const jobs = []
-
-    for (const listing of listings) {
-      const job = extractJobDetail(listing.detailHtml, listing)
-      if (!job) continue
-
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        companyDomain: COMPANY_DOMAIN,
-        companyCareerPage: CAREERS_URL,
-        link: job.sourceUrl,
-        scrapedAt: new Date().toISOString(),
-      })
+    if (jobs.length === 0) {
+      throw new Error('Way.com careers page no longer exposes trusted India jobs in the public jobs JSON')
     }
 
-    return jobs
+    return Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
   },
 })
 

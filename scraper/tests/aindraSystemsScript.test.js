@@ -139,8 +139,19 @@ test('Aindra Systems scraper pins the verified first-party homepage careers surf
   assert.equal(aindra.SOURCE, 'aindrasystems')
   assert.equal(aindra.COMPANY, 'Aindra Systems')
   assert.equal(aindra.HOMEPAGE_URL, 'https://www.aindra.in/')
+  assert.deepEqual(aindra.CANDIDATE_HOMEPAGE_URLS, [
+    'https://www.aindra.in/',
+    'https://aindra.in/',
+  ])
   assert.equal(aindra.APPLICATION_EMAIL, 'contactus@aindra.in')
   assert.equal(aindra.APPLICATION_URL, 'mailto:contactus@aindra.in')
+  assert.equal(aindra.isTrustedUnavailableFailure(new Error('getaddrinfo ENOTFOUND www.aindra.in')), true)
+  assert.equal(
+    aindra.isTrustedUnavailableFailure(
+      new Error('unable to verify the first certificate; if the root CA is installed locally, try running Node.js with --use-system-ca'),
+    ),
+    true,
+  )
   assert.equal(aindra.hasOfficialHomepageSignal(homepageHtml), true)
 
   const openings = aindra.extractOpenings(homepageHtml)
@@ -293,4 +304,93 @@ test('Aindra Systems fails closed when the verified homepage careers surface dri
     }),
     /verified official homepage/i,
   )
+})
+
+test('Aindra Systems can recover with a browser-backed homepage when direct requests fail', async () => {
+  const aindra = await loadModule()
+  const browserUrls = []
+
+  const jobs = await aindra.createAindraSystemsScraper({
+    now: () => '2026-07-14T00:00:00.000Z',
+  }).run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return homepageHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [aindra.HOMEPAGE_URL])
+  assert.equal(jobs.length, 3)
+  assert.equal(jobs[0].source, 'aindrasystems')
+})
+
+test('Aindra Systems can recover from the legacy www host failing when the bare first-party host still serves the verified homepage', async () => {
+  const aindra = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await aindra.createAindraSystemsScraper({
+    now: () => '2026-07-28T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === 'https://www.aindra.in/') {
+        throw new Error('getaddrinfo ENOTFOUND www.aindra.in')
+      }
+
+      if (url === 'https://aindra.in/') {
+        return homepageHtml
+      }
+
+      throw new Error(`Unexpected Aindra Systems URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    'https://www.aindra.in/',
+    'https://aindra.in/',
+  ])
+  assert.equal(jobs.length, 3)
+  assert.ok(jobs.every((job) => job.sourceUrl === 'https://aindra.in/'))
+  assert.ok(jobs.every((job) => job.scrapedAt === '2026-07-28T00:00:00.000Z'))
+})
+
+test('Aindra Systems stays fail-closed while trusted first-party host variants remain unavailable', async () => {
+  const aindra = await loadModule()
+  const browserUrls = []
+
+  const jobs = await aindra.createAindraSystemsScraper().run({
+    fetchText: async (url) => {
+      if (url === 'https://www.aindra.in/') {
+        throw new Error('getaddrinfo ENOTFOUND www.aindra.in')
+      }
+
+      if (url === 'https://aindra.in/') {
+        throw new Error('unable to verify the first certificate')
+      }
+
+      throw new Error(`Unexpected Aindra Systems URL: ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+
+      if (url === 'https://www.aindra.in/') {
+        throw new Error('net::ERR_FAILED at https://www.aindra.in/')
+      }
+
+      if (url === 'https://aindra.in/') {
+        throw new Error('net::ERR_CERT_AUTHORITY_INVALID at https://aindra.in/')
+      }
+
+      throw new Error(`Unexpected browser-backed Aindra Systems URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    'https://aindra.in/',
+  ])
+  assert.deepEqual(jobs, [])
 })

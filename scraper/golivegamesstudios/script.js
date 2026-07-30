@@ -42,7 +42,7 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/&#39;|&apos;|&rsquo;|\u2019/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')

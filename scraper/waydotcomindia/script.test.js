@@ -180,22 +180,28 @@ test('Way.com scraper run keeps only India jobs and adds scraper metadata', asyn
   const jobs = await way.createWayDotComIndiaScraper({ maxJobs: 2 }).run({
     browseCareersSurfaceImpl: async () => ({
       careersHtml: careersShellHtml,
-      listings: [
+      jobsJson: [
         {
+          id: 11,
           title: 'App Store Acquisition Specialist',
           department: null,
-          employmentType: 'Full Time',
+          jobType: 'Full Time',
           location: 'Fremont, California',
-          sourceUrl: 'https://www.way.com/careers/11/app-store-acquisition-specialist?from=profile',
-          detailHtml: usDetailHtml,
+          countryCode: 'US',
+          description: '<p>US-only job.</p>',
+          skills: [],
+          date: '11-April-2025',
         },
         {
+          id: 12,
           title: 'App Store Acquisition Specialist',
           department: null,
-          employmentType: 'Full Time',
+          jobType: 'Full Time',
           location: 'Trivandrum, Kerala',
-          sourceUrl: 'https://www.way.com/careers/12/app-store-acquisition-specialist?from=profile',
-          detailHtml: indiaDetailHtml,
+          countryCode: 'IN',
+          description: '<p>Way.com is looking for an experienced and innovative App Store Acquisition Specialist to join our growing team.</p>',
+          skills: [],
+          date: '11-April-2025',
         },
       ],
     }),
@@ -204,7 +210,7 @@ test('Way.com scraper run keeps only India jobs and adds scraper metadata', asyn
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'waydotcomindia')
   assert.equal(jobs[0].sourceUrl, 'https://www.way.com/careers/12/app-store-acquisition-specialist?from=profile')
-  assert.equal(jobs[0].applyUrl, 'mailto:hrus@way.com')
+  assert.equal(jobs[0].applyUrl, 'mailto:careers@way.com')
   assert.equal(jobs[0].link, 'https://www.way.com/careers/12/app-store-acquisition-specialist?from=profile')
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })

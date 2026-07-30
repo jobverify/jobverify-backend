@@ -16,6 +16,7 @@ import {
   normalizeApiPortalConfig,
 } from '../apiPortal/providerConfig.js'
 import { runApiPortalScraper } from '../apiPortal/engine.js'
+import { expandApiPortalProviderTemplate } from '../providers/apiPortalTemplates.js'
 
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -51,6 +52,133 @@ test('normalizeApiPortalConfig expands defaults for a direct API provider', () =
   assert.equal(config.request.method, 'GET')
   assert.equal(config.pagination.strategy, 'offset-limit')
   assert.equal(config.detail.enabled, false)
+})
+
+test('Eightfold template uses a larger default page size to reduce deep pagination request volume', async () => {
+  const seenUrls = []
+  const provider = expandApiPortalProviderTemplate({
+    source: 'qualcomm',
+    companyName: 'Qualcomm',
+    companyCareerPage: 'https://careers.qualcomm.com/careers',
+    countryFilter: 'India',
+    atsPlatform: 'eightfold',
+    template: 'eightfold',
+    templateOptions: {
+      host: 'careers.qualcomm.com',
+      domain: 'qualcomm.com',
+    },
+  })
+
+  await runApiPortalScraper({
+    provider,
+    fetchJson: async (url) => {
+      seenUrls.push(url)
+      return {
+        data: {
+          positions: [],
+          count: 0,
+        },
+      }
+    },
+  })
+
+  assert.equal(seenUrls.length, 1)
+  assert.equal(new URL(seenUrls[0]).searchParams.get('limit'), '50')
+})
+
+test('runApiPortalScraper falls back to browser-backed JSON for blocked Eightfold GET APIs', async () => {
+  const browserUrls = []
+  const provider = expandApiPortalProviderTemplate({
+    source: 'browser-eightfold',
+    companyName: 'Browser Eightfold Corp',
+    companyCareerPage: 'https://browser-eightfold.example/careers',
+    countryFilter: 'India',
+    atsPlatform: 'eightfold',
+    template: 'eightfold',
+    templateOptions: {
+      host: 'browser-eightfold.example',
+      domain: 'browser-eightfold.example',
+    },
+  })
+
+  const jobs = await runApiPortalScraper({
+    provider,
+    fetchJson: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      browserUrls.push(url)
+
+      if (url.includes('/api/pcsx/search')) {
+        return {
+          data: {
+            positions: [
+              {
+                id: 101,
+                displayJobId: 'REQ-101',
+                name: 'Platform Engineer',
+                locations: ['Bengaluru, Karnataka, India'],
+                department: 'Engineering',
+                postedTs: 1781481600,
+              },
+            ],
+            count: 1,
+          },
+        }
+      }
+
+      if (url.includes('/api/pcsx/position_details?position_id=101')) {
+        return {
+          data: {
+            publicUrl: 'https://browser-eightfold.example/careers/job/101',
+            jobDescription: '<p>Build platform services for India teams.</p>',
+          },
+        }
+      }
+
+      throw new Error(`Unexpected browser fallback URL: ${url}`)
+    },
+  })
+
+  assert.equal(browserUrls.length, 2)
+  assert.equal(new URL(browserUrls[0]).searchParams.get('limit'), '50')
+  assert.match(browserUrls[0], /\/api\/pcsx\/search/)
+  assert.match(browserUrls[1], /position_id=101/)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Platform Engineer')
+  assert.equal(jobs[0].link, 'https://browser-eightfold.example/careers/job/101')
+  assert.match(jobs[0].jobDescription, /platform services/i)
+})
+
+test('runApiPortalScraper returns an aggregate signal job when Eightfold inventory is hard-blocked', async () => {
+  const provider = expandApiPortalProviderTemplate({
+    source: 'blocked-eightfold',
+    companyName: 'Blocked Eightfold Corp',
+    companyCareerPage: 'https://blocked-eightfold.example/careers',
+    countryFilter: 'India',
+    atsPlatform: 'eightfold',
+    template: 'eightfold',
+    templateOptions: {
+      host: 'blocked-eightfold.example',
+      domain: 'blocked-eightfold.example',
+    },
+  })
+
+  const jobs = await runApiPortalScraper({
+    provider,
+    fetchJson: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Current openings at Blocked Eightfold Corp')
+  assert.equal(jobs[0].link, 'https://blocked-eightfold.example/careers')
+  assert.equal(jobs[0].jobId, 'blocked-eightfold-current-openings')
+  assert.match(jobs[0].jobDescription, /Eightfold inventory API returned HTTP 403/i)
 })
 
 test('getValueAtPath resolves nested JSON paths without throwing for missing nodes', () => {

@@ -5,6 +5,7 @@
 
 import mongoose from "mongoose";
 import "../loadEnv.js";
+import { configureMongoDns } from "../src/utils/mongoDns.js";
 
 if (!process.env.MONGO_URI) {
   console.error(
@@ -16,6 +17,7 @@ if (!process.env.MONGO_URI) {
 // Connects to the MongoDB database using the loaded connection string.
 const connectDB = async () => {
   try {
+    configureMongoDns();
     const conn = await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB connected:", conn.connection.host);
     return conn;

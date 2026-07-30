@@ -22,6 +22,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/[\u2018\u2019]/g, "'")
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
 

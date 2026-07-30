@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Turtles",
+    "company": "Turtles",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "source": "hmturtles",
+    "jobId": "hmturtles-current-openings",
+    "requisitionId": "hmturtles-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Turtles had current Himalayas hiring evidence for Software Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:20.214Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

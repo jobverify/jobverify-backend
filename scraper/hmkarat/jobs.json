@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Karat",
+    "company": "Karat",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-development?page=5",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-development?page=5",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-development?page=5",
+    "source": "hmkarat",
+    "jobId": "hmkarat-current-openings",
+    "requisitionId": "hmkarat-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Karat had current Himalayas hiring evidence for Software Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:01.326Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development?page=5",
+    "companyDomain": "himalayas.app"
+  }
+]

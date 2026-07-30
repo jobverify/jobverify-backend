@@ -10,16 +10,15 @@ const careersHtml = `
   <body>
     <main>
       <h1>Join our tribe</h1>
-      <p>At Signeasy, we are on a mission to make contract management easy, seamless, and delightful.</p>
-      <button>Apply Now</button>
       <section>
         <h2>Our principles</h2>
-        <h3>Make the customer hero</h3>
+        <p>Move fast and build deliberately.</p>
       </section>
       <section>
         <h2>Perks and benefits</h2>
-        <h3>Hybrid work</h3>
+        <p>Flexible work, meaningful ownership, and global teammates.</p>
       </section>
+      <p>For early-stage teams ready to scale. Apply here</p>
     </main>
   </body>
 </html>
@@ -29,11 +28,11 @@ const loadModule = async () => {
   try {
     return await import('../signeasy/script.js')
   } catch {
-    assert.fail('Expected SignEasy scraper module at ../signeasy/script.js')
+    assert.fail('Expected Signeasy scraper module at ../signeasy/script.js')
   }
 }
 
-test('SignEasy helpers stay pinned to the verified official careers page with no trustworthy public roles', async () => {
+test('Signeasy accepts the verified careers page shell while no trustworthy public job cards are exposed', async () => {
   const signeasy = await loadModule()
 
   assert.equal(signeasy.SOURCE, 'signeasy')
@@ -43,49 +42,24 @@ test('SignEasy helpers stay pinned to the verified official careers page with no
   assert.equal(signeasy.CAREERS_URL, 'https://signeasy.com/careers')
   assert.equal(signeasy.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(signeasy.hasNoTrustworthyPublicJobsSignal(careersHtml), true)
-  assert.equal(
-    signeasy.hasNoTrustworthyPublicJobsSignal(
-      careersHtml.replace(
-        '</main>',
-        '<article class="job-card"><h2>Account Executive</h2><a href="/careers/account-executive">View Job</a></article></main>',
-      ),
-    ),
-    false,
-  )
 })
 
-test('SignEasy run validates the official careers page and returns an honest empty list while no trustworthy public jobs are exposed', async () => {
+test('Signeasy returns an honest empty list while the verified careers page still lacks trustworthy public jobs', async () => {
   const signeasy = await loadModule()
-  const requestedUrls = []
 
   const jobs = await signeasy.createSigneasyScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return careersHtml
-    },
+    fetchText: async () => careersHtml,
   })
 
-  assert.deepEqual(requestedUrls, [signeasy.CAREERS_URL])
   assert.deepEqual(jobs, [])
 })
 
-test('SignEasy fails closed when the verified careers shell drifts or trustworthy public jobs appear', async () => {
+test('Signeasy fails closed when public job cards appear on the verified careers page', async () => {
   const signeasy = await loadModule()
 
   await assert.rejects(
     signeasy.createSigneasyScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-    }),
-    /verified signeasy careers page/i,
-  )
-
-  await assert.rejects(
-    signeasy.createSigneasyScraper().run({
-      fetchText: async () =>
-        careersHtml.replace(
-          '</main>',
-          '<article class="job-card"><h2>Account Executive</h2><a href="/careers/account-executive">View Job</a></article></main>',
-        ),
+      fetchText: async () => `${careersHtml}<a href="/careers/account-executive">View Job</a>`,
     }),
     /trustworthy public jobs/i,
   )

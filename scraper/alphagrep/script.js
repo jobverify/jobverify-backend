@@ -55,6 +55,8 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_HOME_URL) => {
   }
 }
 
+const normalizeComparableUrl = (value) => String(value ?? '').replace(/\/$/, '')
+
 const extractTitle = (html) => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1])
@@ -141,24 +143,42 @@ export const extractCareersUrl = (html) => {
   return null
 }
 
+const hasCanonicalUrl = (html, expectedUrl, baseUrl) => {
+  for (const match of String(html ?? '').matchAll(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/gi)) {
+    const canonicalUrl = toAbsoluteUrl(match[1], baseUrl)
+    if (normalizeComparableUrl(canonicalUrl) === normalizeComparableUrl(expectedUrl)) return true
+  }
+
+  return false
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
   return extractTitle(page) === 'AlphaGrep | Global Quantitative Trading, Market Making & Investment Firm'
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.alpha-grep\.com\/["']/i.test(page)
+    && hasCanonicalUrl(page, HOMEPAGE_URL, HOMEPAGE_URL)
     && extractCareersUrl(page) === CAREERS_HOME_URL
 }
 
-const extractListingCandidates = (html) =>
-  [...String(html ?? '').matchAll(
-    /<a\b[^>]+href=['"]([^'"]*career-opportunity\?jid=\d+)['"][^>]*>\s*<li>\s*<div>\s*<h5>([\s\S]*?)<\/h5>\s*<\/div>\s*<span[^>]+class=['"]jobLocation['"]>([\s\S]*?)<strong\b/gi,
-  )]
-    .map((match) => ({
-      title: normalizeWhitespace(match[2]),
-      rawLocation: normalizeWhitespace(match[3]),
-      sourceUrl: toAbsoluteUrl(match[1], CAREERS_HOME_URL),
-    }))
-    .filter((listing) => listing.title && listing.rawLocation && listing.sourceUrl)
+const extractListingCandidates = (html) => {
+  const patterns = [
+    /<a\b[^>]+href=['"]([^'"]*career-opportunity\/?\?jid=\d+)['"][^>]*>\s*<li>\s*<div>\s*<h5[^>]*>([\s\S]*?)<\/h5>\s*<\/div>\s*<span[^>]+class=['"]jobLocation['"]>([\s\S]*?)<strong\b/gi,
+    /<li>\s*<a\b[^>]+href=['"]([^'"]*career-opportunity\/?\?jid=\d+)['"][^>]*>\s*<div>\s*<h5[^>]*>([\s\S]*?)<\/h5>\s*<\/div>\s*<span[^>]+class=['"]jobLocation['"]>([\s\S]*?)<strong\b/gi,
+  ]
+
+  const listings = []
+  for (const pattern of patterns) {
+    for (const match of String(html ?? '').matchAll(pattern)) {
+      listings.push({
+        title: normalizeWhitespace(match[2]),
+        rawLocation: normalizeWhitespace(match[3]),
+        sourceUrl: toAbsoluteUrl(match[1], CAREERS_HOME_URL),
+      })
+    }
+  }
+
+  return listings.filter((listing) => listing.title && listing.rawLocation && listing.sourceUrl)
+}
 
 export const extractListingJobs = (html) =>
   extractListingCandidates(html)
@@ -193,7 +213,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   const listings = extractListingJobs(page)
 
   return extractTitle(page) === 'Quantitative Trading Careers | Quant Research & Trading Jobs at AlphaGrep'
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.alpha-grep\.com\/career\/["']/i.test(page)
+    && hasCanonicalUrl(page, CAREERS_HOME_URL, CAREERS_HOME_URL)
     && normalized.includes('Join our Team')
     && normalized.includes('Find your next role at Alphagrep')
     && normalized.includes('Apply for open positions at our offices in')
@@ -207,7 +227,7 @@ export const hasOfficialJobDetailSignal = (html, expectedListing = null) => {
   const rawLocation = extractRawDetailLocation(page)
 
   return extractTitle(page) === 'Career Opportunity - AlphaGrep'
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.alpha-grep\.com\/career-opportunity\/["']/i.test(page)
+    && hasCanonicalUrl(page, CAREER_OPPORTUNITY_BASE_URL, CAREER_OPPORTUNITY_BASE_URL)
     && Boolean(extractDepartment(page))
     && Boolean(detailTitle)
     && Boolean(rawLocation)

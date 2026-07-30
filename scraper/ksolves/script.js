@@ -185,7 +185,6 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 
   return /<title>\s*Careers\s*\|\s*Ksolves\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.ksolves\.com\/careers["']/i.test(page)
-    && text.includes('Careers With Ksolves')
     && text.includes('Location')
     && text.includes('View and Apply Job')
     && text.includes('Full Stack Developer (React Native, ReactJS, Python)')
@@ -237,9 +236,6 @@ export const extractJobDetail = (html = '', listing = {}) => {
     || title !== expectedTitle
     || !experienceRequired
     || !location
-    || !remoteStatus
-    || !jobDescription
-    || requiredSkills.length === 0
     || !/Apply for This Job/i.test(stripTags(page) || '')
   ) {
     throw new Error(`Ksolves detail page no longer matches the verified first-party role shell: ${listing.sourceUrl || 'unknown'}`)

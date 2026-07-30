@@ -48,9 +48,8 @@ export const hasVerifiedCareersShellSignal = (html = '') => {
   const page = String(html ?? '')
 
   return /<title>\s*KreditBee\s*<\/title>/i.test(page)
-    && /If you're seeing this message, that means JavaScript has been disabled/i.test(page)
-    && /<div[^>]+id="root"[^>]*><\/div>/i.test(page)
-    && /\/react\/main\.[a-z0-9]+\.js/i.test(page)
+    && /<div[^>]+id=["'](?:root|app)["'][^>]*><\/div>/i.test(page)
+    && /\/react\/(?:runtime-main|main)\.[a-z0-9]+\.js/i.test(page)
 }
 
 export const extractCareerUrlsFromSitemap = (xml = '') => {
@@ -88,7 +87,6 @@ export const hasNonVerifiableDetailShell = (html = '') => {
   const page = String(html ?? '')
 
   return hasVerifiedCareersShellSignal(page)
-    && /\/careers\//i.test(page)
     && !hasTrustworthyPublicJobDetailSignal(page)
 }
 

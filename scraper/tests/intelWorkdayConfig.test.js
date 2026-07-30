@@ -21,7 +21,7 @@ test('Intel Workday company entry points at the prefiltered India route used by 
   )
 })
 
-test('Intel Workday local config switches the scraper onto the jobs API with the correct facet key', () => {
+test('Intel Workday local config keeps the jobs API but does not override the country facet key', () => {
   const config = loadConfig(
     path.join(testsDir, '../myworkday/intel'),
   )
@@ -35,5 +35,5 @@ test('Intel Workday local config switches the scraper onto the jobs API with the
     config.detailUrlBase,
     'https://intel.wd1.myworkdayjobs.com/External',
   )
-  assert.equal(config.countryFacetParameter, 'locations')
+  assert.equal(config.countryFacetParameter, undefined)
 })

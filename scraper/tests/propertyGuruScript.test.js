@@ -45,6 +45,27 @@ const WORKDAY_BOARD_PAGE = {
   `,
 }
 
+const CURRENT_WORKDAY_BOARD_PAGE = {
+  status: 200,
+  url: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/',
+  html: `
+    <!doctype html>
+    <html lang="en-US">
+      <head>
+        <link rel="canonical" href="https://propertyguru.wd105.myworkdayjobs.com/PropertyGuru" />
+        <meta
+          name="description"
+          property="og:description"
+          content="PropertyGuru is Southeast Asia's leading PropTech company and we're hiring."
+        >
+      </head>
+      <body>
+        <div>PropertyGuru</div>
+      </body>
+    </html>
+  `,
+}
+
 const UNFILTERED_JOBS_PAYLOAD = {
   total: 25,
   jobPostings: [
@@ -152,6 +173,7 @@ test('PropertyGuru pins the verified first-party careers handoff and Workday Ind
     'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/',
   )
   assert.equal(propertyGuru.hasOfficialWorkdayBoardSignal(WORKDAY_BOARD_PAGE), true)
+  assert.equal(propertyGuru.hasOfficialWorkdayBoardSignal(CURRENT_WORKDAY_BOARD_PAGE), true)
   assert.equal(propertyGuru.isPropertyGuruIndiaLocationDescriptor('Bengaluru'), true)
   assert.equal(propertyGuru.isPropertyGuruIndiaLocationDescriptor('Singapore'), false)
   assert.deepEqual(

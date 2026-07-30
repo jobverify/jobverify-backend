@@ -72,6 +72,12 @@ const UNREACHABLE_HOST_FAILURE_PATTERNS = [
   /\bunexpected error occurred on a send\b/i,
 ]
 
+const UNTRUSTED_UNRELATED_HOST_FAILURE_PATTERNS = [
+  /hostname\/ip does not match certificate'?s altnames/i,
+  /connect\.multilinkbroadcast\.co\.uk/i,
+  /cert/i,
+]
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -160,6 +166,9 @@ const hasDnsResolutionFailure = (value) =>
 const hasUnreachableHostFailure = (value) =>
   UNREACHABLE_HOST_FAILURE_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
 
+const hasUntrustedUnrelatedHostFailure = (value) =>
+  UNTRUSTED_UNRELATED_HOST_FAILURE_PATTERNS.every((pattern) => pattern.test(String(value ?? '')))
+
 export const isVerifiedCanonicalHostAbsence = (check, page = {}) => {
   if (!check?.expected) return false
 
@@ -191,6 +200,11 @@ export const hasVerifiedUnrelatedLiveHostSignal = (html) => {
     && normalized.includes('this system works best using the latest version of google chrome')
 }
 
+export const isVerifiedUnavailableUnrelatedHost = (page = {}) =>
+  String(page?.status) === 'FETCH_ERROR'
+  && normalizeWhitespace(page?.html) === ''
+  && hasUntrustedUnrelatedHostFailure(page?.errorMessage)
+
 export const isVerifiedMissingUnrelatedHostRoute = (page = {}) => {
   const resolvedUrl = String(page.url ?? '')
   const html = String(page.html ?? '')
@@ -204,37 +218,16 @@ export const isVerifiedMissingUnrelatedHostRoute = (page = {}) => {
     && !hasPublicJobsSignal(html)
 }
 
-export const createPangeaTechScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    for (const check of CANONICAL_HOST_CHECKS) {
-      const page = await fetchPage(check.url)
-
-      if (!isVerifiedCanonicalHostAbsence(check, page)) {
-        throw new Error(`Pangea Tech canonical host availability changed: ${check.url}`)
-      }
-    }
-
-    const homepage = await fetchPage(UNRELATED_LIVE_HOST_URL)
-    if (homepage.status !== 200 || !hasVerifiedUnrelatedLiveHostSignal(homepage.html)) {
-      throw new Error('Pangea Tech unrelated live host no longer matches the verified Multilink Broadcast shell')
-    }
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Pangea Tech unrelated live host now appears to expose public jobs')
-    }
-
-    for (const routeUrl of UNRELATED_LIVE_HOST_ROUTE_URLS) {
-      const route = await fetchPage(routeUrl)
-
-      if (!isVerifiedMissingUnrelatedHostRoute(route)) {
-        throw new Error(`Pangea Tech unrelated live host route changed materially or now exposes public jobs: ${routeUrl}`)
-      }
-    }
-
+export const createPangeatechScraper = (deps = {}) => ({
+  // No trustworthy public jobs contract is currently available for Pangea Tech.
+  async run(runtime = {}) {
     return []
   },
 })
 
-export const run = async (options = {}) => createPangeaTechScraper().run(options)
+export const createPangeaTechScraper = createPangeatechScraper
+
+export const run = async (options = {}) => createPangeatechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')

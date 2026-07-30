@@ -26,7 +26,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Shutterfly India local catalog captures the verified exact-name no-India-jobs sentinel surface', async () => {
+test('Shutterfly India local catalog captures the verified overview plus Cloudflare-challenged TTC job surfaces', async () => {
   const { SHUTTERFLY_INDIA_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const shutterflyIndia = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(SHUTTERFLY_INDIA_CATALOG)
@@ -41,26 +41,25 @@ test('Shutterfly India local catalog captures the verified exact-name no-India-j
   assert.equal(provider.officialJobsPageUrl, 'https://shutterflycareers.ttcportals.com/?p=jobs&nl=1')
   assert.equal(provider.officialSearchResultsUrl, 'https://shutterflycareers.ttcportals.com/search/jobs')
   assert.equal(provider.companyDomain, 'shutterflyinc.com')
-  assert.equal(provider.atsPlatform, 'jobvite-ttcportals-no-india-public-jobs')
+  assert.equal(provider.atsPlatform, 'jobvite-ttcportals-bot-gated-no-india-public-jobs')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-overview-plus-careers-home-plus-search-results-validation')
+  assert.equal(provider.paginationStrategy, 'official-overview-plus-bot-gated-ttc-job-surfaces')
   assert.equal(
     provider.extractionStrategy,
-    'verified-overview-careers-link+verified-jobvite-redirected-ttc-home+verified-all-jobs-country-filter+no-india-jobs-return-empty',
+    'verified-overview-careers-link+verified-cloudflare-challenged-jobvite-entry+verified-cloudflare-challenged-search-results+return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-27')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /shutterflyindia[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, July 27, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/shutterflyinc\.com\/overview\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.jobvite\.com\/shutterfly/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/shutterflycareers\.ttcportals\.com\/search\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Where We Work/i)
-  assert.match(provider.verifiedSurfaceSummary, /United States/i)
-  assert.match(provider.verifiedSurfaceSummary, /Canada/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public India jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
+  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(provider.verifiedSurfaceSummary, /no trustworthy bot-accessible public India jobs surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Shutterfly India'), false)
 
   assert.equal(shutterflyIndia.PROVIDER_METADATA.source, SHUTTERFLY_INDIA_CATALOG.source)
@@ -95,7 +94,7 @@ test('Shutterfly India hydrated local catalog stays script-runner compatible for
   assert.equal(provider.companyName, 'Shutterfly India')
   assert.equal(provider.companyCareerPage, 'https://jobs.jobvite.com/shutterfly')
   assert.equal(provider.companyDomain, 'shutterflyinc.com')
-  assert.equal(provider.atsPlatform, 'jobvite-ttcportals-no-india-public-jobs')
+  assert.equal(provider.atsPlatform, 'jobvite-ttcportals-bot-gated-no-india-public-jobs')
   assert.match(provider.modulePath, /shutterflyindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /shutterflyindia[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

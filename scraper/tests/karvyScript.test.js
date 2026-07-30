@@ -21,12 +21,12 @@ const contaminatedLegacyRootHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>KEMBANGTOTO</title>
+    <title>KEMBANGTOTO: Data Akurat Karvyonline Akses Prediksi Togel Pasaran Toto Macau Resmi</title>
   </head>
   <body>
     <main>
       <h1>KEMBANGTOTO - Olah Data Togel</h1>
-      <a href="https://karvy.ember-spirit.co/">karvy.ember-spirit.co</a>
+      <p>Data akurat togel pasaran toto macau resmi.</p>
     </main>
   </body>
 </html>
@@ -40,9 +40,15 @@ const staleCareerPageHtml = `
   </head>
   <body>
     <main>
+      <h1>Have a Zest to grow in Your Career?</h1>
       <h1>Interested to Join Us?</h1>
       <p>Apply</p>
-      <p>email resume to careers@karvy.com</p>
+      <h4>
+        email resume to<br />
+        <a href="/cdn-cgi/l/email-protection#example" class="text-white eakarvy pT5">
+          <span class="__cf_email__" data-cfemail="example">[email&#160;protected]</span>
+        </a>
+      </h4>
       <p>SEBI rejoinder</p>
     </main>
   </body>

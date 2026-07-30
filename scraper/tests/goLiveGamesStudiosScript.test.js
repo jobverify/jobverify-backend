@@ -12,6 +12,22 @@ const fixturesDir = path.join(
 const readHtmlFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const verifiedHomepageHtml = readHtmlFixture('homepage.html')
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Welcome to GoLive Games</title>
+  </head>
+  <body>
+    <main>
+      <h1>Bridging the world through games</h1>
+      <p>GoLive Games is the world’s favourite game publisher of casual and mid-core games.</p>
+      <p>Publish@golive.games</p>
+      <p>India 106, Vindhya C5, IIIT Hyderabad, Gachibowli, Hyderabad, Telangana - 500032.</p>
+    </main>
+  </body>
+</html>
+`
 
 const loadGoLiveGamesStudiosModule = async () => {
   try {
@@ -36,6 +52,7 @@ test('GoLive Games Studios validates the verified homepage and recognized missin
     'https://www.golive.games/jobs/',
   ])
   assert.equal(goLiveGamesStudios.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
+  assert.equal(goLiveGamesStudios.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(goLiveGamesStudios.hasPublicJobsSignal(verifiedHomepageHtml), false)
   assert.equal(
     goLiveGamesStudios.isVerifiedMissingCareersRoute({

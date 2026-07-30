@@ -44,7 +44,7 @@ test('Belzabar local catalog captures the verified first-party jobs surface', as
   assert.equal(provider.companyName, 'Belzabar')
   assert.equal(provider.officialBrandName, 'Belzabar Software Design India Pvt Ltd')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.belzabar.com/about/life-at-belzabar?output=1')
+  assert.equal(provider.companyCareerPage, 'https://www.belzabar.com/about/life-at-belzabar')
   assert.equal(provider.homepageUrl, 'https://www.belzabar.com/')
   assert.equal(
     provider.homepageLinkedCareersUrl,

@@ -60,16 +60,58 @@ const buildDetailHtml = (title, responsibilities) => `
 </html>
 `
 
+const buildAreasOfResponsibilitiesDetailHtml = (title, responsibilities) => `
+<!doctype html>
+<html lang="en">
+  <body>
+    <section class="container">
+      <h1 class="font-family">Job Details</h1>
+      <h3 class="JobTitle">${title}</h3>
+      <hr />
+      <h3><span>Areas of Responsibilities</span></h3>
+      <ul>
+        <li><span>&#x2022; Direct Responsibilities</span></li>
+        <li><span>&#x2022; Contributing Responsibilities</span></li>
+        <li><span>&#x2022; Technical &amp; Behavioural Competencies</span></li>
+      </ul>
+      <div>
+        <ul>
+          <li><span>&#x2022; ${responsibilities}</span></li>
+        </ul>
+      </div>
+      <h2>Applying for the Job</h2>
+    </section>
+  </body>
+</html>
+`
+
+const buildListOnlyDetailHtml = (title, responsibilities) => `
+<!doctype html>
+<html lang="en">
+  <body>
+    <section class="container">
+      <h1 class="font-family">Job Details</h1>
+      <h3 class="JobTitle">${title}</h3>
+      <hr />
+      <ul>
+        <li><span>&#x2022; ${responsibilities}</span></li>
+      </ul>
+      <h2>Applying for the Job</h2>
+    </section>
+  </body>
+</html>
+`
+
 const DETAIL_PAGES = {
   'https://www.sharekhan.com/careers/job-details/senior-manager-campaign-management-290029': buildDetailHtml(
     'Senior Manager - Campaign Management',
     'Drive digital programs and campaigns for products with limited or no online journey.',
   ),
-  'https://www.sharekhan.com/careers/job-details/manager-digital-marketing-290020': buildDetailHtml(
+  'https://www.sharekhan.com/careers/job-details/manager-digital-marketing-290020': buildAreasOfResponsibilitiesDetailHtml(
     'Manager Digital Marketing',
     'Manage acquisition and performance marketing programs across digital channels.',
   ),
-  'https://www.sharekhan.com/careers/job-details/ui-ux-designer-289891': buildDetailHtml(
+  'https://www.sharekhan.com/careers/job-details/ui-ux-designer-289891': buildListOnlyDetailHtml(
     'UI/UX Designer',
     'Design intuitive experiences for retail investing and trading journeys.',
   ),

@@ -6,7 +6,7 @@ const homepageHtml = `
 <html lang="en-US">
   <head>
     <title>Advanced Intelligence &amp; Technology Solutions | AKTEK</title>
-    <link rel="canonical" href="https://aktek.io/">
+    <link rel="canonical" href="https://www.aktek.io/">
   </head>
   <body>
     <a href="https://aktek.io/software/">Software</a>

@@ -101,3 +101,30 @@ test('Amber Enterprises fails closed when the verified homepage or careers hando
     /careers handoff/i,
   )
 })
+
+test('Amber Enterprises can recover with browser-backed first-party pages when direct requests time out', async () => {
+  const amberEnterprises = await loadAmberEnterprisesModule()
+  const homepageHtml = await readFixture('homepage.html')
+  const careersHtml = await readFixture('careers.html')
+  const browserUrls = []
+
+  const jobs = await amberEnterprises.createAmberEnterprisesScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+
+      if (url === amberEnterprises.HOMEPAGE_URL) return homepageHtml
+      if (url === amberEnterprises.CAREERS_URL) return careersHtml
+
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    amberEnterprises.HOMEPAGE_URL,
+    amberEnterprises.CAREERS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})

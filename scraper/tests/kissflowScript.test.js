@@ -50,6 +50,43 @@ const careersPageHtml = `
 </html>
 `
 
+const currentCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers - Kissflow</title>
+    <link rel="canonical" href="https://careers.kissflow.com" />
+  </head>
+  <body>
+    <header>
+      <a href="https://kissflow.com/">Kissflow</a>
+      <a href="https://careers.kissflow.com/#viewjobs">Get Jobs</a>
+    </header>
+    <main>
+      <h2>Open Positions</h2>
+      <div class="career-link career-col">
+        <a href="https://careers.kissflow.com/solution-advisor" class="career-in-row">
+          <h6>Solution Advisor</h6>
+          <p>Experience: 8 - 12 years</p>
+        </a>
+      </div>
+      <div class="career-link career-col">
+        <a href="https://careers.kissflow.com/client-director" class="career-in-row">
+          <h6>Client Director</h6>
+          <p>Experience: 14 - 18 years</p>
+        </a>
+      </div>
+      <div class="career-link career-col">
+        <a href="https://careers.kissflow.com/manager-digital-marketing" class="career-in-row">
+          <h6>Manager - Digital Marketing</h6>
+          <p>Experience: 8 - 12 years</p>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 const solutionAdvisorHtml = `
 <!doctype html>
 <html lang="en">
@@ -70,6 +107,32 @@ const solutionAdvisorHtml = `
         <li>Enterprise consulting</li>
       </ul>
       <h6>Applicant Details</h6>
+    </main>
+  </body>
+</html>
+`
+
+const currentSolutionAdvisorHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Solution Advisor</title>
+  </head>
+  <body>
+    <main>
+      <h1 class="semi job-title mb-24 h3">Solution Advisor</h1>
+      <h6 class="mt-24 mb-8 job-experience"><span class="medium">Experience:</span> 8 - 12 years</h6>
+      <h6 class="h6 job-location pb-16"><span class="medium">Work Location:</span> Delhi&amp;Mumbai</h6>
+      <a href="#apply" class="btn btn-outline-blue btn-xl career-btn">Apply now</a>
+      <h6 class="mb-8 h6 mt-32"><span class="medium">Job Description:</span></h6>
+      <p style="background-color: #ffffff;">As a <strong>Kissflow Solution Advisor</strong>, you will be the innovation driver and thought leader.</p>
+      <p style="background-color: #ffffff;">You will help enterprises shape solution roadmaps on the Kissflow platform.</p>
+      <h3><strong><span>Required Skills</span></strong></h3>
+      <ul>
+        <li>Low-code architecture</li>
+        <li>Enterprise consulting</li>
+      </ul>
+      <h3 class="pb-24 semi text-charcoal700">Applicant Details</h3>
     </main>
   </body>
 </html>
@@ -200,7 +263,28 @@ test('Kissflow pins the verified careers index, listing cards, and live first-pa
       country: 'India',
       experienceRequired: '8 - 12 years',
       jobDescription:
-        'As a Kissflow Solution Advisor, you will be the innovation driver and thought leader.',
+        'As a Kissflow Solution Advisor, you will be the innovation driver and thought leader. Required Skills Low-code architecture Enterprise consulting',
+      requiredSkills: [
+        'Low-code architecture',
+        'Enterprise consulting',
+      ],
+    },
+  )
+  assert.equal(kissflow.hasVerifiedCareersPageSignal(currentCareersPageHtml), true)
+  assert.deepEqual(
+    kissflow.extractJobDetail(currentSolutionAdvisorHtml, {
+      title: 'Solution Advisor',
+      sourceUrl: 'https://careers.kissflow.com/solution-advisor',
+      experienceRequired: '8 - 12 years',
+    }),
+    {
+      title: 'Solution Advisor',
+      location: 'Delhi, Mumbai, India',
+      city: 'Delhi',
+      country: 'India',
+      experienceRequired: '8 - 12 years',
+      jobDescription:
+        'As a Kissflow Solution Advisor, you will be the innovation driver and thought leader. You will help enterprises shape solution roadmaps on the Kissflow platform. Required Skills Low-code architecture Enterprise consulting',
       requiredSkills: [
         'Low-code architecture',
         'Enterprise consulting',

@@ -22,6 +22,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html) =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null)
+
 const matchesExpectedUrl = (value, expected) => {
   try {
     const actualUrl = new URL(value)
@@ -63,11 +66,13 @@ export const PARENT_CAREERS_URL = ORDERHIVE_CATALOG.parentCareersPage
 export const hasGenericParentHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const title = extractTitle(page)
 
-  return /Inventory management software and more \| Cin7/i.test(page)
-    && /connected inventory performance platform/i.test(normalized)
+  return /Cin7/i.test(title || '')
+    && /inventory management software/i.test(normalized)
+    && (/connected inventory performance platform/i.test(normalized) || /small business erp/i.test(normalized))
     && /Careers/i.test(normalized)
-    && !/\bOrderhive\b/i.test(page)
+    && !/\bOrderhive\b/i.test(normalized)
 }
 
 export const hasGenericParentCareersSignal = (html = '') => {

@@ -1,0 +1,22 @@
+{
+  "source": "lucidmotors",
+  "companyName": "Lucid Motors",
+  "officialBrandName": "Lucid Motors",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../lucidmotors/script.js",
+  "dryRunFile": "lucidmotors/jobs.json",
+  "companyCareerPage": "https://lucidmotors.com/careers",
+  "officialCareersPageUrl": "https://lucidmotors.com/careers/search",
+  "companyDomain": "lucidmotors.com",
+  "atsPlatform": "official-first-party-careers-search-page-fail-closed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-search-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://lucidmotors.com/careers is Lucid Motors' first-party careers page and that its public open-roles surface is exposed under https://lucidmotors.com/careers/search. Because no stable enumerable extraction contract was independently verified from that first-party search surface here, this exact-name provider fails closed and returns no jobs."
+}

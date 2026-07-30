@@ -111,14 +111,31 @@ const extractLocationCountryFacetValues = (payload = {}) => {
   return locationCountryFacet.values
 }
 
+const isLikelyWorkdayRequisitionId = (value) => {
+  const token = normalizeWhitespace(value)
+  if (!token || /[,\s]/.test(token)) {
+    return false
+  }
+
+  return /^(?:WD\d+(?:-\d+)?|[A-Z]{0,6}[A-Z0-9_-]*\d[A-Z0-9_-]*|\d{5,})$/i.test(token)
+}
+
 const extractJobId = (posting = {}) => {
   const requisitionId = Array.isArray(posting?.bulletFields)
-    ? posting.bulletFields.find((value) => /^WD\d+(?:-\d+)?$/i.test(String(value)))
+    ? posting.bulletFields
+      .map(normalizeWhitespace)
+      .find((value) => isLikelyWorkdayRequisitionId(value))
     : null
 
   if (requisitionId) return requisitionId
 
-  return String(posting?.externalPath ?? '').match(/_(WD\d+(?:-\d+)?)(?:\/)?$/i)?.[1] || null
+  const externalPathRequisitionId = normalizeWhitespace(
+    String(posting?.externalPath ?? '').match(/_([^/?#/_]+)(?:[/?#]|$)/i)?.[1],
+  )
+
+  return isLikelyWorkdayRequisitionId(externalPathRequisitionId)
+    ? externalPathRequisitionId
+    : null
 }
 
 const buildDetailUrl = (externalPath) => {

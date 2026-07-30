@@ -12,7 +12,6 @@ const USER_AGENT =
 const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /\bjob-card\b/i,
   /\bjob-title-link\b/i,
-  /\bapply now\b/i,
   /"@type"\s*:\s*"JobPosting"/i,
 ]
 

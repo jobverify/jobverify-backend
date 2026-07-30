@@ -84,8 +84,15 @@ const unfilteredJobsPayload = {
 }
 
 const filteredIndiaJobsPayload = {
-  total: 3,
+  total: 4,
   jobPostings: [
+    {
+      title: 'Assistant Officer, Personal Banker, Consumer Banking Group',
+      externalPath: '/job/Bye-Pass-Road-Madurai/Personal-Banker_230000FK',
+      locationsText: 'Bye-Pass Road, Madurai',
+      postedOn: 'Posted Today',
+      bulletFields: ['230000FK'],
+    },
     {
       title: 'Associate, Relationship Manager, Credit Program Small, Small Medium Enterprises',
       externalPath: '/job/Kolkata-DBIL/Associate--Relationship-Manager--Credit-Program-Small--Small-Medium-Enterprises_WD86720',
@@ -230,6 +237,26 @@ test('DBS Bank India run validates the verified first-party handoff and extracts
   ])
 
   assert.deepEqual(jobs, [
+    {
+      jobId: '230000FK',
+      title: 'Assistant Officer, Personal Banker, Consumer Banking Group',
+      company: 'DBS Bank India',
+      department: null,
+      location: 'Madurai, India',
+      city: 'Madurai',
+      locations: ['Bye-Pass Road, Madurai'],
+      link: 'https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Bye-Pass-Road-Madurai/Personal-Banker_230000FK',
+      source: 'dbsbankindia',
+      postedAt: null,
+      closingDate: null,
+      jobDescription: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      experienceRequired: null,
+      requisitionId: '230000FK',
+      scrapedAt: '2026-07-15T00:00:00.000Z',
+    },
     {
       jobId: 'WD86755',
       title: 'Assistant Vice President , Regional Sales Manager ,Consumer Banking Group',

@@ -34,7 +34,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Ameyo local catalog captures the verified homepage handoff to the live Exotel careers surface', async () => {
+test('Ameyo local catalog captures the verified homepage 522 outage and the live Exotel careers surface', async () => {
   const { AMEYO_CATALOG } = await loadCatalogModule()
   const ameyo = await loadScraperModule()
   const provider = buildCatalogReadyProvider(AMEYO_CATALOG)
@@ -48,11 +48,11 @@ test('Ameyo local catalog captures the verified homepage handoff to the live Exo
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-homepage-handoff-plus-upstream-recruiterbox-openings-json',
+    'verified-homepage-handoff-or-verified-homepage-522-outage-plus-upstream-recruiterbox-openings-json',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-exotel-careers-handoff+recruiterbox-openings-json',
+    'verified-official-homepage-or-verified-homepage-522-outage+verified-exotel-careers-handoff+recruiterbox-openings-json',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -69,9 +69,10 @@ test('Ameyo local catalog captures the verified homepage handoff to the live Exo
     'https://www.ameyo.com/jobs/',
   ])
   assert.equal(provider.upstreamCompanyName, 'Exotel Techcom Pvt Ltd')
-  assert.equal(provider.verifiedOn, '2026-07-15')
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-07-28')
+  assert.match(provider.verifiedSurfaceSummary, /July 28, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.ameyo\.com\//i)
+  assert.match(provider.verifiedSurfaceSummary, /522 timeout page/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/exotel\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/exotel\.com\/about-us\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /widget\/2176\/openings/i)

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that https://www.somanyceramics.com/work-with-us is the live official Somany Ceramics careers page titled "Careers - Somany Ceramics", that it still leads with the first-party hiring copy "Opportunities that grow with you.", and that it exposes inline public job cards under Work With Us. The verified first-party page publishes Goodfit Know More handoffs on https://v2.app.goodfit.so/ for roles including Area Sales Manager in Agra, Senior Territory Manager - CPD Sales in Delhi, and DM- Business Development, so this provider extracts the inline first-party job cards and trusts their official Goodfit apply links.'
+  'Verified on Monday, July 27, 2026 that https://www.somanyceramics.com/work-with-us is the live official Somany Ceramics careers page titled "Careers - Somany Ceramics", that it still leads with the first-party hiring copy "Opportunities that grow with you.", and that it exposes inline public job cards under Work With Us. The verified first-party page publishes Goodfit Know More handoffs on https://v2.app.goodfit.so/ for live roles including Area Sales Manager in Agra, Senior Territory Manager - CPD Sales in Delhi, Area Sales Manager in Bathinda, and DM- Business Development, so this provider extracts the inline first-party job cards and trusts their official Goodfit apply links.'
 
 export const SOMANY_CERAMICS_CATALOG = {
   source: 'somanyceramics',
@@ -25,7 +25,7 @@ export const SOMANY_CERAMICS_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+inline-job-cards+goodfit-apply-links',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-27',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

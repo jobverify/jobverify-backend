@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 import { normalizeCity } from '../utils/cityNormalizer.js'
 
@@ -53,9 +54,10 @@ export const buildJobsPageUrl = ({ page = 1 } = {}) => {
 
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
+  const heading = stripTags(page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '')
 
   return /<title>\s*Find your dream job\s*\|\s*Canva Careers(?:\s*-\s*Page\s*\d+)?\s*<\/title>/i.test(page)
-    && /<h1[^>]*>\s*Find your dream job\s*<\/h1>/i.test(page)
+    && heading === 'Find your dream job'
     && /Location Type/i.test(page)
     && /Work Type/i.test(page)
     && /Live Results/i.test(page)
@@ -190,74 +192,111 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createCanvaScraper = ({
   maxJobs = null,
   maxPages = null,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
     now = () => new Date().toISOString(),
   } = {}) {
     const selectedMaxPages = Number.isInteger(maxPages) && maxPages > 0
       ? maxPages
       : Number.POSITIVE_INFINITY
 
+    let browserSession = null
     const jobs = []
     const seenJobIds = new Set()
     let currentPage = 1
 
-    while (currentPage <= selectedMaxPages) {
-      const pageUrl = buildJobsPageUrl({ page: currentPage })
-      const html = await fetchText(pageUrl)
-
-      if (!hasOfficialJobsPageSignal(html)) {
-        throw new Error('Canva jobs page no longer matches the verified official Canva jobs surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
       }
 
-      const pagination = extractPaginationSummary(html)
-      if (pagination.currentPage !== currentPage) {
-        throw new Error('Canva jobs page no longer matches the verified official Canva jobs surface')
-      }
-
-      const pageJobs = extractIndiaJobCardsFromPage(html)
-      for (const job of pageJobs) {
-        if (seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
-
-        jobs.push({
-          title: job.title,
-          company: COMPANY,
-          location: job.location,
-          city: deriveCity(job.location),
-          country: 'India',
-          link: job.sourceUrl,
-          applyUrl: job.sourceUrl,
-          sourceUrl: job.sourceUrl,
-          source: SOURCE,
-          jobId: job.jobId,
-          requisitionId: job.requisitionId,
-          department: job.department,
-          employmentType: null,
-          experienceRequired: null,
-          jobDescription: null,
-          minimumQualification: null,
-          preferredQualification: null,
-          requiredSkills: [],
-          postingDate: null,
-          remoteStatus: inferRemoteStatus(job.location),
-          scrapedAt: now(),
-        })
-
-        if (Number.isInteger(maxJobs) && maxJobs > 0 && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!pagination.hasNext) break
-      currentPage += 1
+      return browserSession
     }
 
-    return jobs
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      while (currentPage <= selectedMaxPages) {
+        const pageUrl = buildJobsPageUrl({ page: currentPage })
+        const html = await fetchPageText(pageUrl)
+
+        if (!hasOfficialJobsPageSignal(html)) {
+          throw new Error('Canva jobs page no longer matches the verified official Canva jobs surface')
+        }
+
+        const pagination = extractPaginationSummary(html)
+        if (pagination.currentPage !== currentPage) {
+          throw new Error('Canva jobs page no longer matches the verified official Canva jobs surface')
+        }
+
+        const pageJobs = extractIndiaJobCardsFromPage(html)
+        for (const job of pageJobs) {
+          if (seenJobIds.has(job.jobId)) continue
+          seenJobIds.add(job.jobId)
+
+          jobs.push({
+            title: job.title,
+            company: COMPANY,
+            location: job.location,
+            city: deriveCity(job.location),
+            country: 'India',
+            link: job.sourceUrl,
+            applyUrl: job.sourceUrl,
+            sourceUrl: job.sourceUrl,
+            source: SOURCE,
+            jobId: job.jobId,
+            requisitionId: job.requisitionId,
+            department: job.department,
+            employmentType: null,
+            experienceRequired: null,
+            jobDescription: null,
+            minimumQualification: null,
+            preferredQualification: null,
+            requiredSkills: [],
+            postingDate: null,
+            remoteStatus: inferRemoteStatus(job.location),
+            scrapedAt: now(),
+          })
+
+          if (Number.isInteger(maxJobs) && maxJobs > 0 && jobs.length >= maxJobs) {
+            return jobs
+          }
+        }
+
+        if (!pagination.hasNext) break
+        currentPage += 1
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

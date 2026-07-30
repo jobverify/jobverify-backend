@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import BRAINIUM_INFORMATION_TECHNOLOGIES_CATALOG from './catalog.js'
@@ -17,6 +18,7 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const OPEN_POSITIONS_URL = `${OFFICIAL_CAREERS_URL}#open-positions`
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -46,14 +48,37 @@ const slugify = (value) => normalizeWhitespace(value)
 
 export const hasOfficialBrainiumCareersSignals = (html = '') => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
   return /Careers at Brainium \| Join Our Team/i.test(page)
-    && /Build AI-First\. Work with people who care about craft\./i.test(page)
-    && /Open Positions/i.test(page)
-    && /Kolkata(?: Headquarters)?(?:, India)?/i.test(page)
+    && /Open Positions/i.test(normalized)
+    && /Kolkata(?: Headquarters)?(?:, India)?/i.test(normalized)
+    && (
+      /Build AI-First\. Work with people who care about craft\./i.test(normalized)
+      || /Roles we're hiring for right now\./i.test(normalized)
+    )
 }
 
-export const extractRoleCards = (html = '') => {
+const normalizeRoleUrl = (value) => {
+  if (!value || value === '#') return OPEN_POSITIONS_URL
+
+  try {
+    return new URL(value, OFFICIAL_CAREERS_URL).toString()
+  } catch {
+    return OPEN_POSITIONS_URL
+  }
+}
+
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  return /^(full-time|part-time|contract|temporary|internship|freelance)$/i.test(normalized)
+    ? normalized
+    : null
+}
+
+const extractLegacyRoleCards = (html = '') => {
   const roles = []
 
   for (const match of String(html ?? '').matchAll(/<article\b[^>]*class=["'][^"']*\bbrainium-role-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)) {
@@ -63,7 +88,7 @@ export const extractRoleCards = (html = '') => {
     const skillsText = normalizeWhitespace(articleHtml.match(/class=["'][^"']*\bskills\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
     const locationText = normalizeWhitespace(articleHtml.match(/class=["'][^"']*\blocation\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
     const employmentType = normalizeWhitespace(articleHtml.match(/class=["'][^"']*\bemployment-type\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
-    const applyUrl = normalizeWhitespace(articleHtml.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1])
+    const applyUrl = normalizeRoleUrl(normalizeWhitespace(articleHtml.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1]))
     const city = locationText || null
 
     if (!title || !department || !locationText || !employmentType || !applyUrl) continue
@@ -88,44 +113,129 @@ export const extractRoleCards = (html = '') => {
   return roles
 }
 
+const extractModernRoleCards = (html = '') => {
+  const roles = []
+
+  for (const match of String(html ?? '').matchAll(/<a\b[^>]*class=["'][^"']*\bcareers-job-card\b[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const cardHtml = match[1]
+    const department = normalizeWhitespace(cardHtml.match(/class=["'][^"']*\bcareers-job-dept\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1])
+    const title = normalizeWhitespace(cardHtml.match(/class=["'][^"']*\bcareers-job-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1])
+    const locationMeta = [...cardHtml.matchAll(
+      /<div\b[^>]*class=["'][^"']*\bcareers-job-meta\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+    )]
+      .flatMap((metaMatch) => [...metaMatch[1].matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)])
+      .map((metaValue) => normalizeWhitespace(metaValue[1]))
+      .filter(Boolean)
+    const skills = [...cardHtml.matchAll(/<div\b[^>]*class=["'][^"']*\bcareers-job-tags\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi)]
+      .flatMap((tagsMatch) => [...tagsMatch[1].matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)])
+      .map((skillMatch) => normalizeWhitespace(skillMatch[1]))
+      .filter(Boolean)
+    const city = locationMeta[0] || null
+    const employmentType = normalizeEmploymentType(locationMeta[1])
+
+    if (!title || !department || !city) continue
+
+    roles.push({
+      title,
+      department,
+      skills,
+      location: `${city}, India`,
+      city,
+      country: 'India',
+      employmentType,
+      applyUrl: OPEN_POSITIONS_URL,
+      sourceUrl: OPEN_POSITIONS_URL,
+      jobId: slugify(title),
+    })
+  }
+
+  return roles
+}
+
+export const extractRoleCards = (html = '') => {
+  const modernRoles = extractModernRoleCards(html)
+  if (modernRoles.length > 0) {
+    return modernRoles
+  }
+
+  return extractLegacyRoleCards(html)
+}
+
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createBrainiumInformationTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialBrainiumCareersSignals(careersHtml)) {
-      throw new Error('Brainium Information Technologies verified official careers page no longer matches the verified public surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const roles = extractRoleCards(careersHtml)
-    if (roles.length === 0) {
-      throw new Error('Brainium Information Technologies verified careers surface no longer exposes open roles')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchVerifiedText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    return roles.map((role) => ({
-      title: role.title,
-      company: COMPANY_NAME,
-      department: role.department,
-      location: role.location,
-      city: role.city,
-      country: role.country,
-      jobId: role.jobId,
-      requisitionId: null,
-      sourceUrl: role.sourceUrl,
-      applyUrl: role.applyUrl,
-      employmentType: role.employmentType,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: role.skills,
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      source: SOURCE,
-      link: role.applyUrl,
-      scrapedAt: now(),
-    }))
+    try {
+      const careersHtml = await fetchVerifiedText(OFFICIAL_CAREERS_URL)
+
+      if (!hasOfficialBrainiumCareersSignals(careersHtml)) {
+        throw new Error('Brainium Information Technologies verified official careers page no longer matches the verified public surface')
+      }
+
+      const roles = extractRoleCards(careersHtml)
+      if (roles.length === 0) {
+        throw new Error('Brainium Information Technologies verified careers surface no longer exposes open roles')
+      }
+
+      return roles.map((role) => ({
+        title: role.title,
+        company: COMPANY_NAME,
+        department: role.department,
+        location: role.location,
+        city: role.city,
+        country: role.country,
+        jobId: role.jobId,
+        requisitionId: null,
+        sourceUrl: role.sourceUrl,
+        applyUrl: role.applyUrl,
+        employmentType: role.employmentType,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: role.skills,
+        postingDate: null,
+        closingDate: null,
+        jobDescription: null,
+        source: SOURCE,
+        link: role.applyUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

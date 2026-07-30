@@ -47,7 +47,7 @@ export const extractVerifiedWorkdayHandoffUrl = (html) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -56,6 +56,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   baseDelayMs: 2000,
   timeoutMs: 20000,
   label: SOURCE,
+  signal,
 })
 
 export const buildScraperOptions = () => ({
@@ -70,8 +71,12 @@ export const createImegScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  async run() {
-    const careersHtml = await fetchText(CAREER_PAGE_URL)
+  async run({ signal } = {}) {
+    const careersHtml = await (
+      signal === undefined
+        ? fetchText(CAREER_PAGE_URL)
+        : fetchText(CAREER_PAGE_URL, { signal })
+    )
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('IMEG official careers surface changed; refusing to guess the careers handoff')
     }
@@ -81,11 +86,15 @@ export const createImegScraper = ({
       throw new Error('IMEG verified Workday handoff changed; refusing to guess the public jobs source')
     }
 
-    return workdayRunner(buildScraperOptions())
+    return workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
   },
 })
 
 export const run = async ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
-} = {}) => createImegScraper({ fetchText, workdayRunner }).run()
+  signal,
+} = {}) => createImegScraper({ fetchText, workdayRunner }).run({ signal })

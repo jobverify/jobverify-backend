@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { runWorkdayScraper } from '../myworkday/engine.js'
+import { composeAbortSignals } from '../utils/fetch.js'
 import { ITRON_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -49,14 +50,15 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  const requestSignal = composeAbortSignals(signal, createTimeoutSignal(15000))
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: createTimeoutSignal(15000),
+    signal: requestSignal,
   })
 
   return {
@@ -91,8 +93,8 @@ export const hasOfficialWorkdayBoardSignal = (html = '') => {
   const page = String(html ?? '')
 
   return /rel=["']canonical["'][^>]*href=["']https:\/\/itron\.wd5\.myworkdayjobs\.com\/Itron["']/i.test(page)
-    && /window\.workday\s*=\s*\{[^}]*"tenant"\s*:\s*"itron"/i.test(page)
-    && /window\.workday\s*=\s*\{[^}]*"siteId"\s*:\s*"Itron"/i.test(page)
+    && /window\.workday\s*=\s*(?:window\.workday\s*\|\|\s*)?\{[^}]*["']?tenant["']?\s*:\s*"itron"/i.test(page)
+    && /window\.workday\s*=\s*(?:window\.workday\s*\|\|\s*)?\{[^}]*["']?siteId["']?\s*:\s*"Itron"/i.test(page)
 }
 
 export const buildScraperOptions = () => ({
@@ -107,8 +109,12 @@ export const createItronIndiaScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
     workdayRunner = runWorkdayScraper,
+    signal,
   } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+    const fetchVerifiedPage = (url) => (
+      signal === undefined ? fetchPage(url) : fetchPage(url, { signal })
+    )
+    const careersPage = await fetchVerifiedPage(CAREERS_URL)
     if (
       careersPage.status !== 200
       || !sameUrl(careersPage.url, CAREERS_URL)
@@ -122,7 +128,7 @@ export const createItronIndiaScraper = () => ({
       throw new Error('Itron India verified India Workday handoff changed materially')
     }
 
-    const workdayBoardPage = await fetchPage(verifiedIndiaWorkdayUrl)
+    const workdayBoardPage = await fetchVerifiedPage(verifiedIndiaWorkdayUrl)
     if (
       workdayBoardPage.status !== 200
       || !isAcceptedWorkdayBoardUrl(workdayBoardPage.url)
@@ -131,7 +137,10 @@ export const createItronIndiaScraper = () => ({
       throw new Error('Itron India verified public Workday board changed materially')
     }
 
-    return workdayRunner(buildScraperOptions())
+    return workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
   },
 })
 

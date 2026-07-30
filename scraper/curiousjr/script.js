@@ -102,7 +102,7 @@ export const hasCuriousJrHomeSignal = (html = '') => {
     && normalized.includes('learning made fun for curious minds')
     && normalized.includes('trusted by olympiad rankers')
     && /href=["']https:\/\/www\.pw\.live\/about-us["']/i.test(rawHtml)
-    && normalized.includes('physicswallah ltd')
+    && /physics\s*wallah\s*ltd/i.test(normalized)
 }
 
 export const hasCuriousJrContactSignal = (html = '') => {

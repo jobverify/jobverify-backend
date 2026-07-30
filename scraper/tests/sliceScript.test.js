@@ -55,6 +55,61 @@ const SLICE_CAREERS_HTML = `
 </html>
 `
 
+const LIVE_SLICE_BANK_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title data-next-head="">Careers | We go big. We go beyond | slice</title>
+  </head>
+  <body>
+    <main>
+      <h1>Unleash your potential.</h1>
+      <a href="https://slice.bank.in/careers/open-positions">See all open positions</a>
+    </main>
+    <footer>
+      <p>slice small finance bank ltd</p>
+    </footer>
+  </body>
+</html>
+`
+
+const LIVE_SLICE_BANK_APPLY_404_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title data-next-head="">404 - Not Found</title>
+  </head>
+  <body>
+    <main>
+      <p>Page not found</p>
+      <p>Go back home</p>
+    </main>
+    <footer>
+      <p>slice small finance bank ltd</p>
+      <p>Corporate office address: No. 9 Ashford Park View, 80 ft Road, Koramangala, 3rd Block, Bangalore, Karnataka, 560034</p>
+      <p>Contact us</p>
+    </footer>
+  </body>
+</html>
+`
+
+const LIVE_SLICE_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Slice Careers &mdash; Open for Talent</title>
+  </head>
+  <body>
+    <main>
+      <h1>THE WORLD’S BEST IDEAS THRIVE HERE</h1>
+      <p>Looking to bring world-class products to small business counters? Welcome to Slice.</p>
+      <p>Ilir Sela started Slice in 2016 to bring the modern tools that have grown major chains to local pizzerias.</p>
+      <a href="https://about.slicelife.com">about.slicelife.com</a>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../slice/script.js')
@@ -76,6 +131,9 @@ test('Slice pins the verified exact-name ambiguity contract to two different fir
   assert.equal(slice.hasVerifiedSliceBankCareersSignal(SLICE_BANK_CAREERS_HTML), true)
   assert.equal(slice.hasVerifiedSliceBankApplySignal(SLICE_BANK_APPLY_HTML), true)
   assert.equal(slice.hasVerifiedAlternateSliceCareersSignal(SLICE_CAREERS_HTML), true)
+  assert.equal(slice.hasVerifiedSliceBankCareersSignal(LIVE_SLICE_BANK_CAREERS_HTML), true)
+  assert.equal(slice.hasVerifiedSliceBankApplySignal(LIVE_SLICE_BANK_APPLY_404_HTML), true)
+  assert.equal(slice.hasVerifiedAlternateSliceCareersSignal(LIVE_SLICE_CAREERS_HTML), true)
 })
 
 test('Slice run returns [] only while the exact backlog row still maps to two different verified first-party companies', async () => {

@@ -18,6 +18,9 @@ const USER_AGENT =
 
 const stripTags = (value = '') => String(value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
+const hasMaintenanceSignal = (html = '') =>
+  /We are updating our website\./i.test(stripTags(html))
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -65,7 +68,22 @@ export const parseOpeningCards = (html = '') => {
 
 export const createCiInfotechScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
+    let html
+    try {
+      html = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!/HTTP 404\b/i.test(String(error?.message || ''))) {
+        throw error
+      }
+
+      const homepageHtml = await fetchText('https://ciinfotech.net/')
+      if (hasMaintenanceSignal(homepageHtml)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!hasOfficialOpeningsSignal(html)) {
       throw new Error('The verified CI Infotech openings page no longer matches the trusted first-party contract')
     }

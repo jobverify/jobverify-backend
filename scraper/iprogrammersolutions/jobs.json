@@ -1,0 +1,30 @@
+[
+  {
+    "title": "DevOps Engineer",
+    "company": "Iprogrammer Solutions",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "devops-engineer",
+    "requisitionId": "devops-engineer",
+    "sourceUrl": "https://iprogrammer.com/current-opening/devops-engineer/",
+    "applyUrl": "https://iprogrammer.com/current-opening/devops-engineer/",
+    "employmentType": null,
+    "experienceRequired": "5+ Years",
+    "vacancies": "01",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": null,
+    "closingDate": null,
+    "jobDescription": "We are looking for an experienced Lead NodeJS Engineer to architect and deliver high-quality, scalable backend systems. The ideal candidate will have a strong background in NodeJS frameworks, API architecture, and microservices, along with a passion for leading teams and delivering enterprise-grade solutions.",
+    "remoteStatus": "On-site",
+    "source": "iprogrammersolutions",
+    "link": "https://iprogrammer.com/current-opening/devops-engineer/",
+    "scrapedAt": "2026-07-26T21:05:47.322Z",
+    "companyCareerPage": "https://iprogrammer.com/current-openings-pune/",
+    "companyDomain": "iprogrammer.com",
+    "atsPlatform": "official-first-party-job-listing-page"
+  }
+]

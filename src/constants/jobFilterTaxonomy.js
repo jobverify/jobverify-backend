@@ -67,11 +67,19 @@ export const WORK_ARRANGEMENT_OPTIONS = Object.freeze([
   "Remote",
   "Hybrid",
   "On-site",
-  "Flexible",
   "Not specified",
 ]);
 
-export const DATE_POSTED_OPTIONS = Object.freeze([1, 3, 7, 14, 30]);
+export const DATE_POSTED_NA_VALUE = "na";
+
+export const DATE_POSTED_WINDOW_OPTIONS = Object.freeze(
+  Array.from({ length: 31 }, (_, index) => index),
+);
+
+export const DATE_POSTED_OPTIONS = Object.freeze([
+  ...DATE_POSTED_WINDOW_OPTIONS,
+  DATE_POSTED_NA_VALUE,
+]);
 
 export const SKILL_MATCH_MODE_OPTIONS = Object.freeze([
   { value: "any", label: "Match any selected skill" },

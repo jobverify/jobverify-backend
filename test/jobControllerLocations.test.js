@@ -7,9 +7,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import Job from '../src/models/Job.js'
+import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
 import { ACCESS_ROLES, PLAN_IDS } from '../src/constants/accessPlans.js'
 import { getAllJobs, getJobMeta } from '../src/controllers/jobController.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
 
 // Creates a mock response object for controller tests.
 const createResponseDouble = () => ({
@@ -28,7 +28,27 @@ const createResponseDouble = () => ({
   },
 })
 
-const getCoreFilter = (filter) => filter?.$and?.[0] ?? filter
+const createSummaryFindOneStub = (summary) => () => ({
+  lean() {
+    return this
+  },
+  exec: async () => summary,
+})
+
+const createAggregateExecStub = (handler) => (pipeline) => ({
+  exec: async () => handler(pipeline),
+})
+
+const getCoreFilter = (filter) => {
+  if (!filter || typeof filter !== 'object') return {}
+
+  const keys = Object.keys(filter)
+  if (keys.some((key) => key !== '$and')) {
+    return filter
+  }
+
+  return Array.isArray(filter.$and) ? filter.$and[0] ?? {} : filter
+}
 
 const collectExperienceYearsFilters = (node) => {
   if (!node || typeof node !== 'object' || node instanceof RegExp) return []
@@ -215,10 +235,11 @@ test('getAllJobs matches city filters against expanded location keys', async () 
     }, res)
 
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(capturedFilter.$and))
-    assert.equal(capturedFilter.$and[0].status, 'active')
-    assert.equal(capturedFilter.$and[0].$or, undefined)
-    assert.equal(capturedFilter.$and[0].locationKeys, 'bangalore')
+    const coreFilter = getCoreFilter(capturedFilter)
+    assert.equal(coreFilter.status, 'active')
+    assert.equal(coreFilter.isPublicIndia, true)
+    assert.equal(coreFilter.$or, undefined)
+    assert.equal(coreFilter.locationKeys, 'bangalore')
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
@@ -274,7 +295,8 @@ test('getAllJobs maps the Intern UI filter to stored internship job types', asyn
     }, res)
 
     assert.equal(res.statusCode, 200)
-    assert.deepEqual(capturedFilter.$and[0].jobType, {
+    const coreFilter = getCoreFilter(capturedFilter)
+    assert.deepEqual(coreFilter.jobType, {
       $in: ['Intern', 'Internship'],
     })
   } finally {
@@ -286,15 +308,16 @@ test('getAllJobs maps the Intern UI filter to stored internship job types', asyn
 
 // Verifies that city metadata option merging filters and cleans raw location entries.
 test('getJobMeta merges expanded locations and removes grouped count labels', async () => {
-  const originalDistinct = Job.distinct
+  const originalSummaryFindOne = JobDatasetSummary.findOne
 
-  // Mocks Job.distinct to return stubbed database values.
-  Job.distinct = async (field) => {
-    if (field === 'company') return ['Salesforce']
-    if (field === 'city') return ['3 Locations', 'Hyderabad', 'Bangalore', 'Pune']
-    if (field === 'jobType') return ['Full-time']
-    return []
-  }
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    companies: ['Salesforce'],
+    cities: ['3 Locations', 'Hyderabad', 'Bangalore', 'Pune'],
+    jobTypes: ['Full-time'],
+    totalJobs: 1,
+    totalCompanies: 1,
+  })
 
   try {
     const res = createResponseDouble()
@@ -309,12 +332,15 @@ test('getJobMeta merges expanded locations and removes grouped count labels', as
     ])
     assert.deepEqual(res.body.data.jobTypes, ['Full-time Experienced'])
   } finally {
-    Job.distinct = originalDistinct
+    JobDatasetSummary.findOne = originalSummaryFindOne
   }
 })
 
 test('getJobMeta removes non-India city options and canonicalizes India location labels', async () => {
   const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
+  const originalCountDocuments = Job.countDocuments
+  const originalSummaryFindOne = JobDatasetSummary.findOne
 
   Job.distinct = async (field) => {
     if (field === 'company') return ['Salesforce']
@@ -334,11 +360,42 @@ test('getJobMeta removes non-India city options and canonicalizes India location
     if (field === 'jobType') return ['Full-time']
     return []
   }
+  Job.aggregate = createAggregateExecStub(async () => [{ company: 'Salesforce' }])
+  Job.countDocuments = async () => 1
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    companies: ['Salesforce'],
+    cities: [
+      'Bangalore, KA, India',
+      'India Offsite (ZIN99)',
+      'Pune',
+      'India, Airoli, 400708',
+      'India,Jhajjar,124108',
+      'Nagpur, Maharashtra, India',
+      'Ind â€“ Blr Sez 1 (3Rd, 6Th & 7Th Floor)',
+      'Austin',
+      '1 Smith Haven Mall, Lake Grove, New York',
+    ],
+    jobTypes: ['Full-time'],
+    totalJobs: 1,
+    totalCompanies: 1,
+  })
 
   try {
     const res = createResponseDouble()
 
-    await getJobMeta({}, res)
+    await getJobMeta({
+      query: { company: 'Salesforce' },
+      user: {
+        role: 'user',
+        accessRole: ACCESS_ROLES.MONTHLY,
+        premium: {
+          planId: PLAN_IDS.MONTHLY,
+          status: 'active',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      },
+    }, res)
 
     assert.equal(res.statusCode, 200)
     assert.deepEqual(res.body.data.cities, [
@@ -351,11 +408,17 @@ test('getJobMeta removes non-India city options and canonicalizes India location
     ])
   } finally {
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    Job.countDocuments = originalCountDocuments
+    JobDatasetSummary.findOne = originalSummaryFindOne
   }
 })
 
 test('getJobMeta removes markup, code, and grouped-count noise from city options', async () => {
   const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
+  const originalCountDocuments = Job.countDocuments
+  const originalSummaryFindOne = JobDatasetSummary.findOne
 
   Job.distinct = async (field) => {
     if (field === 'company') return ['Salesforce']
@@ -371,6 +434,69 @@ test('getJobMeta removes markup, code, and grouped-count noise from city options
     if (field === 'jobType') return ['Full-time']
     return []
   }
+  Job.aggregate = createAggregateExecStub(async () => [{ company: 'Salesforce' }])
+  Job.countDocuments = async () => 1
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    companies: ['Salesforce'],
+    cities: [
+      '<span class="jobLocation">DL, India',
+      '<span class="jobLocation">Mohali, India',
+      "$($('#location').val(), India",
+      '2 Locations, India',
+      'Delhi, India',
+    ],
+    jobTypes: ['Full-time'],
+    totalJobs: 1,
+    totalCompanies: 1,
+  })
+
+  try {
+    const res = createResponseDouble()
+
+    await getJobMeta({
+      query: { company: 'Salesforce' },
+      user: {
+        role: 'user',
+        accessRole: ACCESS_ROLES.MONTHLY,
+        premium: {
+          planId: PLAN_IDS.MONTHLY,
+          status: 'active',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      },
+    }, res)
+
+    assert.equal(res.statusCode, 200)
+    assert.deepEqual(res.body.data.cities, ['Delhi'])
+  } finally {
+    Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    Job.countDocuments = originalCountDocuments
+    JobDatasetSummary.findOne = originalSummaryFindOne
+  }
+})
+
+test('getJobMeta excludes office codes while retaining the city embedded in an India address', async () => {
+  const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
+  const originalCountDocuments = Job.countDocuments
+  const originalSummaryFindOne = JobDatasetSummary.findOne
+
+  Job.distinct = async (field) => {
+    if (field === 'city') {
+      return [
+        '1007 - DXN, TPT, Tirupati, Andhra Pradesh, India',
+        '6004 - DEAPL SECTOR-85, Noida, Uttar Pradesh, India',
+        'Indore, Madhya Pradesh, India',
+      ]
+    }
+    if (field === 'jobType') return ['Full-time']
+    return []
+  }
+  Job.aggregate = createAggregateExecStub(async () => [])
+  Job.countDocuments = async () => 2
+  JobDatasetSummary.findOne = createSummaryFindOneStub(null)
 
   try {
     const res = createResponseDouble()
@@ -378,14 +504,19 @@ test('getJobMeta removes markup, code, and grouped-count noise from city options
     await getJobMeta({}, res)
 
     assert.equal(res.statusCode, 200)
-    assert.deepEqual(res.body.data.cities, ['Delhi'])
+    assert.deepEqual(res.body.data.cities, ['Indore', 'Noida', 'Tirupati'])
   } finally {
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    Job.countDocuments = originalCountDocuments
+    JobDatasetSummary.findOne = originalSummaryFindOne
   }
 })
 
 test('getJobMeta returns the fixed 0-15 experience filter options', async () => {
   const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
+  const originalSummaryFindOne = JobDatasetSummary.findOne
 
   Job.distinct = async (field) => {
     if (field === 'company') return ['Salesforce']
@@ -393,6 +524,15 @@ test('getJobMeta returns the fixed 0-15 experience filter options', async () => 
     if (field === 'jobType') return ['Full-time']
     return []
   }
+  Job.aggregate = createAggregateExecStub(async () => [{ company: 'Salesforce' }])
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    companies: ['Salesforce'],
+    cities: ['Bangalore'],
+    jobTypes: ['Full-time'],
+    totalJobs: 1,
+    totalCompanies: 1,
+  })
 
   try {
     const res = createResponseDouble()
@@ -406,11 +546,15 @@ test('getJobMeta returns the fixed 0-15 experience filter options', async () => 
     )
   } finally {
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    JobDatasetSummary.findOne = originalSummaryFindOne
   }
 })
 
 test('getJobMeta returns the first-release filter taxonomy options', async () => {
   const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
+  const originalSummaryFindOne = JobDatasetSummary.findOne
 
   Job.distinct = async (field) => {
     if (field === 'company') return ['Salesforce']
@@ -418,6 +562,15 @@ test('getJobMeta returns the first-release filter taxonomy options', async () =>
     if (field === 'jobType') return ['Full-time']
     return []
   }
+  Job.aggregate = createAggregateExecStub(async () => [{ company: 'Salesforce' }])
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    companies: ['Salesforce'],
+    cities: ['Bangalore'],
+    jobTypes: ['Full-time'],
+    totalJobs: 1,
+    totalCompanies: 1,
+  })
 
   try {
     const res = createResponseDouble()
@@ -437,17 +590,26 @@ test('getJobMeta returns the first-release filter taxonomy options', async () =>
       { value: 'all', label: 'Required or preferred skills' },
       { value: 'required', label: 'Required skills only' },
     ])
-    assert.deepEqual(res.body.data.datePostedOptions, [1, 3, 7, 14, 30])
+    assert.deepEqual(res.body.data.datePostedOptions, [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+      'na',
+    ])
   } finally {
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    JobDatasetSummary.findOne = originalSummaryFindOne
   }
 })
 
 test('getJobMeta scopes each option group by the other active filters', async () => {
   const originalCountDocuments = Job.countDocuments
   const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
   const originalFind = Job.find
   const capturedFilters = new Map()
+  let capturedCompanyFilter = null
 
   Job.countDocuments = async () => 1
   Job.distinct = async (field, filter) => {
@@ -460,6 +622,10 @@ test('getJobMeta scopes each option group by the other active filters', async ()
     if (field === 'experienceYears') return [0, 1]
     return []
   }
+  Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    capturedCompanyFilter = pipeline[0].$match
+    return [{ company: 'Acme Labs' }]
+  })
   Job.find = () => {
     throw new Error('scoped metadata should not load jobs for experience options')
   }
@@ -489,35 +655,36 @@ test('getJobMeta scopes each option group by the other active filters', async ()
 
     assert.equal(res.statusCode, 200)
 
-    const companyFilter = capturedFilters.get('company')
-    assert.equal(companyFilter.$and[0].companyKey, undefined)
-    assert.equal(companyFilter.$and[0].locationKeys, 'bangalore')
-    assert.deepEqual(companyFilter.$and[0].jobType, { $in: ['Intern', 'Internship'] })
-    assert.equal(companyFilter.$and[0].primaryRoleDomain, 'Data Science & AI')
-    assert.equal(companyFilter.$and[0].workArrangement, 'Remote')
-    assert.ok(companyFilter.$and[0].postedAt.$gte instanceof Date)
+    const companyFilter = capturedCompanyFilter ?? capturedFilters.get('company')
+    assert.equal(companyFilter.companyKey, undefined)
+    assert.equal(companyFilter.locationKeys, 'bangalore')
+    assert.deepEqual(companyFilter.jobType, { $in: ['Intern', 'Internship'] })
+    assert.equal(companyFilter.primaryRoleDomain, 'Data Science & AI')
+    assert.equal(companyFilter.workArrangement, 'Remote')
+    assert.ok(companyFilter.postedAt.$gte instanceof Date)
     assert.deepEqual(res.body.data.experienceYears, [0, 1])
 
     const cityFilter = capturedFilters.get('city')
-    assert.equal(cityFilter.$and[0].locationKeys, undefined)
-    assert.equal(cityFilter.$and[0].companyKey, 'acme labs')
-    assert.deepEqual(cityFilter.$and[0].jobType, { $in: ['Intern', 'Internship'] })
+    assert.equal(cityFilter.locationKeys, undefined)
+    assert.equal(cityFilter.companyKey, 'acme labs')
+    assert.deepEqual(cityFilter.jobType, { $in: ['Intern', 'Internship'] })
 
     const jobTypeFilter = capturedFilters.get('jobType')
-    assert.deepEqual(jobTypeFilter.$and[0].jobType, { $ne: null })
-    assert.equal(jobTypeFilter.$and[0].companyKey, 'acme labs')
-    assert.equal(jobTypeFilter.$and[0].locationKeys, 'bangalore')
+    assert.deepEqual(jobTypeFilter.jobType, { $ne: null })
+    assert.equal(jobTypeFilter.companyKey, 'acme labs')
+    assert.equal(jobTypeFilter.locationKeys, 'bangalore')
 
     const roleDomainFilter = capturedFilters.get('primaryRoleDomain')
-    assert.deepEqual(roleDomainFilter.$and[0].primaryRoleDomain, { $ne: null })
-    assert.equal(roleDomainFilter.$and[0].companyKey, 'acme labs')
+    assert.deepEqual(roleDomainFilter.primaryRoleDomain, { $ne: null })
+    assert.equal(roleDomainFilter.companyKey, 'acme labs')
 
     const workArrangementFilter = capturedFilters.get('workArrangement')
-    assert.deepEqual(workArrangementFilter.$and[0].workArrangement, { $ne: null })
-    assert.equal(workArrangementFilter.$and[0].companyKey, 'acme labs')
+    assert.deepEqual(workArrangementFilter.workArrangement, { $ne: null })
+    assert.equal(workArrangementFilter.companyKey, 'acme labs')
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
     Job.find = originalFind
   }
 })
@@ -579,12 +746,15 @@ test('getAllJobs applies advanced filter fields for skills, role domain, seniori
     }, res)
 
     assert.equal(res.statusCode, 200)
-    assert.equal(capturedFilter.$and[0].experienceBucket, '3-5')
-    assert.equal(capturedFilter.$and[0].primaryRoleDomain, 'Data Science & AI')
-    assert.equal(capturedFilter.$and[0].seniority, 'Senior')
-    assert.equal(capturedFilter.$and[0].workArrangement, 'Remote')
-    assert.deepEqual(capturedFilter.$and[0].requiredSkillIds, { $all: ['python', 'aws'] })
-    assert.ok(capturedFilter.$and[0].postedAt.$gte instanceof Date)
+    const coreFilter = getCoreFilter(capturedFilter)
+    assert.equal(coreFilter.experienceBucket, '3-5')
+    assert.equal(coreFilter.primaryRoleDomain, 'Data Science & AI')
+    assert.equal(coreFilter.seniority, 'Senior')
+    assert.equal(coreFilter.workArrangement, 'Remote')
+    assert.equal(coreFilter.isPublicIndia, true)
+    assert.deepEqual(coreFilter.requiredSkillIds, { $all: ['python', 'aws'] })
+    assert.ok(coreFilter.postedAt.$gte instanceof Date)
+    assert.ok(coreFilter.postedAt.$lt instanceof Date)
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
@@ -649,25 +819,40 @@ test('getAllJobs applies multiselect arrays for visible filters', async () => {
     }, res)
 
     assert.equal(res.statusCode, 200)
+    const coreFilter = getCoreFilter(capturedFilter)
     assert.deepEqual(
-      capturedFilter.$and[0].companyKey,
+      coreFilter.companyKey,
       { $in: ['acme labs', 'cloudworks'] },
     )
-    assert.deepEqual(capturedFilter.$and[0].experienceBucket, { $in: ['0-1', '3-5'] })
-    assert.equal(hasExperienceYearsFilter(capturedFilter.$and[0], [0]), true)
-    assert.equal(hasExperienceYearsFilter(capturedFilter.$and[0], [3]), true)
-    assert.deepEqual(capturedFilter.$and[0].primaryRoleDomain, {
+    assert.deepEqual(coreFilter.experienceBucket, { $in: ['0-1', '3-5'] })
+    assert.equal(hasExperienceYearsFilter(coreFilter, [0]), true)
+    assert.equal(hasExperienceYearsFilter(coreFilter, [3]), true)
+    assert.deepEqual(coreFilter.primaryRoleDomain, {
       $in: ['Data Science & AI', 'Sales & Customer Success'],
     })
-    assert.deepEqual(capturedFilter.$and[0].workArrangement, { $in: ['Remote', 'Hybrid'] })
-    assert.deepEqual(capturedFilter.$and[0].jobType, {
+    assert.deepEqual(coreFilter.workArrangement, { $in: ['Remote', 'Hybrid'] })
+    assert.deepEqual(coreFilter.jobType, {
       $in: ['Intern', 'Internship', 'Full-time Experienced', 'Full-time'],
     })
     assert.deepEqual(
-      capturedFilter.$and[0].locationKeys,
+      coreFilter.locationKeys,
       { $in: ['bangalore', 'pune'] },
     )
-    assert.ok(capturedFilter.$and[0].postedAt.$gte instanceof Date)
+    assert.equal(coreFilter.isPublicIndia, true)
+    assert.ok(coreFilter.$or.some((clause) => clause.postedAt.$gte instanceof Date))
+    assert.ok(coreFilter.$or.some((clause) => clause.postedAt.$lt instanceof Date))
+
+    const missingDateResponse = createResponseDouble()
+    await getAllJobs({
+      query: { datePostedDays: 'na' },
+      user: {
+        role: 'user',
+        accessRole: ACCESS_ROLES.MONTHLY,
+        premium: { planId: PLAN_IDS.MONTHLY, status: 'active', expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
+      },
+    }, missingDateResponse)
+    const missingDateFilter = getCoreFilter(capturedFilter)
+    assert.equal(missingDateFilter.postedAt, null)
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
@@ -675,7 +860,7 @@ test('getAllJobs applies multiselect arrays for visible filters', async () => {
   }
 })
 
-test('getAllJobs falls back to visible experience text when experienceYears are not backfilled', async () => {
+test('getAllJobs requires stored experienceYears instead of reparsing visible experience text', async () => {
   const originalCountDocuments = Job.countDocuments
   const originalDistinct = Job.distinct
   const originalFind = Job.find
@@ -768,7 +953,7 @@ test('getAllJobs falls back to visible experience text when experienceYears are 
   }
 
   const applyExperienceFilter = (filter) => {
-    const coreFilter = filter?.$and?.[0] ?? filter
+    const coreFilter = getCoreFilter(filter)
     const clauses = Array.isArray(coreFilter?.$and) ? coreFilter.$and : []
     const matchesStoredYears = (job) => (
       !coreFilter?.experienceYears || matchesExperienceYearsCondition(job, coreFilter)
@@ -824,12 +1009,9 @@ test('getAllJobs falls back to visible experience text when experienceYears are 
     }, res)
 
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.pagination.total, 2)
-    assert.equal(res.body.pagination.totalCompanies, 2)
-    assert.deepEqual(
-      res.body.data.map((job) => job.title),
-      ['Legacy Range Match', 'Legacy Open Match'],
-    )
+    assert.equal(res.body.pagination.total, 0)
+    assert.equal(res.body.pagination.totalCompanies, 0)
+    assert.deepEqual(res.body.data, [])
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
@@ -959,10 +1141,7 @@ test('getAllJobs filters jobs with no experience specified separately from zero 
   }
 
   const applyExperienceFilter = (filter) => {
-    const coreFilter = filter?.$and?.[0] ?? filter
-    const clauses = Array.isArray(coreFilter?.$and) ? coreFilter.$and : []
-
-    return jobs.filter((job) => clauses.every((clause) => matchesClause(job, clause)))
+    return jobs.filter((job) => matchesExperienceFilters(job, filter))
   }
 
   Job.countDocuments = async (filter) => applyExperienceFilter(filter).length
@@ -1217,7 +1396,7 @@ test('getAllJobs filters by stored experienceYears before returning the page', a
   }
 })
 
-test('getAllJobs applies every 0-15 experience option against visible requirements', async () => {
+test('getAllJobs applies every 0-15 experience option against stored experienceYears', async () => {
   const originalCountDocuments = Job.countDocuments
   const originalDistinct = Job.distinct
   const originalFind = Job.find
@@ -1287,6 +1466,7 @@ test('getAllJobs applies every 0-15 experience option against visible requiremen
     ...(year >= 3 && year <= 5 ? ['Three To Five Year Engineer'] : []),
     ...(year === 0 ? ['Freshers Welcome Engineer'] : []),
     ...(year >= 7 ? ['Seven Plus Engineer'] : []),
+    ...(year === 0 ? [] : [`Stale Stored ${year} Visible ${mismatchedVisibleYearFor(year)} Engineer`]),
   ]
   let activeExperienceJobs = []
 
@@ -1357,6 +1537,7 @@ test('getAllJobs applies every 0-15 experience option against visible requiremen
 test('getJobMeta scopes company options through stored experienceYears without loading candidate jobs', async () => {
   const originalCountDocuments = Job.countDocuments
   const originalDistinct = Job.distinct
+  const originalAggregate = Job.aggregate
   const originalFind = Job.find
 
   const jobs = [
@@ -1377,14 +1558,12 @@ test('getJobMeta scopes company options through stored experienceYears without l
       experienceYears: [5],
     },
   ]
-  const countFilters = []
+  let capturedCompanyFilter = null
 
-  Job.countDocuments = async (filter) => {
-    countFilters.push(filter)
-    return 1
-  }
+  Job.countDocuments = async () => 1
   Job.distinct = async (field, filter = {}) => {
     if (field === 'company') {
+      capturedCompanyFilter = filter
       return jobs
         .filter((job) => matchesExperienceFilters(job, filter))
         .map((job) => job.company)
@@ -1396,6 +1575,13 @@ test('getJobMeta scopes company options through stored experienceYears without l
     if (field === 'workArrangement') return []
     return []
   }
+  Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    const companyFilter = pipeline[0].$match
+    capturedCompanyFilter = companyFilter
+    return jobs
+      .filter((job) => matchesExperienceFilters(job, companyFilter))
+      .map((job) => ({ company: job.company }))
+  })
   Job.find = () => {
     throw new Error('scoped metadata should not load jobs for experience filtering')
   }
@@ -1419,29 +1605,38 @@ test('getJobMeta scopes company options through stored experienceYears without l
     assert.equal(res.statusCode, 200)
     assert.deepEqual(res.body.data.companies, ['Acme Labs'])
     assert.deepEqual(res.body.data.experienceYears, [3, 5])
-    assert.equal(
-      countFilters.every((filter) => hasExperienceYearsFilter(filter, [3])),
-      true,
-    )
+    assert.equal(hasExperienceYearsFilter(capturedCompanyFilter, [3]), true)
   } finally {
     Job.countDocuments = originalCountDocuments
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
     Job.find = originalFind
   }
 })
 
-test('getJobMeta includes scraper catalog companies alongside active job companies without duplicates', async () => {
+test('getJobMeta omits the default company list from the unscoped metadata payload', async () => {
   const originalDistinct = Job.distinct
-  const [catalogCompany] = getScraperCatalog()
-    .map((provider) => provider.companyName)
-    .filter(Boolean)
+  const originalAggregate = Job.aggregate
+  const originalSummaryFindOne = JobDatasetSummary.findOne
 
   Job.distinct = async (field) => {
-    if (field === 'company') return [catalogCompany, 'Salesforce']
+    if (field === 'company') return ['Salesforce', 'Acme Labs']
     if (field === 'city') return ['Hyderabad']
     if (field === 'jobType') return ['Full-time']
     return []
   }
+  Job.aggregate = createAggregateExecStub(async () => [
+    { company: 'Salesforce' },
+    { company: 'Acme Labs' },
+  ])
+  JobDatasetSummary.findOne = createSummaryFindOneStub({
+    key: 'public-active',
+    companies: ['Acme Labs', 'Salesforce'],
+    cities: ['Hyderabad'],
+    jobTypes: ['Full-time'],
+    totalJobs: 2,
+    totalCompanies: 2,
+  })
 
   try {
     const res = createResponseDouble()
@@ -1449,14 +1644,12 @@ test('getJobMeta includes scraper catalog companies alongside active job compani
     await getJobMeta({}, res)
 
     assert.equal(res.statusCode, 200)
-    assert.ok(res.body.data.companies.includes('Salesforce'))
-    assert.ok(res.body.data.companies.includes(catalogCompany))
-    assert.equal(
-      res.body.data.companies.filter((company) => company === catalogCompany).length,
-      1,
-    )
-    assert.ok(res.body.data.companies.length > 2)
+    assert.deepEqual(res.body.data.companies, [])
+    assert.deepEqual(res.body.data.cities, ['Hyderabad'])
+    assert.deepEqual(res.body.data.jobTypes, ['Full-time Experienced'])
   } finally {
     Job.distinct = originalDistinct
+    Job.aggregate = originalAggregate
+    JobDatasetSummary.findOne = originalSummaryFindOne
   }
 })

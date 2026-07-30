@@ -22,7 +22,8 @@ const PendingUserSchema = new Schema(
       default: "user",
     },
     profile: {
-      name: { type: String, required: true }
+      name: { type: String, required: true },
+      phoneE164: { type: String, default: null },
     },
     verificationToken: { type: String, default: null },
     verificationTokenHash: { type: String, required: true },

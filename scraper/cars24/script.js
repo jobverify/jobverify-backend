@@ -14,7 +14,7 @@ export const JOBS_API_URL = 'https://api.cars24.com/gw/plt/bffsvc/api/jobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const DETAIL_CONCURRENCY = 6
+const DETAIL_CONCURRENCY = 2
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -223,6 +223,9 @@ export const hasVerifiedJobDetailShape = (payload) =>
     || normalizeWhitespace(payload?.data?.designation_code),
   )
 
+const isTransientDetailEnrichmentError = (error) => /HTTP 429\b|HTTP 5\d\d\b|fetch failed|timed out|aborted due to timeout/i
+  .test(String(error?.message ?? ''))
+
 const buildJobFromListing = (entry, { scrapedAt } = {}) => {
   const title = normalizeWhitespace(entry?.job_title)
   const jobId = normalizeWhitespace(entry?.job_id)
@@ -374,12 +377,21 @@ const enrichJobsWithDetails = async (jobs, { fetchJson, detailConcurrency }) => 
 
   for (const chunk of chunkArray(jobs, detailConcurrency)) {
     const detailedChunk = await Promise.all(chunk.map(async (job) => {
-      const payload = await fetchJson(buildJobDetailApiUrl(job.jobId))
-      if (!hasVerifiedJobDetailShape(payload)) {
-        throw new Error(`Cars24 job detail API no longer returns the verified contract for ${job.jobId}`)
-      }
+      try {
+        const payload = await fetchJson(buildJobDetailApiUrl(job.jobId))
+        if (!hasVerifiedJobDetailShape(payload)) {
+          throw new Error(`Cars24 job detail API no longer returns the verified contract for ${job.jobId}`)
+        }
 
-      return mergeJobDetailIntoJob(job, payload)
+        return mergeJobDetailIntoJob(job, payload)
+      } catch (error) {
+        if (!isTransientDetailEnrichmentError(error)) {
+          throw error
+        }
+
+        console.warn(`  [cars24] Failed to enrich ${job.jobId}; keeping listing-level data: ${error.message}`)
+        return job
+      }
     }))
 
     enrichedJobs.push(...detailedChunk)

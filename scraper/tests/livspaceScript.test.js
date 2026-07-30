@@ -10,7 +10,7 @@ const officialCareersPageHtml = `
     <title>Where passion for design meets technology</title>
   </head>
   <body>
-    <h2>Let's shape the future of home interiors, together</h2>
+    <h2>Let&#8217;s shape the future of home interiors, together</h2>
     <a href="https://careers.livspace.com/livspace/">VIEW OPEN POSITIONS</a>
   </body>
 </html>
@@ -25,16 +25,6 @@ const boardShellHtml = `
   </head>
   <body>
     <app-root></app-root>
-    <section>Current Openings</section>
-    <script>
-      const Ga = {
-        COMPANYID: "MTU5MTk=",
-        DOMAIN: "careers.livspace.com",
-        APIENDPOINT: "https://public.zwayam.com/",
-        APIENDPOINTNEW: "https://public.zwayam.com/",
-        TENANTAPIURL: "https://public.zwayam.com"
-      };
-    </script>
     <script src="main.3a21edc16c1873b1.js"></script>
   </body>
 </html>

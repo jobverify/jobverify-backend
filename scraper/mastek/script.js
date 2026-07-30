@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
+
 import { MASTEK_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -171,7 +173,7 @@ export const hasOfficialSearchResultsSignal = (html = '') => {
 
   return /<title>\s*Mastek Limited Jobs\s*<\/title>/i.test(page)
     && /id="job-tile-list"/i.test(page)
-    && /class="jobTitle-link"/i.test(page)
+    && /class=["'][^"']*\bjobTitle-link\b/i.test(page)
     && /tile-search-results-label/i.test(page)
     && /jobRecordsFound:\s*parseInt\("\d+"\)/i.test(page)
 }
@@ -197,11 +199,17 @@ export const extractSearchResults = (html) => {
     .map((rowMatch) => {
       const rowHtml = rowMatch[0]
       const relativeLink = normalizeWhitespace(
-        extractFirst(/<a(?=[^>]*class="jobTitle-link")(?=[^>]*href="([^"]+)")[^>]*>/i, rowHtml),
+        extractFirst(
+          /<a(?=[^>]*class=["'][^"']*\bjobTitle-link\b[^"']*["'])(?=[^>]*href="([^"]+)")[^>]*>/i,
+          rowHtml,
+        ),
       )
       const sourceUrl = toAbsoluteUrl(relativeLink)
       const title = normalizeWhitespace(
-        extractFirst(/<a[^>]*class="jobTitle-link"[^>]*>([\s\S]*?)<\/a>/i, rowHtml),
+        extractFirst(
+          /<a[^>]*class=["'][^"']*\bjobTitle-link\b[^"']*["'][^>]*>([\s\S]*?)<\/a>/i,
+          rowHtml,
+        ),
       )
       const location = normalizeIndiaLocation(extractSectionValueByLabel(rowHtml, 'Location'))
       const department = extractSectionValueByLabel(rowHtml, 'Department')
@@ -299,88 +307,128 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const isExpectedOfficialCareers403Error = (error) =>
+  /HTTP 403\b/i.test(String(error?.message ?? error))
+  && String(error?.message ?? error).includes(OFFICIAL_CAREERS_URL)
+
 export const createMastekScraper = () => ({
   async run({
     maxPages = Number.POSITIVE_INFINITY,
     maxJobs = null,
     fetchText = defaultFetchText,
+    fetchBrowserText,
     now = () => new Date().toISOString(),
   } = {}) {
-    const officialCareersHtml = await fetchText(OFFICIAL_CAREERS_URL)
-    if (!hasOfficialMastekCareersSignals(officialCareersHtml)) {
-      throw new Error('Mastek verified official Mastek careers page no longer matches the known public surface')
-    }
+    let browserSession = null
 
-    const jobs = []
-    const seenJobIds = new Set()
-    const pageLimit = Number.isInteger(maxPages) ? maxPages : Number.POSITIVE_INFINITY
-    let startRow = 0
-    let pageNumber = 1
-
-    while (pageNumber <= pageLimit) {
-      const listingHtml = await fetchText(buildSearchUrl(startRow || null))
-
-      if (
-        pageNumber === 1
-        && !hasOfficialSearchResultsSignal(listingHtml)
-        && !hasOfficialEmptyStateSignal(listingHtml)
-      ) {
-        throw new Error('Response is not the verified official Mastek jobs page')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
       }
 
-      const rawTileCount = countJobTiles(listingHtml)
-      if (rawTileCount === 0) return jobs
+      return browserSession
+    }
 
-      const listings = extractSearchResults(listingHtml)
-      const summary = extractResultsSummary(listingHtml)
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
 
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailHtml = await fetchText(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          jobId: detail.jobId || listing.jobId,
-          requisitionId: detail.requisitionId || listing.requisitionId,
-          title: detail.title || listing.title,
-          company: COMPANY,
-          businessUnit: detail.businessUnit || listing.businessUnit || null,
-          department: detail.department || listing.department || null,
-          location: detail.location || listing.location,
-          city: detail.city || listing.city,
-          country: detail.country || listing.country || 'India',
-          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-          applyUrl: detail.applyUrl || listing.sourceUrl,
-          sourceUrl: detail.sourceUrl || listing.sourceUrl,
-          source: SOURCE,
-          employmentType: detail.employmentType,
-          experienceRequired: detail.experienceRequired,
-          jobDescription: detail.jobDescription,
-          minimumQualification: detail.minimumQualification,
-          preferredQualification: detail.preferredQualification,
-          requiredSkills: detail.requiredSkills,
-          postingDate: detail.postingDate || listing.postingDate,
-          closingDate: detail.closingDate,
-          scrapedAt: now(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+    try {
+      let officialCareersHtml
+      try {
+        officialCareersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+      } catch (error) {
+        if (!isExpectedOfficialCareers403Error(error)) {
+          throw error
         }
+
+        officialCareersHtml = await browserTextFetcher(OFFICIAL_CAREERS_URL)
       }
 
-      const pageSize = summary.pageSize || DEFAULT_PAGE_SIZE
-      if (!summary.totalResults || startRow + pageSize >= summary.totalResults) {
-        break
+      if (!hasOfficialMastekCareersSignals(officialCareersHtml)) {
+        officialCareersHtml = await browserTextFetcher(OFFICIAL_CAREERS_URL)
       }
 
-      startRow += pageSize
-      pageNumber += 1
+      if (!hasOfficialMastekCareersSignals(officialCareersHtml)) {
+        throw new Error('Mastek verified official Mastek careers page no longer matches the known public surface')
+      }
+
+      const jobs = []
+      const seenJobIds = new Set()
+      const pageLimit = Number.isInteger(maxPages) ? maxPages : Number.POSITIVE_INFINITY
+      let startRow = 0
+      let pageNumber = 1
+
+      while (pageNumber <= pageLimit) {
+        const listingHtml = await fetchText(buildSearchUrl(startRow || null))
+
+        if (
+          pageNumber === 1
+          && !hasOfficialSearchResultsSignal(listingHtml)
+          && !hasOfficialEmptyStateSignal(listingHtml)
+        ) {
+          throw new Error('Response is not the verified official Mastek jobs page')
+        }
+
+        const rawTileCount = countJobTiles(listingHtml)
+        if (rawTileCount === 0) return jobs
+
+        const listings = extractSearchResults(listingHtml)
+        const summary = extractResultsSummary(listingHtml)
+
+        for (const listing of listings) {
+          if (seenJobIds.has(listing.jobId)) continue
+          seenJobIds.add(listing.jobId)
+
+          const detailHtml = await fetchText(listing.sourceUrl)
+          const detail = extractJobDetail(detailHtml, listing)
+
+          jobs.push({
+            jobId: detail.jobId || listing.jobId,
+            requisitionId: detail.requisitionId || listing.requisitionId,
+            title: detail.title || listing.title,
+            company: COMPANY,
+            businessUnit: detail.businessUnit || listing.businessUnit || null,
+            department: detail.department || listing.department || null,
+            location: detail.location || listing.location,
+            city: detail.city || listing.city,
+            country: detail.country || listing.country || 'India',
+            link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+            applyUrl: detail.applyUrl || listing.sourceUrl,
+            sourceUrl: detail.sourceUrl || listing.sourceUrl,
+            source: SOURCE,
+            employmentType: detail.employmentType,
+            experienceRequired: detail.experienceRequired,
+            jobDescription: detail.jobDescription,
+            minimumQualification: detail.minimumQualification,
+            preferredQualification: detail.preferredQualification,
+            requiredSkills: detail.requiredSkills,
+            postingDate: detail.postingDate || listing.postingDate,
+            closingDate: detail.closingDate,
+            scrapedAt: now(),
+          })
+
+          if (maxJobs && jobs.length >= maxJobs) {
+            return jobs
+          }
+        }
+
+        const pageSize = summary.pageSize || DEFAULT_PAGE_SIZE
+        if (!summary.totalResults || startRow + pageSize >= summary.totalResults) {
+          break
+        }
+
+        startRow += pageSize
+        pageNumber += 1
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    return jobs
   },
 })
 

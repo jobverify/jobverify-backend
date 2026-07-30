@@ -4,35 +4,66 @@ import test from 'node:test'
 const searchPageOneHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Aurigo Software Technologies Jobs</title>
+  </head>
   <body>
-    <h1>Search results for "".</h1>
-    <p>Results 1 – 5 of 6 Page 1 of 2</p>
-    <a href="https://careers.aurigo.com/search/?q=&sortColumn=referencedate&sortDirection=desc&startrow=5">2</a>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Manager-Legal/1/">Manager - Legal</a>
-      <span>IN</span>
-      <span>Nov 25, 2025</span>
+    <h1 class="keyword-title">Search results for<span class="securitySearchQuery"> "".</span></h1>
+    <div class="pagination-label-row">
+      <span class="paginationLabel" aria-label="Results 1 – 5">Results <b>1 – 5</b> of <b>6</b></span>
+      <span class="srHelp">Page 1 of 2</span>
     </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Software-Engineer-II/2/">Software Engineer II</a>
-      <span>IN</span>
-      <span>Nov 13, 2025</span>
-    </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Information-Developer-II/3/">Information Developer II</a>
-      <span>IN</span>
-      <span>Nov 11, 2025</span>
-    </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Sales-Engineer/4/">Sales Engineer</a>
-      <span>US</span>
-      <span>Nov 7, 2025</span>
-    </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Information-Developer-II-2/5/">Information Developer - II</a>
-      <span>IN</span>
-      <span>Nov 6, 2025</span>
-    </div>
+    <ul class="pagination">
+      <li class="active"><a href="?q=&amp;sortColumn=referencedate&amp;sortDirection=desc" class="current-page">1</a></li>
+      <li><a href="?q=&amp;sortColumn=referencedate&amp;sortDirection=desc&amp;startrow=5" title="Page 2">2</a></li>
+    </ul>
+    <table id="searchresults" class="searchResults full table table-striped table-hover">
+      <tr class="data-row">
+        <td class="colTitle">
+          <span class="jobTitle hidden-phone">
+            <a href="/job/Manager-Legal/1/" class="jobTitle-link">Manager - Legal</a>
+          </span>
+        </td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Nov 25, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle">
+          <span class="jobTitle hidden-phone">
+            <a href="/job/Software-Engineer-II/2/" class="jobTitle-link">Software Engineer II</a>
+          </span>
+        </td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Nov 13, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle">
+          <span class="jobTitle hidden-phone">
+            <a href="/job/Information-Developer-II/3/" class="jobTitle-link">Information Developer II</a>
+          </span>
+        </td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Nov 11, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle">
+          <span class="jobTitle hidden-phone">
+            <a href="/job/Sales-Engineer/4/" class="jobTitle-link">Sales Engineer</a>
+          </span>
+        </td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> US </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Nov 7, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle">
+          <span class="jobTitle hidden-phone">
+            <a href="/job/Information-Developer-II-2/5/" class="jobTitle-link">Information Developer - II</a>
+          </span>
+        </td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Nov 6, 2025 </span></td>
+      </tr>
+    </table>
   </body>
 </html>
 `
@@ -40,34 +71,42 @@ const searchPageOneHtml = `
 const searchPageTwoHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Aurigo Software Technologies Jobs</title>
+  </head>
   <body>
-    <h1>Search results for "".</h1>
-    <p>Results 6 – 10 of 23 Page 2 of 5</p>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Senior-Manager-Product-Operations/6/">Senior Manager - Product Operations</a>
-      <span>IN</span>
-      <span>Jul 19, 2025</span>
+    <h1 class="keyword-title">Search results for<span class="securitySearchQuery"> "".</span></h1>
+    <div class="pagination-label-row">
+      <span class="paginationLabel" aria-label="Results 6 – 10">Results <b>6 – 10</b> of <b>23</b></span>
+      <span class="srHelp">Page 2 of 5</span>
     </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Senior-Specialist-Content-and-Design/7/">Senior Specialist - Content and Design</a>
-      <span>IN</span>
-      <span>Jul 17, 2025</span>
-    </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Senior-Software-Engineer-I-DevOps/8/">Senior Software Engineer I - DevOps</a>
-      <span>IN</span>
-      <span>Jul 16, 2025</span>
-    </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Administrator-I-Enterprise-IT/9/">Administrator I - Enterprise IT</a>
-      <span>IN</span>
-      <span>Jul 16, 2025</span>
-    </div>
-    <div class="job">
-      <a href="https://careers.aurigo.com/job/Product-Manager-Reporting-Data-Analytics/10/">Product Manager - Reporting & Data Analytics</a>
-      <span>IN</span>
-      <span>Jul 15, 2025</span>
-    </div>
+    <table id="searchresults" class="searchResults full table table-striped table-hover">
+      <tr class="data-row">
+        <td class="colTitle"><span class="jobTitle hidden-phone"><a href="/job/Senior-Manager-Product-Operations/6/" class="jobTitle-link">Senior Manager - Product Operations</a></span></td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Jul 19, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle"><span class="jobTitle hidden-phone"><a href="/job/Senior-Specialist-Content-and-Design/7/" class="jobTitle-link">Senior Specialist - Content and Design</a></span></td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Jul 17, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle"><span class="jobTitle hidden-phone"><a href="/job/Senior-Software-Engineer-I-DevOps/8/" class="jobTitle-link">Senior Software Engineer I - DevOps</a></span></td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Jul 16, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle"><span class="jobTitle hidden-phone"><a href="/job/Administrator-I-Enterprise-IT/9/" class="jobTitle-link">Administrator I - Enterprise IT</a></span></td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Jul 16, 2025 </span></td>
+      </tr>
+      <tr class="data-row">
+        <td class="colTitle"><span class="jobTitle hidden-phone"><a href="/job/Product-Manager-Reporting-Data-Analytics/10/" class="jobTitle-link">Product Manager - Reporting & Data Analytics</a></span></td>
+        <td class="colLocation hidden-phone"><span class="jobLocation"> IN </span></td>
+        <td class="colDate hidden-phone"><span class="jobDate">Jul 15, 2025 </span></td>
+      </tr>
+    </table>
   </body>
 </html>
 `
@@ -93,7 +132,10 @@ test('Aurigo Software Technologies helpers stay pinned to the verified first-par
   assert.equal(aurigo.VERIFIED_ON, '2026-07-17')
   assert.equal(aurigo.hasOfficialCareersSignal(searchPageOneHtml), true)
   assert.equal(aurigo.hasOfficialCareersSignal('<html><body><h1>Search results</h1></body></html>'), false)
-  assert.equal(aurigo.extractNextPageUrl(searchPageOneHtml), 'https://careers.aurigo.com/search/?q=&sortColumn=referencedate&sortDirection=desc&startrow=5')
+  assert.equal(
+    aurigo.extractNextPageUrl(searchPageOneHtml),
+    'https://careers.aurigo.com/search/?q=&sortColumn=referencedate&sortDirection=desc&startrow=5',
+  )
   assert.deepEqual(aurigo.extractJobs(searchPageOneHtml), [
     {
       title: 'Manager - Legal',

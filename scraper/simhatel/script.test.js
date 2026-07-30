@@ -73,7 +73,7 @@ const contactHtml = `
     <body>
       <main>
         <h1>Get in touch.</h1>
-        <p>We'd love to hear from you. Reach out to discuss your project.</p>
+        <p>We&#x27;d love to hear from you. Reach out to discuss your project.</p>
         <p>support@simhatel.com</p>
         <p>+91 82269 48584</p>
         <p>IIT Mandi, Himachal Pradesh, India</p>

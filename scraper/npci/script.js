@@ -47,6 +47,12 @@ const hasInputWithId = (html, id) => new RegExp(
   'i',
 ).test(String(html ?? ''))
 
+const extractHiddenInputValues = (html) => [...String(html ?? '').matchAll(
+  /<input\b(?=[^>]*\btype=["']hidden["'])[^>]*\bvalue=(["'])([\s\S]*?)\1[^>]*>/gi,
+)]
+  .map((match) => decodeHtmlEntities(match[2]))
+  .filter(Boolean)
+
 const slugify = (value) => normalizeWhitespace(value)
   ?.replace(/[^a-z0-9]+/gi, '-')
   .replace(/^-+|-+$/g, '')
@@ -59,18 +65,24 @@ const buildJobUrl = ({ id, title, rawUrl }) => {
 }
 
 const extractJobsPayload = (html) => {
-  const input = /<input\b(?=[^>]*\bid=["']jobs["'])[^>]*\bvalue=(["'])([\s\S]*?)\1[^>]*>/i.exec(
-    String(html ?? ''),
-  )
-
-  if (!input) return []
-
-  try {
-    const payload = JSON.parse(decodeHtmlEntities(input[2]))
-    return Array.isArray(payload) ? payload : []
-  } catch {
-    return []
+  for (const value of extractHiddenInputValues(html)) {
+    try {
+      const payload = JSON.parse(value)
+      if (!Array.isArray(payload) || payload.length === 0) continue
+      if (!payload.some((record) =>
+        record
+        && typeof record === 'object'
+        && ('Posting_Title' in record || 'Job_Opening_Name' in record)
+      )) {
+        continue
+      }
+      return payload
+    } catch {
+      continue
+    }
   }
+
+  return []
 }
 
 const normalizeLocation = (record = {}) => {
@@ -100,11 +112,11 @@ const isPublishedRecord = (record = {}) => record.Publish !== false && record.Ke
 export const hasOfficialPortalSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Jobs at NPCI\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Jobs|Openings)\s+at NPCI\s*<\/title>/i.test(page)
     && /https:\/\/careers\.npci\.org\.in\/jobs\/Careers/i.test(page)
     && hasInputWithId(page, 'pageJson')
     && hasInputWithId(page, 'moduleMeta')
-    && hasInputWithId(page, 'jobs')
+    && extractJobsPayload(page).length > 0
 }
 
 export const extractIndiaJobs = (html) => extractJobsPayload(html)

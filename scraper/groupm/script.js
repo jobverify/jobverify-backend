@@ -26,6 +26,10 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '').replace(/<[^>]+>/g, ' '),
+)
+
 const normalizeUrl = (value) => {
   try {
     return new URL(value).toString()
@@ -44,13 +48,17 @@ export const hasOfficialCareersSignal = (html) => {
 }
 
 export const extractVerifiedJobsBoardUrl = (html) => {
-  const match = String(html ?? '').match(
-    /<a[^>]+href="([^"]*job-boards\.greenhouse\.io\/wppmedia[^"]*)"[^>]*>\s*APAC\s*<\/a>/i,
-  )
-  const resolved = normalizeUrl(match?.[1])
+  for (const match of String(html ?? '').matchAll(
+    /<a\b[^>]+href=(['"])([^'"]*job-boards\.greenhouse\.io\/wppmedia[^'"]*)\1[^>]*>([\s\S]*?)<\/a>/gi,
+  )) {
+    const label = stripTags(match[3])
+    if (!/^APAC(?:\s+Open\s+Roles)?$/i.test(label || '')) continue
 
-  if (!resolved) return null
-  return resolved
+    const resolved = normalizeUrl(match[2])
+    if (resolved) return resolved
+  }
+
+  return null
 }
 
 const createApiProvider = () => ({

@@ -14,6 +14,9 @@ const careersHtml = `
 <html lang="en">
   <head>
     <title>Career Opportunities | Tricon Infotech</title>
+    <style>
+      .awsm-b-job-post-title { font-size: 18px; }
+    </style>
   </head>
   <body class="listing-page-awsm_job_openings">
     <section>
@@ -106,4 +109,24 @@ test('Tricon Infotech sentinel fails closed if first-party AWSM jobs start rende
     }),
     /public jobs surface/i,
   )
+})
+
+test('Tricon Infotech falls back to the browser loader when the primary fetch path times out', async () => {
+  const tricon = await loadScriptModule()
+  let fallbackCalled = false
+
+  const result = await tricon.loadWithBrowserFallback({
+    primaryLoad: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted addresses: 172.67.70.186:443, timeout: 10000ms)',
+      )
+    },
+    fallbackLoad: async () => {
+      fallbackCalled = true
+      return 'browser-result'
+    },
+  })
+
+  assert.equal(result, 'browser-result')
+  assert.equal(fallbackCalled, true)
 })

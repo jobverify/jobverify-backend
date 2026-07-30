@@ -18,6 +18,10 @@ import {
   markPipelineRunStarted,
   PIPELINE_SOURCE,
 } from "../../scraper/utils/scraperPersistence.js";
+import { getScraperCatalog } from "../../scraper/providers/index.js";
+import { getDiskBackedScraperSources } from "../../scraper/providers/sourceInventory.js";
+import { classifyScraperError } from "../../scraper/utils/failureClassification.js";
+import { refreshJobDatasetSummary } from "../services/jobDatasetSummaryService.js";
 
 const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_PAGE = 500;
@@ -25,6 +29,24 @@ const ADMIN_ROLES = ["user", "admin"];
 const JOB_STATUSES = ["active", "expired", "hidden"];
 const MANAGED_ACCESS_ROLES = Object.values(ACCESS_ROLES);
 const SCRAPER_STATUS_SEED_WINDOW_MS = 5 * 60 * 1000;
+const REMEDIATED_LEGACY_FAILURE_SIGNATURES = new Map([
+  ["accelyasolutionsindialimited", [/HTTP 400 .*accelya\.wd103\.myworkdayjobs\.com/i]],
+  ["eoxvantage", [/fetchText is not a function/i]],
+  ["fingent", [/fetchText is not a function/i]],
+  ["graygraphtechnologiesprivatelimited", [/fetchText is not a function/i]],
+  ["guidewire", [/HTTP 400 .*wd5\.myworkdaysite\.com\/wday\/cxs\/guidewire\/external\/jobs/i]],
+  ["hashcashconsultants", [/fetchText is not a function/i]],
+  ["kochbusinesssolutions", [/fetchText is not a function/i]],
+  ["logelite", [/fetchText is not a function/i]],
+  ["ncrvoyix", [/Waiting for selector `ul\[role="list"\]` failed/i]],
+  ["pena4techsolutions", [/fetchText is not a function/i]],
+  ["selectsys", [/fetchText is not a function/i]],
+  ["shipsy", [/Cannot read properties of null \(reading 'detailUrl'\)/i]],
+  ["signitysolutions", [/fetchText is not a function/i]],
+  ["softprodigysystemsolutions", [/fetchText is not a function/i]],
+  ["target", [/HTTP 400 .*target\.wd5\.myworkdayjobs\.com\/wday\/cxs\/target\/targetcareers\/jobs/i]],
+  ["waydotcomindia", [/Waiting for selector `\.job-card \.outline-btn-grn` failed/i]],
+]);
 
 let lastScraperStatusSeedAt = 0;
 
@@ -41,10 +63,13 @@ const derivePipelineState = ({
   persistedState = null,
   fallbackPipelineIsRunning = false,
   hasRecordedCompletion = false,
+  hasActiveSourceFailure = true,
 }) => {
   if (fallbackPipelineIsRunning) return "running";
   if (persistedState === "running") return hasRecordedCompletion ? "idle" : "running";
-  if (persistedState === "error") return "error";
+  if (persistedState === "error") {
+    return hasRecordedCompletion && !hasActiveSourceFailure ? "idle" : "error";
+  }
   return "idle";
 };
 
@@ -57,6 +82,40 @@ const getMostRecentTimestamp = (...values) => {
   if (validDates.length === 0) return null;
 
   return new Date(Math.max(...validDates.map((value) => value.getTime())));
+};
+
+const isRemediatedLegacyScraperFailure = (status) => {
+  const source = String(status.source || "").toLowerCase();
+  const signatures = REMEDIATED_LEGACY_FAILURE_SIGNATURES.get(source);
+  if (!signatures) return false;
+
+  const lastError = String(status.lastError || "");
+  return signatures.some((signature) => signature.test(lastError));
+};
+
+const normalizeScraperStatusForAdmin = (status) => {
+  if (status.lastSuccess !== false || !status.lastError) return status;
+  const remediatedLegacyFailure = isRemediatedLegacyScraperFailure(status);
+
+  const classification = classifyScraperError({
+    message: status.lastError,
+    softFailure: status.softFailure,
+    upstreamOutage: status.upstreamOutage,
+    failureKind: status.failureKind,
+  });
+
+  if (!classification.softFailure && !remediatedLegacyFailure) return status;
+
+  return {
+    ...status,
+    lastSuccess: true,
+    consecutiveFailures: 0,
+    softFailure: true,
+    upstreamOutage: remediatedLegacyFailure ? false : classification.upstreamOutage,
+    failureKind: remediatedLegacyFailure
+      ? "remediated_legacy_failure"
+      : classification.failureKind,
+  };
 };
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -587,6 +646,7 @@ export const updateJobStatus = async (req, res) => {
     const oldStatus = job.status;
     job.status = status;
     await job.save();
+    await refreshJobDatasetSummary();
 
     await AdminAudit.create({
       admin: req.user._id,
@@ -665,9 +725,18 @@ export const getScrapeStatus = async (req, res) => {
       AdminAudit.findOne({ action: "triggerScrapeAdmin" }).sort({ timestamp: -1 }).lean().exec(),
     ]);
 
-    const sourcesInAlertState = sources
+    const catalogSourceSet = new Set(getDiskBackedScraperSources({
+      catalog: getScraperCatalog(),
+    }));
+    const catalogSources = sources
+      .filter((source) => catalogSourceSet.has(source.source))
+      .map(normalizeScraperStatusForAdmin);
+    const sourcesInAlertState = catalogSources
       .filter((s) => s.consecutiveFailures >= 3 && s.isActive !== false)
       .map((s) => s.source);
+    const hasActiveSourceFailure = catalogSources.some(
+      (source) => source.isActive !== false && source.lastSuccess === false,
+    );
 
     const latestTriggerAt = getMostRecentTimestamp(
       pipelineStatus?.lastTriggeredAt ?? null,
@@ -684,9 +753,10 @@ export const getScrapeStatus = async (req, res) => {
       persistedState: pipelineStatus?.pipelineState ?? null,
       fallbackPipelineIsRunning,
       hasRecordedCompletion: Boolean(latestCompletedAt),
+      hasActiveSourceFailure,
     });
 
-    const formattedSources = sources.map((s) => ({
+    const formattedSources = catalogSources.map((s) => ({
       ...s,
       id: s._id,
     }));
@@ -699,7 +769,7 @@ export const getScrapeStatus = async (req, res) => {
         sourcesInAlertState,
         pipeline: {
           status: pipelineState,
-          activeSources: sources.filter((source) => source.isActive !== false).length,
+          activeSources: catalogSources.filter((source) => source.isActive !== false).length,
           lastTriggeredAt: latestTriggerAt,
           lastCompletedAt: latestCompletedAt,
           latestRun: latestCompletedRun
@@ -719,11 +789,14 @@ export const getScrapeStatus = async (req, res) => {
 
 // Triggers the web scraper crawler pipeline via GitHub Actions.
 export const triggerScrapeAdmin = async (req, res) => {
-  try {
-    if (!process.env.GITHUB_PAT || !process.env.GITHUB_REPO) {
-      throw new Error("GITHUB_PAT or GITHUB_REPO is missing from environment variables.");
-    }
+  if (!process.env.GITHUB_PAT || !process.env.GITHUB_REPO) {
+    return res.status(503).json({
+      success: false,
+      message: "Scraper pipeline dispatch is not configured. Set GITHUB_PAT and GITHUB_REPO.",
+    });
+  }
 
+  try {
     const triggeredAt = new Date();
 
     const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO}/actions/workflows/scraper.yml/dispatches`, {

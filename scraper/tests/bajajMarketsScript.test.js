@@ -138,3 +138,26 @@ test('run maps Bajaj Markets Darwinbox listings into Jobify jobs and keeps only 
     },
   ])
 })
+
+test('run can recover the official Bajaj Markets careers handoff with a browser-backed HTML fetch', async () => {
+  const { createBajajMarketsScraper, OFFICIAL_CAREERS_URL } = await loadBajajMarketsModule()
+  const scraper = createBajajMarketsScraper({
+    now: () => FIXED_SCRAPED_AT,
+  })
+  const browserUrls = []
+
+  const jobs = await scraper.run({
+    fetchText: async () => {
+      throw new Error(`HTTP 403 for ${OFFICIAL_CAREERS_URL}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return officialCareersHtml
+    },
+    fetchListingPage: async () => listingPayload,
+  })
+
+  assert.deepEqual(browserUrls, [OFFICIAL_CAREERS_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'bajajmarkets')
+})

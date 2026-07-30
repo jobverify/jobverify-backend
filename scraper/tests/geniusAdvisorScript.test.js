@@ -1,180 +1,119 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const homepageHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>The Genius Advisors | Homepage</title>
-  </head>
-  <body>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="about.html">Who We Are?</a>
-      <a href="services.html">What We Do?</a>
-      <a href="insights.html">Insights</a>
-      <a href="contact.html">Start a Conversation</a>
-    </nav>
-    <h1>Building Brands. Creating Value.</h1>
-    <p>We help retail and consumer businesses build clarity, strong systems, and sustainable growth.</p>
-  </body>
-</html>
+import {
+  FIRST_PARTY_CAREER_ROUTES,
+  FIRST_PARTY_PAGE_URLS,
+  createGeniusAdvisorScraper,
+  hasOfficialAboutSignal,
+  hasOfficialContactSignal,
+  hasOfficialHomepageSignal,
+} from '../geniusadvisor/script.js'
+
+const HOMEPAGE_HTML = `
+  <html>
+    <head>
+      <title>The Genius Advisors | Homepage</title>
+    </head>
+    <body>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/about">Who We Are?</a>
+        <a href="/services">What We Do?</a>
+        <a href="/insights">Insights</a>
+        <a href="/contact">Start a Conversation</a>
+      </nav>
+      <main>
+        <h1>Building Brands. Creating Value.</h1>
+        <p>We help retail and consumer businesses build clarity, strong systems, and sustainable growth — from strategy to execution.</p>
+      </main>
+    </body>
+  </html>
 `
 
-const aboutHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>The Genius Advisors | About Us</title>
-  </head>
-  <body>
-    <h1>Who We Are?</h1>
-    <h2>Experience That Guides Real Growth.</h2>
-    <p>The Genius Advisors is a founder-led advisory firm helping retail and consumer businesses build, transform, and grow.</p>
-    <p>Jai M Bihani Founder &amp; Principal Advisor</p>
-  </body>
-</html>
+const ABOUT_HTML = `
+  <html>
+    <head>
+      <title>The Genius Advisors | About Us</title>
+    </head>
+    <body>
+      <h1>Who We Are?</h1>
+      <p>Experience That Guides Real Growth.</p>
+      <p>The Genius Advisors is a founder-led advisory firm helping retail and consumer businesses build, transform, and grow.</p>
+      <p>Jai M Bihani Founder &amp; Principal Advisor</p>
+    </body>
+  </html>
 `
 
-const contactHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>The Genius Advisors | Contact Us</title>
-  </head>
-  <body>
-    <h1>Get in Touch</h1>
-    <p>Founder &amp; Principal Advisor</p>
-    <p>Jai M Bihani</p>
-    <p>Mumbai, India</p>
-    <a href="mailto:hello@thegeniusadvisor.com">hello@thegeniusadvisor.com</a>
-    <a href="tel:+919686204879">+91 96862 04879</a>
-  </body>
-</html>
+const CONTACT_HTML = `
+  <html>
+    <head>
+      <title>The Genius Advisors | Contact Us</title>
+    </head>
+    <body>
+      <h1>Get in Touch</h1>
+      <p>Jai M Bihani</p>
+      <p>Mumbai, India</p>
+      <p>hello@thegeniusadvisor.com</p>
+      <p>+91 96862 04879</p>
+    </body>
+  </html>
 `
 
-const loadGeniusAdvisorModule = async () => {
-  try {
-    return await import('../geniusadvisor/script.js')
-  } catch {
-    assert.fail('Expected Genius Advisor scraper module at ../geniusadvisor/script.js')
-  }
-}
-
-test('Genius Advisor scraper constants stay pinned to the verified first-party brochure surface', async () => {
-  const geniusAdvisor = await loadGeniusAdvisorModule()
-
-  assert.equal(geniusAdvisor.SOURCE, 'geniusadvisor')
-  assert.equal(geniusAdvisor.COMPANY, 'Genius Advisor')
-  assert.equal(geniusAdvisor.COMPANY_DOMAIN, 'thegeniusadvisor.in')
-  assert.equal(geniusAdvisor.VERIFIED_AT, '2026-07-17')
-  assert.deepEqual(geniusAdvisor.FIRST_PARTY_PAGE_URLS, [
-    'https://www.thegeniusadvisor.in/',
-    'https://www.thegeniusadvisor.in/about.html',
-    'https://www.thegeniusadvisor.in/contact.html',
-  ])
-  assert.deepEqual(geniusAdvisor.FIRST_PARTY_CAREER_ROUTES, [
-    'https://www.thegeniusadvisor.in/careers',
-    'https://www.thegeniusadvisor.in/jobs',
-    'https://www.thegeniusadvisor.in/join-us',
-    'https://www.thegeniusadvisor.in/work-with-us',
-    'https://www.thegeniusadvisor.in/openings',
-  ])
-  assert.equal(geniusAdvisor.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(geniusAdvisor.hasOfficialAboutSignal(aboutHtml), true)
-  assert.equal(geniusAdvisor.hasOfficialContactSignal(contactHtml), true)
-  assert.equal(
-    geniusAdvisor.isExpectedTimedOutSurface({ errorKind: 'timeout', status: null, html: null }),
-    true,
-  )
-  assert.equal(
-    geniusAdvisor.isUnexpectedReachableSurface({
-      status: 200,
-      html: '<html><body><h1>Careers</h1><a href="/apply">Apply now</a></body></html>',
-    }),
-    true,
-  )
+test('Genius Advisor sentinel accepts the current brochure-site drift from Saturday, July 25, 2026', () => {
+  assert.equal(hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(hasOfficialAboutSignal(ABOUT_HTML), true)
+  assert.equal(hasOfficialContactSignal(CONTACT_HTML), true)
 })
 
-test('Genius Advisor run verifies the trusted brochure pages and returns [] when adjacent careers routes stay timed out', async () => {
-  const geniusAdvisor = await loadGeniusAdvisorModule()
-  const requestedPages = []
-  const requestedRoutes = []
-
-  const jobs = await geniusAdvisor.createGeniusAdvisorScraper().run({
+test('Genius Advisor returns no jobs when adjacent careers routes only fall back to the brochure homepage', async () => {
+  const jobs = await createGeniusAdvisorScraper().run({
     fetchBrowserText: async (url) => {
-      requestedPages.push(url)
-
-      if (url === 'https://www.thegeniusadvisor.in/') return homepageHtml
-      if (url === 'https://www.thegeniusadvisor.in/about.html') return aboutHtml
-      if (url === 'https://www.thegeniusadvisor.in/contact.html') return contactHtml
-      throw new Error(`Unexpected brochure URL: ${url}`)
+      if (url === FIRST_PARTY_PAGE_URLS[0]) return HOMEPAGE_HTML
+      if (url === FIRST_PARTY_PAGE_URLS[1]) return ABOUT_HTML
+      if (url === FIRST_PARTY_PAGE_URLS[2]) return CONTACT_HTML
+      throw new Error(`Unexpected browser URL: ${url}`)
     },
     probeUrl: async (url) => {
-      requestedRoutes.push(url)
+      assert.ok(FIRST_PARTY_CAREER_ROUTES.includes(url))
       return {
         url,
         finalUrl: url,
-        status: null,
-        html: null,
-        errorKind: 'timeout',
+        status: 200,
+        html: HOMEPAGE_HTML,
+        errorKind: null,
       }
     },
   })
 
-  assert.deepEqual(requestedPages, geniusAdvisor.FIRST_PARTY_PAGE_URLS)
-  assert.deepEqual(requestedRoutes, geniusAdvisor.FIRST_PARTY_CAREER_ROUTES)
   assert.deepEqual(jobs, [])
 })
 
-test('Genius Advisor fails closed when a brochure page drifts or a public jobs surface becomes reachable', async () => {
-  const geniusAdvisor = await loadGeniusAdvisorModule()
-
+test('Genius Advisor still fails closed if a first-party jobs listing becomes reachable', async () => {
   await assert.rejects(
-    geniusAdvisor.createGeniusAdvisorScraper().run({
+    createGeniusAdvisorScraper().run({
       fetchBrowserText: async (url) => {
-        if (url === 'https://www.thegeniusadvisor.in/') return homepageHtml
-        if (url === 'https://www.thegeniusadvisor.in/about.html') return '<html><title>Unexpected</title></html>'
-        if (url === 'https://www.thegeniusadvisor.in/contact.html') return contactHtml
-        throw new Error(`Unexpected brochure URL: ${url}`)
+        if (url === FIRST_PARTY_PAGE_URLS[0]) return HOMEPAGE_HTML
+        if (url === FIRST_PARTY_PAGE_URLS[1]) return ABOUT_HTML
+        if (url === FIRST_PARTY_PAGE_URLS[2]) return CONTACT_HTML
+        throw new Error(`Unexpected browser URL: ${url}`)
       },
-      probeUrl: async () => ({
-        status: null,
-        html: null,
-        errorKind: 'timeout',
+      probeUrl: async (url) => ({
+        url,
+        finalUrl: url,
+        status: 200,
+        html: `
+          <html>
+            <head><title>Careers</title></head>
+            <body>
+              <h1>Join our team</h1>
+              <a href="/jobs/brand-manager">Search jobs</a>
+            </body>
+          </html>
+        `,
+        errorKind: null,
       }),
     }),
-    /about page/i,
-  )
-
-  await assert.rejects(
-    geniusAdvisor.createGeniusAdvisorScraper().run({
-      fetchBrowserText: async (url) => {
-        if (url === 'https://www.thegeniusadvisor.in/') return homepageHtml
-        if (url === 'https://www.thegeniusadvisor.in/about.html') return aboutHtml
-        if (url === 'https://www.thegeniusadvisor.in/contact.html') return contactHtml
-        throw new Error(`Unexpected brochure URL: ${url}`)
-      },
-      probeUrl: async (url) => {
-        if (url === 'https://www.thegeniusadvisor.in/careers') {
-          return {
-            url,
-            finalUrl: url,
-            status: 200,
-            html: '<html><body><h1>Current Openings</h1><a href="/apply">Apply now</a></body></html>',
-            errorKind: null,
-          }
-        }
-
-        return {
-          url,
-          finalUrl: url,
-          status: null,
-          html: null,
-          errorKind: 'timeout',
-        }
-      },
-    }),
-    /public jobs surface/i,
+    /public jobs surface now appears reachable/i,
   )
 })

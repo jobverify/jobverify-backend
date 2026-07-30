@@ -1,7 +1,12 @@
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
 export const SOURCE = 'fingent'
 export const COMPANY = 'Fingent'
 export const HOMEPAGE_URL = 'https://www.fingent.com/careers/'
 export const CAREERS_URL = 'https://www.fingent.com/careers/career-openings/'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
@@ -28,6 +33,15 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -58,7 +72,7 @@ export const extractOpenings = (html = '') => {
   return jobs
 }
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const careersHtml = await fetchText(CAREERS_URL)
   if (!hasOfficialCareersSignal(careersHtml)) {
     throw new Error('Fingent verified first-party openings page changed materially')

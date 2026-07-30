@@ -99,6 +99,30 @@ const buildJobsHtml = (items) => `
 </html>
 `
 
+const emptyJobsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Explore Jobs – Careers at Acronis</title>
+  </head>
+  <body>
+    <script type="text/json" id="pocket-public_context">
+      {"env":{"HEAD_SITE_MAIN_PUBLIC_BASE_URL_WORKDAY":"https://services1.wd502.myworkday.com"}}
+    </script>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"JobPosting"}
+    </script>
+    <script>
+      window.__ACRONIS_PAGE__ = {"workday":{"items":[]}}
+    </script>
+    <main>
+      <h1>Explore Jobs</h1>
+      <p>Acronis open roles worldwide.</p>
+    </main>
+  </body>
+</html>
+`
+
 test('Acronis India validates the verified Acronis careers pages and extracts India jobs from embedded Workday items', async () => {
   const acronis = await loadAcronisIndiaModule()
 
@@ -207,6 +231,29 @@ test('Acronis India returns [] when the verified public jobs surface has no curr
 
       if (url === acronis.JOBS_URL) {
         return { status: 200, url, html: buildJobsHtml([singaporeRole]) }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Acronis India accepts the current official jobs page when Workday exposes an explicit empty items array', async () => {
+  const acronis = await loadAcronisIndiaModule()
+  assert.ok(acronis)
+
+  assert.equal(acronis.hasOfficialJobsPageSignal(emptyJobsHtml), true)
+
+  const jobs = await acronis.createAcronisIndiaScraper().run({
+    fetchPage: async (url) => {
+      if (url === acronis.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
+      }
+
+      if (url === acronis.JOBS_URL) {
+        return { status: 200, url, html: emptyJobsHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)

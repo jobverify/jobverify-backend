@@ -31,6 +31,11 @@ const normalizeWhitespace = (value) =>
     .replace(/\s+/g, ' ')
     .trim()
 
+const decodeUrlEntities = (value) =>
+  String(value ?? '')
+    .replace(/&amp;/gi, '&')
+    .trim()
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -41,10 +46,37 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const extractOfficialUltiproUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /https:\/\/recruiting2\.ultipro\.com\/VIS1012VISX\/JobBoard\/23e64b4e-ff01-4579-9e5a-835480ac7a51\/\?o=postedDateDesc&q=/i,
-  )
-  return match ? normalizeWhitespace(match[0]) : null
+  const anchors = [...String(html ?? '').matchAll(
+    /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+  )].map(([, href, text]) => ({
+    href: decodeUrlEntities(href),
+    text: normalizeWhitespace(text),
+  }))
+
+  const primaryAnchor = anchors.find(({ text }) => /View All Opportunities|Find Your Opportunity/i.test(text))
+    || anchors.find(({ text, href }) => /India/i.test(text) && /^https?:\/\//i.test(href))
+
+  const candidate = primaryAnchor?.href
+    || decodeUrlEntities(html).match(
+      /https:\/\/recruiting2\.ultipro\.com\/VIS1012VISX\/JobBoard\/23e64b4e-ff01-4579-9e5a-835480ac7a51\/\?[^"'<\s]+/i,
+    )?.[0]
+
+  if (!candidate) return null
+
+  try {
+    const url = new URL(candidate)
+    const normalizedPath = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`
+    if (
+      url.origin === 'https://recruiting2.ultipro.com'
+      && normalizedPath === '/VIS1012VISX/JobBoard/23e64b4e-ff01-4579-9e5a-835480ac7a51/'
+    ) {
+      return ULTIPRO_BOARD_URL
+    }
+
+    return url.toString()
+  } catch {
+    return normalizeWhitespace(candidate)
+  }
 }
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -81,17 +113,22 @@ export const hasOfficialAboutSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('About Us - Vistex, Inc')
-    && normalized.includes('About Us')
-    && normalized.includes('Vistex AI-driven enterprise software helps businesses take control of revenue-generating programs')
-    && normalized.includes('Gain visibility and control of complex pricing, trade, royalty and incentive programs')
+    && /About Us/i.test(normalized)
+    && (
+      normalized.includes('Vistex AI-driven enterprise software helps businesses take control of revenue-generating programs')
+      || normalized.includes('Vistex solutions help businesses take control of mission critical processes')
+    )
+    && (
+      normalized.includes('Gain visibility and control of complex pricing, trade, royalty and incentive programs')
+      || normalized.includes('Now it all adds up')
+    )
 }
 
 export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('General Inquiry - Vistex, Inc.')
-    && normalized.includes('CONTACT US')
-    && normalized.includes('Vistex Logo')
+    && (normalized.includes('CONTACT US') || normalized.includes('How Can We Help You?'))
     && normalized.includes('General Inquiry')
 }
 

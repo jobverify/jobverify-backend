@@ -38,33 +38,68 @@ const decodeHtml = (value) => normalizeWhitespace(value)
 
 export const hasOfficialJobsSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
-  return normalized.includes('OPPORTUNITY. DELIVERED.')
-    && normalized.includes('62 open positions')
+  const page = String(html ?? '')
+
+  const hasLegacySignal = normalized.includes('OPPORTUNITY. DELIVERED.')
+    && /\b\d+\s+open positions\b/i.test(normalized)
     && normalized.includes('Gurugram, IN')
+
+  const hasCurrentSignal = /\b\d+\s+open positions\b/i.test(normalized)
+    && normalized.includes('Gurugram, IN')
+    && normalized.includes('Pune, IN')
+    && normalized.includes('View Engineering Jobs')
+    && /class=["'][^"']*postings-count[^"']*["']/i.test(page)
+
+  return hasLegacySignal || hasCurrentSignal
 }
 
-export const extractLocationGroups = (html = '') =>
+const toAbsoluteUrl = (value = '') => {
+  try {
+    return new URL(value, CAREERS_URL).toString()
+  } catch {
+    return null
+  }
+}
+
+const extractJobsFromGroupBody = (body = '') =>
+  Array.from(
+    String(body ?? '').matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/gi),
+    (jobMatch) => ({
+      title: decodeHtml(jobMatch[2]),
+      applyUrl: toAbsoluteUrl(jobMatch[1]),
+    }),
+  ).filter((job) => job.title && job.applyUrl)
+
+const extractLegacyLocationGroups = (html = '') =>
   Array.from(
     String(html ?? '').matchAll(
       /<section[\s\S]*?<h4>([^<]+)<\/h4>([\s\S]*?)<\/section>/gi,
     ),
-    (match) => {
-      const location = decodeHtml(match[1])
-      const body = match[2]
-      const jobs = Array.from(
-        body.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/gi),
-        (jobMatch) => ({
-          title: decodeHtml(jobMatch[2]),
-          applyUrl: decodeHtml(jobMatch[1]),
-        }),
-      ).filter((job) => job.title && job.applyUrl)
+    (match) => ({
+      location: decodeHtml(match[1]),
+      jobs: extractJobsFromGroupBody(match[2]),
+    }),
+  )
 
-      return {
-        location,
-        jobs,
-      }
-    },
-  ).filter((group) => group.location && group.jobs.length > 0)
+const extractCurrentLocationGroups = (html = '') =>
+  Array.from(
+    String(html ?? '').matchAll(
+      /<h4[^>]*class=["'][^"']*location-name[^"']*["'][^>]*>([^<]+)<\/h4>([\s\S]*?)(?=<h4[^>]*class=["'][^"']*location-name[^"']*["']|<\/body>|$)/gi,
+    ),
+    (match) => ({
+      location: decodeHtml(match[1]),
+      jobs: extractJobsFromGroupBody(match[2]),
+    }),
+  )
+
+export const extractLocationGroups = (html = '') => {
+  const legacyGroups = extractLegacyLocationGroups(html)
+  const groups = legacyGroups.length > 0
+    ? legacyGroups
+    : extractCurrentLocationGroups(html)
+
+  return groups.filter((group) => group.location && group.jobs.length > 0)
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -72,7 +107,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  timeoutMs: 90000,
 })
 
 export const createPubMaticScraper = ({

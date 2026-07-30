@@ -15,6 +15,21 @@ const verifiedCareersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at CBTS | Build Your Future in Technology</title>
+  </head>
+  <body>
+    <h1>Build the technology foundations that North America depends on.</h1>
+    <h2>Explore opportunities across CBTS</h2>
+    <a href="https://jobs.cbts.com/careers?&amp;location=India">CBTS India</a>
+    <span>View open positions</span>
+  </body>
+</html>
+`
+
 const buildBoardHtml = ({ page, totalPages, items }) => `
 <!doctype html>
 <html lang="en">
@@ -125,6 +140,7 @@ test('CBTS Technology Solutions India LLP validates the first-party careers page
   assert.equal(cbts.RIPPLING_BOARD_URL, 'https://ats.rippling.com/cbtsindia/jobs')
   assert.equal(cbts.RIPPLING_BOARD_SLUG, 'cbtsindia')
   assert.equal(cbts.hasVerifiedCareersPageSignal(verifiedCareersHtml), true)
+  assert.equal(cbts.hasVerifiedCareersPageSignal(currentCareersHtml), true)
   assert.equal(
     cbts.buildBoardPageUrl(2),
     'https://ats.rippling.com/cbtsindia/jobs?city=&country=IN&page=2&searchQuery=&state=&weekdayJdUid=789935&workplaceType=',

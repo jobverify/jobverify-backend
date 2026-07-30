@@ -94,6 +94,52 @@ const searchPage2Html = `
 </html>
 `
 
+const currentSearchPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Mastek Limited Jobs</title>
+  </head>
+  <body>
+    <span id="tile-search-results-label">Showing 1 to 12 of 38 Jobs</span>
+    <ul id="job-tile-list" class="container job-list">
+      <li class="job-tile job-id-58191144 job-row-index-1" data-url="/job/Sr_-Specialist-I/58191144/">
+        <a class="jobTitle-link fontcolor08ec7653d54c0f69" href="/job/Sr_-Specialist-I/58191144/">
+          Sr. Specialist I
+        </a>
+        <span class="section-label">Date</span>
+        <div>Jul 24, 2026</div>
+        <span class="section-label">Location</span>
+        <div>IN</div>
+        <span class="section-label">Department</span>
+        <div>Digital CX</div>
+        <span class="section-label">Business Unit</span>
+        <div>Digital Engineering</div>
+        <span class="section-label">Requisition ID</span>
+        <div>136316</div>
+      </li>
+      <li class="job-tile job-id-58191145 job-row-index-2" data-url="/job/Sr_-Specialist-I/58191145/">
+        <a class="jobTitle-link fontcolor08ec7653d54c0f69" href="/job/Sr_-Specialist-I/58191145/">
+          Sr. Specialist I
+        </a>
+        <span class="section-label">Date</span>
+        <div>Jul 24, 2026</div>
+        <span class="section-label">Location</span>
+        <div>GB</div>
+        <span class="section-label">Business Unit</span>
+        <div>Digital Engineering</div>
+        <span class="section-label">Requisition ID</span>
+        <div>136317</div>
+      </li>
+    </ul>
+    <script>
+      jobRecordsPerPage: parseInt("12"),
+      jobRecordsFound: parseInt("38")
+    </script>
+  </body>
+</html>
+`
+
 const detailPage1Html = `
 <!doctype html>
 <html lang="en">
@@ -182,6 +228,30 @@ test('extractSearchResults keeps only India rows from the live Mastek tile board
       requisitionId: '134175',
       sourceUrl: 'https://careers.mastek.com/job/Pune-Oracle-HCM-Functional-Consultant-%28Payroll%29/47800844/',
       postingDate: '2026-07-16',
+    },
+  ])
+})
+
+test('extractSearchResults supports the current live Mastek tile links with extra CSS classes', async () => {
+  const mastek = await loadMastekModule()
+
+  assert.equal(mastek.hasOfficialSearchResultsSignal(currentSearchPageHtml), true)
+  assert.deepEqual(mastek.extractResultsSummary(currentSearchPageHtml), {
+    totalResults: 38,
+    pageSize: 12,
+  })
+  assert.deepEqual(mastek.extractSearchResults(currentSearchPageHtml), [
+    {
+      title: 'Sr. Specialist I',
+      businessUnit: 'Digital Engineering',
+      department: 'Digital CX',
+      location: 'India',
+      city: 'India',
+      country: 'India',
+      jobId: '58191144',
+      requisitionId: '136316',
+      sourceUrl: 'https://careers.mastek.com/job/Sr_-Specialist-I/58191144/',
+      postingDate: '2026-07-24',
     },
   ])
 })
@@ -325,6 +395,48 @@ test('run validates the official Mastek careers handoff, paginates the mixed-glo
   ])
   assert.equal(jobs[0].scrapedAt, '2026-07-16T00:00:00.000Z')
   assert.equal(jobs[1].scrapedAt, '2026-07-16T00:00:00.000Z')
+})
+
+test('run falls back to a browser fetch when the official Mastek careers handoff is blocked by a Cloudflare 403 challenge', async () => {
+  const mastek = await loadMastekModule()
+  const requestedTextUrls = []
+  const requestedBrowserUrls = []
+
+  const jobs = await mastek.createMastekScraper().run({
+    maxPages: 1,
+    maxJobs: 1,
+    now: () => '2026-07-26T00:00:00.000Z',
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+
+      if (url === mastek.OFFICIAL_CAREERS_URL) {
+        throw new Error(`HTTP 403 for ${url}`)
+      }
+      if (url === mastek.buildSearchUrl()) return searchPage1Html
+      if (url === 'https://careers.mastek.com/job/Pune-Oracle-HCM-Functional-Consultant-%28Payroll%29/47800844/') {
+        return detailPage1Html
+      }
+
+      throw new Error(`Unexpected Mastek URL: ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      requestedBrowserUrls.push(url)
+
+      if (url === mastek.OFFICIAL_CAREERS_URL) return officialCareersHtml
+
+      throw new Error(`Unexpected Mastek browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedTextUrls, [
+    mastek.OFFICIAL_CAREERS_URL,
+    mastek.buildSearchUrl(),
+    'https://careers.mastek.com/job/Pune-Oracle-HCM-Functional-Consultant-%28Payroll%29/47800844/',
+  ])
+  assert.deepEqual(requestedBrowserUrls, [mastek.OFFICIAL_CAREERS_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '47800844')
+  assert.equal(jobs[0].scrapedAt, '2026-07-26T00:00:00.000Z')
 })
 
 test('Mastek fails closed when the verified official careers handoff disappears', async () => {

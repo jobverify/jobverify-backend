@@ -22,8 +22,14 @@ export const buildScraperOptions = () => ({
 export const createTheIndianPublicSchoolScraper = ({
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  run: () => workdayRunner(buildScraperOptions()),
+  run: ({ signal } = {}) => workdayRunner({
+    ...buildScraperOptions(),
+    ...(signal === undefined ? {} : { signal }),
+  }),
 })
 
-export const run = async ({ workdayRunner = runWorkdayScraper } = {}) =>
-  createTheIndianPublicSchoolScraper({ workdayRunner }).run()
+export const run = async ({
+  workdayRunner = runWorkdayScraper,
+  signal,
+} = {}) =>
+  createTheIndianPublicSchoolScraper({ workdayRunner }).run({ signal })

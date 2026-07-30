@@ -5,7 +5,7 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Kaynes Technology India Limited</title>
+    <title>Kaynes Technology</title>
   </head>
   <body>
     <header>
@@ -26,23 +26,14 @@ const homepageHtml = `
 `
 
 const missingRouteHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>404 Not Found</title>
-  </head>
-  <body>
-    <h1>404 Not Found</h1>
-    <p>The requested URL was not found on this server.</p>
-  </body>
-</html>
+404 Not Found
 `
 
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Kaynes Technology India Limited</title>
+    <title>Kaynes Technology</title>
   </head>
   <body>
     <section>

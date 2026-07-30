@@ -20,6 +20,8 @@ const decodeHtml = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/[\u201c\u201d]/g, '"')
 
 const normalizeWhitespace = (value) => decodeHtml(value)
   .replace(/\u00a0/g, ' ')
@@ -61,8 +63,8 @@ export const hasOfficialCareersSignal = (html) => {
     && /JOBS/i.test(text)
     && /Apply Now/i.test(text)
     && /Project Engineers Quantity Surveyors Marketing Executives/i.test(text)
-    && /<select[^>]+name=["']your-role["']/i.test(page)
-    && /<input[^>]+type=["']file["'][^>]+name=["']resume["']/i.test(page)
+    && /<select[^>]+name=["'](?:your-role|menu-499)["']/i.test(page)
+    && /<input[^>]+type=["']file["'][^>]+name=["'](?:resume|file-202)["']/i.test(page)
   }
 
 const parseRequirementParts = (summary) => {

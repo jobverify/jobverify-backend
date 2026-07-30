@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { resolveBrowserExecutablePath } from '../utils/browser.js'
+import { createBrowserUserDataDir, resolveBrowserExecutablePath } from '../utils/browser.js'
 
 test('resolveBrowserExecutablePath prefers an explicit Puppeteer executable override when it exists', () => {
   const executablePath = 'C:\\Tools\\Chrome\\chrome.exe'
@@ -40,4 +40,19 @@ test('resolveBrowserExecutablePath returns null when no supported browser execut
     }),
     null,
   )
+})
+
+test('createBrowserUserDataDir allocates a unique temp profile prefix for each browser launch', async () => {
+  let receivedPrefix = null
+
+  const userDataDir = await createBrowserUserDataDir({
+    tmpdirPath: 'C:\\Temp',
+    mkdtempImpl: async (prefix) => {
+      receivedPrefix = prefix
+      return `${prefix}abc123`
+    },
+  })
+
+  assert.equal(receivedPrefix, 'C:\\Temp\\jobify-puppeteer-profile-')
+  assert.equal(userDataDir, 'C:\\Temp\\jobify-puppeteer-profile-abc123')
 })

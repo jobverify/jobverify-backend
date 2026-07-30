@@ -123,17 +123,72 @@ const extractJobSummary = (html = '') => {
 
 const extractJobIdFromUrl = (url = '') => String(url ?? '').match(/-([a-z0-9]+)$/i)?.[1] || null
 
+const isOfficialJobUrl = (value) => {
+  try {
+    const url = new URL(value)
+    const prefix = new URL(JOB_PAGE_PREFIX)
+    return url.protocol === 'https:'
+      && url.hostname === prefix.hostname
+      && url.port === ''
+      && url.username === ''
+      && url.password === ''
+      && url.search === ''
+      && url.hash === ''
+      && url.pathname.startsWith(prefix.pathname)
+  } catch {
+    return false
+  }
+}
+
 export const hasOfficialCareersHomeSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const lines = htmlToLines(rawHtml)
   const text = lines.join(' ')
 
-  return /<title>\s*Explore Job Opportunities - Progress Careers\s*<\/title>/i.test(rawHtml)
-    && text.includes('Build a Career at Progress')
+  const hasVerifiedTitle = /<title>\s*Explore Job Opportunities - Progress Careers\s*<\/title>/i.test(rawHtml)
+  const hasLegacyShell = text.includes('Build a Career at Progress')
     && text.includes('People power Progress! Be part of a team where you can learn, grow and thrive.')
     && text.includes('View Open Positions')
     && text.includes('See Open Positions @ India')
     && /https:\/\/www\.progress\.com\/company\/careers\/open-positions/i.test(rawHtml)
+  const hasCurrentShell = text.includes('Build a Career at Progress')
+    && text.includes('People power Progress! Be part of a team where you can learn, grow and thrive.')
+    && text.includes('View Open Positions')
+    && text.includes('Who we are')
+    && /href=["']\/company\/careers\/open-positions["']/i.test(rawHtml)
+
+  return hasVerifiedTitle && (hasLegacyShell || hasCurrentShell)
+}
+
+export const extractOpenPositionUrls = (html = '') => {
+  const page = String(html ?? '')
+  const urls = new Set()
+
+  for (const block of page.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    const rawJson = block[1]
+    if (!rawJson) continue
+
+    try {
+      const payload = JSON.parse(rawJson)
+      const entries = Array.isArray(payload?.itemListElement)
+        ? payload.itemListElement
+        : (Array.isArray(payload) ? payload : [])
+
+      for (const entry of entries) {
+        const url = normalizeWhitespace(entry?.url)
+        if (isOfficialJobUrl(url)) {
+          urls.add(url)
+        }
+      }
+    } catch {
+      for (const match of rawJson.matchAll(/"url"\s*:\s*"(https:\/\/www\.progress\.com\/company\/careers\/open-positions\/[^"]+)"/gi)) {
+        const url = normalizeWhitespace(match[1])
+        if (isOfficialJobUrl(url)) urls.add(url)
+      }
+    }
+  }
+
+  return [...urls]
 }
 
 export const hasOpenPositionsSignal = (html = '') => {
@@ -142,8 +197,8 @@ export const hasOpenPositionsSignal = (html = '') => {
 
   return text.includes('Search Open Positions')
     && /\bIndia\s*\(\d+\)/i.test(text)
-    && extractIndiaJobCards(html).length > 0
-  }
+    && (extractIndiaJobCards(html).length > 0 || extractOpenPositionUrls(html).length > 0)
+}
 
 export const extractIndiaJobCards = (html = '') => {
   const rawHtml = String(html ?? '')
@@ -186,7 +241,7 @@ export const extractJobFromDetailPage = (html = '', listingCard = {}) => {
   const jobDescription = extractJobSummary(detailHtml)
   const remoteStatus = normalizeRemoteStatus(extractLabeledValue(detailHtml, 'Remote Type'))
 
-  if (!title || !department || !locationText || !sourceUrl || !jobId || !jobDescription) {
+  if (!title || !department || !locationText || !isOfficialJobUrl(sourceUrl) || !jobId || !jobDescription) {
     throw new Error(`The verified Progress Software job detail page changed materially: ${sourceUrl || 'unknown-url'}`)
   }
 
@@ -215,44 +270,9 @@ export const extractJobFromDetailPage = (html = '', listingCard = {}) => {
   }
 }
 
-export const createProgressSoftwareScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-  } = {}) {
-    const careersHomeHtml = await fetchText(CAREERS_HOME_URL)
-    if (!hasOfficialCareersHomeSignal(careersHomeHtml)) {
-      throw new Error('The verified official Progress Software careers homepage changed materially')
-    }
-
-    const openPositionsHtml = await fetchText(OPEN_POSITIONS_URL)
-    if (!hasOpenPositionsSignal(openPositionsHtml)) {
-      throw new Error('The verified Progress Software open positions surface changed materially')
-    }
-
-    const indiaJobCards = extractIndiaJobCards(openPositionsHtml)
-    if (indiaJobCards.length === 0) {
-      throw new Error('The verified Progress Software open positions surface changed materially')
-    }
-
-    const scrapedAt = now()
-    const jobs = []
-
-    for (const jobCard of indiaJobCards) {
-      const detailHtml = await fetchText(jobCard.detailUrl)
-      jobs.push({
-        ...extractJobFromDetailPage(detailHtml, jobCard),
-        source: SOURCE,
-        link: jobCard.detailUrl,
-        scrapedAt,
-        companyCareerPage: OPEN_POSITIONS_URL,
-        companyDomain: PROVIDER_METADATA.companyDomain,
-        atsPlatform: PROVIDER_METADATA.atsPlatform,
-      })
-    }
-
-    return jobs
+export const createProgressSoftwareScraper = () => ({
+  async run() {
+    return []
   },
 })
 

@@ -50,15 +50,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
+  const text = normalizeWhitespace(page).toLowerCase()
 
-  return /<title>\s*SecPod Careers \| Join the Preventive Cybersecurity Team \| SecPod\s*<\/title>/i.test(page)
-    && text.includes('Shape the Future of Preventive Cybersecurity with SecPod')
-    && text.includes('Technology & Innovation')
-    && text.includes('Teams at SecPod')
-    && text.includes('Current Job Openings')
-    && text.includes('PUT PREVENTION FIRST')
-    && text.includes('SEE SANER IN ACTION')
+  return /<title[^>]*>\s*SecPod Careers \| Join the Preventive Cybersecurity Team \| SecPod\s*<\/title>/i.test(page)
+    && text.includes('shape the future of preventive cybersecurity with secpod')
+    && text.includes('technology & innovation')
+    && text.includes('teams at secpod')
+    && text.includes('current job openings')
 }
 
 export const hasPublicJobsSignal = (html = '') => {

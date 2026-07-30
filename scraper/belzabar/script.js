@@ -83,6 +83,18 @@ const uniqueStrings = (values) => {
 }
 
 const extractMetaField = (html, label) => {
+  const inlinePattern = new RegExp(
+    `<strong>\\s*${escapeRegExp(label)}\\s*:?\\s*([^<]*)<\\/strong>\\s*([^<]*?)(?=<br\\s*\\/?>|<\\/p>)`,
+    'i',
+  )
+  const inlineValue = extractFirst(
+    inlinePattern,
+    html,
+    (match) => normalizeWhitespace(`${match[1]}${match[2]}`),
+  )
+
+  if (inlineValue) return inlineValue
+
   const pattern = new RegExp(
     `<strong>\\s*${escapeRegExp(label)}\\s*:?\\s*<\\/strong>\\s*([\\s\\S]*?)(?:<br\\s*\\/?>\\s*<strong>|<\\/p>)`,
     'i',
@@ -136,20 +148,26 @@ const buildJobDescription = ({ requirementBullets, responsibilityBullets }) => {
 }
 
 export const extractHomepageCareersUrl = (html = '') => {
-  const href = extractFirst(
-    /<a\b[^>]*href=["'](\/about\/life-at-belzabar#careers-section)["']/i,
+  const hrefs = extractAll(
+    /href=["']([^"']+)["']/gi,
     html,
+    (match) => absoluteUrl(match[1]),
   )
 
-  return absoluteUrl(href)
+  return hrefs.find((href) => href === HOMEPAGE_LINKED_CAREERS_URL) || null
 }
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
+  const hasTrustedBrandShell = /data-wf-domain=["']web\.belzabar\.com["']/i.test(rawHtml)
+    || /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/www\.belzabar\.com\/?["']/i.test(rawHtml)
 
   return /<title>\s*Belzabar Software\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('Belzabar Software assists prominent and innovative companies')
+    && (
+      normalized.includes('Belzabar Software assists prominent and innovative companies')
+      || hasTrustedBrandShell
+    )
     && extractHomepageCareersUrl(rawHtml) === HOMEPAGE_LINKED_CAREERS_URL
 }
 
@@ -219,7 +237,7 @@ export const hasOfficialJobDetailSignal = (html = '', listing = {}) => {
 
   return /<title>\s*Careers at\s*\|\s*Belzabar Software Design India Pvt Ltd\s*<\/title>/i.test(rawHtml)
     && title === listing.title
-    && /<strong>\s*Experience:\s*<\/strong>/i.test(rawHtml)
+    && /<strong>\s*Experience(?:\s*:\s*[^<]*)?\s*<\/strong>/i.test(rawHtml)
     && /<strong>\s*Qualification:\s*<\/strong>/i.test(rawHtml)
     && /<strong>\s*Job Location:\s*<\/strong>/i.test(rawHtml)
     && /class=["']button w-button["'][^>]*>\s*Apply\s*<\/a>/i.test(rawHtml)

@@ -8,12 +8,9 @@ const careersShellHtml = `
     <title>KreditBee</title>
   </head>
   <body>
-    <noscript>
-      If you're seeing this message, that means JavaScript has been disabled on your browser, please enable JS to make this app work.
-    </noscript>
-    <div id="root"></div>
-    <script defer src="/react/9940.e7136e2c6854f2f01aa6.js"></script>
-    <script defer src="/react/main.0d876b3f7436475f4e2d.js"></script>
+    <div id="app"></div>
+    <script defer src="/react/runtime-main.31a1b939d85abc3049a1.js"></script>
+    <script defer src="/react/main.4c3987ab6f4e3d7b8891.js"></script>
   </body>
 </html>
 `
@@ -25,15 +22,9 @@ const detailShellHtml = `
     <title>KreditBee</title>
   </head>
   <body>
-    <noscript>
-      If you're seeing this message, that means JavaScript has been disabled on your browser, please enable JS to make this app work.
-    </noscript>
-    <div id="root"></div>
-    <script>
-      window.__INITIAL_PATH__ = "/careers/data-engineer";
-    </script>
-    <script defer src="/react/9940.e7136e2c6854f2f01aa6.js"></script>
-    <script defer src="/react/main.0d876b3f7436475f4e2d.js"></script>
+    <div id="app"></div>
+    <script defer src="/react/runtime-main.31a1b939d85abc3049a1.js"></script>
+    <script defer src="/react/main.4c3987ab6f4e3d7b8891.js"></script>
   </body>
 </html>
 `

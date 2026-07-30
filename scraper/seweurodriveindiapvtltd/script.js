@@ -102,11 +102,14 @@ const extractRows = (tableHtml) => [...String(tableHtml ?? '').matchAll(/<tr\b[^
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const text = stripTags(page) || ''
   return (
-    /Your career at SEW-EURODRIVE/i.test(page)
-    && /Job opportunities/i.test(page)
-    && /SEW-EURODRIVE INDIA/i.test(page)
-    && /application form/i.test(page)
+    /<title>\s*Careers\s*<\/title>/i.test(page)
+    && /Your career at SEW-EURODRIVE/i.test(text)
+    && /Job opportunities/i.test(text)
+    && /current job offers/i.test(text)
+    && /application form/i.test(text)
+    && /Take a look at our current job opportunities\./i.test(text)
   )
 }
 

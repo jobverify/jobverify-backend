@@ -68,7 +68,7 @@ export const hasVerifiedJobBoardSignal = (html) => {
 
   return /<title>\s*Jobs in Greece\s*-\s*linq\s*<\/title>/i.test(page)
     && normalized.includes('jobs in greece')
-    && normalized.includes('search')
+    && (/\/job-board\b/i.test(page) || normalized.includes('explore jobs'))
 }
 
 export const isClientHandoffText = (value) => /on behalf of/i.test(stripTags(value))

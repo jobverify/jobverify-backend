@@ -15,6 +15,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const FETCH_TIMEOUT_MS = 60000
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<br\s*\/?>/gi, '\n')
@@ -30,7 +31,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  timeoutMs: FETCH_TIMEOUT_MS,
 })
 
 const MONTH_INDEX = {
@@ -71,7 +72,9 @@ export const hasOfficialCareersSignal = (html = '') => {
 }
 
 export const extractRoleSummaries = (html = '') =>
-  [...String(html ?? '').matchAll(/<article[^>]*>\s*<time[^>]*>([^<]+)<\/time>\s*<h4[^>]*><a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a><\/h4>\s*<\/article>/gi)]
+  [...String(html ?? '').matchAll(
+    /<article[^>]*>[\s\S]*?(?:<time[^>]*>|<div[^>]+class=["'][^"']*\bdate_label\b[^"']*["'][^>]*>)([^<]+)(?:<\/time>|<\/div>)[\s\S]*?<h4[^>]*>\s*<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h4>[\s\S]*?<\/article>/gi,
+  )]
     .map((match) => ({
       title: normalizeWhitespace(match[3]),
       detailUrl: normalizeWhitespace(match[2]),
@@ -112,19 +115,19 @@ export const createAtidanTechnologiesScraper = ({ maxJobs = null } = {}) => ({
 
     const summaries = extractRoleSummaries(careersHtml)
     const selectedSummaries = maxJobs ? summaries.slice(0, maxJobs) : summaries
-    const jobs = []
+    const detailHtmlByUrl = Object.fromEntries(
+      await Promise.all(selectedSummaries.map(async (summary) => [
+        summary.detailUrl,
+        await fetchText(summary.detailUrl),
+      ])),
+    )
 
-    for (const summary of selectedSummaries) {
-      const detailHtml = await fetchText(summary.detailUrl)
-      jobs.push({
-        ...extractRoleDetail(detailHtml, summary),
-        source: SOURCE,
-        link: summary.detailUrl,
-        scrapedAt: now(),
-      })
-    }
-
-    return jobs
+    return selectedSummaries.map((summary) => ({
+      ...extractRoleDetail(detailHtmlByUrl[summary.detailUrl], summary),
+      source: SOURCE,
+      link: summary.detailUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

@@ -28,7 +28,7 @@ test('Paramatrix Technologies local catalog captures the verified first-party ca
   assert.equal(provider.companyName, 'Paramatrix Technologies')
   assert.equal(provider.companyCareerPage, 'https://www.paramatrix.com/careers')
   assert.equal(provider.atsPlatform, 'first-party-careers-page-with-inline-apply-modals')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-25')
   assert.match(provider.verifiedSurfaceSummary, /talent network/i)
   assert.equal(provider.modulePath, modulePath)
 })

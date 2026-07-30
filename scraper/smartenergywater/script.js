@@ -26,10 +26,17 @@ const normalizeWhitespace = (value) => String(value ?? '')
 
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
+  const title = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || ''
 
-  return normalized.includes('Join the SEW Mission')
+  return (
+    normalized.includes('Join the SEW Mission')
     && normalized.includes('Explore Job Openings')
     && normalized.includes('Help Us Shape the Future')
+  ) || (
+    /SEW Careers \| Be Part of Our Future Success/i.test(title)
+    && /skilled and innovative individuals/i.test(normalized)
+    && /shape the future/i.test(normalized)
+  )
 }
 
 export const hasVerifiedIndiaDetailSignal = (html = '') => {

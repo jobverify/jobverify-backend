@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Zeta Suite",
+    "company": "Zeta Suite",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "source": "hmzetasuite",
+    "jobId": "hmzetasuite-current-openings",
+    "requisitionId": "hmzetasuite-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Zeta Suite had current Himalayas hiring evidence for Software Development Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:31:27.506Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

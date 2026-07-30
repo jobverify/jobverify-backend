@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { IRON_MOUNTAIN_INDIA_CATALOG } from './catalog.js'
@@ -21,6 +22,7 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const BROWSER_TIMEOUT_MS = 60000
 
 const ACRONYM_MAP = new Map([
   ['ai', 'AI'],
@@ -205,46 +207,107 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createIronMountainIndiaScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, maxJobs = Number.POSITIVE_INFINITY } = {}) {
-    const aboutHtml = await fetchText(ABOUT_PAGE_URL)
-    if (!hasOfficialAboutPageCareersSignal(aboutHtml)) {
-      throw new Error('Iron Mountain India about page no longer matches the verified first-party careers handoff')
-    }
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b/i.test(String(error?.message ?? ''))
 
-    const jobsBoardHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialJobsBoardSignal(jobsBoardHtml)) {
-      throw new Error('Iron Mountain India jobs board no longer matches the verified first-party NLX surface')
-    }
+const createBrowserTextSession = async () => {
+  const browser = await launchBrowser()
+  const page = await createOptimizedPage(browser)
 
-    const sitemapXml = await fetchText(JOBS_SITEMAP_URL)
-    const entries = extractSitemapEntries(sitemapXml)
-    if (entries.length === 0) {
-      throw new Error('Iron Mountain India jobs sitemap no longer exposes public job URLs')
-    }
-
-    const scrapedAt = now()
-    const jobs = []
-    const seen = new Set()
-
-    for (const entry of entries) {
-      const mappedJob = mapSitemapEntryToJob(entry)
-      if (!mappedJob?.jobId || !mappedJob.applyUrl) continue
-      if (seen.has(mappedJob.jobId) || seen.has(mappedJob.applyUrl)) continue
-
-      seen.add(mappedJob.jobId)
-      seen.add(mappedJob.applyUrl)
-      jobs.push({
-        ...mappedJob,
-        link: mappedJob.applyUrl || mappedJob.sourceUrl,
-        source: SOURCE,
-        scrapedAt,
+  return {
+    close: async () => browser.close(),
+    fetchText: async (url) => {
+      const response = await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: BROWSER_TIMEOUT_MS,
       })
 
-      if (jobs.length >= maxJobs) break
+      if (!response?.ok()) {
+        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
+      }
+
+      return page.content()
+    },
+  }
+}
+
+export const createIronMountainIndiaScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+  async run({
+    fetchText = defaultFetchText,
+    fetchBrowserText,
+    maxJobs = Number.POSITIVE_INFINITY,
+  } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserTextSession()
+      }
+
+      return browserSession
     }
 
-    return jobs
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const aboutHtml = await fetchPageText(ABOUT_PAGE_URL)
+      if (!hasOfficialAboutPageCareersSignal(aboutHtml)) {
+        throw new Error('Iron Mountain India about page no longer matches the verified first-party careers handoff')
+      }
+
+      const jobsBoardHtml = await fetchPageText(CAREERS_URL)
+      if (!hasOfficialJobsBoardSignal(jobsBoardHtml)) {
+        throw new Error('Iron Mountain India jobs board no longer matches the verified first-party NLX surface')
+      }
+
+      const sitemapXml = await fetchText(JOBS_SITEMAP_URL)
+      const entries = extractSitemapEntries(sitemapXml)
+      if (entries.length === 0) {
+        throw new Error('Iron Mountain India jobs sitemap no longer exposes public job URLs')
+      }
+
+      const scrapedAt = now()
+      const jobs = []
+      const seen = new Set()
+
+      for (const entry of entries) {
+        const mappedJob = mapSitemapEntryToJob(entry)
+        if (!mappedJob?.jobId || !mappedJob.applyUrl) continue
+        if (seen.has(mappedJob.jobId) || seen.has(mappedJob.applyUrl)) continue
+
+        seen.add(mappedJob.jobId)
+        seen.add(mappedJob.applyUrl)
+        jobs.push({
+          ...mappedJob,
+          link: mappedJob.applyUrl || mappedJob.sourceUrl,
+          source: SOURCE,
+          scrapedAt,
+        })
+
+        if (jobs.length >= maxJobs) break
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

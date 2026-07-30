@@ -16,30 +16,42 @@ const careersHtml = `
       <p>Kolkata Headquarters, India</p>
       <section>
         <h2>Open Positions</h2>
-        <article class="brainium-role-card">
-          <h3>Senior Full-Stack Engineer</h3>
-          <p class="department">Engineering</p>
-          <p class="skills">React / Next.js | Node.js | TypeScript</p>
-          <p class="location">Kolkata</p>
-          <p class="employment-type">Full-time</p>
-          <a href="https://www.brainiuminfotech.com/careers#apply-senior-full-stack-engineer">Apply now</a>
-        </article>
-        <article class="brainium-role-card">
-          <h3>AI / ML Engineer</h3>
-          <p class="department">AI &amp; Data</p>
-          <p class="skills">Python | PyTorch | LangChain | LLM integration</p>
-          <p class="location">Kolkata</p>
-          <p class="employment-type">Full-time</p>
-          <a href="https://www.brainiuminfotech.com/careers#apply-ai-ml-engineer">Apply now</a>
-        </article>
-        <article class="brainium-role-card">
-          <h3>Senior DevOps / Platform Engineer</h3>
-          <p class="department">Cloud &amp; DevOps</p>
-          <p class="skills">Kubernetes | Terraform | AWS / Azure | GitHub Actions</p>
-          <p class="location">Kolkata</p>
-          <p class="employment-type">Full-time</p>
-          <a href="https://www.brainiuminfotech.com/careers#apply-senior-devops-platform-engineer">Apply now</a>
-        </article>
+        <h3>Roles we're hiring for right now.</h3>
+        <div class="careers-jobs-list">
+          <a href="#" class="careers-job-card" data-category="engineering">
+            <div class="careers-job-dept">Engineering</div>
+            <h5 class="careers-job-title">Senior Full-Stack Engineer</h5>
+            <div class="careers-job-tags">
+              <span>React / Next.js</span><span>Node.js</span><span>TypeScript</span>
+            </div>
+            <div class="careers-job-meta">
+              <span>Kolkata</span>
+              <span>Full-time</span>
+            </div>
+          </a>
+          <a href="#" class="careers-job-card" data-category="ai-data">
+            <div class="careers-job-dept">AI &amp; Data</div>
+            <h5 class="careers-job-title">AI / ML Engineer</h5>
+            <div class="careers-job-tags">
+              <span>Python</span><span>PyTorch</span><span>LangChain</span><span>LLM integration</span>
+            </div>
+            <div class="careers-job-meta">
+              <span>Kolkata</span>
+              <span>Full-time</span>
+            </div>
+          </a>
+          <a href="#" class="careers-job-card" data-category="cloud-devops">
+            <div class="careers-job-dept">Cloud &amp; DevOps</div>
+            <h5 class="careers-job-title">Senior DevOps / Platform Engineer</h5>
+            <div class="careers-job-tags">
+              <span>Kubernetes</span><span>Terraform</span><span>AWS / Azure</span><span>GitHub Actions</span>
+            </div>
+            <div class="careers-job-meta">
+              <span>Kolkata</span>
+              <span>Full-time</span>
+            </div>
+          </a>
+        </div>
       </section>
       <section>
         <h2>We're Hiring</h2>
@@ -71,8 +83,8 @@ test('Brainium Information Technologies extracts first-party open roles from the
       city: 'Kolkata',
       country: 'India',
       employmentType: 'Full-time',
-      applyUrl: 'https://www.brainiuminfotech.com/careers#apply-senior-full-stack-engineer',
-      sourceUrl: 'https://www.brainiuminfotech.com/careers#apply-senior-full-stack-engineer',
+      applyUrl: 'https://www.brainiuminfotech.com/careers#open-positions',
+      sourceUrl: 'https://www.brainiuminfotech.com/careers#open-positions',
       jobId: 'senior-full-stack-engineer',
     },
     {
@@ -83,8 +95,8 @@ test('Brainium Information Technologies extracts first-party open roles from the
       city: 'Kolkata',
       country: 'India',
       employmentType: 'Full-time',
-      applyUrl: 'https://www.brainiuminfotech.com/careers#apply-ai-ml-engineer',
-      sourceUrl: 'https://www.brainiuminfotech.com/careers#apply-ai-ml-engineer',
+      applyUrl: 'https://www.brainiuminfotech.com/careers#open-positions',
+      sourceUrl: 'https://www.brainiuminfotech.com/careers#open-positions',
       jobId: 'ai-ml-engineer',
     },
     {
@@ -95,8 +107,8 @@ test('Brainium Information Technologies extracts first-party open roles from the
       city: 'Kolkata',
       country: 'India',
       employmentType: 'Full-time',
-      applyUrl: 'https://www.brainiuminfotech.com/careers#apply-senior-devops-platform-engineer',
-      sourceUrl: 'https://www.brainiuminfotech.com/careers#apply-senior-devops-platform-engineer',
+      applyUrl: 'https://www.brainiuminfotech.com/careers#open-positions',
+      sourceUrl: 'https://www.brainiuminfotech.com/careers#open-positions',
       jobId: 'senior-devops-platform-engineer',
     },
   ])
@@ -125,6 +137,25 @@ test('Brainium Information Technologies run returns structured jobs from the ver
       ['Senior DevOps / Platform Engineer', 'Cloud & DevOps', 'Kolkata', 'India', 'brainiuminformationtechnologies', FIXED_SCRAPED_AT],
     ],
   )
+})
+
+test('Brainium Information Technologies falls back to a browser-rendered careers page when the direct request is blocked', async () => {
+  const brainium = await loadBrainiumModule()
+
+  const jobs = await brainium.createBrainiumInformationTechnologiesScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => {
+      throw new Error('HTTP 403 for https://www.brainiuminfotech.com/careers')
+    },
+    fetchBrowserText: async (url) => {
+      assert.equal(url, 'https://www.brainiuminfotech.com/careers')
+      return careersHtml
+    },
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.equal(jobs[0].applyUrl, 'https://www.brainiuminfotech.com/careers#open-positions')
 })
 
 test('Brainium Information Technologies fails closed when the verified careers surface no longer exposes open roles', async () => {

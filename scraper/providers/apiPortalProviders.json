@@ -32,6 +32,25 @@
     }
   },
   {
+    "source": "bristolmyerssquibb",
+    "companyName": "Bristol Myers Squibb",
+    "companyCareerPage": "https://jobs.bms.com/careers?location=india",
+    "companyDomain": "jobs.bms.com",
+    "countryFilter": "India",
+    "atsPlatform": "eightfold",
+    "paginationStrategy": "offset-limit",
+    "extractionStrategy": "api+detail",
+    "parser": "api-portal",
+    "normalizationProfile": "engineering-default",
+    "template": "eightfold",
+    "templateOptions": {
+      "host": "jobs.bms.com",
+      "domain": "bms.com",
+      "location": "India",
+      "locationPattern": "india|hyderabad|mumbai|delhi|bangalore|bengaluru|pune|chennai|gurgaon|gurugram|remote"
+    }
+  },
+  {
     "source": "amd",
     "companyName": "AMD",
     "companyCareerPage": "https://careers.amd.com/careers-home/jobs",
@@ -679,6 +698,86 @@
     }
   },
   {
+    "source": "materialize",
+    "companyName": "Materialize",
+    "companyCareerPage": "https://materialize.com/careers/",
+    "countryFilter": "India",
+    "atsPlatform": "ashby",
+    "paginationStrategy": "single-page",
+    "extractionStrategy": "verified-first-party-careers-page+public-ashby-board+public-ashby-get-feed+india-location-filter",
+    "parser": "api-portal",
+    "normalizationProfile": "engineering-default",
+    "ashbyPublicBoardUrl": "https://jobs.ashbyhq.com/materialize",
+    "ashbyJobBoardUrl": "https://api.ashbyhq.com/posting-api/job-board/materialize",
+    "verifiedOn": "2026-07-25",
+    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://materialize.com/careers/ was the live first-party Materialize careers page and publicly listed openings including Senior / Staff Software Engineer (Database) and Field Engineer in New York. Verified that the public Ashby board at https://jobs.ashbyhq.com/materialize and the companion public GET feed at https://api.ashbyhq.com/posting-api/job-board/materialize were live and exposed listed roles including Senior / Staff Software Engineer (Database), Field Engineer, Senior Marketing Manager, and Enterprise Account Executive. The verified public board showed New York and remote-US openings only, with zero India openings on the verified date.",
+    "config": {
+      "discovery": {
+        "careerPageUrl": "https://materialize.com/careers/",
+        "listingApiUrl": "https://api.ashbyhq.com/posting-api/job-board/materialize"
+      },
+      "request": {
+        "method": "GET"
+      },
+      "pagination": {
+        "strategy": "single-page",
+        "resultsPath": "jobs"
+      },
+      "mapping": {
+        "title": "title",
+        "location": [
+          "secondaryLocations.0.address.postalAddress.addressLocality",
+          "secondaryLocations.0.location",
+          "address.postalAddress.addressLocality",
+          "address.postalAddress.addressCountry",
+          "location"
+        ],
+        "jobId": "id",
+        "requisitionId": "id",
+        "sourceUrl": "jobUrl",
+        "applyUrl": "applyUrl",
+        "department": "department",
+        "employmentType": {
+          "path": "employmentType",
+          "valueMap": {
+            "FullTime": "Full-time",
+            "PartTime": "Part-time",
+            "Contract": "Contract",
+            "Internship": "Internship"
+          }
+        },
+        "jobDescription": "descriptionPlain",
+        "postingDate": "publishedAt",
+        "remoteStatus": [
+          {
+            "path": "isRemote",
+            "valueMap": {
+              "true": "Remote",
+              "false": null
+            }
+          },
+          {
+            "path": "workplaceType",
+            "valueMap": {
+              "Hybrid": "Hybrid",
+              "Remote": "Remote",
+              "OnSite": "On-site",
+              "Onsite": "On-site"
+            }
+          }
+        ]
+      },
+      "resultFilter": {
+        "include": [
+          {
+            "field": "location",
+            "pattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|gurugram|gurgaon|noida|delhi|chennai|kolkata|ahmedabad|trivandrum|kochi"
+          }
+        ]
+      }
+    }
+  },
+  {
     "source": "matterev",
     "companyName": "Matter EV",
     "companyCareerPage": "https://www.matter.in/careers",
@@ -876,6 +975,24 @@
     }
   },
   {
+    "source": "grafanalabs",
+    "companyName": "Grafana Labs",
+    "companyCareerPage": "https://grafana.com/careers/",
+    "countryFilter": "India",
+    "companyDomain": "grafana.com",
+    "atsPlatform": "greenhouse",
+    "paginationStrategy": "single-page",
+    "extractionStrategy": "api",
+    "parser": "api-portal",
+    "normalizationProfile": "engineering-default",
+    "template": "greenhouse",
+    "templateOptions": {
+      "boardToken": "grafanalabs",
+      "locationPattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|gurugram|gurgaon|noida|delhi|chennai|remote india"
+    },
+    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://grafana.com/careers/ is the live first-party Grafana Labs careers page, that it visibly promotes \"Explore open roles\", and that it hands candidates to the official Greenhouse board at https://job-boards.greenhouse.io/grafanalabs. The public Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/grafanalabs/jobs?content=true was reachable and returned 131 live Grafana Labs openings on the verified date, but none matched India location signals; the only APAC listings observed were Japan (Remote) and Singapore (Remote). This provider therefore uses the trusted first-party Greenhouse feed and currently returns a verified zero-openings result for India."
+  },
+  {
     "source": "groww",
     "companyName": "Groww",
     "companyCareerPage": "https://job-boards.eu.greenhouse.io/groww",
@@ -1044,6 +1161,25 @@
         ]
       }
     }
+  },
+  {
+    "source": "planetscale",
+    "companyName": "PlanetScale",
+    "companyCareerPage": "https://planetscale.com/careers",
+    "countryFilter": "India",
+    "companyDomain": "planetscale.com",
+    "atsPlatform": "greenhouse",
+    "paginationStrategy": "single-page",
+    "extractionStrategy": "api",
+    "parser": "api-portal",
+    "normalizationProfile": "engineering-default",
+    "template": "greenhouse",
+    "templateOptions": {
+      "boardToken": "planetscale",
+      "locationPattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|gurugram|gurgaon|noida|delhi|chennai|remote india|remote - india"
+    },
+    "verifiedOn": "2026-07-25",
+    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://planetscale.com/careers was the live first-party PlanetScale careers page, that its Current openings section linked candidates to the official Greenhouse board under https://job-boards.greenhouse.io/planetscale, and that the public Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/planetscale/jobs?content=true was the trusted machine-readable source for those openings. The verified first-party page listed roles including Software Engineer - PlanetScale Postgres (Remote), Solutions Engineer (Remote - EMEA, Remote - NA), and Enterprise Support Engineer (Remote - NA, APAC, EMEA), with zero India openings on the verified date."
   },
   {
     "source": "qualcomm",
@@ -1321,6 +1457,8 @@
     "source": "microsoft",
     "companyName": "Microsoft",
     "companyCareerPage": "https://careers.microsoft.com",
+    "verifiedOn": "2026-07-25",
+    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.microsoft.com/en-us/power-platform/products/power-bi/ is the live first-party Power BI product surface under Microsoft, and that https://careers.microsoft.com/professionals/us/en/l-india is the live first-party Microsoft India careers page linking applicants into the official Microsoft careers flow on apply.careers.microsoft.com. Microsoft therefore remains the trustworthy parent-company provider for Power BI coverage.",
     "countryFilter": "India",
     "atsPlatform": "eightfold",
     "paginationStrategy": "offset-limit",
@@ -1726,66 +1864,6 @@
     }
   },
   {
-    "source": "decathlon",
-    "companyName": "Decathlon Sports India",
-    "companyCareerPage": "https://joinus.decathlon.in/en",
-    "countryFilter": "India",
-    "atsPlatform": "cegid-digitalrecruiters",
-    "paginationStrategy": "page-number",
-    "extractionStrategy": "api",
-    "parser": "api-portal",
-    "normalizationProfile": "engineering-default",
-    "config": {
-      "discovery": {
-        "careerPageUrl": "https://joinus.decathlon.in/en/annonces",
-        "listingApiUrl": "https://api.digitalrecruiters.com/public/v1/careers-site/job-ads"
-      },
-      "request": {
-        "method": "POST",
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "query": {
-          "domainName": "joinus.decathlon.in",
-          "limit": "100",
-          "locale": "en_GB"
-        },
-        "body": {
-          "filters": {}
-        }
-      },
-      "pagination": {
-        "strategy": "page-number",
-        "pageParam": "page",
-        "pageSize": 100,
-        "resultsPath": "items",
-        "totalCountPath": "count"
-      },
-      "mapping": {
-        "title": "title",
-        "location": "location",
-        "jobId": "job_ad_id",
-        "requisitionId": "id",
-        "sourceUrl": {
-          "strategy": "template",
-          "template": "/en/annonces/{{slug}}",
-          "values": {
-            "slug": "url"
-          }
-        },
-        "applyUrl": {
-          "strategy": "template",
-          "template": "/en/annonces/{{slug}}",
-          "values": {
-            "slug": "url"
-          }
-        },
-        "department": "job",
-        "employmentType": "contract"
-      }
-    }
-  },
-  {
     "source": "virtusa",
     "companyName": "Virtusa",
     "companyCareerPage": "https://www.virtusa.com/careers/job-search/in",
@@ -1856,6 +1934,25 @@
       "boardToken": "observeai",
       "locationPattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|gurgaon|gurugram|noida|chennai|delhi|remote"
     }
+  },
+  {
+    "source": "newrelic",
+    "companyName": "New Relic",
+    "companyCareerPage": "https://newrelic.com/careers",
+    "companyDomain": "newrelic.com",
+    "countryFilter": "India",
+    "atsPlatform": "greenhouse-board-api",
+    "paginationStrategy": "single-page",
+    "extractionStrategy": "verified-first-party-careers-page+embedded-drupal-jobsearchdata+official-greenhouse-board-api+india-filter",
+    "parser": "api-portal",
+    "normalizationProfile": "engineering-default",
+    "template": "greenhouse",
+    "templateOptions": {
+      "boardToken": "newrelic",
+      "locationPattern": "india|bangalore|bengaluru|hyderabad"
+    },
+    "verifiedOn": "2026-07-25",
+    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://newrelic.com/careers was the live first-party New Relic careers page, that its bot-safe HTML at https://newrelic.com/careers?is_bot=true embedded Drupal jobSearchData.jobs records whose absolute_url values pointed to the official Greenhouse board under https://job-boards.greenhouse.io/newrelic/, and that the corresponding public Greenhouse board API at https://boards-api.greenhouse.io/v1/boards/newrelic/jobs?content=true exposed India openings including Director, Billing in Bangalore, India, Lead Financial Compliance Analyst in Bangalore, India, and Lead Fullstack Engineer - Backend focused in Hyderabad, India."
   },
   {
     "source": "nielseniq",
@@ -2438,84 +2535,6 @@
     }
   },
   {
-    "source": "ujjivan",
-    "companyName": "Ujjivan",
-    "companyCareerPage": "https://www.ujjivansfb.bank.in/careers-home/explore-jobs",
-    "companyDomain": "ujjivansfb.bank.in",
-    "countryFilter": "India",
-    "atsPlatform": "official-company-careers",
-    "paginationStrategy": "single-page",
-    "extractionStrategy": "first-party-jobs-api+detail-url-template",
-    "parser": "api-portal",
-    "normalizationProfile": "engineering-default",
-    "config": {
-      "discovery": {
-        "careerPageUrl": "https://www.ujjivansfb.bank.in/careers-home/explore-jobs",
-        "listingApiUrl": "https://www.ujjivansfb.bank.in/api/jobs"
-      },
-      "request": {
-        "method": "GET"
-      },
-      "pagination": {
-        "strategy": "single-page",
-        "resultsPath": "data",
-        "totalCountPath": "count"
-      },
-      "mapping": {
-        "title": "job_title",
-        "location": [
-          "location_city.0",
-          "location_city.1",
-          "location_city.2",
-          "location_city.3"
-        ],
-        "jobId": "job_id",
-        "requisitionId": "job_code",
-        "sourceUrl": {
-          "strategy": "template",
-          "template": "https://www.ujjivansfb.bank.in/career-details?id={{jobId}}",
-          "values": {
-            "jobId": "job_id"
-          }
-        },
-        "applyUrl": {
-          "strategy": "template",
-          "template": "https://www.ujjivansfb.bank.in/career-details?id={{jobId}}",
-          "values": {
-            "jobId": "job_id"
-          }
-        },
-        "department": [
-          "parent_department",
-          "department"
-        ],
-        "employmentType": {
-          "path": "employee_type",
-          "valueMap": {
-            "Permanent": "Full-time",
-            "Intern": "Internship"
-          }
-        },
-        "experienceRequired": {
-          "strategy": "template",
-          "template": "{{from}} - {{to}} years",
-          "values": {
-            "from": "experience_from",
-            "to": "experience_to"
-          }
-        },
-        "postingDate": "job_updated_timestamp",
-        "remoteStatus": {
-          "path": "is_remote",
-          "valueMap": {
-            "0": "On-site",
-            "1": "Remote"
-          }
-        }
-      }
-    }
-  },
-  {
     "source": "arcesium",
     "companyName": "Arcesium",
     "companyCareerPage": "https://www.arcesium.com/careers",
@@ -2586,5 +2605,24 @@
         ]
       }
     }
+  },
+  {
+    "source": "collibra",
+    "companyName": "Collibra",
+    "companyCareerPage": "https://www.collibra.com/company/careers",
+    "companyDomain": "collibra.com",
+    "countryFilter": "India",
+    "atsPlatform": "greenhouse",
+    "paginationStrategy": "single-page",
+    "extractionStrategy": "api",
+    "parser": "api-portal",
+    "normalizationProfile": "engineering-default",
+    "template": "greenhouse",
+    "templateOptions": {
+      "boardToken": "collibra",
+      "locationPattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|gurgaon|gurugram|noida|delhi|new delhi|chennai|remote india|india remote|remote, india|remote - india"
+    },
+    "verifiedOn": "2026-07-25",
+    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.collibra.com/company/careers remained the live first-party Collibra careers page, that it listed 40 current openings through first-party role URLs such as /company/careers/jobs/7059344?gh_jid=7059344 and /company/careers/jobs/7940004?gh_jid=7940004, and that the public Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/collibra/jobs?content=true returned the same 40 live openings with first-party absolute_url values under collibra.com. Verified sample openings on the date included DevOps Software Engineer in Prague, Director, Talent Acquisition in New York, New York, USA; Raleigh, North Carolina, USA, and Executive Assistant II in Brussels, Belgium, with zero India openings."
   }
 ]

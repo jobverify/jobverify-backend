@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { PATHPARTNER_TECHNOLOGY_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -28,12 +29,17 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const isExpectedBlockedFetchError = (error) => /connection was reset|secure channel|tls|ssl|trust relationship/i
   .test(String(error?.message ?? error ?? ''))
 
 export const createPathPartnerTechnologyScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
   } = {}) {
     try {
       const html = await fetchText(CAREERS_URL)
@@ -43,7 +49,41 @@ export const createPathPartnerTechnologyScraper = () => ({
       throw new Error('PathPartner Technology careers fetch returned an unexpected empty success response')
     } catch (error) {
       if (!isExpectedBlockedFetchError(error)) {
-        throw error
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        let browserSession = null
+
+        const getBrowserSession = async () => {
+          if (!browserSession) {
+            browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+          }
+
+          return browserSession
+        }
+
+        const browserTextFetcher = fetchBrowserText || (async (url) => {
+          const session = await getBrowserSession()
+          return session.fetchText(url)
+        })
+
+        try {
+          const html = await browserTextFetcher(CAREERS_URL)
+          if (typeof html === 'string' && html.trim()) {
+            throw new Error('PathPartner Technology careers surface became publicly fetchable and needs a fresh manual review')
+          }
+
+          throw new Error('PathPartner Technology careers fetch returned an unexpected empty success response')
+        } catch (browserError) {
+          if (!isExpectedBlockedFetchError(browserError)) {
+            throw browserError
+          }
+        } finally {
+          if (browserSession) {
+            await browserSession.close()
+          }
+        }
       }
       return []
     }

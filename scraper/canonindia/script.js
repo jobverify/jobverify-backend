@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { loadConfig } from '../utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -42,6 +43,10 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const hasCareerPageSignal = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
   return (
@@ -53,7 +58,7 @@ export const hasCareerPageSignal = (html) => {
 
 export const hasPortalBlockedSignal = ({ status, html }) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
-  return status === 200 && normalized === 'no access'
+  return (status === 200 || status === 403) && normalized === 'no access'
 }
 
 export const extractOpenings = () => []
@@ -63,19 +68,53 @@ export const createCanonIndiaScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchPage = options.fetchPage || defaultFetchPage
-    const careerPage = await fetchPage(CAREER_PAGE_URL)
+    const fetchBrowserPage = options.fetchBrowserPage
+    let browserSession = null
 
-    if (!hasCareerPageSignal(careerPage.html)) {
-      return []
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const portalPage = await fetchPage(EXTERNAL_PORTAL_URL)
-    if (!hasPortalBlockedSignal(portalPage)) {
-      throw new Error('Canon India external careers portal no longer returns the expected current no-access state')
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
+
+    const fetchVerifiedPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserPageFetcher(url)
+      }
     }
 
-    const jobs = extractOpenings()
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    try {
+      const careerPage = await fetchVerifiedPage(CAREER_PAGE_URL)
+
+      if (!hasCareerPageSignal(careerPage.html)) {
+        return []
+      }
+
+      const portalPage = await fetchVerifiedPage(EXTERNAL_PORTAL_URL)
+      if (!hasPortalBlockedSignal(portalPage)) {
+        throw new Error('Canon India external careers portal no longer returns the expected current no-access state')
+      }
+
+      const jobs = extractOpenings()
+      return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

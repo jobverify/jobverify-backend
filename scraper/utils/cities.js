@@ -65,6 +65,7 @@ export const CANONICAL_CITIES = {
   'nagpur':         'Nagpur',
   'thane':          'Thane',
   'tirunelveli':    'Tirunelveli',
+  'tirupati':       'Tirupati',
   'patna':          'Patna',
   'raipur':         'Raipur',
   'ghaziabad':      'Ghaziabad',

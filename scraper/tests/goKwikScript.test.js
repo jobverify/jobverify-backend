@@ -30,6 +30,32 @@ const aboutPageHtml = `
 </html>
 `
 
+const currentAboutPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>GoKwik - Smart Checkout &amp; RTO Solutions for D2C Brands</title>
+  </head>
+  <body>
+    <main>
+      <h1>We Are GoKwik</h1>
+      <p>GoKwik is a D2C commerce growth platform that helps brands drive revenue across the entire customer lifecycle.</p>
+      <section>
+        <h2>Life at GoKwik</h2>
+        <a href="https://gokwik.keka.com/careers/">JOIN OUR TEAM</a>
+      </section>
+      <footer>
+        <p>GoKwik Commerce solutions private limited is not a payment aggregator.</p>
+        <nav>
+          <a href="https://gokwik.keka.com/careers/">Careers</a>
+        </nav>
+        <p>Trusted. Certified. Secure.</p>
+      </footer>
+    </main>
+  </body>
+</html>
+`
+
 const portalInfo = {
   name: 'GoKwik Commerce Solutions Pvt. Ltd.',
   shortName: 'GoKwik Commerce Solutions Pvt. Ltd.',
@@ -110,6 +136,7 @@ test('GoKwik helpers stay pinned to the verified first-party careers handoff and
   assert.equal(gokwik.VERIFIED_ON, '2026-07-16')
   assert.equal(gokwik.extractCareersUrlFromAboutPage(aboutPageHtml), gokwik.CAREERS_URL)
   assert.equal(gokwik.hasOfficialAboutPageSignal(aboutPageHtml), true)
+  assert.equal(gokwik.hasOfficialAboutPageSignal(currentAboutPageHtml), true)
   assert.equal(gokwik.hasExpectedCareerPortalInfo(portalInfo), true)
 })
 

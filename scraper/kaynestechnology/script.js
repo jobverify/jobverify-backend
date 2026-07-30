@@ -36,7 +36,7 @@ export const hasVerifiedHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Kaynes Technology India Limited\s*<\/title>/i.test(page)
+  return /<title>\s*Kaynes Technology(?: India Limited)?\s*<\/title>/i.test(page)
     && normalized.includes('Beware of Recruitment Frauds')
     && normalized.includes('Kaynes Technology India Limited')
 }
@@ -54,9 +54,13 @@ export const isVerifiedMissingJobRoute = (page = {}) => {
   const normalized = normalizeWhitespace(html)
 
   return Number(page.status) === 404
-    && /<title>\s*404 Not Found\s*<\/title>/i.test(html)
-    && normalized.includes('404 Not Found')
-    && !hasPublicJobSignals(html)
+    && normalized === '404 Not Found'
+    || (
+      Number(page.status) === 404
+      && /<title>\s*404 Not Found\s*<\/title>/i.test(html)
+      && normalized.includes('404 Not Found')
+      && !hasPublicJobSignals(html)
+    )
 }
 
 const defaultFetchPage = async (url) => {

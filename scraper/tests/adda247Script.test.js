@@ -186,6 +186,33 @@ test('Adda247 returns Keka jobs after validating the verified first-party career
   assert.equal(jobs[0].link, 'https://adda247.keka.com/careers/jobdetails/133120')
 })
 
+test('Adda247 can recover with a browser-backed first-party careers shell when direct requests are blocked', async () => {
+  const adda247 = await loadAdda247Module()
+  const browserUrls = []
+
+  const jobs = await adda247.createAdda247Scraper().run({
+    fetchText: async () => {
+      throw new Error(`HTTP 403 for ${adda247.CAREERS_URL}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return careersShellHtml
+    },
+    fetchJson: async (url) => {
+      if (url === adda247.KEKA_ACTIVE_JOBS_API_URL) {
+        return kekaActiveJobsPayload
+      }
+
+      throw new Error(`Unexpected JSON URL: ${url}`)
+    },
+    now: () => '2026-07-19T00:00:00.000Z',
+  })
+
+  assert.deepEqual(browserUrls, [adda247.CAREERS_URL])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'adda247')
+})
+
 test('Adda247 fails closed when the first-party careers shell changes or starts exposing first-party job records', async () => {
   const adda247 = await loadAdda247Module()
 

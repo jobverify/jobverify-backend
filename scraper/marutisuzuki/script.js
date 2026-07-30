@@ -9,6 +9,7 @@ export const SOURCE = 'marutisuzuki'
 export const COMPANY = 'Maruti Suzuki India Limited'
 export const CAREERS_URL = 'https://www.marutisuzuki.com/corporate/careers'
 export const APPLY_PORTAL_URL = 'https://maruti.app.param.ai/jobs/'
+export const CAREER_NOTICE_URL = 'https://www.marutisuzuki.com/corporate/careers/join-us/career-notice'
 
 const ARCHIVED_PROGRAM_URL = 'https://maruti.app.param.ai/jobs/all-india-hiring-2023-20-btech-and-mtech'
 const EXPECTED_APPLY_URLS = [
@@ -20,6 +21,8 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtml = (value) => String(value ?? '')
+  .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
+  .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
   .replace(/&nbsp;/gi, ' ')
   .replace(/&#39;|&apos;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
@@ -52,11 +55,26 @@ const toAbsoluteUrl = (value) => {
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
 
-  return normalized.includes('career - life at maruti suzuki india limited')
-    && normalized.includes('work with maruti suzuki')
+  const hasLegacyCareersHubSignals = normalized.includes('work with maruti suzuki')
     && normalized.includes('freshers')
     && normalized.includes('experienced professionals')
     && normalized.includes('workmen hiring (iti)')
+  const hasCurrentCareersHubSignals = normalized.includes('come, join us! the future of mobility needs you')
+    && normalized.includes('life at msil')
+    && normalized.includes('why work with us')
+    && normalized.includes('better opportunities')
+    && normalized.includes('learning & development')
+    && normalized.includes('care & love')
+    && normalized.includes('maximize potential')
+    && normalized.includes('join us')
+    && normalized.includes('see open positions')
+    && normalized.includes('freshers')
+    && normalized.includes('all india engineering hiring')
+    && normalized.includes('experienced professionals')
+    && normalized.includes('workmen hiring (iti)')
+
+  return normalized.includes('career - life at maruti suzuki india limited')
+    && (hasLegacyCareersHubSignals || hasCurrentCareersHubSignals)
 }
 
 export const extractApplyUrls = (html) => {
@@ -85,12 +103,25 @@ const hasExpectedApplyUrls = (urls) =>
 export const hasArchivedApplyOnlySignal = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
   const applyUrls = extractApplyUrls(html)
+  const rawHtml = String(html ?? '')
+  const hasCurrentCareerNoticeLink = /href=["']https:\/\/www\.marutisuzuki\.com\/corporate\/careers\/join-us\/career-notice["']/i.test(rawHtml)
 
-  return hasExpectedApplyUrls(applyUrls)
+  const hasLegacyArchivedApplyOnlySignals = hasExpectedApplyUrls(applyUrls)
     && normalized.includes('all india engineering hiring 2023')
     && normalized.includes('last date for application: july 16, 2023, 23:59 hrs')
     && normalized.includes('passing year 2019, 2020 & 2021')
     && normalized.includes('we will be maintaining your resume in our database')
+  const hasCurrentGenericApplyOnlySignals = applyUrls.length === 1
+    && applyUrls[0] === APPLY_PORTAL_URL
+    && hasCurrentCareerNoticeLink
+    && normalized.includes('view all open positions')
+    && normalized.includes('freshers')
+    && normalized.includes('all india engineering hiring')
+    && normalized.includes('experienced professionals')
+    && normalized.includes('workmen hiring (iti)')
+    && normalized.includes('pan india / hybrid')
+
+  return hasLegacyArchivedApplyOnlySignals || hasCurrentGenericApplyOnlySignals
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

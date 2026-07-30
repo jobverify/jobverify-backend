@@ -42,6 +42,19 @@ const missingDetailHtml = `
 </html>
 `
 
+const originUnreachableHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>ajnalens.com | 523: Origin is unreachable</title>
+  </head>
+  <body>
+    <h1>523</h1>
+    <p>Origin is unreachable</p>
+  </body>
+</html>
+`
+
 const loadAjnaLensModule = async () => {
   try {
     return await import('../ajnalens/script.js')
@@ -210,5 +223,28 @@ test('run fails closed when the verified AjnaLens careers surface or missing det
       },
     }),
     /verified missing role detail route/i,
+  )
+})
+
+test('run marks AjnaLens origin-unreachable outages as upstream soft failures', async () => {
+  const ajnaLens = await loadAjnaLensModule()
+
+  await assert.rejects(
+    ajnaLens.createAjnaLensScraper().run({
+      fetchPage: async (url) => {
+        assert.equal(url, ajnaLens.CAREERS_URL)
+        return {
+          status: 523,
+          url,
+          html: originUnreachableHtml,
+        }
+      },
+    }),
+    (error) => {
+      assert.match(error.message, /origin is unreachable/i)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      return true
+    },
   )
 })

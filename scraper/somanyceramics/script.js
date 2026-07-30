@@ -11,7 +11,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const CARD_PATTERN =
-  /Designation[\s\S]{0,500}?<h3[^>]*>\s*([^<]+?)\s*<\/h3>[\s\S]{0,300}?Job Location[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,300}?Work Type[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,500}?<a[^>]+href=["'](https:\/\/v2\.app\.goodfit\.so\/jobs\/[^"']+)["'][^>]*>\s*Know More\s*<\/a>/gi
+  /Designation[\s\S]{0,500}?<h3[^>]*>\s*([^<]+?)\s*<\/h3>[\s\S]{0,300}?Job Location[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,300}?Work Type[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,500}?<a[^>]+href=["'](https:\/\/v2\.app\.goodfit\.so\/jobs\/[^"']+)["'][^>]*>[\s\S]{0,300}?Know More[\s\S]{0,300}?<\/a>/gi
 
 export const PROVIDER_METADATA = SOMANY_CERAMICS_CATALOG
 export const SOURCE = PROVIDER_METADATA.source

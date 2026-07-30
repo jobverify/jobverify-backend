@@ -18,12 +18,13 @@ const HOMEPAGE_HTML = `
 const CAREERS_HTML = `
   <html>
     <head>
-      <title>LG Soft India Private Limited</title>
-      <base href="/ms/candidate/">
+      <title></title>
+      <base href="/ms/candidatev2/">
     </head>
     <body>
       <app-root></app-root>
-      <script src="/ms/bot/candidateweb/assets/bot.js"></script>
+      <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
     </body>
   </html>
 `

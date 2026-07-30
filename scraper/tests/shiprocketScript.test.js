@@ -13,30 +13,36 @@ const careersHtml = `
     <main>
       <h1>Career That Takes You Miles!</h1>
       <p>Bring ideas to life by starting your career at Shiprocket.</p>
-      <h2>Join The Family, We're Hiring!</h2>
-      <article class="job-card">
-        <h5>GoLang Developer</h5>
-        <div class="job-card__meta">
-          <span>Gurugram</span>
+      <h2>Join The Family, We&#8217;re Hiring!</h2>
+      <div class="job">
+        <div class="content">
+          <h5>GoLang Developer</h5>
+          <div class="meta">
+            <small>Gurugram</small>
+          </div>
         </div>
         <a href="https://careers.shiprocket.in/jobs/golang-developer/">View Job</a>
-      </article>
-      <article class="job-card">
-        <h5>Central Analytics Lead</h5>
-        <div class="job-card__meta">
-          <span>4+ years</span>
-          <span>Gurugram, Haryana</span>
+      </div>
+      <div class="job">
+        <div class="content">
+          <h5>Central Analytics Lead</h5>
+          <div class="meta">
+            <small>4+ years</small>
+            <small>Gurugram, Haryana</small>
+          </div>
         </div>
         <a href="https://careers.shiprocket.in/jobs/central-analytics-lead/">View Job</a>
-      </article>
-      <article class="job-card">
-        <h5>Sr. Manager- Supply (FTL & PTL)</h5>
-        <div class="job-card__meta">
-          <span>6-8 yrs</span>
-          <span>Gurgaon</span>
+      </div>
+      <div class="job">
+        <div class="content">
+          <h5>Sr. Manager- Supply (FTL & PTL)</h5>
+          <div class="meta">
+            <small>6-8 yrs</small>
+            <small>Gurgaon</small>
+          </div>
         </div>
         <a href="https://careers.shiprocket.in/jobs/sr-manager-supply-ftl-ptl/">View Job</a>
-      </article>
+      </div>
       <section>
         <h3>Job Application Form</h3>
         <p>Resume*</p>
@@ -143,6 +149,35 @@ const supplyDetailHtml = `
 </html>
 `
 
+const encodedTitleCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Shiprocket Careers - Apply for a Job at Shiprocket</title>
+  </head>
+  <body>
+    <main>
+      <h1>Career That Takes You Miles!</h1>
+      <h2>Join The Family, We&#8217;re Hiring!</h2>
+      <div class="job enterprise-kam">
+        <div class="content">
+          <h5>Team Lead &#8211; Key Account Manager</h5>
+          <div class="meta">
+            <small>5+ Years</small>
+            <small>Gurgaon</small>
+          </div>
+        </div>
+        <a href="https://careers.shiprocket.in/jobs/team-lead-key-account-manager/">View Job</a>
+      </div>
+      <section>
+        <h3>Job Application Form</h3>
+        <p>Resume*</p>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../shiprocket/script.js')
@@ -161,6 +196,12 @@ test('Shiprocket helpers stay pinned to the verified official careers list and d
   assert.equal(shiprocket.CAREERS_URL, 'https://careers.shiprocket.in/')
   assert.equal(shiprocket.JOB_PAGE_PREFIX, 'https://careers.shiprocket.in/jobs/')
   assert.equal(shiprocket.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(
+    shiprocket.hasOfficialCareersSignal(
+      careersHtml.replace('We&#8217;re Hiring!', 'We\u2019re Hiring!'),
+    ),
+    true,
+  )
   assert.deepEqual(shiprocket.extractVisibleJobListings(careersHtml), [
     {
       slug: 'golang-developer',
@@ -185,6 +226,16 @@ test('Shiprocket helpers stay pinned to the verified official careers list and d
       applyUrl: 'https://careers.shiprocket.in/jobs/sr-manager-supply-ftl-ptl/',
       location: 'Gurgaon',
       experienceRequired: '6-8 yrs',
+    },
+  ])
+  assert.deepEqual(shiprocket.extractVisibleJobListings(encodedTitleCareersHtml), [
+    {
+      slug: 'team-lead-key-account-manager',
+      title: 'Team Lead - Key Account Manager',
+      sourceUrl: 'https://careers.shiprocket.in/jobs/team-lead-key-account-manager/',
+      applyUrl: 'https://careers.shiprocket.in/jobs/team-lead-key-account-manager/',
+      location: 'Gurgaon',
+      experienceRequired: '5+ Years',
     },
   ])
 

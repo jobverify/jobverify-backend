@@ -21,9 +21,17 @@ const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  return OFFICIAL_BRAND_PATTERN.test(page)
+  const normalized = normalizeWhitespace(page)
+  const hasLegacySignals = OFFICIAL_BRAND_PATTERN.test(page)
     && CAREERS_PATTERN.test(page)
     && MAILTO_PATTERN.test(page)
+  const hasCurrentLandingSignals = normalized.includes('Career at Smartworks')
+    && normalized.includes('Join Our Team')
+    && normalized.includes('Your journey to grow, innovate, and make an impact starts here.')
+    && normalized.includes('View Open Positions')
+    && normalized.includes('Life @Smartworks')
+
+  return hasLegacySignals || hasCurrentLandingSignals
 }
 
 export const hasPublicJobBoardSignal = (html) => PUBLIC_JOB_BOARD_PATTERN.test(String(html ?? ''))

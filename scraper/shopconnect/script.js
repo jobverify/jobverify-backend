@@ -1,3 +1,5 @@
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
+
 export const SOURCE = 'shopconnect'
 export const COMPANY = 'Shopconnect'
 export const HOMEPAGE_URL = 'https://www.shopconnect.in/'
@@ -81,7 +83,6 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /<title>\s*Shopconnect\s*<\/title>/i.test(rawHtml)
     && normalized.includes('shopconnect')
-    && normalized.includes('amazon associates')
 }
 
 export const hasPublicJobsSignal = (html) =>
@@ -111,44 +112,80 @@ export const isVerifiedEmptyWordPressSearchResult = (html) => {
 
 export const isVerifiedMissingCareerRoute = (page = {}) =>
   Number(page?.status) === 404
-  && /<title>\s*Page not found\s*-\s*Shopconnect\s*<\/title>/i.test(String(page?.html ?? ''))
+  && /^Page not found\s*(?:-|&#8211;|&#x2013;|&ndash;|&mdash;)\s*Shopconnect$/i.test(
+    String(page?.html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '',
+  )
+  && !hasPublicJobsSignal(page?.html)
+
+const shouldUseBrowserFallback = (page = {}) =>
+  [403, 406].includes(Number(page?.status))
   && !hasPublicJobsSignal(page?.html)
 
 export const createShopconnectScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Shopconnect verified official homepage no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Shopconnect homepage now appears to expose a public jobs surface')
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || !sitemapPointsToVerifiedPageSitemap(sitemap.html)) {
-      throw new Error('Shopconnect verified sitemap chain no longer matches the known public surface')
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
+
+    const fetchVerifiedPage = async (url) => {
+      const page = await fetchPage(url)
+      if (!shouldUseBrowserFallback(page)) {
+        return page
+      }
+
+      return browserPageFetcher(url)
     }
 
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
-    if (pageSitemap.status !== 200 || sitemapHasCareerLikeUrl(pageSitemap.html)) {
-      throw new Error('Shopconnect verified sitemap no longer matches the no-public-careers surface')
-    }
+    try {
+      const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Shopconnect verified official homepage no longer matches the known public surface')
+      }
+      if (hasPublicJobsSignal(homepage.html)) {
+        throw new Error('Shopconnect homepage now appears to expose a public jobs surface')
+      }
 
-    for (const searchUrl of WORDPRESS_SEARCH_URLS) {
-      const searchResponse = await fetchPage(searchUrl)
-      if (searchResponse.status !== 200 || !isVerifiedEmptyWordPressSearchResult(searchResponse.html)) {
-        throw new Error('Shopconnect verified WordPress search surface no longer matches the empty no-public-careers state')
+      const sitemap = await fetchVerifiedPage(SITEMAP_URL)
+      if (sitemap.status !== 200 || !sitemapPointsToVerifiedPageSitemap(sitemap.html)) {
+        throw new Error('Shopconnect verified sitemap chain no longer matches the known public surface')
+      }
+
+      const pageSitemap = await fetchVerifiedPage(PAGE_SITEMAP_URL)
+      if (pageSitemap.status !== 200 || sitemapHasCareerLikeUrl(pageSitemap.html)) {
+        throw new Error('Shopconnect verified sitemap no longer matches the no-public-careers surface')
+      }
+
+      for (const searchUrl of WORDPRESS_SEARCH_URLS) {
+        const searchResponse = await fetchVerifiedPage(searchUrl)
+        if (searchResponse.status !== 200 || !isVerifiedEmptyWordPressSearchResult(searchResponse.html)) {
+          throw new Error('Shopconnect verified WordPress search surface no longer matches the empty no-public-careers state')
+        }
+      }
+
+      for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
+        const routePage = await fetchVerifiedPage(routeUrl)
+        if (!isVerifiedMissingCareerRoute(routePage)) {
+          throw new Error(`Shopconnect verified no-public-careers route changed: ${routePage.url || routeUrl}`)
+        }
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
       }
     }
-
-    for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareerRoute(routePage)) {
-        throw new Error(`Shopconnect verified no-public-careers route changed: ${routePage.url || routeUrl}`)
-      }
-    }
-
-    return []
   },
 })
 

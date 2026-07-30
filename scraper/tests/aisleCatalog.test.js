@@ -34,7 +34,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Aisle local catalog captures the verified homepage handoff to the public Freshteam board', async () => {
+test('Aisle local catalog captures the verified homepage handoff to the public Freshteam board outage sentinel', async () => {
   const { AISLE_CATALOG } = await loadCatalogModule()
   const aisle = await loadScraperModule()
   const provider = buildCatalogReadyProvider(AISLE_CATALOG)
@@ -46,10 +46,10 @@ test('Aisle local catalog captures the verified homepage handoff to the public F
   assert.equal(provider.companyDomain, 'aisle.co')
   assert.equal(provider.atsPlatform, 'freshteam')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-homepage-plus-public-freshteam-board')
+  assert.equal(provider.paginationStrategy, 'official-homepage-plus-public-freshteam-board-or-verified-500-outage')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage-handoff+public-freshteam-board+detail-page-apply-surface',
+    'verified-homepage-handoff+public-freshteam-board-or-verified-500-outage-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -59,11 +59,12 @@ test('Aisle local catalog captures the verified homepage handoff to the public F
     provider.detailUrlPattern,
     'https://aisle.freshteam.com/jobs/{opaque_id}/{slug}',
   )
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-07-28')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.aisle\.co\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/aisle\.freshteam\.com\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /no jobs found/i)
+  assert.match(provider.verifiedSurfaceSummary, /generic freshteam 500 error page/i)
   assert.match(provider.verifiedSurfaceSummary, /Check Openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /returns an empty set until the exact public board recovers/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /aisle[\\/]jobs\.json$/i)
 

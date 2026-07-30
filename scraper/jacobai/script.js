@@ -10,11 +10,22 @@ export const CAREER_PAGE_URL = 'https://jacob.ai/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
+const normalizeText = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 export const hasJacobAiDomainForSaleSignal = (html) => /Domain for sale|Listed with\s*spaceship\.com|Make offer/i
   .test(String(html ?? ''))
 
-export const hasJacobAiNoJobsSignal = (html) => /Domain for sale[\s\S]*Listed with\s*spaceship\.com[\s\S]*Make offer/i
-  .test(String(html ?? ''))
+export const hasJacobAiNoJobsSignal = (html) => {
+  const normalized = normalizeText(html)
+  return /Domain for sale/i.test(normalized)
+    && /Listed with\s*spaceship\.com/i.test(normalized)
+    && /Make offer/i.test(normalized)
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {

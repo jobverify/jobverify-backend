@@ -128,12 +128,20 @@ export const hasAccessHrLoginShellSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /AccessHr/i.test(rawHtml)
+  const hasLegacyLoginShell = /AccessHr/i.test(rawHtml)
     && /Log In/i.test(normalized)
     && /Please choose the connection mode that suits you\./i.test(normalized)
     && /I have a Sodexo Email Address/i.test(normalized)
     && /I do not have a Sodexo Email Address/i.test(normalized)
     && /Powered by mObilise|Powered by mObilise/i.test(rawHtml)
+
+  const hasJavaScriptAppShell = /<title>\s*AccessHr\s*<\/title>/i.test(rawHtml)
+    && /<base href="https:\/\/accesshr\.in\.sodexo\.com\/">/i.test(rawHtml)
+    && /<app-root><\/app-root>/i.test(rawHtml)
+    && /main\.[^"']+\.js/i.test(rawHtml)
+    && /assets\/img\/favicon\.ico/i.test(rawHtml)
+
+  return hasLegacyLoginShell || hasJavaScriptAppShell
 }
 
 export const hasUnexpectedPublicJobSurface = (surface = {}) =>

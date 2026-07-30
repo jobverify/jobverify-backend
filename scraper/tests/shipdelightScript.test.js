@@ -11,9 +11,10 @@ const careersHtml = `
     <main>
       <h1>Unleash Your Career With ShipDelight</h1>
       <p>At ShipDelight, we're not just shaping the future of logistics; we're redefining it.</p>
+      <h2>ShipDelight&#x27;s People First Culture</h2>
       <h2>Current Job Openings</h2>
       <p>No open position available!</p>
-      <footer>Copyright 2026 @ Shipdelight Logistics Technologies Pvt Ltd. All rights reserved.</footer>
+      <p>Our mission is to lead a logistics revolution powered by smart technology for modern Bharat.</p>
     </main>
   </body>
 </html>

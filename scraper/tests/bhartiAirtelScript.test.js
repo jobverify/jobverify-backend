@@ -152,3 +152,35 @@ test('run maps Bharti Airtel Darwinbox listings into Jobify jobs and keeps only 
     },
   ])
 })
+
+test('run can recover with browser-backed Airtel careers verification when direct official requests fail', async () => {
+  const { createBhartiAirtelScraper, OFFICIAL_CAREERS_URL } = await loadBhartiAirtelModule()
+  const scraper = createBhartiAirtelScraper({
+    now: () => FIXED_SCRAPED_AT,
+  })
+  const attempts = []
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      attempts.push(`http:${url}`)
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      attempts.push(`browser:${url}`)
+      if (url === OFFICIAL_CAREERS_URL) return officialCareersHtml
+      if (url === 'https://careers.airtel.com/static/js/main.57023176.js') return careersBundle
+      throw new Error(`Unexpected browser Airtel URL: ${url}`)
+    },
+    fetchListingPage: async () => listingPayload,
+  })
+
+  assert.deepEqual(attempts, [
+    `http:${OFFICIAL_CAREERS_URL}`,
+    `browser:${OFFICIAL_CAREERS_URL}`,
+    'http:https://careers.airtel.com/static/js/main.57023176.js',
+    'browser:https://careers.airtel.com/static/js/main.57023176.js',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'bhartiairtel')
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})

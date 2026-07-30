@@ -42,7 +42,7 @@ const publicJobsHtml = `
 </html>
 `
 
-const afternicRedirect = 'https://www.afternic.com/forsale/authorstream.com?utm_source=TDFS_DASLNC&utm_medium=parkedpages&utm_campaign=x_corp_tdfs-daslnc_base&traffic_type=TDFS_DASLNC&traffic_id=daslnc&'
+const parkedRedirect = 'https://forsale.godaddy.com/forsale/authorstream.com?utm_source=TDFS_DASLNC&utm_medium=parkedpages&utm_campaign=x_corp_tdfs-daslnc_base&traffic_type=TDFS_DASLNC&traffic_id=daslnc&'
 
 const loadModule = async () => {
   try {
@@ -58,7 +58,7 @@ test('AuthorStream scraper constants stay pinned to the verified parked redirect
   assert.equal(authorStream.SOURCE, 'authorstream')
   assert.equal(authorStream.COMPANY, 'AuthorStream')
   assert.equal(authorStream.OFFICIAL_BRAND_NAME, 'AuthorStream')
-  assert.equal(authorStream.VERIFIED_AT, '2026-07-15')
+  assert.equal(authorStream.VERIFIED_AT, '2026-07-28')
   assert.equal(authorStream.HOMEPAGE_URL, 'https://authorstream.com/')
   assert.equal(authorStream.LANDER_URL, 'https://authorstream.com/lander')
   assert.equal(authorStream.ROBOTS_TXT_URL, 'https://authorstream.com/robots.txt')
@@ -78,7 +78,7 @@ test('AuthorStream scraper constants stay pinned to the verified parked redirect
   assert.equal(
     authorStream.hasParkedLanderRedirect({
       status: 307,
-      location: afternicRedirect,
+      location: parkedRedirect,
     }),
     true,
   )
@@ -114,7 +114,7 @@ test('AuthorStream returns no jobs only while the verified first-party domain st
         return {
           status: 307,
           url,
-          location: afternicRedirect,
+          location: parkedRedirect,
           html: '',
         }
       }

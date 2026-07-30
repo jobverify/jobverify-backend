@@ -86,3 +86,34 @@ test('ivy fails closed when the first-party blocked routes start exposing public
     /public job listings/i,
   )
 })
+
+test('ivy can recover with browser-backed shared surface checks when direct requests fail', async () => {
+  const ivy = await loadModule()
+  const browserTextUrls = []
+  const browserPageUrls = []
+
+  const jobs = await ivy.createIvyScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+
+      if (url === ivy.HOMEPAGE_URL) return homepageHtml
+      if (url === ivy.CONTACT_URL) return contactHtml
+
+      throw new Error(`Unexpected fetchBrowserText URL: ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      browserPageUrls.push(url)
+      return {
+        status: 403,
+        html: '<html><body>Forbidden</body></html>',
+      }
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [ivy.HOMEPAGE_URL, ivy.CONTACT_URL])
+  assert.deepEqual(browserPageUrls, ivy.BLOCKED_ROUTE_URLS)
+  assert.deepEqual(jobs, [])
+})

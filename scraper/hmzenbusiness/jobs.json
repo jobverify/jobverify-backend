@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at ZenBusiness",
+    "company": "ZenBusiness",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "source": "hmzenbusiness",
+    "jobId": "hmzenbusiness-current-openings",
+    "requisitionId": "hmzenbusiness-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "ZenBusiness had current Himalayas hiring evidence for Senior Software Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:31:32.445Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "companyDomain": "himalayas.app"
+  }
+]

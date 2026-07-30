@@ -32,6 +32,23 @@ const extractFirst = (pattern, value) => {
   return match ? match[1] : null
 }
 
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractMetaContent = (key, html) => {
+  const escapedKey = escapeRegex(key)
+  const patterns = [
+    new RegExp(`<meta[^>]+(?:property|name)=["']${escapedKey}["'][^>]+content=["']([\\s\\S]*?)["']`, 'i'),
+    new RegExp(`<meta[^>]+content=["']([\\s\\S]*?)["'][^>]+(?:property|name)=["']${escapedKey}["']`, 'i'),
+  ]
+
+  for (const pattern of patterns) {
+    const value = extractFirst(pattern, html)
+    if (value) return normalizeWhitespace(value)
+  }
+
+  return null
+}
+
 const parseEmbeddedArray = (pattern, html) => {
   const raw = extractFirst(pattern, html)
   if (!raw) return []
@@ -89,6 +106,27 @@ const toAbsoluteUrl = (value) => {
     return new URL(value, CAREER_PAGE_URL).toString()
   } catch {
     return null
+  }
+}
+
+const extractDetailPageData = (html) => ({
+  title: normalizeTitle(
+    extractMetaContent('og:title', html)
+      || extractFirst(/<title>\s*([\s\S]*?)\s*<\/title>/i, html),
+  ),
+  jobDescription: normalizeWhitespace(
+    extractMetaContent('og:description', html)
+      || extractMetaContent('description', html),
+  ),
+})
+
+const enrichJobFromDetailPage = (job, detailHtml) => {
+  const detail = extractDetailPageData(detailHtml)
+
+  return {
+    ...job,
+    title: detail.title || job.title,
+    jobDescription: detail.jobDescription || job.jobDescription,
   }
 }
 
@@ -154,6 +192,26 @@ export const extractSearchResults = (html) => {
   return [...new Map(jobs.map((job) => [job.jobId, job])).values()]
 }
 
+const mapWithConcurrency = async (items, limit, iteratee) => {
+  const concurrency = Math.max(1, Number.isInteger(limit) ? limit : 1)
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  )
+
+  return results
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -177,8 +235,24 @@ export const createPwcScraper = ({
     const html = await fetchText(buildSearchUrl())
     const jobs = extractSearchResults(html)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = await mapWithConcurrency(
+      selectedJobs,
+      6,
+      async (job) => {
+        if (!job.applyUrl || (job.jobDescription && job.experienceRequired)) {
+          return job
+        }
 
-    return selectedJobs.map((job) => ({
+        try {
+          const detailHtml = await fetchText(job.applyUrl)
+          return enrichJobFromDetailPage(job, detailHtml)
+        } catch {
+          return job
+        }
+      },
+    )
+
+    return enrichedJobs.map((job) => ({
       ...job,
       source: 'pwc',
       link: job.applyUrl || job.sourceUrl,

@@ -67,6 +67,12 @@ test('Skoruz sentinel recognizes the verified careers page and the untrusted Ind
     ),
     true,
   )
+  assert.equal(
+    skoruz.isTrustedIndiaIframeFailure(
+      new Error('[skoruz] All 3 attempts failed. Last error: fetch failed | Connect Timeout Error (attempted address: talenthire.ceipal.in:443, timeout: 10000ms)'),
+    ),
+    true,
+  )
 })
 
 test('Skoruz returns [] only while the verified careers page still depends on an untrusted India iframe and the US tab is empty', async () => {

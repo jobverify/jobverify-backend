@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict'
+import path from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { loadConfig } from '../utils/loadConfig.js'
+
+const testsDir = path.dirname(fileURLToPath(import.meta.url))
 
 test('registers NCR Voyix against the official NCR Voyix careers page and Workday board', () => {
   const catalog = getScraperCatalog()
@@ -50,4 +55,16 @@ test('buildScrapers exposes one runnable NCR Voyix Workday scraper with no dupli
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'ncrvoyix')
   assert.match(scraper.dryRunFile, /myworkday[\\/]ncrvoyix[\\/]jobs\.json$/)
+})
+
+test('NCR Voyix uses the verified Workday jobs API instead of the browser-only list flow', () => {
+  const config = loadConfig(path.join(testsDir, '../myworkday/ncrvoyix'))
+
+  assert.equal(config.listingStrategy, 'jobs-api')
+  assert.equal(
+    config.jobsApiUrl,
+    'https://ncr.wd1.myworkdayjobs.com/wday/cxs/ncr/ext_apac/jobs',
+  )
+  assert.equal(config.detailUrlBase, 'https://ncr.wd1.myworkdayjobs.com/ext_apac')
+  assert.match(config.locationPattern, /india|ind|chennai|hyderabad/i)
 })

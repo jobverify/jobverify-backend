@@ -42,6 +42,14 @@ test('SmarterBharat sentinel helpers stay pinned to the verified absent exact-na
     smarterBharat.isExpectedVerificationFailure({ message: 'curl: (6) Could not resolve host: smarterbharat.com' }),
     true,
   )
+  assert.equal(typeof smarterBharat.classifyProbeErrorKind, 'function')
+  assert.equal(
+    smarterBharat.classifyProbeErrorKind({
+      message: 'fetch failed',
+      causeMessage: 'getaddrinfo ENOTFOUND smarterbharat.com',
+    }),
+    'dns',
+  )
 })
 
 test('SmarterBharat returns [] only while all exact-name first-party candidates remain unresolved or untrusted', async () => {

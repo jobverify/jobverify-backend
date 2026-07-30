@@ -35,7 +35,8 @@ export const hasOfficialHomepageSignal = (html) => {
   return /Genex Space/i.test(page)
     && /SpaceShaala/i.test(text)
     && /info@genex\.space/i.test(text)
-    && /Bengaluru,\s*Karnataka,\s*India/i.test(text)
+    && /UNLOCKING YOUR COSMIC CURIOSITY/i.test(text)
+    && /GSE Fellowship/i.test(text)
     && /href=["']https:\/\/genex\.space\/gsef\/["']/i.test(page)
 }
 
@@ -46,7 +47,7 @@ export const hasOfficialFellowshipSignal = (html) => {
   return /Genex Space Explorers Fellowship/i.test(text)
     && /Indian nationals/i.test(text)
     && /full-time Fellows/i.test(text)
-    && /two-year commitment/i.test(text)
+    && /(two-year commitment|two-year program)/i.test(text)
     && /stipend/i.test(text)
     && /<form\b/i.test(page)
     && /type=["']file["']/i.test(page)

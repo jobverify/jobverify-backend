@@ -1,0 +1,6 @@
+{
+  "listingStrategy": "jobs-api",
+  "jobsApiUrl": "https://jj.wd5.myworkdayjobs.com/wday/cxs/jj/JJ/jobs",
+  "detailUrlBase": "https://jj.wd5.myworkdayjobs.com/JJ",
+  "locationPattern": "india|ahmedabad|aurangabad|bangalore|bengaluru|chandigarh|chennai|cochin|gurgaon|gurugram|hyderabad|indore|jaipur|jodhpur|kanpur|kolkata|kozhikode|mumbai|pune|penjerla"
+}

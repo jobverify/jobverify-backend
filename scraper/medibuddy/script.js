@@ -15,6 +15,7 @@ export const COMPANY_NAME = MEDIBUDDY_CATALOG.companyName
 export const COUNTRY_FILTER = MEDIBUDDY_CATALOG.countryFilter
 export const FIRST_PARTY_JOB_PAGES = MEDIBUDDY_CATALOG.firstPartyJobPages
 export const TRAKSTAR_JOBS_HOST = MEDIBUDDY_CATALOG.trakstarJobsHost
+export const TRAKSTAR_ROOT_JOBS_URL = `${TRAKSTAR_JOBS_HOST}/jobs/`
 export const MEDIREVIVA_APPLY_URL = MEDIBUDDY_CATALOG.medirevivaApplyUrl
 
 const USER_AGENT =
@@ -52,6 +53,15 @@ const normalizeWhitespace = (value) => {
 }
 
 const stripTags = (value) => normalizeWhitespace(value)
+
+const normalizePlainText = (value) => decodeUnicodeEscapes(decodeHtmlEntities(String(value ?? '')))
+  .replace(/\r\n?/g, '\n')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\t+/g, ' ')
+  .replace(/[ \f\v]+/g, ' ')
+  .replace(/ *\n */g, '\n')
+  .replace(/\n{3,}/g, '\n\n')
+  .trim()
 
 const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
@@ -118,15 +128,6 @@ const extractCity = (value) => normalizeWhitespace(value)
   ?.split(/,|\/|\|/)[0]
   ?.trim() || null
 
-const normalizeDocsLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  if (/\b(india|bengaluru|bangalore|hyderabad|mumbai|delhi|chennai|pune|indore)\b/i.test(normalized)) {
-    return normalized
-  }
-  return null
-}
-
 const toAbsoluteUrl = (value, baseUrl) => {
   try {
     return new URL(value, baseUrl).toString()
@@ -138,6 +139,11 @@ const toAbsoluteUrl = (value, baseUrl) => {
 const extractTrackedTrakstarUrl = (value) => {
   const jobId = String(value ?? '').match(/medibuddy\.hire\.trakstar\.com\/jobs\/([a-z0-9]+)/i)?.[1]
   return jobId ? `${TRAKSTAR_JOBS_HOST}/jobs/${jobId}/` : null
+}
+
+export const getGoogleDocExportUrl = (value) => {
+  const docId = String(value ?? '').match(/docs\.google\.com\/document\/d\/([^/]+)/i)?.[1]
+  return docId ? `https://docs.google.com/document/d/${docId}/export?format=txt` : null
 }
 
 const extractGoogleDocUrl = (value, baseUrl) => {
@@ -231,6 +237,13 @@ export const hasOfficialJobsPageSignal = (html) => {
     )
 }
 
+export const isInactiveTrakstarAccount = (html) => {
+  const normalized = normalizeWhitespace(html) || ''
+
+  return /inactive account/i.test(normalized)
+    && /no longer using trakstar hire/i.test(normalized)
+}
+
 export const extractListingCards = (html, sourcePageUrl) => {
   const listings = []
   const sectionHtml = getJobsSectionHtml(html, sourcePageUrl)
@@ -319,6 +332,9 @@ export const extractTrakstarDetail = (html, listing = {}) => {
 }
 
 const extractDocTitle = (html, listing = {}) => {
+  const listingTitle = normalizeWhitespace(listing.title)
+  if (listingTitle) return listingTitle
+
   const page = String(html ?? '')
   const rawTitle = stripTags(
     page.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)?.[1]
@@ -340,14 +356,81 @@ const extractDocText = (html) => {
   return normalizeWhitespace(scriptText)
 }
 
-export const extractGoogleDocDetail = (html, listing = {}) => {
-  const decodedText = extractDocText(html) || ''
-  const title = extractDocTitle(html, listing)
-  const locationLine = decodedText.match(/Location:\s*([^"]+?)(?:\s+Role Overview|\s+About MediBuddy|\s+Work Mode|$)/i)?.[1]
-  const overview = decodedText.match(/Role Overview\s*(.*?)(?=\s+Work Mode|$)/i)?.[1]
-  const workMode = decodedText.match(/Work Mode\s*(.*?)(?=$)/i)?.[1]
+const extractLabeledValue = (text, labels = []) => {
+  const source = normalizePlainText(text)
+  if (!source) return null
+
+  for (const label of labels) {
+    const sameLine = source.match(new RegExp(`${label}\\s*:?\\s*([^\\n]+)`, 'i'))?.[1]
+    if (sameLine) return normalizeWhitespace(sameLine)
+
+    const nextLine = source.match(new RegExp(`${label}\\s*:?\\s*\\n+([^\\n]+)`, 'i'))?.[1]
+    if (nextLine) return normalizeWhitespace(nextLine)
+  }
+
+  return null
+}
+
+const extractTextSection = (text, startPattern, endPatterns = []) => {
+  const source = normalizePlainText(text)
+  if (!source) return null
+
+  const startMatch = source.match(startPattern)
+  if (!startMatch || startMatch.index == null) return null
+
+  const startIndex = startMatch.index + startMatch[0].length
+  const remainder = source.slice(startIndex)
+  const endIndex = endPatterns
+    .map((pattern) => remainder.search(pattern))
+    .filter((index) => index >= 0)
+    .sort((left, right) => left - right)[0]
+
+  const section = endIndex == null ? remainder : remainder.slice(0, endIndex)
+  return normalizeWhitespace(section)
+}
+
+const normalizeDocsLocation = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  if (/multiple locations/i.test(normalized)) return 'Multiple Locations, India'
+  if (/\b(india|bengaluru|bangalore|hyderabad|mumbai|delhi|chennai|pune|indore)\b/i.test(normalized)) {
+    return normalized
+  }
+  return null
+}
+
+const isSkippableDetailError = (error) => {
+  const status = Number(error?.cause?.status ?? error?.status ?? 0)
+  return status === 401 || status === 403 || status === 404
+}
+
+export const extractGoogleDocDetail = (value, listing = {}) => {
+  const source = normalizePlainText(value)
+  const title = normalizeWhitespace(listing.title) || extractDocTitle(value, listing)
+  const locationLine = extractLabeledValue(source, ['Location'])
+  const overview = extractTextSection(
+    source,
+    /Role Overview\s*/i,
+    [/\nKey Responsibilities\b/i, /\nWork Mode\b/i, /\nRequired Skills\b/i, /\nRequirements?\b/i],
+  )
+  const mission = extractTextSection(
+    source,
+    /Family Summary\/Mission\s*:?\s*/i,
+    [/\nJob Responsibilities\b/i, /\nResponsibilities\s*:?\s*/i, /\nEmployment Type\b/i],
+  )
+  const roleIntro = extractTextSection(
+    source,
+    /Role\s*-\s*[^\n]+\s*/i,
+    [/\nResponsibilities\s*:?\s*/i, /\nJob Responsibilities\b/i, /\nRequirements?\b/i],
+  )
+  const workMode = extractTextSection(source, /Work Mode\s*/i, [/\n[A-Z][A-Za-z ]{2,}:/])
   const jobDescription = normalizeWhitespace(
-    [overview ? `Role Overview ${overview}` : null, workMode ? `Work Mode ${workMode}` : null]
+    [
+      overview ? `Role Overview ${overview}` : null,
+      mission ? `Family Summary ${mission}` : null,
+      roleIntro,
+      workMode ? `Work Mode ${workMode}` : null,
+    ]
       .filter(Boolean)
       .join(' '),
   )?.replace(/[";]+$/g, '').trim() || null
@@ -356,7 +439,7 @@ export const extractGoogleDocDetail = (html, listing = {}) => {
     title,
     location: normalizeDocsLocation(locationLine),
     city: extractCity(normalizeDocsLocation(locationLine)),
-    employmentType: normalizeEmploymentType(listing.employmentType || decodedText.match(/\bintern\w*/i)?.[0]),
+    employmentType: normalizeEmploymentType(listing.employmentType || source.match(/\bintern\w*/i)?.[0]),
     experienceRequired: extractExperienceRequired(jobDescription),
     jobDescription,
     remoteStatus: inferRemoteStatus(locationLine, jobDescription, 'office based'),
@@ -382,13 +465,47 @@ export const createMediBuddyScraper = ({
       ? dedupeListings(listings).slice(0, maxJobs)
       : dedupeListings(listings)
 
+    const hasTrakstarListings = selectedListings.some((listing) => listing.detailKind === 'trakstar')
+    let skipTrakstarListings = false
+
+    if (hasTrakstarListings) {
+      const trakstarRootHtml = await fetchText(TRAKSTAR_ROOT_JOBS_URL)
+      skipTrakstarListings = isInactiveTrakstarAccount(trakstarRootHtml)
+    }
+
     const jobs = []
 
     for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = listing.detailKind === 'trakstar'
-        ? extractTrakstarDetail(detailHtml, listing)
-        : extractGoogleDocDetail(detailHtml, listing)
+      if (listing.detailKind === 'trakstar' && skipTrakstarListings) {
+        continue
+      }
+
+      let detail
+
+      try {
+        const detailSourceUrl = listing.detailKind === 'public-doc'
+          ? getGoogleDocExportUrl(listing.sourceUrl)
+          : listing.sourceUrl
+
+        if (!detailSourceUrl) {
+          continue
+        }
+
+        const detailPayload = await fetchText(detailSourceUrl)
+        detail = listing.detailKind === 'trakstar'
+          ? extractTrakstarDetail(detailPayload, listing)
+          : extractGoogleDocDetail(detailPayload, listing)
+      } catch (error) {
+        if (isSkippableDetailError(error)) {
+          continue
+        }
+
+        throw error
+      }
+
+      if (!detail?.title || !detail?.jobDescription) {
+        continue
+      }
 
       jobs.push({
         title: detail.title || listing.title,

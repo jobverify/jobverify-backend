@@ -140,7 +140,7 @@ export const hasExpectedDepartmentPayload = (payload = []) => {
   if (!Array.isArray(payload) || payload.length < 3) return false
 
   const normalizedNames = payload
-    .map((item) => normalizeWhitespace(item?.departmentName)?.toLowerCase())
+    .map((item) => normalizeWhitespace(item?.departmentName || item?.name)?.toLowerCase())
     .filter(Boolean)
 
   return normalizedNames.includes('application support')

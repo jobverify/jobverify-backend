@@ -91,7 +91,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('goapptiv')
     && normalized.includes('improving access to primary healthcare')
-    && normalized.includes('quality medication across india')
+    && (
+      normalized.includes('quality medication across india')
+      || normalized.includes('quality medicines across india')
+    )
     && normalized.includes('business@goapptiv.com')
     && normalized.includes('grievances@goapptiv.com')
     && normalized.includes('the team')

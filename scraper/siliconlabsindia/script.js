@@ -22,8 +22,14 @@ export const buildScraperOptions = () => ({
 export const createSiliconLabsIndiaScraper = ({
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  run: () => workdayRunner(buildScraperOptions()),
+  run: ({ signal } = {}) => workdayRunner({
+    ...buildScraperOptions(),
+    ...(signal === undefined ? {} : { signal }),
+  }),
 })
 
-export const run = async ({ workdayRunner = runWorkdayScraper } = {}) =>
-  createSiliconLabsIndiaScraper({ workdayRunner }).run()
+export const run = async ({
+  workdayRunner = runWorkdayScraper,
+  signal,
+} = {}) =>
+  createSiliconLabsIndiaScraper({ workdayRunner }).run({ signal })

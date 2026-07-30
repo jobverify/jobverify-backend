@@ -92,3 +92,24 @@ test('Intersoft Data Labs fails closed when the verified openings contract chang
     /verified intersoft careers surface/i,
   )
 })
+
+test('Intersoft Data Labs can recover with a browser-backed careers page when direct requests fail', async () => {
+  const intersoft = await loadModule()
+  const browserUrls = []
+
+  const jobs = await intersoft.createIntersoftDataLabsScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return careersHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [intersoft.CAREERS_URL])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'intersoftdatalabs')
+})

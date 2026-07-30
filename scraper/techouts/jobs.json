@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Data Engineer",
+    "company": "Techouts",
+    "department": "IT-Analytics",
+    "location": "Hyderabad, Telangana, India",
+    "country": "India",
+    "sourceUrl": "https://techouts.keka.com/careers/jobdetails/126651",
+    "applyUrl": "https://techouts.keka.com/careers/jobdetails/126651",
+    "link": "https://techouts.keka.com/careers/jobdetails/126651",
+    "jobDescription": "Purpose: Bridge data processing and model experimentation. Key Responsibilities: Prepare, clean, and transform training datasets Perform EDA and feature engineering Support model experimentation and evaluation Build and maintain data pipelines Ensure data quality, consistency, and governance Key Skills: Python, SQL Data processing tools (Pandas, Spark) Basic ML understanding Data pipeline tools (Airflow, etc.) Strong analytical thinking",
+    "employmentType": "Full-time",
+    "experienceRequired": "2-5",
+    "postingDate": "2026-04-22T16:45:12.887Z",
+    "remoteStatus": "On-site",
+    "source": "techouts",
+    "companyCareerPage": "https://techouts.com/careers",
+    "companyDomain": "techouts.com",
+    "atsPlatform": "keka-embedjobs",
+    "scrapedAt": "2026-07-26T21:01:10.478Z"
+  },
+  {
+    "title": "Software Engineer-Machine Learning",
+    "company": "Techouts",
+    "department": "IT",
+    "location": "Hyderabad, Telangana, India",
+    "country": "India",
+    "sourceUrl": "https://techouts.keka.com/careers/jobdetails/126261",
+    "applyUrl": "https://techouts.keka.com/careers/jobdetails/126261",
+    "link": "https://techouts.keka.com/careers/jobdetails/126261",
+    "jobDescription": "ML Engineers Purpose: Build, fine-tune, and optimize ML models for production use.Key Responsibilities:Develop and fine-tune ML/AI modelsConvert prototypes into production-ready systemsWork closely with MLOps for deploymentOptimize models for performance, latency, and scalabilityIntegrate models with APIs/servicesKey Skills:Strong in Python + ML frameworks (PyTorch, TensorFlow)Experience with model optimization & fine-tuningUnderstanding of LLMs / modern ML systems (preferred)Experience with serving models in production",
+    "employmentType": "Full-time",
+    "experienceRequired": "2-5",
+    "postingDate": "2026-04-20T06:16:31.63Z",
+    "remoteStatus": "On-site",
+    "source": "techouts",
+    "companyCareerPage": "https://techouts.com/careers",
+    "companyDomain": "techouts.com",
+    "atsPlatform": "keka-embedjobs",
+    "scrapedAt": "2026-07-26T21:01:10.478Z"
+  }
+]

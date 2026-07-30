@@ -7,7 +7,7 @@ const OFFICIAL_SITE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Shop Online for Men, Women & Kids Clothing, Shoes, Home Decor Items</title>
+    <title>Online shopping for Men, Women &amp; Kids Fashion, Home Decor, lifestyle &amp; More</title>
   </head>
   <body>
     <main>

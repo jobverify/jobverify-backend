@@ -77,7 +77,11 @@ export const hasOfficialHomepageSignal = (html) => {
   return title === 'BSV Group'
     && /<link[^>]+rel="canonical"[^>]+href="https:\/\/bsvgroup\.com\/"/i.test(page)
     && visibleText.includes('BSV Group')
-    && visibleText.includes('fastest growing biopharmaceutical companies in India')
+    && (
+      visibleText.includes('fastest growing biopharmaceutical companies in India')
+      || visibleText.includes('BSV (A Mankind Group Company)')
+    )
+    && visibleText.includes('Life at BSV')
   }
 
 export const hasOfficialCareersSignal = (html) => {

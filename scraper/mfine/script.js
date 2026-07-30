@@ -82,9 +82,22 @@ export const hasBlankDarwinboxShellSignal = (html = '') => {
   const text = normalizeWhitespace(page)
 
   return (
-    text === '-'
-    && /<meta\s+property=["']og:title["']\s+content=["']\s*["']/i.test(page)
-    && !/current openings|apply now|jobdetails|careers\/job/i.test(page)
+    (
+      text === '-'
+      && /<meta\s+property=["']og:title["']\s+content=["']\s*["']/i.test(page)
+      && !/current openings|apply now|jobdetails|careers\/job/i.test(page)
+    )
+    || (
+      /<base\s+href=["']\/ms\/candidate\/["']\s*\/?>/i.test(page)
+      && /please enable javascript!/i.test(text)
+      && /candidateweb\/assets\/bot\.js/i.test(page)
+    )
+    || (
+      /<base\s+href=["']\/ms\/candidatev2\/["']\s*\/?>/i.test(page)
+      && /<app-root\b/i.test(page)
+      && /candidateweb\/assets\/bot\.js/i.test(page)
+      && /pendo/i.test(page)
+    )
   )
 }
 

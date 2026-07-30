@@ -34,23 +34,29 @@ test('Adda247 local catalog captures the verified first-party careers shell and 
   assert.equal(ADDA247_CATALOG.adapter, 'script')
   assert.equal(ADDA247_CATALOG.companyCareerPage, 'https://www.adda247.com/careers.html')
   assert.equal(ADDA247_CATALOG.companyDomain, 'adda247.com')
-  assert.equal(ADDA247_CATALOG.atsPlatform, 'official-company-careers')
+  assert.equal(ADDA247_CATALOG.atsPlatform, 'keka')
   assert.equal(ADDA247_CATALOG.countryFilter, 'India')
   assert.equal(
     ADDA247_CATALOG.paginationStrategy,
-    'single-first-party-careers-page-with-external-ats-handoff',
+    'single-first-party-careers-page-plus-keka-active-jobs-api',
   )
   assert.equal(
     ADDA247_CATALOG.extractionStrategy,
-    'verified-first-party-careers-shell+external-keka-handoff-no-first-party-job-records',
+    'verified-first-party-careers-shell+official-keka-active-jobs-api',
   )
   assert.equal(ADDA247_CATALOG.parser, 'custom-script')
   assert.equal(ADDA247_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ADDA247_CATALOG.verifiedOn, '2026-07-14')
+  assert.equal(ADDA247_CATALOG.verifiedOn, '2026-07-19')
   assert.equal(ADDA247_CATALOG.externalHandoffUrl, 'https://adda247.kekahire.com/')
+  assert.equal(ADDA247_CATALOG.kekaCareersUrl, 'https://adda247.keka.com/careers/')
+  assert.equal(
+    ADDA247_CATALOG.kekaActiveJobsApiUrl,
+    'https://adda247.keka.com/careers/api/jobs/default/active',
+  )
   assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.adda247\.com\/careers\.html/i)
   assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /https:\/\/adda247\.kekahire\.com\/?/i)
-  assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /no public job records/i)
+  assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /adda247\.keka\.com\/careers/i)
+  assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /active public India jobs/i)
   assert.equal(ADDA247_CATALOG.modulePath, adda247ModulePath)
 
   assert.equal(adda247.PROVIDER_METADATA.source, ADDA247_CATALOG.source)

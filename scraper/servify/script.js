@@ -33,8 +33,10 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers\s*-\s*The product lifecycle management platform\s*<\/title>/i.test(page)
-    && text.includes('Make Great Things Happen. Join Servify.')
+  return /<title[^>]*>\s*Careers\s*(?:&#8211;|&ndash;|-)\s*The product lifecycle management platform\s*<\/title>/i.test(page)
+    && text.includes('Make Great Things Happen.')
+    && text.includes('Join Servify.')
+    && text.includes('Present across 3 continents, Servify has a diverse workforce')
     && text.includes('Apply now and shape your future')
     && text.includes(CAREERS_EMAIL)
 }

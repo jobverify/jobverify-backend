@@ -103,7 +103,10 @@ export const hasOfficialJobDetailSignal = (html) => {
     && normalized.includes('apply now')
     && normalized.includes('your role at sixt')
     && normalized.includes('your skills matter')
-    && normalized.includes('what we offer')
+    && (
+      normalized.includes('what we offer')
+      || normalized.includes('about us')
+    )
 }
 
 const extractDescription = (html) => {

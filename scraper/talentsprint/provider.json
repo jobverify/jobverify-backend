@@ -1,0 +1,22 @@
+{
+  "source": "talentsprint",
+  "companyName": "TalentSprint",
+  "adapter": "script",
+  "modulePath": "../talentsprint/script.js",
+  "companyCareerPage": "https://talentsprint.com/careers/",
+  "officialSiteUrl": "https://talentsprint.com/",
+  "officialCareersHandoffUrl": "https://talentsprint.darwinbox.in/ms/candidate/careers",
+  "darwinboxOrigin": "https://talentsprint.darwinbox.in",
+  "darwinboxCompanyId": "main",
+  "publicAllJobsUrl": "https://talentsprint.darwinbox.in/ms/candidatev2/main/careers/allJobs",
+  "atsPlatform": "darwinbox",
+  "countryFilter": "India",
+  "paginationStrategy": "browser-session-darwinbox-pagination",
+  "extractionStrategy": "verified-first-party-careers-page+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "companyDomain": "talentsprint.com",
+  "verifiedOn": "2026-07-25",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://talentsprint.com/careers/ is the live first-party TalentSprint careers page and exposes View Job Openings and Join Our Team links to the public TalentSprint Darwinbox surface at https://talentsprint.darwinbox.in/ms/candidate/careers. The provider validates that first-party handoff before using the public Darwinbox listing API and India location filter.",
+  "dryRunFile": "talentsprint/jobs.json"
+}

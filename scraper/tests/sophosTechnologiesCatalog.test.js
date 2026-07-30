@@ -11,7 +11,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Sophos Technologies local catalog captures the verified first-party careers landing sentinel contract', async () => {
+test('Sophos Technologies local catalog captures the verified first-party Lever contract', async () => {
   const { SOPHOS_TECHNOLOGIES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
 
   assert.equal(defaultCatalog, SOPHOS_TECHNOLOGIES_CATALOG)
@@ -21,20 +21,23 @@ test('Sophos Technologies local catalog captures the verified first-party career
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.adapter, 'script')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.companyCareerPage, 'https://www.sophos.com/en-us/company/careers')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.companyDomain, 'sophos.com')
-  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.atsPlatform, 'lever')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.countryFilter, 'India')
-  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.paginationStrategy, 'verified-careers-landing-only')
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.paginationStrategy, 'lever-skip-limit-until-short-page')
   assert.equal(
     SOPHOS_TECHNOLOGIES_CATALOG.extractionStrategy,
-    'verified-first-party-careers-landing+job-listings-cta-without-inline-jobs-return-empty',
+    'verified-first-party-careers-handoff+official-lever-postings-api+india-country-location-filter',
   )
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.parser, 'custom-script')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.modulePath, '../sophostechnologies/script.js')
-  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-17')
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-23')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.dryRunFile, 'sophostechnologies/jobs.json')
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.leverBoardUrl, 'https://jobs.lever.co/sophos')
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.leverPostingsApiUrl, 'https://api.lever.co/v0/postings/sophos')
   assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.sophos\.com\/en-us\/company\/careers/i)
-  assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /Explore our job listings/i)
+  assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.lever\.co\/sophos/i)
+  assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /api\.lever\.co/i)
 })
 
 test('Sophos Technologies exact backlog row resolves directly from local provider metadata', async () => {

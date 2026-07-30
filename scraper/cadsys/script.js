@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-
 import { CADSYS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -24,14 +22,25 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(30000),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return {
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 const slugify = (value) => String(value ?? '')
   .toLowerCase()
@@ -48,6 +57,16 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('Software Engineer, Frontend')
     && normalized.includes('Remote / Hybrid')
   }
+
+const CAREERS_HOSTNAME = new URL(CAREERS_URL).hostname
+
+const isTrustedCareersUrl = (url = CAREERS_URL) => {
+  try {
+    return new URL(url).hostname === CAREERS_HOSTNAME
+  } catch {
+    return false
+  }
+}
 
 export const extractJobs = (html = '') => {
   const jobs = []
@@ -89,8 +108,19 @@ export const extractJobs = (html = '') => {
 }
 
 export const createCadsysScraper = ({ maxJobs = Number.POSITIVE_INFINITY } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText, fetchPage = defaultFetchPage, now = () => new Date().toISOString() } = {}) {
+    const careersPage = fetchText
+      ? {
+          url: CAREERS_URL,
+          html: await fetchText(CAREERS_URL),
+        }
+      : await fetchPage(CAREERS_URL)
+
+    if (!isTrustedCareersUrl(careersPage.url)) {
+      return []
+    }
+
+    const careersHtml = careersPage.html
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Cadsys verified first-party careers page changed materially')
     }

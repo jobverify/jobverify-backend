@@ -18,7 +18,8 @@ const homepageHtml = `
     <body>
       <main>
         <h1>BSV Group</h1>
-        <p>BSV is one of the fastest growing biopharmaceutical companies in India.</p>
+        <p>BSV (A Mankind Group Company)</p>
+        <a href="https://bsvgroup.com/life-at-bsv/">Life at BSV</a>
       </main>
     </body>
   </html>

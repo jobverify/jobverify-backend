@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Visier",
+    "company": "Visier",
+    "location": "India / India-eligible remote; verify on listing",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India / India-eligible remote; verify on listing"
+    ],
+    "link": "https://www.bing.com/search?q=Visier+official+careers+India+software+jobs",
+    "applyUrl": "https://www.bing.com/search?q=Visier+official+careers+India+software+jobs",
+    "sourceUrl": "https://www.bing.com/search?q=Visier+official+careers+India+software+jobs",
+    "source": "hmvisier",
+    "jobId": "hmvisier-current-openings",
+    "requisitionId": "hmvisier-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Visier had current Himalayas hiring evidence for Use the live India job search link to view current openings. Location evidence: India / India-eligible remote; verify on listing. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:32:53.749Z",
+    "companyCareerPage": "https://www.bing.com/search?q=Visier+official+careers+India+software+jobs",
+    "companyDomain": "himalayas.app"
+  }
+]

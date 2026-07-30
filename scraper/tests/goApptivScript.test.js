@@ -19,6 +19,24 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>GoApptiv | Improving Access to Primary Healthcare in India</title>
+  </head>
+  <body>
+    <main>
+      <h1>Improving access to Primary Healthcare and Quality Medicines across India</h1>
+      <p>India's leading tech-enabled Go-To-Market (GTM) Specialist for Healthcare Companies</p>
+      <a href="https://www.goapptiv.com/teamandculture">The Team</a>
+      <p>business@goapptiv.com</p>
+      <p>grievances@goapptiv.com</p>
+    </main>
+  </body>
+</html>
+`
+
 const teamCultureHtml = `
 <!doctype html>
 <html lang="en">
@@ -93,6 +111,7 @@ test('GoApptiv sentinel pins the verified homepage, team page, and missing caree
   assert.match(goApptiv.VERIFIED_SURFACE_SUMMARY, /no trustworthy public job listings/i)
 
   assert.equal(goApptiv.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(goApptiv.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(goApptiv.hasOfficialTeamCultureSignal(teamCultureHtml), true)
   assert.equal(goApptiv.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(goApptiv.hasPublicJobsSignal(publicJobsHtml), true)

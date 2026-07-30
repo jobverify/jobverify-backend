@@ -84,6 +84,31 @@ test('saveToFile keeps allowed city-only India locations', () => {
   assert.equal(savedJobs[0].title, 'QA Engineer')
 })
 
+test('saveToFile writes normalized experience when it can be inferred from the scraped description', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-india-filter-'))
+  const filePath = path.join(tmpDir, 'jobs.json')
+
+  saveToFile(
+    [
+      {
+        title: 'Senior Digital Data Analyst',
+        company: 'Example India',
+        location: 'Bengaluru, India',
+        city: 'Bengaluru',
+        link: 'https://example.com/analyst-role',
+        experienceRequired: null,
+        jobDescription: 'Qualifications Required 5+ years of experience in digital analytics, web analytics, marketing analytics, or a related field.',
+      },
+    ],
+    filePath,
+  )
+
+  const savedJobs = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+
+  assert.equal(savedJobs.length, 1)
+  assert.equal(savedJobs[0].experienceRequired, '5+ years')
+})
+
 test('filterIndiaJobs keeps city-only India jobs and plain remote jobs without requiring country', () => {
   const filteredJobs = filterIndiaJobs([
     {

@@ -5,7 +5,10 @@
 
 import dns from 'node:dns/promises'
 import { existsSync } from 'node:fs'
+import { mkdtemp, rm } from 'node:fs/promises'
 import net from 'node:net'
+import os from 'node:os'
+import path from 'node:path'
 
 const dnsCache = new Map()
 let puppeteerPromise = null
@@ -105,6 +108,11 @@ export const resolveBrowserExecutablePath = ({
   return getBrowserExecutableCandidates(platform).find((candidate) => fileExists(candidate)) || null
 }
 
+export const createBrowserUserDataDir = async ({
+  mkdtempImpl = mkdtemp,
+  tmpdirPath = os.tmpdir(),
+} = {}) => mkdtempImpl(path.join(tmpdirPath, 'jobify-puppeteer-profile-'))
+
 const resolveHostnameAddresses = async (hostname) => {
   if (dnsCache.has(hostname)) return dnsCache.get(hostname)
 
@@ -159,18 +167,34 @@ export const launchBrowser = async () => {
     '--js-flags="--max-old-space-size=256"'
   ]
 
-  if (process.env.PUPPETEER_DISABLE_SANDBOX === 'true') {
+  // Chrome's Windows sandbox can prevent the DevTools target from becoming
+  // available in this scraper runtime. Keep the opt-in environment switch for
+  // other platforms, but apply the required Windows launch flags by default.
+  if (process.platform === 'win32' || process.env.PUPPETEER_DISABLE_SANDBOX === 'true') {
     args.push('--no-sandbox', '--disable-setuid-sandbox')
   }
 
   const executablePath = resolveBrowserExecutablePath()
+  const userDataDir = await createBrowserUserDataDir()
 
-  return await puppeteer.launch({
-    headless: true,
-    args,
-    protocolTimeout: 300000,
-    ...(executablePath ? { executablePath } : {}),
-  })
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args,
+      protocolTimeout: 300000,
+      userDataDir,
+      ...(executablePath ? { executablePath } : {}),
+    })
+
+    browser.on('disconnected', () => {
+      rm(userDataDir, { recursive: true, force: true }).catch(() => {})
+    })
+
+    return browser
+  } catch (error) {
+    await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
+    throw error
+  }
 }
 
 // Configures a new browser page with request interception to block heavy assets.

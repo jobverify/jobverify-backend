@@ -27,6 +27,11 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 const PAGE_SIZE = 20
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const HOMEPAGE_ACCEPTED_URLS = [
+  HOMEPAGE_URL,
+  'https://www.hotstar.com/in',
+  'https://www.hotstar.com/in/',
+]
 
 export const WORKDAY_BOARD_ACCEPTED_URLS = [
   WORKDAY_BOARD_URL,
@@ -59,6 +64,9 @@ const normalizeComparableUrl = (value) => {
 }
 
 const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
+
+const isAcceptedHomepageUrl = (value) =>
+  HOMEPAGE_ACCEPTED_URLS.some((candidate) => sameUrl(value, candidate))
 
 const isAcceptedWorkdayBoardUrl = (value) =>
   WORKDAY_BOARD_ACCEPTED_URLS.some((candidate) => sameUrl(value, candidate))
@@ -114,6 +122,14 @@ const defaultFetchJson = (url, body) => fetchJsonWithRetry(url, {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const normalizedHomepage = normalized.replace(/\u2019/g, "'")
+
+  if (
+    /<title>\s*JioHotstar\s*-\s*Watch TV Shows, Movies, Specials, Live Cricket\s*&amp;\s*Football\s*<\/title>/i.test(page)
+    && /JioHotstar is India's largest premium streaming platform/i.test(normalizedHomepage)
+  ) {
+    return true
+  }
 
   return (
     (
@@ -287,7 +303,7 @@ export const createHotstarScraper = ({
     const homepagePage = await fetchPage(HOMEPAGE_URL)
     if (
       homepagePage.status !== 200
-      || !sameUrl(homepagePage.url, HOMEPAGE_URL)
+      || !isAcceptedHomepageUrl(homepagePage.url)
       || !hasOfficialHomepageSignal(homepagePage.html)
     ) {
       throw new Error('Hotstar verified homepage surface changed materially')

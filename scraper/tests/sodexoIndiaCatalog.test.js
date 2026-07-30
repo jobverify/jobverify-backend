@@ -24,21 +24,21 @@ test('Sodexo India catalog metadata captures the verified careers page and Acces
   assert.equal(provider.accessHrJobsUrl, 'https://accesshr.in.sodexo.com/#/jobs')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-careers-page-plus-accesshr-login-or-timeout-validation')
+  assert.equal(provider.paginationStrategy, 'verified-careers-page-plus-accesshr-login-js-shell-or-timeout-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-accesshr-jobs-link+verified-login-shell-or-timeout-return-empty',
+    'verified-first-party-careers-page+verified-accesshr-jobs-link+verified-login-shell-js-shell-or-timeout-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'sodexo.in')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-27')
   assert.match(provider.modulePath, /sodexoindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /sodexoindia[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, July 27, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sodexo\.in\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/accesshr\.in\.sodexo\.com\/#\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /login shell|timed out/i)
+  assert.match(provider.verifiedSurfaceSummary, /JavaScript app shell|timeout/i)
 })
 
 test('Sodexo India matches exact-name backlog coverage from the local catalog contract alone', async () => {

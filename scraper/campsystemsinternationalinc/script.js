@@ -30,12 +30,22 @@ export const hasVerifiedCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /<title>\s*Careers\s*\|\s*CAMP Systems\s*<\/title>/i.test(page)
+  return (/<title>\s*Careers\s*\|\s*CAMP Systems\s*<\/title>/i.test(page)
+    || /<title>\s*Careers\s*<\/title>/i.test(page))
     && text.includes('careers')
     && text.includes('innovative, forward-thinkers wanted')
-    && text.includes('leading provider of aviation software and services')
-    && text.includes('saas products power the business of aviation worldwide')
-    && text.includes('find opportunities')
+    && (
+      text.includes('leading provider of aviation software and services')
+      || text.includes('saas company delivering groundbreaking aircraft health management solutions')
+    )
+    && (
+      text.includes('saas products power the business of aviation worldwide')
+      || text.includes('market data to the business aviation industry worldwide')
+    )
+    && (
+      text.includes('find opportunities')
+      || text.includes('talented and passionate people')
+    )
   }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

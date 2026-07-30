@@ -7,7 +7,7 @@ const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Sauce Labs Careers & Opportunities</title>
+    <title>Sauce Labs Careers &amp; Opportunities</title>
   </head>
   <body>
     <main>
@@ -32,7 +32,7 @@ const GREENHOUSE_PAYLOAD_WITH_INDIA = {
       absolute_url: 'https://job-boards.greenhouse.io/saucelabs/jobs/7096532',
       updated_at: '2026-06-25T11:10:37-04:00',
       first_published: '2025-07-23T10:23:20-04:00',
-      company_name: 'Sauce Labs',
+      company_name: 'Sauce Labs Inc.',
       location: { name: 'Gurugram, India' },
       departments: [{ name: '3210:Development' }],
       content: '<p>Architect the next generation of AI-powered quality workflows.</p>',
@@ -47,7 +47,7 @@ const GREENHOUSE_PAYLOAD_WITH_INDIA = {
       absolute_url: 'https://job-boards.greenhouse.io/saucelabs/jobs/7899103',
       updated_at: '2026-05-29T09:06:06-04:00',
       first_published: '2026-05-07T03:35:13-04:00',
-      company_name: 'Sauce Labs',
+      company_name: 'Sauce Labs Inc.',
       location: { name: 'Gurugram, Haryana' },
       departments: [{ name: '2410:Enterprise Marketing' }],
       content: '<p>Create high-quality creative assets across digital and campaign channels.</p>',
@@ -61,7 +61,7 @@ const GREENHOUSE_PAYLOAD_WITH_INDIA = {
       absolute_url: 'https://job-boards.greenhouse.io/saucelabs/jobs/7551123',
       updated_at: '2026-06-24T12:00:00-04:00',
       first_published: '2026-04-20T09:00:00-04:00',
-      company_name: 'Sauce Labs',
+      company_name: 'Sauce Labs Inc.',
       location: { name: 'London, UK' },
       departments: [{ name: '2210:Sales' }],
       content: '<p>Non-India role.</p>',
@@ -210,7 +210,7 @@ test('Sauce Labs run validates the official careers page in-browser and then rea
   })
 
   assert.deepEqual(events, [
-    ['goto', 'https://saucelabs.com/careers', 'networkidle2'],
+    ['goto', 'https://saucelabs.com/careers', 'domcontentloaded'],
     ['content'],
     ['close'],
   ])

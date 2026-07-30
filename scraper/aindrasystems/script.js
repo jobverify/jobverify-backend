@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { AINDRA_SYSTEMS_CATALOG } from './catalog.js'
@@ -10,6 +11,10 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = AINDRA_SYSTEMS_CATALOG.source
 export const COMPANY = AINDRA_SYSTEMS_CATALOG.companyName
 export const HOMEPAGE_URL = AINDRA_SYSTEMS_CATALOG.companyCareerPage
+export const CANDIDATE_HOMEPAGE_URLS = [
+  HOMEPAGE_URL,
+  'https://aindra.in/',
+]
 export const APPLICATION_EMAIL = AINDRA_SYSTEMS_CATALOG.applicationEmail
 export const APPLICATION_URL = `mailto:${APPLICATION_EMAIL}`
 export const PROVIDER_METADATA = AINDRA_SYSTEMS_CATALOG
@@ -105,7 +110,7 @@ export const hasOfficialHomepageSignal = (html) => {
     && />\s*Careers\s*</i.test(page)
 }
 
-export const extractOpenings = (html) => {
+export const extractOpenings = (html, { sourceUrl = HOMEPAGE_URL } = {}) => {
   if (!hasOfficialHomepageSignal(html)) {
     throw new Error('Aindra Systems verified official homepage changed')
   }
@@ -142,7 +147,7 @@ export const extractOpenings = (html) => {
         country,
         jobId: `${SOURCE}-${identity}`,
         requisitionId: `${SOURCE}-${identity}`,
-        sourceUrl: HOMEPAGE_URL,
+        sourceUrl,
         applyUrl,
         employmentType: null,
         experienceRequired,
@@ -172,19 +177,81 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+export const isTrustedUnavailableFailure = (error) => {
+  const message = String(error?.message ?? error ?? '').toLowerCase()
+
+  return message.includes('enotfound')
+    || message.includes('getaddrinfo')
+    || message.includes('could not be resolved')
+    || message.includes('unable to verify the first certificate')
+    || message.includes('unable_to_verify_leaf_signature')
+    || message.includes('err_cert_authority_invalid')
+    || (message.includes('net::err_failed') && message.includes('aindra.in'))
+    || message.includes('certificate')
+}
+
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createAindraSystemsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    const jobs = extractOpenings(homepageHtml)
+  async run({ fetchText = defaultFetchText, fetchBrowserText, now: overrideNow } = {}) {
+    let browserSession = null
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: (overrideNow || now)(),
-    }))
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
+    }
+
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      for (const url of CANDIDATE_HOMEPAGE_URLS) {
+        try {
+          const homepageHtml = await fetchPageText(url)
+          const jobs = extractOpenings(homepageHtml, { sourceUrl: url })
+
+          return jobs.map((job) => ({
+            ...job,
+            source: SOURCE,
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: (overrideNow || now)(),
+          }))
+        } catch (error) {
+          if (isTrustedUnavailableFailure(error)) {
+            continue
+          }
+
+          throw error
+        }
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

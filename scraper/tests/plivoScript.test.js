@@ -55,6 +55,33 @@ const officialLeverBoardHtml = `
 </html>
 `
 
+const currentOfficialLeverBoardHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Plivo</title>
+    <meta name="twitter:description" content="Job openings at Plivo" />
+  </head>
+  <body class="list header-compact">
+    <div class="postings-wrapper">
+      <div class="postings-message">No job postings currently open. Check back later!</div>
+      <a href="https://www.plivo.com/">Plivo Home Page</a>
+      <section aria-label="Privacy Notice">
+        <h2>Privacy Notice</h2>
+        <p>
+          We may use artificial intelligence (AI) tools to support parts of the hiring process,
+          such as reviewing applications and analyzing resumes.
+        </p>
+      </section>
+      <footer>
+        <span>Jobs powered by</span>
+        <img alt="Lever" src="/img/lever-logo.png" />
+      </footer>
+    </div>
+  </body>
+</html>
+`
+
 const sampleLeverJobs = [
   {
     id: '669aaffa-a293-4f99-8989-393aa077f854',
@@ -110,7 +137,7 @@ test('Plivo scraper pins the verified first-party jobs shell, bundle, and Lever 
   assert.equal(plivo.CAREERS_URL, 'https://www.plivo.com/jobs/')
   assert.equal(plivo.LEVER_BOARD_URL, 'https://jobs.lever.co/plivo')
   assert.equal(plivo.LEVER_API_URL, 'https://api.lever.co/v0/postings/plivo?mode=json')
-  assert.equal(plivo.VERIFIED_ON, '2026-07-17')
+  assert.equal(plivo.VERIFIED_ON, '2026-07-26')
   assert.equal(plivo.hasOfficialPlivoJobsSignal(officialJobsHtml), true)
   assert.equal(
     plivo.extractJobsBundleUrl(officialJobsHtml),
@@ -122,6 +149,13 @@ test('Plivo scraper pins the verified first-party jobs shell, bundle, and Lever 
   )
   assert.equal(plivo.hasOfficialLeverBoardSignal(officialLeverBoardHtml), true)
   assert.equal(plivo.hasEmptyLeverBoardSignal(officialLeverBoardHtml), true)
+})
+
+test('Plivo accepts the current July 26, 2026 empty Lever board layout', async () => {
+  const plivo = await loadPlivoModule()
+
+  assert.equal(plivo.hasOfficialLeverBoardSignal(currentOfficialLeverBoardHtml), true)
+  assert.equal(plivo.hasEmptyLeverBoardSignal(currentOfficialLeverBoardHtml), true)
 })
 
 test('Plivo extracts Lever jobs into shared scraper job fields and preserves a global scope', async () => {

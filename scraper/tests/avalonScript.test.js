@@ -247,7 +247,7 @@ test('Avalon scraper constants and helpers stay pinned to the verified first-par
   assert.equal(avalon.SOURCE, 'avalon')
   assert.equal(avalon.COMPANY, 'Avalon')
   assert.equal(avalon.OFFICIAL_BRAND_NAME, 'Avalon Information Systems')
-  assert.equal(avalon.VERIFIED_ON, '2026-07-15')
+  assert.equal(avalon.VERIFIED_ON, '2026-07-28')
   assert.equal(avalon.HOMEPAGE_URL, 'https://www.avaloninfosys.com/')
   assert.equal(avalon.CAREERS_URL, 'https://www.avaloninfosys.com/career')
   assert.equal(avalon.CAREER_ALIAS_URL, 'https://www.avaloninfosys.com/index.php/career')

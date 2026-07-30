@@ -92,10 +92,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-
-  return /careers\s*\|\s*invenger/i.test(page)
+  const hasLegacyCareersSurface = /careers\s*\|\s*invenger/i.test(page)
     && /info@invenger\.com/i.test(page)
     && /india\s*office\s*location/i.test(page)
+  const hasCurrentJobsHandoff = /careers\s*\|\s*invenger/i.test(page)
+    && /href=["'][^"']*\/jobs["']/i.test(page)
+    && /invenger/i.test(page)
+
+  return hasLegacyCareersSurface || hasCurrentJobsHandoff
 }
 
 export const hasOfficialJobsPageSignal = (html) => {

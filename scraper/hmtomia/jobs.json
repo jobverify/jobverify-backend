@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at TOMIA",
+    "company": "TOMIA",
+    "location": "India remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-engineering",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-engineering",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-engineering",
+    "source": "hmtomia",
+    "jobId": "hmtomia-current-openings",
+    "requisitionId": "hmtomia-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "TOMIA had current Himalayas hiring evidence for Software Engineer. Location evidence: India remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:15.194Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
+    "companyDomain": "himalayas.app"
+  }
+]

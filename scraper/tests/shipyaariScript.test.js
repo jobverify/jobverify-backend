@@ -16,15 +16,15 @@ const careersHtml = `
     <p>Please share your resume with us at careers@shipyaari.com</p>
     <article class="role-card">
       <h5>Sales Head - B2C & D2C</h5>
-      <a href="/careers/sales-manager/">Know More</a>
+      <a href="/careers/sales-manager/"><span>Know More</span></a>
     </article>
     <article class="role-card">
       <h5>Customer Growth Manager</h5>
-      <a href="https://www.shipyaari.com/careers/customer-growth-manager/">Know More</a>
+      <a href="https://www.shipyaari.com/careers/customer-growth-manager/"><span>Know More</span></a>
     </article>
     <article class="role-card">
       <h5>Logistics Operations Executive</h5>
-      <a href="/careers/logistics-operations-executive-sr-executive/">Know More</a>
+      <a href="/careers/logistics-operations-executive-sr-executive/"><span>Know More</span></a>
     </article>
   </body>
 </html>
@@ -106,6 +106,17 @@ test('Shipyaari helpers stay pinned to the verified official careers page and ro
   assert.equal(shipyaari.HOMEPAGE_URL, 'https://www.shipyaari.com/')
   assert.equal(shipyaari.CAREERS_URL, 'https://www.shipyaari.com/careers/')
   assert.equal(shipyaari.hasOfficialCareersPageSignal(careersHtml), true)
+  assert.equal(
+    shipyaari.hasOfficialCareersPageSignal(
+      careersHtml
+        .replace("We're Hiring!", 'We\u2019re Hiring!')
+        .replace(
+          'Please share your resume with us at careers@shipyaari.com',
+          'Please share your resume with us at [email&#160;protected]',
+        ),
+    ),
+    true,
+  )
   assert.equal(shipyaari.hasOfficialCareersPageSignal('<html><body>Careers</body></html>'), false)
   assert.equal(shipyaari.hasOfficialRoleDetailSignal(salesManagerHtml), true)
   assert.equal(shipyaari.hasOfficialRoleDetailSignal('<html><body>Job Title only</body></html>'), false)
@@ -251,7 +262,11 @@ test('Shipyaari fails closed when the verified careers surface drifts materially
           return `
             <!doctype html>
             <html>
+              <head>
+                <title>Careers in Logistics, Shipping and Technology - Shipyaari Jobs</title>
+              </head>
               <body>
+                <h1>Why Join Shipyaari?</h1>
                 <h2>Join The Crew, We're Hiring!</h2>
                 <p>Please share your resume with us at careers@shipyaari.com</p>
               </body>

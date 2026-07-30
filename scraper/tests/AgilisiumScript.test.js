@@ -5,15 +5,30 @@ const careersHtml = `
 <!doctype html>
 <html><head><title>Careers at Agilisium | Life Sciences AI &amp; Data Jobs</title></head>
 <body>
-  <p>Explore open roles across engineering, consulting, and data science.</p>
+  <a href="https://agilisium.zohorecruit.com/jobs/Careers">view current openings</a>
   <a href="https://agilisium.zohorecruit.com/jobs/Careers">EXPLORE OPEN ROLES</a>
 </body></html>
 `
 
 const boardHtml = `
 <!doctype html>
-<html><head><title>Jobs at Agilisium</title><meta property="og:url" content="https://agilisium.zohorecruit.com/jobs/Careers"></head>
-<body>Everyone at Agilisium is free to explore and work the way you want. Come join us!</body></html>
+<html>
+<head>
+  <title>Jobs at Agilisium</title>
+  <meta name="description" content="Everyone at Agilisium is free to explore and work the way you want. Come join us!">
+  <meta property="og:url" content="https://agilisium.zohorecruit.com/jobs/Careers">
+</head>
+<body>
+  <div id="meta"></div>
+  <script>
+    window.__INITIAL_STATE__ = {
+      "page_name":"Careers",
+      "list_url":"https://agilisium.zohorecruit.com/jobs/Careers",
+      "_no_longer":"openings"
+    };
+  </script>
+</body>
+</html>
 `
 
 const loadModule = async () => {

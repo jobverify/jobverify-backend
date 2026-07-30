@@ -33,6 +33,21 @@ const accessHrLoginShellHtml = `
 </html>
 `
 
+const accessHrAppShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>AccessHr</title>
+    <base href="https://accesshr.in.sodexo.com/">
+    <link rel="icon" type="image/x-icon" href="/assets/img/favicon.ico">
+  </head>
+  <body>
+    <app-root></app-root>
+    <script src="main.fd737a57e00cc417.js"></script>
+  </body>
+</html>
+`
+
 const loadSodexoIndiaModule = async () => {
   try {
     return await import('../sodexoindia/script.js')
@@ -49,10 +64,11 @@ test('Sodexo India scraper constants stay pinned to the verified careers page an
   assert.equal(sodexoIndia.CAREERS_URL, 'https://www.sodexo.in/careers')
   assert.equal(sodexoIndia.ACCESS_HR_ROOT_URL, 'https://accesshr.in.sodexo.com/')
   assert.equal(sodexoIndia.ACCESS_HR_JOBS_URL, 'https://accesshr.in.sodexo.com/#/jobs')
-  assert.equal(sodexoIndia.VERIFIED_AT, '2026-07-17')
+  assert.equal(sodexoIndia.VERIFIED_AT, '2026-07-27')
   assert.equal(sodexoIndia.hasOfficialCareersPageSignal(careersPageHtml), true)
   assert.equal(sodexoIndia.extractAccessHrJobsUrl(careersPageHtml), 'https://accesshr.in.sodexo.com/#/jobs')
   assert.equal(sodexoIndia.hasAccessHrLoginShellSignal(accessHrLoginShellHtml), true)
+  assert.equal(sodexoIndia.hasAccessHrLoginShellSignal(accessHrAppShellHtml), true)
   assert.equal(sodexoIndia.isExpectedTimedOutSurface({ errorKind: 'timeout', status: null, html: null }), true)
   assert.equal(
     sodexoIndia.hasUnexpectedPublicJobSurface({
@@ -88,6 +104,22 @@ test('Sodexo India returns no jobs while AccessHr remains a verified login shell
     sodexoIndia.ACCESS_HR_ROOT_URL,
   ])
   assert.deepEqual(loginShellJobs, [])
+
+  const appShellJobs = await sodexoIndia.createSodexoIndiaScraper().run({
+    fetchPage: async (url) => {
+      if (url === sodexoIndia.CAREERS_URL) {
+        return { status: 200, url, html: careersPageHtml, errorKind: null }
+      }
+
+      if (url === sodexoIndia.ACCESS_HR_ROOT_URL) {
+        return { status: 200, url, html: accessHrAppShellHtml, errorKind: null }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(appShellJobs, [])
 
   const timeoutJobs = await sodexoIndia.createSodexoIndiaScraper().run({
     fetchPage: async (url) => {

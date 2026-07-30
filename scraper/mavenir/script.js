@@ -58,7 +58,7 @@ export const extractVerifiedWorkdayHandoffUrl = (html) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -67,19 +67,23 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   baseDelayMs: 2000,
   timeoutMs: 20000,
   label: SOURCE,
+  signal,
 })
 
 export const createMavenirScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  async run() {
-    const homepageHtml = await fetchText(CAREER_PAGE_URL)
+  async run({ signal } = {}) {
+    const fetchVerifiedText = (url) => (
+      signal === undefined ? fetchText(url) : fetchText(url, { signal })
+    )
+    const homepageHtml = await fetchVerifiedText(CAREER_PAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Mavenir official homepage surface changed; refusing to guess the careers handoff')
     }
 
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    const careersHtml = await fetchVerifiedText(CAREERS_PAGE_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Mavenir official careers page changed; refusing to guess the public jobs source')
     }
@@ -89,11 +93,15 @@ export const createMavenirScraper = ({
       throw new Error('Mavenir verified Workday handoff changed; refusing to guess the public jobs source')
     }
 
-    return workdayRunner(buildScraperOptions())
+    return workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
   },
 })
 
 export const run = async ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
-} = {}) => createMavenirScraper({ fetchText, workdayRunner }).run()
+  signal,
+} = {}) => createMavenirScraper({ fetchText, workdayRunner }).run({ signal })

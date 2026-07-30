@@ -13,6 +13,9 @@ export const CAREERS_URL = 'https://www.kathirsudhirautomation.com/career'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const HOMEPAGE_CAREERS_LINK_PATTERN =
+  /href=["'](?:https?:\/\/www\.kathirsudhirautomation\.com)?\/career\/?["'][^>]*>\s*Career\s*<\/a>/i
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
@@ -48,16 +51,47 @@ const buildAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   }
 }
 
-const cleanJobTitle = (value) => normalizeWhitespace(String(value ?? '').replace(/^\d+\.\s*Job Title:\s*/i, ''))
+const cleanJobTitle = (value) => normalizeWhitespace(stripTags(value))
+  .replace(/^\d+\.\s*/i, '')
+  .replace(/^Job Title:\s*/i, '')
 
 const extractTextAfterLabel = (blockHtml, label) => {
-  const pattern = new RegExp(`${label}\\s*[:\\-]?\\s*<\\/p>\\s*<p>([\\s\\S]*?)<\\/p>`, 'i')
-  return stripTags(pattern.exec(blockHtml)?.[1] || '')
+  const paragraphs = [...String(blockHtml ?? '').matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]))
+    .filter(Boolean)
+  const normalizedLabel = normalizeWhitespace(label).replace(/\s*[:\-]\s*$/u, '').toLowerCase()
+
+  for (let index = 0; index < paragraphs.length - 1; index += 1) {
+    const paragraphLabel = normalizeWhitespace(paragraphs[index])
+      .replace(/\s*[:\-]\s*$/u, '')
+      .toLowerCase()
+
+    if (paragraphLabel === normalizedLabel) {
+      return paragraphs[index + 1]
+    }
+  }
+
+  return ''
 }
 
 const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
+
+const extractResponsibilities = (blockHtml) => {
+  const listItems = extractListItems(blockHtml)
+  if (listItems.length > 0) return listItems
+
+  const match = String(blockHtml ?? '').match(
+    /Roles and Responsibilities[\s\S]*?<\/p>([\s\S]*?)<p\b[^>]*>[\s\S]*?Experience/i,
+  )
+
+  if (!match) return []
+
+  return [...match[1].matchAll(/<(?:div|p)\b[^>]*>([\s\S]*?)<\/(?:div|p)>/gi)]
+    .map((segment) => stripTags(segment[1]).replace(/^[>\-•]+\s*/u, ''))
+    .filter(Boolean)
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -66,7 +100,7 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*Kathir Sudhir Automation Solution_\s*Home\s*<\/title>/i.test(page)
     && /Kathir Sudhir Automation India Pvt Ltd/i.test(text)
     && /Electronics Instruments Manufacturer\s*&\s*System Integrator for Automation Solutions/i.test(text)
-    && /href=["']\/career["'][^>]*>\s*Career\s*<\/a>/i.test(page)
+    && HOMEPAGE_CAREERS_LINK_PATTERN.test(page)
     && /hr@kathirsudhirautomation\.com/i.test(page)
 }
 
@@ -84,7 +118,7 @@ export const hasOfficialCareersSignal = (html) => {
 }
 
 const JOB_SECTION_PATTERN =
-  /<section>\s*<h3>\s*([^<]+)\s*<\/h3>([\s\S]*?)<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*apply here\s*<\/a>\s*<\/section>/gi
+  /<h3\b[^>]*>([\s\S]*?Job Title:[\s\S]*?)<\/h3>([\s\S]*?)<a\b[^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?apply here[\s\S]*?<\/a>/gi
 
 export const extractPublicJobs = (html) => {
   if (!hasOfficialCareersSignal(html)) {
@@ -99,7 +133,7 @@ export const extractPublicJobs = (html) => {
     const minimumQualification = extractTextAfterLabel(blockHtml, 'Qualifications') || null
     const experienceRequired = extractTextAfterLabel(blockHtml, 'Experience') || null
     const salary = extractTextAfterLabel(blockHtml, 'Salary range') || null
-    const jobDescription = extractListItems(blockHtml).join(' ') || null
+    const jobDescription = extractResponsibilities(blockHtml).join(' ') || null
     const jobId = `${SOURCE}-${slugify(`${title}-chennai`)}`
 
     if (!title || !applyUrl || !jobDescription || !jobId) {

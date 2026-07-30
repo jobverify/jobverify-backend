@@ -49,6 +49,65 @@ const careersPageHtml = `
 </html>
 `
 
+const currentCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <section>
+        <h2>Explore a career @ PlanetSpark</h2>
+        <h3>Live 1:1 Online Classes for Public Speaking & Creative Writing</h3>
+        <h1>
+          We're
+          <br />
+          hiring
+          <br />
+          for these
+          <br />
+          roles
+        </h1>
+
+        <div class="card">
+          <div class="card-body">
+            <h4 class="new_career_card_title">Online English Teacher</h4>
+            <p class="text-uppercase mb-2">
+              <i class="material-icons career-icon-color">location_on</i>
+              <span>Work From Home</span>
+            </p>
+            <p class="text-uppercase mb-2">
+              <i class="material-icons career-icon-color">calendar_today</i>
+              <span>1 to 20 Years</span>
+            </p>
+            <a href="/careers/32-full-time-jobs-online-english-teacher-work-from-home">View &amp; Apply</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h4 class="new_career_card_title">Ruby On Rails Developer</h4>
+            <p class="text-uppercase mb-2">
+              <i class="material-icons career-icon-color">access_time</i>
+              <span>Full time</span>
+            </p>
+            <p class="text-uppercase mb-2">
+              <i class="material-icons career-icon-color">location_on</i>
+              <span>Gurugram, Haryana (Work from office)</span>
+            </p>
+            <p class="text-uppercase mb-2">
+              <i class="material-icons career-icon-color">calendar_today</i>
+              <span>1 to 4 yrs</span>
+            </p>
+            <a href="/careers/54-full-time-jobs-ruby-on-rails-developer-gurugram-haryana-work-from-office-">View &amp; Apply</a>
+          </div>
+        </div>
+      </section>
+
+      <p>For job application related queries, kindly reach out to teach@planetspark.in</p>
+    </main>
+  </body>
+</html>
+`
+
 test('PlanetSpark scraper recognizes the verified official careers page and extracts public role cards', async () => {
   const planetSpark = await loadPlanetSparkModule()
   assert.ok(planetSpark, 'Expected PlanetSpark scraper module at ../planetspark/script.js')
@@ -73,6 +132,26 @@ test('PlanetSpark scraper recognizes the verified official careers page and extr
       location: 'Work From Home, India',
       city: null,
       employmentType: 'Full time',
+      experienceRequired: '1 to 20 Years',
+      sourceUrl: 'https://www.planetspark.in/careers',
+      applyUrl: 'https://www.planetspark.in/careers',
+    },
+    {
+      title: 'Ruby On Rails Developer',
+      location: 'Gurugram, Haryana (Work from office), India',
+      city: 'Gurgaon',
+      employmentType: 'Full time',
+      experienceRequired: '1 to 4 yrs',
+      sourceUrl: 'https://www.planetspark.in/careers',
+      applyUrl: 'https://www.planetspark.in/careers',
+    },
+  ])
+  assert.deepEqual(planetSpark.extractRoleCards(currentCareersPageHtml), [
+    {
+      title: 'Online English Teacher',
+      location: 'Work From Home, India',
+      city: null,
+      employmentType: null,
       experienceRequired: '1 to 20 Years',
       sourceUrl: 'https://www.planetspark.in/careers',
       applyUrl: 'https://www.planetspark.in/careers',
@@ -122,4 +201,12 @@ test('run fails closed when the PlanetSpark careers page no longer matches the v
     }),
     /verified official public careers surface/i,
   )
+})
+
+test('PlanetSpark accepts the verified careers heading when the apostrophe is curly', async () => {
+  const planetSpark = await loadPlanetSparkModule()
+  const curlyApostropheHtml = careersPageHtml.replace("We're", 'We\u2019re')
+
+  assert.equal(planetSpark.hasOfficialCareersSignal(curlyApostropheHtml), true)
+  assert.equal(planetSpark.extractRoleCards(curlyApostropheHtml).length, 3)
 })

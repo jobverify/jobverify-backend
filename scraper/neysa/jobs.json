@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Sales Head - Education & Research",
+    "company": "Neysa",
+    "department": "Sales",
+    "location": "$('#location').val(), India",
+    "city": "$('#location').val()",
+    "country": "India",
+    "jobId": "sales-head-education-research",
+    "requisitionId": "sales-head-education-research",
+    "sourceUrl": "https://neysa.ai/careers/job-openings/sales-head-education-research/",
+    "applyUrl": "https://neysa.ai/careers/job-openings/sales-head-education-research/",
+    "employmentType": null,
+    "experienceRequired": "15-20 YearsJob Type: Onsite - Work from OfficeDepartment: Sales & Business Development / Strategic Partnerships About Neysa.aiNeysa.ai is an AI Acceleration Cloud company enabling the secure, scalable, and cost-effective adoption of Generative AI (Gen AI) and AI-native applications. With platforms like Neysa Velocis, Neysa Overwatch, and Neysa Aegis, [&hellip;]\" />",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-07-04",
+    "closingDate": null,
+    "jobDescription": null,
+    "remoteStatus": "On-site",
+    "source": "neysa",
+    "link": "https://neysa.ai/careers/job-openings/sales-head-education-research/",
+    "scrapedAt": "2026-07-26T20:13:24.676Z",
+    "companyCareerPage": "https://neysa.ai/careers/",
+    "companyDomain": "neysa.ai",
+    "atsPlatform": "official-company-careers"
+  }
+]

@@ -16,8 +16,12 @@ const homepageHtml = `
     <title>SoftProdigy | AI &amp; Software Development Services</title>
   </head>
   <body>
+    <p>Agentic AI Consulting that Simplifies Smart Decisions</p>
+    <a href="https://softprodigy.com/contact-us/">Get in Touch</a>
+    <p>Start Your AI Strategy Session</p>
+    <p>Digital Transformation , Engineered for Impact</p>
+    <p>Become a Smarter Business</p>
     <a href="https://softprodigy.keka.com/careers/">Careers</a>
-    <h1>Digital Transformation, Engineered for Impact</h1>
   </body>
 </html>
 `
@@ -31,22 +35,48 @@ const kekaBoardHtml = `
   <body>
     <h1>Be a part of building something great</h1>
     <p>Browse all jobs</p>
-    <div class="job-card">
-      <a href="/careers/jobdetails/101">Senior Software Engineer</a>
-      <span>Chandigarh, India</span>
-      <span>Full Time</span>
-    </div>
-    <div class="job-card">
-      <a href="/careers/jobdetails/202">QA Automation Engineer</a>
-      <span>Mohali, India</span>
-      <span>Full Time</span>
-    </div>
-    <footer>SoftProdigy System Solutions Pvt. Ltd. &copy; 2026 Keka Hire. Powered by Keka.</footer>
+    <footer>
+      SoftProdigy System Solutions Pvt. Ltd. &copy; 2026 Keka Hire. Powered by
+      <a href="https://www.keka.com" target="_blank">Keka</a>
+    </footer>
   </body>
 </html>
 `
 
-test('SoftProdigy System Solutions validates the verified homepage handoff and extracts Keka board jobs', async () => {
+const kekaActiveJobsPayload = [
+  {
+    id: 133656,
+    title: 'Software Developer',
+    jobLocations: [
+      {
+        name: 'Sahibzada Ajit Singh Nagar',
+        city: 'Sahibzada Ajit Singh Nagar',
+        countryName: 'India',
+      },
+    ],
+    jobType: 2,
+  },
+  {
+    id: 129380,
+    title: 'Internship cum Job Opportunity - Hiring Interns (2025 & 2026 Batch)',
+    jobLocations: [],
+    jobType: 2,
+  },
+  {
+    id: 118126,
+    title: 'PPC Analyst',
+    jobLocations: [
+      {
+        name: 'Mohali',
+        city: 'Mohali',
+        countryName: 'India',
+      },
+    ],
+    jobType: 2,
+  },
+]
+
+test('SoftProdigy System Solutions validates the verified homepage handoff and extracts jobs from the live Keka active-jobs payload', async () => {
   const softProdigy = await loadModule()
 
   assert.equal(softProdigy.hasOfficialHomepageSignal(homepageHtml), true)
@@ -55,25 +85,38 @@ test('SoftProdigy System Solutions validates the verified homepage handoff and e
     'https://softprodigy.keka.com/careers/',
   )
   assert.equal(softProdigy.hasKekaBoardSignal(kekaBoardHtml), true)
-  assert.deepEqual(softProdigy.extractJobCards(kekaBoardHtml), [
+  assert.deepEqual(softProdigy.extractJobCards(kekaActiveJobsPayload), [
     {
-      title: 'Senior Software Engineer',
-      location: 'Chandigarh, India',
-      employmentType: 'Full Time',
-      sourceUrl: 'https://softprodigy.keka.com/careers/jobdetails/101',
-      applyUrl: 'https://softprodigy.keka.com/careers/jobdetails/101',
+      title: 'Software Developer',
+      location: 'Sahibzada Ajit Singh Nagar, India',
+      city: 'Sahibzada Ajit Singh Nagar',
+      employmentType: 'Full-Time',
+      sourceUrl: 'https://softprodigy.keka.com/careers/jobdetails/133656',
+      applyUrl: 'https://softprodigy.keka.com/careers/jobdetails/133656',
+      jobId: 133656,
     },
     {
-      title: 'QA Automation Engineer',
+      title: 'Internship cum Job Opportunity - Hiring Interns (2025 & 2026 Batch)',
+      location: 'India',
+      city: null,
+      employmentType: 'Full-Time',
+      sourceUrl: 'https://softprodigy.keka.com/careers/jobdetails/129380',
+      applyUrl: 'https://softprodigy.keka.com/careers/jobdetails/129380',
+      jobId: 129380,
+    },
+    {
+      title: 'PPC Analyst',
       location: 'Mohali, India',
-      employmentType: 'Full Time',
-      sourceUrl: 'https://softprodigy.keka.com/careers/jobdetails/202',
-      applyUrl: 'https://softprodigy.keka.com/careers/jobdetails/202',
+      city: 'Mohali',
+      employmentType: 'Full-Time',
+      sourceUrl: 'https://softprodigy.keka.com/careers/jobdetails/118126',
+      applyUrl: 'https://softprodigy.keka.com/careers/jobdetails/118126',
+      jobId: 118126,
     },
   ])
 })
 
-test('SoftProdigy System Solutions run returns normalized jobs from the verified Keka board', async () => {
+test('SoftProdigy System Solutions run returns normalized jobs from the verified Keka board and public active-jobs API', async () => {
   const softProdigy = await loadModule()
   const requestedUrls = []
 
@@ -84,12 +127,18 @@ test('SoftProdigy System Solutions run returns normalized jobs from the verified
       if (url === softProdigy.KEKA_BOARD_URL) return kekaBoardHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
-    now: () => '2026-07-17T00:00:00.000Z',
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      assert.equal(url, softProdigy.KEKA_ACTIVE_JOBS_API_URL)
+      return kekaActiveJobsPayload
+    },
+    now: () => '2026-07-27T00:00:00.000Z',
   })
 
   assert.deepEqual(requestedUrls, [
     softProdigy.HOMEPAGE_URL,
     softProdigy.KEKA_BOARD_URL,
+    softProdigy.KEKA_ACTIVE_JOBS_API_URL,
   ])
   assert.deepEqual(
     jobs.map((job) => ({
@@ -101,18 +150,25 @@ test('SoftProdigy System Solutions run returns normalized jobs from the verified
     })),
     [
       {
-        title: 'Senior Software Engineer',
-        location: 'Chandigarh, India',
-        link: 'https://softprodigy.keka.com/careers/jobdetails/101',
+        title: 'Software Developer',
+        location: 'Sahibzada Ajit Singh Nagar, India',
+        link: 'https://softprodigy.keka.com/careers/jobdetails/133656',
         source: 'softprodigysystemsolutions',
-        scrapedAt: '2026-07-17T00:00:00.000Z',
+        scrapedAt: '2026-07-27T00:00:00.000Z',
       },
       {
-        title: 'QA Automation Engineer',
-        location: 'Mohali, India',
-        link: 'https://softprodigy.keka.com/careers/jobdetails/202',
+        title: 'Internship cum Job Opportunity - Hiring Interns (2025 & 2026 Batch)',
+        location: 'India',
+        link: 'https://softprodigy.keka.com/careers/jobdetails/129380',
         source: 'softprodigysystemsolutions',
-        scrapedAt: '2026-07-17T00:00:00.000Z',
+        scrapedAt: '2026-07-27T00:00:00.000Z',
+      },
+      {
+        title: 'PPC Analyst',
+        location: 'Mohali, India',
+        link: 'https://softprodigy.keka.com/careers/jobdetails/118126',
+        source: 'softprodigysystemsolutions',
+        scrapedAt: '2026-07-27T00:00:00.000Z',
       },
     ],
   )

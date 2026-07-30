@@ -67,22 +67,20 @@ export const hasOfficialIndiaCareersSignal = (html) => {
   const text = normalizeText(page)
 
   return /<title>\s*Careers in India\s*\|\s*India\s*\|\s*McKinsey\s*&amp;\s*Company\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.mckinsey\.com\/in\/careers-in-india["']/i.test(page)
     && text.includes('search jobs')
     && text.includes('careers in india')
     && text.includes('join mckinsey india')
     && text.includes('find your ideal job')
+    && text.includes('career paths for students')
 }
 
 export const hasPublicJobsSearchSignal = (html) => {
   const page = String(html ?? '')
-  const text = normalizeText(page)
 
   return /<title>\s*McKinsey Job Search\s*\|\s*Consulting and Internal Roles\s*\|\s*Careers\s*\|\s*McKinsey\s*&amp;\s*Company\s*<\/title>/i.test(page)
-    && /aria-label=["']Search Jobs["']/i.test(page)
-    && /<button[^>]*>\s*Load More\s*<\/button>/i.test(page)
-    && /<a[^>]+jobs\.mckinsey\.com\/en_US\/careers\/login[^>]*>\s*Sign in here\.\s*<\/a>/i.test(page)
-    && text.includes('load more')
+    && page.includes('/careers/search-jobs/en')
+    && page.includes('gateway.mckinsey.com')
+    && page.includes('__NEXT_DATA__')
 }
 
 export const extractIndiaCityPairs = (record = {}) => {

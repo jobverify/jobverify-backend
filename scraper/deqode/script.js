@@ -19,8 +19,8 @@ export const VERIFIED_JOB_DETAIL_URL = PROVIDER_METADATA.verifiedSampleJobUrl
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const JOB_DETAIL_URL_PATTERN =
-  /(?:https?:\/\/(?:www\.)?deqode\.com)?\/career\/([a-z0-9-]+)(?=["'/?#])/gi
+const JOB_DETAIL_HREF_PATTERN =
+  /href=["']((?:https?:\/\/(?:www\.)?deqode\.com)?\/career\/([a-z0-9-]+)\/?(?:[?#][^"']*)?)["']/gi
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -103,8 +103,8 @@ export const extractJobDetailUrls = (html = '') => {
 
   const detailUrls = new Set()
 
-  for (const match of String(html ?? '').matchAll(JOB_DETAIL_URL_PATTERN)) {
-    const slug = normalizeInlineText(match[1])
+  for (const match of String(html ?? '').matchAll(JOB_DETAIL_HREF_PATTERN)) {
+    const slug = normalizeInlineText(match[2])
     if (!slug) continue
     detailUrls.add(absolutizeUrl(`/career/${slug}`))
   }

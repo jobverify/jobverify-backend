@@ -18,6 +18,12 @@ export const buildScraperOptions = () => ({
   scraperDir,
 })
 
-export const run = async ({ workdayRunner = runWorkdayScraper } = {}) =>
-  workdayRunner(buildScraperOptions())
+export const run = async ({
+  workdayRunner = runWorkdayScraper,
+  signal,
+} = {}) =>
+  workdayRunner({
+    ...buildScraperOptions(),
+    ...(signal === undefined ? {} : { signal }),
+  })
 

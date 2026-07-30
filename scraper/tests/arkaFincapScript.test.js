@@ -5,13 +5,13 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Arka Fincap &#8211; Expert Financial Solutions &amp; Services</title>
+    <title>Arka Fincap \u2013 Expert Financial Solutions &amp; Services</title>
   </head>
   <body>
     <nav>
       <a href="https://www.arkafincap.com/">Home</a>
       <a href="https://www.arkafincap.com/about-us">About Us</a>
-      <a href="https://www.arkafincap.com/life-at-arka">Life at Arka</a>
+      <a href="/life-at-arka">Life at Arka</a>
       <a href="https://arkafincap.zohorecruit.in/jobs/Careers">Job Openings</a>
     </nav>
     <h1>Arka Fincap</h1>
@@ -24,13 +24,14 @@ const careersPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Life at Arka &#8211; Work Culture, Careers &amp; Growth</title>
+    <title>Life at Arka \u2013 Work Culture, Careers &amp; Growth</title>
     <meta property="og:url" content="https://www.arkafincap.com/life-at-arka">
   </head>
   <body>
     <h1>Life at Arka</h1>
     <h2>Our Culture</h2>
     <p>Why Join Us?</p>
+    <a href="/life-at-arka">Careers</a>
     <a href="https://arkafincap.zohorecruit.in/jobs/Careers">Join Us</a>
   </body>
 </html>
@@ -109,6 +110,13 @@ test('Arka Fincap constants stay pinned to the verified homepage, careers page, 
   assert.equal(arkaFincap.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(arkaFincap.hasOfficialCareersPageSignal(careersPageHtml), true)
   assert.equal(arkaFincap.hasOfficialPortalSignal(portalHtml), true)
+})
+
+test('Arka Fincap validators accept the current relative careers handoff links and unicode dash titles', async () => {
+  const arkaFincap = await loadArkaFincapModule()
+
+  assert.equal(arkaFincap.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(arkaFincap.hasOfficialCareersPageSignal(careersPageHtml), true)
 })
 
 test('extractIndiaJobs maps Arka Fincap public Zoho Recruit records and excludes non-India roles', async () => {
@@ -269,4 +277,38 @@ test('run fails closed when the verified Arka Fincap surface markers drift', asy
     }),
     /public jobs API no longer returns the verified success payload/i,
   )
+})
+
+test('run can recover with browser-backed Arka Fincap HTML surfaces when direct requests fail', async () => {
+  const arkaFincap = await loadArkaFincapModule()
+  const browserUrls = []
+
+  const jobs = await arkaFincap.createArkaFincapScraper({ maxJobs: 1 }).run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+
+      if (url === arkaFincap.HOMEPAGE_URL) return homepageHtml
+      if (url === arkaFincap.CAREERS_PAGE_URL) return careersPageHtml
+      if (url === arkaFincap.CAREERS_PORTAL_URL) return portalHtml
+
+      assert.fail(`Unexpected browser HTML request: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (url === arkaFincap.CAREERS_API_URL) return apiPayload
+
+      assert.fail(`Unexpected JSON request: ${url}`)
+    },
+    now: () => '2026-07-15T00:00:00.000Z',
+  })
+
+  assert.deepEqual(browserUrls, [
+    arkaFincap.HOMEPAGE_URL,
+    arkaFincap.CAREERS_PAGE_URL,
+    arkaFincap.CAREERS_PORTAL_URL,
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'arkafincap')
 })

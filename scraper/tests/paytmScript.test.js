@@ -21,6 +21,11 @@ const officialCareersHtml = `
 const officialLeverBoardHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Paytm</title>
+    <meta property="og:description" content="Job openings at Paytm" />
+    <meta property="og:url" content="https://jobs.lever.co/paytm" />
+  </head>
   <body>
     <img alt="Paytm logo" src="https://jobs.lever.co/paytm/logo.svg" />
     <section>Location type</section>
@@ -28,7 +33,6 @@ const officialLeverBoardHtml = `
     <section>Team</section>
     <section>Work type</section>
     <a href="https://jobs.lever.co/paytm/paytm-001">Apply</a>
-    <p>Jobs powered by Lever</p>
   </body>
 </html>
 `

@@ -75,19 +75,30 @@ const isIndiaLocation = (location) => /\bindia\b/i.test(location || '')
 
 const extractListingCards = (html = '', baseUrl) => {
   const cards = []
+  const seenDetailUrls = new Set()
+  const page = String(html ?? '')
 
-  for (const match of String(html ?? '').matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)) {
-    const articleHtml = match[1]
-    const title = normalizeWhitespace(
-      articleHtml.match(/<a\b[^>]*href=["'][^"']+["'][^>]*>([\s\S]*?)<\/a>/i)?.[1],
-    )
-    const href = normalizeWhitespace(articleHtml.match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1])
+  for (const match of page.matchAll(/<a\b[^>]*href=["']([^"']*\/jobs\/\d+\/[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const href = normalizeWhitespace(match[1])
     const detailUrl = makeAbsoluteUrl(href, baseUrl)
-    const listItems = [...articleHtml.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+    const title = normalizeWhitespace(stripTags(match[2]))
+
+    if (!title || !detailUrl || seenDetailUrls.has(detailUrl)) continue
+
+    const anchorOffset = Number(match.index) + String(match[0]).length
+    const trailingHtml = page.slice(anchorOffset, anchorOffset + 2500)
+    const listHtml = trailingHtml.match(
+      /<ul\b[^>]*class=["'][^"']*\bjob-meta\b[^"']*["'][^>]*>([\s\S]*?)<\/ul>/i,
+    )?.[1]
+      || trailingHtml.match(/<ul\b[^>]*>([\s\S]*?)<\/ul>/i)?.[1]
+
+    const listItems = [...String(listHtml ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
       .map((item) => normalizeWhitespace(stripTags(item[1])))
       .filter(Boolean)
 
-    if (!title || !detailUrl || listItems.length < 2) continue
+    if (listItems.length < 2) continue
+
+    seenDetailUrls.add(detailUrl)
 
     cards.push({
       title,

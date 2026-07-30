@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Mercor",
+    "company": "Mercor",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "source": "hmmercor",
+    "jobId": "hmmercor-current-openings",
+    "requisitionId": "hmmercor-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Mercor had current Himalayas hiring evidence for Senior Software Development Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:04.422Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

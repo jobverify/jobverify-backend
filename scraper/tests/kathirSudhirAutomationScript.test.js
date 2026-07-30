@@ -15,6 +15,99 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedCareersHtml = readFixture('careers.html')
 
+const LIVE_STYLE_APPLY_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdYI3l27XLVXdhVuKXHhhQq-ztYM2rszdBr5geuDO8A6kB1sg/viewform'
+
+const buildLiveStyleJobBlock = ({
+  title,
+  qualifications,
+  experience,
+  salary = '18000 CTC',
+  responsibilities = [
+    'Identify new customers and business opportunities',
+    'Communicate product value to prospects',
+  ],
+  responsibilitiesHtml = null,
+}) => `
+  <section class="elementor-section">
+    <div class="elementor-widget-heading">
+      <h3 class="elementor-heading-title elementor-size-default">
+        <h3 data-elementor-setting-key="title">Job Title:&nbsp;<span>${title}</span></h3>
+      </h3>
+    </div>
+  </section>
+  <section class="elementor-section">
+    <div class="elementor-widget-text-editor">
+      <p><b>Job detail&nbsp;&#8211;</b></p>
+      <p><b>Qualifications:</b></p>
+      <p>${qualifications}</p>
+      <p><b>Roles and Responsibilities:</b></p>
+      ${responsibilitiesHtml ?? `<ul>${responsibilities.map((item) => `<li>${item}</li>`).join('')}</ul>`}
+      <p><b>Experience :&nbsp;</b></p>
+      <p>${experience}</p>
+      <p><b>Salary range&nbsp; :</b></p>
+      <p>${salary}</p>
+    </div>
+  </section>
+  <section class="elementor-section">
+    <div class="elementor-widget-button">
+      <a class="elementor-button elementor-button-link elementor-size-sm" href="${LIVE_STYLE_APPLY_URL}">
+        <span class="elementor-button-text">apply here </span>
+      </a>
+    </div>
+  </section>
+`
+
+const liveStyleCareersHtml = `
+  <html>
+    <head>
+      <title>Career opportunities in Electronics Core Company in Chennai</title>
+    </head>
+    <body>
+      <h2>Electronics Core Company Jobs</h2>
+      ${buildLiveStyleJobBlock({
+        title: 'Sales &amp; Business Development Executive',
+        qualifications: 'Any Degree Preferred , MBA/BBA/MSC /BSC/',
+        experience: '0-3 years / Freshers can apply',
+      })}
+      ${buildLiveStyleJobBlock({
+        title: 'Marketing and sales',
+        qualifications: 'Any Degree Preferred',
+        experience: '0-1 years / Freshers can apply',
+      })}
+      ${buildLiveStyleJobBlock({
+        title: 'Graduate Engineer Trainee (GET)',
+        qualifications: 'BE ECE/EEE/ E&amp;I, Mechatronics , BSc/MSc Electronics',
+        experience: '0-1 years / Freshers can apply',
+        responsibilitiesHtml: `
+          <div>&gt; To involve in production, service, projects, stores, purchase, logistics and all related activities</div>
+        `,
+      })}
+      ${buildLiveStyleJobBlock({
+        title: 'Accounts &amp; Customer Support Executive',
+        qualifications: 'Bcom (any) preferred Zoho Books Knowledge',
+        experience: '0-1 years / Freshers can apply',
+        salary: '17000 CTC',
+        responsibilitiesHtml: `
+          <div>&gt; Accounts maintenance, Payments, Receivables</div>
+          <div>&gt; Customers interaction for Quotation, Invoice, Payment, Materials, Service Item, QA, and Digital review</div>
+          <div>&gt; Manage Customer Enquiries and Calls</div>
+        `,
+      })}
+      ${buildLiveStyleJobBlock({
+        title: 'SCM Engineer &amp; Lead',
+        qualifications: 'Any Degree',
+        experience: '0-1 years / Freshers can apply',
+        responsibilitiesHtml: `
+          <div>&gt; Handle Stores, Purchase and Logistics functions</div>
+          <div>&gt; Optimize inventory levels &amp; lead times</div>
+          <div>&gt; Develop &amp; implement supply plans using SCM tools</div>
+        `,
+      })}
+      <p>Contact: hr@kathirsudhirautomation.com</p>
+    </body>
+  </html>
+`
+
 const loadKathirSudhirAutomationModule = async () => {
   try {
     return await import('../kathirsudhirautomation/script.js')
@@ -115,5 +208,39 @@ test('Kathir Sudhir Automation fails closed when the verified homepage or career
       },
     }),
     /verified careers page/i,
+  )
+})
+
+test('Kathir Sudhir Automation accepts the live-style Elementor careers markup and absolute homepage careers link', async () => {
+  const scraperModule = await loadKathirSudhirAutomationModule()
+
+  assert.equal(scraperModule.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
+  assert.equal(scraperModule.hasOfficialCareersSignal(liveStyleCareersHtml), true)
+
+  const jobs = scraperModule.extractPublicJobs(liveStyleCareersHtml)
+
+  assert.equal(jobs.length, 5)
+  assert.deepEqual(
+    jobs.map((job) => job.title),
+    [
+      'Accounts & Customer Support Executive',
+      'Graduate Engineer Trainee (GET)',
+      'Marketing and sales',
+      'Sales & Business Development Executive',
+      'SCM Engineer & Lead',
+    ],
+  )
+  assert.ok(jobs.every((job) => job.applyUrl === LIVE_STYLE_APPLY_URL))
+  assert.equal(
+    jobs.find((job) => job.title === 'Accounts & Customer Support Executive')?.minimumQualification,
+    'Bcom (any) preferred Zoho Books Knowledge',
+  )
+  assert.match(
+    jobs.find((job) => job.title === 'Graduate Engineer Trainee (GET)')?.jobDescription || '',
+    /production, service, projects, stores, purchase, logistics/i,
+  )
+  assert.match(
+    jobs.find((job) => job.title === 'SCM Engineer & Lead')?.jobDescription || '',
+    /optimize inventory levels & lead times/i,
   )
 })

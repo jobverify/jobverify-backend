@@ -85,7 +85,7 @@ export const extractKulaCompanyUrl = (html = '') => {
 export const hasOfficialKulaBoardSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
 
-  return /Work that powers the world of good\./i.test(normalized)
+  return /(?:Work that powers the world of good\.|Powering the World of Good)/i.test(normalized)
     && /Open Positions/i.test(normalized)
     && /Explore our current job openings across various departments/i.test(normalized)
 }

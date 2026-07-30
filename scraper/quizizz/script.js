@@ -150,19 +150,23 @@ export const hasResolvedCareersSignal = (html = '') => {
 
 export const extractLeverBoardUrl = (html = '') => {
   const match = String(html ?? '').match(/href=["'](https:\/\/jobs\.lever\.co\/Wayground\/?)["']/i)
-  return match?.[1] ? match[1].replace(/\/$/, '') : null
+  if (match?.[1]) {
+    return match[1].replace(/\/$/, '')
+  }
+
+  return hasResolvedCareersSignal(html) ? LEVER_BOARD_URL : null
 }
 
 export const hasOfficialLeverBoardSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return text.includes('wayground (formerly quizizz)')
+  return /<title>\s*Wayground \(formerly Quizizz\)\s*<\/title>/i.test(page)
+    && /job openings at wayground \(formerly quizizz\)/i.test(page)
     && text.includes('location type')
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
     && /https:\/\/jobs\.lever\.co\/Wayground\/[a-z0-9-]+/i.test(page)
 }
 

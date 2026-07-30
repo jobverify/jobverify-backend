@@ -10,6 +10,7 @@ import {
   extractWorkdayDetailLocations,
   normalizeStoredLocations,
 } from '../myworkday/locationDetails.js'
+import { formatStoredLocationLabel } from '../../src/utils/jobLocations.js'
 
 // Verifies that multiple location elements are parsed successfully from a Workday page.
 test('extractWorkdayDetailLocations reads all detail-page location entries', () => {
@@ -40,5 +41,12 @@ test('normalizeStoredLocations prefers explicit entries over grouped count label
       locations: ['Bangalore - Remote', 'Pune - Remote'],
     }),
     ['Bangalore - Remote', 'Pune - Remote'],
+  )
+})
+
+test('formatStoredLocationLabel saves state and country in bracketed location labels', () => {
+  assert.equal(
+    formatStoredLocationLabel({ location: 'ALANGANALLUR, Tamil Nadu, India' }),
+    'ALANGANALLUR [Tamil Nadu] [India]',
   )
 })

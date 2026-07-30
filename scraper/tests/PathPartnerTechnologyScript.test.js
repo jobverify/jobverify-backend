@@ -46,3 +46,21 @@ test('PathPartner Technology fails closed when the fetch behavior changes', asyn
     /became publicly fetchable/i,
   )
 })
+
+test('PathPartner Technology can recover with browser-backed verification when direct requests fail generically', async () => {
+  const pathpartner = await loadScriptModule()
+  const browserUrls = []
+
+  const jobs = await pathpartner.createPathPartnerTechnologyScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      throw new Error('Could not establish trust relationship for the SSL/TLS secure channel')
+    },
+  })
+
+  assert.deepEqual(browserUrls, [pathpartner.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})

@@ -15,8 +15,6 @@ export const SEARCH_API_URL = PRACTO_CATALOG.officialSearchApiUrl
 export const ZWAYAM_COMPANY_ID = PRACTO_CATALOG.zwayamCompanyId
 export const ZWAYAM_DETAIL_COMPANY_ID = PRACTO_CATALOG.zwayamDetailCompanyId
 
-const DEFAULT_PAGE_SIZE = 10
-
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -77,28 +75,26 @@ const defaultFetchJson = async (url, options = {}) => {
   return response.json()
 }
 
-export const buildSearchPayload = ({ page = 1, keywords = '' } = {}) => ({
-  filterCri: JSON.stringify({
-    paginationStartNo: (Math.max(1, Number(page) || 1) - 1) * DEFAULT_PAGE_SIZE,
-    selectedCall: 'sort',
-    sortCriteria: {
-      name: 'modifiedDate',
-      isAscending: false,
-    },
-    anyOfTheseWords: normalizeWhitespace(keywords),
-  }),
-  domain: 'careers.practo.com',
-  companyId: ZWAYAM_COMPANY_ID,
+export const buildSearchPayload = () => ({
+  companyId: 'practo',
 })
 
 export const hasVerifiedCareersShellSignals = (html) => {
   const page = String(html ?? '')
-
-  return /<title>\s*Practo \| Careers\s*<\/title>/i.test(page)
-    && /<meta name="description" content="Practo Careers">/i.test(page)
-    && /<base href="\/practo\/">/i.test(page)
-    && /current_openings/i.test(page)
+  const hasVerifiedTitle = /<title>\s*Practo \| Careers\s*<\/title>/i.test(page)
+  const hasVerifiedDescription = /<meta name="description" content="Practo Careers">/i.test(page)
+  const hasVerifiedBaseHref = /<base href="\/practo\/">/i.test(page)
+  const hasLegacyShell = /current_openings/i.test(page)
     && /Search Jobs/i.test(page)
+  const hasCurrentShell = /<app-root>/i.test(page)
+    && /current_openings/i.test(page)
+    && /<script[^>]+src="runtime\.[^"]+\.js"[^>]*type="module"/i.test(page)
+    && /<script[^>]+src="main\.[^"]+\.js"[^>]*type="module"/i.test(page)
+
+  return hasVerifiedTitle
+    && hasVerifiedDescription
+    && hasVerifiedBaseHref
+    && (hasLegacyShell || hasCurrentShell)
 }
 
 export const extractSearchRecords = (payload) =>

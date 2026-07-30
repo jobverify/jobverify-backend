@@ -29,13 +29,22 @@ export const buildScraperOptions = () => ({
 })
 
 export const createCloudLendingScraper = () => ({
-  async run({ workdayRunner = runWorkdayScraper } = {}) {
-    return workdayRunner(buildScraperOptions())
+  async run({
+    workdayRunner = runWorkdayScraper,
+    signal,
+  } = {}) {
+    return workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
   },
 })
 
-export const run = async ({ workdayRunner = runWorkdayScraper } = {}) =>
-  createCloudLendingScraper().run({ workdayRunner })
+export const run = async ({
+  workdayRunner = runWorkdayScraper,
+  signal,
+} = {}) =>
+  createCloudLendingScraper().run({ workdayRunner, signal })
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')

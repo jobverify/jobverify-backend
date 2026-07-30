@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 import { loadConfig } from '../utils/loadConfig.js'
 
@@ -113,6 +114,15 @@ const splitTitleAndDomain = (value) => {
   }
 }
 
+const normalizeDomainValue = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized || /^[-–—]+$/.test(normalized)) {
+    return null
+  }
+
+  return normalized
+}
+
 const buildJobDescription = ({
   title,
   department,
@@ -132,6 +142,53 @@ const buildJobDescription = ({
   parts.push(`Apply by emailing ${APPLICATION_EMAIL}.`)
 
   return normalizeWhitespace(parts.join(' '))
+}
+
+const buildStructuredOpeningJob = ({
+  rowNumber,
+  title,
+  currentDivision,
+  domain,
+  minimumQualification,
+  skillsText,
+  experienceRequired,
+}) => {
+  if (!rowNumber || !title || !currentDivision || !minimumQualification || !experienceRequired) {
+    return null
+  }
+
+  const requiredSkills = splitSkills(skillsText)
+  const normalizedDomain = normalizeDomainValue(domain)
+  const jobSlug = slugify(`${currentDivision}-${title}-${rowNumber}`)
+  if (!jobSlug) return null
+
+  return {
+    title,
+    company: COMPANY,
+    department: currentDivision,
+    location: 'India',
+    city: null,
+    country: 'India',
+    jobId: `${SOURCE}-${jobSlug}`,
+    requisitionId: `${SOURCE}-${jobSlug}`,
+    sourceUrl: CAREER_PAGE_URL,
+    applyUrl: `mailto:${APPLICATION_EMAIL}`,
+    employmentType: null,
+    experienceRequired,
+    minimumQualification,
+    preferredQualification: null,
+    requiredSkills,
+    postingDate: null,
+    closingDate: null,
+    jobDescription: buildJobDescription({
+      title,
+      department: currentDivision,
+      domain: normalizedDomain,
+      minimumQualification,
+      experienceRequired,
+      requiredSkills,
+    }),
+  }
 }
 
 const parseStructuredOpening = (line, currentDivision) => {
@@ -158,36 +215,52 @@ const parseStructuredOpening = (line, currentDivision) => {
   const { title, domain } = splitTitleAndDomain(prefix)
   if (!title) return null
 
-  const requiredSkills = splitSkills(skillsText)
-  const jobSlug = slugify(`${currentDivision}-${title}-${rowNumber}`)
-  if (!jobSlug) return null
+  return buildStructuredOpeningJob({
+    rowNumber,
+    title,
+    currentDivision,
+    domain,
+    minimumQualification,
+    skillsText,
+    experienceRequired,
+  })
+}
+
+const parseSplitOpening = (sectionLines, startIndex, currentDivision) => {
+  if (!currentDivision) return null
+
+  const rowNumber = normalizeWhitespace(sectionLines[startIndex])
+  if (!/^\d{2}$/.test(rowNumber || '')) {
+    return null
+  }
+
+  const title = normalizeWhitespace(sectionLines[startIndex + 1])
+  const domain = normalizeWhitespace(sectionLines[startIndex + 2])
+  const minimumQualification = normalizeWhitespace(sectionLines[startIndex + 3])
+  const skillsText = normalizeWhitespace(sectionLines[startIndex + 4])
+  const experienceRequired = normalizeWhitespace(sectionLines[startIndex + 5])
+
+  if (!EXPERIENCE_PATTERN.test(experienceRequired || '')) {
+    return null
+  }
+
+  const job = buildStructuredOpeningJob({
+    rowNumber,
+    title,
+    currentDivision,
+    domain,
+    minimumQualification,
+    skillsText,
+    experienceRequired,
+  })
+
+  if (!job) {
+    return null
+  }
 
   return {
-    title,
-    company: COMPANY,
-    department: currentDivision,
-    location: 'India',
-    city: null,
-    country: 'India',
-    jobId: `${SOURCE}-${jobSlug}`,
-    requisitionId: `${SOURCE}-${jobSlug}`,
-    sourceUrl: CAREER_PAGE_URL,
-    applyUrl: `mailto:${APPLICATION_EMAIL}`,
-    employmentType: null,
-    experienceRequired,
-    minimumQualification,
-    preferredQualification: null,
-    requiredSkills,
-    postingDate: null,
-    closingDate: null,
-    jobDescription: buildJobDescription({
-      title,
-      department: currentDivision,
-      domain,
-      minimumQualification,
-      experienceRequired,
-      requiredSkills,
-    }),
+    job,
+    consumedLines: 6,
   }
 }
 
@@ -218,7 +291,9 @@ export const extractOpenings = (html) => {
   const jobs = []
   let currentDivision = null
 
-  for (const line of sectionLines) {
+  for (let index = 0; index < sectionLines.length; index += 1) {
+    const line = sectionLines[index]
+
     if (DIVISION_PATTERN.test(line)) {
       currentDivision = line
       continue
@@ -229,7 +304,16 @@ export const extractOpenings = (html) => {
     }
 
     const job = parseStructuredOpening(line, currentDivision)
-    if (job) jobs.push(job)
+    if (job) {
+      jobs.push(job)
+      continue
+    }
+
+    const splitOpening = parseSplitOpening(sectionLines, index, currentDivision)
+    if (splitOpening) {
+      jobs.push(splitOpening.job)
+      index += splitOpening.consumedLines - 1
+    }
   }
 
   if (jobs.length === 0) {
@@ -248,20 +332,62 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const code = String(error?.code ?? error?.cause?.code ?? '')
+  const haystack = `${message} ${causeMessage} ${code}`
+
+  return /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
+    .test(haystack)
+}
+
 export const createSfoTechnologiesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREER_PAGE_URL)
-    const jobs = extractOpenings(html)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
+    }
+
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    try {
+      let html
+
+      try {
+        html = await fetchText(CAREER_PAGE_URL)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        html = await browserTextFetcher(CAREER_PAGE_URL)
+      }
+
+      const jobs = extractOpenings(html)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

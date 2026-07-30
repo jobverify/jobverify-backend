@@ -9,6 +9,7 @@ export const COMPANY = 'Arjuna Research and Financial Services Pvt Ltd'
 export const VERIFIED_ON = '2026-07-13'
 export const VERIFIED_SURFACE_SUMMARY =
   'No trustworthy first-party careers surface was discoverable on July 13, 2026, and the canonical company hostnames did not resolve.'
+export const DNS_LOOKUP_TIMEOUT_MS = 5000
 export const CAREER_HOSTS = [
   'arjunaresearch.com',
   'www.arjunaresearch.com',
@@ -23,18 +24,30 @@ export const CAREER_HOSTS = [
 export const hasResolvableFirstPartyHost = (addresses) =>
   Array.isArray(addresses) && addresses.length > 0
 
-export const resolveCanonicalHosts = async (hosts = CAREER_HOSTS) => {
+const raceWithTimeout = (promise, timeoutMs) => Promise.race([
+  promise,
+  new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(`DNS lookup timed out after ${timeoutMs}ms`)), timeoutMs)
+  }),
+])
+
+export const resolveCanonicalHosts = async (
+  hosts = CAREER_HOSTS,
+  {
+    resolveIpv4 = resolve4,
+    resolveIpv6 = resolve6,
+    lookupTimeoutMs = DNS_LOOKUP_TIMEOUT_MS,
+  } = {},
+) => {
   const addresses = new Set()
+  const lookups = hosts.flatMap((host) => ([
+    raceWithTimeout(resolveIpv4(host), lookupTimeoutMs),
+    raceWithTimeout(resolveIpv6(host), lookupTimeoutMs),
+  ]))
 
-  for (const host of hosts) {
+  for (const lookup of lookups) {
     try {
-      for (const address of await resolve4(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-
-    try {
-      for (const address of await resolve6(host)) {
+      for (const address of await lookup) {
         addresses.add(address)
       }
     } catch {}
@@ -46,8 +59,9 @@ export const resolveCanonicalHosts = async (hosts = CAREER_HOSTS) => {
 export const createArjunaResearchAndFinancialServicesScraper = () => ({
   async run({
     resolveHosts = resolveCanonicalHosts,
+    lookupTimeoutMs = DNS_LOOKUP_TIMEOUT_MS,
   } = {}) {
-    const addresses = await resolveHosts(CAREER_HOSTS)
+    const addresses = await resolveHosts(CAREER_HOSTS, { lookupTimeoutMs })
 
     if (hasResolvableFirstPartyHost(addresses)) {
       throw new Error(

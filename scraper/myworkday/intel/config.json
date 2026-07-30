@@ -2,6 +2,5 @@
   "listingStrategy": "jobs-api",
   "jobsApiUrl": "https://intel.wd1.myworkdayjobs.com/wday/cxs/intel/External/jobs",
   "detailUrlBase": "https://intel.wd1.myworkdayjobs.com/External",
-  "countryFacetParameter": "locations",
   "maxPages": 20
 }

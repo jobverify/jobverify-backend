@@ -5,6 +5,12 @@
 
 import { normalizeCity } from "../../scraper/utils/cityNormalizer.js";
 import { CANONICAL_CITIES } from "../../scraper/utils/cities.js";
+import {
+  buildJobPostedAtCutoff,
+  normalizeLifecycleDate,
+  resolveJobRetentionDays,
+  startOfUtcDay,
+} from "./jobLifecycle.js";
 
 export const PUBLIC_JOB_ALLOWED_CITIES = Object.freeze([
   ...new Set(
@@ -94,7 +100,7 @@ const extractCityCandidate = (value = "") => {
   const normalized = normalizeCity(value);
   if (!normalized) return null;
   if (/^india$/i.test(normalized)) return null;
-  return normalized;
+  return ALLOWED_CITY_SET.has(normalized.toLowerCase()) ? normalized : null;
 };
 
 export const getValidIndiaCityForJob = (job = {}) => {
@@ -144,14 +150,74 @@ export const isJobInPublicLocationScope = (job = {}) => {
   return getValidIndiaCityForJob(job) !== null;
 };
 
-export const buildPublicJobLocationScope = () => ({
-  $or: [
-    { city: { $in: ALLOWED_LOCATION_REGEXES } },
-    { location: { $in: ALLOWED_LOCATION_REGEXES } },
-    { locations: { $in: ALLOWED_LOCATION_REGEXES } },
-  ],
+export const buildPublishedJobDateScope = (
+  now = new Date(),
+) => {
+  const resolvedNow = normalizeLifecycleDate(now) || new Date();
+
+  return {
+    $expr: {
+      $lte: [
+        { $ifNull: ["$postedAt", resolvedNow] },
+        resolvedNow,
+      ],
+    },
+  };
+};
+
+export const buildPublicJobLifecycleDateScope = (
+  now = new Date(),
+  { retentionDays } = {},
+) => {
+  const resolvedNow = normalizeLifecycleDate(now) || new Date();
+  const resolvedRetentionDays = resolveJobRetentionDays(retentionDays);
+  const postedAtCutoff = buildJobPostedAtCutoff(resolvedNow, resolvedRetentionDays);
+  const today = startOfUtcDay(resolvedNow);
+
+  return {
+    // Unknown dates are not proof that a role has closed, so they remain visible.
+    // Known dates must be recent, not future-dated, and not past their closing day.
+    $expr: {
+      $and: [
+        {
+          $gte: [
+            { $ifNull: ["$postedAt", postedAtCutoff] },
+            postedAtCutoff,
+          ],
+        },
+        {
+          $lte: [
+            { $ifNull: ["$postedAt", resolvedNow] },
+            resolvedNow,
+          ],
+        },
+        {
+          $gte: [
+            { $ifNull: ["$closingDate", today] },
+            today,
+          ],
+        },
+        {
+          $gte: [
+            { $ifNull: ["$lastSeenAt", postedAtCutoff] },
+            postedAtCutoff,
+          ],
+        },
+      ],
+    },
+  };
+};
+
+export const buildPublicJobLocationScope = (now = new Date(), options = {}) => ({
+  isPublicIndia: true,
+  ...buildPublicJobLifecycleDateScope(now, options),
 });
 
-export const applyPublicJobLocationScope = (filters = {}) => ({
-  $and: [filters, buildPublicJobLocationScope()],
+export const applyPublicJobLocationScope = (
+  filters = {},
+  now = new Date(),
+  options = {},
+) => ({
+  ...filters,
+  ...buildPublicJobLocationScope(now, options),
 });

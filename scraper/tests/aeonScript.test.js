@@ -323,3 +323,47 @@ test('AEON fails closed when the homepage, careers hub, join-us handoff, or bloc
     /public job listings surface no longer matches the verified blocked state/i,
   )
 })
+
+test('AEON can recover with browser-backed pages when direct requests fail', async () => {
+  const aeon = await loadAeonModule()
+  const browserUrls = []
+
+  const jobs = await aeon.createAeonScraper().run({
+    fetchPage: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserPage: async (url) => {
+      browserUrls.push(url)
+
+      if (url === aeon.HOMEPAGE_URL) {
+        return { status: 200, url, html: currentHomepageHtml }
+      }
+
+      if (url === aeon.CAREERS_URL) {
+        return { status: 200, url, html: careersHubHtml }
+      }
+
+      if (url === aeon.JOIN_US_URL) {
+        return { status: 200, url, html: currentJoinUsHtml }
+      }
+
+      if (url === 'https://careers-aeoncredit.peoplestrong.com/portal/home') {
+        return {
+          status: 403,
+          url,
+          html: '<html><body><h1>403 Forbidden</h1><p>Request forbidden by administrative rules.</p></body></html>',
+        }
+      }
+
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    aeon.HOMEPAGE_URL,
+    aeon.CAREERS_URL,
+    aeon.JOIN_US_URL,
+    'https://careers-aeoncredit.peoplestrong.com/portal/home',
+  ])
+  assert.deepEqual(jobs, [])
+})

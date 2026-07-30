@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Vannevar Labs",
+    "company": "Vannevar Labs",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "source": "hmvannevarlabs",
+    "jobId": "hmvannevarlabs-current-openings",
+    "requisitionId": "hmvannevarlabs-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Vannevar Labs had current Himalayas hiring evidence for Backend Software Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:47.469Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

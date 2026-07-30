@@ -11,12 +11,17 @@ const loadModule = async () => {
 
 const careersHtml = `
   <html lang="en">
+    <head>
+      <title>Careers</title>
+    </head>
     <body>
       <main>
         <h1>Your career at SEW-EURODRIVE</h1>
+        <p>As a leading global specialist in drive technology, we keep the world moving.</p>
         <p>Join us and make your next move with us!</p>
         <h2>Job opportunities</h2>
-        <p>Come and join our empowered, motivated, trained and qualified direct sales team at SEW-EURODRIVE INDIA.</p>
+        <p>Come and join our empowered, motivated, trained and qualified direct sales team.</p>
+        <p>Take a look at our current job opportunities.</p>
         <p>You can find a list of current job offers as below:</p>
         <table>
           <thead>
@@ -47,9 +52,9 @@ const careersHtml = `
         </table>
         <p>
           You may park your applications in the below link if you are interested to join us.
-          <a href="/contact/online_application_form/online_application_form.html">application form</a>
+          <a href="/meta_seiten/web_online_contact_form_career.html">application form</a>
         </p>
-        <a href="/contact/online_application_form/online_application_form.html">Apply now!</a>
+        <a href="/meta_seiten/web_online_contact_form_career.xhtml">Apply now!</a>
         <footer>
           <p>In India, 400 employees are currently working with presence in almost 31 cities.</p>
         </footer>
@@ -63,7 +68,7 @@ test('extractOpenings parses the verified SEW-EURODRIVE India careers table and 
 
   assert.equal(seweurodrive.CAREERS_URL, 'https://www.seweurodriveindia.com/career/your_career/your_career.html')
   assert.equal(seweurodrive.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(seweurodrive.extractApplicationFormUrl(careersHtml), 'https://www.seweurodriveindia.com/contact/online_application_form/online_application_form.html')
+  assert.equal(seweurodrive.extractApplicationFormUrl(careersHtml), 'https://www.seweurodriveindia.com/meta_seiten/web_online_contact_form_career.html')
   assert.deepEqual(seweurodrive.extractOpenings(careersHtml), [
     {
       title: 'Executive/Assistant Manager - Technical Sales',
@@ -75,7 +80,7 @@ test('extractOpenings parses the verified SEW-EURODRIVE India careers table and 
       jobId: 'seweurodriveindiapvtltd-executive-assistant-manager-technical-sales-sales-sriperumbudur-electronic-city-bangalore-navi-mumbai',
       requisitionId: 'seweurodriveindiapvtltd-executive-assistant-manager-technical-sales-sales-sriperumbudur-electronic-city-bangalore-navi-mumbai',
       sourceUrl: 'https://media.sew-eurodrive.com/download/pdf/12345_Executive_Assistant_Manager_Technical_Sales.pdf',
-      applyUrl: 'https://www.seweurodriveindia.com/contact/online_application_form/online_application_form.html',
+      applyUrl: 'https://www.seweurodriveindia.com/meta_seiten/web_online_contact_form_career.html',
       employmentType: null,
       experienceRequired: null,
       minimumQualification: null,
@@ -95,7 +100,7 @@ test('extractOpenings parses the verified SEW-EURODRIVE India careers table and 
       jobId: 'seweurodriveindiapvtltd-deputy-manager-technical-sales-resident-sales-ludhiana',
       requisitionId: 'seweurodriveindiapvtltd-deputy-manager-technical-sales-resident-sales-ludhiana',
       sourceUrl: 'https://www.seweurodriveindia.com/download/pdf/98765_Deputy_Manager_Technical_Sales_Resident.pdf',
-      applyUrl: 'https://www.seweurodriveindia.com/contact/online_application_form/online_application_form.html',
+      applyUrl: 'https://www.seweurodriveindia.com/meta_seiten/web_online_contact_form_career.html',
       employmentType: null,
       experienceRequired: null,
       minimumQualification: null,
@@ -122,7 +127,7 @@ test('run fetches the official SEW-EURODRIVE India careers page and decorates jo
   assert.deepEqual(requestedUrls, [seweurodrive.CAREERS_URL])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'seweurodriveindiapvtltd')
-  assert.equal(jobs[0].link, 'https://www.seweurodriveindia.com/contact/online_application_form/online_application_form.html')
+  assert.equal(jobs[0].link, 'https://www.seweurodriveindia.com/meta_seiten/web_online_contact_form_career.html')
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 

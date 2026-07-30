@@ -13,6 +13,33 @@ const BROKEN_MYNNTRA_HTML = `
 </html>
 `
 
+const CURRENT_MYNNTRA_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Online Shopping for Women, Men, Kids Fashion & Lifestyle - Myntra</title>
+    <link
+      rel="search"
+      type="application/opensearchdescription+xml"
+      href="https://www.myntra.com/opensearch.xml"
+      title="Myntra Fashion Search"
+    >
+  </head>
+  <body>
+    <main>
+      <h1>Myntra</h1>
+      <nav>
+        <a href="/shop/men">Men</a>
+        <a href="/shop/women">Women</a>
+        <a href="/shop/kids">Kids</a>
+      </nav>
+      <p>Topwear</p>
+      <p>Indian & Festive Wear</p>
+    </main>
+  </body>
+</html>
+`
+
 const PUBLIC_JOBS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -44,14 +71,24 @@ test('Jabong sentinel helpers stay pinned to the verified exact-name broken redi
   assert.equal(jabong.HOMEPAGE_URL, 'https://www.jabong.com/')
   assert.equal(jabong.EXPECTED_REDIRECT_URL, 'https://www.myntra.com/')
   assert.equal(jabong.hasVerifiedBrokenParentShellSignal(BROKEN_MYNNTRA_HTML), true)
+  assert.equal(jabong.hasVerifiedBrokenParentShellSignal(CURRENT_MYNNTRA_HOMEPAGE_HTML), true)
   assert.equal(jabong.hasVerifiedBrokenParentShellSignal(PUBLIC_JOBS_HTML), false)
   assert.equal(jabong.pageExposesPublicJobListings(BROKEN_MYNNTRA_HTML), false)
+  assert.equal(jabong.pageExposesPublicJobListings(CURRENT_MYNNTRA_HOMEPAGE_HTML), false)
   assert.equal(jabong.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
   assert.equal(
     jabong.matchesVerifiedJabongRedirectState({
       status: 200,
       url: 'https://www.myntra.com/',
       html: BROKEN_MYNNTRA_HTML,
+    }),
+    true,
+  )
+  assert.equal(
+    jabong.matchesVerifiedJabongRedirectState({
+      status: 200,
+      url: 'https://www.myntra.com/',
+      html: CURRENT_MYNNTRA_HOMEPAGE_HTML,
     }),
     true,
   )
@@ -74,6 +111,20 @@ test('Jabong returns [] only while the exact-name host still redirects to the ve
   })
 
   assert.deepEqual(requestedUrls, [jabong.HOMEPAGE_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Jabong returns [] when the exact-name host redirects to the current Myntra homepage with no public jobs surface', async () => {
+  const jabong = await loadModule()
+
+  const jobs = await jabong.createJabongScraper().run({
+    fetchPage: async () => ({
+      status: 200,
+      url: 'https://www.myntra.com/',
+      html: CURRENT_MYNNTRA_HOMEPAGE_HTML,
+    }),
+  })
+
   assert.deepEqual(jobs, [])
 })
 

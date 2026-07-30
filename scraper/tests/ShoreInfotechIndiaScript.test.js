@@ -12,9 +12,9 @@ const homepageHtml = `
     <main>
       <h1>Managed Data Services That Simplify Your Operations</h1>
       <p>Designed for Small and Medium-Sized Businesses.</p>
-      <a href="https://www.shoregrp.com/get-started">Get Started</a>
+      <p>SLA-backed outcomes - driving accuracy, speed, and measurable impact for your business.</p>
+      <a href="https://www.shoregrp.com/contact">Schedule a Discovery Call</a>
     </main>
-    <footer>© 2024 Shore Group Associates LLC</footer>
   </body>
 </html>
 `
@@ -23,12 +23,13 @@ const contactHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Get Started — Shore Group Associates</title>
+    <title>Schedule a Free Discovery Call | Shore Group</title>
   </head>
   <body>
-    <h1>Let’s Connect</h1>
-    <p>Innovative Services for Modern Businesses</p>
-    <p>We’re just an email away.</p>
+    <p>WE RESPOND WITHIN 24 HOURS</p>
+    <h1>Schedule a Free Discovery Call</h1>
+    <p>Schedule your discovery call and let's discuss how we can solve your biggest operational or strategic challenge.</p>
+    <p>Hyderabad, India - Operations, R&amp;D</p>
   </body>
 </html>
 `
@@ -36,7 +37,7 @@ const contactHtml = `
 const missingRouteHtml = `
 <!doctype html>
 <html lang="en">
-  <head><title>Not Found</title></head>
+  <head><title>404: NOT_FOUND</title></head>
   <body><div>404</div></body>
 </html>
 `

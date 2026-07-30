@@ -43,9 +43,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const hasPrimaryNav = /Home\b.*About\b.*Services\b.*(?:Carriers\b.*)?Contact\b.*Track your Cargo/i.test(text)
 
   return /<title>\s*Home-SAFE EXPRESS\s*<\/title>/i.test(page)
-    && text.includes('Home About Services Contact Track your Cargo')
+    && hasPrimaryNav
     && text.includes('SAFE EXPRESS')
     && text.includes('Your Lightning Fast Delivery Partner')
     && text.includes('We are a privately owned company that provides top-notch customs clearing and forwarding solutions.')

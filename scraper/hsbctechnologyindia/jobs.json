@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Current openings at HSBC Technology India",
+    "company": "HSBC Technology India",
+    "location": "India",
+    "city": "India",
+    "country": "India",
+    "link": "https://portal.careers.hsbc.com/careers?location=India",
+    "applyUrl": "https://portal.careers.hsbc.com/careers?location=India",
+    "sourceUrl": "https://portal.careers.hsbc.com/careers?location=India",
+    "source": "hsbctechnologyindia",
+    "jobId": "hsbctechnologyindia-current-openings",
+    "requisitionId": "hsbctechnologyindia-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "jobDescription": "The official HSBC Technology India careers page remained reachable, but the public Eightfold inventory API returned HTTP 403 during this scrape. Review current openings directly on https://portal.careers.hsbc.com/careers?location=India.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "remoteStatus": null,
+    "scrapedAt": "2026-07-26T21:43:08.308Z",
+    "companyCareerPage": "https://portal.careers.hsbc.com/careers?location=India",
+    "companyDomain": "portal.careers.hsbc.com",
+    "atsPlatform": "eightfold"
+  }
+]

@@ -75,6 +75,44 @@ const CAREERS_HTML = `
 </html>
 `
 
+const CURRENT_HIRING_CITIES_HTML = `
+<!doctype html>
+<html>
+  <body>
+    <div class="office-add">
+      <div class="address">
+        <div class="heading">Currently hiring for</div>
+        <div class="city-info-wrapper">
+          <ul class="accordian-box">
+            <li>
+              <span class="city-location gurugram" data-id="gurugram"><i class="plus-icon"></i>Gurugram</span>
+            </li>
+            <li>
+              <span class="city-location mumbai" data-id="mumbai"><i class="plus-icon"></i>Mumbai</span>
+            </li>
+            <li>
+              <span class="city-location pune" data-id="pune"><i class="plus-icon"></i>Pune</span>
+            </li>
+            <li>
+              <span class="city-location kolkata" data-id="kolkata"><i class="plus-icon"></i>Kolkata</span>
+            </li>
+            <li>
+              <span class="city-location chennai" data-id="chennai"><i class="plus-icon"></i>Chennai</span>
+            </li>
+            <li>
+              <span class="city-location bangalore" data-id="bangalore"><i class="plus-icon"></i>Bangalore</span>
+            </li>
+            <li>
+              <span class="city-location hyderabad" data-id="hyderabad"><i class="plus-icon"></i>Hyderabad</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
 const DRIFTED_HTML = `
 <!doctype html>
 <html>
@@ -107,6 +145,15 @@ test('Policybazaar helpers keep the verified first-party inline careers page con
   assert.equal(policybazaar.hasOfficialCareersPageSignal(CAREERS_HTML), true)
   assert.equal(policybazaar.hasSharedApplicationFormSignal(CAREERS_HTML), true)
   assert.deepEqual(policybazaar.extractHiringCities(CAREERS_HTML), [
+    'Gurugram',
+    'Mumbai',
+    'Pune',
+    'Kolkata',
+    'Chennai',
+    'Bangalore',
+    'Hyderabad',
+  ])
+  assert.deepEqual(policybazaar.extractHiringCities(CURRENT_HIRING_CITIES_HTML), [
     'Gurugram',
     'Mumbai',
     'Pune',
@@ -148,49 +195,27 @@ test('extractSearchResults maps Policybazaar inline job cards into shared scrape
   assert.equal(jobs[3].title, 'Careers in Technology')
 })
 
-test('run fetches the verified Policybazaar careers page and decorates inline jobs', async () => {
+test('run stays empty until a trustworthy public Policybazaar jobs contract exists', async () => {
   const policybazaar = await loadModule()
-  const requestedUrls = []
-  const scraper = policybazaar.createPolicybazaarScraper({ maxJobs: 2 })
+  let fetchAttempted = false
 
-  const jobs = await scraper.run({
+  const jobs = await policybazaar.createPolicybazaarScraper({ maxJobs: 2 }).run({
     fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === policybazaar.CAREERS_URL) return CAREERS_HTML
-      throw new Error(`Unexpected Policybazaar URL: ${url}`)
+      fetchAttempted = true
+      throw new Error(`Unexpected Policybazaar fetch: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [policybazaar.CAREERS_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'policybazaar')
-  assert.equal(jobs[0].link, 'https://www.policybazaar.com/careers/')
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
-  assert.equal(jobs[1].jobId, 'associate-service-consultant')
+  assert.equal(fetchAttempted, false)
+  assert.deepEqual(jobs, [])
 })
 
-test('Policybazaar fails closed when the first-party careers page or shared application form drifts', async () => {
+test('run remains empty even when the first-party careers page is supplied', async () => {
   const policybazaar = await loadModule()
 
-  await assert.rejects(
-    policybazaar.createPolicybazaarScraper().run({
-      fetchText: async (url) => {
-        if (url === policybazaar.CAREERS_URL) return DRIFTED_HTML
-        throw new Error(`Unexpected Policybazaar URL: ${url}`)
-      },
-    }),
-    /careers page/i,
-  )
+  const jobs = await policybazaar.createPolicybazaarScraper().run({
+    fetchText: async () => DRIFTED_HTML,
+  })
 
-  await assert.rejects(
-    policybazaar.createPolicybazaarScraper().run({
-      fetchText: async (url) => {
-        if (url === policybazaar.CAREERS_URL) {
-          return CAREERS_HTML.replace('<form id="careerFormReferer">', '<form id="differentForm">')
-        }
-        throw new Error(`Unexpected Policybazaar URL: ${url}`)
-      },
-    }),
-    /application form/i,
-  )
+  assert.deepEqual(jobs, [])
 })

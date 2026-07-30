@@ -35,6 +35,19 @@ const staleOfficialRouteHtml = `
   </html>
 `
 
+const noJobsLavoraConNoiHtml = `
+  <html>
+    <head><title>Lavora con noi - Sipal</title></head>
+    <body>
+      <main>
+        <h1>Lavora con noi</h1>
+        <p>contact@sipal.it</p>
+        <p>Corso Vittorio Emanuele II, 178 Torino, Italia</p>
+      </main>
+    </body>
+  </html>
+`
+
 const publicJobsHtml = `
   <html>
     <head><script type="application/ld+json">{"@type":"JobPosting"}</script></head>
@@ -62,6 +75,7 @@ test('SIPAL sentinel constants stay pinned to the verified official no-public-jo
   ])
   assert.equal(sipal.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(sipal.isVerifiedNoTrustPublicJobRoute({ status: 404, html: staleOfficialRouteHtml }), true)
+  assert.equal(sipal.isVerifiedNoTrustPublicJobRoute({ status: 200, html: noJobsLavoraConNoiHtml }), true)
   assert.equal(sipal.pageShowsPublicJobs(publicJobsHtml), true)
   assert.equal(sipal.pageShowsPublicJobs(staleOfficialRouteHtml), false)
 })
@@ -79,6 +93,9 @@ test('run returns [] only while SIPAL official routes expose no public jobs', as
       }
 
       if (sipal.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
+        if (url === 'https://sipal.it/lavora-con-noi/') {
+          return { status: 200, url, html: noJobsLavoraConNoiHtml }
+        }
         return { status: 404, url, html: staleOfficialRouteHtml }
       }
 

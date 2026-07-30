@@ -15,7 +15,7 @@ const officialCareersHtml = `
         <h1>Build the AI</h1>
         <h2>behind Smart Vehicles</h2>
         <p>We are using AI to solve exciting new challenges like turning vehicle data into intelligence.</p>
-        <a href="https://job-boards.greenhouse.io/sonatus">View open positions</a>
+        <a href="https://job-boards.greenhouse.io/sonatus/"><span>View open positions</span></a>
       </section>
       <section>
         <h2>Join us around the world</h2>

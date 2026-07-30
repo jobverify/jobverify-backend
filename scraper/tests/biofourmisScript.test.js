@@ -23,6 +23,21 @@ const officialCareersHtml = `
 </html>
 `
 
+const currentOfficialCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job Openings</title>
+    <link href="https://www.biofourmis.com/about/job-openings" rel="canonical" />
+  </head>
+  <body>
+    <h1>Find open roles</h1>
+    <a href="/about/job-openings">Find general positions</a>
+    <a href="/about/clinical-job-openings">Find clinical positions</a>
+  </body>
+</html>
+`
+
 const loaderScript = `
 const ghSlug = "biofourmis";
 fetch("https://boards-api.greenhouse.io/v1/boards/" + ghSlug + "/departments/");
@@ -69,6 +84,7 @@ test('Biofourmis verifies the official careers page, loader script, and Greenhou
     'https://boards-api.greenhouse.io/v1/boards/biofourmis/jobs?content=true',
   )
   assert.equal(biofourmis.hasOfficialCareersSignal(officialCareersHtml), true)
+  assert.equal(biofourmis.hasOfficialCareersSignal(currentOfficialCareersHtml), true)
   assert.equal(biofourmis.extractJobsLoaderUrl(officialCareersHtml), biofourmis.JOBS_LOADER_URL)
   assert.equal(biofourmis.hasVerifiedJobsLoaderSignal(loaderScript), true)
 })

@@ -75,6 +75,36 @@ test('Primaseller sentinel pins the verified exact-name redirect and expired TLS
     }),
     false,
   )
+  assert.equal(
+    primaseller.isExpiredLegacyTlsSurface({
+      error: 'TypeError: fetch failed',
+      causeMessage: 'certificate has expired',
+      causeCode: 'CERT_HAS_EXPIRED',
+    }),
+    true,
+  )
+  assert.equal(
+    primaseller.hasRedirectedDelhiverySignal({
+      status: 200,
+      url: 'http://www.delhivery.com/solutions/d2c-brands',
+      html: redirectedHomepageHtml,
+    }),
+    false,
+  )
+})
+
+test('Primaseller keeps the verified redirect target independent of mutable catalog metadata', async () => {
+  const catalog = await import('../primaseller/catalog.js')
+  const originalTarget = catalog.PRIMASELLER_CATALOG.redirectTargetUrl
+
+  catalog.PRIMASELLER_CATALOG.redirectTargetUrl = 'https://example.com/untrusted-target'
+
+  try {
+    const primaseller = await import(`../primaseller/script.js?redirect-target-test=${Date.now()}`)
+    assert.equal(primaseller.REDIRECT_TARGET_URL, 'https://www.delhivery.com/solutions/d2c-brands')
+  } finally {
+    catalog.PRIMASELLER_CATALOG.redirectTargetUrl = originalTarget
+  }
 })
 
 test('Primaseller sentinel returns [] only while the exact-name redirect and expired legacy surfaces remain unchanged', async () => {
@@ -109,6 +139,34 @@ test('Primaseller sentinel returns [] only while the exact-name redirect and exp
     primaseller.LEGACY_ABOUT_PAGE_URL,
     primaseller.LEGACY_FSLINK_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Primaseller sentinel treats the current fetch-failed-plus-expired-certificate legacy shape as unchanged', async () => {
+  const primaseller = await loadPrimasellerModule()
+
+  const jobs = await primaseller.createPrimasellerScraper().run({
+    fetchPage: async (url) => {
+      if (url === primaseller.HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url: primaseller.REDIRECT_TARGET_URL,
+          html: redirectedHomepageHtml,
+        }
+      }
+
+      if (url === primaseller.LEGACY_ABOUT_PAGE_URL || url === primaseller.LEGACY_FSLINK_URL) {
+        return {
+          error: 'TypeError: fetch failed',
+          causeMessage: 'certificate has expired',
+          causeCode: 'CERT_HAS_EXPIRED',
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

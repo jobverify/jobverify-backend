@@ -7,8 +7,8 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Digitising Education | ICT Labs & English Language Training</title>
-    <link rel="canonical" href="https://www.schoolnetindia.com/careers/">
+    <title>Digitising Education | ICT Labs &amp; English Language Training</title>
+    <link rel="canonical" href="https://www.schoolnetindia.com/more">
   </head>
   <body>
     <h1>Unlock Your Potential With Our Team Of Visionaries</h1>
@@ -24,8 +24,8 @@ const careersHtml = `
           We are seeking an experienced Senior Full Stack Developer (MERN Stack) to design, develop,
           and maintain scalable, secure, and high-performance web and desktop applications.
         </p>
-        <a href="https://www.schoolnetindia.com/careers/senior-full-stack-developer">View Details</a>
-        <a href="https://www.schoolnetindia.com/careers/senior-full-stack-developer/apply">Apply</a>
+        <button>View Details</button>
+        <button>Apply</button>
       </article>
       <article class="job-card">
         <h3>Trainer - Food Processing</h3>
@@ -36,8 +36,8 @@ const careersHtml = `
           We are seeking a qualified and experienced Food Processing Trainer to train students in
           Classes 9-12.
         </p>
-        <a href="https://www.schoolnetindia.com/careers/trainer-food-processing">View Details</a>
-        <a href="https://www.schoolnetindia.com/careers/trainer-food-processing/apply">Apply</a>
+        <button>View Details</button>
+        <button>Apply</button>
       </article>
     </section>
   </body>
@@ -49,14 +49,11 @@ const hmsHtml = `
 <html lang="en">
   <head>
     <title>hms</title>
+    <script type="module" crossorigin src="/assets/index-Q8Mjbwhh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BMbHyYvU.css">
   </head>
   <body>
-    <h1>Welcome back</h1>
-    <p>Sign in to your HMS account</p>
-    <p>HMS - Hiring Management System</p>
-    <a href="/jobs">Browse Jobs</a>
-    <p>Computer Training Facilitator (ICT Educator)</p>
-    <p>Schoolnet India Ltd., India</p>
+    <div id="root"></div>
   </body>
 </html>
 `
@@ -83,6 +80,13 @@ test('Schoolnet India helpers stay pinned to the verified official careers and H
   assert.equal(schoolnet.hasOfficialCareersPageSignal('<html><body>Job Openings</body></html>'), false)
   assert.equal(schoolnet.hasOfficialRecruitmentPortalSignal(hmsHtml), true)
   assert.equal(schoolnet.hasOfficialRecruitmentPortalSignal('<html><body>HMS</body></html>'), false)
+  assert.deepEqual(
+    schoolnet.extractRoleCardsFromCareersHtml(careersHtml).map((card) => card.text.split('\n')[0].trim()),
+    [
+      'Senior Full Stack Developer',
+      'Trainer - Food Processing',
+    ],
+  )
   assert.equal(
     schoolnet.parseRoleCardText(`
       Senior Full Stack Developer
@@ -186,6 +190,16 @@ test('Schoolnet India helpers stay pinned to the verified official careers and H
         link: 'https://www.schoolnetindia.com/careers/trainer-food-processing',
         scrapedAt: FIXED_SCRAPED_AT,
       },
+    ],
+  )
+  assert.deepEqual(
+    schoolnet.buildJobsFromRoleCards(
+      schoolnet.extractRoleCardsFromCareersHtml(careersHtml),
+      { scrapedAt: FIXED_SCRAPED_AT },
+    ).map((job) => [job.title, job.jobId]),
+    [
+      ['Senior Full Stack Developer', 'senior-full-stack-developer'],
+      ['Trainer - Food Processing', 'trainer-food-processing'],
     ],
   )
 })

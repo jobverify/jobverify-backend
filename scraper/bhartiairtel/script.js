@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 import { loadConfig } from '../utils/loadConfig.js'
 
@@ -111,6 +112,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createBhartiAirtelScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
@@ -118,34 +123,68 @@ export const createBhartiAirtelScraper = ({
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
+    fetchBrowserText,
     fetchListingPage,
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    let browserSession = null
 
-    if (!hasOfficialBhartiAirtelCareersShell(careersHtml)) {
-      throw new Error('Bharti Airtel verified official careers page no longer matches the verified public surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (extractOfficialDarwinboxUrl(careersHtml) !== PUBLIC_PORTAL_URL) {
-      const bundleUrl = extractOfficialAirtelBundleUrl(careersHtml)
-      const bundle = await fetchText(bundleUrl)
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
 
-      if (!hasOfficialBhartiAirtelBundleSignals(bundle)) {
-        throw new Error('Bharti Airtel verified careers bundle no longer exposes the official Darwinbox public surface')
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
       }
     }
 
-    const jobs = await darwinboxScraper.run({
-      maxPages,
-      maxJobs,
-      fetchListingPage,
-    })
-    const scrapedAt = now()
+    try {
+      const careersHtml = await fetchPageText(OFFICIAL_CAREERS_URL)
 
-    return jobs.map((job) => ({
-      ...job,
-      scrapedAt,
-    }))
+      if (!hasOfficialBhartiAirtelCareersShell(careersHtml)) {
+        throw new Error('Bharti Airtel verified official careers page no longer matches the verified public surface')
+      }
+
+      if (extractOfficialDarwinboxUrl(careersHtml) !== PUBLIC_PORTAL_URL) {
+        const bundleUrl = extractOfficialAirtelBundleUrl(careersHtml)
+        const bundle = await fetchPageText(bundleUrl)
+
+        if (!hasOfficialBhartiAirtelBundleSignals(bundle)) {
+          throw new Error('Bharti Airtel verified careers bundle no longer exposes the official Darwinbox public surface')
+        }
+      }
+
+      const jobs = await darwinboxScraper.run({
+        maxPages,
+        maxJobs,
+        fetchListingPage,
+      })
+      const scrapedAt = now()
+
+      return jobs.map((job) => ({
+        ...job,
+        scrapedAt,
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

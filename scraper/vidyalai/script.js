@@ -102,9 +102,16 @@ const defaultFetchJson = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) || ''
+  const hasOfficialTitle = /^Vidyalai$/i.test(title)
+    || /Vidyalai\.com:\s*One to One Online Tuitions/i.test(title)
+  const hasVerifiedJobsLink = /href=["']https?:\/\/erp\.vidyalai\.com\/jobs\/?["']/i.test(page)
 
-  return /<title>\s*Vidyalai\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/erp\.vidyalai\.com\/jobs["']/i.test(page)
+  return hasOfficialTitle
+    && /Vidyalai/i.test(normalized)
+    && /Careers/i.test(normalized)
+    && hasVerifiedJobsLink
 }
 
 export const extractJobsPageCount = (html) => {

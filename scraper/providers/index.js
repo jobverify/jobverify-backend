@@ -1,11 +1,14 @@
 import path from 'path'
-import { readFileSync } from 'fs'
+import { existsSync, readdirSync, readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 
 import { expandApiPortalProviderTemplate } from './apiPortalTemplates.js'
+import { TARGETED_OPENING_PROVIDERS } from './targetedOpeningProviders.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const scraperDir = path.resolve(currentDir, '..')
+export const DEFAULT_PROVIDER_EXTENSION_DIR = path.join(currentDir, 'providerExtensions')
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
 const workdayCompanies = JSON.parse(
   readFileSync(path.resolve(scraperDir, 'myworkday/companies.json'), 'utf-8'),
 )
@@ -15,9 +18,38 @@ const customProviders = JSON.parse(
 const wellfoundProviders = JSON.parse(
   readFileSync(path.resolve(currentDir, 'wellfoundProviders.json'), 'utf-8'),
 )
+const himalayasProviderFiles = [
+  'himalayasProviders.batch1.json',
+  'himalayasProviders.batch2.json',
+  'himalayasProviders.batch3.json',
+  'himalayasProviders.batch4.json',
+  'himalayasProviders.batch5.json',
+  'himalayasProviders.batch6.json',
+]
+const himalayasProviders = himalayasProviderFiles.flatMap((fileName) =>
+  JSON.parse(readFileSync(path.resolve(currentDir, fileName), 'utf-8')),
+)
 const apiPortalProviders = JSON.parse(
   readFileSync(path.resolve(currentDir, 'apiPortalProviders.json'), 'utf-8'),
 ).map((provider) => expandApiPortalProviderTemplate(provider))
+
+export const loadProviderExtensions = (
+  extensionDir = DEFAULT_PROVIDER_EXTENSION_DIR,
+) => {
+  if (!existsSync(extensionDir)) return []
+
+  return readdirSync(extensionDir)
+    .filter((fileName) => fileName.toLowerCase().endsWith('.json'))
+    .sort((left, right) => left.localeCompare(right))
+    .flatMap((fileName) => {
+      const filePath = path.join(extensionDir, fileName)
+      const parsed = JSON.parse(readFileSync(filePath, 'utf-8'))
+
+      if (Array.isArray(parsed)) return parsed
+      if (parsed && typeof parsed === 'object') return [parsed]
+      return []
+    })
+}
 
 const getCompanyDomain = (value) => {
   try {
@@ -72,6 +104,14 @@ const PROVIDER_DEFAULTS = {
     paginationStrategy: 'single-directory-company-jobs-link-or-aggregate-signal',
     extractionStrategy: 'directory-hiring-signal+optional-public-job-links+challenge-gated-aggregate-fallback',
     parser: 'directory-hiring-signal',
+    normalizationProfile: 'engineering-default',
+  },
+  himalayasDirectory: {
+    atsPlatform: 'himalayas-remote-jobs-api',
+    countryFilter: 'India',
+    paginationStrategy: 'himalayas-search-api-company-query-pages',
+    extractionStrategy: 'himalayas-public-json-api+company-match+india-or-worldwide-filter+workbook-signal-fallback',
+    parser: 'himalayas-api',
     normalizationProfile: 'engineering-default',
   },
 }
@@ -218,24 +258,42 @@ const createAuthorizedFetchJson = (provider) => {
   }
 }
 
-export const getScraperCatalog = () => [
+export const getScraperCatalog = ({
+  providerExtensionDir = DEFAULT_PROVIDER_EXTENSION_DIR,
+  providerExtensions = loadProviderExtensions(providerExtensionDir),
+} = {}) => [
   ...workdayCompanies.map((item) => hydrateProviderCatalogEntry({
     ...item,
     adapter: 'workday',
   })),
   ...customProviders.map((item) => hydrateProviderCatalogEntry(item)),
+  ...providerExtensions.map((item) => hydrateProviderCatalogEntry(item)),
   ...wellfoundProviders.map((item) => hydrateProviderCatalogEntry(item)),
+  ...himalayasProviders.map((item) => hydrateProviderCatalogEntry(item)),
   ...apiPortalProviders.map((item) => hydrateProviderCatalogEntry({
     ...item,
     adapter: 'apiPortal',
   })),
+  ...TARGETED_OPENING_PROVIDERS.map((item) => hydrateProviderCatalogEntry(
+    expandApiPortalProviderTemplate(item),
+  )),
 ]
+
+const decorateJobsWithProviderMetadata = (jobs, provider) => {
+  const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+  if (jobs[WORKDAY_AUTHORITATIVE_EMPTY] === true) {
+    Object.defineProperty(decoratedJobs, WORKDAY_AUTHORITATIVE_EMPTY, {
+      value: true,
+    })
+  }
+  return decoratedJobs
+}
 
 const createWorkdayScraper = (provider) => ({
   name: provider.source,
   dryRunFile: provider.dryRunFile,
   provider,
-  run: async () => {
+  run: async ({ signal } = {}) => {
     const { runWorkdayScraper } = await import('../myworkday/engine.js')
     const jobs = await runWorkdayScraper({
       company: provider.companyName,
@@ -243,9 +301,10 @@ const createWorkdayScraper = (provider) => ({
       locationCountry: provider.locationCountry,
       source: provider.source,
       scraperDir: path.join(scraperDir, `myworkday/${provider.source}`),
+      ...(signal === undefined ? {} : { signal }),
     })
 
-    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+    return decorateJobsWithProviderMetadata(jobs, provider)
   },
 })
 
@@ -253,10 +312,10 @@ const createScriptScraper = (provider) => ({
   name: provider.source,
   dryRunFile: provider.dryRunFile,
   provider,
-  run: async () => {
+  run: async (runOptions = {}) => {
     const module = await import(provider.modulePath)
-    const jobs = await module.run()
-    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+    const jobs = await module.run(runOptions)
+    return decorateJobsWithProviderMetadata(jobs, provider)
   },
 })
 
@@ -303,11 +362,24 @@ const createWellfoundDirectoryAdapterScraper = (provider) => ({
   },
 })
 
+const createHimalayasDirectoryAdapterScraper = (provider) => ({
+  name: provider.source,
+  dryRunFile: provider.dryRunFile,
+  provider,
+  run: async () => {
+    const { createHimalayasDirectoryScraper } = await import('../himalayasDirectory/engine.js')
+    const scraper = createHimalayasDirectoryScraper(provider)
+    const jobs = await scraper.run()
+    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+  },
+})
+
 const ADAPTER_FACTORIES = {
   workday: createWorkdayScraper,
   script: createScriptScraper,
   apiPortal: createApiPortalScraper,
   wellfoundDirectory: createWellfoundDirectoryAdapterScraper,
+  himalayasDirectory: createHimalayasDirectoryAdapterScraper,
 }
 
 export const buildScrapers = () =>

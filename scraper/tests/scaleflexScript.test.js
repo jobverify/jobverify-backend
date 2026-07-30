@@ -4,15 +4,20 @@ import test from 'node:test'
 const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Cloud-based Visual Asset Management for Enterprise</title>
+  </head>
   <body>
     <nav>
       <a href="/about">About us</a>
       <a href="https://portals.scaleflex.com/s/xJfYX5yl/en/home">Careers</a>
     </nav>
     <main>
-      <h1>Turning billions of assets into engaging digital masterpieces</h1>
+      <h1>Cloud-based Visual Asset Management for Enterprise</h1>
+      <p>VXP Platform</p>
       <p>1300+ brands trust us with their visual content</p>
-      <p>Strengthen your Visual Asset Management with a unique combination of digital asset management, dynamic media optimization, brand portals and visual AI.</p>
+      <p>Visual Asset Management</p>
+      <p>Dynamic Media Optimization</p>
     </main>
   </body>
 </html>
@@ -21,7 +26,11 @@ const HOMEPAGE_HTML = `
 const PORTAL_LOADING_HTML = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Scaleflex Career Page</title>
+  </head>
   <body>
+    <div>Loading...</div>
     <div>Loading...</div>
     <div>Loading...</div>
   </body>

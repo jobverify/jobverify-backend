@@ -39,6 +39,21 @@ const upstreamCareersHtml = `
 </html>
 `
 
+const homepage522Html = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>kinsta.cloud | 522: Connection timed out</title>
+  </head>
+  <body>
+    <div id="cf-error-details">
+      <h1>Connection timed out</h1>
+      <span>Error code 522</span>
+    </div>
+  </body>
+</html>
+`
+
 const openingsPayload = [
   {
     id: 701455,
@@ -109,6 +124,14 @@ test('Ameyo constants and validators stay pinned to the verified homepage handof
   assert.equal(ameyo.UPSTREAM_COMPANY_NAME, 'Exotel Techcom Pvt Ltd')
   assert.equal(ameyo.extractCareersUrl(homepageHtml), ameyo.OFFICIAL_CAREERS_HANDOFF_URL)
   assert.equal(ameyo.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(
+    ameyo.hasExpectedHomepageOutageSignal({
+      status: 522,
+      url: 'https://www.ameyo.com/',
+      html: homepage522Html,
+    }),
+    true,
+  )
   assert.equal(ameyo.hasUpstreamCareersSignal(upstreamCareersHtml), true)
 
   const jobs = ameyo.extractSearchResults(openingsPayload)
@@ -144,10 +167,16 @@ test('run validates the Ameyo homepage handoff, the upstream Exotel careers surf
   const requestedJsonUrls = []
 
   const jobs = await ameyo.createAmeyoScraper({ maxJobs: 1, now: () => FIXED_SCRAPED_AT }).run({
+    fetchPage: async (url) => {
+      if (url === ameyo.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      throw new Error(`Unexpected Ameyo page fixture URL: ${url}`)
+    },
     fetchText: async (url) => {
       requestedTextUrls.push(url)
 
-      if (url === ameyo.HOMEPAGE_URL) return homepageHtml
       if (url === ameyo.CAREERS_HOME_URL) return upstreamCareersHtml
 
       throw new Error(`Unexpected Ameyo text fixture URL: ${url}`)
@@ -162,7 +191,6 @@ test('run validates the Ameyo homepage handoff, the upstream Exotel careers surf
   })
 
   assert.deepEqual(requestedTextUrls, [
-    ameyo.HOMEPAGE_URL,
     ameyo.CAREERS_HOME_URL,
   ])
   assert.deepEqual(requestedJsonUrls, [ameyo.OPENINGS_API_URL])
@@ -173,16 +201,59 @@ test('run validates the Ameyo homepage handoff, the upstream Exotel careers surf
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
 })
 
+test('run continues through the verified Ameyo homepage 522 outage while the upstream Exotel careers surface and Recruiterbox feed remain healthy', async () => {
+  const ameyo = await loadModule()
+  const requestedTextUrls = []
+  const requestedJsonUrls = []
+
+  const jobs = await ameyo.createAmeyoScraper({ maxJobs: 1, now: () => FIXED_SCRAPED_AT }).run({
+    fetchPage: async (url) => {
+      if (url === ameyo.HOMEPAGE_URL) {
+        return {
+          status: 522,
+          url,
+          html: homepage522Html,
+        }
+      }
+
+      throw new Error(`Unexpected Ameyo page fixture URL: ${url}`)
+    },
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+
+      if (url === ameyo.CAREERS_HOME_URL) return upstreamCareersHtml
+
+      throw new Error(`Unexpected Ameyo text fixture URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedJsonUrls.push(url)
+
+      if (url === ameyo.OPENINGS_API_URL) return openingsPayload
+
+      throw new Error(`Unexpected Ameyo JSON fixture URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedTextUrls, [ameyo.CAREERS_HOME_URL])
+  assert.deepEqual(requestedJsonUrls, [ameyo.OPENINGS_API_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'ameyo')
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})
+
 test('Ameyo scraper fails closed when the homepage handoff, upstream careers page, or openings feed drifts', async () => {
   const ameyo = await loadModule()
 
   await assert.rejects(
     ameyo.createAmeyoScraper().run({
-      fetchText: async (url) => {
+      fetchPage: async (url) => {
         if (url === ameyo.HOMEPAGE_URL) {
-          return homepageHtml.replaceAll('https://exotel.com/careers/', 'https://exotel.com/jobs/')
+          return { status: 200, url, html: homepageHtml.replaceAll('https://exotel.com/careers/', 'https://exotel.com/jobs/') }
         }
 
+        throw new Error(`Unexpected Ameyo page fixture URL: ${url}`)
+      },
+      fetchText: async (url) => {
         throw new Error(`Unexpected Ameyo text fixture URL: ${url}`)
       },
       fetchJson: async () => openingsPayload,
@@ -192,8 +263,14 @@ test('Ameyo scraper fails closed when the homepage handoff, upstream careers pag
 
   await assert.rejects(
     ameyo.createAmeyoScraper().run({
+      fetchPage: async (url) => {
+        if (url === ameyo.HOMEPAGE_URL) {
+          return { status: 200, url, html: homepageHtml }
+        }
+
+        throw new Error(`Unexpected Ameyo page fixture URL: ${url}`)
+      },
       fetchText: async (url) => {
-        if (url === ameyo.HOMEPAGE_URL) return homepageHtml
         if (url === ameyo.CAREERS_HOME_URL) {
           return upstreamCareersHtml.replace('rbox-opening-list', 'openings-placeholder')
         }
@@ -207,8 +284,14 @@ test('Ameyo scraper fails closed when the homepage handoff, upstream careers pag
 
   await assert.rejects(
     ameyo.createAmeyoScraper().run({
+      fetchPage: async (url) => {
+        if (url === ameyo.HOMEPAGE_URL) {
+          return { status: 200, url, html: homepageHtml }
+        }
+
+        throw new Error(`Unexpected Ameyo page fixture URL: ${url}`)
+      },
       fetchText: async (url) => {
-        if (url === ameyo.HOMEPAGE_URL) return homepageHtml
         if (url === ameyo.CAREERS_HOME_URL) return upstreamCareersHtml
 
         throw new Error(`Unexpected Ameyo text fixture URL: ${url}`)

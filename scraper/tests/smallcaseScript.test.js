@@ -18,6 +18,23 @@ const OFFICIAL_ABOUT_HTML = `
 </html>
 `
 
+const CURRENT_ABOUT_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About | smallcase</title>
+  </head>
+  <body>
+    <main>
+      <h1>Changing How India invests</h1>
+      <p>Join us to shape tomorrow’s investment product layer for India</p>
+      <p>Come work with us. Write in at work@smallcase.com</p>
+      <a href="https://app.pyjamahr.com/careers?company=smallcase&amp;company_uuid=2615584222">View Open Positions</a>
+    </main>
+  </body>
+</html>
+`
+
 const EMPTY_PYJAMA_BOARD_HTML = `
 <!doctype html>
 <html lang="en">
@@ -87,6 +104,16 @@ test('Smallcase sentinel helpers stay pinned to the verified first-party About p
       html: EMPTY_PYJAMA_BOARD_HTML,
     }),
     true,
+  )
+})
+
+test('Smallcase accepts the current About page handoff when the Pyjama query string is HTML-escaped', async () => {
+  const smallcase = await loadModule()
+
+  assert.equal(smallcase.hasOfficialCareersSignal(CURRENT_ABOUT_HTML), true)
+  assert.equal(
+    smallcase.extractOfficialPyjamaHandoffUrl(CURRENT_ABOUT_HTML),
+    'https://app.pyjamahr.com/careers?company=smallcase&company_uuid=2615584222',
   )
 })
 

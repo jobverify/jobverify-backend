@@ -41,6 +41,11 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1]) || null
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -85,10 +90,15 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
+  const text = (normalizeWhitespace(page) || '').toLowerCase()
 
-  return /join the mix/i.test(text)
-    && text.includes('Make an impact.')
+  return extractTitle(page) === 'Licious Careers'
+    && text.includes('join the mix')
+    && (
+      text.includes('make an impact.')
+      || text.includes('think you are the magic ingredient?')
+      || text.includes('careers@licious.com')
+    )
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
@@ -116,7 +126,7 @@ export const createLiciousScraper = ({
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
-    fetchListingPage = defaultFetchListingPage,
+    fetchListingPage,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 

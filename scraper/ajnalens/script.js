@@ -95,7 +95,22 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const markUpstreamOutage = (error) => {
+  error.softFailure = true
+  error.upstreamOutage = true
+  return error
+}
+
 export const buildRoleDetailUrl = (slug) => `${CAREERS_URL}/${normalizeWhitespace(slug) || ''}`
+
+export const isOriginUnreachableSurface = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const text = normalizeTextContent(html) || ''
+
+  return Number(page?.status) === 523
+    && /<title>\s*ajnalens\.com\s*\|\s*523:\s*Origin is unreachable\s*<\/title>/i.test(html)
+    && /origin is unreachable/i.test(text)
+}
 
 export const hasOfficialCareersSurface = (html) => {
   const page = String(html ?? '')
@@ -169,6 +184,10 @@ export const extractOpenPositions = (html) => {
 export const createAjnaLensScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchPage = defaultFetchPage, now: overrideNow } = {}) {
     const careersPage = await fetchPage(CAREERS_URL)
+
+    if (isOriginUnreachableSurface(careersPage)) {
+      throw markUpstreamOutage(new Error('AjnaLens careers page is currently upstream unavailable: Origin is unreachable'))
+    }
 
     if (Number(careersPage?.status) !== 200 || !hasOfficialCareersSurface(careersPage?.html)) {
       throw new Error('AjnaLens careers page no longer matches the verified AjnaLens careers surface')

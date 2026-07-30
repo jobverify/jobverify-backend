@@ -62,8 +62,12 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 export const hasOfficialQuickHealCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
+  const title = extractTitle(page)
 
-  return extractTitle(page) === 'Quick Heal Careers - Be Part of Our Security Innovations'
+  return (
+    title === 'Quick Heal Careers - Be Part of Our Security Innovations'
+      || title === 'Careers at Quick Heal | Cybersecurity Jobs & Career Opportunities'
+  )
     && text.includes('work with purpose. grow from the experience. innovate to shape the future with quick heal')
     && text.includes('innovator. curious. growth-mindset. positive. sounds like you?')
     && text.includes('apply for a job')

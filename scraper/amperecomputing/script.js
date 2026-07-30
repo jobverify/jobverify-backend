@@ -1,6 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREER_PAGE_URL = 'https://careers.amperecomputing.com/'
@@ -45,8 +47,9 @@ const extractLabeledText = (html, className) => stripTags(
 )
 
 export const extractSearchResults = (html) => {
+  const page = String(html ?? '')
   const results = []
-  const cards = String(html ?? '').match(/<(?:div|li)[^>]+class=["'][^"']*(?:job-card|job-listing|job-search-result)[^"']*["'][^>]*>[\s\S]*?<\/(?:div|li)>/gi) || []
+  const cards = page.match(/<(?:div|li)[^>]+class=["'][^"']*(?:job-card|job-listing|job-search-result)[^"']*["'][^>]*>[\s\S]*?<\/(?:div|li)>/gi) || []
 
   for (const card of cards) {
     const match = card.match(/href=["'](\/jobs\/(\d+)-[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i)
@@ -62,6 +65,32 @@ export const extractSearchResults = (html) => {
       location,
       jobId,
       sourceUrl: new URL(pathName, SEARCH_URL).toString(),
+    })
+  }
+
+  if (results.length > 0) return results
+
+  const seen = new Set()
+  for (const match of page.matchAll(/<h3[^>]*class=["'][^"']*heading-6[^"']*["'][^>]*>\s*<a[^>]+href=["']([^"']*\/jobs\/(\d+)-[^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/gi)) {
+    const [, pathName, jobId, rawTitle] = match
+    const resultWindow = page.slice(match.index, match.index + 1600)
+    const columns = [...resultWindow.matchAll(/<div[^>]*class=["'][^"']*large-3 columns[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi)]
+      .map((columnMatch) => stripTags(columnMatch[1]))
+      .map((value) => value?.replace(/^(Category|Location):\s*/i, '').trim() || null)
+      .filter(Boolean)
+    const location = columns.find((value) => /\bIndia\s*$/i.test(value)) || null
+    if (!location) continue
+
+    const sourceUrl = new URL(pathName, SEARCH_URL).toString()
+    if (seen.has(sourceUrl)) continue
+    seen.add(sourceUrl)
+
+    results.push({
+      title: stripTags(rawTitle),
+      category: columns[0] || null,
+      location,
+      jobId,
+      sourceUrl,
     })
   }
 
@@ -90,6 +119,10 @@ const normalizeEmploymentType = (value) => {
   return normalizeWhitespace(value)
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -103,51 +136,86 @@ const defaultFetchText = async (url) => {
 }
 
 export const createAmpereComputingScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const searchHtml = await fetchText(SEARCH_URL)
-    const listings = extractSearchResults(searchHtml)
-    const jobs = []
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJsonLd(detailHtml) || {}
-      const parsedLocation = parseLocation(
-        detail.jobLocation?.address
-          ? [
-              detail.jobLocation.address.addressLocality,
-              detail.jobLocation.address.addressRegion,
-              detail.jobLocation.address.addressCountry,
-            ].filter(Boolean).join(', ')
-          : listing.location,
-      )
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: 'Mozilla/5.0 (compatible; Jobify/1.0)',
+        })
+      }
 
-      jobs.push({
-        title: normalizeWhitespace(detail.title) || listing.title,
-        company: 'Ampere Computing',
-        location: parsedLocation.location,
-        city: parsedLocation.city,
-        country: parsedLocation.country,
-        link: listing.sourceUrl,
-        applyUrl: listing.sourceUrl,
-        sourceUrl: listing.sourceUrl,
-        source: 'amperecomputing',
-        jobId: listing.jobId,
-        requisitionId: listing.jobId,
-        department: listing.category,
-        employmentType: normalizeEmploymentType(detail.employmentType),
-        experienceRequired: null,
-        postingDate: normalizeWhitespace(detail.datePosted),
-        closingDate: normalizeWhitespace(detail.validThrough),
-        jobDescription: stripTags(detail.description),
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        remoteStatus: 'On-site',
-        scrapedAt: new Date().toISOString(),
-      })
+      return browserSession
     }
 
-    return jobs
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const searchHtml = await fetchPageText(SEARCH_URL)
+      const listings = extractSearchResults(searchHtml)
+      const jobs = []
+
+      for (const listing of listings) {
+        const detailHtml = await fetchPageText(listing.sourceUrl)
+        const detail = extractJsonLd(detailHtml) || {}
+        const parsedLocation = parseLocation(
+          detail.jobLocation?.address
+            ? [
+                detail.jobLocation.address.addressLocality,
+                detail.jobLocation.address.addressRegion,
+                detail.jobLocation.address.addressCountry,
+              ].filter(Boolean).join(', ')
+            : listing.location,
+        )
+
+        jobs.push({
+          title: normalizeWhitespace(detail.title) || listing.title,
+          company: 'Ampere Computing',
+          location: parsedLocation.location,
+          city: parsedLocation.city,
+          country: parsedLocation.country,
+          link: listing.sourceUrl,
+          applyUrl: listing.sourceUrl,
+          sourceUrl: listing.sourceUrl,
+          source: 'amperecomputing',
+          jobId: listing.jobId,
+          requisitionId: listing.jobId,
+          department: listing.category,
+          employmentType: normalizeEmploymentType(detail.employmentType),
+          experienceRequired: null,
+          postingDate: normalizeWhitespace(detail.datePosted),
+          closingDate: normalizeWhitespace(detail.validThrough),
+          jobDescription: stripTags(detail.description),
+          minimumQualification: null,
+          preferredQualification: null,
+          requiredSkills: [],
+          remoteStatus: 'On-site',
+          scrapedAt: new Date().toISOString(),
+        })
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

@@ -22,6 +22,31 @@ const practoCareersHtml = `
 </html>
 `
 
+const currentPractoCareersHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Practo | Careers</title>
+    <meta name="description" content="Practo Careers">
+    <base href="/practo/">
+  </head>
+  <body>
+    <app-root></app-root>
+    <script>
+      $("#current_openings").click(function() {
+        $('html, body').animate({
+          scrollTop: $("#jobs").offset().top
+        }, 1000);
+      });
+    </script>
+    <script src="runtime.8062548306377782.js" type="module"></script>
+    <script src="polyfills.712cec7b40080dce.js" type="module"></script>
+    <script src="main.67346d0ad0dd7169.js" type="module"></script>
+  </body>
+</html>
+`
+
 const hiddenClosedSearchPayload = {
   data: {
     data: [
@@ -98,7 +123,7 @@ test('Practo script pins the verified first-party careers shell and hidden-and-c
   assert.equal(practo.SOURCE, 'practo')
   assert.equal(practo.COMPANY, 'Practo')
   assert.equal(practo.OFFICIAL_BRAND_NAME, 'Practo')
-  assert.equal(practo.VERIFIED_ON, '2026-07-17')
+  assert.equal(practo.VERIFIED_ON, '2026-07-26')
   assert.equal(practo.OFFICIAL_CAREERS_URL, 'https://careers.practo.com/practo/')
   assert.equal(practo.SEARCH_API_URL, 'https://public.zwayam.com/jobs/search')
   assert.equal(typeof practo.buildSearchPayload, 'function')
@@ -109,20 +134,11 @@ test('Practo script pins the verified first-party careers shell and hidden-and-c
   assert.equal(typeof practo.createPractoScraper, 'function')
 
   assert.deepEqual(practo.buildSearchPayload(), {
-    filterCri: JSON.stringify({
-      paginationStartNo: 0,
-      selectedCall: 'sort',
-      sortCriteria: {
-        name: 'modifiedDate',
-        isAscending: false,
-      },
-      anyOfTheseWords: '',
-    }),
-    domain: 'careers.practo.com',
-    companyId: 'MTYzMDI=',
+    companyId: 'practo',
   })
 
   assert.equal(practo.hasVerifiedCareersShellSignals(practoCareersHtml), true)
+  assert.equal(practo.hasVerifiedCareersShellSignals(currentPractoCareersHtml), true)
   assert.equal(practo.hasVerifiedCareersShellSignals('<html><body>No trusted Practo careers shell</body></html>'), false)
 
   assert.equal(practo.extractSearchRecords(hiddenClosedSearchPayload).length, 2)
@@ -159,17 +175,7 @@ test('Practo run returns [] only while the official search payload remains hidde
       options: {
         method: 'POST',
         form: {
-          filterCri: JSON.stringify({
-            paginationStartNo: 0,
-            selectedCall: 'sort',
-            sortCriteria: {
-              name: 'modifiedDate',
-              isAscending: false,
-            },
-            anyOfTheseWords: '',
-          }),
-          domain: 'careers.practo.com',
-          companyId: 'MTYzMDI=',
+          companyId: 'practo',
         },
       },
     },
@@ -196,6 +202,14 @@ test('Practo fails closed when the verified shell drifts or the official payload
     scraper.run({
       fetchText: async () => practoCareersHtml,
       fetchJson: async () => payloadWithPublicDrift,
+    }),
+    /public jobs/i,
+  )
+
+  await assert.rejects(
+    scraper.run({
+      fetchText: async () => practoCareersHtml,
+      fetchJson: async () => ({ data: { data: [] } }),
     }),
     /public jobs/i,
   )

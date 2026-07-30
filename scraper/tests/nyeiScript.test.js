@@ -14,6 +14,12 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedCareersHtml = readFixture('careers.html')
+const reorderedBoundaryCareersHtml = verifiedCareersHtml.replace(
+  /(<div id="form-wrap"[\s\S]*$)/i,
+  '',
+).trim() === verifiedCareersHtml.trim()
+  ? verifiedCareersHtml
+  : `${verifiedCareersHtml.match(/<div id="form-wrap"[\s\S]*$/i)?.[0] ?? ''}\n${verifiedCareersHtml.replace(/<div id="form-wrap"[\s\S]*$/i, '').trim()}`
 
 const loadNyeiModule = async () => {
   try {
@@ -153,6 +159,14 @@ test('NYEI scraper extracts the current first-party role cards and narrows them 
     jobs.some((job) => /New York, USA/i.test(job.location)),
     false,
   )
+})
+
+test('NYEI scraper tolerates the live careers-page section boundary moving ahead of the job cards', async () => {
+  const nyei = await loadNyeiModule()
+  const cards = nyei.extractOpenRoleCards(reorderedBoundaryCareersHtml)
+
+  assert.equal(cards.length, 14)
+  assert.equal(cards[0].title, 'HVAC Design Engineer')
 })
 
 test('NYEI scraper returns the public first-party India roles from the verified careers page', async () => {

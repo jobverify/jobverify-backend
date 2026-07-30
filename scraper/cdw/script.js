@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { CDW_CATALOG } from './catalog.js'
@@ -48,14 +49,20 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const hasOfficialSearchResultsSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
   return normalized.includes('Job Search Results')
-    && /Country India \(5 jobs/i.test(normalized)
-    && normalized.includes('Senior Data Engineer-2')
+    && /\bIndia\s*\(\d+\s*jobs?\s*\)/i.test(normalized)
+    && /(jobs-section__item|<article)/i.test(page)
+    && /href=["'][^"']*\/jobs\/[^"']+/i.test(page)
 }
 
-export const extractListingCards = (html = '') =>
+const extractLegacyListingCards = (html = '') =>
   [...String(html).matchAll(/<article[^>]*>([\s\S]*?)<\/article>/gi)]
     .map((match) => match[1])
     .map((block) => {
@@ -72,7 +79,26 @@ export const extractListingCards = (html = '') =>
         location: lines[2] || null,
       }
     })
-    .filter((job) => job.title && job.detailUrl && /, India$/i.test(job.location || ''))
+
+const extractCurrentListingCards = (html = '') =>
+  [...String(html).matchAll(
+    /<div[^>]*class=["'][^"']*jobs-section__item[^"']*["'][^>]*>[\s\S]*?<h4[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h4>[\s\S]*?<div[^>]*class=["'][^"']*columns medium-7[^"']*["'][^>]*>([\s\S]*?)<\/div>[\s\S]*?<div[^>]*class=["'][^"']*columns medium-5 text-right[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+  )]
+    .map((match) => ({
+      title: normalizeWhitespace(match[2]),
+      detailUrl: toAbsoluteUrl(match[1]),
+      focusArea: normalizeWhitespace(match[3]) || null,
+      location: normalizeWhitespace(match[4]) || null,
+    }))
+
+export const extractListingCards = (html = '') => {
+  const legacyListings = extractLegacyListingCards(html)
+  const listings = legacyListings.length > 0
+    ? legacyListings
+    : extractCurrentListingCards(html)
+
+  return listings.filter((job) => job.title && job.detailUrl && /, India$/i.test(job.location || ''))
+}
 
 const extractField = (html = '', label = '') => {
   const normalized = normalizeWhitespace(html)
@@ -100,47 +126,80 @@ const extractDetail = (html = '') => ({
 export const createCdwScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const searchHtml = await fetchText(SEARCH_URL)
-    if (!hasOfficialSearchResultsSignal(searchHtml)) {
-      throw new Error('CDW search results page no longer matches the verified first-party surface')
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const listings = extractListingCards(searchHtml)
-    if (listings.length === 0) {
-      throw new Error('CDW search results no longer expose trusted India listings')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const jobs = []
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.detailUrl)
-      const detail = extractDetail(detailHtml)
-      if (!/, India$/i.test(detail.location)) continue
+    try {
+      const searchHtml = await fetchPageText(SEARCH_URL)
+      if (!hasOfficialSearchResultsSignal(searchHtml)) {
+        throw new Error('CDW search results page no longer matches the verified first-party surface')
+      }
 
-      jobs.push({
-        title: detail.title || listing.title,
-        company: COMPANY,
-        location: detail.location,
-        city: detail.location.split(',')[0].trim(),
-        country: 'India',
-        team: detail.team || null,
-        department: detail.focusArea || listing.focusArea || null,
-        focusArea: detail.focusArea || listing.focusArea || null,
-        remoteType: detail.remoteType || null,
-        employmentType: null,
-        jobId: detail.jobId || toSlug(detail.title || listing.title),
-        requisitionId: detail.jobId || toSlug(detail.title || listing.title),
-        datePosted: detail.datePosted || null,
-        sourceUrl: listing.detailUrl,
-        applyUrl: listing.detailUrl,
-        link: listing.detailUrl,
-        jobDescription: detail.jobDescription || null,
-        source: SOURCE,
-        scrapedAt: now(),
-      })
+      const listings = extractListingCards(searchHtml)
+      if (listings.length === 0) {
+        throw new Error('CDW search results no longer expose trusted India listings')
+      }
+
+      const jobs = []
+      for (const listing of listings) {
+        const detailHtml = await fetchPageText(listing.detailUrl)
+        const detail = extractDetail(detailHtml)
+        if (!/, India$/i.test(detail.location)) continue
+
+        jobs.push({
+          title: detail.title || listing.title,
+          company: COMPANY,
+          location: detail.location,
+          city: detail.location.split(',')[0].trim(),
+          country: 'India',
+          team: detail.team || null,
+          department: detail.focusArea || listing.focusArea || null,
+          focusArea: detail.focusArea || listing.focusArea || null,
+          remoteType: detail.remoteType || null,
+          employmentType: null,
+          jobId: detail.jobId || toSlug(detail.title || listing.title),
+          requisitionId: detail.jobId || toSlug(detail.title || listing.title),
+          datePosted: detail.datePosted || null,
+          sourceUrl: listing.detailUrl,
+          applyUrl: listing.detailUrl,
+          link: listing.detailUrl,
+          jobDescription: detail.jobDescription || null,
+          source: SOURCE,
+          scrapedAt: now(),
+        })
+      }
+
+      return jobs.sort((left, right) => left.title.localeCompare(right.title))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    return jobs.sort((left, right) => left.title.localeCompare(right.title))
   },
 })
 

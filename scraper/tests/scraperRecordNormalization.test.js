@@ -257,29 +257,6 @@ test('normalizeScrapedJob formats flattened role descriptions after scraping', (
   )
 })
 
-test('normalizeScrapedJob infers experienced full-time job types for Mahindra successfactors roles', () => {
-  const normalized = normalizeScrapedJob(
-    {
-      title: 'Lead Engineer - NVH',
-      company: 'Mahindra Group',
-      location: 'Chennai, Chennai-MRV-AD, IN',
-      city: 'Chennai',
-      employmentType: 'Full-time',
-      experienceRequired: '3 to 5 years in the relevant field',
-      link: 'https://jobs.mahindracareers.com/talentcommunity/apply/1371714500/?locale=en_GB',
-    },
-    {
-      source: 'mahindra',
-      companyCareerPage: 'https://jobs.mahindracareers.com/',
-      atsPlatform: 'successfactors',
-    },
-  )
-
-  assert.equal(normalized.employmentType, 'Full-time')
-  assert.equal(normalized.experienceLevel, 'Senior Level')
-  assert.equal(normalized.jobType, 'Full-time Experienced')
-})
-
 test('normalizeScrapedJob filters generic job-link skillNames tags down to tool names for allowlisted api sources', () => {
   const normalized = normalizeScrapedJob(
     {

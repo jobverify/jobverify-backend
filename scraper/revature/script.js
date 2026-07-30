@@ -44,7 +44,7 @@ export const extractVerifiedWorkdayHandoffUrl = (html) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -53,6 +53,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   baseDelayMs: 2000,
   timeoutMs: 20000,
   label: SOURCE,
+  signal,
 })
 
 export const buildScraperOptions = () => ({
@@ -67,8 +68,12 @@ export const createRevatureScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  async run() {
-    const homepageHtml = await fetchText(CAREER_PAGE_URL)
+  async run({ signal } = {}) {
+    const homepageHtml = await (
+      signal === undefined
+        ? fetchText(CAREER_PAGE_URL)
+        : fetchText(CAREER_PAGE_URL, { signal })
+    )
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Revature official homepage surface changed; refusing to guess the careers handoff')
     }
@@ -78,11 +83,15 @@ export const createRevatureScraper = ({
       throw new Error('Revature verified Workday handoff changed; refusing to guess the public jobs source')
     }
 
-    return workdayRunner(buildScraperOptions())
+    return workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
   },
 })
 
 export const run = async ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
-} = {}) => createRevatureScraper({ fetchText, workdayRunner }).run()
+  signal,
+} = {}) => createRevatureScraper({ fetchText, workdayRunner }).run({ signal })

@@ -121,3 +121,23 @@ test('run fetches the Acsia careers page and decorates current openings', async 
   assert.equal(jobs[0].company, 'Acsia Technologies')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })
+
+test('run can recover with a browser-backed Acsia careers page when direct requests are blocked', async () => {
+  const acsia = await loadAcsiaModule()
+  assert.ok(acsia)
+
+  const browserUrls = []
+  const jobs = await acsia.createAcsiaScraper().run({
+    fetchText: async () => {
+      throw new Error(`HTTP 403 for ${acsia.CAREER_PAGE_URL}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return careerPageHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [acsia.CAREER_PAGE_URL])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'acsia')
+})

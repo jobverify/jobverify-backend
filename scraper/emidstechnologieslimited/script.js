@@ -162,8 +162,13 @@ export const hasOfficialCorporateCareersSignal = (html = '') => {
   const text = normalizeWhitespace(page)
 
   return /<title[^>]*>\s*Careers\s*-\s*Emids\s*<\/title>/i.test(page)
-    && page.includes(CANDIDATE_EXPERIENCE_URL)
-    && text.includes('Explore Open Roles')
+    && (
+      (page.includes(CANDIDATE_EXPERIENCE_URL) && text.includes('Explore Open Roles'))
+      || (
+        text.includes('Help Shape the Future of Health')
+        && text.includes('Be A Part Of Our Growth Story')
+      )
+    )
 }
 
 export const hasOfficialCandidateExperienceSignal = (html = '') => {

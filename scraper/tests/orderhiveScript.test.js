@@ -5,12 +5,13 @@ const homepageRedirectHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Inventory management software and more | Cin7</title>
-    <meta name="description" content="Cin7 is the leading inventory and order management platform for product sellers.">
+    <title>Inventory Management Software &amp; Small Business ERP | Cin7</title>
+    <meta name="description" content="Streamline your inventory management with Cin7's inventory management software.">
   </head>
   <body>
-    <h1>Inventory management software and more</h1>
-    <p>Cin7 is the connected inventory performance platform for growing product businesses.</p>
+    <h1>Inventory Management Software &amp; Small Business ERP</h1>
+    <p>Streamline your inventory management with Cin7's inventory management software.</p>
+    <p>Cin7 Core robust out of the box features to streamline operations.</p>
     <a href="https://www.cin7.com/careers/">Careers</a>
   </body>
 </html>

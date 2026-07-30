@@ -41,6 +41,18 @@ const registerLimiter = createRateLimiter({
   legacyHeaders: false,
 });
 
+const loginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    code: 429,
+    success: false,
+    message: "Too many sign-in attempts, please try again after 15 minutes",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Limits email verification resends to prevent mailing abuse.
 const resendLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
@@ -74,6 +86,7 @@ router.get("/csrf-token", getCsrfToken);
 router.post("/register", registerLimiter, registerValidation, validateRequest, register);
 router.post(
   "/login",
+  loginLimiter,
   loginValidation,
   validateRequest,
   requireTurnstileCaptcha(),

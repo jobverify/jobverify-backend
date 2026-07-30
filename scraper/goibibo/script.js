@@ -93,6 +93,13 @@ export const isVerifiedUnavailableCareerPage = (page = {}) =>
   ACCEPTED_CAREER_PAGE_STATUSES.includes(Number(page.status))
   && !hasPublicJobSignals(page.html)
 
+const isHomepageTimeoutError = (error) => {
+  const message = String(error?.message ?? '')
+  return error?.name === 'TimeoutError'
+    || error?.name === 'AbortError'
+    || /aborted due to timeout/i.test(message)
+}
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -112,7 +119,23 @@ const defaultFetchPage = async (url) => {
 
 export const createGoibiboScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    let homepage
+
+    try {
+      homepage = await fetchPage(HOMEPAGE_URL)
+    } catch (error) {
+      if (!isHomepageTimeoutError(error)) {
+        throw error
+      }
+
+      const careerPage = await fetchPage(CAREER_URL)
+      if (isVerifiedUnavailableCareerPage(careerPage)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (
       homepage.status !== 200
       || !pageHasOfficialGoibiboSignals(homepage.html)

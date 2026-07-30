@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Tether",
+    "company": "Tether",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "source": "hmtether",
+    "jobId": "hmtether-current-openings",
+    "requisitionId": "hmtether-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Tether had current Himalayas hiring evidence for Backend / Machine Learning Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:13.318Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

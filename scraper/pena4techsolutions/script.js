@@ -1,6 +1,11 @@
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
 export const SOURCE = 'pena4techsolutions'
 export const COMPANY = 'Pena4 Tech Solutions'
 export const JOBS_URL = 'https://www.pena4.com/jobs.php'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
@@ -24,6 +29,15 @@ export const PROVIDER_METADATA = {
 }
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
@@ -60,7 +74,7 @@ export const extractJobCards = (html) => {
   return cards
 }
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const page = await fetchText(JOBS_URL)
 
   if (!hasOfficialJobsPageSignal(page)) {

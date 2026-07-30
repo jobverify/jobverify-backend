@@ -7,6 +7,7 @@ import "./loadEnv.js";
 import express from "express";
 import cors from "cors";
 import connectDB from "./db/db.js";
+import { recoverQueuedJobAlerts } from "./src/services/jobAlertService.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import helmet from "helmet";
 import jobRoutes from "./src/routes/jobRoutes.js";
@@ -16,7 +17,11 @@ import adminRoutes from "./src/routes/adminRoutes.js";
 import billingRoutes from "./src/routes/billingRoutes.js";
 import { createCsrfProtection } from "./src/middleware/csrfProtection.js";
 import { errorHandler } from "./src/middleware/errorHandler.js";
-import { createRateLimiter } from "./src/utils/rateLimit.js";
+import {
+  createApiRateLimitHandler,
+  createRateLimiter,
+  getApiRateLimitProfile,
+} from "./src/utils/rateLimit.js";
 import {
   requireEnv,
   requireOneOf,
@@ -131,25 +136,58 @@ app.use(
   }),
 );
 
-const isSignInRequest = (req) => {
-  const path = String(req.originalUrl || "").split("?")[0];
-  return req.method === "POST" && path === "/api/auth/login";
-};
-
-// Global API Rate Limiting
-const limiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // Limit each IP to 100 requests per window
-  skip: isSignInRequest,
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: {
-    code: 429,
-    success: false,
-    message: "Too many requests from this IP, please try again after 15 minutes",
-  },
+const mutationLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  skip: (req) => getApiRateLimitProfile(req) !== "mutation",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: createApiRateLimitHandler({
+    message: "Too many write requests from this IP, please try again after 15 minutes",
+    retryAfterSeconds: 15 * 60,
+  }),
 });
-app.use("/api", limiter); // Apply to all /api routes
+
+const authLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  skip: (req) => getApiRateLimitProfile(req) !== "auth",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: createApiRateLimitHandler({
+    message: "Too many authentication requests from this IP, please try again after 15 minutes",
+    retryAfterSeconds: 15 * 60,
+  }),
+});
+
+const cheapReadLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  skip: (req) => getApiRateLimitProfile(req) !== "cheap-read",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: createApiRateLimitHandler({
+    message: "Too many read requests from this IP, please try again after 15 minutes",
+    retryAfterSeconds: 15 * 60,
+  }),
+});
+
+const expensiveSearchLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  skip: (req) => getApiRateLimitProfile(req) !== "expensive-search",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: createApiRateLimitHandler({
+    message: "Too many job search requests from this IP, please try again after 15 minutes",
+    retryAfterSeconds: 15 * 60,
+  }),
+});
+
+app.use("/api", mutationLimiter);
+app.use("/api", authLimiter);
+app.use("/api", cheapReadLimiter);
+app.use("/api", expensiveSearchLimiter);
 
 const noStore = (_req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -180,6 +218,15 @@ const PORT = requireEnv("PORT");
 
 // Connect to database before starting the server
 await connectDB();
+
+const recoverWhatsappAlerts = () => {
+  recoverQueuedJobAlerts().catch((error) => {
+    console.error("[Job Alerts] Failed to recover queued alerts:", error.message);
+  });
+};
+
+recoverWhatsappAlerts();
+setInterval(recoverWhatsappAlerts, 60 * 1000).unref();
 
 setInterval(() => {
   downgradeExpiredPlans().catch((error) => {

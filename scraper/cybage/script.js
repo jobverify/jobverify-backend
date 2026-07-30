@@ -59,6 +59,24 @@ const slugify = (value) => normalizeWhitespace(value)
 
 const extractCity = (location) => normalizeWhitespace(location)?.split(',')[0]?.trim() || null
 
+const normalizeLocation = (location) => {
+  const normalized = normalizeWhitespace(location)
+  if (!normalized) return null
+  return /,\s*India$/i.test(normalized) ? normalized : `${normalized}, India`
+}
+
+const extractJobInfoValue = (html, label) => {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return stripTags(
+    String(html ?? '').match(
+      new RegExp(
+        `<div class="job_info">[\\s\\S]*?<h4 class="job_info__heading">${escapedLabel}<\\/h4>[\\s\\S]*?<div class="job_info__desc">([\\s\\S]*?)<\\/div>`,
+        'i',
+      ),
+    )?.[1],
+  )
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
@@ -66,8 +84,8 @@ export const hasOfficialCareersSignal = (html) => {
   return /<title>\s*Open Positions\s*(?:\|\s*Cybage|\(Careers\):\s*Cybage)\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.cybage\.com\/careers\/open-positions["']/i.test(page)
     && text.includes('Open Positions')
-    && text.includes('Current Openings')
     && /\/careers\/open-positions\/current-openings\//i.test(page)
+    && /views-view-table|jobs-table/i.test(page)
 }
 
 export const extractListings = (html) => {
@@ -87,8 +105,12 @@ export const extractListings = (html) => {
     const cells = [...rowHtml.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)]
       .map((match) => stripTags(match[1]))
       .filter(Boolean)
-    const location = cells[1] || null
-    const experienceRequired = cells[2] || null
+    const metadataCells = cells.slice(1)
+    const department = metadataCells.length >= 3 ? metadataCells[0] : null
+    const location = normalizeLocation(
+      metadataCells.length >= 3 ? metadataCells[1] : metadataCells[0],
+    ) || null
+    const experienceRequired = metadataCells.length >= 3 ? metadataCells[2] : metadataCells[1]
     const jobId = slugify(sourceUrl?.split('/').pop() || title)
 
     if (!sourceUrl || !title || !jobId || !location) {
@@ -98,7 +120,7 @@ export const extractListings = (html) => {
     jobs.push({
       title,
       company: COMPANY,
-      department: null,
+      department,
       location,
       city: extractCity(location),
       country: 'India',
@@ -126,13 +148,26 @@ export const extractListings = (html) => {
 
 export const extractJobDetail = (html, listing = {}) => {
   const page = String(html ?? '')
-  const title = stripTags(page.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1]) || listing.title || null
-  const applyUrl = toAbsoluteUrl(page.match(/<a[^>]+class=["'][^"']*apply-now[^"']*["'][^>]+href=["']([^"']+)["']/i)?.[1])
-  const location = normalizeWhitespace(
-    stripTags(page.match(/Location:\s*([^<\n]+)/i)?.[1]) || listing.location,
+  const titleFromHeading = stripTags(page.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  const title = titleFromHeading && titleFromHeading.toLowerCase() !== 'job description'
+    ? titleFromHeading
+    : extractJobInfoValue(page, 'Job Title') || listing.title || null
+  const applyUrl = toAbsoluteUrl(
+    page.match(/<a[^>]+href=["']([^"']*PublicPages\/UserLogin\.aspx)["'][^>]*>\s*Apply Now/i)?.[1]
+    || page.match(/<a[^>]+class=["'][^"']*apply-now[^"']*["'][^>]+href=["']([^"']+)["']/i)?.[1],
+  )
+  const location = normalizeLocation(
+    extractJobInfoValue(page, 'Location')
+    || stripTags(page.match(/Location:\s*([^<\n]+)/i)?.[1])
+    || listing.location,
   )
   const experienceRequired = normalizeWhitespace(
-    stripTags(page.match(/Experience:\s*([^<\n]+)/i)?.[1]) || listing.experienceRequired,
+    extractJobInfoValue(page, 'Work Experience')
+    || stripTags(page.match(/Experience:\s*([^<\n]+)/i)?.[1])
+    || listing.experienceRequired,
+  )
+  const department = normalizeWhitespace(
+    extractJobInfoValue(page, 'Department') || listing.department,
   )
   const jobDescription = normalizeWhitespace(
     stripTags(page.match(/<div[^>]+class=["'][^"']*job-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]),
@@ -145,6 +180,7 @@ export const extractJobDetail = (html, listing = {}) => {
   return {
     ...listing,
     title,
+    department,
     location,
     city: extractCity(location),
     applyUrl,

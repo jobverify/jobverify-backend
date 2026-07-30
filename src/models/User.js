@@ -32,7 +32,7 @@ const ProfilePreferenceFiltersSchema = new Schema(
     experienceYear: { type: String, default: "" },
     roleDomain: { type: [String], default: [], validate: boundedStringList },
     workArrangement: { type: [String], default: [], validate: boundedStringList },
-    datePostedDays: { type: [Number], default: [] },
+    datePostedDays: { type: [String], default: [], validate: boundedStringList },
     sortBy: {
       type: String,
       enum: ["all", "popularity", "latest", "oldest"],
@@ -54,6 +54,10 @@ const ProfileSchema = new Schema(
     },
     locationPreference: { type: [String], default: [], validate: boundedStringList },
     profilePreferenceFilters: {
+      type: ProfilePreferenceFiltersSchema,
+      default: () => ({}),
+    },
+    whatsappAlertFilters: {
       type: ProfilePreferenceFiltersSchema,
       default: () => ({}),
     },
@@ -147,6 +151,8 @@ const UserSchema = new Schema(
     isVerified: { type: Boolean, default: false },
     deactivated: { type: Boolean, default: false },
     lastLoginAt: { type: Date },
+    passwordChangedAt: { type: Date, default: null },
+    sessionVersion: { type: Number, default: 0 },
     resetPasswordTokenHash: { type: String, default: null },
     resetPasswordExpiresAt: { type: Date, default: null },
   },

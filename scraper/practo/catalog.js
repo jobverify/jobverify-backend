@@ -20,9 +20,9 @@ export const PRACTO_CATALOG = {
   officialSearchApiUrl: 'https://public.zwayam.com/jobs/search',
   zwayamCompanyId: 'MTYzMDI=',
   zwayamDetailCompanyId: '16302',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-26',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://careers.practo.com/practo/ is the live official Practo careers shell titled "Practo | Careers", while the official Zwayam search payload for Practo returned only records flagged Hidden and Closed with appliesNotBlocked 0. Because the verified official surface exposed no trustworthy public jobs surface, this provider is a fail-closed sentinel that returns no jobs.',
+    'Verified on Sunday, July 26, 2026 that https://careers.practo.com/practo/ is the live official Practo careers shell titled "Practo | Careers" and currently rendered as the Angular app-root shell with current_openings script hooks and hashed runtime/main bundles, while the official Zwayam search payload for Practo returned only records flagged Hidden and Closed with appliesNotBlocked 0. Because the verified official surface exposed no trustworthy public jobs surface, this provider is a fail-closed sentinel that returns no jobs.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: path.join(currentDir, 'jobs.json'),
 }

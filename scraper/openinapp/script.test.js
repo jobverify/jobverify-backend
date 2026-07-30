@@ -70,6 +70,14 @@ test('run returns no jobs when the homepage has no careers signal and public car
 
       throw new Error(`Unexpected URL: ${url}`)
     },
+    fetchRoutePage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 404,
+        url,
+        html: notFoundHtml,
+      }
+    },
   })
 
   assert.deepEqual(requestedUrls, [
@@ -78,6 +86,22 @@ test('run returns no jobs when the homepage has no careers signal and public car
     CAREER_ROUTE_URL,
     JOBS_ROUTE_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('run accepts live-style 404 route responses when the branded missing-route shell is still intact', async () => {
+  const jobs = await createOpeninAppScraper().run({
+    fetchText: async (url) => {
+      if (url === CAREER_PAGE_URL) return homepageHtml
+      throw new Error(`Unexpected homepage fetch URL: ${url}`)
+    },
+    fetchRoutePage: async (url) => ({
+      status: 404,
+      url,
+      html: notFoundHtml,
+    }),
+  })
+
   assert.deepEqual(jobs, [])
 })
 
@@ -92,16 +116,13 @@ test('run fails closed when the homepage or verified career routes change shape'
           )
         }
 
-        if (
-          url === CAREERS_ROUTE_URL
-          || url === CAREER_ROUTE_URL
-          || url === JOBS_ROUTE_URL
-        ) {
-          return notFoundHtml
-        }
-
         throw new Error(`Unexpected URL: ${url}`)
       },
+      fetchRoutePage: async (url) => ({
+        status: 404,
+        url,
+        html: notFoundHtml,
+      }),
     }),
     /public careers surface changed/i,
   )
@@ -110,15 +131,16 @@ test('run fails closed when the homepage or verified career routes change shape'
     createOpeninAppScraper().run({
       fetchText: async (url) => {
         if (url === CAREER_PAGE_URL) return homepageHtml
-        if (url === CAREERS_ROUTE_URL) {
-          return '<html><body><h1>Open roles</h1></body></html>'
-        }
-        if (url === CAREER_ROUTE_URL || url === JOBS_ROUTE_URL) {
-          return notFoundHtml
-        }
 
         throw new Error(`Unexpected URL: ${url}`)
       },
+      fetchRoutePage: async (url) => ({
+        status: 404,
+        url,
+        html: url === CAREERS_ROUTE_URL
+          ? '<html><body><h1>Open roles</h1></body></html>'
+          : notFoundHtml,
+      }),
     }),
     /verified missing careers routes changed/i,
   )

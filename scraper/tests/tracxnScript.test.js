@@ -80,6 +80,48 @@ const SDE_BACKEND_DETAIL_HTML = `
 </html>
 `
 
+const CURRENT_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Join our team at Tracxn</h1>
+      <p>Careers</p>
+      <h2>Your next role starts here</h2>
+      <div class="div-block-380">
+        <div class="div-block-381">
+          <h3 class="heading-80">Analyst</h3>
+          <div class="text-block-303">10 JOBS</div>
+        </div>
+        <div role="listitem" class="w-dyn-item">
+          <a href="/career/analyst-senior-analyst-market-research" class="w-inline-block">
+            <div class="div-block-373">
+              <div class="text-block-290">Full-time</div>
+              <div class="text-block-292">Analyst / Senior Analyst - Market Research</div>
+              <div class="text-block-291">Bangalore</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
+const CURRENT_DETAIL_HTML = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <p>Job listing &gt; Job details Analyst / Senior Analyst - Market Research Full-time | Bangalore</p>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLScaVyB4twr8DJjgJc7ZU1OmbDrFh0nvw9Ya4U9o8K9kBjI8Sg/viewform?usp=header">Apply for this role</a>
+      <p>Job Description We are looking for intellectually curious and detail-oriented individuals from top institutions to join our Sector Research team.</p>
+      <p>What We’re Looking For: Graduates from top-tier institutes. 0–3 years of experience in research, consulting, analytics, or strategy.</p>
+    </main>
+  </body>
+</html>
+`
+
 const loadTracxnModule = async () => {
   try {
     return await import('../tracxn/script.js')
@@ -147,6 +189,35 @@ test('extractListings parses Tracxn careers cards into detail-page listings', as
   })
 })
 
+test('extractListings supports the current Webflow-style Tracxn role cards', async () => {
+  const tracxn = await loadTracxnModule()
+
+  const jobs = tracxn.extractListings(CURRENT_CAREERS_HTML)
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(jobs[0], {
+    title: 'Analyst / Senior Analyst - Market Research',
+    company: 'Tracxn Technologies Limited',
+    department: 'Analyst',
+    location: 'Bangalore, India',
+    city: 'Bangalore',
+    country: 'India',
+    jobId: 'analyst-senior-analyst-market-research',
+    requisitionId: 'analyst-senior-analyst-market-research',
+    sourceUrl: 'https://w.tracxn.com/career/analyst-senior-analyst-market-research',
+    applyUrl: 'https://w.tracxn.com/career/analyst-senior-analyst-market-research',
+    employmentType: 'Full-time',
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+    remoteStatus: 'On-site',
+  })
+})
+
 test('extractJobDetail lifts Tracxn detail fields and Google Forms apply links', async () => {
   const tracxn = await loadTracxnModule()
 
@@ -166,6 +237,25 @@ test('extractJobDetail lifts Tracxn detail fields and Google Forms apply links',
     '2+ years of experience in Python and SQL',
     'Experience building data products',
   ])
+})
+
+test('extractJobDetail supports the current Tracxn detail shell without labeled fields', async () => {
+  const tracxn = await loadTracxnModule()
+
+  const listing = tracxn.extractListings(CURRENT_CAREERS_HTML)[0]
+  const job = tracxn.extractJobDetail(CURRENT_DETAIL_HTML, listing)
+
+  assert.equal(job.title, 'Analyst / Senior Analyst - Market Research')
+  assert.equal(job.department, 'Analyst')
+  assert.equal(job.location, 'Bangalore, India')
+  assert.equal(job.employmentType, 'Full-time')
+  assert.equal(
+    job.applyUrl,
+    'https://docs.google.com/forms/d/e/1FAIpQLScaVyB4twr8DJjgJc7ZU1OmbDrFh0nvw9Ya4U9o8K9kBjI8Sg/viewform?usp=header',
+  )
+  assert.match(job.jobDescription, /sector research team/i)
+  assert.equal(job.minimumQualification, 'Graduates from top-tier institutes')
+  assert.equal(job.preferredQualification, '0–3 years of experience in research, consulting, analytics, or strategy.')
 })
 
 test('run fetches the Tracxn careers page and detail pages, then decorates runner fields', async () => {

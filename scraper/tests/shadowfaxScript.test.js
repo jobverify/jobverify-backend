@@ -15,8 +15,8 @@ const HOMEPAGE_HTML = `
       <a href="/careers">Careers</a>
     </nav>
     <main>
-      <h1>India's Trusted Partner For Speed and Reliable Delivery</h1>
-      <p>Your trusted partner for express parcels, returns, same-day, next-day, 30-min delivery, and fulfillment solutions.</p>
+      <h1>India's Trusted Partner for Fast, Reliable Delivery</h1>
+      <p>Your trusted partner for express parcel delivery, returns, same-day, next-day, 30-minute delivery, and fulfilment solutions.</p>
     </main>
     <footer>
       <span>© 2026 All rights reserved. Shadowfax Technologies Limited</span>
@@ -34,15 +34,15 @@ const CAREERS_HTML = `
   <body>
     <main>
       <h1>Join the Shadowfax Team!</h1>
-      <h2>Join a team of passionate people moving the world forward. We’re hiring those who want to help shape the future of logistics with us.</h2>
+      <h2>Join a team of passionate people moving the world forward. We&#8217;re hiring those who want to help shape the future of logistics with us.</h2>
       <h3>Our Openings</h3>
       <div>All Categories All Job Types All Locations</div>
       <button>Search</button>
       <h3>Our Openings</h3>
       <p>No job openings available at the moment.</p>
       <h4>Join our talent pool</h4>
-      <h4>Couldn’t find a suitable vacancy?</h4>
-      <p>Upload your CV and we’ll get back to you when something opens up</p>
+      <h4>Couldn&#8217;t find a suitable vacancy?</h4>
+      <p>Upload your CV and we&#8217;ll get back to you when something opens up</p>
       <label>Enter your full name</label>
       <label>Enter your email</label>
       <label>Preffered department</label>

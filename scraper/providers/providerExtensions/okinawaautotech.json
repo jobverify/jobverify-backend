@@ -1,0 +1,22 @@
+{
+  "source": "okinawaautotech",
+  "companyName": "Okinawa Autotech",
+  "officialBrandName": "Okinawa Autotec Private Limited",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../okinawaautotech/script.js",
+  "dryRunFile": "okinawaautotech/jobs.json",
+  "companyCareerPage": "https://okinawascooters.com/career",
+  "companyDomain": "okinawascooters.com",
+  "atsPlatform": "official-first-party-careers-page",
+  "countryFilter": "India",
+  "paginationStrategy": "single-verified-first-party-careers-page",
+  "extractionStrategy": "official-careers-html+first-party-apply-links-only",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 1,
+  "verifiedIndiaJobCount": 1,
+  "officialCareersPageUrl": "https://okinawascooters.com/career",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://okinawascooters.com/career is Okinawa Autotech's first-party careers surface. The page identifies Okinawa Autotec Private Limited as formerly Okinawa Autotech and publishes one Gurugram opening with an on-domain application form. This exact-name provider accepts only structured cards and on-domain apply URLs, and fails closed if that verified contract changes."
+}

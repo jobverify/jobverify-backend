@@ -21,6 +21,27 @@ const homepageHtml = `
   </html>
 `
 
+const spaHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta content="width=device-width,initial-scale=1" name="viewport">
+      <title>Electrifex</title>
+      <meta name="title" content="Electrifex">
+      <meta
+        name="description"
+        content="Electrifex: Engineering innovative solutions for automotive, embedded, and cloud technologies. Discover our products, team, and culture."
+      />
+      <script type="module" crossorigin src="/assets/index-CZyhokCF.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-ClzYOlaq.css">
+    </head>
+    <body>
+      <div id="root"></div>
+    </body>
+  </html>
+`
+
 const careersHtml = `
   <!doctype html>
   <html lang="en">
@@ -44,6 +65,7 @@ const careersHtml = `
 
 test('validates the verified official Electrifex public surfaces', () => {
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(hasOfficialHomepageSignal(spaHomepageHtml), true)
   assert.equal(hasOfficialCareersSignal(careersHtml), true)
 })
 
@@ -100,7 +122,7 @@ test('run validates the official Electrifex surfaces before extracting jobs', as
   const jobs = await createElectrifexScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === HOMEPAGE_URL) return homepageHtml
+      if (url === HOMEPAGE_URL) return spaHomepageHtml
       if (url === CAREERS_URL) return careersHtml
       throw new Error(`Unexpected URL: ${url}`)
     },

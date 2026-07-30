@@ -33,6 +33,8 @@ const normalizeWhitespace = (value) => stripTags(value)
   .replace(/&#038;|&amp;/gi, '&')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/[\u2013\u2014]/g, '-')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -40,6 +42,37 @@ const normalizeWhitespace = (value) => stripTags(value)
 const normalizeUrlish = (value) => String(value ?? '')
   .replace(/&#038;|&amp;/gi, '&')
   .trim()
+
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
+)
+
+const matchesExpectedHandoffUrl = (actual, expected) => {
+  try {
+    const actualUrl = new URL(normalizeUrlish(actual))
+    const expectedUrl = new URL(normalizeUrlish(expected))
+
+    if (
+      actualUrl.origin !== expectedUrl.origin
+      || actualUrl.pathname.replace(/\/+$/, '') !== expectedUrl.pathname.replace(/\/+$/, '')
+    ) {
+      return false
+    }
+
+    const serializeParams = (url) => (
+      [...url.searchParams.entries()]
+        .sort(([leftKey, leftValue], [rightKey, rightValue]) => (
+          leftKey.localeCompare(rightKey) || leftValue.localeCompare(rightValue)
+        ))
+        .map(([key, value]) => `${key}=${value}`)
+        .join('&')
+    )
+
+    return serializeParams(actualUrl) === serializeParams(expectedUrl)
+  } catch {
+    return false
+  }
+}
 
 const defaultFetchPage = async (url) => {
   const controller = new AbortController()
@@ -71,8 +104,9 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const title = extractTitle(page)
 
-  return /<title>\s*Careers at Gupshup/i.test(page)
+  return title.startsWith('Careers at Gupshup')
     && text.includes('Join Gupshup')
     && text.includes('Your Next Career Move Is Just a Message Away')
     && text.includes('Explore Opportunities')
@@ -107,7 +141,7 @@ export const createGupshupScraper = () => ({
 
     const handoffUrl = extractWhatsAppHandoffUrl(careersPage?.html)
 
-    if (handoffUrl !== WHATSAPP_HANDOFF_URL) {
+    if (!matchesExpectedHandoffUrl(handoffUrl, WHATSAPP_HANDOFF_URL)) {
       const combinedSignals = `${String(careersPage?.html ?? '')} ${normalizeUrlish(handoffUrl)}`
 
       if (PUBLIC_JOBS_SURFACE_PATTERN.test(combinedSignals)) {

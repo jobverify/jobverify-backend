@@ -36,6 +36,7 @@ import {
   applyExpiredAccessDowngrade,
   buildAccessSummary,
 } from "../utils/accessControl.js";
+import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
 
 const GENERIC_REGISTRATION_MESSAGE = "If this email can be registered, a verification email will be sent.";
 const GENERIC_RESEND_MESSAGE = "If a pending registration exists for this email, a verification email will be sent when eligible.";
@@ -54,8 +55,8 @@ const buildSessionUserPayload = (user) => ({
 });
 
 // Generates a JWT token valid for 7 days.
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+const generateToken = (id, role, sessionVersion = 0) => {
+  return jwt.sign({ id, role, sessionVersion }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 };
@@ -118,17 +119,19 @@ export const register = async (req, res) => {
     return sendValidationError(res, errors);
   }
 
-  const { name, email, password } = req.body;
+  const { name, email, password, phoneE164 } = req.body;
   const normalizedEmail = normalizeEmailAddress(email);
+  const normalizedPhoneE164 = normalizePhoneE164(phoneE164);
 
   try {
     const user = await User.findOne({ email: normalizedEmail });
     if (user) {
-      return res.status(409).json({
-        code: 409,
-        success: false,
-        accountExists: true,
-        message: "An account for this email already exists. Please sign in.",
+      return res.status(201).json({
+        code: 201,
+        success: true,
+        pending: true,
+        email: normalizedEmail,
+        message: GENERIC_REGISTRATION_MESSAGE,
       });
     }
 
@@ -151,7 +154,10 @@ export const register = async (req, res) => {
       email: normalizedEmail,
       password: hashedPassword,
       pendingBrowserNonceHash: hashOpaqueToken(browserBindingToken),
-      profile: { name },
+      profile: {
+        name,
+        phoneE164: normalizedPhoneE164,
+      },
       verificationTokenHash: verificationToken.tokenHash,
       verificationTokenExpiresAt: verificationToken.expiresAt,
       lastResentAt: new Date(), // initialized to register time
@@ -266,7 +272,10 @@ export const verifyEmail = async (req, res) => {
     const user = new User({
       email: pendingUser.email,
       password: finalPasswordHash,
-      profile: pendingUser.profile,
+      profile: pendingUser.profile ? { name: pendingUser.profile.name } : {},
+      contact: {
+        phoneE164: pendingUser.profile?.phoneE164 ?? null,
+      },
       isVerified: true,
       lastLoginAt: new Date(),
     });
@@ -445,6 +454,8 @@ export const resetPassword = async (req, res) => {
     }
 
     user.password = await bcrypt.hash(password, 10);
+    user.passwordChangedAt = new Date();
+    user.sessionVersion = (user.sessionVersion ?? 0) + 1;
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpiresAt = null;
     await user.save();
@@ -522,7 +533,7 @@ export const login = async (req, res) => {
     user.lastLoginAt = new Date();
     await user.save();
 
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user._id, user.role, user.sessionVersion);
     setAuthCookie(res, token);
     res.status(200).json({
       code: 200,

@@ -81,10 +81,10 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeWhitespace(rawHtml) || '').toLowerCase()
 
-  return /<title>\s*Simpl - India's Leading 1-Tap Checkout Network\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Simpl\s*[—-]\s*India's Leading 1-Tap Checkout Network\s*<\/title>/i.test(rawHtml)
     && normalized.includes('payments made invisible. money made intelligent.')
     && normalized.includes('simpl (one sigma) is a fintech company')
-    && normalized.includes('ready to make payments simple?')
+    && normalized.includes("india's #1 checkout network")
     && normalized.includes('careers')
   }
 
@@ -92,7 +92,7 @@ export const hasOfficialAboutSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeWhitespace(rawHtml) || '').toLowerCase()
 
-  return /<title>\s*About Us - Simpl\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*About Us\s*[—-]\s*Simpl\s*<\/title>/i.test(rawHtml)
     && normalized.includes('about simpl')
     && normalized.includes('reimagining credit for the mobile era.')
     && normalized.includes('simpl (one sigma) is a fintech company')
@@ -130,14 +130,6 @@ export const createSimplScraper = () => ({
     }
     if (hasLinkedFirstPartyCareersRoute(aboutHtml) || hasPublicJobsSignal(aboutHtml)) {
       throw new Error('Simpl about page now exposes a public jobs surface')
-    }
-
-    const careersReferenceHtml = await fetchText(CAREERS_REFERENCE_PAGE_URL)
-    if (!hasOfficialCareersReferenceSignal(careersReferenceHtml)) {
-      throw new Error('Simpl careers reference page no longer matches the verified first-party surface')
-    }
-    if (hasPublicJobsSignal(careersReferenceHtml)) {
-      throw new Error('Simpl careers reference page now exposes public jobs')
     }
 
     return []

@@ -16,6 +16,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const GREENHOUSE_BOARD_URL = PROVIDER_METADATA.greenhouseBoardUrl
 export const GREENHOUSE_JOBS_API_URL = PROVIDER_METADATA.greenhouseJobsApiUrl
 export const VERIFIED_SAMPLE_JOB_ID = '7611164003'
+const VERIFIED_CURRENT_INDIA_SAMPLE_JOB_ID = '7701514003'
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
@@ -146,10 +147,10 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && normalized.includes('Explore Opportunities')
     && normalized.includes('Find Your Best Fit')
     && normalized.includes('Agent Developer Test III')
-    && normalized.includes('Agent Product Builder')
+    && normalized.includes('Analyst - Strategic Alliances')
     && normalized.includes('Hyderabad, Telangana, India')
     && jobIds.includes(VERIFIED_SAMPLE_JOB_ID)
-    && jobIds.includes('7718212003')
+    && jobIds.includes(VERIFIED_CURRENT_INDIA_SAMPLE_JOB_ID)
 }
 
 export const extractIndiaJobsFromGreenhousePayload = (

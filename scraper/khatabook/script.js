@@ -57,6 +57,20 @@ const extractTitle = (html = '') => {
   return normalizeWhitespace(match?.[1])
 }
 
+const extractMetaContent = (html = '', attributeName, attributeValue) => {
+  const pattern = new RegExp(
+    `<meta[^>]+${attributeName}=["']${attributeValue}["'][^>]+content=["']([^"']+)["']|<meta[^>]+content=["']([^"']+)["'][^>]+${attributeName}=["']${attributeValue}["']`,
+    'i',
+  )
+  const match = String(html ?? '').match(pattern)
+  return normalizeWhitespace(match?.[1] || match?.[2])
+}
+
+const extractPageTitle = (html = '') =>
+  extractTitle(html)
+  || extractMetaContent(html, 'name', 'title')
+  || extractMetaContent(html, 'property', 'og:title')
+
 const parseLocationList = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return []
@@ -121,7 +135,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return extractTitle(page) === CAREERS_TITLE
+  return extractPageTitle(page) === CAREERS_TITLE
     && normalized.includes('Search for a Job')
     && normalized.includes('View Openings')
     && /name=["']locations["']/i.test(page)

@@ -69,14 +69,9 @@ export const upsertScraperStatus = async (source, result) => {
           lastSuccess: true,
           consecutiveFailures: 0,
           lastError: null,
-          lastJobsFound: jobsFound,
-          lastEligibleJobsFound: eligibleJobsFound,
-          lastInserted: result.inserted || 0,
-          lastUpdated: result.updated || 0,
-          lastDeleted: result.deleted || 0,
-          lastFilteredOld: result.filteredOld || 0,
-          lastExpired: result.expired || 0,
-          lastMissed: result.missed || 0,
+          softFailure: false,
+          upstreamOutage: false,
+          failureKind: null,
           durationMs: result.durationMs || 0,
           lastPartialAt: isPartial ? now : null,
           lastPartialReason: isPartial
@@ -86,17 +81,41 @@ export const upsertScraperStatus = async (source, result) => {
         };
 
         if (!isPartial) {
+          set.lastJobsFound = jobsFound;
+          set.lastEligibleJobsFound = eligibleJobsFound;
           set.lastCompleteJobsFound = jobsFound;
           set.lastCompleteEligibleJobsFound = eligibleJobsFound;
+          set.lastInserted = result.inserted || 0;
+          set.lastUpdated = result.updated || 0;
+          set.lastDeleted = result.deleted || 0;
+          set.lastFilteredOld = result.filteredOld || 0;
+          set.lastExpired = result.expired || 0;
+          set.lastMissed = result.missed || 0;
         }
 
         return { $set: set };
       })()
+    : result.softFailure === true
+      ? {
+          $set: {
+            lastRanAt: now,
+            lastSuccess: true,
+            consecutiveFailures: 0,
+            lastError: result.error || "Unknown upstream scraper condition",
+            softFailure: true,
+            upstreamOutage: result.upstreamOutage === true,
+            failureKind: result.failureKind || "soft_failure",
+            durationMs: result.durationMs || 0,
+          },
+        }
     : {
         $set: {
           lastRanAt: now,
           lastSuccess: false,
           lastError: result.error || "Unknown error",
+          softFailure: false,
+          upstreamOutage: false,
+          failureKind: result.failureKind || "hard_failure",
           durationMs: result.durationMs || 0,
         },
         $inc: {

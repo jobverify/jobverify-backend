@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { INTERSOFT_DATA_LABS_CATALOG } from './catalog.js'
@@ -115,50 +116,88 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createIntersoftDataLabsScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let browserSession = null
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Intersoft Data Labs verified Intersoft careers surface no longer matches the public contract')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const openings = extractJobToggles(careersHtml)
-    if (openings.length === 0) {
-      throw new Error('Intersoft Data Labs verified openings surface no longer exposes the expected toggle jobs')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const jobs = openings.map((opening) => ({
-      title: opening.title,
-      company: COMPANY,
-      department: null,
-      location: opening.location,
-      city: null,
-      country: 'India',
-      jobId: opening.jobId,
-      requisitionId: opening.jobId,
-      sourceUrl: `${CAREERS_URL}#${opening.jobId}`,
-      applyUrl: buildApplyUrl(opening.email, opening.title),
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: opening.requiredSkills,
-      postingDate: null,
-      closingDate: null,
-      jobDescription: opening.jobDescription,
-      remoteStatus: null,
-      source: SOURCE,
-      link: buildApplyUrl(opening.email, opening.title),
-      scrapedAt: now(),
-    }))
+    try {
+      const careersHtml = await fetchPageText(CAREERS_URL)
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Intersoft Data Labs verified Intersoft careers surface no longer matches the public contract')
+      }
+
+      const openings = extractJobToggles(careersHtml)
+      if (openings.length === 0) {
+        throw new Error('Intersoft Data Labs verified openings surface no longer exposes the expected toggle jobs')
+      }
+
+      const jobs = openings.map((opening) => ({
+        title: opening.title,
+        company: COMPANY,
+        department: null,
+        location: opening.location,
+        city: null,
+        country: 'India',
+        jobId: opening.jobId,
+        requisitionId: opening.jobId,
+        sourceUrl: `${CAREERS_URL}#${opening.jobId}`,
+        applyUrl: buildApplyUrl(opening.email, opening.title),
+        employmentType: null,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: opening.requiredSkills,
+        postingDate: null,
+        closingDate: null,
+        jobDescription: opening.jobDescription,
+        remoteStatus: null,
+        source: SOURCE,
+        link: buildApplyUrl(opening.email, opening.title),
+        scrapedAt: now(),
+      }))
+
+      return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

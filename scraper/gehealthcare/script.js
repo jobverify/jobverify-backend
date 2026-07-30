@@ -10,7 +10,7 @@ export const hasOfficialCareersSurface = (html) => {
 
   return /<title[^>]*>\s*Careers at GE HealthCare\s*\|\s*GE HealthCare jobs\s*<\/title>/i.test(source)
     && /Create the future of healthcare/i.test(source)
-    && /Search Jobs/i.test(source)
+    && /Search(?:\s|&nbsp;|&#xa0;)+Jobs/i.test(source)
 }
 
 const defaultFetchText = async (url) => {

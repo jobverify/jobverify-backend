@@ -23,9 +23,9 @@ export const PLIVO_CATALOG = {
     'verified-first-party-jobs-page+verified-jobs-bundle-lever-fetch+live-empty-lever-board',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-26',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.plivo.com/jobs/ is the live official Plivo jobs page, that its Astro JobsPage client bundle fetches the public Lever API at https://api.lever.co/v0/postings/plivo?mode=json, and that the corresponding public Lever board at https://jobs.lever.co/plivo is live but currently states "No job postings currently open. Check back later!" The first-party Plivo page still renders stale "03 open positions" shell copy, while the live Lever API returned [] on the verified date.',
+    'Verified on Sunday, July 26, 2026 that https://www.plivo.com/jobs/ is the live official Plivo jobs page, that its Astro JobsPage client bundle fetches the public Lever API at https://api.lever.co/v0/postings/plivo?mode=json, and that the corresponding public Lever board at https://jobs.lever.co/plivo is live but currently empty with the simplified privacy-notice layout that still states "No job postings currently open. Check back later!" and links back to the Plivo homepage. The first-party Plivo page still renders stale "03 open positions" shell copy, while the live Lever API returned [] on the verified date.',
 }
 
 export default PLIVO_CATALOG

@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Lingaro",
+    "company": "Lingaro",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "source": "hmlingaro",
+    "jobId": "hmlingaro-current-openings",
+    "requisitionId": "hmlingaro-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Lingaro had current Himalayas hiring evidence for Data Scientist / Data Engineer. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:03.013Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "companyDomain": "himalayas.app"
+  }
+]

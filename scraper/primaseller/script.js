@@ -26,7 +26,12 @@ const matchesExpectedUrl = (value, expected) => {
     const expectedUrl = new URL(expected)
     const normalizePath = (pathname) => pathname === '/' ? '/' : pathname.replace(/\/+$/, '')
 
-    return actualUrl.hostname.replace(/^www\./i, '').toLowerCase() === expectedUrl.hostname.replace(/^www\./i, '').toLowerCase()
+    return actualUrl.protocol === 'https:'
+      && actualUrl.port === ''
+      && actualUrl.username === ''
+      && actualUrl.password === ''
+      && actualUrl.hash === ''
+      && actualUrl.hostname.replace(/^www\./i, '').toLowerCase() === expectedUrl.hostname.replace(/^www\./i, '').toLowerCase()
       && normalizePath(actualUrl.pathname) === normalizePath(expectedUrl.pathname)
       && actualUrl.search === expectedUrl.search
   } catch {
@@ -55,6 +60,8 @@ const defaultFetchPage = async (url) => {
       url,
       html: null,
       error: String(error),
+      causeMessage: error?.cause?.message ? String(error.cause.message) : null,
+      causeCode: error?.cause?.code ? String(error.cause.code) : null,
     }
   }
 }
@@ -65,7 +72,7 @@ export const PROVIDER_METADATA = PRIMASELLER_CATALOG
 export const HOMEPAGE_URL = PRIMASELLER_CATALOG.homepageUrl
 export const LEGACY_ABOUT_PAGE_URL = PRIMASELLER_CATALOG.legacyAboutPageUrl
 export const LEGACY_FSLINK_URL = PRIMASELLER_CATALOG.legacyFsLinkUrl
-export const REDIRECT_TARGET_URL = PRIMASELLER_CATALOG.redirectTargetUrl
+export const REDIRECT_TARGET_URL = 'https://www.delhivery.com/solutions/d2c-brands'
 export const VERIFIED_AT = PRIMASELLER_CATALOG.verifiedOn
 
 export const hasRedirectedDelhiverySignal = (page) => {
@@ -80,7 +87,9 @@ export const hasRedirectedDelhiverySignal = (page) => {
 }
 
 export const isExpiredLegacyTlsSurface = (page) =>
-  /SEC_E_CERT_EXPIRED|certificate has expired|CERT_HAS_EXPIRED/i.test(String(page?.error ?? ''))
+  /SEC_E_CERT_EXPIRED|certificate has expired|CERT_HAS_EXPIRED/i.test(
+    [page?.error, page?.causeMessage, page?.causeCode].filter(Boolean).join(' | '),
+  )
 
 export const createPrimasellerScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

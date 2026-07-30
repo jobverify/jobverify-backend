@@ -157,7 +157,10 @@ export const createHealthAsystScraper = () => ({
   async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
-    if (!hasOfficialCareersPageSignal(careersHtml) || extractExternalHandoffUrl(careersHtml) !== KEKA_BOARD_URL) {
+    if (
+      !hasOfficialCareersPageSignal(careersHtml)
+      || normalizeDomain(extractExternalHandoffUrl(careersHtml)) !== normalizeDomain(KEKA_BOARD_URL)
+    ) {
       throw new Error('HealthAsyst verified official careers handoff changed materially')
     }
 

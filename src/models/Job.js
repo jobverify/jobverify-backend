@@ -5,6 +5,7 @@
 
 import { Schema, model } from "mongoose";
 import { buildJobSearchKeys } from "../utils/jobSearchKeys.js";
+import { buildJobDerivedFields } from "../utils/jobDerivedFields.js";
 
 const JobSkillSchema = new Schema(
   {
@@ -80,6 +81,7 @@ const JobSchema = new Schema(
     location: { type: String, trim: true },
     city: { type: String, trim: true },
     cityKey: { type: String, trim: true, default: null },
+    publicCityKey: { type: String, trim: true, default: null },
     state: { type: String, trim: true, default: null },
     country: { type: String, trim: true, default: null },
     remoteStatus: { type: String, trim: true, default: null },
@@ -114,6 +116,13 @@ const JobSchema = new Schema(
       },
     },
     atsPlatform: { type: String, trim: true, default: null },
+    workdayApplicationStatus: {
+      type: String,
+      enum: ["available", "temporarily_unavailable", "unavailable"],
+      default: null,
+    },
+    workdayApplicationStatusReason: { type: String, trim: true, default: null },
+    workdayApplicationStatusCheckedAt: { type: Date, default: null },
     description: { type: String, trim: true, default: null },
     minimumQualification: { type: String, trim: true, default: null },
     preferredQualification: { type: String, trim: true, default: null },
@@ -148,6 +157,7 @@ const JobSchema = new Schema(
       unique: true,
     },
     postedAt: { type: Date },
+    sortDate: { type: Date, default: null },
     closingDate: { type: Date },
     scrapedAt: { type: Date, default: Date.now },
     scrapedTimestamp: { type: Date, default: Date.now },
@@ -159,6 +169,7 @@ const JobSchema = new Schema(
       default: "active",
       index: true,
     },
+    isPublicIndia: { type: Boolean, default: false, index: true },
     clickCount: { type: Number, default: 0 },
   },
   {
@@ -168,18 +179,18 @@ const JobSchema = new Schema(
 );
 
 JobSchema.pre("validate", function setJobSearchKeys(next) {
-  Object.assign(this, buildJobSearchKeys(this));
+  Object.assign(this, buildJobSearchKeys(this), buildJobDerivedFields(this));
   next();
 });
 
-JobSchema.index({ status: 1, postedAt: -1, createdAt: -1, _id: -1 });
+JobSchema.index({ status: 1, isPublicIndia: 1, sortDate: -1, _id: -1 });
 JobSchema.index({ status: 1, closingDate: 1 }); // query: roles closing soon
-JobSchema.index({ status: 1, clickCount: -1, postedAt: -1, _id: -1 }); // popularity sort
+JobSchema.index({ status: 1, isPublicIndia: 1, clickCount: -1, sortDate: -1, _id: -1 }); // popularity sort
 JobSchema.index({ status: 1, company: 1 }); // query meta & company queries
 JobSchema.index({ status: 1, city: 1 }); // query meta & city queries
-JobSchema.index({ status: 1, companyKey: 1, postedAt: -1, _id: -1 });
-JobSchema.index({ status: 1, locationKeys: 1, postedAt: -1, _id: -1 });
-JobSchema.index({ status: 1, companyKey: 1, locationKeys: 1, postedAt: -1, _id: -1 });
+JobSchema.index({ status: 1, isPublicIndia: 1, companyKey: 1, sortDate: -1, _id: -1 });
+JobSchema.index({ status: 1, isPublicIndia: 1, locationKeys: 1, sortDate: -1, _id: -1 });
+JobSchema.index({ status: 1, isPublicIndia: 1, companyKey: 1, locationKeys: 1, sortDate: -1, _id: -1 });
 JobSchema.index({ source: 1, status: 1, missedScrapeCount: 1 });
 JobSchema.index({ source: 1, status: 1, lastSeenAt: 1 });
 JobSchema.index({ location: 1 });
@@ -194,7 +205,7 @@ JobSchema.index({ status: 1, skillIds: 1 });
 JobSchema.index({ status: 1, requiredSkillIds: 1 });
 JobSchema.index({ status: 1, experienceBucket: 1 });
 JobSchema.index({ status: 1, experienceYears: 1 });
-JobSchema.index({ status: 1, experienceYears: 1, postedAt: -1, _id: -1 });
+JobSchema.index({ status: 1, isPublicIndia: 1, experienceYears: 1, sortDate: -1, _id: -1 });
 JobSchema.index({ status: 1, seniority: 1 });
 JobSchema.index({ status: 1, primaryRoleDomain: 1 });
 JobSchema.index({ status: 1, workArrangement: 1 });

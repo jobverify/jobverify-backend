@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { ATMECS_GLOBAL_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -40,6 +41,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
+export const isTrustedUnavailableFailure = (error) => {
+  const message = String(error?.message ?? error ?? '').toLowerCase()
+
+  return message.includes('enotfound')
+    || message.includes('getaddrinfo')
+    || message.includes('could not be resolved')
+    || (message.includes('net::err_failed') && message.includes('atmecs.com'))
+}
+
 export const hasOfficialJobsShellSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
@@ -59,18 +73,61 @@ export const hasPublicJobsSignal = (html = '') =>
 export const createAtmecsGlobalScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
   } = {}) {
-    const jobsHtml = await fetchText(CAREERS_URL)
+    let browserSession = null
 
-    if (hasPublicJobsSignal(jobsHtml)) {
-      throw new Error('ATMECS Global surface now appears to expose public jobs')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (!hasOfficialJobsShellSignal(jobsHtml)) {
-      throw new Error('ATMECS Global verified first-party jobs page no longer matches the trusted surface')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    return []
+    try {
+      let jobsHtml
+      try {
+        jobsHtml = await fetchPageText(CAREERS_URL)
+      } catch (error) {
+        if (isTrustedUnavailableFailure(error)) {
+          return []
+        }
+
+        throw error
+      }
+
+      if (hasPublicJobsSignal(jobsHtml)) {
+        throw new Error('ATMECS Global surface now appears to expose public jobs')
+      }
+
+      if (!hasOfficialJobsShellSignal(jobsHtml)) {
+        throw new Error('ATMECS Global verified first-party jobs page no longer matches the trusted surface')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

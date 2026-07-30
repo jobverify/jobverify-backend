@@ -25,6 +25,22 @@ const homepageHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Mute</title>
+    </head>
+    <body>
+      <nav>After-School Learn English Learn Maths Activity Kits Talent Search</nav>
+      <h1>Learning made fun for Curious Minds!</h1>
+      <p>Trusted by Olympiad Rankers</p>
+      <a href="https://www.pw.live/about-us">About Us</a>
+      <footer>Copyright © 2025 Physics Wallah Ltd. All rights reserved.</footer>
+    </body>
+  </html>
+`
+
 const contactHtml = `
   <!doctype html>
   <html lang="en">
@@ -94,6 +110,7 @@ test('CuriousJr sentinel pins the verified brand surfaces, parent-company career
     },
   ])
   assert.equal(curiousJr.hasCuriousJrHomeSignal(homepageHtml), true)
+  assert.equal(curiousJr.hasCuriousJrHomeSignal(currentHomepageHtml), true)
   assert.equal(curiousJr.hasCuriousJrContactSignal(contactHtml), true)
   assert.equal(curiousJr.hasParentCompanyBridgeSignal(parentAboutHtml), true)
   assert.equal(

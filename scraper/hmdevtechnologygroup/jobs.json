@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Mid and Senior ServiceNow Developers (Always Recruiting)",
+    "company": "Dev Technology Group",
+    "location": "Worldwide / India eligible",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "Worldwide / India eligible",
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "applyUrl": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "sourceUrl": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "source": "hmdevtechnologygroup",
+    "jobId": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "requisitionId": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "department": "ServiceNow-Development",
+    "employmentType": "Full Time",
+    "experienceRequired": "Mid-level, Senior",
+    "postingDate": "1970-01-21",
+    "expiresAt": "1970-01-21",
+    "jobDescription": "Dev's Talent Network is designed to create a network of talented applicants who are interested in working for Dev Technology and are waiting for a job opening that matches their skills and experience. Here you will find positions we are \"always recruiting\" as well as an opportunity to share your resume with Dev, even if the job position you seek is not listed here today. The Dev Talent Network is acommunityofhighly qualified technical and management professionalsrecognized by Dev to demonstrate strong alignment with our company culture.The Dev TalentNetwork is comprised of candidates, referrals, Dev alumni, andfellow colleagues with whom we have worked in the past. We’re excited to evolve the Dev Talent Networkso our membersstay connected with Dev and discover new career opportunities with us. Clearance: Public Trust or the ability to obtain a Public Trust clearance Dev Technology Group is looking for talented ServiceNow application developers at many levels of experience with specific, tangible experience in the following: Object oriented development experience focused on Javascript What You'll Be Doing: Serve as a ServiceNow developer on a cross-functional development team; Design and develop custom scoped applications on the Now Platform to meet business requirements, including implementation of client scripts, business rules, workflows, and custom Service Portal widgets Collaborate with application teams to design and implement data interfaces with other enterprise application systems Create and configure Business Rules, UI Policies, UI Actions, Client Scripts and ACLs including advanced scripting of each Develop and manage operational metrics reporting and dashboards Support the development and analysis of customer requirements and assist with the development of user stories Perform application testing Required Education, Skills and Experience: Bachelor’s degree in a related discipline, with 5+ years of relevant experience 5 or more years of development experience using the ServiceNow platform Experience with use of Agile methodologies for software development In depth knowledge of development on the ServiceNow Platform, including client and server scripting, ServiceNow REST APIs, and custom widget development in Service Portal. Experience with working to support a Federal Law Enforcement agency a plus. Experience developing, updating, and interpreting JavaScript on the ServiceNow platform Knowledge of ServiceNow development and configuration best practices Knowledge of ServiceNow database hierarchies and design Experience with development, customization, and administration of multiple components of ServiceNow Excellent communications skills Excellent teamwork skills Preferred Education Skills and Experience: ServiceNow Systems Administration certification strongly preferred Experience with Angular Experience or training with React ***By submitting your information you agree our talent recruitment team may use your contact information to reach out to you regarding new opportunities that may be applicable to your experience. Originally posted on Himalayas",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:28:04.863Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
+    "companyDomain": "himalayas.app"
+  }
+]

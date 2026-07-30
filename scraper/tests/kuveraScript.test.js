@@ -54,11 +54,35 @@ const spaShellHtml = `
 </html>
 `
 
+const currentAboutShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Kuvera by CRED</title>
+    <meta name="author" content="Kuvera Dev Team" />
+    <script src="https://assets2.kuvera.in/production/atlantis/web/assets/js/main.bdbffbba1285f001682c.js"></script>
+  </head>
+  <body>
+    <main></main>
+  </body>
+</html>
+`
+
 const appBundleText = `
 window.__APP__={};
+const pageTitle="Kuvera by CRED";
+const legalEntity="Arevuk Advisory Services Pvt Ltd";
+const assetPath="https://assets2.kuvera.in/production/atlantis/web/";
 const hiringBanner="JOIN OUR TEAM";
 const hiringHeading="We\\u2019re Hiring!";
 const hiringEmail="jobs@kuvera.in";
+`
+
+const currentAppBundleText = `
+window.__APP__={};
+const pageTitle="Kuvera by CRED";
+const legalEntity="Arevuk Advisory Services Pvt Ltd";
+const assetPath="https://assets2.kuvera.in/production/atlantis/web/";
 `
 
 const loadScriptModule = async () => {
@@ -84,10 +108,16 @@ test('Kuvera helper contract stays pinned to the verified first-party resume-onl
     kuvera.extractAppBundleUrl(spaShellHtml),
     'https://assets2.kuvera.in/production/atlantis/web/assets/js/main.12345678.js',
   )
+  assert.equal(
+    kuvera.extractAppBundleUrl(currentAboutShellHtml),
+    'https://assets2.kuvera.in/production/atlantis/web/assets/js/main.bdbffbba1285f001682c.js',
+  )
   assert.equal(kuvera.hasOfficialAboutPageSignal(aboutHtml), true)
+  assert.equal(kuvera.hasOfficialAboutPageShellSignal(currentAboutShellHtml), true)
   assert.equal(kuvera.hasPublicJobListingSignal(aboutHtml), false)
   assert.equal(kuvera.hasPublicJobListingSignal(publicJobsHtml), true)
   assert.equal(kuvera.hasVerifiedBundleHiringSignal(appBundleText), true)
+  assert.equal(kuvera.hasVerifiedBundleShellSignal(currentAppBundleText), true)
 })
 
 test('Kuvera returns no jobs only while the verified first-party about page stays resume-only', async () => {
@@ -139,6 +169,39 @@ test('Kuvera accepts the verified SPA shell plus first-party app bundle hiring s
   assert.deepEqual(requestedPages, [kuvera.ABOUT_URL])
   assert.deepEqual(requestedTexts, [
     'https://assets2.kuvera.in/production/atlantis/web/assets/js/main.12345678.js',
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Kuvera accepts the current official about-page shell and first-party app bundle and still returns no jobs', async () => {
+  const kuvera = await loadScriptModule()
+  const requestedPages = []
+  const requestedTexts = []
+
+  const jobs = await kuvera.createKuveraScraper().run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+
+      if (url === kuvera.ABOUT_URL) {
+        return { status: 200, url, html: currentAboutShellHtml }
+      }
+
+      throw new Error(`Unexpected Kuvera URL: ${url}`)
+    },
+    fetchText: async (url) => {
+      requestedTexts.push(url)
+
+      if (url === 'https://assets2.kuvera.in/production/atlantis/web/assets/js/main.bdbffbba1285f001682c.js') {
+        return currentAppBundleText
+      }
+
+      throw new Error(`Unexpected Kuvera asset URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedPages, [kuvera.ABOUT_URL])
+  assert.deepEqual(requestedTexts, [
+    'https://assets2.kuvera.in/production/atlantis/web/assets/js/main.bdbffbba1285f001682c.js',
   ])
   assert.deepEqual(jobs, [])
 })

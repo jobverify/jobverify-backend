@@ -7,7 +7,7 @@ const CAREERS_HTML = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <title>Careers - KocharTech</title>
+    <title>Careers - Technology Solutions | AI backed Knowledge Management, IoT, Device Care</title>
     <link rel="canonical" href="https://www.kochartech.com/careers/" />
   </head>
   <body>

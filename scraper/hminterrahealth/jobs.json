@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Interrahealth",
+    "company": "Interrahealth",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-development",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-development",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-development",
+    "source": "hminterrahealth",
+    "jobId": "hminterrahealth-current-openings",
+    "requisitionId": "hminterrahealth-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Interrahealth had current Himalayas hiring evidence for Software Developer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:29:59.506Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
+    "companyDomain": "himalayas.app"
+  }
+]

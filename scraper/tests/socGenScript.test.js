@@ -8,9 +8,9 @@ const careersPageHtml = `
     </head>
     <body>
       <h1>All Job offers at Societe Generale</h1>
-      <div>688 offre(s)</div>
-      <a href="https://careers.societegenerale.com/en/job-offers/product-owner-payments-25000AAA-en">
-        Product owner - Payments
+      <div>702 offre(s)</div>
+      <a href="https://careers.societegenerale.com/en/job-offers/senior-analyst-260009MF-en">
+        Senior Analyst
       </a>
       <div>Bangalore, India Permanent contract Banking operations processing</div>
       <a href="https://careers.societegenerale.com/en/job-offers/delivery-manager-25000FP8-en">
@@ -81,8 +81,8 @@ test('SocGen exports a stable exact-name wrapper over the verified Societe Gener
   assert.equal(socgen.COMPANY, 'SocGen')
   assert.equal(socgen.OFFICIAL_BRAND_NAME, 'Societe Generale')
   assert.equal(socgen.CAREERS_URL, 'https://careers.societegenerale.com/en/Technical/all-job-offers')
-  assert.equal(socgen.VERIFIED_ON, '2026-07-15')
-  assert.match(socgen.VERIFIED_SURFACE_SUMMARY, /688 offre\(s\)/i)
+  assert.equal(socgen.VERIFIED_ON, '2026-07-27')
+  assert.match(socgen.VERIFIED_SURFACE_SUMMARY, /702 offre\(s\)/i)
   assert.equal(socgen.hasVerifiedSocGenCareersPageSignal(careersPageHtml), true)
   assert.deepEqual(
     socgen.decorateSocGenJob(
@@ -95,7 +95,7 @@ test('SocGen exports a stable exact-name wrapper over the verified Societe Gener
         applyUrl: 'https://socgen.taleo.net/careersection/sgcareers/jobapply.ftl?job=25000FP8&lang=en&src=CWS-1',
         sourceUrl: 'https://careers.societegenerale.com/en/job-offers/delivery-manager-25000FP8-en',
       },
-      '2026-07-15T19:30:00.000Z',
+      '2026-07-27T19:30:00.000Z',
     ),
     {
       title: 'Delivery Manager',
@@ -108,7 +108,7 @@ test('SocGen exports a stable exact-name wrapper over the verified Societe Gener
       companyCareerPage: 'https://careers.societegenerale.com/en/Technical/all-job-offers',
       companyDomain: 'careers.societegenerale.com',
       atsPlatform: 'oracle-taleo',
-      scrapedAt: '2026-07-15T19:30:00.000Z',
+      scrapedAt: '2026-07-27T19:30:00.000Z',
     },
   )
 })
@@ -119,7 +119,7 @@ test('SocGen run validates the careers page and decorates jobs from the existing
 
   const jobs = await socgen.createSocGenScraper({
     maxJobs: 1,
-    now: () => '2026-07-15T19:30:00.000Z',
+    now: () => '2026-07-27T19:30:00.000Z',
   }).run({
     fetchPage: async (url) => {
       requests.push(url)
@@ -149,7 +149,7 @@ test('SocGen run validates the careers page and decorates jobs from the existing
   assert.equal(jobs[0].companyCareerPage, socgen.CAREERS_URL)
   assert.equal(jobs[0].companyDomain, 'careers.societegenerale.com')
   assert.equal(jobs[0].atsPlatform, 'oracle-taleo')
-  assert.equal(jobs[0].scrapedAt, '2026-07-15T19:30:00.000Z')
+  assert.equal(jobs[0].scrapedAt, '2026-07-27T19:30:00.000Z')
 })
 
 test('SocGen fails closed when the verified careers page drifts materially', async () => {

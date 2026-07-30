@@ -131,6 +131,28 @@ export const hasOfficialBoardSignal = (html) => {
     && /You need to enable JavaScript to run this app\./i.test(page)
 }
 
+export const extractOfficialBoardUrl = (html = '') => {
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const href = normalizeWhitespace(match[1])
+    const text = stripTags(match[2])?.toLowerCase() || ''
+
+    if (isVerifiedBoardUrl(href)) return href
+    if (/open roles|see all open roles/i.test(text) && isVerifiedBoardUrl(href)) return href
+  }
+
+  return null
+}
+
+export const hasOfficialCareersWrapperSignal = (html = '') => {
+  const normalized = stripTags(html)?.toLowerCase() || ''
+
+  return normalized.includes('life at idfy')
+    && normalized.includes('expect the unexpected')
+    && normalized.includes('helping a billion people move through life with trust')
+    && normalized.includes('open roles')
+    && extractOfficialBoardUrl(html) === BOARD_URL
+}
+
 export const buildFilteredJobsRequestBody = () => JSON.stringify(LIVE_FILTER_BODY)
 
 export const extractPublicJobs = (payload = {}) =>
@@ -208,10 +230,27 @@ export const createIdfyScraper = ({
     const now = options.now || (() => new Date().toISOString())
 
     const careersPage = await fetchPage(OFFICIAL_CAREERS_URL)
+    if (careersPage?.status !== 200) {
+      throw new Error('IDfy official careers handoff changed; refusing to guess the public jobs source')
+    }
+
+    let boardPage = null
+
+    if (isVerifiedBoardUrl(careersPage?.url) && hasOfficialBoardSignal(careersPage?.html)) {
+      boardPage = careersPage
+    } else if (
+      careersPage?.url === OFFICIAL_CAREERS_URL
+      && hasOfficialCareersWrapperSignal(careersPage?.html)
+    ) {
+      boardPage = await fetchPage(BOARD_URL)
+    } else {
+      throw new Error('IDfy official careers handoff changed; refusing to guess the public jobs source')
+    }
+
     if (
-      careersPage?.status !== 200
-      || !isVerifiedBoardUrl(careersPage?.url)
-      || !hasOfficialBoardSignal(careersPage?.html)
+      boardPage?.status !== 200
+      || !isVerifiedBoardUrl(boardPage?.url)
+      || !hasOfficialBoardSignal(boardPage?.html)
     ) {
       throw new Error('IDfy official careers handoff changed; refusing to guess the public jobs source')
     }

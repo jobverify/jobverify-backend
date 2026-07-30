@@ -18,6 +18,23 @@ const homepageHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <!doctype html>
+  <html lang="en-GB">
+    <head>
+      <title>iPhone &amp; Android Spyware Detection | Certo Software</title>
+    </head>
+    <body>
+      <h1>Your mobile privacy is our mission</h1>
+      <p>Think your phone has been hacked? Our trusted apps make it easy for you to scan, detect and remove threats from your iPhone and Android devices.</p>
+      <h2>At Certo, mobile security is not an afterthought, it’s what we do.</h2>
+      <a href="/about/">About us</a>
+      <a href="https://www.linkedin.com/company/certo-software/">LinkedIn</a>
+      <p>Copyright © 2026 Certo Software Limited | Registered in England &amp; Wales No. 10072356</p>
+    </body>
+  </html>
+`
+
 const aboutHtml = `
   <!doctype html>
   <html lang="en-GB">
@@ -85,6 +102,7 @@ test('Certo sentinel pins the verified official first-party no-public-careers su
     'https://www.certosoftware.com/jobs/',
   ])
   assert.equal(certo.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(certo.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(certo.hasOfficialAboutPageSignal(aboutHtml), true)
   assert.equal(certo.hasOfficialSitemapSignal(sitemapXml), true)
   assert.equal(certo.hasPublicJobsSignal(homepageHtml), false)

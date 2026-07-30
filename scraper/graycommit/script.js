@@ -56,23 +56,38 @@ export const hasOfficialCareersSignal = (html) => {
 const extractArticleBlocks = (html) => [...String(html ?? '').matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)]
   .map((match) => match[1])
 
-export const extractJobCards = (html) => extractArticleBlocks(html)
-  .map((articleHtml) => {
-    const title = normalizeText(articleHtml.match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1])
-    const paragraphs = [...articleHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
-      .map((match) => normalizeText(match[1]))
-      .filter(Boolean)
-    const locationData = normalizeLocation(paragraphs[0])
-    const jobDescription = paragraphs[1] || null
-    const applyUrl = normalizeText(
-      articleHtml.match(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>\s*apply\s+now\s*<\/a>/i)?.[1],
-    )
+const extractCurrentCardJobs = (html) => {
+  const jobs = []
+  const source = String(html ?? '')
 
-    if (!title || !locationData || !applyUrl) return null
+  for (const match of source.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const applyLabel = normalizeText(match[2])
+    if (!/^apply now$/i.test(applyLabel || '')) continue
+
+    const applyUrl = normalizeText(match[1])
+    const prefix = source.slice(Math.max(0, match.index - 2500), match.index)
+    const suffix = source.slice(match.index, Math.min(source.length, match.index + 2000))
+
+    const title = [...prefix.matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
+      .map((entry) => normalizeText(entry[1]))
+      .filter(Boolean)
+      .at(-1)
+
+    const location = [...prefix.matchAll(/(?:icon-map-pin|map-pin)[\s\S]*?(?:<\/svg>|<\/span>)\s*([^<]+)\s*<\/div>/gi)]
+      .map((entry) => normalizeText(entry[1]))
+      .filter(Boolean)
+      .at(-1)
+
+    const locationData = normalizeLocation(location)
+    const jobDescription = [...suffix.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map((entry) => normalizeText(entry[1]))
+      .filter(Boolean)
+      .find((value) => !/ready to join our mission|current openings/i.test(value)) || null
+
+    if (!title || !locationData || !applyUrl) continue
 
     const jobId = `${SOURCE}-${slugify(title)}-${slugify(locationData.city)}`
-
-    return {
+    jobs.push({
       title,
       company: COMPANY,
       department: null,
@@ -91,9 +106,59 @@ export const extractJobCards = (html) => extractArticleBlocks(html)
       postingDate: null,
       closingDate: null,
       jobDescription,
-    }
-  })
-  .filter(Boolean)
+    })
+  }
+
+  return jobs
+}
+
+export const extractJobCards = (html) => {
+  const articleJobs = extractArticleBlocks(html)
+    .map((articleHtml) => {
+      const title = normalizeText(articleHtml.match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1])
+      const paragraphs = [...articleHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+        .map((match) => normalizeText(match[1]))
+        .filter(Boolean)
+      const locationData = normalizeLocation(paragraphs[0])
+      const jobDescription = paragraphs[1] || null
+      const applyUrl = normalizeText(
+        articleHtml.match(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>\s*apply\s+now\s*<\/a>/i)?.[1],
+      )
+
+      if (!title || !locationData || !applyUrl) return null
+
+      const jobId = `${SOURCE}-${slugify(title)}-${slugify(locationData.city)}`
+
+      return {
+        title,
+        company: COMPANY,
+        department: null,
+        location: locationData.location,
+        city: locationData.city,
+        country: locationData.country,
+        jobId,
+        requisitionId: jobId,
+        sourceUrl: CAREERS_URL,
+        applyUrl,
+        employmentType: null,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription,
+      }
+    })
+    .filter(Boolean)
+
+  const jobsById = new Map(articleJobs.map((job) => [job.jobId, job]))
+  for (const job of extractCurrentCardJobs(html)) {
+    jobsById.set(job.jobId, job)
+  }
+
+  return [...jobsById.values()]
+}
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {

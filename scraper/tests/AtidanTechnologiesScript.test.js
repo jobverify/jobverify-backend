@@ -26,6 +26,29 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers - Atidan Technologies Pvt. Ltd.</title>
+  </head>
+  <body>
+    <main>
+      <h1>What is it like working on cutting edge technology</h1>
+      <p>Creating exceptional careers with a strong purpose.</p>
+      <article class="post post-item isotope-item clearfix no-img category-job">
+        <div class="date_label">June 19, 2026</div>
+        <div class="post-title"><h4 class="entry-title"><a href="https://atidantech.com/sccm-l3-engineer/">SCCM L3 Engineer</a></h4></div>
+      </article>
+      <article class="post post-item isotope-item clearfix no-img category-job">
+        <div class="date_label">June 8, 2026</div>
+        <div class="post-title"><h4 class="entry-title"><a href="https://atidantech.com/servicenow-hrsd-developer/">ServiceNow HRSD Developer</a></h4></div>
+      </article>
+    </main>
+  </body>
+</html>
+`
+
 const sccmDetailHtml = `
 <!doctype html>
 <html lang="en">
@@ -105,6 +128,24 @@ test('Atidan Technologies helpers stay pinned to the verified careers archive an
   ])
 })
 
+test('Atidan Technologies accepts the current careers archive cards with date_label metadata', async () => {
+  const atidan = await loadModule()
+
+  assert.equal(atidan.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.deepEqual(atidan.extractRoleSummaries(currentCareersHtml), [
+    {
+      title: 'SCCM L3 Engineer',
+      detailUrl: 'https://atidantech.com/sccm-l3-engineer/',
+      postingDate: '2026-06-19',
+    },
+    {
+      title: 'ServiceNow HRSD Developer',
+      detailUrl: 'https://atidantech.com/servicenow-hrsd-developer/',
+      postingDate: '2026-06-08',
+    },
+  ])
+})
+
 test('Atidan Technologies run validates the verified careers archive before hydrating detail pages', async () => {
   const atidan = await loadModule()
   const requestedUrls = []
@@ -129,6 +170,36 @@ test('Atidan Technologies run validates the verified careers archive before hydr
   assert.equal(jobs[0].source, 'atidantechnologies')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
   assert.equal(jobs[1].title, 'ServiceNow HRSD Developer')
+})
+
+test('Atidan Technologies overlaps detail page fetches so live-slow role pages do not time out sequentially', async () => {
+  const atidan = await loadModule()
+  let activeDetails = 0
+  let maxActiveDetails = 0
+
+  const jobs = await atidan.createAtidanTechnologiesScraper().run({
+    now: () => FIXED_SCRAPED_AT,
+    fetchText: async (url) => {
+      if (url === atidan.CAREERS_URL) return currentCareersHtml
+
+      if (
+        url === 'https://atidantech.com/sccm-l3-engineer/'
+        || url === 'https://atidantech.com/servicenow-hrsd-developer/'
+      ) {
+        activeDetails += 1
+        maxActiveDetails = Math.max(maxActiveDetails, activeDetails)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        activeDetails -= 1
+
+        return url.includes('sccm-l3-engineer') ? sccmDetailHtml : hrsdDetailHtml
+      }
+
+      throw new Error(`Unexpected Atidan URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.ok(maxActiveDetails > 1, `expected overlapping detail fetches, saw max concurrency ${maxActiveDetails}`)
 })
 
 test('Atidan Technologies run fails closed when the verified careers archive drifts', async () => {

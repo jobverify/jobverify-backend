@@ -87,13 +87,26 @@ const normalizeExperience = (value) => {
 }
 
 const extractJobDescription = (html = '') => {
-  const match = String(html ?? '').match(
+  const page = String(html ?? '')
+  const directResponsibilitiesMatch = page.match(
     /<p><strong>\s*(?:<span[^>]*>)?Direct Responsibilities(?:<\/span>)?\s*<\/strong><\/p>[\s\S]*?<ul>([\s\S]*?)<\/ul>/i,
   )
-  if (!match) return null
+  const modernResponsibilitiesMatch = page.match(
+    /Direct Responsibilities[\s\S]*?<\/ul>\s*<div>\s*<ul>([\s\S]*?)<\/ul>/i,
+  )
+  const listOnlyResponsibilitiesMatch = page.match(
+    /<h3[^>]+class=["'][^"']*JobTitle[^"']*["'][^>]*>[\s\S]*?<\/h3>\s*<hr[^>]*>\s*<ul>([\s\S]*?)<\/ul>/i,
+  )
+  const listHtml =
+    directResponsibilitiesMatch?.[1]
+    || modernResponsibilitiesMatch?.[1]
+    || listOnlyResponsibilitiesMatch?.[1]
 
-  const items = Array.from(match[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi))
+  if (!listHtml) return null
+
+  const items = Array.from(listHtml.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi))
     .map((item) => stripTags(item[1]))
+    .map((item) => item?.replace(/^[•\u2022]\s*/, '') || item)
     .filter(Boolean)
 
   return items[0] ?? null

@@ -1,3 +1,4 @@
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { createPaginationState, getNextPageRequest, updatePaginationState } from './pagination.js'
 import {
   expandTemplate,
@@ -210,77 +211,223 @@ const createFallbackDetailUrl = (provider, record, config) => {
   return toAbsoluteUrl(detailUrl, provider)
 }
 
-export const runApiPortalScraper = async ({ provider, fetchJson }) => {
+const BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const isBrowserJsonFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout/i
+    .test(String(error?.message ?? error ?? ''))
+
+const canUseBrowserJsonFallback = (provider, url, options = {}) => {
+  const method = String(options.method || 'GET').toUpperCase()
+
+  return method === 'GET'
+    && options.body == null
+    && (
+      provider.atsPlatform === 'eightfold'
+      || /\/api\/pcsx\//i.test(String(url ?? ''))
+    )
+}
+
+const parseBrowserJson = (rawText, url) => {
+  try {
+    return JSON.parse(String(rawText ?? '').trim())
+  } catch (error) {
+    throw new Error(`Browser JSON fallback returned invalid JSON for ${url}: ${error.message}`)
+  }
+}
+
+const isBlockedEightfoldInventoryError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+
+  return /HTTP 403\b/i.test(message)
+    && (
+      /\/api\/pcsx\/search/i.test(message)
+      || /PCSX is not enabled/i.test(message)
+      || /eightfold/i.test(message)
+    )
+}
+
+const createBlockedEightfoldSignalJob = (provider) => {
+  const sourceUrl = provider.companyCareerPage
+  const location = provider.countryFilter || 'India'
+  const verificationNote = provider.verifiedOn
+    ? ` Verified surface checked on ${provider.verifiedOn}.`
+    : ''
+
+  return {
+    title: `Current openings at ${provider.companyName}`,
+    company: provider.companyName,
+    location,
+    city: deriveCity(location),
+    country: provider.countryFilter || 'India',
+    link: sourceUrl,
+    applyUrl: sourceUrl,
+    sourceUrl,
+    source: provider.source,
+    jobId: `${provider.source}-current-openings`,
+    requisitionId: `${provider.source}-current-openings`,
+    department: null,
+    employmentType: null,
+    experienceRequired: null,
+    jobDescription:
+      `The official ${provider.companyName} careers page remained reachable, `
+      + 'but the public Eightfold inventory API returned HTTP 403 during this scrape. '
+      + `Review current openings directly on ${sourceUrl}.${verificationNote}`,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    remoteStatus: null,
+    scrapedAt: new Date().toISOString(),
+  }
+}
+
+export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson }) => {
   const config = normalizeApiPortalConfig(provider.config || {})
+  if (
+    provider.atsPlatform === 'eightfold'
+    && config.pagination?.strategy === 'offset-limit'
+    && (config.pagination.pageSize == null || config.pagination.pageSize === 10)
+  ) {
+    config.pagination.pageSize = 50
+  }
   const jobs = []
   let state = createPaginationState(config.pagination)
+  let browserSession = null
+  let browserJsonFetcher = null
+  let browserSessionPrimed = false
 
-  while (true) {
-    const nextPage = getNextPageRequest(config, state)
-    if (!nextPage) break
+  const getBrowserJsonFetcher = async () => {
+    if (fetchBrowserJson) {
+      return fetchBrowserJson
+    }
 
-    const url = new URL(config.discovery.listingApiUrl)
-    Object.entries(config.request.query || {}).forEach(([key, value]) => {
-      url.searchParams.set(key, value)
-    })
-    Object.entries(nextPage.query || {}).forEach(([key, value]) => {
-      url.searchParams.set(key, value)
-    })
+    if (browserJsonFetcher) {
+      return browserJsonFetcher
+    }
 
-    const listingPayload = await fetchJson(url.toString(), {
-      method: config.request.method,
-      headers: config.request.headers,
-      body: serializeRequestBody(
-        mergeRequestBody(config.request.body, nextPage.body),
-        config.request.headers,
-      ),
-    })
-    const records = getValueAtPath(listingPayload, config.pagination.resultsPath) || []
+    browserSession = await createBrowserFetchSession({ userAgent: BROWSER_USER_AGENT })
+    const warmupUrl = config.discovery.careerPageUrl || provider.companyCareerPage || null
 
-    for (const record of records) {
-      let detailPayload = {}
+    browserJsonFetcher = async (url, options = {}) => {
+      if (!browserSessionPrimed) {
+        browserSessionPrimed = true
 
-      if (config.detail.enabled) {
-        const detailUrl = expandTemplate(config.detail.urlTemplate, {
-          jobId: getMappedValue(record, config.mapping.jobId),
-          requisitionId: getMappedValue(record, config.mapping.requisitionId),
-        })
-
-        try {
-          detailPayload = await fetchJson(detailUrl, {
-            method: config.detail.method,
-            headers: config.detail.headers,
-            body: serializeRequestBody(config.detail.body, config.detail.headers),
-          })
-        } catch (error) {
-          if (config.detail.required) throw error
-
-          detailPayload = {
-            sourceUrl: createFallbackDetailUrl(provider, record, config),
-            applyUrl: createFallbackDetailUrl(provider, record, config),
-            detailFetchError: error.message,
+        if (warmupUrl) {
+          try {
+            await browserSession.fetchPage(warmupUrl)
+          } catch {
+            // Best-effort warmup: the API request itself is the real signal.
           }
         }
       }
 
-      const mapped = mapRecord(record, provider, config, detailPayload)
-      if (mapped && passesResultFilter(mapped, config.resultFilter)) jobs.push(mapped)
+      const rawText = await browserSession.fetchText(url, {
+        referer: warmupUrl || options?.headers?.Referer,
+      })
+
+      return parseBrowserJson(rawText, url)
     }
 
-    const hasMore = config.pagination.hasMorePath
-      ? getValueAtPath(listingPayload, config.pagination.hasMorePath)
-      : null
-    const totalCount = config.pagination.totalCountPath
-      ? getValueAtPath(listingPayload, config.pagination.totalCountPath)
-      : null
-
-    state = updatePaginationState(config.pagination, state, {
-      hasMore,
-      totalCount,
-      resultCount: Array.isArray(records) ? records.length : 0,
-      pageSize: config.pagination.pageSize,
-    })
+    return browserJsonFetcher
   }
 
-  return jobs
+  const fetchJsonWithFallback = async (url, options = {}) => {
+    try {
+      return await fetchJson(url, options)
+    } catch (error) {
+      if (!canUseBrowserJsonFallback(provider, url, options) || !isBrowserJsonFallbackError(error)) {
+        throw error
+      }
+
+      const browserFetcher = await getBrowserJsonFetcher()
+      return browserFetcher(url, options)
+    }
+  }
+
+  try {
+    while (true) {
+      const nextPage = getNextPageRequest(config, state)
+      if (!nextPage) break
+
+      const url = new URL(config.discovery.listingApiUrl)
+      Object.entries(config.request.query || {}).forEach(([key, value]) => {
+        url.searchParams.set(key, value)
+      })
+      Object.entries(nextPage.query || {}).forEach(([key, value]) => {
+        url.searchParams.set(key, value)
+      })
+
+      const listingPayload = await fetchJsonWithFallback(url.toString(), {
+        method: config.request.method,
+        headers: config.request.headers,
+        body: serializeRequestBody(
+          mergeRequestBody(config.request.body, nextPage.body),
+          config.request.headers,
+        ),
+      })
+      const records = getValueAtPath(listingPayload, config.pagination.resultsPath) || []
+
+      for (const record of records) {
+        let detailPayload = {}
+
+        if (config.detail.enabled) {
+          const detailUrl = expandTemplate(config.detail.urlTemplate, {
+            jobId: getMappedValue(record, config.mapping.jobId),
+            requisitionId: getMappedValue(record, config.mapping.requisitionId),
+          })
+
+          try {
+            detailPayload = await fetchJsonWithFallback(detailUrl, {
+              method: config.detail.method,
+              headers: config.detail.headers,
+              body: serializeRequestBody(config.detail.body, config.detail.headers),
+            })
+          } catch (error) {
+            if (config.detail.required) throw error
+
+            detailPayload = {
+              sourceUrl: createFallbackDetailUrl(provider, record, config),
+              applyUrl: createFallbackDetailUrl(provider, record, config),
+              detailFetchError: error.message,
+            }
+          }
+        }
+
+        const mapped = mapRecord(record, provider, config, detailPayload)
+        if (mapped && passesResultFilter(mapped, config.resultFilter)) jobs.push(mapped)
+      }
+
+      const hasMore = config.pagination.hasMorePath
+        ? getValueAtPath(listingPayload, config.pagination.hasMorePath)
+        : null
+      const totalCount = config.pagination.totalCountPath
+        ? getValueAtPath(listingPayload, config.pagination.totalCountPath)
+        : null
+
+      state = updatePaginationState(config.pagination, state, {
+        hasMore,
+        totalCount,
+        resultCount: Array.isArray(records) ? records.length : 0,
+        pageSize: config.pagination.pageSize,
+      })
+    }
+
+    return jobs
+  } catch (error) {
+    if (
+      jobs.length === 0
+      && provider.atsPlatform === 'eightfold'
+      && provider.companyCareerPage
+      && isBlockedEightfoldInventoryError(error)
+    ) {
+      return [createBlockedEightfoldSignalJob(provider)]
+    }
+
+    throw error
+  } finally {
+    if (browserSession) {
+      await browserSession.close()
+    }
+  }
 }

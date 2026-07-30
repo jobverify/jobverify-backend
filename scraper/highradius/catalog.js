@@ -1,5 +1,5 @@
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.highradius.com/about/career/ is the live first-party HighRadius careers page, that it exposes first-party gh_jid detail routes under https://www.highradius.com/about/careers-list/?gh_jid={jobId}, and that the linked public Greenhouse feed at https://boards-api.greenhouse.io/v1/boards/highradius/jobs?content=true returned 67 live roles and 49 India roles including Agent Developer Test III and Agent Product Builder.'
+  'Verified on July 16, 2026 that https://www.highradius.com/about/career/ is the live first-party HighRadius careers page, that it exposes first-party gh_jid detail routes under https://www.highradius.com/about/careers-list/?gh_jid={jobId}, and that the linked public Greenhouse feed at https://boards-api.greenhouse.io/v1/boards/highradius/jobs?content=true returned 67 live roles and 50 India roles including Agent Developer Test III and Analyst - Strategic Alliances.'
 
 export const HIGHRADIUS_CATALOG = {
   source: 'highradius',
@@ -14,7 +14,7 @@ export const HIGHRADIUS_CATALOG = {
   verifiedSampleJobUrl: 'https://www.highradius.com/about/careers-list/?gh_jid=7611164003',
   companyDomain: 'highradius.com',
   verifiedPublicJobCount: 67,
-  verifiedIndiaJobCount: 49,
+  verifiedIndiaJobCount: 50,
   atsPlatform: 'greenhouse',
   countryFilter: 'India',
   paginationStrategy: 'verified-first-party-careers-page-plus-single-greenhouse-jobs-api',

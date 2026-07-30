@@ -35,6 +35,10 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const extractTitle = (html) => normalizeWhitespace(
+  decodeHtmlEntities(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null),
+)
+
 const normalizeText = (value) => normalizeWhitespace(
   String(value ?? '')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -127,12 +131,17 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /<title>\s*Sauce Labs Careers & Opportunities\s*<\/title>/i.test(page)
+  return extractTitle(page) === 'Sauce Labs Careers & Opportunities'
     && normalized.includes('see openings')
     && normalized.includes('current positions at sauce labs')
     && normalized.includes('departments')
     && normalized.includes('locations')
 }
+
+const normalizeCompanyName = (value) => normalizeWhitespace(value)
+  ?.replace(/\binc\.?$/i, '')
+  .trim()
+  .toLowerCase() || null
 
 const getValidatedJobs = (payload) => {
   const jobs = Array.isArray(payload?.jobs) ? payload.jobs : null
@@ -144,13 +153,13 @@ const getValidatedJobs = (payload) => {
     const jobId = normalizeWhitespace(job?.id)
     const title = normalizeWhitespace(job?.title)
     const absoluteUrl = normalizeGreenhouseAbsoluteUrl(job?.absolute_url, jobId)
-    const companyName = normalizeWhitespace(job?.company_name)
+    const companyName = normalizeCompanyName(job?.company_name)
 
     if (!jobId || !title || !absoluteUrl) {
       throw new Error('Verified Sauce Labs greenhouse payload changed materially')
     }
 
-    if (companyName && companyName.toLowerCase() !== COMPANY.toLowerCase()) {
+    if (companyName && companyName !== COMPANY.toLowerCase()) {
       throw new Error('Verified Sauce Labs greenhouse payload changed materially')
     }
   }
@@ -225,7 +234,10 @@ export const createSauceLabsScraper = ({
       browser = await launchBrowser()
       const page = await createOptimizedPage(browser)
 
-      await page.goto(CAREERS_PAGE_URL, { waitUntil: 'networkidle2' })
+      await page.goto(CAREERS_PAGE_URL, {
+        waitUntil: 'domcontentloaded',
+        timeout: 60000,
+      })
 
       const careersHtml = await page.content()
       if (!hasOfficialCareersSignal(careersHtml)) {

@@ -46,11 +46,16 @@ const defaultFetchPage = async (url) => {
 }
 
 export const hasCompromisedHomepageSignal = (html = '') => {
+  const rawHtml = String(html ?? '').toLowerCase()
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('deposit pulsa indosat')
+  const hasSlotBaitCopy = normalized.includes('deposit pulsa indosat')
     && normalized.includes('slot pulsa')
-    && normalized.includes('powered by team')
+  const hasVerifiedCompromisedHostSignal = normalized.includes('powered by team')
+    || rawHtml.includes('bigskyworldview')
+    || rawHtml.includes('view.bigskyworldview.org')
+
+  return hasSlotBaitCopy && hasVerifiedCompromisedHostSignal
 }
 
 const redirectsOutsideOfficialDomain = (url) => {

@@ -136,7 +136,7 @@ test('Sify Technologies stays pinned to the verified first-party Tallite endpoin
 
   assert.equal(sifyTechnologies.SOURCE, 'sifytechnologies')
   assert.equal(sifyTechnologies.COMPANY_NAME, 'Sify Technologies')
-  assert.equal(sifyTechnologies.VERIFIED_ON, '2026-07-17')
+  assert.equal(sifyTechnologies.VERIFIED_ON, '2026-07-26')
   assert.equal(sifyTechnologies.ABOUT_URL, 'https://www.sifytechnologies.com/about-us/')
   assert.equal(sifyTechnologies.CAREERS_URL, 'https://sifycareer.tallite.com/')
   assert.equal(sifyTechnologies.JOBS_PAGE_URL, 'https://sifycareer.tallite.com/jobs')
@@ -233,7 +233,7 @@ test('Sify Technologies run verifies the official first-party careers handoff be
   const jobs = await sifyTechnologies.createSifyTechnologiesScraper({
     maxPages: 1,
     maxJobs: 1,
-    now: () => '2026-07-17T00:00:00.000Z',
+    now: () => '2026-07-26T00:00:00.000Z',
     fetchText: async (url) => {
       requestedTextUrls.push(url)
       if (url === sifyTechnologies.ABOUT_URL) return ABOUT_HTML
@@ -286,7 +286,7 @@ test('Sify Technologies run verifies the official first-party careers handoff be
   assert.equal(jobs[0].source, 'sifytechnologies')
   assert.equal(jobs[0].company, 'Sify Technologies')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, '2026-07-17T00:00:00.000Z')
+  assert.equal(jobs[0].scrapedAt, '2026-07-26T00:00:00.000Z')
 })
 
 test('Sify Technologies fails closed when the verified about page or encrypted Tallite payload contract drifts', async () => {

@@ -1,0 +1,104 @@
+import assert from 'node:assert/strict'
+import path from 'node:path'
+import test from 'node:test'
+import { fileURLToPath } from 'node:url'
+
+import {
+  runWorkdayScraper,
+  shouldFetchWorkdayJobDetail,
+} from '../myworkday/engine.js'
+
+const testsDir = path.dirname(fileURLToPath(import.meta.url))
+
+test('shouldFetchWorkdayJobDetail skips obvious non-India country-code summaries while keeping India-prefixed ones', () => {
+  assert.equal(
+    shouldFetchWorkdayJobDetail({ location: 'CO - Bogota' }),
+    false,
+  )
+
+  assert.equal(
+    shouldFetchWorkdayJobDetail({ location: 'TH - Laem Chabang' }),
+    false,
+  )
+
+  assert.equal(
+    shouldFetchWorkdayJobDetail({ location: 'IN - Chennai' }),
+    true,
+  )
+})
+
+test('runWorkdayScraper jobs-api mode skips leaked non-India country-code listings before detail fetches', async () => {
+  const originalFetch = global.fetch
+  const detailUrls = []
+
+  global.fetch = async (url, options = {}) => {
+    if ((options.method || 'GET') === 'POST') {
+      return {
+        ok: true,
+        status: 200,
+        url,
+        headers: { get: () => 'application/json' },
+        json: async () => ({
+          total: 2,
+          jobPostings: [
+            {
+              title: 'Customs Operations Associate',
+              externalPath: '/job/CO---Bogota/Customs-Operations-Associate_R186594',
+              locationsText: 'CO - Bogota',
+              postedOn: 'Today',
+            },
+            {
+              title: 'Senior Specialist - Workflow Management',
+              externalPath: '/job/IN---Chennai/Senior-Specialist---Workflow-Management_R190557',
+              locationsText: 'IN - Chennai',
+              postedOn: 'Today',
+            },
+          ],
+        }),
+      }
+    }
+
+    if (url.includes('/job/')) {
+      detailUrls.push(url)
+      return {
+        ok: true,
+        status: 200,
+        url,
+        headers: { get: () => 'text/html' },
+        text: async () => '<html><body>India detail page</body></html>',
+      }
+    }
+
+    return {
+      ok: true,
+      status: 200,
+      url,
+      headers: {
+        getSetCookie: () => [],
+        get: () => 'text/html; charset=UTF-8',
+      },
+      text: async () => '<html><body>Workday shell</body></html>',
+    }
+  }
+
+  try {
+    const jobs = await runWorkdayScraper({
+      company: 'Scope Guard Test',
+      baseUrl: 'https://scope-guard-test.wd5.myworkdayjobs.com/External',
+      locationCountry: 'india-id',
+      source: 'scope-guard-test',
+      scraperDir: path.join(testsDir, '../myworkday'),
+      requestTimeoutMs: 1000,
+      retryBaseDelayMs: 0,
+    })
+
+    assert.equal(jobs.length, 1)
+    assert.equal(jobs[0].title, 'Senior Specialist - Workflow Management')
+    assert.equal(jobs[0].location, 'IN - Chennai')
+    assert.deepEqual(detailUrls, [
+      'https://scope-guard-test.wd5.myworkdayjobs.com/External/job/IN---Chennai/Senior-Specialist---Workflow-Management_R190557',
+    ])
+  } finally {
+    global.fetch = originalFetch
+  }
+})

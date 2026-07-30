@@ -15,7 +15,7 @@ const buildCareersPageHtml = () => `
       <h1>Join us</h1>
       <a href="https://www.highradius.com/about/careers-list/?gh_jid=6542907003">Account Executive - Enterprise Net-New</a>
       <a href="https://www.highradius.com/about/careers-list/?gh_jid=7611164003">Agent Developer Test III</a>
-      <a href="https://www.highradius.com/about/careers-list/?gh_jid=7718212003">Agent Product Builder</a>
+      <a href="https://www.highradius.com/about/careers-list/?gh_jid=7701514003">Analyst - Strategic Alliances</a>
       <p>Explore Opportunities</p>
       <h2>Find Your Best Fit</h2>
       <span>Select Location</span>
@@ -48,21 +48,21 @@ const greenhousePayload = {
       offices: [{ location: 'Hyderabad, Telangana, India' }],
     },
     {
-      id: 7718212003,
-      title: 'Agent Product Builder',
+      id: 7701514003,
+      title: 'Analyst - Strategic Alliances',
       location: { name: 'Hyderabad, Telangana, India' },
-      absolute_url: 'https://www.highradius.com/about/careers-list/?gh_jid=7718212003&utm_source=homepage',
-      requisition_id: '20260218',
+      absolute_url: 'https://www.highradius.com/about/careers-list/?gh_jid=7701514003',
+      requisition_id: '20260409',
       company_name: 'HighRadius',
-      updated_at: '2026-06-29T04:29:19-04:00',
-      first_published: '2026-06-28T04:15:00-04:00',
-      content: '&lt;p&gt;Build agentic AI product experiences for finance users.&lt;/p&gt;',
+      updated_at: '2026-06-23T08:16:55-04:00',
+      first_published: '2026-04-20T06:15:11-04:00',
+      content: '&lt;p&gt;Drive partnership strategy with research and stakeholder management.&lt;/p&gt;',
       metadata: [
-        { name: 'Sub Department', value: 'Product CFOTech AP & Payments' },
+        { name: 'Sub Department', value: 'Sales Strategic Alliance' },
         { name: 'Remote Position', value: false },
-        { name: 'Experience Range', value: ['3.1 to 5.0 Years'] },
+        { name: 'Experience Range', value: ['3.0 to 5.0 Years'] },
       ],
-      departments: [{ name: 'Product & Engineering' }],
+      departments: [{ name: 'Sales' }],
       offices: [{ location: 'Hyderabad, Telangana, India' }],
     },
     {
@@ -107,14 +107,14 @@ test('HighRadius pins the verified first-party careers page and Greenhouse hando
   assert.equal(highRadius.hasOfficialCareersPageSignal(buildCareersPageHtml()), true)
   assert.deepEqual(
     highRadius.extractFirstPartyJobIdsFromCareersPage(buildCareersPageHtml()),
-    ['6542907003', '7611164003', '7718212003'],
+    ['6542907003', '7611164003', '7701514003'],
   )
   assert.equal(
     highRadius.normalizeHighRadiusJobUrl(
-      'https://www.highradius.com/about/careers-list/?gh_jid=7718212003&utm_source=homepage',
-      7718212003,
+      'https://www.highradius.com/about/careers-list/?gh_jid=7701514003&utm_source=homepage',
+      7701514003,
     ),
-    'https://www.highradius.com/about/careers-list/?gh_jid=7718212003',
+    'https://www.highradius.com/about/careers-list/?gh_jid=7701514003',
   )
 })
 
@@ -122,7 +122,7 @@ test('HighRadius extracts only India jobs from the verified Greenhouse payload a
   const highRadius = await loadHighRadiusModule()
 
   const jobs = highRadius.extractIndiaJobsFromGreenhousePayload(greenhousePayload, {
-    allowedJobIds: new Set(['7611164003', '7718212003']),
+    allowedJobIds: new Set(['7611164003', '7701514003']),
     scrapedAt: FIXED_SCRAPED_AT,
   })
 
@@ -152,25 +152,25 @@ test('HighRadius extracts only India jobs from the verified Greenhouse payload a
       scrapedAt: FIXED_SCRAPED_AT,
     },
     {
-      title: 'Agent Product Builder',
+      title: 'Analyst - Strategic Alliances',
       company: 'HighRadius',
       location: 'Hyderabad, Telangana, India',
       city: 'Hyderabad',
       country: 'India',
-      link: 'https://www.highradius.com/about/careers-list/?gh_jid=7718212003',
-      applyUrl: 'https://www.highradius.com/about/careers-list/?gh_jid=7718212003',
-      sourceUrl: 'https://www.highradius.com/about/careers-list/?gh_jid=7718212003',
+      link: 'https://www.highradius.com/about/careers-list/?gh_jid=7701514003',
+      applyUrl: 'https://www.highradius.com/about/careers-list/?gh_jid=7701514003',
+      sourceUrl: 'https://www.highradius.com/about/careers-list/?gh_jid=7701514003',
       source: 'highradius',
-      jobId: '7718212003',
-      requisitionId: '20260218',
-      department: 'Product & Engineering',
+      jobId: '7701514003',
+      requisitionId: '20260409',
+      department: 'Sales',
       employmentType: null,
-      experienceRequired: '3.1 to 5.0 Years',
-      jobDescription: 'Build agentic AI product experiences for finance users.',
+      experienceRequired: '3.0 to 5.0 Years',
+      jobDescription: 'Drive partnership strategy with research and stakeholder management.',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '2026-06-29T04:29:19-04:00',
+      postingDate: '2026-06-23T08:16:55-04:00',
       remoteStatus: 'On-site',
       scrapedAt: FIXED_SCRAPED_AT,
     },
@@ -214,7 +214,7 @@ test('HighRadius fails closed when the first-party careers page or Greenhouse co
 
   await assert.rejects(
     highRadius.createHighRadiusScraper().run({
-      fetchText: async () => buildCareersPageHtml().replace('Agent Product Builder', 'Missing job'),
+      fetchText: async () => buildCareersPageHtml().replace('Analyst - Strategic Alliances', 'Missing job'),
       fetchJson: async () => greenhousePayload,
     }),
     /verified first-party careers page/i,

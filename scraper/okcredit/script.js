@@ -53,7 +53,6 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*Best Digital Bahi Khata & Ledger App \| OkCredit\s*<\/title>/i.test(page)
     && /Digital Udhar Bahi Khata/i.test(page)
     && /Keep track of receivables and payables\. Make collections simpler and faster\./i.test(page)
-    && /Spread across 2,800 cities/i.test(page)
     && /OkCredit Psi Phi Global Solutions Pvt\. Ltd\./i.test(page)
 }
 
@@ -86,6 +85,10 @@ export const createOkCreditScraper = () => ({
 
     if (hasPublicJobsSignal(careersPage.html)) {
       throw new Error('OkCredit careers page now appears to expose public jobs')
+    }
+
+    if (hasOfficialHomepageSignal(careersPage.html)) {
+      return []
     }
 
     if (!hasOfficialCareersSignal(careersPage.html)) {

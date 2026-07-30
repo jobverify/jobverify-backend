@@ -79,9 +79,25 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && !pageShowsPublicJobs(page)
 }
 
+const hasVerifiedLavoraConNoiInfoSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title[^>]*>[^<]*Lavora con noi/i.test(page)
+    && normalized.includes('Lavora con noi')
+    && normalized.includes('contact@sipal.it')
+    && normalized.includes('Corso Vittorio Emanuele II')
+    && !pageShowsPublicJobs(page)
+}
+
 export const isVerifiedNoTrustPublicJobRoute = (page = {}) =>
-  Number(page.status) === 404
-  && !pageShowsPublicJobs(page.html)
+  (
+    Number(page.status) === 404
+    && !pageShowsPublicJobs(page.html)
+  ) || (
+    Number(page.status) === 200
+    && hasVerifiedLavoraConNoiInfoSignal(page.html)
+  )
 
 export const createSipalTechnologiesIndiaPrivateLimitedScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

@@ -1,0 +1,23 @@
+{
+  "source": "jungleworks",
+  "companyName": "Jungleworks",
+  "officialBrandName": "Jungleworks",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../jungleworks/script.js",
+  "dryRunFile": "jungleworks/jobs.json",
+  "companyCareerPage": "https://jungleworks.com/careers/",
+  "companyDomain": "jungleworks.com",
+  "atsPlatform": "zoho-recruit-official-ats-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-official-ats-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+official-zoho-recruit-handoff-without-enumerable-public-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://jungleworks.com/careers/",
+  "officialAtsUrl": "https://jungleworks.zohorecruit.in/jobs/Careers",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://jungleworks.com/careers/ is Jungleworks' first-party careers page and its Apply Now link hands off to https://jungleworks.zohorecruit.in/jobs/Careers, Jungleworks' official Zoho Recruit surface. The public ATS surface exposed only an empty shell and no trustworthy enumerable India job cards or role-detail URLs, so this exact-name provider fails closed and returns no jobs until the official surface publishes enumerable openings."
+}

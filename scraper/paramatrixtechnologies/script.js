@@ -31,14 +31,27 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const extractTitle = (html = '') =>
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null
+
+const extractCanonicalUrl = (html = '') =>
+  String(html ?? '').match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1]?.trim() ?? null
+
+export const extractInlineRoleTitles = (html = '') =>
+  Array.from(
+    String(html ?? '').matchAll(/selectOption\('([^']+)'\)/g),
+    (match) => match[1].trim(),
+  ).filter(Boolean)
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const roleTitles = extractInlineRoleTitles(page)
 
-  return page.includes('Careers - Paramatrix Technologies Ltd.')
-    && page.includes('https://www.paramatrix.com/careers')
+  return extractTitle(page) === 'Careers - Paramatrix Technologies Ltd.'
+    && extractCanonicalUrl(page) === CAREERS_URL
     && page.includes('Be a part of our talent network')
-    && page.includes('Java Developer (Java 21, Microservices, Springboot)')
-    && page.includes("selectOption('Java Developer (Java 21, Microservices, Springboot)')")
+    && page.includes('Explore our diverse opportunities and job roles')
+    && roleTitles.length > 0
 }
 
 export const createParamatrixTechnologiesScraper = () => ({

@@ -13,7 +13,7 @@ const loadAmicableAiCatalog = async () => {
   }
 }
 
-test('Amicable AI catalog captures the verified first-party no-public-careers surface and stale Screenloop board metadata', async () => {
+test('Amicable AI catalog captures the verified first-party no-public-careers surface and non-India Screenloop board metadata', async () => {
   const {
     AMICABLE_AI_CATALOG,
     default: defaultCatalog,
@@ -36,15 +36,15 @@ test('Amicable AI catalog captures the verified first-party no-public-careers su
   assert.equal(AMICABLE_AI_CATALOG.countryFilter, 'India')
   assert.equal(
     AMICABLE_AI_CATALOG.paginationStrategy,
-    'verified-homepage-plus-careers-no-openings-message-plus-stale-screenloop-board',
+    'verified-homepage-plus-careers-no-openings-message-plus-non-india-screenloop-board',
   )
   assert.equal(
     AMICABLE_AI_CATALOG.extractionStrategy,
-    'verified-homepage-careers-link+verified-careers-no-openings-message+verified-stale-screenloop-board-return-empty',
+    'verified-homepage-careers-link+verified-careers-no-openings-message+verified-non-india-screenloop-board-return-empty',
   )
   assert.equal(AMICABLE_AI_CATALOG.parser, 'custom-script')
   assert.equal(AMICABLE_AI_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AMICABLE_AI_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AMICABLE_AI_CATALOG.verifiedOn, '2026-07-28')
   assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /https:\/\/amicable\.io\//i)
   assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /https:\/\/amicable\.io\/careers/i)
   assert.match(
@@ -52,8 +52,8 @@ test('Amicable AI catalog captures the verified first-party no-public-careers su
     /https:\/\/app\.screenloop\.com\/careers\/amicable/i,
   )
   assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /jobs@amicable\.co\.uk/i)
-  assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
-  assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /stale united kingdom roles/i)
+  assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /no trustworthy india jobs surface/i)
+  assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /non-india roles such as remote or london/i)
   assert.match(AMICABLE_AI_CATALOG.modulePath, /amicableai[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Amicable AI'), false)
 })

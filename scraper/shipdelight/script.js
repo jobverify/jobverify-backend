@@ -21,8 +21,13 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = String(value)
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&#038;|&amp;/gi, '&')
+    .replace(/&#0*39;|&apos;|&rsquo;|&lsquo;|&#8217;|&#8216;|&#x27;/gi, "'")
+    .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/[\u2018\u2019]/g, "'")
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -50,8 +55,9 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return extractTitle(page) === 'Join Our Team: Careers'
     && text.includes('unleash your career with shipdelight')
+    && text.includes("shipdelight's people first culture")
     && text.includes('current job openings')
-    && text.includes('shipdelight logistics technologies pvt ltd.')
+    && text.includes('our mission is to lead a logistics revolution powered by smart technology for modern bharat.')
 }
 
 export const hasVerifiedEmptyOpeningsSignal = (html = '') =>

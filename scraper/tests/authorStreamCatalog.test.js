@@ -30,7 +30,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('AuthorStream local catalog captures the verified parked redirect shell and no-public-jobs sentinel state', async () => {
+test('AuthorStream local catalog captures the verified parked redirect shell and updated GoDaddy no-public-jobs sentinel state', async () => {
   const { AUTHORSTREAM_CATALOG } = await loadCatalogModule()
   const authorStream = await loadScriptModule()
 
@@ -63,14 +63,14 @@ test('AuthorStream local catalog captures the verified parked redirect shell and
   )
   assert.equal(AUTHORSTREAM_CATALOG.parser, 'custom-script')
   assert.equal(AUTHORSTREAM_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AUTHORSTREAM_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AUTHORSTREAM_CATALOG.verifiedOn, '2026-07-28')
   assert.equal(AUTHORSTREAM_CATALOG.dryRunFile, 'authorstream/jobs.json')
   assert.equal(AUTHORSTREAM_CATALOG.modulePath, authorStreamModulePath)
   assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\//i)
   assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\/lander/i)
   assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\/robots\.txt/i)
   assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\/sitemap\.xml/i)
-  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /Afternic/i)
+  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /GoDaddy/i)
   assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 
   assert.equal(authorStream.PROVIDER_METADATA.source, AUTHORSTREAM_CATALOG.source)

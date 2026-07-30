@@ -1,0 +1,22 @@
+{
+  "source": "letstransport",
+  "companyName": "LetsTransport",
+  "officialBrandName": "LetsTransport",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../letstransport/script.js",
+  "dryRunFile": "letstransport/jobs.json",
+  "companyCareerPage": "https://letstransport.in/we-are-hiring/",
+  "companyDomain": "letstransport.in",
+  "atsPlatform": "official-first-party-careers-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-enumerable-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://letstransport.in/we-are-hiring/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://letstransport.in/we-are-hiring/ is LetsTransport's first-party careers surface. It invites applicants to email a resume to recruitment@letstransport.team but exposes no enumerable public roles or official ATS feed, so this exact-name provider fails closed and returns no jobs rather than using third-party listings or a near-name company."
+}

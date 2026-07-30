@@ -284,3 +284,39 @@ test('run uses browser-backed first-party HTML when direct HTTP access is blocke
   assert.equal(jobs[1].location, 'Pune, India')
   assert.equal(jobs[1].experienceRequired, '3-5 years')
 })
+
+test('run also uses browser-backed first-party HTML when direct HTTP access is rate-limited', async () => {
+  const remunance = await loadRemunanceModule()
+  const attempts = []
+
+  const jobs = await remunance.createRemunanceServicesPvtLtdScraper().run({
+    fetchText: async (url) => {
+      attempts.push(`http:${url}`)
+      throw new Error(`HTTP 429 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      attempts.push(`browser:${url}`)
+      if (url === remunance.HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === 'https://remunance.com/jobs/new-product-introduction-buyer/') return DETAIL_HTML
+      if (url === 'https://remunance.com/jobs/supply-continuity-analyst/') return SECOND_DETAIL_HTML
+      throw new Error(`Unexpected browser detail URL: ${url}`)
+    },
+    fetchBrowserListingHtml: async () => {
+      attempts.push(`browser:${remunance.JOBS_URL}:listing`)
+      return LISTING_HTML
+    },
+    now: () => '2026-07-11T05:55:00.000Z',
+  })
+
+  assert.deepEqual(attempts, [
+    `http:${remunance.HOMEPAGE_URL}`,
+    `browser:${remunance.HOMEPAGE_URL}`,
+    `browser:${remunance.JOBS_URL}:listing`,
+    'http:https://remunance.com/jobs/new-product-introduction-buyer/',
+    'browser:https://remunance.com/jobs/new-product-introduction-buyer/',
+    'http:https://remunance.com/jobs/supply-continuity-analyst/',
+    'browser:https://remunance.com/jobs/supply-continuity-analyst/',
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'remunanceservicespvtltd')
+})

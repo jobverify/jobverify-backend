@@ -1,0 +1,22 @@
+{
+  "source": "turtlemint",
+  "companyName": "Turtlemint",
+  "officialBrandName": "Turtlemint Fintech Solutions Limited",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../turtlemint/script.js",
+  "dryRunFile": "turtlemint/jobs.json",
+  "companyCareerPage": "https://www.turtlemint.com/careers/",
+  "companyDomain": "turtlemint.com",
+  "atsPlatform": "official-first-party-careers-no-active-openings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-no-active-openings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.turtlemint.com/careers/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.turtlemint.com/careers/ is Turtlemint's first-party India careers surface. It explicitly reports no active openings and offers only an email contact, so this exact-name provider fails closed and returns no jobs until the official surface publishes public openings."
+}

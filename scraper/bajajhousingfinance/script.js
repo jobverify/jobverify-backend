@@ -52,7 +52,7 @@ export const isVerifiedHomepage = (html) => {
   const text = stripTags(page)
 
   return title === EXPECTED_HOMEPAGE_TITLE
-    && canonical === EXPECTED_CANONICAL_URL
+    && (!canonical || canonical === EXPECTED_CANONICAL_URL)
     && EXPECTED_HOMEPAGE_COPY_PATTERN.test(text)
 }
 

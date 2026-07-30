@@ -45,6 +45,61 @@ const careersHtml = `
   </html>
 `
 
+const currentCareersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Graycommit Stock Radar - AI Market Intelligence</title>
+    </head>
+    <body>
+      <nav>
+        <a href="/careers">Careers</a>
+      </nav>
+      <main>
+        <h1>Join Our Team</h1>
+        <section id="open-positions">
+          <h2>Open Positions</h2>
+          <p>Ready to join our mission? Check out our current openings below.</p>
+
+          <div class="job-card">
+            <div class="job-card__header">
+              <div>
+                <h3>GTM Sales Exec - AI</h3>
+                <div class="job-meta">
+                  <div>Sales</div>
+                  <div><span class="icon-map-pin"></span>Bangalore</div>
+                  <div>Full-time</div>
+                </div>
+              </div>
+              <a href="https://forms.gle/JRRyEqayaV32F3xC7">
+                <button>Apply Now</button>
+              </a>
+            </div>
+            <p>Drive revenue growth by selling our AI-powered sales platform to enterprise customers and building strategic partnerships.</p>
+          </div>
+
+          <div class="job-card">
+            <div class="job-card__header">
+              <div>
+                <h3>Founding Engineer</h3>
+                <div class="job-meta">
+                  <div>Engineering</div>
+                  <div><span class="icon-map-pin"></span>San Francisco</div>
+                  <div>Full-time</div>
+                </div>
+              </div>
+              <a href="https://forms.gle/JRRyEqayaV32F3xC7">
+                <button>Apply Now</button>
+              </a>
+            </div>
+            <p>Build full-stack AI systems from zero to one.</p>
+          </div>
+        </section>
+      </main>
+    </body>
+  </html>
+`
+
 test('Graycommit scraper extracts the verified India opening from the official careers page', async () => {
   const graycommit = await loadModule()
   assert.ok(graycommit, 'Graycommit scraper module should load')
@@ -71,6 +126,34 @@ test('Graycommit scraper extracts the verified India opening from the official c
     postingDate: null,
     closingDate: null,
     jobDescription: 'Own outbound AI sales and partnerships for India growth.',
+  }])
+})
+
+test('Graycommit scraper extracts the current India opening from the live open-positions card layout', async () => {
+  const graycommit = await loadModule()
+  assert.ok(graycommit, 'Graycommit scraper module should load')
+
+  assert.equal(graycommit.hasOfficialCareersSignal(currentCareersHtml), true)
+
+  assert.deepEqual(graycommit.extractJobCards(currentCareersHtml), [{
+    title: 'GTM Sales Exec - AI',
+    company: 'Graycommit',
+    department: null,
+    location: 'Bangalore, India',
+    city: 'Bangalore',
+    country: 'India',
+    jobId: 'graycommit-gtm-sales-exec-ai-bangalore',
+    requisitionId: 'graycommit-gtm-sales-exec-ai-bangalore',
+    sourceUrl: 'https://www.graycommit.com/careers',
+    applyUrl: 'https://forms.gle/JRRyEqayaV32F3xC7',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: 'Drive revenue growth by selling our AI-powered sales platform to enterprise customers and building strategic partnerships.',
   }])
 })
 

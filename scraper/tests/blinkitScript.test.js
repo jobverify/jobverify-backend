@@ -44,6 +44,35 @@ const jobsShellHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <html>
+    <head>
+      <title>30,000+ products delivered to your doorstep | Blinkit</title>
+    </head>
+    <body>
+      <h1>Blinkit</h1>
+      <p>#1 instant delivery service in India</p>
+      <p>30,000+ products delivered to your doorstep</p>
+    </body>
+  </html>
+`
+
+const currentJobsShellHtml = `
+  <html>
+    <head>
+      <title>blinkit | careers</title>
+    </head>
+    <body>
+      <h1>Job Listing</h1>
+      <p>open positions</p>
+      <p>0 job positions</p>
+      <p>0 of 0 results</p>
+      <p>locations</p>
+      <p>teams</p>
+    </body>
+  </html>
+`
+
 const officialAccessDeniedHtml = `
   <html>
     <head>
@@ -66,7 +95,9 @@ test('Blinkit sentinels recognize the verified homepage and zero-openings jobs s
   assert.equal(blinkit.HOMEPAGE_URL, 'https://blinkit.com/')
   assert.equal(blinkit.JOBS_URL, 'https://blinkit.com/careers/jobs')
   assert.equal(blinkit.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(blinkit.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(blinkit.hasVerifiedJobsShellSignal(jobsShellHtml), true)
+  assert.equal(blinkit.hasVerifiedJobsShellSignal(currentJobsShellHtml), true)
   assert.equal(blinkit.hasOpenJobCards(jobsShellHtml), false)
   assert.equal(
     blinkit.extractJobCards('<a class="job-card" href="/careers/job/software-engineer">Role</a>').length,
@@ -103,6 +134,25 @@ test('Blinkit returns no jobs only while the verified first-party zero-openings 
   })
 
   assert.deepEqual(requestedPages, [blinkit.HOMEPAGE_URL, blinkit.JOBS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Blinkit falls back to a browser-rendered zero-openings shell when the direct site responds with the official access-denied page', async () => {
+  const blinkit = await loadBlinkitModule()
+
+  const jobs = await blinkit.createBlinkitScraper().run({
+    fetchPage: async (url) => ({
+      status: 403,
+      url,
+      html: officialAccessDeniedHtml,
+    }),
+    fetchBrowserPage: async (url) => ({
+      status: 200,
+      url,
+      html: url === blinkit.HOMEPAGE_URL ? currentHomepageHtml : currentJobsShellHtml,
+    }),
+  })
+
   assert.deepEqual(jobs, [])
 })
 
@@ -166,6 +216,11 @@ test('Blinkit classifies the official Cloudflare access-denied page as an upstre
   await assert.rejects(
     blinkit.createBlinkitScraper().run({
       fetchPage: async (url) => ({
+        status: 403,
+        url,
+        html: officialAccessDeniedHtml,
+      }),
+      fetchBrowserPage: async (url) => ({
         status: 403,
         url,
         html: officialAccessDeniedHtml,

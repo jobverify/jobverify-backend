@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-07-27T00:00:00.000Z'
 
 const INDIA_JOBS_HTML = `
 <!doctype html>
@@ -125,6 +125,36 @@ const AI_DATA_ENGINEER_DETAIL_HTML = `
 </html>
 `
 
+const SECURITY_ENGINEER_DETAIL_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Security Engineer II (AI) | SIXT Jobs</title>
+  </head>
+  <body>
+    <main>
+      <a href="/in/jobs?q=&country=IN">Back to results</a>
+      <h1>Security Engineer II (AI)</h1>
+      <p>TECH & Engineering</p>
+      <p>Full-time Bengaluru, India</p>
+      <a href="#apply">Apply now</a>
+      <p>At SIXT, AI is changing how work gets done and we are looking for the person who will help us do it safely.</p>
+      <h2>YOUR ROLE AT SIXT</h2>
+      <ul>
+        <li>You assess AI tooling and AI-built applications across SIXT.</li>
+      </ul>
+      <h2>YOUR SKILLS MATTER</h2>
+      <ul>
+        <li>AI Security</li>
+      </ul>
+      <h2>About us:</h2>
+      <p>We are shaping the future of mobility.</p>
+      <p>Postet on 25.07.2026</p>
+    </main>
+  </body>
+</html>
+`
+
 const STAFF_DATA_ENGINEER_DETAIL_HTML = `
 <!doctype html>
 <html lang="en">
@@ -169,10 +199,11 @@ test('Sixt helpers stay pinned to the verified first-party India jobs flow', asy
   assert.equal(sixt.SOURCE, 'sixt')
   assert.equal(sixt.COMPANY_NAME, 'Sixt')
   assert.equal(sixt.OFFICIAL_BRAND_NAME, 'SIXT')
-  assert.equal(sixt.VERIFIED_ON, '2026-07-17')
+  assert.equal(sixt.VERIFIED_ON, '2026-07-27')
   assert.equal(sixt.INDIA_JOBS_URL, 'https://www.sixt.jobs/in/jobs?q=&country=IN')
   assert.equal(sixt.DETAIL_PAGE_PREFIX, 'https://www.sixt.jobs/in/jobs/')
   assert.equal(sixt.hasOfficialJobsPageSignal(INDIA_JOBS_HTML), true)
+  assert.equal(sixt.hasOfficialJobDetailSignal(SECURITY_ENGINEER_DETAIL_HTML), true)
   assert.deepEqual(sixt.extractVisibleJobLinks(INDIA_JOBS_HTML), [
     {
       jobId: 'f2e35a18-5799-4833-b1a3-c71e4c28619a',

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.kheyti.com/join/ is the official Kheyti join page and links directly to the branded public jobs surface at https://jobs.kheyti.com/careers. The public Zoho Recruit careers table on that page was live under the Current Job Openings heading with 7 public India openings, including Green House- Product Manager, Farmer Success Associate, Project Lead, and Customer Success Lead, and exposed stable PortalDetail job URLs under the same first-party jobs.kheyti.com host.'
+  'Verified on July 16, 2026 that https://www.kheyti.com/join-us is the official Kheyti join page and that https://jobs.kheyti.com/careers remained the branded public jobs surface. The public Zoho Recruit careers table on that page was live under the Current Job Openings heading with public India openings, including Green House- Product Manager and Farmer Success Associate, and exposed stable PortalDetail job URLs under the same first-party jobs.kheyti.com host.'
 
 export const KHEYTI_CATALOG = {
   source: 'kheyti',
@@ -13,7 +13,7 @@ export const KHEYTI_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://www.kheyti.com/',
   companyCareerPage: 'https://jobs.kheyti.com/careers',
-  officialJoinPageUrl: 'https://www.kheyti.com/join/',
+  officialJoinPageUrl: 'https://www.kheyti.com/join-us',
   officialJobsPageUrl: 'https://jobs.kheyti.com/careers',
   sampleJobDetailUrl:
     'https://jobs.kheyti.com/recruit/PortalDetail.na?iframe=true&digest=OAklCDTw9J9pswkzjtfSB3GAUnkE7bVo.a85bxdBEmQ-&jobid=484579000019591131&widgetid=484579000000072311&embedsource=CareerSite',

@@ -79,12 +79,25 @@ export const extractOfficialSearchConfig = (html) => {
   }
 }
 
+const getCorporateContextDefinition = (searchConfig = {}) =>
+  Array.isArray(searchConfig?.contextSettings?.contextDefinitions)
+    ? searchConfig.contextSettings.contextDefinitions.find(
+      (definition) => normalizeWhitespace(definition?.name) === 'corporate',
+    ) ?? null
+    : null
+
 export const hasOfficialPanasonicCareersSignals = (html) => {
   const rawHtml = String(html ?? '')
   const searchConfig = extractOfficialSearchConfig(rawHtml)
+  const corporateContextDefinition = getCorporateContextDefinition(searchConfig)
+  const normalizedPage = normalizeWhitespace(rawHtml) || ''
+  const hasCorporateLandingIdentity = normalizedPage.includes('Panasonic Corporation of North America Careers')
+    || normalizeWhitespace(searchConfig?.pageTitle) === 'Panasonic Corporate Careers'
+    || normalizeWhitespace(searchConfig?.searchPageHeader) === 'corporate Job Search'
+    || normalizeWhitespace(corporateContextDefinition?.metadata?.title) === 'Panasonic Corporate Careers'
 
   return extractTitle(rawHtml) === 'Panasonic Corporate Careers'
-    && (normalizeWhitespace(rawHtml) || '').includes('Panasonic Corporation of North America Careers')
+    && hasCorporateLandingIdentity
     && extractWindowValue(rawHtml, 'currentContext') === 'corporate'
     && extractWindowValue(rawHtml, 'currentContextValue') === 'corporate'
     && searchConfig?.path === DEFAULT_SEARCH_CONFIG.path
@@ -99,7 +112,10 @@ export const buildIndiaJobsApiUrl = ({
   searchConfig = DEFAULT_SEARCH_CONFIG,
 } = {}) => {
   const url = new URL(OFFICIAL_JOBS_API_URL)
-  const query = searchConfig?.query || DEFAULT_SEARCH_CONFIG.query
+  const query = {
+    ...DEFAULT_SEARCH_CONFIG.query,
+    ...(searchConfig?.query || {}),
+  }
 
   Object.entries(query).forEach(([key, value]) => {
     if (value == null || value === '') return

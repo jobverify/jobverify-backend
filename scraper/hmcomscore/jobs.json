@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at comScore",
+    "company": "comScore",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "source": "hmcomscore",
+    "jobId": "hmcomscore-current-openings",
+    "requisitionId": "hmcomscore-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "comScore had current Himalayas hiring evidence for Data Scientist. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:27:58.031Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-scientist",
+    "companyDomain": "himalayas.app"
+  }
+]

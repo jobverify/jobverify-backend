@@ -120,10 +120,12 @@ const extractExperienceRequired = (description) => {
 export const hasOfficialJoinPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /Join Us/i.test(page)
-    && /Build farmer-first climate-smart agriculture with us/i.test(page)
-    && /https:\/\/jobs\.kheyti\.com\/careers/i.test(page)
-    && /Apply Now/i.test(page)
+  return /<title>\s*We bring innovation in Indian agriculture\s*\|\s*Join Kheyti\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.kheyti\.com\/join-us["']/i.test(page)
+    && /Employee testimonials/i.test(page)
+    && /href=["']\/join-us["']/i.test(page)
+    && /Apply now/i.test(page)
+    && /1 million farmers/i.test(page)
 }
 
 export const hasOfficialJobsPageSignal = (html) => {

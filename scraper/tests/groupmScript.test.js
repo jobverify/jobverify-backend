@@ -30,6 +30,30 @@ const officialCareersHtml = `
 </html>
 `
 
+const officialCareersHtmlWithNestedApacLabel = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Let's build the future together</h1>
+      <p>
+        We only hire through our careers site and @wppmedia.com or @wpp.com emails.
+        No fees, ever.
+      </p>
+      <section>
+        <a href='https://job-boards.greenhouse.io/wppmedia?offices%5B%5D=4046746008'>
+          <span>North America Open Roles</span>
+        </a>
+        <a href='https://job-boards.greenhouse.io/wppmedia?offices%5B%5D=4046626008'>
+          <span>APAC Open Roles</span>
+        </a>
+      </section>
+      <footer>© Copyright 2026 WPP Media Limited.</footer>
+    </main>
+  </body>
+</html>
+`
+
 const greenhousePayload = {
   jobs: [
     {
@@ -66,6 +90,10 @@ test('GroupM constants stay pinned to the verified WPP Media careers handoff and
   assert.equal(groupm.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.equal(
     groupm.extractVerifiedJobsBoardUrl(officialCareersHtml),
+    'https://job-boards.greenhouse.io/wppmedia?offices%5B%5D=4046626008',
+  )
+  assert.equal(
+    groupm.extractVerifiedJobsBoardUrl(officialCareersHtmlWithNestedApacLabel),
     'https://job-boards.greenhouse.io/wppmedia?offices%5B%5D=4046626008',
   )
 })

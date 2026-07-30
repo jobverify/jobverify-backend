@@ -48,7 +48,7 @@ test('Cloud Lending script pins the verified Q2 careers and Workday surfaces', a
 test('Cloud Lending config post-filters Workday results to India locations', () => {
   const config = loadConfig(scraperDir)
 
-  assert.equal(config.listingStrategy, 'next-button')
+  assert.equal(config.listingStrategy, 'jobs-api')
   assert.match(
     config.locationPattern,
     /india\|bengaluru\|bangalore\|hyderabad\|pune\|mumbai/i,

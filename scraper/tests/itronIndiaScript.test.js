@@ -32,7 +32,7 @@ const officialWorkdayBoardHtml = `
   <head>
     <link rel="canonical" href="https://itron.wd5.myworkdayjobs.com/Itron" />
     <script>
-      window.workday = {"tenant":"itron","siteId":"Itron","appName":"cxs"}
+      window.workday = window.workday || {tenant: "itron", siteId: "Itron", appName: "cxs"}
     </script>
   </head>
   <body>

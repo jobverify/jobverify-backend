@@ -244,3 +244,34 @@ test('Iron Mountain India fails closed when the about page or jobs board drifts 
     /jobs board/i,
   )
 })
+
+test('Iron Mountain India can recover with browser-backed first-party HTML when direct requests are rate-limited', async () => {
+  const ironMountainIndia = await loadIronMountainIndiaModule()
+  const attempts = []
+
+  const jobs = await ironMountainIndia.createIronMountainIndiaScraper({
+    now: () => '2026-07-16T09:30:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      attempts.push(`http:${url}`)
+      if (url === JOBS_SITEMAP_URL) return sitemapXml
+      throw new Error(`HTTP 429 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      attempts.push(`browser:${url}`)
+      if (url === ABOUT_PAGE_URL) return aboutPageHtml
+      if (url === CAREERS_URL) return jobsBoardHtml
+      throw new Error(`Unexpected Iron Mountain India browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(attempts, [
+    `http:${ABOUT_PAGE_URL}`,
+    `browser:${ABOUT_PAGE_URL}`,
+    `http:${CAREERS_URL}`,
+    `browser:${CAREERS_URL}`,
+    `http:${JOBS_SITEMAP_URL}`,
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'ironmountainindia')
+})

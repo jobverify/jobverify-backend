@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Sciative Solutions local catalog captures the verified first-party talent-community-only surface', async () => {
+test('Sciative Solutions local catalog captures the verified first-party careers API surface', async () => {
   const { SCIATIVE_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const sciative = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(SCIATIVE_SOLUTIONS_CATALOG)
@@ -36,22 +36,24 @@ test('Sciative Solutions local catalog captures the verified first-party talent-
   assert.equal(provider.officialBrandName, 'Sciative')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://sciative.com/')
-  assert.equal(provider.companyCareerPage, 'https://sciative.com/about-us')
+  assert.equal(provider.companyCareerPage, 'https://sciative.com/careers')
+  assert.equal(provider.careersApiUrl, 'https://sciative.com/backend/get_career_item/1')
   assert.equal(provider.companyDomain, 'sciative.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page-plus-json-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-homepage-plus-about-page-talent-community-scan')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-public-json-endpoint')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-page-talent-community-without-public-openings-return-empty',
+    'verified-first-party-careers-page+verified-first-party-careers-api+same-page-apply-flow',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sciative\.com\/about-us/i)
-  assert.match(provider.verifiedSurfaceSummary, /Join Our Talent Community/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public job listings/i)
+  assert.equal(provider.verifiedOn, '2026-07-26')
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sciative\.com\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sciative\.com\/backend\/get_career_item\/1/i)
+  assert.match(provider.verifiedSurfaceSummary, /Devops Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Product Manager - Hospality Domain/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /sciative[\\/]jobs\.json$/i)
 

@@ -5,12 +5,13 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Simpl - India's Leading 1-Tap Checkout Network</title>
+    <title>Simpl — India's Leading 1-Tap Checkout Network</title>
   </head>
   <body>
+    <h2>India's #1 Checkout Network</h2>
     <h1>Payments made invisible. Money made intelligent.</h1>
     <p>Based in Bengaluru, India, and founded in 2015, Simpl (One Sigma) is a fintech company.</p>
-    <h2>Ready to make payments simple?</h2>
+    <h2>About Simpl</h2>
     <p>Join thousands of merchants and millions of users who trust Simpl.</p>
     <footer>
       <div>Company</div>
@@ -28,7 +29,7 @@ const aboutHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Us - Simpl</title>
+    <title>About Us — Simpl</title>
   </head>
   <body>
     <h1>About Simpl</h1>
@@ -78,7 +79,7 @@ test('Simpl sentinel helpers stay pinned to the verified first-party no-public-j
   assert.equal(simpl.SOURCE, 'simpl')
   assert.equal(simpl.COMPANY_NAME, 'Simpl')
   assert.equal(simpl.OFFICIAL_BRAND_NAME, 'Simpl')
-  assert.equal(simpl.VERIFIED_ON, '2026-07-17')
+  assert.equal(simpl.VERIFIED_ON, '2026-07-26')
   assert.equal(simpl.HOMEPAGE_URL, 'https://www.get-simpl.com/index.html')
   assert.equal(simpl.ABOUT_PAGE_URL, 'https://www.get-simpl.com/about.html')
   assert.equal(simpl.CAREERS_REFERENCE_PAGE_URL, 'https://sandbox.getsimpl.com/about-us/')
@@ -117,7 +118,6 @@ test('Simpl sentinel returns [] only while the verified first-party surfaces exp
   assert.deepEqual(requestedUrls, [
     simpl.HOMEPAGE_URL,
     simpl.ABOUT_PAGE_URL,
-    simpl.CAREERS_REFERENCE_PAGE_URL,
   ])
   assert.deepEqual(jobs, [])
 })
@@ -141,13 +141,12 @@ test('Simpl sentinel fails closed when the first-party surface starts exposing a
     simpl.createSimplScraper().run({
       fetchText: async (url) => {
         if (url === simpl.HOMEPAGE_URL) return homepageHtml
-        if (url === simpl.ABOUT_PAGE_URL) return aboutHtml
-        if (url === simpl.CAREERS_REFERENCE_PAGE_URL) {
-          return `${careersReferenceHtml}<h3>Open Roles</h3><a href="https://jobs.lever.co/simpl">Apply Now</a>`
+        if (url === simpl.ABOUT_PAGE_URL) {
+          return `${aboutHtml}<a href="https://jobs.lever.co/simpl">Open positions</a>`
         }
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /careers reference page now exposes public jobs/i,
+    /about page now exposes a public jobs surface/i,
   )
 })

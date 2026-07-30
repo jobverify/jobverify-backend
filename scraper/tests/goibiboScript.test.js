@@ -137,6 +137,32 @@ test('Goibibo sentinel returns [] only while the verified broken first-party car
   assert.deepEqual(jobs, [])
 })
 
+test('Goibibo sentinel tolerates a homepage timeout when the verified careers route still serves the known unavailable surface', async () => {
+  const goibibo = await loadGoibiboModule()
+  const requestedUrls = []
+
+  const jobs = await goibibo.createGoibiboScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === goibibo.HOMEPAGE_URL) {
+        const error = new Error('The operation was aborted due to timeout')
+        error.name = 'TimeoutError'
+        throw error
+      }
+
+      if (url === goibibo.CAREER_URL) {
+        return { status: 503, url, html: career503Html }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [goibibo.HOMEPAGE_URL, goibibo.CAREER_URL])
+  assert.deepEqual(jobs, [])
+})
+
 test('Goibibo sentinel fails closed when the homepage handoff drifts or the careers route starts serving public jobs', async () => {
   const goibibo = await loadGoibiboModule()
 

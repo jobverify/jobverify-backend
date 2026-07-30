@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Kalepa",
+    "company": "Kalepa",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "source": "hmkalepa",
+    "jobId": "hmkalepa-current-openings",
+    "requisitionId": "hmkalepa-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Kalepa had current Himalayas hiring evidence for Backend / Product Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:30:00.796Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

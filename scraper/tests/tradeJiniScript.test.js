@@ -25,6 +25,25 @@ const VERIFIED_CAREERS_HTML = `
 </html>
 `
 
+const VERIFIED_CAREERS_WITH_NESTED_LINK_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Tradejini | Explore Opportunities &amp; Join Our Team</title>
+  </head>
+  <body>
+    <main>
+      <h1>Join our passionate team</h1>
+      <p>Explore opportunities to grow, contribute, and make a real impact.</p>
+      <a href="/careers/open-positions"><span>See open positions</span></a>
+      <section>
+        <h2>Our Hiring Process</h2>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const OPEN_POSITIONS_SHELL_HTML = `
 <!doctype html>
 <html lang="en">
@@ -83,6 +102,10 @@ test('TradeJini pins the verified first-party careers shell and empty open-posit
   )
   assert.equal(
     tradeJini.extractOpenPositionsUrl(VERIFIED_CAREERS_HTML),
+    tradeJini.OPEN_POSITIONS_URL,
+  )
+  assert.equal(
+    tradeJini.extractOpenPositionsUrl(VERIFIED_CAREERS_WITH_NESTED_LINK_HTML),
     tradeJini.OPEN_POSITIONS_URL,
   )
   assert.equal(tradeJini.hasPublicJobRecordsSignal(OPEN_POSITIONS_SHELL_HTML), false)

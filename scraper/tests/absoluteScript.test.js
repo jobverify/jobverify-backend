@@ -32,6 +32,28 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Stop Downtime &amp; Business Disruption | Absolute Security</title>
+  </head>
+  <body>
+    <main>
+      <h1>Detect.Remediate.Rehydrate.Recover.Autonomously.</h1>
+      <h2>Fully. In Minutes.</h2>
+      <p>THE AUTONOMOUS CYBER RESILIENCE PLATFORM</p>
+      <p>Cyber incidents are now the new normal.</p>
+      <p>We Stop Downtime.</p>
+    </main>
+    <footer>
+      <a href="/company/careers">Careers</a>
+      <span>Absolute Security</span>
+    </footer>
+  </body>
+</html>
+`
+
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -231,6 +253,13 @@ test('Absolute validates the verified official homepage, careers handoff, Jobvit
       requisitionId: 'o0vpAfwe',
     },
   ])
+})
+
+test('Absolute recognizes the current July 25, 2026 homepage shell after the marketing refresh', async () => {
+  const absolute = await loadAbsoluteModule()
+  assert.ok(absolute)
+
+  assert.equal(absolute.hasOfficialHomepageSignal(currentHomepageHtml), true)
 })
 
 test('Absolute extracts India roles from the current Jobvite table layout', async () => {

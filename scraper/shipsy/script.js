@@ -101,7 +101,7 @@ export const extractRoleCards = (html = '') => [...String(html ?? '').matchAll(/
       detailUrl: new URL(href, CAREERS_URL).toString(),
     }
   })
-  .filter((card, index, array) => card && array.findIndex((item) => item.detailUrl === card.detailUrl) === index)
+  .filter((card, index, array) => card && array.findIndex((item) => item?.detailUrl === card.detailUrl) === index)
 
 export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {}) => {
   const lines = htmlToLines(html)

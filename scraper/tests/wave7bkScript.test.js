@@ -23,6 +23,53 @@ const izmoCareersHtml = `
 </html>
 `
 
+const currentIzmoCareersHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Careers at izmocars | Join Our Global Team | izmocars</title>
+  </head>
+  <body>
+    <div class="hero">
+      <span>Join Our Global Team</span>
+      <h1>Build the Future of <br><span>Automotive Tech</span>.</h1>
+      <a href="#openings"><button>View Openings</button></a>
+    </div>
+    <section id="openings">
+      <h2>Current Openings.</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="group bg-white rounded-xl p-6">
+          <div class="flex flex-col h-full">
+            <div class="flex-1">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3>Associate Graphic Designer (UK Process)</h3>
+                  <div class="inline-flex items-center gap-2">
+                    <span class="font-medium">Creative / Design</span>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-2 mb-4">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm">Bangalore, India (BTM 2nd Stage)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm">Full Time (On-Site)</span>
+                </div>
+              </div>
+              <p class="line-clamp-3">We are seeking a highly creative and detail-oriented Graphic Designer.</p>
+            </div>
+            <div class="mt-6 pt-6 border-t">
+              <a href="/careers/graphic-designer-uk-process"><button>View Openings</button></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
+`
+
 const cadsysCareersHtml = `
 <!doctype html>
 <html>
@@ -35,6 +82,19 @@ const cadsysCareersHtml = `
       <li><a href="/careers/software-engineer-frontend">Software Engineer, Frontend <span>Remote / Hybrid</span></a></li>
     </ul>
     <footer>Cadensys Ltd © 2025</footer>
+  </body>
+</html>
+`
+
+const cadsysOffBrandRedirectHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Orb | Manage what matters</title>
+  </head>
+  <body>
+    <h1>The most intentional version of you.</h1>
+    <p>Orb drafted a reply.</p>
   </body>
 </html>
 `
@@ -157,6 +217,34 @@ test('Izmo scraper extracts the verified first-party izmocars opening card', asy
   assert.equal(jobs[0].scrapedAt, '2026-07-18T09:30:00.000Z')
 })
 
+test('Izmo scraper accepts the current first-party careers card layout', async () => {
+  const izmo = await loadScript('../izmo/script.js')
+
+  assert.equal(izmo.hasOfficialCareersSignal(currentIzmoCareersHtml), true)
+  assert.deepEqual(izmo.extractJobs(currentIzmoCareersHtml), [
+    {
+      title: 'Associate Graphic Designer (UK Process)',
+      company: 'Izmo',
+      department: 'Creative / Design',
+      location: 'Bangalore, India (BTM 2nd Stage)',
+      city: 'Bangalore',
+      country: 'India',
+      jobId: 'associate-graphic-designer-uk-process',
+      requisitionId: 'associate-graphic-designer-uk-process',
+      sourceUrl: 'https://www.goizmo.com/careers/graphic-designer-uk-process',
+      applyUrl: 'https://www.goizmo.com/careers/graphic-designer-uk-process',
+      employmentType: 'Full Time',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+    },
+  ])
+})
+
 test('Cadsys scraper extracts the verified Cadensys role links', async () => {
   const cadsys = await loadScript('../cadsys/script.js')
 
@@ -232,6 +320,19 @@ test('Cadsys scraper extracts the verified Cadensys role links', async () => {
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'cadsys')
   assert.equal(jobs[0].scrapedAt, '2026-07-18T09:30:00.000Z')
+})
+
+test('Cadsys scraper stays fail-closed when the careers route redirects off-domain to Orb', async () => {
+  const cadsys = await loadScript('../cadsys/script.js')
+
+  const jobs = await cadsys.createCadsysScraper().run({
+    fetchPage: async () => ({
+      url: 'https://getorb.ai/careers/',
+      html: cadsysOffBrandRedirectHtml,
+    }),
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('NaviSite scraper stays fail-closed on the verified Accenture handoff page', async () => {

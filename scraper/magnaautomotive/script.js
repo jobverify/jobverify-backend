@@ -47,7 +47,7 @@ export const extractVerifiedWorkdayHandoffUrl = (html) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -56,6 +56,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   baseDelayMs: 2000,
   timeoutMs: 20000,
   label: SOURCE,
+  signal,
 })
 
 export const buildScraperOptions = () => ({
@@ -70,10 +71,13 @@ export const createMagnaAutomotiveScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  async run() {
+  async run({ signal } = {}) {
+    const fetchVerifiedText = (url) => (
+      signal === undefined ? fetchText(url) : fetchText(url, { signal })
+    )
     const [homeHtml, careersHtml] = await Promise.all([
-      fetchText(HOME_PAGE_URL),
-      fetchText(CAREER_PAGE_URL),
+      fetchVerifiedText(HOME_PAGE_URL),
+      fetchVerifiedText(CAREER_PAGE_URL),
     ])
 
     if (!hasOfficialHomepageSignal(homeHtml)) {
@@ -89,11 +93,15 @@ export const createMagnaAutomotiveScraper = ({
       throw new Error('Magna Automotive verified Workday handoff changed; refusing to guess the jobs source')
     }
 
-    return workdayRunner(buildScraperOptions())
+    return workdayRunner({
+      ...buildScraperOptions(),
+      ...(signal === undefined ? {} : { signal }),
+    })
   },
 })
 
 export const run = async ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
-} = {}) => createMagnaAutomotiveScraper({ fetchText, workdayRunner }).run()
+  signal,
+} = {}) => createMagnaAutomotiveScraper({ fetchText, workdayRunner }).run({ signal })

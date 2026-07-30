@@ -123,3 +123,34 @@ test('run fetches ALTEN India company, search, and detail pages and decorates op
   assert.equal(jobs[0].source, 'altenindia')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
 })
+
+test('run keeps ALTEN India listing data when LinkedIn detail pages are rate-limited', async () => {
+  const alten = await loadAltenIndiaModule()
+  const requestedUrls = []
+
+  const jobs = await alten.createAltenIndiaScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === alten.LINKEDIN_COMPANY_PAGE_URL) return sampleCompanyHtml
+      if (url === alten.LINKEDIN_INDIA_JOBS_URL) return sampleSearchHtml
+      if (url === 'https://www.linkedin.com/jobs/view/software-engineer-at-alten-india-4277770012?trk=public_jobs_topcard-title') {
+        throw new Error(`HTTP 429 for ${url}`)
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(
+    requestedUrls,
+    [
+      alten.LINKEDIN_COMPANY_PAGE_URL,
+      alten.LINKEDIN_INDIA_JOBS_URL,
+      'https://www.linkedin.com/jobs/view/software-engineer-at-alten-india-4277770012?trk=public_jobs_topcard-title',
+    ],
+  )
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Software Engineer')
+  assert.equal(jobs[0].location, 'Bengaluru, Karnataka, India')
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].source, 'altenindia')
+})

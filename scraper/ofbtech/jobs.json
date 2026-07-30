@@ -1,0 +1,29 @@
+[
+  {
+    "jobId": "[object Object]",
+    "requisitionId": "[object Object]",
+    "title": "[object Object]",
+    "company": "OFB Tech",
+    "department": null,
+    "location": "[object Object], India",
+    "city": "[object Object]",
+    "country": "India",
+    "sourceUrl": "https://www.ofbcareers.com/[object%20Object]",
+    "applyUrl": "https://www.ofbcareers.com/[object%20Object]",
+    "employmentType": "[object Object]",
+    "experienceRequired": "[object Object]",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": null,
+    "closingDate": null,
+    "jobDescription": "About the business: [object Object] What you will do: [object Object] What we are looking for: [object Object] What we offer: [object Object]",
+    "remoteStatus": "On-site",
+    "link": "https://www.ofbcareers.com/[object%20Object]",
+    "source": "ofbtech",
+    "scrapedAt": "2026-07-26T20:16:44.757Z",
+    "companyCareerPage": "https://www.ofbcareers.com/",
+    "companyDomain": "ofbcareers.com",
+    "atsPlatform": "wix"
+  }
+]

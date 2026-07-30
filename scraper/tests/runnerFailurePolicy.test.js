@@ -84,6 +84,62 @@ test('classifyScraperError keeps parser and contract errors hard', () => {
   )
 })
 
+test('classifyScraperError recognizes remaining external and transient failure signatures', () => {
+  assert.deepEqual(
+    classifyScraperError(new Error('HTTP 406 for https://www.bfil.co.in/apply-for-job.php')),
+    {
+      softFailure: true,
+      upstreamOutage: true,
+      failureKind: 'blocked_or_access_denied',
+    },
+  )
+
+  assert.deepEqual(
+    classifyScraperError(new Error('Execution context was destroyed, most likely because of a navigation.')),
+    {
+      softFailure: true,
+      upstreamOutage: true,
+      failureKind: 'network_or_timeout',
+    },
+  )
+
+  assert.deepEqual(
+    classifyScraperError(new Error('net::ERR_FAILED at https://www.aindra.in/')),
+    {
+      softFailure: true,
+      upstreamOutage: true,
+      failureKind: 'network_or_timeout',
+    },
+  )
+
+  assert.deepEqual(
+    classifyScraperError(new Error(
+      'OdNest Company canonical first-party hosts now resolve; re-verify the official careers surface before trusting []',
+    )),
+    {
+      softFailure: true,
+      upstreamOutage: false,
+      failureKind: 'surface_drift_or_fail_closed',
+    },
+  )
+})
+
+test('classifyScraperError keeps runner-enforced source timeouts as local hard failures', () => {
+  const timeoutError = new Error('[abb] timed out after 300000ms')
+  timeoutError.localTimeout = true
+  timeoutError.abortRetries = true
+  timeoutError.failureKind = 'runner_timeout'
+
+  assert.deepEqual(
+    classifyScraperError(timeoutError),
+    {
+      softFailure: false,
+      upstreamOutage: false,
+      failureKind: 'runner_timeout',
+    },
+  )
+})
+
 test('isFailureCountedForAbort still counts ordinary hard failures', () => {
   assert.equal(
     isFailureCountedForAbort({

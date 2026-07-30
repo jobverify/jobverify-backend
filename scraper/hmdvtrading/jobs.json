@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at DV Trading",
+    "company": "DV Trading",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "source": "hmdvtrading",
+    "jobId": "hmdvtrading-current-openings",
+    "requisitionId": "hmdvtrading-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "DV Trading had current Himalayas hiring evidence for Cloud Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:28:43.167Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

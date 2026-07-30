@@ -127,11 +127,15 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const hasCanonical = /<link[^>]+(?:rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.)?biofourmis\.com\/about\/job-openings["']|href=["']https:\/\/(?:www\.)?biofourmis\.com\/about\/job-openings["'][^>]+rel=["']canonical["'])/i
+    .test(page)
 
-  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.)?biofourmis\.com\/about\/job-openings["']/i.test(page)
+  return hasCanonical
     && /<title[^>]*>\s*(?:Job Openings(?:\s*\|\s*Biofourmis)?)\s*<\/title>/i.test(page)
-    && /Open Roles/i.test(page)
-    && extractJobsLoaderUrl(page) === JOBS_LOADER_URL
+    && (
+      (/Open Roles/i.test(page) && extractJobsLoaderUrl(page) === JOBS_LOADER_URL)
+      || (/Find open roles/i.test(page) && /Find general positions/i.test(page))
+    )
 }
 
 export const extractJobsLoaderUrl = (html) => {

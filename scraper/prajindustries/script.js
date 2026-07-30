@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { PRAJ_INDUSTRIES_CATALOG } from './catalog.js'
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -97,6 +98,18 @@ const defaultFetchJson = async (url) => {
   }
 
   return response.json()
+}
+
+const isExpectedDarwinbox403Error = (error, url) =>
+  /HTTP 403/i.test(String(error?.message || error || ''))
+  && String(url ?? '').startsWith(DARWINBOX_ORIGIN)
+
+const parseBrowserJsonResponse = (value, url) => {
+  try {
+    return JSON.parse(String(value ?? ''))
+  } catch (error) {
+    throw new Error(`Unexpected non-JSON browser response for ${url}: ${error.message}`)
+  }
 }
 
 export const extractOfficialDarwinboxUrl = (html = '') => {
@@ -195,40 +208,67 @@ export const createPrajIndustriesScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchBrowserJson = null,
   } = {}) {
+    let browserSession = null
+    const fetchJsonWithBrowserFallback = async (url) => {
+      try {
+        return await fetchJson(url)
+      } catch (error) {
+        if (!isExpectedDarwinbox403Error(error, url)) {
+          throw error
+        }
+
+        if (typeof fetchBrowserJson === 'function') {
+          return fetchBrowserJson(url)
+        }
+
+        browserSession ??= await createBrowserFetchSession({ userAgent: USER_AGENT })
+        const page = await browserSession.fetchPage(url, { referer: DARWINBOX_HANDOFF_URL })
+        if (page.status !== 200) {
+          throw new Error(`HTTP ${page.status} for ${url}`)
+        }
+        return parseBrowserJsonResponse(page.html, url)
+      }
+    }
+
     const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
     if (!hasVerifiedCareersPageSignals(careersHtml)) {
       throw new Error('Praj Industries verified careers page no longer matches the official first-party handoff')
     }
 
-    const jobs = []
-    const seenJobIds = new Set()
+    try {
+      const jobs = []
+      const seenJobIds = new Set()
 
-    for (let page = 1; page <= maxPages; page += 1) {
-      const listingPayload = await fetchJson(buildListingApiUrl(page))
-      const listings = extractListings(listingPayload)
+      for (let page = 1; page <= maxPages; page += 1) {
+        const listingPayload = await fetchJsonWithBrowserFallback(buildListingApiUrl(page))
+        const listings = extractListings(listingPayload)
 
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
+        for (const listing of listings) {
+          if (seenJobIds.has(listing.jobId)) continue
+          seenJobIds.add(listing.jobId)
 
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
-        const detail = extractJobDetail(detailPayload, listing)
+          const detailPayload = await fetchJsonWithBrowserFallback(buildJobDetailApiUrl(listing.jobId))
+          const detail = extractJobDetail(detailPayload, listing)
 
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
+          jobs.push({
+            ...detail,
+            source: SOURCE,
+            link: detail.applyUrl || detail.sourceUrl,
+            scrapedAt: now(),
+          })
+        }
+
+        if (!extractPaginationSummary(listingPayload, { page, pageSize }).hasNext) {
+          break
+        }
       }
 
-      if (!extractPaginationSummary(listingPayload, { page, pageSize }).hasNext) {
-        break
-      }
+      return jobs
+    } finally {
+      await browserSession?.close?.()
     }
-
-    return jobs
   },
 })
 

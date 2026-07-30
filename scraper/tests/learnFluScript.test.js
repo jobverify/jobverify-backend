@@ -110,6 +110,27 @@ test('LearnFlu scraper returns the public first-party roles from the verified ca
   assert.equal(jobs[0].link, jobs[0].applyUrl)
 })
 
+test('LearnFlu still extracts the verified job cards when the legacy section markers drift', async () => {
+  const learnFlu = await loadLearnFluModule()
+  const markerlessCareersHtml = verifiedCareersHtml
+    .replace('Why Employers Trust Our Candidate', 'Why learners choose us')
+
+  const jobs = learnFlu.extractPublicJobs(markerlessCareersHtml)
+
+  assert.equal(jobs.length, 6)
+  assert.deepEqual(
+    jobs.map((job) => job.title),
+    [
+      'Business Analyst',
+      'Business Development Executive (B2C)',
+      'Content Writer',
+      'Digital Marketing Executive',
+      'Marketing Intern',
+      'Relationship Manager',
+    ],
+  )
+})
+
 test('LearnFlu scraper fails closed when the verified homepage or careers shell drifts materially', async () => {
   const learnFlu = await loadLearnFluModule()
 
@@ -138,7 +159,7 @@ test('LearnFlu scraper fails closed when the verified homepage or careers shell 
       fetchText: async (url) => {
         if (url === learnFlu.HOMEPAGE_URL) return verifiedHomepageHtml
         return verifiedCareersHtml.replace(
-          'View Apply',
+          /View Apply/g,
           'Apply Now',
         )
       },

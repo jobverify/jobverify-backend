@@ -1,0 +1,22 @@
+{
+  "source": "sunrun",
+  "companyName": "Sunrun",
+  "officialBrandName": "Sunrun",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../sunrun/script.js",
+  "dryRunFile": "sunrun/jobs.json",
+  "companyCareerPage": "https://careers.sunrun.com/explore-your-future",
+  "officialCareersPageUrl": "https://careers.sunrun.com/en/search-jobs",
+  "companyDomain": "sunrun.com",
+  "atsPlatform": "official-first-party-careers-search-page-fail-closed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-search-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://careers.sunrun.com/explore-your-future and https://careers.sunrun.com/en/search-jobs are Sunrun's first-party careers surfaces. The public search page currently lists live openings, but this exact-name provider stays fail-closed until a stable first-party extraction contract is separately verified from that client-rendered search surface."
+}

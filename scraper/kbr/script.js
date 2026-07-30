@@ -7,11 +7,31 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const HOMEPAGE_URL = 'https://www.kbr.com/en'
 export const CAREERS_LANDING_URL = 'https://careers.kbr.com/us/en'
+export const CAREERS_HOMEPAGE_URL = 'https://careers.kbr.com/'
 
-const OFFICIAL_CAREERS_LINK_PATTERN = /<a\b[^>]*href=(["'])https:\/\/careers\.kbr\.com\/us\/en\1[^>]*>\s*Careers\s*<\/a>/i
 const HOMEPAGE_BRAND_SIGNAL_PATTERN = /Delivering Solutions, Changing the World|KBR/i
 const CAREERS_BRAND_SIGNAL_PATTERN = /Belong,\s*connect and grow at KBR|Find your next opportunity/i
 const CAREERS_SEARCH_SIGNAL_PATTERN = /Search results|\/us\/en\/search-results/i
+const HOMEPAGE_ACCEPTED_CAREERS_URLS = [
+  CAREERS_HOMEPAGE_URL,
+  CAREERS_LANDING_URL,
+]
+
+const normalizeComparableUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? '').trim())
+    url.hash = ''
+    url.search = ''
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+const extractOfficialCareersHref = (html) => {
+  const match = html.match(/<a\b[^>]*href=(["'])(https:\/\/careers\.kbr\.com\/[^"']*)\1[^>]*>\s*Careers\s*<\/a>/i)
+  return normalizeComparableUrl(match?.[2] ?? null)
+}
 
 const fetchText = async (url) => {
   const response = await fetch(url, {
@@ -29,7 +49,12 @@ const fetchText = async (url) => {
 }
 
 const assertOfficialHomepage = (html) => {
-  if (!OFFICIAL_CAREERS_LINK_PATTERN.test(html) || !HOMEPAGE_BRAND_SIGNAL_PATTERN.test(html)) {
+  const careersHref = extractOfficialCareersHref(html)
+  const hasAcceptedCareersLink = HOMEPAGE_ACCEPTED_CAREERS_URLS.some(
+    (candidate) => normalizeComparableUrl(candidate) === careersHref,
+  )
+
+  if (!hasAcceptedCareersLink || !HOMEPAGE_BRAND_SIGNAL_PATTERN.test(html)) {
     throw new Error(
       `KBR homepage no longer links to the official careers site: ${HOMEPAGE_URL}`,
     )

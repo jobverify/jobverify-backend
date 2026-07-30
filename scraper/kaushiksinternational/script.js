@@ -75,7 +75,7 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title[^>]*>\s*KAUSHIKS INTERNATIONAL - IMPROVING PRODUCTIVITY\s*<\/title>/i.test(rawHtml)
     && /\bKAUSHIKS INTERNATIONAL\b/i.test(normalized)
     && /For nearly 3 decades now, Kaushiks International has been bringing to the Indian Industry the world's best expertise by offering world class products\./i.test(normalized)
-    && /Kaushiks International is the associate of global companies such as Flow Science\./i.test(normalized)
+    && /Kaushiks International is the associate of global companies such as Flow Science(?:,\s*Inc\.,\s*USA)?(?: in India for their world-renowned Computational Fluid Dynamics \(CFD\) software FLOW-3D\.)?/i.test(normalized)
     && /Indiranagar,\s*bangalore,\s*INDIA/i.test(normalized)
     && /info\[at\]kaushiksinternational\[dot\]com/i.test(rawHtml)
     && /\+91-80-25288286/.test(rawHtml)
@@ -99,7 +99,14 @@ export const isVerifiedMissingCareersRoute = (page = {}) => {
     return false
   }
 
-  return normalizeWhitespace(page?.html) === ''
+  const normalized = normalizeWhitespace(page?.html)
+
+  return normalized === ''
+    || (
+      /404 Not Found/i.test(normalized)
+      && /The resource requested could not be found on this server!/i.test(normalized)
+      && /Proudly powered by LiteSpeed Web Server/i.test(normalized)
+    )
 }
 
 export const createKaushiksInternationalScraper = () => ({

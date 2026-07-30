@@ -49,6 +49,18 @@ const firstNonEmpty = (...values) => {
   return null
 }
 
+const matchesExpectedUrl = (value, expected) => {
+  try {
+    const actualUrl = new URL(value)
+    const expectedUrl = new URL(expected)
+
+    return actualUrl.origin === expectedUrl.origin
+      && actualUrl.pathname.replace(/\/+$/, '') === expectedUrl.pathname.replace(/\/+$/, '')
+  } catch {
+    return false
+  }
+}
+
 const normalizeHierarchyLocation = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -229,7 +241,12 @@ export const createLivpureScraper = ({
     }
 
     const portalPage = await fetchPage(JOB_LISTINGS_URL)
-    if (portalPage.status !== 200 || !hasPublicPortalShell(portalPage.html)) {
+    const portalStatus = Number(portalPage.status)
+    if (
+      ![200, 404].includes(portalStatus)
+      || !matchesExpectedUrl(portalPage.url || JOB_LISTINGS_URL, JOB_LISTINGS_URL)
+      || !hasPublicPortalShell(portalPage.html)
+    ) {
       throw new Error('Livpure verified public PeopleStrong portal no longer matches the known public surface')
     }
 

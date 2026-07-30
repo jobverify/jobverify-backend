@@ -1,0 +1,21 @@
+{
+  "source": "qandle",
+  "companyName": "Qandle",
+  "officialBrandName": "Qandle by MyndX",
+  "adapter": "script",
+  "modulePath": "../qandle/script.js",
+  "dryRunFile": "qandle/jobs.json",
+  "companyCareerPage": "https://www.qandle.com/",
+  "companyDomain": "qandle.com",
+  "atsPlatform": "official-first-party-site-no-public-careers-listing",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "verified-first-party-site-without-public-careers-or-enumerable-india-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.qandle.com/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.qandle.com/ is Qandle's first-party site, identifies Qandle as an HR platform, and announces that Qandle is part of Mynd. Its public site does not expose an exact Qandle careers or jobs route, public role cards, or a trustworthy enumerable India hiring feed. Qandle's product pages describe ATS functionality for customers, but customer-hosted Qandle career pages are not Qandle employer listings; this exact-name provider therefore fails closed and returns no jobs until Qandle publishes a trustworthy public hiring surface."
+}

@@ -10,6 +10,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+const HOMEPAGE_ORIGIN = new URL(HOMEPAGE_URL).origin
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -80,14 +81,26 @@ export const hasOfficialHomepageSignal = (html) => {
   return /DeepIntent/i.test(normalized)
     && /the leading Healthcare Advertising Platform/i.test(normalized)
     && /Shaping the Future of Healthcare Advertising/i.test(normalized)
-    && /<a[^>]+href=["']https:\/\/deepintent\.com\/careers\/?["'][^>]*>\s*Careers\s*<\/a>/i.test(rawHtml)
+    && extractCareersUrl(rawHtml) === CAREERS_URL
 }
 
 export const extractCareersUrl = (html) => {
-  const match = String(html ?? '').match(/<a[^>]+href=["'](https:\/\/deepintent\.com\/careers\/?)["'][^>]*>\s*Careers\s*<\/a>/i)
-  if (!match) return null
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Careers\s*<\/a>/gi)) {
+    const href = String(match[1] ?? '')
 
-  return match[1].replace(/\/+$/, '')
+    try {
+      const careersUrl = new URL(href, HOMEPAGE_URL)
+      const normalizedPath = careersUrl.pathname.replace(/\/+$/, '') || '/'
+
+      if (careersUrl.origin === HOMEPAGE_ORIGIN && normalizedPath === '/careers') {
+        return `${careersUrl.origin}${normalizedPath}`
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return null
 }
 
 export const hasVerifiedCareersShell = (html) => {

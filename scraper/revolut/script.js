@@ -65,9 +65,9 @@ const getRemoteStatus = (locations) => {
 export const hasOfficialCareersSignal = (html) => {
   const source = String(html ?? '')
 
-  return /<title>\s*Careers \| Revolut India\s*<\/title>/i.test(source)
+  return /<title[^>]*>\s*Careers \| Revolut India\s*<\/title>/i.test(source)
     && /\bopen positions\b/i.test(source)
-    && /Only apply through official Revolut channels/i.test(source)
+    && /Join the people creating a one-stop shop for financial freedom/i.test(source)
 }
 
 export const buildPositionDetailUrl = (jobId) =>

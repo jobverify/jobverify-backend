@@ -5,7 +5,7 @@ const aboutPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Us | Read More - LazyPay</title>
+    <title data-rh="true">About Us | Read More - LazyPay</title>
   </head>
   <body>
     <h1>About Us</h1>

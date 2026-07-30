@@ -198,8 +198,9 @@ export const createAlchemyTechsolIndiaScraper = ({
       const html = await fetchText(CAREERS_URL)
       const openings = extractCurrentOpenings(html)
       const legacyHtml = await fetchText(LEGACY_CAREERS_URL)
+      const legacyIndicatesOfficialCareersSurface = pageIndicatesOfficialCareersSurface(legacyHtml)
       const categoryUrls = extractLegacyCategoryUrls(legacyHtml)
-      if (categoryUrls.length === 0 && openings.length === 0) {
+      if (categoryUrls.length === 0 && openings.length === 0 && !legacyIndicatesOfficialCareersSurface) {
         throw new Error('Alchemy Techsol legacy careers surface no longer exposes category job links')
       }
 

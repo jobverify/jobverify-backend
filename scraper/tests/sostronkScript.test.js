@@ -33,7 +33,7 @@ test('Sostronk sentinel helpers stay pinned to the verified branded changelog an
   assert.equal(sostronk.COMPANY, 'Sostronk')
   assert.equal(sostronk.COMPANY_DOMAIN, 'sostronk.com')
   assert.equal(sostronk.CHANGELOG_URL, 'https://changelog.sostronk.com/')
-  assert.equal(sostronk.VERIFIED_AT, '2026-07-17')
+  assert.equal(sostronk.VERIFIED_AT, '2026-07-27')
   assert.deepEqual(sostronk.FIRST_PARTY_TIMEOUT_URLS, [
     'https://www.sostronk.com/',
     'https://www.sostronk.com/about',
@@ -45,6 +45,10 @@ test('Sostronk sentinel helpers stay pinned to the verified branded changelog an
   assert.equal(sostronk.hasOfficialChangelogSignal(changelogHtml), true)
   assert.equal(
     sostronk.isExpectedTimedOutSurface({ errorKind: 'timeout', status: null, html: null }),
+    true,
+  )
+  assert.equal(
+    sostronk.isExpectedBlockedSurface({ errorKind: 'tls', status: null, html: null }),
     true,
   )
   assert.equal(
@@ -63,12 +67,22 @@ test('Sostronk run verifies the exact-name timeout routes before returning []', 
   const jobs = await sostronk.createSostronkScraper().run({
     probeUrl: async (url) => {
       requestedUrls.push(url)
+      if (url === sostronk.CHANGELOG_URL) {
+        return {
+          url,
+          finalUrl: url,
+          status: 200,
+          html: changelogHtml,
+          errorKind: null,
+        }
+      }
+
       return {
         url,
         finalUrl: url,
         status: null,
         html: null,
-        errorKind: 'timeout',
+        errorKind: 'tls',
       }
     },
   })
@@ -98,7 +112,7 @@ test('Sostronk fails closed when a first-party route becomes reachable or change
           finalUrl: url,
           status: null,
           html: null,
-          errorKind: 'timeout',
+          errorKind: 'tls',
         }
       },
     }),
@@ -123,7 +137,7 @@ test('Sostronk fails closed when a first-party route becomes reachable or change
           finalUrl: url,
           status: null,
           html: null,
-          errorKind: 'timeout',
+          errorKind: 'tls',
         }
       },
     }),
@@ -140,6 +154,31 @@ test('Sostronk fails closed when a first-party route becomes reachable or change
         errorKind: 'dns',
       }),
     }),
-    /verified timed-out surface changed materially/i,
+    /verified blocked first-party surface changed materially/i,
+  )
+
+  await assert.rejects(
+    sostronk.createSostronkScraper().run({
+      probeUrl: async (url) => {
+        if (url === sostronk.CHANGELOG_URL) {
+          return {
+            url,
+            finalUrl: url,
+            status: 200,
+            html: '<html><body><h1>Unexpected changelog shell</h1></body></html>',
+            errorKind: null,
+          }
+        }
+
+        return {
+          url,
+          finalUrl: url,
+          status: null,
+          html: null,
+          errorKind: 'tls',
+        }
+      },
+    }),
+    /verified branded changelog surface changed materially/i,
   )
 })

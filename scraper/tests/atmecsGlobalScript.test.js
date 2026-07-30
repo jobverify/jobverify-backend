@@ -45,9 +45,11 @@ test('ATMECS Global sentinel helpers stay pinned to the verified placeholder-onl
   assert.equal(atmecs.SOURCE, 'atmecsglobal')
   assert.equal(atmecs.COMPANY, 'ATMECS Global')
   assert.equal(atmecs.OFFICIAL_BRAND_NAME, 'ATMECS Global')
-  assert.equal(atmecs.VERIFIED_ON, '2026-07-18')
+  assert.equal(atmecs.VERIFIED_ON, '2026-07-28')
   assert.equal(atmecs.HOMEPAGE_URL, 'https://atmecs.com/')
   assert.equal(atmecs.CAREERS_URL, 'https://atmecs.com/jobs/')
+  assert.equal(atmecs.isTrustedUnavailableFailure(new Error('getaddrinfo ENOTFOUND atmecs.com')), true)
+  assert.equal(atmecs.isTrustedUnavailableFailure(new Error('net::ERR_FAILED at https://atmecs.com/jobs/')), true)
   assert.equal(atmecs.hasOfficialJobsShellSignal(JOBS_PAGE_HTML), true)
   assert.equal(atmecs.hasPublicJobsSignal(JOBS_PAGE_HTML), false)
   assert.equal(atmecs.hasPublicJobsSignal(JOBS_PAGE_WITH_PUBLIC_LISTING_HTML), true)
@@ -85,4 +87,37 @@ test('ATMECS Global fails closed when the verified jobs shell drifts or starts e
     }),
     /surface now appears to expose public jobs/i,
   )
+})
+
+test('ATMECS Global can recover with a browser-backed jobs page when direct requests fail', async () => {
+  const atmecs = await loadModule()
+  const browserUrls = []
+
+  const jobs = await atmecs.createAtmecsGlobalScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return JOBS_PAGE_HTML
+    },
+  })
+
+  assert.deepEqual(browserUrls, [atmecs.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('ATMECS Global stays fail-closed when the pinned first-party jobs host is now unavailable', async () => {
+  const atmecs = await loadModule()
+
+  const jobs = await atmecs.createAtmecsGlobalScraper().run({
+    fetchText: async () => {
+      throw new Error('fetch failed | getaddrinfo ENOTFOUND atmecs.com')
+    },
+    fetchBrowserText: async () => {
+      throw new Error('net::ERR_FAILED at https://atmecs.com/jobs/')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

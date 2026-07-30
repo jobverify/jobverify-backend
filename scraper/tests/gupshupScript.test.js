@@ -20,6 +20,25 @@ const CAREERS_HTML = `
 </html>
 `
 
+const CURRENT_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Gupshup | Shape the Future of Conversations</title>
+  </head>
+  <body>
+    <main>
+      <h1>Join Gupshup’s Global Team</h1>
+      <h2>Your Next Career Move Is Just a Message Away</h2>
+      <p>Join forces with brilliant minds across 5 continents who are reshaping the world of customer engagement, one conversation at a time.</p>
+      <a href="https://api.whatsapp.com/send?phone=+919873865178&text=Hi+&type=phone_number&app_absent=0">Explore Opportunities</a>
+      <p>Your global career starts here – explore exciting opportunities at Gupshup across India, UAE, Saudi Arabia, Brazil, Mexico, Africa and beyond</p>
+      <p>sales@gupshup.ai</p>
+    </main>
+  </body>
+</html>
+`
+
 const ABOUT_HTML = `
 <!doctype html>
 <html lang="en">
@@ -62,6 +81,7 @@ test('Gupshup pins the verified careers page, WhatsApp handoff, and about-page s
     'https://api.whatsapp.com/send?app_absent=0&phone=+919873865178&text=Hi+&type=phone_number',
   )
   assert.equal(gupshup.hasOfficialCareersPageSignal(CAREERS_HTML), true)
+  assert.equal(gupshup.hasOfficialCareersPageSignal(CURRENT_CAREERS_HTML), true)
   assert.equal(gupshup.hasOfficialAboutPageSignal(ABOUT_HTML), true)
   assert.equal(
     gupshup.extractWhatsAppHandoffUrl(CAREERS_HTML),
@@ -94,6 +114,26 @@ test('Gupshup run verifies the official careers page and WhatsApp handoff before
   })
 
   assert.deepEqual(requestedUrls, [gupshup.CAREERS_URL, gupshup.ABOUT_US_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Gupshup accepts the current careers title variant and reordered WhatsApp handoff query', async () => {
+  const gupshup = await loadModule()
+
+  const jobs = await gupshup.createGupshupScraper().run({
+    fetchPage: async (url) => {
+      if (url === gupshup.CAREERS_URL) {
+        return { status: 200, url, html: CURRENT_CAREERS_HTML }
+      }
+
+      if (url === gupshup.ABOUT_US_URL) {
+        return { status: 200, url, html: ABOUT_HTML }
+      }
+
+      throw new Error(`Unexpected Gupshup URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

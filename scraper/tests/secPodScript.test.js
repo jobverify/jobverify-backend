@@ -5,20 +5,20 @@ const CAREERS_PAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>SecPod Careers | Join the Preventive Cybersecurity Team | SecPod</title>
+    <title data-next-head="">SecPod Careers | Join the Preventive Cybersecurity Team | SecPod</title>
   </head>
   <body>
     <h1>Shape the Future of Preventive Cybersecurity with SecPod</h1>
     <p>We are building a world where cyberattacks are prevented before they happen.</p>
     <section>
-      <h2>Technology & Innovation</h2>
+      <h2>Technology &amp; Innovation</h2>
       <h3>AI-assisted security analysis</h3>
       <h3>Autonomous remediation</h3>
       <h3>Exposure intelligence</h3>
       <h3>Endpoint security at scale</h3>
     </section>
     <section>
-      <h2>Teams at SecPod</h2>
+      <h2>TEAMS AT SECPOD</h2>
       <h3>Engineering</h3>
       <h3>Security Research</h3>
       <h3>Product</h3>
@@ -29,8 +29,6 @@ const CAREERS_PAGE_HTML = `
     <section>
       <h2>Current Job Openings</h2>
     </section>
-    <p>PUT PREVENTION FIRST</p>
-    <p>SEE SANER IN ACTION</p>
   </body>
 </html>
 `

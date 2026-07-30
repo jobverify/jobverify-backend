@@ -26,7 +26,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('ATMECS Global local catalog captures the verified shortcode-only jobs shell and fail-closed contract', async () => {
+test('ATMECS Global local catalog captures the verified unavailable-host fail-closed contract', async () => {
   const { ATMECS_GLOBAL_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const atmecs = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(ATMECS_GLOBAL_CATALOG)
@@ -42,20 +42,20 @@ test('ATMECS Global local catalog captures the verified shortcode-only jobs shel
   assert.equal(provider.companyDomain, 'atmecs.com')
   assert.equal(provider.atsPlatform, 'official-first-party-jobs-page-placeholder-shortcode')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-jobs-page-placeholder-shortcode-validation')
+  assert.equal(provider.paginationStrategy, 'single-jobs-page-placeholder-shortcode-or-unavailable-host-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-jobs-page+verified-placeholder-shortcode-without-public-listings+return-empty',
+    'verified-first-party-jobs-page-placeholder-or-unavailable-host+return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-07-28')
   assert.match(provider.dryRunFile, /atmecsglobal[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, July 28, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/atmecs\.com\/jobs\//i)
-  assert.match(provider.verifiedSurfaceSummary, /\[jobs\]/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /no longer resolves/i)
+  assert.match(provider.verifiedSurfaceSummary, /returns an empty set/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'ATMECS Global'), false)
 
   assert.equal(atmecs.PROVIDER_METADATA.source, ATMECS_GLOBAL_CATALOG.source)

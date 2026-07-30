@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 
 import { NAVISITE_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -14,7 +15,8 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const PARENT_CAREERS_URL = PROVIDER_METADATA.parentCareersUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -34,6 +36,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Discover Opportunities at Navisite, Part of Accenture')
@@ -48,14 +54,47 @@ export const hasBlockedCareersSignal = (html = '') => {
   }
 
 export const createNaviSiteScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialCareersSignal(careersHtml) && !hasBlockedCareersSignal(careersHtml)) {
-      throw new Error('NaviSite verified careers surface changed materially')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    return []
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const careersHtml = await fetchPageText(CAREERS_URL)
+
+      if (!hasOfficialCareersSignal(careersHtml) && !hasBlockedCareersSignal(careersHtml)) {
+        throw new Error('NaviSite verified careers surface changed materially')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

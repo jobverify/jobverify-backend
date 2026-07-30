@@ -23,9 +23,9 @@ export const PANASONIC_CATALOG = {
     'verified-panasonic-india-corporate-handoff+verified-corporate-india-route+public-jibe-api-country-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-25',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that the official Panasonic India corporate page at https://www.panasonic.com/in/corporate.html exposes Careers[Global site], that Panasonic\'s official corporate careers surface at https://careers.na.panasonic.com/corporate/jobs/locations lists India and the India route at https://careers.na.panasonic.com/corporate/jobs/locations/country/India embeds country=India in window.searchConfig, and that the first-party public Jibe API at https://careers.na.panasonic.com/api/jobs returned 25 India jobs including Line Maintenance Manager - India and Software Engineer III - Fullstack + Kubernetes + Devops.',
+    'Verified on Saturday, July 25, 2026 that the official Panasonic India corporate page at https://www.panasonic.com/in/corporate.html exposes Careers[Global site], that Panasonic\'s official corporate careers surface at https://careers.na.panasonic.com/corporate/jobs/locations lists India and the India route at https://careers.na.panasonic.com/corporate/jobs/locations/country/India still exposes country=India through window.searchConfig, and that the first-party public Jibe API at https://careers.na.panasonic.com/api/jobs returned 21 India jobs including Line Maintenance Manager - India and Software Engineer III - Fullstack + Kubernetes + Devops.',
   dryRunFile: 'panasonic/jobs.json',
 }
 

@@ -101,6 +101,12 @@ const workingOfficeFormPage = {
   html: '<html><head><title>Microsoft Forms</title></head><body><form></form></body></html>',
 }
 
+const redirectedWorkingOfficeFormPage = {
+  status: 200,
+  url: 'https://forms.cloud.microsoft/pages/responsepage.aspx?id=9ZowM48mvkq4Z3pFDULIGiuhPAGD1SNKuPL2TTPwggtUQ0hDTTBJR1hLRlE5R0ZaRVJQSkpUUURFRi4u&route=shorturl',
+  html: '<html><head><title>Microsoft Forms</title></head><body><form></form></body></html>',
+}
+
 test('Akasa Air helpers stay pinned to the verified careers landing page, sitemap role discovery, and mixed handoff signals', async () => {
   const akasaAir = await loadAkasaAirModule()
 
@@ -140,6 +146,7 @@ test('Akasa Air helpers stay pinned to the verified careers landing page, sitema
   assert.equal(akasaAir.hasJobPostingSignal(corporateRoleHtml), true)
   assert.equal(akasaAir.isBrokenPeopleStrongSurface(brokenPeopleStrongPage), true)
   assert.equal(akasaAir.isWorkingOfficeFormSurface(workingOfficeFormPage), true)
+  assert.equal(akasaAir.isWorkingOfficeFormSurface(redirectedWorkingOfficeFormPage), true)
 })
 
 test('Akasa Air run returns only the live pilot posting and filters role pages whose official apply handoff is currently broken', async () => {

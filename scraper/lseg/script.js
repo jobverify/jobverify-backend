@@ -22,8 +22,14 @@ export const buildScraperOptions = () => ({
 export const createLsegScraper = ({
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
-  run: () => workdayRunner(buildScraperOptions()),
+  run: ({ signal } = {}) => workdayRunner({
+    ...buildScraperOptions(),
+    ...(signal === undefined ? {} : { signal }),
+  }),
 })
 
-export const run = async ({ workdayRunner = runWorkdayScraper } = {}) =>
-  createLsegScraper({ workdayRunner }).run()
+export const run = async ({
+  workdayRunner = runWorkdayScraper,
+  signal,
+} = {}) =>
+  createLsegScraper({ workdayRunner }).run({ signal })

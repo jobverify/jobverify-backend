@@ -24,6 +24,29 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Goldcast | The AI-first Video Content Platform for B2B Videos, Webinars, and Events</title>
+  </head>
+  <body>
+    <main>
+      <h1>You’re invisible without video</h1>
+      <p>Goldcast’s agentic workflows put it at the heart of your GTM strategy—curating the right clips, making them production-ready, and keeping you in the spotlight.</p>
+    </main>
+    <footer>
+      <p>Stay In Touch</p>
+      <nav>
+        <a href="/company/careers">Careers</a>
+        <a href="/company/about">About</a>
+      </nav>
+      <p>© 2026 Copyright Goldcast, Inc. All rights reserved.</p>
+    </footer>
+  </body>
+</html>
+`
+
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -90,6 +113,7 @@ test('Goldcast helpers stay pinned to the verified no-public-jobs careers shell'
   assert.equal(goldcast.COMPANY_DOMAIN, 'goldcast.io')
   assert.equal(goldcast.VERIFIED_ON, '2026-07-16')
   assert.equal(goldcast.hasVerifiedGoldcastHomepageSignals(homepageHtml), true)
+  assert.equal(goldcast.hasVerifiedGoldcastHomepageSignals(currentHomepageHtml), true)
   assert.equal(goldcast.hasVerifiedGoldcastCareersSignals(careersHtml), true)
   assert.equal(goldcast.hasPublicGoldcastJobSignals(careersHtml), false)
   assert.equal(goldcast.hasPublicGoldcastJobSignals(publicJobsHtml), true)

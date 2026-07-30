@@ -1,0 +1,21 @@
+{
+  "source": "tataneu",
+  "companyName": "Tata Neu",
+  "officialBrandName": "Tata Neu",
+  "adapter": "script",
+  "modulePath": "../tataneu/script.js",
+  "dryRunFile": "tataneu/jobs.json",
+  "companyCareerPage": "https://www.tata.com/business/tata-digital/tata-neu",
+  "companyDomain": "tata.com",
+  "atsPlatform": "official-first-party-product-page-no-exact-employer-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-product-page-sentinel",
+  "extractionStrategy": "exact-brand-identity-required+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.tata.com/business/tata-digital/tata-neu",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that Tata Neu is an official Tata Digital product at https://www.tata.com/business/tata-digital/tata-neu. Tata's official group jobs site lists Tata Digital as an employer but does not expose Tata Neu as an exact employer or an exact Tata Neu jobs feed. This provider therefore fails closed and returns no jobs rather than substituting Tata Digital or other Tata group vacancies."
+}

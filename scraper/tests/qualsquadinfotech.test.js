@@ -51,3 +51,21 @@ test('Qualsquad sentinel returns [] only while the candidate first-party domains
     /public jobs surface/i,
   )
 })
+
+test('Qualsquad can recover with browser-backed verification when direct requests fail generically', async () => {
+  const qualsquad = await loadScript()
+  const browserUrls = []
+
+  const jobs = await qualsquad.run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      throw new Error('getaddrinfo ENOTFOUND www.qualsquadinfotech.com')
+    },
+  })
+
+  assert.deepEqual(browserUrls, qualsquad.CANDIDATE_ROUTE_URLS)
+  assert.deepEqual(jobs, [])
+})

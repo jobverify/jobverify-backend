@@ -55,9 +55,9 @@ const jobBoardHtml = `
   <body>
     <main>
       <h1>Jobs in Greece</h1>
-      <p>Search</p>
       <p>14 results in Greece</p>
     </main>
+    <script src="/_next/static/chunks/app/%5Blocale%5D/job-board/%5B%5B...filters%5D%5D/page-9ca804e5aab242b9.js"></script>
   </body>
 </html>
 `

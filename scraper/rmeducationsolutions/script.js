@@ -33,10 +33,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialIndiaSignal = (html = '') => {
-  const page = String(html ?? '')
+  const page = normalizeWhitespace(html) || ''
 
-  return /Life\s*@\s*RM India/i.test(page)
-    && /join RM India/i.test(page)
+  return /Life\s*(?:@|at)\s*RM India/i.test(page)
+    && (
+      /join RM India/i.test(page)
+      || /When you join RM India/i.test(page)
+      || /Come to Trivandrum/i.test(page)
+    )
 }
 
 export const hasVerifiedJobsShell = (html = '') => {
@@ -47,9 +51,11 @@ export const hasVerifiedJobsShell = (html = '') => {
 }
 
 const hasLocationsIndexSignal = (html = '') => {
-  const page = String(html ?? '')
-  return /By City \| By State \/ Province \| By Country/i.test(page)
-    && /\/jobs\/locations\/country\/India/i.test(page)
+  const page = normalizeWhitespace(html) || ''
+  return page.includes('By City')
+    && page.includes('By State / Province')
+    && page.includes('By Country')
+    && /\/jobs\/locations\/country\/India/i.test(String(html ?? ''))
 }
 
 const hasCountryRouteJobLinks = (html = '') => /\/jobs\/\d+\?lang=/i.test(String(html ?? ''))

@@ -20,6 +20,21 @@ const JOIN_US_HTML = `
 </html>
 `
 
+const BLOCKED_FIRST_PARTY_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Attention Required! | Cloudflare</title>
+  </head>
+  <body>
+    <h1>Sorry, you have been blocked</h1>
+    <p>Please enable cookies.</p>
+    <p>You are unable to access wpenginepowered.com</p>
+    <p>Performance &amp; security by Cloudflare</p>
+  </body>
+</html>
+`
+
 const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -43,21 +58,53 @@ const BOARD_HTML = `
   <body>
     <h4>Careers</h4>
     <h3>Open Positions</h3>
-    <a href="/jobs/NL9eULd4lxHD/analyst-data-science-spatial-analytics">
-      <span>Analyst - Data Science & Spatial Analytics</span>
-      <span>New Delhi, Delhi</span>
-      <span>Contract</span>
-    </a>
-    <a href="/jobs/VyhBa3Uwin7B/intern-corporate-advisory">
-      <span>Intern - Corporate Advisory</span>
-      <span>Mumbai, Maharashtra</span>
-      <span>Internship</span>
-    </a>
-    <a href="/jobs/ldn000000001/growth-manager-emea">
-      <span>Growth Manager - EMEA</span>
-      <span>London, England</span>
-      <span>Full Time</span>
-    </a>
+    <div class="job-list">
+      <a href="/jobs/NL9eULd4lxHD/analyst-data-science-spatial-analytics" class="heading" data-portal-location="New Delhi, India">
+        <div class="row">
+          <div class="job-list-info">
+            <div class="job-title">Analyst - Data Science & Spatial Analytics</div>
+            <div class="job-desc text">Role: Analyst - Data Science & Spatial Analytics Employment type: Contract (1 Year) Location: Delhi / Gurgaon / Bangalore</div>
+          </div>
+          <div class="job-location">
+            <div class="location-info">
+              New Delhi, Delhi
+              <br/>
+              Contract
+            </div>
+          </div>
+        </div>
+      </a>
+      <a href="/jobs/VyhBa3Uwin7B/intern-corporate-advisory" class="heading" data-portal-location="Mumbai, India">
+        <div class="row">
+          <div class="job-list-info">
+            <div class="job-title">Intern - Corporate Advisory</div>
+            <div class="job-desc text">Position: Intern - Corporate Advisory Employment type: Internship Location: Mumbai</div>
+          </div>
+          <div class="job-location">
+            <div class="location-info">
+              Mumbai, Maharashtra
+              <br/>
+              Internship
+            </div>
+          </div>
+        </div>
+      </a>
+      <a href="/jobs/ldn000000001/growth-manager-emea" class="heading" data-portal-location="London, United Kingdom">
+        <div class="row">
+          <div class="job-list-info">
+            <div class="job-title">Growth Manager - EMEA</div>
+            <div class="job-desc text">Employment type: Full Time Location: London</div>
+          </div>
+          <div class="job-location">
+            <div class="location-info">
+              London, England
+              <br/>
+              Full Time
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
   </body>
 </html>
 `
@@ -184,6 +231,36 @@ test('Sattva Media run verifies the first-party join-us flow and keeps only Indi
       },
     ],
   )
+})
+
+test('Sattva Media can continue via the verified Freshteam board when first-party pages are Cloudflare-blocked', async () => {
+  const sattvaMedia = await loadModule()
+  const requested = []
+
+  const jobs = await sattvaMedia.createSattvaMediaScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      requested.push(url)
+      if (url === sattvaMedia.JOIN_US_URL || url === sattvaMedia.CAREERS_URL) {
+        return BLOCKED_FIRST_PARTY_HTML
+      }
+      if (url === sattvaMedia.LISTING_URL) return BOARD_HTML
+      if (url === 'https://sattva-talent.freshteam.com/jobs/NL9eULd4lxHD/analyst-data-science-spatial-analytics') {
+        return DATA_SCIENCE_DETAIL_HTML
+      }
+      throw new Error(`Unexpected Sattva Media fallback fixture URL: ${url}`)
+    },
+    now: () => '2026-07-25T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requested, [
+    sattvaMedia.JOIN_US_URL,
+    sattvaMedia.CAREERS_URL,
+    sattvaMedia.LISTING_URL,
+    'https://sattva-talent.freshteam.com/jobs/NL9eULd4lxHD/analyst-data-science-spatial-analytics',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Analyst - Data Science & Spatial Analytics')
+  assert.equal(jobs[0].source, 'sattvamedia')
 })
 
 test('Sattva Media fails closed when the verified join-us landing, careers CTA, or Freshteam board drifts', async () => {

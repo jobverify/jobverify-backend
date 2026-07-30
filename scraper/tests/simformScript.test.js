@@ -20,6 +20,26 @@ const CURRENT_OPENINGS_HTML = `
 </html>
 `
 
+const HERO_COPY_EMPTY_STATE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Current openings</title>
+  </head>
+  <body>
+    <main>
+      <p>Apply now, because there's never a perfect time to seize the opportunity.</p>
+      <h1>All Departments</h1>
+      <h2>All Locations</h2>
+      <div>Loading...</div>
+      <p>No jobs found matching your criteria</p>
+      <button id="loadMoreBtn" class="primary-btn">Load More Jobs</button>
+      <script type="module" src="https://www.simform.com/wp-content/plugins/kula-job-board/scripts/app.js"></script>
+    </main>
+  </body>
+</html>
+`
+
 const PUBLIC_JOBS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -61,6 +81,7 @@ test('Simform sentinel pins the verified current-openings empty state', async ()
   assert.equal(simform.hasVerifiedEmptyState(CURRENT_OPENINGS_HTML), true)
   assert.equal(simform.hasVerifiedEmptyState('<html><body>Other</body></html>'), false)
   assert.equal(simform.pageExposesPublicJobListings(CURRENT_OPENINGS_HTML), false)
+  assert.equal(simform.pageExposesPublicJobListings(HERO_COPY_EMPTY_STATE_HTML), false)
   assert.equal(simform.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
 })
 

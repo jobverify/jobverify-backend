@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://authorstream.com/, https://authorstream.com/careers, https://authorstream.com/career, https://authorstream.com/jobs, https://authorstream.com/about, and https://authorstream.com/contact-us all served the same first-party JavaScript redirect shell that sends visitors to /lander. Verified that https://authorstream.com/lander returned a 307 redirect to an Afternic for-sale page for authorstream.com, that https://authorstream.com/robots.txt is a minimal allow-all crawl file, and that https://authorstream.com/sitemap.xml lists only https://authorstream.com/lander. There is no trustworthy public jobs surface: the verified first-party domain is a parked shell rather than a live company careers site or ATS handoff.'
+  'Verified on July 28, 2026 that https://authorstream.com/, https://authorstream.com/careers, https://authorstream.com/career, https://authorstream.com/jobs, https://authorstream.com/about, and https://authorstream.com/contact-us all still serve the same first-party JavaScript redirect shell that sends visitors to /lander. Verified that https://authorstream.com/lander now returns a 307 redirect to the GoDaddy for-sale page for authorstream.com, that https://authorstream.com/robots.txt is still a minimal allow-all crawl file, and that https://authorstream.com/sitemap.xml still lists only https://authorstream.com/lander. There is no trustworthy public jobs surface: the verified first-party domain remains a parked shell rather than a live company careers site or ATS handoff.'
 
 export const AUTHORSTREAM_CATALOG = {
   source: 'authorstream',
@@ -33,7 +33,7 @@ export const AUTHORSTREAM_CATALOG = {
     'verified-redirect-shell+verified-robots-and-sitemap-with-single-lander-url+verified-first-party-routes-share-parked-redirect-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-07-28',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

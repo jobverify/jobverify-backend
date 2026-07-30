@@ -97,7 +97,8 @@ export const hasExpectedSitemapSignal = (xml = '') => {
 
 export const hasParkedLanderRedirect = (response = {}) =>
   Number(response?.status) === 307
-  && /^https:\/\/www\.afternic\.com\/forsale\/authorstream\.com\b/i.test(String(response?.location ?? ''))
+  && /^(https:\/\/www\.afternic\.com\/forsale\/authorstream\.com\b|https:\/\/forsale\.godaddy\.com\/forsale\/authorstream\.com\b)/i
+    .test(String(response?.location ?? ''))
 
 export const createAuthorStreamScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

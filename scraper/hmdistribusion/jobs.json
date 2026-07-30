@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Current remote openings at Distribusion",
+    "company": "Distribusion",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/frontend-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/frontend-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/frontend-engineer",
+    "source": "hmdistribusion",
+    "jobId": "hmdistribusion-current-openings",
+    "requisitionId": "hmdistribusion-current-openings",
+    "department": null,
+    "employmentType": null,
+    "experienceRequired": null,
+    "postingDate": null,
+    "expiresAt": null,
+    "jobDescription": "Distribusion had current Himalayas hiring evidence for Frontend Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-07-26T21:28:05.748Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
+    "companyDomain": "himalayas.app"
+  }
+]

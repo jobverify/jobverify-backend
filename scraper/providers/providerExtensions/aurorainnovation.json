@@ -1,0 +1,22 @@
+{
+  "source": "aurorainnovation",
+  "companyName": "Aurora Innovation",
+  "officialBrandName": "Aurora Innovation, Inc.",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../aurorainnovation/script.js",
+  "dryRunFile": "aurorainnovation/jobs.json",
+  "companyCareerPage": "https://aurora.tech/careers/",
+  "companyDomain": "aurora.tech",
+  "atsPlatform": "official-first-party-careers-site-no-current-openings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-sentinel",
+  "extractionStrategy": "verified-first-party-careers-site-without-current-openings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://aurora.tech/careers/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://aurora.tech/careers/ was Aurora Innovation's live first-party careers surface and that its public openings view reported no current positions. This exact-name provider fails closed and returns no jobs rather than substituting unrelated Aurora companies or third-party listings."
+}

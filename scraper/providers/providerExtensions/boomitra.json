@@ -1,0 +1,21 @@
+{
+  "source": "boomitra",
+  "companyName": "Boomitra",
+  "officialBrandName": "Boomitra",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../boomitra/script.js",
+  "dryRunFile": "boomitra/jobs.json",
+  "companyCareerPage": "https://boomitra.com/careers/",
+  "companyDomain": "boomitra.com",
+  "atsPlatform": "official-company-site-pdf-application",
+  "countryFilter": "India",
+  "paginationStrategy": "single-first-party-careers-page",
+  "extractionStrategy": "verified-first-party-careers-page+exact-role-pdf-link",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "officialCareersPageUrl": "https://boomitra.com/careers/",
+  "verifiedJobOpeningsPageUrl": "https://boomitra.com/job-openings/",
+  "verifiedSurfaceSummary": "Verified on July 26, 2026 that https://boomitra.com/careers/ is Boomitra's first-party careers page and currently exposes the exact Full Stack Developer role for Bangalore, India with a first-party PDF application link and careers@boomitra.com contact. The linked /job-openings/ page exposes only an unrendered [awsmjobs] shortcode, so this provider stays on the verified careers page, emits only the exact visible role, and fails closed if the page identity, role, location, or first-party PDF link changes."
+}

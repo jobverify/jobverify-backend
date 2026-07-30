@@ -56,3 +56,21 @@ test('United Alliance Technology rethrows unexpected network failures instead of
     /socket hang up/i,
   )
 })
+
+test('United Alliance Technology can recover with browser-backed verification when direct requests fail generically', async () => {
+  const unitedAlliance = await loadModule()
+  const browserUrls = []
+
+  const jobs = await unitedAlliance.createUnitedAllianceTechnologyScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      throw new Error('getaddrinfo ENOTFOUND unitedalliancetechnology.com')
+    },
+  })
+
+  assert.deepEqual(browserUrls, [unitedAlliance.OFFICIAL_CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})

@@ -1,0 +1,21 @@
+{
+  "source": "zoox",
+  "companyName": "Zoox",
+  "officialBrandName": "Zoox",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../zoox/script.js",
+  "dryRunFile": "zoox/jobs.json",
+  "companyCareerPage": "https://zoox.com/careers",
+  "companyDomain": "zoox.com",
+  "atsPlatform": "official-first-party-careers-page-fail-closed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://zoox.com/careers is Zoox's first-party careers page. The live public page currently rendered the Zoox careers shell with a job-search section that reported no results instead of exposing a stable enumerable jobs feed that could be verified from this surface, so this exact-name provider fails closed and returns no jobs."
+}

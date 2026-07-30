@@ -48,7 +48,11 @@ export const buildJobsPageUrl = (page = 1) =>
 
 export const pageHasOfficialJobsListing = (html) => {
   const value = String(html ?? '')
-  return /\bopen jobs\b/i.test(value) && /showing\s+\d+\s*-\s*\d+\s+of\s+\d+\s+jobs/i.test(value)
+  return /\bopen jobs\b/i.test(value)
+    && (
+      /showing\s+\d+\s*-\s*\d+\s+of\s+\d+\s+jobs/i.test(value)
+      || /showing\s+\{start_job\}\s*-\s*\{end_job\}\s+of\s+\{total\}\s+jobs/i.test(value)
+    )
 }
 
 const extractJobCards = (html) => {

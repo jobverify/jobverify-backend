@@ -51,6 +51,26 @@ const buildEscapedKulaHtml = (jobs) => {
 `
 }
 
+const buildCurrentKulaHtml = (jobs) => {
+  const escapedJobs = JSON.stringify(jobs).replace(/"/g, '\\"')
+  return `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Goodera | Powering the World of Good</title>
+  </head>
+  <body>
+    <main>
+      <h1>Powering the World of Good</h1>
+      <p>Open Positions</p>
+      <p>Explore our current job openings across various departments</p>
+      before \\"accountName\\":\\"goodera\\",\\"jobs\\":${escapedJobs},\\"departments\\":[] after
+    </main>
+  </body>
+</html>
+`
+}
+
 const loadModule = async () => {
   try {
     return await import('../goodera/script.js')
@@ -75,6 +95,7 @@ test('Goodera constants and helpers stay pinned to the verified first-party hand
   assert.equal(goodera.hasContactPageSignal(CONTACT_HTML), true)
   assert.equal(goodera.extractKulaCompanyUrl(CONTACT_HTML), 'https://careers.kula.ai/goodera')
   assert.equal(goodera.hasOfficialKulaBoardSignal(buildEscapedKulaHtml([])), true)
+  assert.equal(goodera.hasOfficialKulaBoardSignal(buildCurrentKulaHtml([])), true)
   assert.equal(goodera.buildSearchUrl(), goodera.KULA_JOBS_URL)
 })
 

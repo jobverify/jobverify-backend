@@ -24,6 +24,21 @@ const officialCareersHtml = `
 </html>
 `
 
+const currentOfficialCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>We turn on the promise of a new day.</h1>
+      <a href="/ww/recruit/corporate/worklife.html">Life at Toshiba</a>
+      <a href="https://www.global.toshiba/ww/recruit/corporate/ourteams/jump.html">
+        Job Openings &amp; Apply
+      </a>
+    </main>
+  </body>
+</html>
+`
+
 const officialJobsHandoffHtml = `
 <!doctype html>
 <html lang="en">
@@ -32,6 +47,21 @@ const officialJobsHandoffHtml = `
       <h1>Link to third-party website</h1>
       <p>Please click “View Jobs” to move to HRMOS Recruitment page offered by BizReach, Inc.</p>
       <a href="https://hrmos.co/pages/toshiba/">View Jobs (HRMOS)</a>
+    </main>
+  </body>
+</html>
+`
+
+const currentHrmosBoardUrl = 'https://hrmos.co/pages/toshiba/jobs?category=1490198329516470272'
+
+const currentOfficialJobsHandoffHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Link to third-party website</h1>
+      <p>Please click “View Jobs” to move to HRMOS Recruitment page offered by BizReach, Inc.</p>
+      <a href="${currentHrmosBoardUrl}">View Jobs (HRMOS)</a>
     </main>
   </body>
 </html>
@@ -69,9 +99,11 @@ test('Toshiba scraper validates the verified official careers handoff and curren
   assert.equal(toshiba.JOBS_HANDOFF_URL, 'https://www.global.toshiba/ww/recruit/corporate/ourteams/jump.html')
   assert.equal(toshiba.HRMOS_BOARD_URL, 'https://hrmos.co/pages/toshiba/')
   assert.equal(toshiba.hasOfficialCareersSignal(officialCareersHtml), true)
+  assert.equal(toshiba.hasOfficialCareersSignal(currentOfficialCareersHtml), true)
   assert.equal(toshiba.extractHandoffUrl(officialCareersHtml), toshiba.JOBS_HANDOFF_URL)
   assert.equal(toshiba.hasOfficialJobsHandoffSignal(officialJobsHandoffHtml), true)
   assert.equal(toshiba.extractHrmosBoardUrl(officialJobsHandoffHtml), toshiba.HRMOS_BOARD_URL)
+  assert.equal(toshiba.extractHrmosBoardUrl(currentOfficialJobsHandoffHtml), currentHrmosBoardUrl)
   assert.equal(toshiba.hasHrmosBoardSignal(hrmosBoardHtml), true)
   assert.equal(toshiba.hasIndiaJobsSignal(hrmosBoardHtml), false)
 })
@@ -96,6 +128,30 @@ test('Toshiba scraper returns no jobs while the official public board remains Ja
     toshiba.CAREERS_URL,
     toshiba.JOBS_HANDOFF_URL,
     toshiba.HRMOS_BOARD_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Toshiba scraper follows the current Toshiba HRMOS jobs URL when the handoff is category-filtered', async () => {
+  const toshiba = await loadToshibaModule()
+  const requestedUrls = []
+
+  const jobs = await toshiba.createToshibaScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === toshiba.CAREERS_URL) return currentOfficialCareersHtml
+      if (url === toshiba.JOBS_HANDOFF_URL) return currentOfficialJobsHandoffHtml
+      if (url === currentHrmosBoardUrl) return hrmosBoardHtml
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    toshiba.CAREERS_URL,
+    toshiba.JOBS_HANDOFF_URL,
+    currentHrmosBoardUrl,
   ])
   assert.deepEqual(jobs, [])
 })

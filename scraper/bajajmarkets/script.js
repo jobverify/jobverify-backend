@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
 import { loadConfig } from '../utils/loadConfig.js'
@@ -17,7 +18,8 @@ export const OFFICIAL_CAREERS_HANDOFF_URL = `${DARWINBOX_ORIGIN}/ms/candidate/ca
 export const PUBLIC_PORTAL_URL =
   `${DARWINBOX_ORIGIN}/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/allJobs`
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -74,6 +76,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createBajajMarketsScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
@@ -81,25 +87,60 @@ export const createBajajMarketsScraper = ({
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
+    fetchBrowserText,
     fetchListingPage,
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    let browserSession = null
 
-    if (!hasOfficialBajajMarketsCareersSignals(careersHtml)) {
-      throw new Error('Bajaj Markets verified official careers page no longer matches the verified public surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const jobs = await darwinboxScraper.run({
-      maxPages,
-      maxJobs,
-      fetchListingPage,
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+      return page.html
     })
-    const scrapedAt = now()
 
-    return jobs.map((job) => ({
-      ...job,
-      scrapedAt,
-    }))
+    const fetchCareersText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const careersHtml = await fetchCareersText(OFFICIAL_CAREERS_URL)
+
+      if (!hasOfficialBajajMarketsCareersSignals(careersHtml)) {
+        throw new Error('Bajaj Markets verified official careers page no longer matches the verified public surface')
+      }
+
+      const jobs = await darwinboxScraper.run({
+        maxPages,
+        maxJobs,
+        fetchListingPage,
+      })
+      const scrapedAt = now()
+
+      return jobs.map((job) => ({
+        ...job,
+        scrapedAt,
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

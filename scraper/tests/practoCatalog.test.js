@@ -13,7 +13,7 @@ const loadPractoCatalog = async () => {
   }
 }
 
-test('Practo catalog captures the verified July 17, 2026 hidden-and-closed careers contract', async () => {
+test('Practo catalog captures the verified July 26, 2026 hidden-and-closed careers contract', async () => {
   const { PRACTO_CATALOG } = await loadPractoCatalog()
 
   assert.equal(PRACTO_CATALOG.source, 'practo')
@@ -35,11 +35,12 @@ test('Practo catalog captures the verified July 17, 2026 hidden-and-closed caree
   )
   assert.equal(PRACTO_CATALOG.parser, 'custom-script')
   assert.equal(PRACTO_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(PRACTO_CATALOG.verifiedOn, '2026-07-17')
+  assert.equal(PRACTO_CATALOG.verifiedOn, '2026-07-26')
   assert.equal(PRACTO_CATALOG.officialSearchApiUrl, 'https://public.zwayam.com/jobs/search')
   assert.equal(PRACTO_CATALOG.zwayamCompanyId, 'MTYzMDI=')
   assert.equal(PRACTO_CATALOG.zwayamDetailCompanyId, '16302')
-  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
+  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /app-root shell/i)
   assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Practo \| Careers/i)
   assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Hidden/i)
   assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Closed/i)

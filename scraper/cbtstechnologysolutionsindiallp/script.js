@@ -11,6 +11,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const RIPPLING_BOARD_URL = PROVIDER_METADATA.ripplingBoardUrl
 export const RIPPLING_BOARD_SLUG = PROVIDER_METADATA.ripplingBoardSlug
+export const CURRENT_INDIA_CAREERS_BOARD_URL = 'https://jobs.cbts.com/careers?&location=India'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -57,9 +58,14 @@ export const buildBoardPageUrl = (page = 1) =>
 
 export const hasVerifiedCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
+  const currentIndiaBoardPattern = /https:\/\/jobs\.cbts\.com\/careers\?&(?:amp;)?location=India/i
   return /Careers at CBTS/i.test(rawHtml)
     && /Explore opportunities across CBTS/i.test(rawHtml)
-    && new RegExp(RIPPLING_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(rawHtml)
+    && /CBTS India/i.test(rawHtml)
+    && (
+      currentIndiaBoardPattern.test(rawHtml)
+      || new RegExp(RIPPLING_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(rawHtml)
+    )
 }
 
 export const extractIndiaJobsFromBoardHtml = (html, { scrapedAt = new Date().toISOString() } = {}) => {

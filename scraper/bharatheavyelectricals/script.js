@@ -22,6 +22,8 @@ export const TRUSTED_OPENING_HOSTS = [
   'careers.bhel.in',
   'careers1.bhel.in',
   'sbdapp.bhel.in',
+  'edn.bhel.com',
+  'ednnet.bhel.in',
   'hpep.bhel.com',
   'bpl.bhel.com',
   'cdn.digialm.com',

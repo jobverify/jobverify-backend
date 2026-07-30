@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 const CAREERS_PAGE_URL = 'https://www.maxlinear.com/company/careers'
-const SEARCH_PAGE_URL = 'https://careersintl-maxlinear.icims.com/jobs/search?ss=1&searchLocation=13228-13245-Bangalore&in_iframe=1'
-const SEARCH_PAGE_URL_PAGE_2 = 'https://careersintl-maxlinear.icims.com/jobs/search?pr=1&in_iframe=1&searchLocation=13228-13245-Bangalore'
+const SEARCH_PAGE_URL = 'https://careersintl-maxlinear.icims.com/jobs/search?ss=1&in_iframe=1'
+const SEARCH_PAGE_URL_PAGE_2 = 'https://careersintl-maxlinear.icims.com/jobs/search?pr=1&in_iframe=1'
 const DETAIL_URL = 'https://careersintl-maxlinear.icims.com/jobs/3000/principal-asic-design-verification-engineer/job'
 const DETAIL_FETCH_URL = `${DETAIL_URL}?in_iframe=1`
 const APPLY_URL = 'https://careersintl-maxlinear.icims.com/jobs/3000/principal-asic-design-verification-engineer/job?apply=yes&hashed=-1834446046&mode=apply'
@@ -14,7 +14,7 @@ const careersPageHtml = `
     <body>
       <h1>Find Your Future with MaxLinear</h1>
       <a href="https://careersus-maxlinear.icims.com">Browse all US Jobs</a>
-      <a href="https://careersintl-maxlinear.icims.com/jobs/search?ss=1&searchLocation=13228-13245-Bangalore">Browse all International Jobs</a>
+      <a href="https://careersintl-maxlinear.icims.com/jobs/search?ss=1">Browse all International Jobs</a>
       <div class="featured-job">
         <h2>Principal Systems Engineer (Power)</h2>
         <span>IND-KA-Bangalore</span>
@@ -27,8 +27,8 @@ const listingPageOneHtml = `
   <html>
     <head>
       <title>Job Listings at MaxLinear</title>
-      <link rel="canonical" href="https://careersintl-maxlinear.icims.com/jobs/search?searchLocation=13228-13245-Bangalore&ss=1" />
-      <link rel="next" href="https://careersintl-maxlinear.icims.com/jobs/search?pr=1&amp;in_iframe=1&amp;searchLocation=13228-13245-Bangalore" />
+      <link rel="canonical" href="https://careersintl-maxlinear.icims.com/jobs/search?ss=1" />
+      <link rel="next" href="https://careersintl-maxlinear.icims.com/jobs/search?pr=1&amp;in_iframe=1" />
     </head>
     <body>
       <div id="iCIMS_Header"><h1 class="iCIMS_Header">Job Listings</h1></div>
@@ -137,6 +137,31 @@ const listingPageTwoHtml = `
   </html>
 `
 
+const terminalListingPageHtml = `
+  <html>
+    <head><title>Job Listings at MaxLinear</title></head>
+    <body>
+      <div class="iCIMS_Paging text-center">
+        <a class="iCIMS_Anchor_Nav" href="https://careersintl-maxlinear.icims.com/jobs/intro?in_iframe=1">
+          <span class="halflings halflings-menu-left" aria-hidden="true"></span>
+          <span class="iCIMS_NavigationText">Welcome page</span>
+        </a>
+        <div class="iCIMS_PagingBatch">
+          <a href="https://careersintl-maxlinear.icims.com/jobs/search?pr=2&amp;in_iframe=1" class="selected">
+            <span class="sr-only">Page</span>
+            3
+            <span class="sr-only"> of 3 , Current Page </span>
+          </a>
+        </div>
+        <a class="glyph invisible" href="https://careersintl-maxlinear.icims.com/jobs/search?pr=&amp;in_iframe=1" target="_self">
+          <span class="sr-only">Next page of results</span>
+          <span class="halflings halflings-menu-right" title="Next page of results" aria-hidden="true"></span>
+        </a>
+      </div>
+    </body>
+  </html>
+`
+
 const detailHtml = `
   <html>
     <body>
@@ -235,7 +260,7 @@ test('MaxLinear scraper stays pinned to the verified official careers and iCIMS 
   assert.equal(maxlinear.CAREERS_PAGE_URL, CAREERS_PAGE_URL)
   assert.equal(
     maxlinear.INTERNATIONAL_JOBS_URL,
-    'https://careersintl-maxlinear.icims.com/jobs/search?ss=1&searchLocation=13228-13245-Bangalore',
+    'https://careersintl-maxlinear.icims.com/jobs/search?ss=1',
   )
   assert.equal(maxlinear.buildSearchUrl(), SEARCH_PAGE_URL)
   assert.equal(maxlinear.buildSearchUrl(1), SEARCH_PAGE_URL_PAGE_2)
@@ -311,6 +336,12 @@ test('extractJobDetail reads MaxLinear iCIMS metadata, description sections, and
     closingDate: null,
     jobDescription: "We are seeking a Principal ASIC Design Verification Engineer to provide technical leadership. Act as a verification technical leader and architect across IP, Subsystem, and SoC programs Define and own end-to-end verification strategies and best practices across teams Bachelor's or Master's degree in Electronic Engineering or a related field 12-16 years of deep, hands-on ASIC Design Verification experience MaxLinear is a global, NASDAQ-traded company.",
   })
+})
+
+test('extractNextPageUrl ignores terminal-page controls that do not point to another listings page', async () => {
+  const maxlinear = await loadMaxLinearModule()
+
+  assert.equal(maxlinear.extractNextPageUrl(terminalListingPageHtml), null)
 })
 
 test('run validates the official MaxLinear careers handoff, paginates the public Bangalore board, and decorates jobs', async () => {

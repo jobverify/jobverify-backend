@@ -49,9 +49,15 @@ const normalizeWhitespace = (value) =>
     .replace(/&amp;/gi, '&')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x2019;/gi, "'")
     .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/&#8211;|&#x2013;|&ndash;|&#8212;|&#x2014;|&mdash;/gi, '-')
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+
+const extractTitle = (html) => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
+)
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
@@ -68,8 +74,9 @@ const defaultFetchText = async (url) => {
 export const hasVerifiedGivaHomepageSignals = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
+  const title = extractTitle(page)
 
-  return /<title>\s*Buy Gold & Lab Grown Diamond Jewellery \| Silver Jewellery - GIVA\s*<\/title>/i.test(page)
+  return title === 'Buy Gold & Lab Grown Diamond Jewellery | Silver Jewellery - GIVA'
     && normalized.includes('quick links')
     && /<a[^>]+href=["']\/pages\/careers["'][^>]*>\s*Join Us\s*<\/a>/i.test(page)
     && normalized.includes('indiejewel fashions private limited')
@@ -78,8 +85,9 @@ export const hasVerifiedGivaHomepageSignals = (html) => {
 export const hasVerifiedGivaCareersSignals = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
+  const title = extractTitle(page)
 
-  return /<title>\s*Careers at GIVA \| Explore Job Opportunities & Join Our Team - GIVA\s*<\/title>/i.test(page)
+  return title === 'Careers at GIVA | Explore Job Opportunities & Join Our Team - GIVA'
     && normalized.includes('why giva?')
     && normalized.includes('hear from the #gemsofgiva')
     && normalized.includes('indiejewel fashions private limited')
