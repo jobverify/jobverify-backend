@@ -86,6 +86,24 @@ const sampleLeverJobs = [
   },
 ]
 
+const richerLeverJob = {
+  id: 'de1283c4-fccd-483b-bbd9-9c9f7e57dabc',
+  text: 'Account Executive - Skillet',
+  hostedUrl: 'https://jobs.lever.co/Wayground/de1283c4-fccd-483b-bbd9-9c9f7e57dabc',
+  applyUrl: 'https://jobs.lever.co/Wayground/de1283c4-fccd-483b-bbd9-9c9f7e57dabc/apply',
+  createdAt: 1_785_403_026_117,
+  categories: {
+    location: 'Bangalore',
+    team: 'Sales Development',
+    commitment: 'Full-time',
+    allLocations: ['Bangalore'],
+  },
+  country: 'IN',
+  workplaceType: 'onsite',
+  descriptionPlain: 'Skillet is an AI-powered platform for life sciences commercial teams.',
+  additionalPlain: "Who you are You have 2+ years of experience selling B2B SaaS solutions, preferably to customers in the US or Europe.",
+}
+
 const loadModule = async () => {
   try {
     return await import('../quizizz/script.js')
@@ -165,6 +183,15 @@ test('Quizizz extracts only India roles from the Wayground Lever postings payloa
       remoteStatus: 'On-site',
     },
   ])
+})
+
+test('Quizizz extracts experienceRequired from richer Lever text sections when descriptionPlain alone has no years', async () => {
+  const quizizz = await loadModule()
+  const [job] = quizizz.extractIndiaLeverJobs([richerLeverJob])
+
+  assert.equal(job.experienceRequired, '2+ years')
+  assert.match(job.jobDescription, /Skillet is an AI-powered platform/i)
+  assert.match(job.jobDescription, /2\+ years of experience selling B2B SaaS solutions/i)
 })
 
 test('Quizizz run validates the exact-name careers redirect and returns only India jobs from the public Lever feed', async () => {

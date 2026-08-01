@@ -92,6 +92,26 @@ test('extractLeverJobs keeps only India roles from the Hevo Lever feed', async (
   })
 })
 
+test('extractLeverJobs derives experience from official Lever requirement lists when descriptionPlain is incomplete', async () => {
+  const hevoData = await loadHevoDataModule()
+  const jobs = hevoData.extractLeverJobs([
+    {
+      ...leverJobs[0],
+      descriptionPlain: 'About Hevo Data Build the next phase of growth.',
+      descriptionBodyPlain: 'About Hevo Data Build the next phase of growth.',
+      lists: [
+        {
+          text: 'What We Are Looking For',
+          content: '<li>4 - 7 years of B2B sales experience, with meaningful time in a quota-carrying, net-new business role.</li>',
+        },
+      ],
+    },
+  ])
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].experienceRequired, '4-7 years')
+})
+
 test('run fetches the official Hevo Lever feed and decorates shared runner fields', async () => {
   const hevoData = await loadHevoDataModule()
   const requests = []

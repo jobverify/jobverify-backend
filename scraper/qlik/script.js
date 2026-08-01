@@ -152,7 +152,7 @@ export const createQlikScraper = ({
     }
 
     const jobs = []
-    const seen = new Set()
+    const seenIds = new Set()
     const seenPageSignatures = new Set()
     const scrapedAt = now()
     let declaredTotal = null
@@ -192,20 +192,19 @@ export const createQlikScraper = ({
         throw new Error('[qlik] Eightfold pagination repeated a page without progress')
       }
       if (positions.length > 0) seenPageSignatures.add(signature)
-      const newIds = ids.filter((id) => !seen.has(id))
+      const newIds = ids.filter((id) => !seenIds.has(id))
       if (positions.length > 0 && newIds.length === 0) {
         throw new Error('[qlik] Eightfold pagination made no progress')
       }
+      const newIdSet = new Set(newIds)
 
       for (const position of positions) {
         const jobId = clean(position.id)
+        if (!newIdSet.has(jobId)) continue
+
         const title = clean(position.name)
         const location = chooseIndiaLocation(position)
-        if (!jobId || !title || !location) {
-          throw new Error('[qlik] India-filtered Eightfold page contains a malformed or foreign position')
-        }
-        if (seen.has(jobId)) continue
-        seen.add(jobId)
+        if (!title || !location) continue
 
         const detailUrl = new URL(DETAIL_URL)
         detailUrl.searchParams.set('position_id', jobId)
@@ -252,17 +251,18 @@ export const createQlikScraper = ({
           scrapedAt,
         })
       }
+      for (const jobId of newIdSet) seenIds.add(jobId)
 
-      if (seen.size > declaredTotal) {
+      if (seenIds.size > declaredTotal) {
         throw new Error('[qlik] Eightfold returned more unique positions than its declared total')
       }
       if (positions.length === 0) {
-        if (seen.size < declaredTotal) {
+        if (seenIds.size < declaredTotal) {
           throw new Error('[qlik] Eightfold pagination ended before the declared total')
         }
         break
       }
-      if (seen.size === declaredTotal) break
+      if (seenIds.size === declaredTotal) break
       if (positions.length < pageSize) {
         throw new Error('[qlik] Eightfold returned a premature short page')
       }

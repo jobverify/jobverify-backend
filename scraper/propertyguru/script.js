@@ -44,6 +44,29 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const stripHtml = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/section|\/article|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<(p|div|section|article|li|ul|ol|h[1-6]|span)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const normalizeExperience = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const rangeMatch = normalized.match(/\b(\d+)\s*[-–]\s*(\d+)\s*years?\b/i)
+  if (rangeMatch) return `${rangeMatch[1]} - ${rangeMatch[2]} years`
+
+  const plusMatch = normalized.match(/\b(\d+)\+\s*years?\b/i)
+  if (plusMatch) return `${plusMatch[1]}+ years`
+
+  const exactMatch = normalized.match(/\b(\d+)\s*years?\b/i)
+  if (exactMatch) return `${exactMatch[1]} years`
+
+  return null
+}
+
 const normalizeComparableUrl = (value) => {
   try {
     const url = new URL(String(value ?? ''))
@@ -237,6 +260,16 @@ export const hasOfficialWorkdayBoardSignal = (page = {}) => {
     && /PropertyGuru/i.test(html)
   }
 
+export const hasOfficialJobDetailSignal = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const text = stripHtml(html) || ''
+
+  return Number(page?.status) === 200
+    && /<title>\s*.+<\/title>/i.test(html)
+    && /<h1[^>]*>.+<\/h1>/i.test(html)
+    && text.includes('Requirements')
+  }
+
 export const isPropertyGuruIndiaLocationDescriptor = (value) => {
   const normalized = normalizeWhitespace(value) || ''
   return VERIFIED_INDIA_LOCATION_DESCRIPTORS.some((descriptor) => normalized === descriptor)
@@ -291,6 +324,32 @@ export const extractJobsFromPayload = (payload = {}, scrapedAt) => {
     .filter((posting) => isPropertyGuruIndiaLocationDescriptor(posting?.locationsText))
     .map((posting) => normalizePosting(posting, scrapedAt))
 }
+
+export const extractExperienceFromJobDetailPage = (html = '') => {
+  const text = stripHtml(html) || ''
+  const candidate = text.match(
+    /\b(?:\d+\s*[-–]\s*\d+\s*years?|\d+\+\s*years?|\d+\s*years?)\b[^.]{0,140}\b(?:products?|experience)\b/i,
+  )?.[0]
+
+  return normalizeExperience(candidate)
+}
+
+export const enrichJobWithDetailPage = (job, page = {}) => ({
+  ...job,
+  experienceRequired: extractExperienceFromJobDetailPage(page.html) || job.experienceRequired,
+})
+
+export const enrichJobsWithDetailPages = async (jobs, fetchPage = defaultFetchPage) => Promise.all(
+  jobs.map(async (job) => {
+    try {
+      const page = await fetchPage(job.sourceUrl)
+      if (!hasOfficialJobDetailSignal(page)) return job
+      return enrichJobWithDetailPage(job, page)
+    } catch {
+      return job
+    }
+  }),
+)
 
 export const createPropertyGuruScraper = ({
   now: defaultNow = () => new Date().toISOString(),
@@ -366,7 +425,8 @@ export const createPropertyGuruScraper = ({
       }
     }
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    return enrichJobsWithDetailPages(selectedJobs, fetchPage)
   },
 })
 

@@ -4,6 +4,7 @@
  */
 
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 
@@ -43,11 +44,11 @@ export class ScraperSourceTimeoutError extends Error {
   }
 }
 
-const isLatePuppeteerTargetClose = (reason) => {
+export const isLatePuppeteerTargetClose = (reason) => {
   const message = String(reason?.message || reason || '')
   const stack = String(reason?.stack || '')
 
-  return /TargetCloseError|Protocol error .*Target closed|Target closed/i.test(message)
+  return /TargetCloseError|Protocol error .*(?:Target|Session) closed|(?:Target|Session) closed/i.test(`${reason?.name || ''}\n${message}`)
     && /puppeteer|CdpCDPSession|CallbackRegistry|NodeWebSocketTransport/i.test(`${message}\n${stack}`)
 }
 
@@ -274,6 +275,11 @@ export const shouldAbortPipelineAfterFailures = (
   threshold = resolveFailureAbortThreshold(),
 ) => Number.isFinite(threshold) && failedCount >= threshold
 
+const clearDryRunArtifact = (filePath) => {
+  if (!filePath) return
+  fs.rmSync(filePath, { force: true })
+}
+
 // Runs all scrapers sequentially and saves results to MongoDB.
 export const runAll = async () => {
   const { scrapers, resumeMessage } = selectScrapersForRun(buildScrapers())
@@ -339,6 +345,8 @@ export const runAll = async () => {
     console.log(`▶ ${progressStr}Running [${scraper.name}]...`)
 
     try {
+      if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
+
       const jobs = await withRetry(
         () => runScraperWithTimeout(scraper),
         {
@@ -449,7 +457,7 @@ export const runAll = async () => {
 }
 
 // Runs a single scraper with retry, saves results, and updates live status.
-const runScraper = async (scraper, progressStr = '') => {
+export const runScraper = async (scraper, progressStr = '') => {
   const scraperStart = Date.now()
 
   // Skip execution if the scraper has been deactivated by an administrator
@@ -468,6 +476,8 @@ const runScraper = async (scraper, progressStr = '') => {
   console.log(`▶ ${progressStr}Starting [${scraper.name}]...`)
 
   try {
+    if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
+
     const jobs = await withRetry(
       () => runScraperWithTimeout(scraper),
       {

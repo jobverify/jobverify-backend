@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractWorkdayJobDetail } from '../detailExtractors/workday.js'
 import { shouldContinueWorkdayJobsApiPagination } from '../myworkday/engine.js'
 import { fetchJsonWithRetry } from '../utils/fetch.js'
 import { normalizeCity } from '../utils/cityNormalizer.js'
@@ -23,6 +24,9 @@ export const WORKDAY_BOARD_ACCEPTED_URLS = [
 ]
 
 const PAGE_SIZE = 20
+const DETAIL_FETCH_CONCURRENCY = 2
+const DETAIL_FETCH_ATTEMPTS = 3
+const DETAIL_RETRY_BASE_DELAY_MS = 1500
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -170,6 +174,94 @@ const normalizeIndiaLocation = (value) => {
   return city ? `${city}, India` : null
 }
 
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let firstError = null
+
+  const worker = async () => {
+    while (!firstError) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+
+      if (currentIndex >= items.length) return
+      try {
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  )
+
+  if (firstError) throw firstError
+  return results
+}
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const mergePostingDetail = (job, detail = {}) => ({
+  ...job,
+  postedAt: detail.postingDate ?? job.postedAt,
+  postingDate: detail.postingDate ?? job.postingDate ?? null,
+  jobDescription: detail.jobDescription ?? job.jobDescription,
+  minimumQualification: detail.minimumQualification ?? job.minimumQualification,
+  preferredQualification: detail.preferredQualification ?? job.preferredQualification,
+  requiredSkills: Array.isArray(detail.requiredSkills)
+    ? detail.requiredSkills
+    : job.requiredSkills,
+  experienceRequired: detail.experienceRequired ?? job.experienceRequired,
+  requisitionId: detail.requisitionId ?? job.requisitionId,
+})
+
+const fetchPostingDetail = async (
+  job,
+  fetchPage,
+  {
+    detailFetchAttempts = DETAIL_FETCH_ATTEMPTS,
+    detailRetryBaseDelayMs = DETAIL_RETRY_BASE_DELAY_MS,
+  } = {},
+) => {
+  for (let attempt = 1; attempt <= detailFetchAttempts; attempt += 1) {
+    try {
+      const detailPage = await fetchPage(job.link)
+      if (detailPage.status !== 200) {
+        const error = new Error(`HTTP ${detailPage.status}`)
+        error.httpStatus = detailPage.status
+        throw error
+      }
+
+      return extractWorkdayJobDetail(detailPage.html)
+    } catch (error) {
+      const status = Number(error?.httpStatus)
+      const shouldRetry = attempt < detailFetchAttempts
+        && (status === 429 || (status >= 500 && status <= 599))
+
+      if (!shouldRetry) {
+        throw error
+      }
+
+      await delay(detailRetryBaseDelayMs * (2 ** (attempt - 1)))
+    }
+  }
+
+  return {}
+}
+
+const enrichPostingWithDetail = async (job, fetchPage, options = {}) => {
+  try {
+    return mergePostingDetail(job, await fetchPostingDetail(job, fetchPage, options))
+  } catch (error) {
+    console.warn(`  [${SOURCE}] Failed to enrich details for ${job.link}: ${error.message}`)
+    return job
+  }
+}
+
 const normalizePosting = (posting, scrapedAt) => {
   const title = normalizeWhitespace(posting?.title)
   const summaryLocation = normalizeWhitespace(posting?.locationsText)
@@ -270,11 +362,17 @@ export const buildIndiaJobsRequestBody = ({
 export const createDbsBankIndiaScraper = ({
   now: defaultNow = () => new Date().toISOString(),
   maxPages = Number.POSITIVE_INFINITY,
+  detailFetchConcurrency: defaultDetailFetchConcurrency = DETAIL_FETCH_CONCURRENCY,
+  detailFetchAttempts: defaultDetailFetchAttempts = DETAIL_FETCH_ATTEMPTS,
+  detailRetryBaseDelayMs: defaultDetailRetryBaseDelayMs = DETAIL_RETRY_BASE_DELAY_MS,
 } = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
     fetchJson = defaultFetchJson,
     now = defaultNow,
+    detailFetchConcurrency = defaultDetailFetchConcurrency,
+    detailFetchAttempts = defaultDetailFetchAttempts,
+    detailRetryBaseDelayMs = defaultDetailRetryBaseDelayMs,
   } = {}) {
     const careersPage = await fetchPage(CAREERS_URL)
     if (
@@ -342,7 +440,16 @@ export const createDbsBankIndiaScraper = ({
       }
     }
 
-    return jobs.sort((left, right) => left.title.localeCompare(right.title))
+    const enrichedJobs = await mapWithConcurrency(
+      jobs,
+      detailFetchConcurrency,
+      async (job) => enrichPostingWithDetail(job, fetchPage, {
+        detailFetchAttempts,
+        detailRetryBaseDelayMs,
+      }),
+    )
+
+    return enrichedJobs.sort((left, right) => left.title.localeCompare(right.title))
   },
 })
 

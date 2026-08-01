@@ -69,6 +69,39 @@ test('extractSearchResults maps EPAM India search jobs into the shared scraper f
   assert.equal(jobs[3].department, 'Software Architect')
 })
 
+test('extractSearchResults derives experienceRequired from official EPAM search descriptions', async () => {
+  const { extractSearchResults } = await loadEpamModule()
+  const jobs = extractSearchResults({
+    data: {
+      jobs: [
+        {
+          name: 'Senior Technical Delivery Manager - Java/.NET',
+          uid: 'delivery-manager-1',
+          seo: {
+            url: '/en/vacancy/senior-technical-delivery-manager-java-net-blt1e34ac3d19140099_en',
+          },
+          city: [{ name: 'Bengaluru' }],
+          country: [{ name: 'India' }],
+          text: 'Requirements 15 to 18 years of experience in the software industry. Background in Coding with 10-13 years of hands-on experience.',
+        },
+        {
+          name: 'Software Engineer - Java Full Stack React',
+          uid: 'fullstack-react-1',
+          seo: {
+            url: '/en/vacancy/software-engineer-java-full-stack-react-blt1jr66036aesrrgj1_en',
+          },
+          city: [{ name: 'Hyderabad' }],
+          country: [{ name: 'India' }],
+          text: 'Requirements 4-5.5 years of experience in full-stack development, with a strong focus on React and Java.',
+        },
+      ],
+    },
+  })
+
+  assert.equal(jobs[0].experienceRequired, '15-18 years')
+  assert.equal(jobs[1].experienceRequired, '4-5.5 years')
+})
+
 test('run paginates the EPAM India search feed and decorates shared runner fields', async () => {
   const {
     createEpamScraper,

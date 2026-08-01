@@ -230,6 +230,53 @@ test('Boeing India extractJobDetail reads the first-party detail page and Workda
   })
 })
 
+test('Boeing India extractJobDetail captures open-ended experience phrasing from the official job description', async () => {
+  const boeingIndia = await loadBoeingIndiaModule()
+
+  const detail = boeingIndia.extractJobDetail(
+    `
+      <html lang="en">
+        <head>
+          <title>Experienced Software Engineer - FSD at Boeing</title>
+          <meta name="search-job-apply-url" content="https://boeing.wd1.myworkdayjobs.com/EXTERNAL_CAREERS/job/IND---Bangalore-India/Experienced-Software-Engineer---FSD_JR2026515903-1/apply">
+          <script type="application/ld+json">{
+            "@context":"http://schema.org",
+            "@type":"JobPosting",
+            "datePosted":"2026-7-14",
+            "description":"<p><b>Job Description</b></p><p><b>Typical Education &amp; Experience</b>:</p><ul><li><p>Education/experience typically acquired through advanced education (e.g. Bachelor/Masters) and typically 8 or more years' related work experience.</p></li></ul>",
+            "employmentType":"Regular",
+            "identifier":"JR2026515903",
+            "title":"Experienced Software Engineer - FSD",
+            "url":"https://jobs.boeing.com/job/bengaluru/experienced-software-engineer-fsd/185/96869650448",
+            "jobLocation":[{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Bangalore","addressCountry":"India"}}]
+          }</script>
+        </head>
+        <body>
+          <section class="job-description" data-selector-name="jobdetails" data-org-id="185" data-job-id="96869650448">
+            <h1 class="job-description__job-title">Experienced Software Engineer - FSD</h1>
+            <span class="job-description__job-location">Bengaluru, Karnataka</span>
+            <span class="job-description__job-info job-id"><span>Job ID</span> JR2026515903</span>
+          </section>
+        </body>
+      </html>
+    `,
+    {
+      title: 'Experienced Software Engineer - FSD',
+      company: 'Boeing India',
+      location: 'Bengaluru, India',
+      city: 'Bengaluru',
+      country: 'India',
+      jobId: '96869650448',
+      requisitionId: '96869650448',
+      sourceUrl: 'https://jobs.boeing.com/job/bengaluru/experienced-software-engineer-fsd/185/96869650448',
+      applyUrl: 'https://jobs.boeing.com/job/bengaluru/experienced-software-engineer-fsd/185/96869650448',
+      postingDate: '2026-07-14',
+    },
+  )
+
+  assert.equal(detail.experienceRequired, '8+ years')
+})
+
 test('Boeing India run validates the careers redirect, parses the India search results, and enriches detail pages', async () => {
   const boeingIndia = await loadBoeingIndiaModule()
   const requests = []

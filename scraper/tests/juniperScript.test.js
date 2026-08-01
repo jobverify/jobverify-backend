@@ -91,7 +91,7 @@ test('extractJobDetail reads Juniper detail metadata and Workday apply links fro
   assert.equal(detail.requisitionId, '1191918')
   assert.equal(detail.department, 'Engineering & QA')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.equal(detail.experienceRequired, '10+ years of experience is required.')
+  assert.equal(detail.experienceRequired, '10+ years')
   assert.equal(detail.minimumQualification, null)
   assert.equal(detail.preferredQualification, null)
   assert.equal(detail.postingDate, '2026-05-17')

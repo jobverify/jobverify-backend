@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry } from '../utils/fetch.js'
 import { filterIndiaJobs } from '../utils/indiaLocationFilter.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -17,6 +18,15 @@ const normalizeString = (value) => {
   const normalized = String(value).replace(/\s+/g, ' ').trim()
   return normalized || null
 }
+
+const stripTags = (value) => normalizeString(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<(p|div|li|ul|ol|h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&'),
+)
 
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeString(value)
@@ -52,6 +62,14 @@ const selectIndiaLocation = (job = {}) => {
   return candidates.find((candidate) => filterIndiaJobs([candidate]).length > 0) || null
 }
 
+const extractExperienceRequired = ({ title, jobDescription }) => (
+  extractJobFilterSignals({
+    title,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || null
+)
+
 export const extractAshbyJobs = (payload = {}) => (
   (Array.isArray(payload?.jobs) ? payload.jobs : [])
     .filter((job) => job?.isListed === true)
@@ -61,6 +79,7 @@ export const extractAshbyJobs = (payload = {}) => (
       const sourceUrl = normalizeString(job?.jobUrl)
       const applyUrl = normalizeString(job?.applyUrl)
       const selectedLocation = selectIndiaLocation(job)
+      const jobDescription = stripTags(job?.descriptionHtml)
 
       if (!title || !jobId || !sourceUrl || !applyUrl || !selectedLocation) return null
 
@@ -77,13 +96,13 @@ export const extractAshbyJobs = (payload = {}) => (
         sourceUrl,
         applyUrl,
         employmentType: normalizeEmploymentType(job?.employmentType),
-        experienceRequired: null,
+        experienceRequired: extractExperienceRequired({ title, jobDescription }),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
         postingDate: normalizeString(job?.publishedAt),
         closingDate: null,
-        jobDescription: normalizeString(job?.descriptionHtml),
+        jobDescription,
       }
     })
     .filter(Boolean)

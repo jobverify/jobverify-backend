@@ -1,4 +1,4 @@
-import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { extractJobFilterSignals, hasEntryLevelCue } from '../../src/utils/jobFilterSignals.js'
 import { resolveJobPostedAt } from '../../src/utils/jobLifecycle.js'
 
 const normalizeString = (value) => {
@@ -233,8 +233,12 @@ const filterSkillNamesTagsForSource = (skills = [], source) => {
 }
 
 const isPartTimeLabel = (value) => /part[\s_-]?time/i.test(String(value ?? ''))
+const hasInternshipCue = (value) => /intern|internship|trainee|apprentice/i.test(String(value ?? ''))
 
 const inferEmploymentType = (job = {}) => {
+  const title = normalizeString(job.title) || ''
+  if (hasInternshipCue(title)) return 'Internship'
+
   const explicitType = normalizeString(job.employmentType)
   if (explicitType) return isPartTimeLabel(explicitType) ? null : explicitType
   if (job.jobType === 'Full-time Fresher' || job.jobType === 'Full-time Experienced') {
@@ -245,10 +249,9 @@ const inferEmploymentType = (job = {}) => {
   }
   if (isPartTimeLabel(job.jobType)) return null
 
-  const title = (job.title || '').toLowerCase()
-  if (/intern|internship|trainee|apprentice/i.test(title)) return 'Internship'
+  const normalizedTitle = title.toLowerCase()
   if (/contract|contractor|freelance/i.test(title)) return 'Contract'
-  if (/part.?time/i.test(title)) return null
+  if (/part.?time/i.test(normalizedTitle)) return null
   return 'Full-time'
 }
 
@@ -268,7 +271,6 @@ const hasFresherCue = (job = {}) => {
 
   return [
     /\bfresher\b/,
-    /\bgraduate\b/,
     /\bcampus\b/,
     /\bentry level\b/,
     /\bnew grad\b/,
@@ -278,6 +280,7 @@ const hasFresherCue = (job = {}) => {
     /\b0\s+to\s+1\s+years?\b/,
     /\b0\s+years?\b/,
   ].some((pattern) => pattern.test(haystack))
+    || hasEntryLevelCue(haystack)
 }
 
 const getExperienceBounds = (job = {}) => {
@@ -547,17 +550,46 @@ const normalizeDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
+const GENERIC_EXPERIENCE_LABEL_PATTERN = /^(?:experienced professionals?|professional(?:s)?|entry level|junior level|mid(?:-| )level|senior(?:-| )level|associate(?: level)?)$/i
+const NUMERIC_EXPERIENCE_PATTERN = /\d+(?:\.\d+)?\s*(?:-|to|\+)?\s*\d*(?:\.\d+)?\s*(?:years?|yrs?|months?)\b/i
+const EXPERIENCE_CONTEXT_PATTERN = /\b(?:experience|exp\.?|required|preferred|minimum|desired|hands[- ]on|relevant|overall|fresher|graduate|entry[- ]level|intern(?:ship)?|apprentice)\b/i
+
+const shouldPreferProfileEvidence = (explicitExperience, experienceProfile = {}) => {
+  const evidence = normalizeString(experienceProfile.evidence)
+  if (experienceProfile.confidence !== 'high' || !evidence) return false
+  if (GENERIC_EXPERIENCE_LABEL_PATTERN.test(String(explicitExperience ?? ''))) {
+    return NUMERIC_EXPERIENCE_PATTERN.test(evidence)
+  }
+
+  const explicitProfile = extractJobFilterSignals({
+    experienceRequired: explicitExperience,
+  })?.experienceProfile || {}
+  const explicitEvidence = normalizeString(explicitProfile.evidence)
+
+  if (!explicitEvidence) return true
+  if (explicitProfile.confidence === 'high') return false
+
+  return !EXPERIENCE_CONTEXT_PATTERN.test(String(explicitExperience ?? ''))
+    && explicitEvidence !== evidence
+}
+
 export const inferMissingExperienceRequired = (job = {}, experienceRequired, experienceProfile = {}) => {
   const explicitExperience = normalizeString(experienceRequired)
-  if (explicitExperience) return explicitExperience
+  if (explicitExperience) {
+    return shouldPreferProfileEvidence(explicitExperience, experienceProfile)
+      ? normalizeString(experienceProfile.evidence)
+      : explicitExperience
+  }
+
+  if (experienceProfile.confidence === 'high' && normalizeString(experienceProfile.evidence)) {
+    return normalizeString(experienceProfile.evidence)
+  }
 
   if (job.jobType === 'Internship' || job.employmentType === 'Internship') {
     return 'No experience required'
   }
 
-  return experienceProfile.confidence === 'high'
-    ? normalizeString(experienceProfile.evidence)
-    : null
+  return null
 }
 
 export const normalizeScrapedJob = (job = {}, provider = {}) => {
@@ -565,6 +597,12 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
   const normalizedTitle = normalizeTitle(originalTitle)
   const applyUrl = normalizeUrl(job.applyUrl || job.link || job.sourceUrl)
   const sourceUrl = normalizeUrl(job.sourceUrl || job.link || job.applyUrl)
+  const scrapedTimestamp = normalizeDate(job.scrapedTimestamp || job.scrapedAt) || new Date()
+  const resolvedPostedAt = resolveJobPostedAt({
+    ...job,
+    scrapedTimestamp,
+    scrapedAt: scrapedTimestamp,
+  }) || scrapedTimestamp
   const requiredSkills = filterSkillNamesTagsForSource(
     normalizeStringArray(job.requiredSkills),
     job.source || provider.source,
@@ -596,14 +634,16 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     salary: normalizeString(job.salary),
     jobId: normalizeString(job.jobId),
     requisitionId: normalizeString(job.requisitionId || job.reqId),
-    postingDate: resolveJobPostedAt(job),
+    postedAt: resolvedPostedAt,
+    postingDate: resolvedPostedAt,
     closingDate: normalizeDate(job.closingDate),
     applyUrl,
     sourceUrl: sourceUrl || applyUrl,
     companyCareerPage: normalizeUrl(job.companyCareerPage || provider.companyCareerPage),
     companyDomain: extractCompanyDomain(job, provider),
     atsPlatform: normalizeString(job.atsPlatform || provider.atsPlatform),
-    scrapedTimestamp: normalizeDate(job.scrapedTimestamp || job.scrapedAt) || new Date(),
+    scrapedAt: scrapedTimestamp,
+    scrapedTimestamp,
   }
 
   const signals = extractJobFilterSignals(normalizedJob)

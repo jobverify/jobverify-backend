@@ -55,8 +55,79 @@ const DETAIL_HTML = `
     <div itemprop="description" class="jobdescription">
       <p><strong>Position Summary:</strong></p>
       <p>We are looking for a Senior Software Engineer with an experience in Data Engineering.</p>
+      <ul>
+        <li>8+ years of professional web application development experience, with deep expertise in frontend engineering and 3+ years of hands-on React experience building complex, production-scale applications.</li>
+      </ul>
     </div>
     <aside></aside>
+  </body>
+</html>
+`
+
+const USER_ENGAGEMENT_DETAIL_HTML = `
+<html>
+  <body>
+    <div class="jobTitle">
+      <h1 id="job-title" itemprop="title">User Engagement Advocate</h1>
+      <div class="applylink pull-right">
+        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn" href="/talentcommunity/apply/1405551000/?locale=en_US">Apply now</a>
+      </div>
+    </div>
+    <p class="jobDate"><strong>Date: </strong>Jul 15, 2026</p>
+    <p class="jobLocation"><strong>Location:</strong><span class="jobGeoLocation">Kolkata, WB, IN</span></p>
+    <div itemprop="description" class="jobdescription">
+      <p>2 to 5 years of experience in customer success, account management, or sales function.</p>
+    </div>
+  </body>
+</html>
+`
+
+const NESTED_DIV_DESCRIPTION_DETAIL_HTML = `
+<html>
+  <body>
+    <div class="jobTitle">
+      <h1 id="job-title" itemprop="title">Senior Software Engineer</h1>
+      <div class="applylink pull-right">
+        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn" href="/talentcommunity/apply/1413642500/?locale=en_US">Apply now</a>
+      </div>
+    </div>
+    <p class="jobLocation"><strong>Location:</strong><span class="jobGeoLocation">Pune, IN</span></p>
+    <span itemprop="description" class="jobdescription">
+      <p><strong>Position Summary:</strong></p>
+      <ul>
+        <li>
+          <div>Collaborate with backend teams to design and consume RESTful APIs.</div>
+        </li>
+      </ul>
+      <p><strong>Qualifications:</strong></p>
+      <ul>
+        <li>8+ years of professional web application development experience, with 3+ years of hands-on React experience.</li>
+      </ul>
+    </span>
+    <p class="job-location"></p>
+  </body>
+</html>
+`
+
+const MULTI_DIV_DESCRIPTION_DETAIL_HTML = `
+<html>
+  <body>
+    <div class="jobTitle">
+      <h1 id="job-title" itemprop="title">User Engagement Advocate</h1>
+    </div>
+    <p class="jobLocation"><strong>Location:</strong><span class="jobGeoLocation">Kolkata, WB, IN</span></p>
+    <span itemprop="description" class="jobdescription">
+      <div>
+        <p>Location: Hybrid or Office-Based - India, Kolkata</p>
+      </div>
+      <div>
+        <p><strong>Qualifications</strong>:</p>
+      </div>
+      <div>
+        <p>2 to 5 years of experience in customer success, account management, or sales function.</p>
+      </div>
+    </span>
+    <p class="job-location"></p>
   </body>
 </html>
 `
@@ -102,6 +173,32 @@ test('Bentley Systems extracts India search results and detail metadata from the
   assert.equal(detail.applyUrl, 'https://jobs.bentley.com/talentcommunity/apply/1409448100/?locale=en_US')
   assert.equal(detail.closingDate, '2026-08-31')
   assert.match(detail.jobDescription, /Data Engineering/i)
+  assert.equal(detail.experienceRequired, '8+ years')
+
+  const userEngagementDetail = bentley.extractJobDetail(USER_ENGAGEMENT_DETAIL_HTML, listings[1])
+  assert.equal(userEngagementDetail.experienceRequired, '2-5 years')
+})
+
+test('Bentley Systems keeps full job descriptions when the outer jobdescription block contains nested div sections', async () => {
+  const bentley = await loadScriptModule()
+
+  const truncatedByNestedDiv = bentley.extractJobDetail(NESTED_DIV_DESCRIPTION_DETAIL_HTML, {
+    title: 'Senior Software Engineer',
+    sourceUrl: 'https://jobs.bentley.com/job/Pune-Senior-Software-Engineer/1413642500/',
+    applyUrl: 'https://jobs.bentley.com/job/Pune-Senior-Software-Engineer/1413642500/',
+    location: 'Pune, IN',
+  })
+  assert.match(truncatedByNestedDiv.jobDescription || '', /Qualifications/i)
+  assert.equal(truncatedByNestedDiv.experienceRequired, '8+ years')
+
+  const truncatedByFirstDiv = bentley.extractJobDetail(MULTI_DIV_DESCRIPTION_DETAIL_HTML, {
+    title: 'User Engagement Advocate',
+    sourceUrl: 'https://jobs.bentley.com/job/Kolkata-User-Engagement-Advocate-WB/1409054400/',
+    applyUrl: 'https://jobs.bentley.com/job/Kolkata-User-Engagement-Advocate-WB/1409054400/',
+    location: 'Kolkata, WB, IN',
+  })
+  assert.match(truncatedByFirstDiv.jobDescription || '', /Qualifications/i)
+  assert.equal(truncatedByFirstDiv.experienceRequired, '2-5 years')
 })
 
 test('Bentley Systems run stitches search and detail pages into runnable jobs', async () => {

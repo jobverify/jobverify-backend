@@ -29,3 +29,57 @@ test('Qlik falls back to a browser-backed loader when Node fetch times out', asy
     recoveredFrom: 'TypeError: fetch failed | Connect Timeout Error',
   })
 })
+
+test('Qlik skips malformed India-filtered positions and keeps valid jobs', async () => {
+  const qlik = await loadModule()
+
+  const jobs = await qlik.createQlikScraper({
+    pageSize: 3,
+    now: () => '2026-07-31T00:00:00.000Z',
+  }).run({
+    fetchJson: async (url) => {
+      if (url.includes('position_details')) {
+        const positionId = new URL(url).searchParams.get('position_id')
+        return {
+          data: {
+            publicUrl: `https://careerhub.qlik.com/careers/job/${positionId}`,
+            jobDescription: `<p>Detail for ${positionId}</p>`,
+          },
+        }
+      }
+
+      return {
+        data: {
+          count: 3,
+          positions: [
+            {
+              id: '1',
+              displayJobId: 'REQ-1',
+              name: 'Platform Engineer',
+              locations: ['Bangalore, Karnataka, India'],
+              department: 'Engineering',
+            },
+            {
+              id: '2',
+              displayJobId: 'REQ-2',
+              name: '',
+              locations: ['Bangalore, Karnataka, India'],
+              department: 'Engineering',
+            },
+            {
+              id: '3',
+              displayJobId: 'REQ-3',
+              name: 'Foreign Leakage',
+              locations: ['Warsaw, Poland'],
+              department: 'Engineering',
+            },
+          ],
+        },
+      }
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '1')
+  assert.equal(jobs[0].sourceUrl, 'https://careerhub.qlik.com/careers/job/1')
+})

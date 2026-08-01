@@ -77,6 +77,39 @@ const LISTING_PAGE_2 = {
   total_pages: 3,
 }
 
+const DETAIL_HTML = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script type="application/ld+json">{
+      "@context":"https://schema.org/",
+      "@type":"JobPosting",
+      "directApply":true,
+      "title":"Remote Telemedicine Physician (MD/DO) | 100% Remote | 1099/W2",
+      "description":"<p><strong>Overview</strong>:</p><p>Seeking Board-Certified Physician to provide virtual primary and urgent care services.</p><p><strong>Qualifications</strong></p><ul><li>MD or DO, Board Certified</li><li>5+ years post-residency experience</li><li>Telehealth experience preferred</li></ul>",
+      "datePosted":"2026-07-31",
+      "validThrough":"2026-10-29",
+      "employmentType":"FULL_TIME",
+      "hiringOrganization":{"@type":"Organization","name":"DirectShifts"},
+      "jobLocationType":"TELECOMMUTE",
+      "applicantLocationRequirements":{"@type":"Country","name":"USA"}
+    }</script>
+  </head>
+  <body>
+    <div class="description">
+      <p><strong>Overview</strong>:</p>
+      <p>Seeking Board-Certified Physician to provide virtual primary and urgent care services.</p>
+      <p><strong>Qualifications</strong></p>
+      <ul>
+        <li>MD or DO, Board Certified</li>
+        <li>5+ years post-residency experience</li>
+        <li>Telehealth experience preferred</li>
+      </ul>
+    </div>
+  </body>
+</html>
+`
+
 test('DirectShifts URL builders stay on the public feed and clean detail pages', async () => {
   const {
     CAREERS_PAGE_URL,
@@ -158,9 +191,36 @@ test('extractSearchResults maps the DirectShifts public listing feed into normal
   })
 })
 
+test('extractJobDetail reads DirectShifts public job detail experience from the official detail page', async () => {
+  const { extractJobDetail } = await loadDirectShiftsModule()
+
+  const detail = extractJobDetail(DETAIL_HTML, {
+    title: 'Remote Telemedicine Physician (MD/DO) | 100% Remote | 1099/W2',
+    company: 'DirectShifts',
+    department: 'Telemedicine',
+    location: 'Remote, United States',
+    city: 'Remote',
+    state: null,
+    country: 'United States',
+    jobId: '14409',
+    requisitionId: '14409',
+    sourceUrl: 'https://app.directshifts.com/jobs/p/remote-telemedicine-physician-md-do-100-remote-1099-w2-14409',
+    applyUrl: 'https://app.directshifts.com/jobs/p/remote-telemedicine-physician-md-do-100-remote-1099-w2-14409',
+    employmentType: 'Permanent',
+    requiredSkills: ['Family Medicine', 'Internal Medicine'],
+    jobDescription: 'Specialties: Family Medicine, Internal Medicine. Practice type: Telemedicine. Shift: Night. Hours per shift: 1.0. Hot job.',
+  })
+
+  assert.equal(detail.experienceRequired, '5+ years')
+  assert.equal(detail.postingDate, '2026-07-31')
+  assert.equal(detail.closingDate, '2026-10-29')
+  assert.match(detail.jobDescription, /5\+ years post-residency experience/i)
+})
+
 test('run paginates the DirectShifts feed and decorates shared runner fields', async () => {
   const {
     buildFeedUrl,
+    buildDetailUrl,
     createDirectShiftsScraper,
   } = await loadDirectShiftsModule()
 
@@ -176,15 +236,34 @@ test('run paginates the DirectShifts feed and decorates shared runner fields', a
 
       throw new Error(`Unexpected DirectShifts URL: ${url}`)
     },
+    fetchText: async (url) => {
+      requests.push(url)
+
+      if (url === buildDetailUrl('remote-collaborating-physician-opportunity-indiana-family-medicine-primary-care-14172')) {
+        return DETAIL_HTML
+      }
+      if (url === buildDetailUrl('actively-hiring-clinical-nurse-manager-rn-brooklyn-ny-14166')) {
+        return DETAIL_HTML
+      }
+      if (url === buildDetailUrl('california-independently-licensed-therapists-remote-opportunity-1-000-bonus-14170')) {
+        return DETAIL_HTML
+      }
+
+      throw new Error(`Unexpected DirectShifts detail URL: ${url}`)
+    },
   })
 
   assert.deepEqual(requests, [
     buildFeedUrl({ page: 1 }),
+    buildDetailUrl('remote-collaborating-physician-opportunity-indiana-family-medicine-primary-care-14172'),
+    buildDetailUrl('actively-hiring-clinical-nurse-manager-rn-brooklyn-ny-14166'),
     buildFeedUrl({ page: 2 }),
+    buildDetailUrl('california-independently-licensed-therapists-remote-opportunity-1-000-bonus-14170'),
   ])
   assert.equal(jobs.length, 3)
   assert.equal(jobs[0].source, 'directshifts')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].experienceRequired, '5+ years')
   assert.equal(jobs[1].employmentType, 'Locum')
   assert.equal(jobs[2].location, 'California, United States')
   assert.deepEqual(jobs[2].requiredSkills, [

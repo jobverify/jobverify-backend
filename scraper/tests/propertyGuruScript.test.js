@@ -141,6 +141,32 @@ const FILTERED_INDIA_JOBS_PAYLOAD = {
   ],
 }
 
+const JOB_DETAIL_PAGE = {
+  status: 200,
+  url: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931',
+  html: `
+    <!doctype html>
+    <html lang="en-US">
+      <head>
+        <title>Senior Product Manager</title>
+        <meta
+          name="description"
+          property="og:description"
+          content="We’re looking for a Senior Product Manager. Requirements 5+ years crafting and delivering world-class products Experience building marketplace or platform products preferred."
+        >
+      </head>
+      <body>
+        <main>
+          <h1>Senior Product Manager</h1>
+          <p>Bengaluru</p>
+          <div>Requirements</div>
+          <div>5+ years crafting and delivering world-class products</div>
+        </main>
+      </body>
+    </html>
+  `,
+}
+
 const loadModule = async () => {
   try {
     return await import('../propertyguru/script.js')
@@ -308,6 +334,44 @@ test('PropertyGuru pins the verified first-party careers handoff and Workday Ind
   )
 })
 
+test('PropertyGuru extracts experience from the official Workday job detail page', async () => {
+  const propertyGuru = await loadModule()
+  const listing = {
+    jobId: 'JR100931',
+    title: 'Senior Product Manager',
+    company: 'PropertyGuru',
+    department: null,
+    location: 'Bengaluru, India',
+    city: 'Bengaluru',
+    state: null,
+    country: 'India',
+    sourceUrl: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931',
+    applyUrl: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931/apply',
+    employmentType: 'Full time',
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: 'Posted Today',
+    closingDate: null,
+    jobDescription: null,
+    requisitionId: 'JR100931',
+    source: 'propertyguru',
+    link: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931/apply',
+    scrapedAt: FIXED_SCRAPED_AT,
+  }
+
+  assert.equal(propertyGuru.hasOfficialJobDetailSignal(JOB_DETAIL_PAGE), true)
+  assert.equal(
+    propertyGuru.extractExperienceFromJobDetailPage(JOB_DETAIL_PAGE.html),
+    '5+ years',
+  )
+  assert.deepEqual(propertyGuru.enrichJobWithDetailPage(listing, JOB_DETAIL_PAGE), {
+    ...listing,
+    experienceRequired: '5+ years',
+  })
+})
+
 test('PropertyGuru run validates the official careers handoff and returns India Workday jobs from the verified Bengaluru facet', async () => {
   const propertyGuru = await loadModule()
   const requestedPages = []
@@ -332,6 +396,10 @@ test('PropertyGuru run validates the official careers handoff and returns India 
         return WORKDAY_BOARD_PAGE
       }
 
+      if (url.startsWith('https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/')) {
+        return JOB_DETAIL_PAGE
+      }
+
       throw new Error(`Unexpected PropertyGuru page URL: ${url}`)
     },
     fetchJson: async (url, body) => {
@@ -348,6 +416,10 @@ test('PropertyGuru run validates the official careers handoff and returns India 
   assert.deepEqual(requestedPages, [
     propertyGuru.CAREERS_URL,
     propertyGuru.WORKDAY_BOARD_URL,
+    'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Head-of-People--Country---Function-Lead--CTPO--_JR100927',
+    'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Cloud---AI-Security-Architect_JR100919',
+    'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Manager---Offensive-Security_JR100915',
+    'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Product---AI-Transformation-Lead--Talent-Development-_JR100890',
   ])
   assert.deepEqual(requestedJsonBodies, [
     JSON.parse(propertyGuru.buildUnfilteredJobsRequestBody({ offset: 0 })),
@@ -366,6 +438,7 @@ test('PropertyGuru run validates the official careers handoff and returns India 
     'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Head-of-People--Country---Function-Lead--CTPO--_JR100927/apply',
   )
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[0].experienceRequired, '5+ years')
 })
 
 test('PropertyGuru fails closed when the verified careers page, public Workday board, or India location facet changes materially', async () => {

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { SANDBOXAQ_CATALOG } from './catalog.js'
+import { extractAshbyExperienceRequired } from '../utils/ashbyExperience.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -114,7 +115,10 @@ export const extractAshbyJobs = (payload = {}) => (
         sourceUrl,
         applyUrl,
         employmentType: normalizeEmploymentType(job?.employmentType),
-        experienceRequired: null,
+        experienceRequired: extractAshbyExperienceRequired({
+          title,
+          jobDescription: normalizeString(job?.descriptionPlain ?? job?.descriptionHtml),
+        }),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],

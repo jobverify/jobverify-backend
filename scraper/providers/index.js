@@ -261,7 +261,7 @@ const createAuthorizedFetchJson = (provider) => {
 export const getScraperCatalog = ({
   providerExtensionDir = DEFAULT_PROVIDER_EXTENSION_DIR,
   providerExtensions = loadProviderExtensions(providerExtensionDir),
-} = {}) => [
+} = {}) => dedupeCatalogBySource([
   ...workdayCompanies.map((item) => hydrateProviderCatalogEntry({
     ...item,
     adapter: 'workday',
@@ -277,7 +277,7 @@ export const getScraperCatalog = ({
   ...TARGETED_OPENING_PROVIDERS.map((item) => hydrateProviderCatalogEntry(
     expandApiPortalProviderTemplate(item),
   )),
-]
+])
 
 const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
@@ -380,6 +380,16 @@ const ADAPTER_FACTORIES = {
   apiPortal: createApiPortalScraper,
   wellfoundDirectory: createWellfoundDirectoryAdapterScraper,
   himalayasDirectory: createHimalayasDirectoryAdapterScraper,
+}
+
+const dedupeCatalogBySource = (providers = []) => {
+  const providersBySource = new Map()
+
+  for (const provider of providers) {
+    providersBySource.set(provider.source, provider)
+  }
+
+  return [...providersBySource.values()]
 }
 
 export const buildScrapers = () =>

@@ -88,6 +88,10 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
 const extractTaggedSectionValue = (html, heading) => {
   const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return extractFirst(
+    new RegExp(`<p><b>${escapedHeading}\\s*:?\\s*<\\/b>\\s*:?\\s*([\\s\\S]*?)<\\/p>`, 'i'),
+    html,
+    (match) => stripTags(match[1]),
+  ) || extractFirst(
     new RegExp(`<p><b>${escapedHeading}<\\/b><\\/p>\\s*<p>([\\s\\S]*?)<\\/p>`, 'i'),
     html,
     (match) => stripTags(match[1]),

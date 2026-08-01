@@ -103,6 +103,8 @@ const extractCityCandidate = (value = "") => {
   return ALLOWED_CITY_SET.has(normalized.toLowerCase()) ? normalized : null;
 };
 
+const isRemoteCity = (value = "") => /^remote$/i.test(String(value || "").trim());
+
 export const getValidIndiaCityForJob = (job = {}) => {
   const country = typeof job.country === "string" ? job.country.trim() : "";
   const city = typeof job.city === "string" ? job.city.trim() : "";
@@ -115,6 +117,10 @@ export const getValidIndiaCityForJob = (job = {}) => {
     .filter((value) => value && !isNoisyLocationCandidate(value));
   const locationCandidates = locations
     .filter((value) => !isNoisyLocationCandidate(value));
+  const hasIndiaScopeHint = explicitIndiaCountry
+    || [...primaryCandidates, ...locationCandidates].some((value) => (
+      matchesSpecialLocationLabel(value) || matchesIndiaLocationMarker(value)
+    ));
   const hasLocationHint = [...primaryCandidates, ...locationCandidates].some(Boolean);
 
   // First try the primary city/location fields
@@ -122,6 +128,7 @@ export const getValidIndiaCityForJob = (job = {}) => {
     if (matchesSpecialLocationLabel(candidate)) return "Remote";
     const normalized = extractCityCandidate(candidate);
     if (!normalized) continue;
+    if (isRemoteCity(normalized) && !hasIndiaScopeHint) continue;
     if (matchesIndiaLocationMarker(candidate)) return normalized;
     if (ALLOWED_CITY_SET.has(normalized.toLowerCase())) return normalized;
   }
@@ -135,6 +142,7 @@ export const getValidIndiaCityForJob = (job = {}) => {
     if (matchesSpecialLocationLabel(value)) return "Remote";
     const normalizedValue = extractCityCandidate(value);
     if (!normalizedValue) continue;
+    if (isRemoteCity(normalizedValue) && !hasIndiaScopeHint) continue;
     if (matchesIndiaLocationMarker(value)) return normalizedValue;
     if (ALLOWED_CITY_SET.has(normalizedValue.toLowerCase())) return normalizedValue;
   }

@@ -52,6 +52,22 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const normalizeExperience = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const rangeMatch = normalized.match(/\b(\d+)\s*[-–]\s*(\d+)\s*years?\b/i)
+  if (rangeMatch) return `${rangeMatch[1]} - ${rangeMatch[2]} years`
+
+  const plusMatch = normalized.match(/\b(\d+)\+\s*years?\b/i)
+  if (plusMatch) return `${plusMatch[1]}+ years`
+
+  const exactMatch = normalized.match(/\b(\d+)\s*years?\b/i)
+  if (exactMatch) return `${exactMatch[1]} years`
+
+  return null
+}
+
 const toAbsoluteUrl = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -82,6 +98,15 @@ export const hasOfficialJobListingSignal = (html) => {
     && /<div class="views-row[^"]*">/i.test(page)
     && /\/company\/careers\//i.test(page)
 }
+
+export const hasOfficialJobDetailSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title>\s*.+\|\s*Okta\s*<\/title>/i.test(page)
+    && /<h1[^>]*>.+<\/h1>/i.test(page)
+    && text.includes('India')
+  }
 
 export const extractIndiaJobsFromJobListing = (html) => {
   const jobs = []
@@ -135,6 +160,45 @@ export const extractIndiaJobsFromJobListing = (html) => {
   return jobs
 }
 
+const extractDetailTitle = (html = '') =>
+  stripTags(String(html ?? '').match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+
+const extractExperienceRequiredFromDetail = (html = '') => {
+  const text = stripTags(html) || ''
+  const candidate = text.match(
+    /\b(?:\d+\s*[-–]\s*\d+\s*years?|\d+\+\s*years?|\d+\s*years?)\b[^.]{0,120}\bexperience\b/i,
+  )?.[0]
+
+  return normalizeExperience(candidate)
+}
+
+export const extractJobDetail = (html = '', listing = {}) => {
+  const title = extractDetailTitle(html) || listing.title || null
+  const jobDescription = stripTags(
+    String(html ?? '').match(/<div class="field--name-body">([\s\S]*?)<\/div>\s*<\/article>/i)?.[1]
+      || html,
+  )
+
+  return {
+    ...listing,
+    title,
+    experienceRequired: extractExperienceRequiredFromDetail(html) || listing.experienceRequired || null,
+    jobDescription: jobDescription || listing.jobDescription || null,
+  }
+}
+
+export const enrichIndiaJobsWithDetailPages = async (jobs, fetchText = defaultFetchText) => Promise.all(
+  jobs.map(async (job) => {
+    try {
+      const detailHtml = await fetchText(job.sourceUrl)
+      if (!hasOfficialJobDetailSignal(detailHtml)) return job
+      return extractJobDetail(detailHtml, job)
+    } catch {
+      return job
+    }
+  }),
+)
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -168,15 +232,17 @@ export const createOktaScraper = ({
       throw new Error('Okta official India jobs surface no longer exposes the expected public first-party role set')
     }
 
+    const limitedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = await enrichIndiaJobsWithDetailPages(limitedJobs, fetchText)
     const scrapedAt = now()
-    const decoratedJobs = jobs.map((job) => ({
+    const decoratedJobs = enrichedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt,
     }))
 
-    return maxJobs ? decoratedJobs.slice(0, maxJobs) : decoratedJobs
+    return decoratedJobs
   },
 })
 

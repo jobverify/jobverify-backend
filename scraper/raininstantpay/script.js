@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
 import { loadConfig } from '../utils/loadConfig.js'
+import { extractAshbyExperienceRequired } from '../utils/ashbyExperience.js'
 
 import { RAIN_INSTANT_PAY_CATALOG } from './catalog.js'
 
@@ -148,7 +149,10 @@ export const extractAshbyJobs = (payload = {}) =>
         sourceUrl,
         applyUrl,
         employmentType: normalizeEmploymentType(job?.employmentType),
-        experienceRequired: null,
+        experienceRequired: extractAshbyExperienceRequired({
+          title,
+          jobDescription: normalizeWhitespace(job?.descriptionPlain ?? job?.descriptionHtml),
+        }),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],

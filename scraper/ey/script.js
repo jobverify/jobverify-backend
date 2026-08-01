@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../utils/loadConfig.js'
 import { fetchTextWithRetry } from '../utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -141,6 +142,26 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
+const normalizeExperienceEvidence = (value) => normalizeWhitespace(value)
+  ?.replace(
+    /^(?:minimum|at\s+least)\s+(\d+(?:\.\d+)?)\s+(years?|months?)$/i,
+    (_, minimum, unit) => `${minimum}+ ${unit.toLowerCase()}`,
+  )
+  ?.replace(
+    /(\d+(?:\.\d+)?)\s+to\s+(\d+(?:\.\d+)?)\s+(years?|months?)$/i,
+    (_, minimum, maximum, unit) => `${minimum}-${maximum} ${unit.toLowerCase()}`,
+  )
+
+const extractExperienceRequired = ({ title, jobDescription }) => (
+  normalizeExperienceEvidence(
+    extractJobFilterSignals({
+      title,
+      jobDescription,
+      experienceRequired: null,
+    }).experienceProfile?.evidence,
+  ) || null
+)
+
 export const extractJobDetail = (html, listing = {}) => {
   const title = normalizeWhitespace(
     extractFirst(/itemprop="title"[^>]*>([\s\S]*?)<\/span>/i, html),
@@ -158,6 +179,7 @@ export const extractJobDetail = (html, listing = {}) => {
   const city = listing.city || normalizeWhitespace(
     extractFirst(/itemprop="addressLocality" content="([^"]+)"/i, html),
   ) || null
+  const jobDescription = stripTags(descriptionHtml)
 
   return {
     title,
@@ -166,8 +188,11 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId,
     requisitionId: listing.requisitionId || jobId,
     employmentType: 'Full-time',
-    experienceRequired: listing.experienceRequired || null,
-    jobDescription: stripTags(descriptionHtml),
+    experienceRequired: extractExperienceRequired({
+      title,
+      jobDescription,
+    }) || listing.experienceRequired || null,
+    jobDescription,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractListItems(descriptionHtml),

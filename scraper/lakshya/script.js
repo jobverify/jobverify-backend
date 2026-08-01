@@ -58,6 +58,117 @@ const extractJobId = (url) => {
   }
 }
 
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  if (/^full[\s-]*time$/i.test(normalized)) return 'Full-time'
+  if (/^part[\s-]*time$/i.test(normalized)) return 'Part-time'
+  return normalized
+}
+
+const WORD_NUMBER_MAP = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
+  twenty: 20,
+}
+
+const WORD_NUMBER_PATTERN = Object.keys(WORD_NUMBER_MAP).join('|')
+
+const stripMarkdown = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
+    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
+    .replace(/[*_`>#]/g, ' ')
+    .replace(/\s+/g, ' '),
+)
+
+const extractExperienceRequired = (markdown = '') => {
+  const text = stripMarkdown(markdown)
+  if (!text) return null
+
+  const rangeMatch = text.match(/\b(\d+)\s*[-–]\s*(\d+)\s*years?\b/i)
+  if (rangeMatch) return `${rangeMatch[1]} - ${rangeMatch[2]} years`
+
+  const plusMatch = text.match(/\b(\d+)\+\s*years?\b/i)
+  if (plusMatch) return `${plusMatch[1]}+ years`
+
+  const minDigitsMatch = text.match(/\b(?:at\s*least|atleast|minimum(?:\s*of)?|over|more than)\s*(\d+)\s*years?\b/i)
+  if (minDigitsMatch) return `${minDigitsMatch[1]}+ years`
+
+  const exactDigitsMatch = text.match(/\b(\d+)\s*years?\s+of\s+experience\b/i)
+  if (exactDigitsMatch) return `${exactDigitsMatch[1]} years`
+
+  const minWordMatch = text.match(
+    new RegExp(`\\b(?:at\\s*least|atleast|minimum(?:\\s*of)?|over|more than)\\s*(${WORD_NUMBER_PATTERN})\\s*years?\\b`, 'i'),
+  )
+  if (minWordMatch) return `${WORD_NUMBER_MAP[minWordMatch[1].toLowerCase()]}+ years`
+
+  const exactWordMatch = text.match(
+    new RegExp(`\\b(${WORD_NUMBER_PATTERN})\\s*years?\\s+of\\s+experience\\b`, 'i'),
+  )
+  if (exactWordMatch) return `${WORD_NUMBER_MAP[exactWordMatch[1].toLowerCase()]} years`
+
+  return null
+}
+
+export const buildWorkableMarkdownUrl = (jobId) =>
+  `${WORKABLE_BOARD_URL}/jobs/view/${encodeURIComponent(String(jobId ?? '').trim())}.md`
+
+export const extractWorkableJobDetail = (markdown = '') => {
+  const department = normalizeWhitespace(
+    String(markdown ?? '').match(/\*\*Department:\*\*\s*(.+)/i)?.[1],
+  )
+  const employmentTypeFromHeader = normalizeEmploymentType(
+    String(markdown ?? '').match(/^>\s*.+?·\s*([^·\n]+)\s*·\s*Posted\b/im)?.[1],
+  )
+  const employmentTypeFromRoleInfo = normalizeEmploymentType(
+    String(markdown ?? '').match(/Employment Type:\s*([^\n*]+)/i)?.[1],
+  )
+
+  return {
+    department,
+    employmentType: employmentTypeFromHeader || employmentTypeFromRoleInfo,
+    experienceRequired: extractExperienceRequired(markdown),
+  }
+}
+
+const enrichJobWithWorkableDetail = (job, detail) => ({
+  ...job,
+  department: detail.department || job.department,
+  employmentType: detail.employmentType || job.employmentType,
+  experienceRequired: detail.experienceRequired || job.experienceRequired,
+})
+
+export const enrichPublicJobs = async (jobs, fetchText = defaultFetchText) => Promise.all(
+  jobs.map(async (job) => {
+    if (!job?.jobId) return job
+
+    try {
+      const markdown = await fetchText(buildWorkableMarkdownUrl(job.jobId))
+      return enrichJobWithWorkableDetail(job, extractWorkableJobDetail(markdown))
+    } catch {
+      return job
+    }
+  }),
+)
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
@@ -172,7 +283,7 @@ export const createLakshyaScraper = ({ now = () => new Date().toISOString() } = 
     }
 
     const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
+    const jobs = await enrichPublicJobs(extractPublicJobs(careersHtml), fetchText)
 
     return jobs.map((job) => ({
       ...job,

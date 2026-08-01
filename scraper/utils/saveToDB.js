@@ -372,9 +372,22 @@ export const deleteAllJobsFromDB = async () => {
  * @param {string}   filePath  Absolute path to the output JSON file
  */
 export const saveToFile = (jobs, filePath) => {
-  const indiaJobs = filterIndiaJobs(jobs).map((job) => normalizeScrapedJob(job, {
-    source: job?.source || null,
-  }))
+  const indiaJobs = filterIndiaJobs(jobs).map((job) => {
+    const normalizedJob = normalizeScrapedJob(job, {
+      source: job?.source || null,
+    })
+    const rawApplyUrl = String(job?.applyUrl || job?.link || '').trim()
+
+    if (!normalizedJob.applyUrl && /^mailto:/i.test(rawApplyUrl)) {
+      return {
+        ...normalizedJob,
+        applyUrl: rawApplyUrl,
+        link: rawApplyUrl,
+      }
+    }
+
+    return normalizedJob
+  })
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
   fs.writeFileSync(filePath, JSON.stringify(indiaJobs, null, 2), 'utf-8')
 }

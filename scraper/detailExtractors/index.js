@@ -7,6 +7,7 @@ const EMPTY_DETAIL = {
   preferredQualification: null,
   requiredSkills: [],
   experienceRequired: null,
+  postingDate: null,
   department: null,
   requisitionId: null,
 }

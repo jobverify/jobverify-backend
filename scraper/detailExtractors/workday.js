@@ -1,4 +1,5 @@
 import { collectListItems, collectSkills, firstMatch, joinItems } from './shared.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -72,11 +73,21 @@ const extractLabeledSection = (text, labels, stopLabels = []) => {
 }
 
 const extractExperience = (...values) => {
-  for (const value of values.filter(Boolean)) {
-    const match = String(value).match(/[^.;\n]*\byears?\b[^.;\n]*/i)
-    if (match?.[0]) return match[0].trim()
-  }
-  return null
+  const combinedText = values
+    .filter(Boolean)
+    .map((value) => String(value).trim())
+    .filter(Boolean)
+    .join(' ')
+
+  if (!combinedText) return null
+
+  const { experienceProfile } = extractJobFilterSignals({
+    description: combinedText,
+  })
+
+  return experienceProfile?.confidence === 'high'
+    ? experienceProfile.evidence || null
+    : null
 }
 
 export const extractWorkdayJobDetail = (html = '') => {
@@ -111,6 +122,12 @@ export const extractWorkdayJobDetail = (html = '') => {
     /<dt[^>]*>\s*Job Requisition ID\s*<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/i,
     /<dt[^>]*>\s*Requisition ID\s*<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/i,
   ]) || jsonLd?.identifier?.value || null
+
+  const postingDate = firstMatch(html, [
+    /data-automation-id="postedOn"[\s\S]*?<dd[^>]*>([\s\S]*?)<\/dd>/i,
+    /<dt[^>]*>\s*posted on\s*<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/i,
+    /<dt[^>]*>\s*date posted\s*<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/i,
+  ]) || String(jsonLd?.datePosted || '').trim() || null
 
   const minimumQualification = joinItems(minimumItems) || extractLabeledSection(
     jsonLdDescription,
@@ -148,6 +165,7 @@ export const extractWorkdayJobDetail = (html = '') => {
     experienceRequired:
       [...minimumItems, ...preferredItems].find((item) => /\byears?\b/i.test(item))
       || extractExperience(minimumQualification, preferredQualification, jsonLdDescription),
+    postingDate,
     department,
     requisitionId,
   }

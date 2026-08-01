@@ -198,6 +198,57 @@ test('LILT extracts only listed India jobs from the verified Ashby payload', asy
   ])
 })
 
+test('LILT derives experienceRequired from verified Ashby descriptions for India jobs', async () => {
+  const lilt = await loadLiltModule()
+  const [dtpJob, smeJob] = lilt.extractAshbyJobs({
+    jobs: [
+      {
+        id: 'dtp-specialist',
+        title: 'DTP Specialist',
+        department: 'Production',
+        employmentType: 'Contract',
+        location: 'India (Remote)',
+        secondaryLocations: [],
+        publishedAt: '2026-07-30T00:00:00.000+00:00',
+        isListed: true,
+        isRemote: true,
+        workplaceType: 'Remote',
+        address: {
+          postalAddress: {
+            addressCountry: 'India',
+          },
+        },
+        jobUrl: 'https://jobs.ashbyhq.com/lilt-production/dtp-specialist',
+        applyUrl: 'https://jobs.ashbyhq.com/lilt-production/dtp-specialist/application',
+        descriptionPlain: 'Experience: 2+ years of experience in desktop publishing, preferably in an LSP or localization environment.',
+      },
+      {
+        id: 'math-sme',
+        title: 'Subject Matter Expert – Mathematics (Bengali) – Remote',
+        department: 'LiltLancer Community AI Data Services',
+        employmentType: 'Contract',
+        location: 'India (Remote)',
+        secondaryLocations: [],
+        publishedAt: '2026-07-30T00:00:00.000+00:00',
+        isListed: true,
+        isRemote: true,
+        workplaceType: 'Remote',
+        address: {
+          postalAddress: {
+            addressCountry: 'India',
+          },
+        },
+        jobUrl: 'https://jobs.ashbyhq.com/lilt-production/math-sme',
+        applyUrl: 'https://jobs.ashbyhq.com/lilt-production/math-sme/application',
+        descriptionPlain: '5+ years of experience in Mathematics (e.g. applied mathematics, probability and statistics, computational mathematics and physics).',
+      },
+    ],
+  })
+
+  assert.equal(dtpJob.experienceRequired, '2+ years')
+  assert.equal(smeJob.experienceRequired, '5+ years')
+})
+
 test('LILT run validates the first-party handoff and returns normalized India jobs', async () => {
   const lilt = await loadLiltModule()
   const requestedTexts = []

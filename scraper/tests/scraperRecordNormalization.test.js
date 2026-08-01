@@ -304,3 +304,24 @@ test('normalizeScrapedJob does not filter requiredSkills for non-skillNames sour
 
   assert.deepEqual(normalized.requiredSkills, ['Node.js', 'Research', 'Leadership'])
 })
+
+test('normalizeScrapedJob prefers high-confidence experience evidence over noisy Workday prose', () => {
+  const normalized = normalizeScrapedJob(
+    {
+      title: 'Customer Service Associate III/Analyst II ( Voice Process)',
+      company: 'Allstate',
+      location: 'Pune, India',
+      city: 'Pune',
+      experienceRequired: 'And for more than 90 years, our innovative drive has kept us a step ahead of our customers evolving needs',
+      jobDescription: 'At Allstate, great things happen when our people work together. Job Description RESPONSIBILITIES: Support claims workflows. Experience 1-4 years experience (Preferred).',
+      link: 'https://allstate.wd5.myworkdayjobs.com/allstate_careers/job/Ind--Pune/Customer-Service-Associate-III-Analyst-II---Voice-Process-_R31706',
+    },
+    {
+      source: 'allstate',
+      companyCareerPage: 'https://www.allstate.jobs',
+      atsPlatform: 'workday',
+    },
+  )
+
+  assert.equal(normalized.experienceRequired, '1-4 years')
+})

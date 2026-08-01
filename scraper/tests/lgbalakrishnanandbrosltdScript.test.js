@@ -14,6 +14,7 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const HOMEPAGE_HTML = readFixture('homepage.html')
 const CAREERS_HTML = readFixture('careers.html')
+const JOB_APPLY_A1494_HTML = readFixture('job-apply-a1494.html')
 
 const loadModule = async () => {
   try {
@@ -59,6 +60,16 @@ test('L.G.Balakrishnan & Bros Ltd scraper validates the verified homepage and ca
   assert.equal(jobs.at(-1)?.jobId, 'A1295')
 })
 
+test('L.G.Balakrishnan & Bros Ltd extracts experience and qualifications from the official job apply page', async () => {
+  const lgb = await loadModule()
+
+  assert.deepEqual(lgb.extractPublicJobDetail(JOB_APPLY_A1494_HTML), {
+    experienceRequired: '2 - 4 years',
+    minimumQualification: 'Diploma - (Mechanical / Automobile Engineering) - Good, Certification - (Quality control tools) - Preferred',
+    jobDescription: 'Inspect incoming and in-process components for quality compliance. Document defects and support corrective action follow-through.',
+  })
+})
+
 test('L.G.Balakrishnan & Bros Ltd run fetches the verified first-party pages and decorates the job cards for persistence', async () => {
   const lgb = await loadModule()
   const requestedUrls = []
@@ -71,12 +82,18 @@ test('L.G.Balakrishnan & Bros Ltd run fetches the verified first-party pages and
 
       if (url === lgb.HOMEPAGE_URL) return HOMEPAGE_HTML
       if (url === lgb.CAREERS_URL) return CAREERS_HTML
+      if (url.startsWith('https://careers.lgbportal.co.in/job_apply/')) return JOB_APPLY_A1494_HTML
 
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [lgb.HOMEPAGE_URL, lgb.CAREERS_URL])
+  assert.equal(requestedUrls[0], lgb.HOMEPAGE_URL)
+  assert.equal(requestedUrls[1], lgb.CAREERS_URL)
+  assert.equal(
+    requestedUrls.includes('https://careers.lgbportal.co.in/job_apply/500a04a2-0045-4da7-a703-801ab4092c42'),
+    true,
+  )
   assert.equal(jobs.length, 10)
   assert.equal(jobs[0].source, 'lgbalakrishnanandbrosltd')
   assert.equal(jobs[0].companyCareerPage, 'https://careers.lgbportal.co.in/')
@@ -84,6 +101,11 @@ test('L.G.Balakrishnan & Bros Ltd run fetches the verified first-party pages and
   assert.equal(jobs[0].atsPlatform, 'official-first-party-candidate-portal')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T07:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].experienceRequired, '2 - 4 years')
+  assert.equal(
+    jobs[0].minimumQualification,
+    'Diploma - (Mechanical / Automobile Engineering) - Good, Certification - (Quality control tools) - Preferred',
+  )
 })
 
 test('L.G.Balakrishnan & Bros Ltd fails closed when the verified homepage or careers portal drifts', async () => {

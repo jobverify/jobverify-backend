@@ -14,6 +14,7 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedCareersHtml = readFixture('careers.html')
+const animationLeadMarkdown = readFixture('3d-animation-lead.md')
 
 const loadLakshyaModule = async () => {
   try {
@@ -56,6 +57,20 @@ test('Lakshya scraper recognizes the verified homepage and first-party careers l
   assert.ok(jobs.some((job) => job.city === 'Pune' && job.state === 'Maharashtra'))
 })
 
+test('Lakshya scraper extracts experience from the official Workable markdown view', async () => {
+  const lakshya = await loadLakshyaModule()
+
+  assert.equal(
+    lakshya.buildWorkableMarkdownUrl('7CBF88DEEF'),
+    'https://apply.workable.com/lakshyadigitalglobal/jobs/view/7CBF88DEEF.md',
+  )
+  assert.deepEqual(lakshya.extractWorkableJobDetail(animationLeadMarkdown), {
+    department: 'Lakshya India',
+    employmentType: 'Full-time',
+    experienceRequired: '3+ years',
+  })
+})
+
 test('Lakshya scraper returns the public India roles from the verified careers page', async () => {
   const lakshya = await loadLakshyaModule()
   const requestedUrls = []
@@ -68,12 +83,23 @@ test('Lakshya scraper returns the public India roles from the verified careers p
 
       if (url === lakshya.HOMEPAGE_URL) return verifiedHomepageHtml
       if (url === lakshya.CAREERS_URL) return verifiedCareersHtml
+      if (url === 'https://apply.workable.com/lakshyadigitalglobal/jobs/view/7CBF88DEEF.md') {
+        return animationLeadMarkdown
+      }
+      if (url.startsWith('https://apply.workable.com/lakshyadigitalglobal/jobs/view/')) {
+        return '# Placeholder role'
+      }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [lakshya.HOMEPAGE_URL, lakshya.CAREERS_URL])
+  assert.equal(requestedUrls[0], lakshya.HOMEPAGE_URL)
+  assert.equal(requestedUrls[1], lakshya.CAREERS_URL)
+  assert.equal(
+    requestedUrls.includes('https://apply.workable.com/lakshyadigitalglobal/jobs/view/7CBF88DEEF.md'),
+    true,
+  )
   assert.equal(jobs.length, 22)
   assert.equal(jobs[0].source, 'lakshya')
   assert.equal(jobs[0].company, 'Lakshya')
@@ -82,6 +108,10 @@ test('Lakshya scraper returns the public India roles from the verified careers p
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T06:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(
+    jobs.find((job) => job.title === '3D Animation Lead')?.experienceRequired,
+    '3+ years',
+  )
 })
 
 test('Lakshya scraper fails closed when the verified homepage or careers shell drifts materially', async () => {

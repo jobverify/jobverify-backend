@@ -17,6 +17,29 @@ const careersHtml = `
 </html>
 `
 
+const kulaJobDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Account Manager, Enterprise - Plum Benefits Private Limited</title>
+  </head>
+  <body>
+    <main>
+      <p>Account Manager, Enterprise</p>
+      <p>Job type: Full Time · Department: Account Management · Work type: On-Site</p>
+      <p>Bengaluru, Karnataka, India</p>
+      <div class="job-details">
+        <h4><strong>Role Requirement</strong></h4>
+        <ul>
+          <li>1-3 years of experience in a customer facing role.</li>
+          <li>Very strong written and verbal communication.</li>
+        </ul>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 const buildEscapedKulaHtml = (jobs) => {
   const escapedJobs = JSON.stringify(jobs).replace(/"/g, '\\"')
   return `before \\"accountName\\":\\"plumhq\\",\\"jobs\\":${escapedJobs},\\"departments\\":[] after`
@@ -165,6 +188,37 @@ test('extractSearchResults parses embedded Kula jobs and keeps only India roles 
   ])
 })
 
+test('Plum HQ extracts experience from the official Kula detail page', async () => {
+  const plumHq = await loadModule()
+  const listing = plumHq.extractSearchResults(buildEscapedKulaHtml([
+    {
+      id: 34037,
+      title: 'Account Manager, Enterprise',
+      listed: true,
+      kind: 'external',
+      ats_job: {
+        employment_type: 'full_time',
+        ats_department: {
+          name: 'Account Management',
+        },
+        offices: [
+          {
+            location: 'Bengaluru, Karnataka, India',
+            country: 'India',
+            remote: false,
+          },
+        ],
+      },
+    },
+  ]))[0]
+
+  assert.equal(plumHq.hasOfficialKulaJobDetailSignal(kulaJobDetailHtml), true)
+  assert.deepEqual(plumHq.extractKulaJobDetail(kulaJobDetailHtml, listing), {
+    ...listing,
+    experienceRequired: '1 - 3 years',
+  })
+})
+
 test('run validates the official careers handoff and decorates Plum HQ jobs from the embedded Kula board', async () => {
   const plumHq = await loadModule()
   const requestedUrls = []
@@ -176,14 +230,14 @@ test('run validates the official careers handoff and decorates Plum HQ jobs from
       if (url === plumHq.KULA_JOBS_URL) {
         return buildEscapedKulaHtml([
           {
-            id: 81002,
-            title: 'Lead, Account-Based Marketing',
+            id: 34037,
+            title: 'Account Manager, Enterprise',
             listed: true,
             kind: 'external',
             ats_job: {
               employment_type: 'full_time',
               ats_department: {
-                name: 'Marketing',
+                name: 'Account Management',
               },
               offices: [
                 {
@@ -215,6 +269,7 @@ test('run validates the official careers handoff and decorates Plum HQ jobs from
           },
         ])
       }
+      if (url === 'https://careers.kula.ai/plumhq/34037/?jobs=true') return kulaJobDetailHtml
 
       throw new Error(`Unexpected Plum HQ fixture URL: ${url}`)
     },
@@ -224,12 +279,14 @@ test('run validates the official careers handoff and decorates Plum HQ jobs from
   assert.deepEqual(requestedUrls, [
     plumHq.CAREERS_URL,
     plumHq.KULA_JOBS_URL,
+    'https://careers.kula.ai/plumhq/34037/?jobs=true',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'plumhq')
   assert.equal(jobs[0].company, 'Plum HQ')
-  assert.equal(jobs[0].link, 'https://careers.kula.ai/plumhq/81002/?jobs=true')
+  assert.equal(jobs[0].link, 'https://careers.kula.ai/plumhq/34037/?jobs=true')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[0].experienceRequired, '1 - 3 years')
 })
 
 test('Plum HQ scraper fails closed when the verified careers page signal or embedded Kula handoff drifts', async () => {

@@ -37,6 +37,74 @@ const careersBundleJs = `
   ],n0=e=>null;
 `
 
+const technicalProgramManagerDetailHtml = `
+  <html>
+    <head>
+      <title>Technical Program Manager | Apply now</title>
+    </head>
+    <body>
+      <script id="__NEXT_DATA__" type="application/json">
+        {
+          "props": {
+            "pageProps": {
+              "jobDetails": {
+                "id": 365199,
+                "title": "Technical Program Manager",
+                "job_type": "FULLTIME",
+                "description": "<p>Required Qualifications</p><ul><li>2-4 years of experience in a technical coordination or program support role</li><li>Hands-on experience with JIRA / JIRA Service Management</li></ul>",
+                "max_experience": 4,
+                "min_experience": 2,
+                "skill": ["scrum", "jira"],
+                "education": [],
+                "country": "India",
+                "location": "Gurugram, Haryana, India",
+                "department_name": "Engineering",
+                "workplace_type": "ON_SITE",
+                "created_at": "2026-06-08T11:24:41.060262-05:00",
+                "valid_through": "2026-08-07T11:24:41.060262-05:00"
+              }
+            }
+          }
+        }
+      </script>
+    </body>
+  </html>
+`
+
+const aiEngineerDetailHtml = `
+  <html>
+    <head>
+      <title>AI Engineer | Apply now</title>
+    </head>
+    <body>
+      <script id="__NEXT_DATA__" type="application/json">
+        {
+          "props": {
+            "pageProps": {
+              "jobDetails": {
+                "id": 365200,
+                "title": "AI Engineer",
+                "job_type": "FULLTIME",
+                "description": "<p>Role overview</p><ul><li>4+ years of experience with applied AI systems</li></ul>",
+                "min_experience": 4,
+                "max_experience": null,
+                "skill": ["python", "llmops"],
+                "education": ["B.Tech"],
+                "country": "India",
+                "location": "Gurugram, Haryana, India",
+                "department_name": "Engineering",
+                "workplace_type": "ON_SITE",
+                "created_at": "2026-06-10T09:00:00.000Z",
+                "valid_through": "2026-08-20T09:00:00.000Z"
+              }
+            }
+          }
+        }
+      </script>
+    </body>
+  </html>
+`
+
 const openRoleCards = [
   {
     title: 'Technical Program Manager',
@@ -196,23 +264,47 @@ test('run maps Leena AI roles from the first-party careers bundle without browse
       requestedUrls.push(url)
       if (url === leenaAi.CAREERS_URL) return officialCareersHtmlWithBundle
       if (url === careersBundleUrl) return careersBundleJs
+      if (url === 'https://jobs.pyjamahr.com/leena-ai/technical-program-manager?source=JOB_LINK&shared_at=1780988641680') {
+        return technicalProgramManagerDetailHtml
+      }
+      if (url === 'https://jobs.pyjamahr.com/leena-ai/ai-engineer?source=JOB_LINK&shared_at=1783485938705') {
+        return aiEngineerDetailHtml
+      }
       throw new Error(`Unexpected Leena AI fixture URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [leenaAi.CAREERS_URL, careersBundleUrl])
+  assert.deepEqual(requestedUrls, [
+    leenaAi.CAREERS_URL,
+    careersBundleUrl,
+    'https://jobs.pyjamahr.com/leena-ai/technical-program-manager?source=JOB_LINK&shared_at=1780988641680',
+    'https://jobs.pyjamahr.com/leena-ai/ai-engineer?source=JOB_LINK&shared_at=1783485938705',
+  ])
   assert.deepEqual(
-    jobs.map((job) => [job.title, job.department, job.sourceUrl]),
+    jobs.map((job) => [
+      job.title,
+      job.department,
+      job.experienceRequired,
+      job.sourceUrl,
+      job.applyUrl,
+      job.requiredSkills,
+    ]),
     [
       [
         'Technical Program Manager',
         'Engineering',
+        '2 - 4 years',
         'https://jobs.pyjamahr.com/leena-ai/technical-program-manager?source=JOB_LINK&shared_at=1780988641680',
+        'https://jobs.pyjamahr.com/leena-ai/technical-program-manager?source=JOB_LINK&shared_at=1780988641680',
+        ['scrum', 'jira'],
       ],
       [
         'AI Engineer',
         'Engineering',
+        '4+ years',
         'https://jobs.pyjamahr.com/leena-ai/ai-engineer?source=JOB_LINK&shared_at=1783485938705',
+        'https://jobs.pyjamahr.com/leena-ai/ai-engineer?source=JOB_LINK&shared_at=1783485938705',
+        ['python', 'llmops'],
       ],
     ],
   )

@@ -22,6 +22,80 @@ const fixturesDir = path.join(
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
+const DETAIL_WITH_EXPERIENCE_HTML = `
+<html>
+  <head>
+    <meta name="search-job-apply-url" content="https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Bengaluru/Assistant-Vice-President---Applied-AI-Engineer_JR-0000125361/apply" />
+    <script type="application/ld+json">{
+      "@context":"http://schema.org",
+      "@type":"JobPosting",
+      "datePosted":"2026-07-30",
+      "description":"<p>Join Barclays as an Assistant Vice President - Applied AI Engineer role.</p><ul><li><p>8+ years software engineering experience with at least 3 years building AI/ML systems, scalable ML infrastructure, or model serving platforms at enterprise scale</p></li></ul>",
+      "employmentType":"Permanent",
+      "identifier":"JR-0000125361",
+      "industry":"Chief Technology Office",
+      "title":"Assistant Vice President - Applied AI Engineer",
+      "url":"https://search.jobs.barclays/job/bengaluru/assistant-vice-president-applied-ai-engineer/13015/98506870816",
+      "workHours":"Full time",
+      "hiringOrganization":{"@type":"Organization","name":"Barclays"},
+      "jobLocation":[{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Bengaluru","addressCountry":"India"}}]
+    }</script>
+  </head>
+  <body>
+    <section>
+      <h1 class="job-details--title">Assistant Vice President - Applied AI Engineer</h1>
+      <p class="job-details--location">Bengaluru, India</p>
+      <div data-selector-name="jobdetails" data-job-id="98506870816"></div>
+      <div class="ats-description pt-1 pl-m-4 pr-m-4">
+        <p>Join Barclays as an Assistant Vice President - Applied AI Engineer role.</p>
+        <ul>
+          <li><p>8+ years software engineering experience with at least 3 years building AI/ML systems, scalable ML infrastructure, or model serving platforms at enterprise scale</p></li>
+        </ul>
+      </div>
+    </section>
+  </body>
+</html>
+`
+
+const DETAIL_WITH_GENERIC_EXPERIENCE_HTML = `
+<html>
+  <head>
+    <meta name="search-job-apply-url" content="https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Mumbai/PB-India-Banking-Product-Manager-AVP_JR-0000129999/apply" />
+    <script type="application/ld+json">{
+      "@context":"http://schema.org",
+      "@type":"JobPosting",
+      "datePosted":"2026-07-30",
+      "description":"<p>Join us as PB India Banking Product Manager - AVP.</p><p>Essential Skills / Basic Qualifications:</p><ul><li><p>Graduate degree.</p></li><li><p>Strong understanding of Indian regulatory frameworks.</p></li><li><p>Experience with governance processes such as ALCO, audit, and risk committees.</p></li><li><p>Commercial acumen with a client-focused mindset.</p></li></ul>",
+      "employmentType":"Permanent",
+      "identifier":"JR-0000129999",
+      "industry":"Private Banking",
+      "title":"PB India Banking Product Manager - AVP",
+      "url":"https://search.jobs.barclays/job/mumbai/pb-india-banking-product-manager-avp/13015/97553105744",
+      "workHours":"Full time",
+      "hiringOrganization":{"@type":"Organization","name":"Barclays"},
+      "jobLocation":[{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Mumbai","addressCountry":"India"}}]
+    }</script>
+  </head>
+  <body>
+    <section>
+      <h1 class="job-details--title">PB India Banking Product Manager - AVP</h1>
+      <p class="job-details--location">Mumbai, India</p>
+      <div data-selector-name="jobdetails" data-job-id="97553105744"></div>
+      <div class="ats-description pt-1 pl-m-4 pr-m-4">
+        <p>Join us as PB India Banking Product Manager - AVP.</p>
+        <p>Essential Skills / Basic Qualifications:</p>
+        <ul>
+          <li><p>Graduate degree.</p></li>
+          <li><p>Strong understanding of Indian regulatory frameworks.</p></li>
+          <li><p>Experience with governance processes such as ALCO, audit, and risk committees.</p></li>
+          <li><p>Commercial acumen with a client-focused mindset.</p></li>
+        </ul>
+      </div>
+    </section>
+  </body>
+</html>
+`
+
 test('buildSearchUrl keeps Barclays listings on the India TalentBrew pages', async () => {
   const barclays = await loadBarclaysModule()
   assert.ok(barclays)
@@ -124,6 +198,78 @@ test('extractJobDetail reads Barclays detail metadata, JSON-LD, and Workday appl
   )
 })
 
+test('extractJobDetail derives Barclays experience from official detail descriptions when numeric years are present', async () => {
+  const barclays = await loadBarclaysModule()
+  assert.ok(barclays)
+
+  const detail = barclays.extractJobDetail(DETAIL_WITH_EXPERIENCE_HTML, {
+    title: 'Assistant Vice President - Applied AI Engineer',
+    company: 'Barclays',
+    department: null,
+    location: 'Bengaluru, India',
+    city: 'Bengaluru',
+    country: 'India',
+    jobId: '98506870816',
+    requisitionId: '98506870816',
+    sourceUrl: 'https://search.jobs.barclays/job/bengaluru/assistant-vice-president-applied-ai-engineer/13015/98506870816',
+    applyUrl: 'https://search.jobs.barclays/job/bengaluru/assistant-vice-president-applied-ai-engineer/13015/98506870816',
+  })
+
+  assert.equal(detail.experienceRequired, '8+ years')
+  assert.match(detail.jobDescription, /8\+ years software engineering experience/i)
+})
+
+test('extractJobDetail keeps Barclays experience null when the detail page only has generic experience wording', async () => {
+  const barclays = await loadBarclaysModule()
+  assert.ok(barclays)
+
+  const detail = barclays.extractJobDetail(DETAIL_WITH_GENERIC_EXPERIENCE_HTML, {
+    title: 'PB India Banking Product Manager - AVP',
+    company: 'Barclays',
+    department: null,
+    location: 'Mumbai, India',
+    city: 'Mumbai',
+    country: 'India',
+    jobId: '97553105744',
+    requisitionId: '97553105744',
+    sourceUrl: 'https://search.jobs.barclays/job/mumbai/pb-india-banking-product-manager-avp/13015/97553105744',
+    applyUrl: 'https://search.jobs.barclays/job/mumbai/pb-india-banking-product-manager-avp/13015/97553105744',
+  })
+
+  assert.equal(detail.experienceRequired, null)
+})
+
+test('normalizeScrapedJob does not turn Barclays graduate-degree requirements into fresher roles', async () => {
+  const barclays = await loadBarclaysModule()
+  assert.ok(barclays)
+
+  const detail = barclays.extractJobDetail(DETAIL_WITH_GENERIC_EXPERIENCE_HTML, {
+    title: 'PB India Banking Product Manager - AVP',
+    company: 'Barclays',
+    department: null,
+    location: 'Mumbai, India',
+    city: 'Mumbai',
+    country: 'India',
+    jobId: '97553105744',
+    requisitionId: '97553105744',
+    sourceUrl: 'https://search.jobs.barclays/job/mumbai/pb-india-banking-product-manager-avp/13015/97553105744',
+    applyUrl: 'https://search.jobs.barclays/job/mumbai/pb-india-banking-product-manager-avp/13015/97553105744',
+  })
+
+  const normalized = normalizeScrapedJob(detail, {
+    source: 'barclays',
+    companyName: 'Barclays',
+    companyCareerPage: 'https://search.jobs.barclays/search-jobs/india',
+    atsPlatform: 'talentbrew-radancy',
+  })
+
+  assert.equal(normalized.experienceRequired, null)
+  assert.equal(normalized.experienceProfile?.evidence ?? null, null)
+  assert.equal(normalized.experienceLevel, 'Senior Level')
+  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.seniority, 'Manager')
+})
+
 test('normalizeScrapedJob composes Barclays India roles from the public detail pages', async () => {
   const barclays = await loadBarclaysModule()
   assert.ok(barclays)
@@ -194,7 +340,7 @@ test('run stops when Barclays TalentBrew repeats the next-page URL', async () =>
 
   const repeatedNextUrl = 'https://search.jobs.barclays/search-jobs/india&p=2'
   const requests = []
-  const jobs = await barclays.createBarclaysScraper({ maxPages: 10 }).run({
+  const jobs = await barclays.createBarclaysScraper({ maxPages: 10, includeDetails: false }).run({
     fetchText: async (url) => {
       requests.push(url)
       if (url === barclays.buildSearchUrl() || url === repeatedNextUrl) {
@@ -221,7 +367,7 @@ test('run bounds default Barclays fetches with abort signals', async () => {
       return { ok: true, status: 200, text: async () => readFixture('search-results-page-1.html') }
     }
     if (url === 'https://search.jobs.barclays/job/mumbai/macro-and-credit-bco-india/13015/92127468928') {
-      return { ok: true, status: 200, text: async () => readFixture('job-detail-macro-and-credit-bco-india.html') }
+      return { ok: true, status: 200, text: async () => DETAIL_WITH_EXPERIENCE_HTML }
     }
 
     assert.fail(`Unexpected Barclays URL: ${url}`)
@@ -231,6 +377,11 @@ test('run bounds default Barclays fetches with abort signals', async () => {
     const jobs = await barclays.createBarclaysScraper({ maxPages: 1, maxJobs: 1 }).run()
 
     assert.equal(jobs.length, 1)
+    assert.equal(
+      requests.map((request) => request.url).includes('https://search.jobs.barclays/job/mumbai/macro-and-credit-bco-india/13015/92127468928'),
+      true,
+    )
+    assert.equal(jobs[0].experienceRequired, '8+ years')
     assert.ok(requests.every((request) => request.signal), 'each fetch should include an abort signal')
     assert.ok(requests.every((request) => typeof request.signal.aborted === 'boolean'))
   } finally {

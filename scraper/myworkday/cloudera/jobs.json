@@ -13,7 +13,7 @@
     "source": "cloudera",
     "postedAt": "2026-07-24T00:00:00.000Z",
     "closingDate": null,
-    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. The Data Services Platform organization has deep technical expertise in distributed computing and container orchestration technologies like Kubernetes, Apache Hadoop, etc. and on various cloud platforms like Openshift, RKE, AWS, Azure, GCP etc. We have team members who have been the pioneers of open source projects like YuniKorn for Kubernetes. We are deeply involved in open source communities like Apache Software Foundation and CNCF. As the Staff Software Engineer you will:: You will be a full stack engineer in the CDP Data Services Platform - Control Plane team. This is a distributed team of senior engineers. In this role you will Work closely with Product Managers to drive a project’s requirements and convert said requirements into technical designs Design, write and review high quality code to deliver elegant, scalable, enterprise-quality, cloud based application services Execute the development of software with a strong focus on the security, performance, and robustness Build strong relationships and collaborate with UI engineers, quality engineers, UX designers, Product Managers, SRE, Infosec and external partners Hire, mentor and lead junior engineers by example Work to enhance developer productivity and team agility We’re excited about you if you have: BS/MS in Computer Science Passionate about programming. Clean coding habits, attention to details, and focus on quality and testability 5+ years of hands on software design, implementation and test experience with strong understanding of distributed &amp; large scale systems Strong software engineering skills: object oriented design, data structures, and algorithms Experience with the following: Java, concurrent programming, test driven development, and related areas required. You may also have: Working knowledge of Hadoop or other big data solutions Experience with disaster recovery, data tiering solutions and workflow management. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-VG1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. The Data Services Platform organization has deep technical expertise in distributed computing and container orchestration technologies like Kubernetes, Apache Hadoop, etc. and on various cloud platforms like Openshift, RKE, AWS, Azure, GCP etc. We have team members who have been the pioneers of open source projects like Yuni Korn for Kubernetes. We are deeply involved in open source communities like Apache Software Foundation and CNCF. As the Staff Software Engineer you will:: You will be a full stack engineer in the CDP Data Services Platform\n- Control Plane team. This is a distributed team of senior engineers. In this role you will Work closely with Product Managers to drive a project’s requirements and convert said requirements into technical designs Design, write and review high quality code to deliver elegant, scalable, enterprise-quality, cloud based application services Execute the development of software with a strong focus on the security, performance, and robustness Build strong relationships and collaborate with UI engineers, quality engineers, UX designers, Product Managers, SRE, Infosec and external partners Hire, mentor and lead junior engineers by example Work to enhance developer productivity and team agility We’re excited about you if you have: BS/MS in Computer Science Passionate about programming. Clean coding habits, attention to details, and focus on quality and testability 5+ years of hands on software design, implementation and test experience with strong understanding of distributed &amp; large scale systems Strong software engineering skills: object oriented design, data structures, and algorithms Experience with the following: Java, concurrent programming, test driven development, and related areas required. You may also have: Working knowledge of Hadoop or other big data solutions Experience with disaster recovery, data tiering solutions and workflow management. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-VG1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
     "minimumQualification": null,
     "preferredQualification": null,
     "requiredSkills": [],
@@ -25,7 +25,120 @@
     "companyDomain": "cloudera.com",
     "atsPlatform": "workday",
     "applyUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Staff-Software-Engineer_260199",
-    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Staff-Software-Engineer_260199"
+    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Staff-Software-Engineer_260199",
+    "originalTitle": "Staff Software Engineer",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-24T00:00:00.000Z",
+    "scrapedTimestamp": "2026-07-26T18:42:58.011Z",
+    "skillIds": [
+      "kubernetes",
+      "aws",
+      "azure",
+      "gcp",
+      "java"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "Clean coding habits, attention to details, and focus on quality and testability 5+ years of hands on software design, implementation and test experience with strong understanding of distributed &amp",
+      "minimumYears": 5,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5+ years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Staff",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-07-31T15:49:48.634Z"
   },
   {
     "jobId": null,
@@ -53,7 +166,51 @@
     "companyDomain": "cloudera.com",
     "atsPlatform": "workday",
     "applyUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Learning---Enrichment-Sr-Associate_261052-1",
-    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Learning---Enrichment-Sr-Associate_261052-1"
+    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Learning---Enrichment-Sr-Associate_261052-1",
+    "originalTitle": "Learning & Enrichment Sr. Associate",
+    "normalizedTitle": "Learning & Enrichment Sr. Associate",
+    "jobCategory": "Learning & Enrichment Sr. Associate",
+    "engineeringDomain": "Process",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-23T00:00:00.000Z",
+    "scrapedTimestamp": "2026-07-26T18:42:58.527Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. The Learning &amp; Enrichment team is looking for a motivated and detail-oriented Learning &amp; Enrichment Senior Associate to help build engaging learning experiences that enable employees to succeed. In this role, you will contribute to the design, delivery, and continuous improvement of learning programs that address business needs across the organization. This is an excellent opportunity for someone who enjoys facilitating engaging learning experiences, creating digital learning content, collaborating with global stakeholders and growing their instructional design expertise while working alongside experienced learning professionals. As a Learning &amp; Enrichment Senior Associate you will: Content Design &amp; Development: Build engaging, self-led learning modules using Articulate (Storyline/Rise) and curate highly relevant Udemy learning paths based on clearly defined business needs. Instructional Design &amp; Problem Solving: Address localized learning gaps using standard instructional design methodologies. You will use established team templates to handle structured requests, such as refreshing and updating existing onboarding modules. Program Delivery: Facilitate and deliver standard training programs with high energy and clarity, ensuring a smooth, high-quality experience that directly impacts immediate learner performance. Stakeholder Management: Act as the primary point of contact for line managers and specific team-level stakeholders to identify immediate training needs and deliver tailored learning solutions. Project Execution &amp; Collaboration: Independently drive assigned L&amp;D projects from start to finish. You will receive peer-level guidance and will regularly shadow and support senior team members on larger, complex strategic initiatives. We are excited about you if you have: Experience facilitating instructor-led or virtual learning sessions with confidence and strong audience engagement. Foundational knowledge of instructional design principles and content development. Hands-on experience using authoring tools such as Articulate Storyline or Rise. Familiarity with learning platforms such as Udemy or similar learning management systems. Strong problem-solving skills with the ability to address learning needs using structured approaches and established templates. Excellent verbal and written communication skills with the ability to collaborate effectively with managers and cross-functional stakeholders. Strong organizational skills with the ability to manage multiple priorities in a fast-paced environment. You may also have: Experience supporting onboarding or employee development programs. Exposure to pulling out learning reports Experience working with global or cross-functional teams. Passion for learning, continuous improvement, and creating engaging learner experiences. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-RC1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Human Resources",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-07-31T15:49:48.636Z"
   },
   {
     "jobId": null,
@@ -69,7 +226,7 @@
     "source": "cloudera",
     "postedAt": "2026-07-14T00:00:00.000Z",
     "closingDate": null,
-    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Ready to take cloud innovation to the next level? Join Cloudera’s Anywhere Cloud team and help deliver a true “build your own pipeline, bring your own engine” experience — enabling data and AI workloads to run anywhere, without friction or vendor lock-in. Cloudera Anywhere Cloud is our revolutionary hybrid data and Agentic AI platform. Built on a modular, Kubernetes-native, and API-first foundation, it delivers a unified console and Marketplace to govern and deploy autonomous data and AI services seamlessly across any public cloud and your private data center. We are seeking a visionary Engineering manager to take the reins of the Marketplace experience—the crucial front door for all Cloudera Data Services, Machine Learning, and Agentic AI offerings. This is a high-impact Individual Contributor role, empowering you to shape the architectural destiny of Cloudera across a massive, multi-cloud environment, impacting thousands of global customers We are looking for an experienced Engineering Manager to lead the AWC Platform organization. In this role, you will be responsible for the strategic direction and operational success of our core cloud infrastructure. You will manage a team that includes Individual Contributors, overseeing the delivery of high-performance distributed systems. You will bridge the gap between business goals and technical execution, ensuring our platform is scalable, secure, and developer-friendly. As an Engineering Manager, you will lead: Organizational Leadership: Manage and grow a diverse engineering organization. Operational Strategy: Establish operational objectives and work assignments, delegating effectively to ensure the team meets critical schedules and performance requirements. Strategic Planning: Participate in the development of strategic plans and objectives for the AWC division; make final decisions on operational matters that impact the success of the broader platform. Cross-Functional Influence: Regularly interact with senior-level management and executives to align on roadmap and priorities; exercise influence to gain acceptance of new initiatives in sensitive situations. Technical Oversight: Guide the engineering quality and architecture of the platform (built on Kubernetes, Go, and Rust), ensuring the team balances technical debt with new feature delivery. Policy &amp; Process: Develop and modify engineering policies and procedures to improve team efficiency and impact immediate operations. We’re excited about you if you have: A relentless drive to innovate and an obsession with delivery, even amidst volatility. Management Experience: Bachelor’s degree with 2+ years of specific management experience, preferably managing managers or multiple teams. Technical Background: Strong engineering background in distributed systems, cloud-native technologies (Kubernetes, Docker), and backend development (Go or Rust). Operational Excellence: Proven ability to manage budgets, resources, and schedules for complex projects where erroneous decisions could cause critical delays. Leadership Scale: Experience managing teams of 10+ engineers, including performance management, hiring, and career development. You May Also Have: Hands-on experience with at least one major public cloud (AWS, Azure, GCP) and/or private cloud platforms (OpenShift, Rancher). A track record of building and maintaining high-volume containerized applications on Kubernetes. Contributions and/or working experience to open-source projects (Apache, CNCF) Iceberg, Polaris, and other catalogs. Experience leading platform engineering or \"Internal Developer Platform\" (IDP) teams. Experience transitioning teams from single-cloud to multi-cloud/hybrid architectures. Background in security-focused engineering leadership. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-SV1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Ready to take cloud innovation to the next level? Join Cloudera’s Anywhere Cloud team and help deliver a true “build your own pipeline, bring your own engine” experience — enabling data and AI workloads to run anywhere, without friction or vendor lock-in. Cloudera Anywhere Cloud is our revolutionary hybrid data and Agentic AI platform. Built on a modular, Kubernetes-native, and API-first foundation, it delivers a unified console and Marketplace to govern and deploy autonomous data and AI services seamlessly across any public cloud and your private data center. We are seeking a visionary Engineering manager to take the reins of the Marketplace experience—the crucial front door for all Cloudera Data Services, Machine Learning, and Agentic AI offerings. This is a high-impact Individual Contributor role, empowering you to shape the architectural destiny of Cloudera across a massive, multi-cloud environment, impacting thousands of global customers We are looking for an experienced Engineering Manager to lead the AWC Platform organization. In this role, you will be responsible for the strategic direction and operational success of our core cloud infrastructure. You will manage a team that includes Individual Contributors, overseeing the delivery of high-performance distributed systems. You will bridge the gap between business goals and technical execution, ensuring our platform is scalable, secure, and developer-friendly. As an Engineering Manager, you will lead: Organizational Leadership: Manage and grow a diverse engineering organization. Operational Strategy: Establish operational objectives and work assignments, delegating effectively to ensure the team meets critical schedules and performance requirements. Strategic Planning: Participate in the development of strategic plans and objectives for the AWC division; make final decisions on operational matters that impact the success of the broader platform. Cross-Functional Influence: Regularly interact with senior-level management and executives to align on roadmap and priorities; exercise influence to gain acceptance of new initiatives in sensitive situations. Technical Oversight: Guide the engineering quality and architecture of the platform (built on Kubernetes, Go, and Rust), ensuring the team balances technical debt with new feature delivery. Policy &amp; Process: Develop and modify engineering policies and procedures to improve team efficiency and impact immediate operations. We’re excited about you if you have: A relentless drive to innovate and an obsession with delivery, even amidst volatility. Management Experience: Bachelor’s degree with 2+ years of specific management experience, preferably managing managers or multiple teams. Technical Background: Strong engineering background in distributed systems, cloud-native technologies (Kubernetes, Docker), and backend development (Go or Rust). Operational Excellence: Proven ability to manage budgets, resources, and schedules for complex projects where erroneous decisions could cause critical delays. Leadership Scale: Experience managing teams of 10+ engineers, including performance management, hiring, and career development. You May Also Have: Hands-on experience with at least one major public cloud (AWS, Azure, GCP) and/or private cloud platforms (Open Shift, Rancher). A track record of building and maintaining high-volume containerized applications on Kubernetes. Contributions and/or working experience to open-source projects (Apache, CNCF) Iceberg, Polaris, and other catalogs. Experience leading platform engineering or \"Internal Developer Platform\" (IDP) teams. Experience transitioning teams from single-cloud to multi-cloud/hybrid architectures. Background in security-focused engineering leadership. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-SV1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
     "minimumQualification": null,
     "preferredQualification": null,
     "requiredSkills": [],
@@ -81,7 +238,134 @@
     "companyDomain": "cloudera.com",
     "atsPlatform": "workday",
     "applyUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore-Remote/Staff-Software-Engineer---Golang_260227",
-    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore-Remote/Staff-Software-Engineer---Golang_260227"
+    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore-Remote/Staff-Software-Engineer---Golang_260227",
+    "originalTitle": "Engineering Manager - AWC",
+    "normalizedTitle": "Engineering Manager - AWC",
+    "jobCategory": "Engineering Manager - AWC",
+    "engineeringDomain": "Machine Learning",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "Remote",
+    "salary": null,
+    "postingDate": "2026-07-14T00:00:00.000Z",
+    "scrapedTimestamp": "2026-07-26T18:42:58.490Z",
+    "skillIds": [
+      "kubernetes",
+      "machine-learning",
+      "docker",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Machine Learning"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "Management Experience: Bachelor’s degree with 2+ years of specific management experience, preferably managing managers or multiple teams",
+      "minimumYears": 2,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2+ years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-07-31T15:49:48.638Z"
   },
   {
     "jobId": null,
@@ -97,7 +381,7 @@
     "source": "cloudera",
     "postedAt": "2026-06-27T00:00:00.000Z",
     "closingDate": null,
-    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera is seeking a Senior Solutions Architect to join its APAC Professional Services team. In this role you’ll have the opportunity to develop massively scalable solutions to solve complex data problems using Hadoop, NiFi, Spark and related Big Data technology. This role is a client facing opportunity that combines consulting skills with deep technical design and development in the Big Data space. This role will present the successful candidate the opportunity to travel across Asia Pacific and across multiple industries and large customer organisations. As the Senior Solutions Architect you will: Work directly with customer business and technical teams to understand requirements and develop high quality solutions Design highly scalable and reliable data pipelines to consume, integrate, and analyze large amounts of data from various sources. Able to understand big data use-cases and recommend standard design, implementation patterns used in Hadoop-based deployments Able to document and present complex architectures for the customer’s technical teams Work closely with Cloudera teams at all levels to ensure project and customer success Design effective data models for optimal storage and retrieval, deploy inclusive data quality checks to ensure high quality of data Design, build, tune and maintain data pipelines using Hadoop, NiFi or related data integration technologies Install, deploy, augment, upgrade, manage and operate large Hadoop clusters Write and produce technical documentation, customer status reports and knowledge-base articles Keep up with current Hadoop, NiFi, Big Data ecosystem / technologies. We’re excited about you if you have: Overall 12+ years IT experience, with at least 4+ years of production experience working with Hadoop and/or NiFi, data engineering. Hands-on experience with all aspects of developing, testing and implementing low-latency big data pipelines. Demonstrated production experience in data engineering, data management, cluster management and/or analytics domains. Experience designing data queries against data in the HDFS environment using tools such as Apache Hive Experience implementing MapReduce, Spark jobs Experience setting up multi-node Hadoop clusters Experience in systems administration or DevOps experience with one or more open-source operating systems [Big Data Developers interested in Administration and consulting can also apply] Experience with Data Warehouse design, ETL (Extraction, Transformation &amp; Load), architecting efficient software designs for DW platform. Experience implementing operational best practices such as alerting, monitoring, and metadata management. Strong understanding with various enterprise security practices and solutions such as LDAP and/or Kerberos Experience using configuration management tools such as Ansible, Puppet or Chef Familiarity with scripting tools such as bash shell scripts, Python and/or Perl Experience with Apache NiFi is desired Significant previous work writing to network-based APIs, preferably REST/JSON or XML/SOAP Understanding of the Java ecosystem and enterprise offerings, including debugging and profiling tools (e.g. jstack, jmap, jconsole), logging and monitoring tools (log4j, JMX) Ability to understand and translate customer requirements into technical requirements Excellent verbal and written communications You may also have: Site Reliability Engineering concepts and practices Knowledge of the data management eco-system including: Concepts of data warehousing, ETL, data integration, etc. Experience using a compiled programming language, preferably one that runs on the JVM (Java, Scala, etc) Experience coding with streaming/micro-batch compute frameworks, preferably Kafka, Spark What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-VG1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera is seeking a Senior Solutions Architect to join its APAC Professional Services team. In this role you’ll have the opportunity to develop massively scalable solutions to solve complex data problems using Hadoop, Ni Fi, Spark and related Big Data technology. This role is a client facing opportunity that combines consulting skills with deep technical design and development in the Big Data space. This role will present the successful candidate the opportunity to travel across Asia Pacific and across multiple industries and large customer organisations. As the Senior Solutions Architect you will: Work directly with customer business and technical teams to understand requirements and develop high quality solutions Design highly scalable and reliable data pipelines to consume, integrate, and analyze large amounts of data from various sources. Able to understand big data use-cases and recommend standard design, implementation patterns used in Hadoop-based deployments Able to document and present complex architectures for the customer’s technical teams Work closely with Cloudera teams at all levels to ensure project and customer success Design effective data models for optimal storage and retrieval, deploy inclusive data quality checks to ensure high quality of data Design, build, tune and maintain data pipelines using Hadoop, Ni Fi or related data integration technologies Install, deploy, augment, upgrade, manage and operate large Hadoop clusters Write and produce technical documentation, customer status reports and knowledge-base articles Keep up with current Hadoop, Ni Fi, Big Data ecosystem / technologies. We’re excited about you if you have: Overall 12+ years IT experience, with at least 4+ years of production experience working with Hadoop and/or Ni Fi, data engineering. Hands-on experience with all aspects of developing, testing and implementing low-latency big data pipelines. Demonstrated production experience in data engineering, data management, cluster management and/or analytics domains. Experience designing data queries against data in the HDFS environment using tools such as Apache Hive Experience implementing Map Reduce, Spark jobs Experience setting up multi-node Hadoop clusters Experience in systems administration or Dev Ops experience with one or more open-source operating systems [Big Data Developers interested in Administration and consulting can also apply] Experience with Data Warehouse design, ETL (Extraction, Transformation &amp; Load), architecting efficient software designs for DW platform. Experience implementing operational best practices such as alerting, monitoring, and metadata management. Strong understanding with various enterprise security practices and solutions such as LDAP and/or Kerberos Experience using configuration management tools such as Ansible, Puppet or Chef Familiarity with scripting tools such as bash shell scripts, Python and/or Perl Experience with Apache Ni Fi is desired Significant previous work writing to network-based APIs, preferably REST/JSON or XML/SOAP Understanding of the Java ecosystem and enterprise offerings, including debugging and profiling tools (e.g. jstack, jmap, jconsole), logging and monitoring tools (log4j, JMX) Ability to understand and translate customer requirements into technical requirements Excellent verbal and written communications You may also have: Site Reliability Engineering concepts and practices Knowledge of the data management eco-system including: Concepts of data warehousing, ETL, data integration, etc. Experience using a compiled programming language, preferably one that runs on the JVM (Java, Scala, etc) Experience coding with streaming/micro-batch compute frameworks, preferably Kafka, Spark What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-VG1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
     "minimumQualification": null,
     "preferredQualification": null,
     "requiredSkills": [],
@@ -109,6 +393,101 @@
     "companyDomain": "cloudera.com",
     "atsPlatform": "workday",
     "applyUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India--Mumbai--Remote/Senior-Solutions-Architect_260676",
-    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India--Mumbai--Remote/Senior-Solutions-Architect_260676"
+    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India--Mumbai--Remote/Senior-Solutions-Architect_260676",
+    "originalTitle": "Senior Solutions Architect",
+    "normalizedTitle": "Senior Solutions Architect",
+    "jobCategory": "Senior Solutions Architect",
+    "engineeringDomain": "Data Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "Remote",
+    "salary": null,
+    "postingDate": "2026-06-27T00:00:00.000Z",
+    "scrapedTimestamp": "2026-07-26T18:42:58.531Z",
+    "skillIds": [
+      "spark",
+      "python",
+      "java",
+      "kafka"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Spark"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kafka"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "We’re excited about you if you have: Overall 12+ years IT experience, with at least 4+ years of production experience working with Hadoop and/or NiFi, data engineering",
+      "minimumYears": 12,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12+ years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-07-31T15:49:48.641Z"
   }
 ]

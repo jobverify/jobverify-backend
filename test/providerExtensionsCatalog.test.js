@@ -96,3 +96,48 @@ test('getScraperCatalog includes providers loaded from extension files', () => {
     rmSync(tempDir, { recursive: true, force: true })
   }
 })
+
+test('getScraperCatalog prefers the later extension entry when sources collide', () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-provider-catalog-dedupe-'))
+
+  try {
+    writeFileSync(
+      path.join(tempDir, 'a-first.json'),
+      `${JSON.stringify([
+        {
+          source: 'duplicate-source',
+          companyName: 'First Duplicate',
+          adapter: 'script',
+          modulePath: '../duplicate-first/script.js',
+          companyCareerPage: 'https://first.example/careers',
+          atsPlatform: 'shared-first',
+        },
+      ], null, 2)}\n`,
+      'utf8',
+    )
+    writeFileSync(
+      path.join(tempDir, 'z-last.json'),
+      `${JSON.stringify([
+        {
+          source: 'duplicate-source',
+          companyName: 'Last Duplicate',
+          adapter: 'script',
+          modulePath: '../duplicate-last/script.js',
+          companyCareerPage: 'https://last.example/careers',
+          atsPlatform: 'dedicated-last',
+        },
+      ], null, 2)}\n`,
+      'utf8',
+    )
+
+    const catalog = getScraperCatalog({ providerExtensionDir: tempDir })
+    const duplicates = catalog.filter((provider) => provider.source === 'duplicate-source')
+
+    assert.equal(duplicates.length, 1)
+    assert.equal(duplicates[0].companyName, 'Last Duplicate')
+    assert.equal(duplicates[0].atsPlatform, 'dedicated-last')
+    assert.equal(duplicates[0].modulePath, '../duplicate-last/script.js')
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true })
+  }
+})

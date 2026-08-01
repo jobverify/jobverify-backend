@@ -108,6 +108,60 @@ test('extractJobDetail pulls Bank of America description, apply link, and skill 
   )
 })
 
+test('extractJobDetail reads inline Bank of America Experience Range values from the official detail page', async () => {
+  const bankOfAmerica = await loadBankOfAmericaModule()
+  assert.ok(bankOfAmerica)
+
+  const detail = bankOfAmerica.extractJobDetail(
+    `
+      <html>
+        <head>
+          <meta name="job-path" content="/en-us/job-detail/26021959/senior-analyst-multiple-locations">
+        </head>
+        <body>
+          <div
+            class="job-description-body"
+            data-jobTitle="Senior Analyst"
+            data-jobSaveLocation="Hyderabad, India"
+            data-jobRequisitionID="26021959"
+            data-jobFamily="Risk"
+            data-jobTimeType="Full Time"
+            data-postedDate="07/29/2026"
+          ></div>
+          <div class="job-description-body__internal job__external js-job-description-body-internal">
+            <p><b>Requirements:</b></p>
+            <p><b>Education : </b>Master's degree or equivalent work experience</p>
+            <p><b>Experience Range: </b>5 yrs +</p>
+            <a href="https://ghr.wd1.myworkdayjobs.com/lateral-ba_continuum/job/Hyderabad/Senior-Analyst_26021959-1">Apply</a>
+          </div>
+          <div class="job-description-body__video-wrapper"></div>
+          <script type="application/ld+json">
+            {
+              "@type": "JobPosting",
+              "title": "Senior Analyst",
+              "datePosted": "2026-07-29"
+            }
+          </script>
+        </body>
+      </html>
+    `,
+    {
+      title: 'Senior Analyst',
+      location: 'Hyderabad, India',
+      city: 'Hyderabad',
+      jobId: '26021959',
+      requisitionId: '26021959',
+      sourceUrl: 'https://careers.bankofamerica.com/en-us/job-detail/26021959/senior-analyst-multiple-locations',
+      employmentType: 'Full-time',
+      experienceRequired: null,
+      department: 'Risk',
+      postingDate: '2026-07-29',
+    },
+  )
+
+  assert.equal(detail.experienceRequired, '5 yrs +')
+})
+
 test('normalizeScrapedJob composes Bank of America experienced security roles from detail pages', async () => {
   const bankOfAmerica = await loadBankOfAmericaModule()
   assert.ok(bankOfAmerica)

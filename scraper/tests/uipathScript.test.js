@@ -5,6 +5,7 @@ import test from 'node:test'
 import {
   ASHBY_JOB_BOARD_URL,
   createUiPathScraper,
+  extractAshbyJobs,
 } from '../uipath/script.js'
 
 const fixtureUrl = new URL('./fixtures/uipath/public-jobs.json', import.meta.url)
@@ -47,4 +48,31 @@ test('run reads UiPath\'s public Ashby board and returns only listed India jobs'
       source: 'uipath',
     },
   ])
+})
+
+test('extractAshbyJobs derives experienceRequired from Ashby descriptionHtml for India jobs', () => {
+  const [job] = extractAshbyJobs({
+    jobs: [
+      {
+        id: 'india-experience',
+        title: 'Senior Software Engineer',
+        department: 'Engineering',
+        employmentType: 'FullTime',
+        isListed: true,
+        jobUrl: 'https://jobs.ashbyhq.com/uipath/india-experience',
+        applyUrl: 'https://jobs.ashbyhq.com/uipath/india-experience/application',
+        descriptionHtml: '<p>Build automation software.</p><ul><li>7+ years of experience in a software engineering role.</li></ul>',
+        address: {
+          postalAddress: {
+            addressLocality: 'Bengaluru',
+            addressRegion: 'Karnataka',
+            addressCountry: 'India',
+          },
+        },
+      },
+    ],
+  })
+
+  assert.equal(job.experienceRequired, '7+ years')
+  assert.match(job.jobDescription, /7\+ years of experience in a software engineering role/i)
 })

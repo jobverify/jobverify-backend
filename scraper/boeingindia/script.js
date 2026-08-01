@@ -194,6 +194,9 @@ const extractExperienceRequired = (descriptionHtml) => {
   const plusMatch = descriptionText?.match(/(\d+\+?\s*years)/i)
   if (plusMatch) return normalizeWhitespace(plusMatch[1])
 
+  const openEndedMatch = descriptionText?.match(/(\d+)\s*(?:or more|or above)\s*years?(?:'|’)?/i)
+  if (openEndedMatch) return `${openEndedMatch[1]}+ years`
+
   return null
 }
 

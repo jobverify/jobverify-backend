@@ -2,7 +2,6 @@ import { readdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { extractCoverageCompanyNames } from '../../Jobify-frontend/src/pages/Landing/companyMarquee.js'
 import { normalizeCompanyName } from '../scraper/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper/providers/index.js'
 import { getDiskBackedScraperSources } from '../scraper/providers/sourceInventory.js'
@@ -13,15 +12,15 @@ const repoDir = path.resolve(backendDir, '..')
 const scraperDir = path.join(backendDir, 'scraper')
 
 const backendReportPath = path.join(backendDir, 'company_coverage_report.json')
-const frontendReportPath = path.join(
+const obsoleteLiveHiringCompaniesPath = path.join(
   repoDir,
-  'Jobify-frontend',
+  'jobverify-frontend',
   'public',
   'live_hiring_companies.json',
 )
 const deprecatedFrontendRawReportPath = path.join(
   repoDir,
-  'Jobify-frontend',
+  'jobverify-frontend',
   'public',
   'company_coverage_report.json',
 )
@@ -67,7 +66,7 @@ export const buildScraperCoverageReport = ({
 export const syncCompanyCoverageReportsFromScraper = ({
   scraperDirectoryPath = scraperDir,
   backendReportPath: outputBackendReportPath = backendReportPath,
-  frontendReportPath: outputFrontendReportPath = frontendReportPath,
+  obsoleteLiveHiringCompaniesPath: outputObsoleteLiveHiringCompaniesPath = obsoleteLiveHiringCompaniesPath,
   deprecatedFrontendRawReportPath: outputDeprecatedFrontendRawReportPath = deprecatedFrontendRawReportPath,
   catalog = getScraperCatalog(),
   scraperDirectories = readdirSync(scraperDirectoryPath, { withFileTypes: true })
@@ -79,23 +78,20 @@ export const syncCompanyCoverageReportsFromScraper = ({
     catalog,
     scraperDirectories,
   })
-  const frontendCompanyNames = extractCoverageCompanyNames(report)
-
   writeFileSync(outputBackendReportPath, `${JSON.stringify(report, null, 2)}\n`)
-  writeFileSync(outputFrontendReportPath, `${JSON.stringify(frontendCompanyNames, null, 2)}\n`)
+  rmSync(outputObsoleteLiveHiringCompaniesPath, { force: true })
   rmSync(outputDeprecatedFrontendRawReportPath, { force: true })
 
   return {
     scraperDir: scraperDirectoryPath,
     backendReportPath: outputBackendReportPath,
-    frontendReportPath: outputFrontendReportPath,
+    obsoleteLiveHiringCompaniesPath: outputObsoleteLiveHiringCompaniesPath,
     deprecatedFrontendRawReportPath: outputDeprecatedFrontendRawReportPath,
     totalScraperDirs: scraperDirectories.length,
     sourceDirCount: sourceDirs.length,
     skippedDirCount: skippedDirs.length,
     skippedDirs,
     matchedCount: report.matchedCount,
-    frontendCompanyCount: frontendCompanyNames.length,
   }
 }
 

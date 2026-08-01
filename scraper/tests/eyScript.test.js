@@ -93,6 +93,35 @@ test('extractJobDetail pulls EY apply URL, description, and schema dates from th
   assert.ok(detail.requiredSkills.includes('Manage quality of service delivery'))
 })
 
+test('extractJobDetail derives EY experienceRequired from official detail descriptions', async () => {
+  const { extractJobDetail } = await loadEyModule()
+  const html = `
+    <html>
+      <body>
+        <span itemprop="title">Guidewire Digital-Staff</span>
+        <span itemprop="description">
+          <p>At EY, we're all in to shape your future with confidence.</p>
+          <p>GW Experience - Minimum 3 years Experience in JUTRO framework (Mandatory)</p>
+          <p>Non Guidewire Exp: Frontend technologies : ReactJs (Mandatory)</p>
+        </span>
+        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/talentcommunity/apply/1401647333/?locale=en_US">Apply</a>
+        <meta itemprop="datePosted" content="Fri Jul 31 00:00:00 UTC 2026" />
+      </body>
+    </html>
+  `
+
+  const detail = extractJobDetail(html, {
+    sourceUrl: 'https://careers.ey.com/ey/job/Bengaluru-Guidewire-Digital-Staff-KA-560016/1401647333/',
+    title: 'Guidewire Digital-Staff',
+    location: 'Bengaluru, KA, IN, 560016',
+    city: 'Bengaluru',
+    jobId: '1401647333',
+    requisitionId: '1401647333',
+  })
+
+  assert.equal(detail.experienceRequired, '3+ years')
+})
+
 test('run keeps EY jobs on the public India search route and decorates shared runner fields', async () => {
   const {
     buildIndiaSearchUrl,

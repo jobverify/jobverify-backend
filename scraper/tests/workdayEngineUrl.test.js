@@ -1792,7 +1792,11 @@ test('runWorkdayScraper jobs-api mode overlaps detail fetches within a page to r
 
 test('runWorkdayScraper falls back from a missing DOM list to the inferred API and preserves structured outages', async () => {
   const originalFetch = global.fetch
-  let fetchCall = 0
+  const calls = []
+  const circuitBreaker = new WorkdayHostCircuitBreaker({
+    failureThreshold: 10,
+    cooldownMs: 60_000,
+  })
   const page = {
     on() {},
     async goto() {},
@@ -1810,9 +1814,14 @@ test('runWorkdayScraper falls back from a missing DOM list to the inferred API a
   }
 
   global.fetch = async (url, options = {}) => {
-    fetchCall += 1
-    if (fetchCall === 1) {
-      assert.equal(options.method ?? 'GET', 'GET')
+    const method = options.method ?? 'GET'
+    calls.push({ url, method })
+
+    if (method === 'GET') {
+      assert.equal(
+        url,
+        'https://att.wd1.myworkdayjobs.com/ATTSpecialInvite?locationCountry=c4f78be1a8f14da0ab49ce1162348a5e',
+      )
       return {
         ok: true,
         status: 200,
@@ -1825,11 +1834,11 @@ test('runWorkdayScraper falls back from a missing DOM list to the inferred API a
       }
     }
 
+    assert.equal(method, 'POST')
     assert.equal(
       url,
       'https://att.wd1.myworkdayjobs.com/wday/cxs/att/ATTSpecialInvite/jobs',
     )
-    assert.equal(options.method, 'POST')
     return {
       ok: false,
       status: 503,
@@ -1849,6 +1858,7 @@ test('runWorkdayScraper falls back from a missing DOM list to the inferred API a
         scraperDir: path.join(testsDir, '../myworkday/att'),
         launchBrowserImpl: async () => ({ close: async () => {} }),
         createOptimizedPageImpl: async () => page,
+        circuitBreaker,
       }),
       (error) => {
         assert.equal(error instanceof WorkdayUpstreamOutageError, true)
@@ -1857,7 +1867,10 @@ test('runWorkdayScraper falls back from a missing DOM list to the inferred API a
         return true
       },
     )
-    assert.equal(fetchCall, 2)
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ['GET', 'POST', 'GET', 'POST'],
+    )
   } finally {
     global.fetch = originalFetch
   }

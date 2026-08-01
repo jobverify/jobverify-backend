@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createBrowserFetchSession } from '../shared/browserFetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 import { MASTEK_CATALOG } from './catalog.js'
 
@@ -66,6 +67,14 @@ const toAbsoluteUrl = (value) => {
 const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
+
+const extractExperienceRequired = ({ title, jobDescription }) => (
+  extractJobFilterSignals({
+    title,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || null
+)
 
 const escapeForRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -265,6 +274,11 @@ export const extractJobDetail = (html, listing = {}) => {
   const jobId = normalizeWhitespace(
     extractFirst(/\/apply\/(\d+)\/\?locale=/i, applyPath),
   ) || listing.jobId || null
+  const jobDescription = stripTags(descriptionHtml)
+  const experienceRequired = extractExperienceRequired({
+    title: listing.title || null,
+    jobDescription,
+  })
 
   return {
     title: listing.title || null,
@@ -276,8 +290,8 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId,
     requisitionId: listing.requisitionId || jobId,
     employmentType: null,
-    experienceRequired: null,
-    jobDescription: stripTags(descriptionHtml),
+    experienceRequired,
+    jobDescription,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractListItems(descriptionHtml),

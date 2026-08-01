@@ -19,6 +19,7 @@
     "coverage:companies": "node scripts/reportCompanyCoverage.js",
     "coverage:companies:regenerate": "node scripts/regenerateCompanyCoverageReport.js",
     "coverage:companies:sync": "node scripts/syncCompanyCoverageReportsFromScraper.js",
+    "coverage:companies:catalog-topology": "node scripts/reportScriptCatalogTopology.js",
     "coverage:companies:himalayas500": "node scripts/buildHimalayas500CoverageReport.js",
     "backfill:job-filters": "node scripts/backfillJobFilterSignals.js",
     "backfill:job-posted-at": "node scripts/backfillMissingPostedAt.js",

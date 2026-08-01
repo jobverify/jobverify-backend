@@ -55,6 +55,28 @@ const DRIFTED_LISTING_HTML = `
 </html>
 `
 
+const JOB_DETAIL_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Senior AEM Engineer | Okta</title>
+  </head>
+  <body>
+    <article>
+      <h1>Senior AEM Engineer</h1>
+      <p>Bengaluru, India</p>
+      <div class="field--name-body">
+        <p>Okta is seeking an experienced Senior Adobe Experience Cloud Engineer with a deep understanding of Adobe's tech stack to join our growing team.</p>
+        <ul>
+          <li>BS Computer Science or other technical degree. 3+ years of related overall technology experience</li>
+          <li>Experience in Adobe Experience Manager (required)</li>
+        </ul>
+      </div>
+    </article>
+  </body>
+</html>
+`
+
 const loadOktaModule = async () => {
   try {
     return await import('../okta/script.js')
@@ -113,6 +135,36 @@ test('extractIndiaJobsFromJobListing filters to India roles and maps first-party
   assert.equal(jobs.some((job) => /Washington/.test(job.location ?? '')), false)
 })
 
+test('Okta extracts experience from the official first-party job detail page', async () => {
+  const okta = await loadOktaModule()
+
+  assert.equal(okta.hasOfficialJobDetailSignal(JOB_DETAIL_HTML), true)
+  assert.deepEqual(
+    okta.extractJobDetail(JOB_DETAIL_HTML, okta.extractIndiaJobsFromJobListing(JOB_LISTING_HTML)[0]),
+    {
+      title: 'Senior AEM Engineer',
+      company: 'Okta',
+      department: 'Business Technology',
+      location: 'Bengaluru, India',
+      city: 'Bengaluru',
+      country: 'India',
+      jobId: '7629690',
+      requisitionId: '7629690',
+      sourceUrl: 'https://www.okta.com/company/careers/business-technology/senior-aem-engineer-7629690/',
+      applyUrl: 'https://www.okta.com/company/careers/business-technology/senior-aem-engineer-7629690/',
+      employmentType: null,
+      experienceRequired: '3+ years',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: "Okta is seeking an experienced Senior Adobe Experience Cloud Engineer with a deep understanding of Adobe's tech stack to join our growing team. BS Computer Science or other technical degree. 3+ years of related overall technology experience Experience in Adobe Experience Manager (required)",
+      remoteStatus: null,
+    },
+  )
+})
+
 test('Okta run validates the first-party landing page before extracting India roles from the official listing page', async () => {
   const okta = await loadOktaModule()
   const requestedUrls = []
@@ -126,14 +178,22 @@ test('Okta run validates the first-party landing page before extracting India ro
       requestedUrls.push(url)
       if (url === okta.CAREERS_URL) return CAREERS_HTML
       if (url === okta.PUBLIC_BOARD_URL) return JOB_LISTING_HTML
+      if (url === 'https://www.okta.com/company/careers/business-technology/senior-aem-engineer-7629690/') {
+        return JOB_DETAIL_HTML
+      }
+      if (url.startsWith('https://www.okta.com/company/careers/')) {
+        return '<html><body><article><h1>Placeholder</h1></article></body></html>'
+      }
       throw new Error(`Unexpected Okta fixture URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    okta.CAREERS_URL,
-    okta.PUBLIC_BOARD_URL,
-  ])
+  assert.equal(requestedUrls[0], okta.CAREERS_URL)
+  assert.equal(requestedUrls[1], okta.PUBLIC_BOARD_URL)
+  assert.equal(
+    requestedUrls.includes('https://www.okta.com/company/careers/business-technology/senior-aem-engineer-7629690/'),
+    true,
+  )
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'okta')
   assert.equal(
@@ -141,6 +201,7 @@ test('Okta run validates the first-party landing page before extracting India ro
     'https://www.okta.com/company/careers/business-technology/senior-aem-engineer-7629690/',
   )
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[0].experienceRequired, '3+ years')
 })
 
 test('Okta fails closed when either the careers landing page or the first-party listing page drifts', async () => {

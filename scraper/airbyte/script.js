@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
 import { filterIndiaJobs } from '../utils/indiaLocationFilter.js'
 import { loadConfig } from '../utils/loadConfig.js'
+import { extractAshbyExperienceRequired } from '../utils/ashbyExperience.js'
 
 import { AIRBYTE_CATALOG } from './catalog.js'
 
@@ -161,7 +162,10 @@ export const extractAshbyJobs = (payload = {}) =>
         sourceUrl,
         applyUrl,
         employmentType: normalizeEmploymentType(job?.employmentType),
-        experienceRequired: null,
+        experienceRequired: extractAshbyExperienceRequired({
+          title,
+          jobDescription: normalizeString(job?.descriptionPlain ?? job?.descriptionHtml),
+        }),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],

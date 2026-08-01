@@ -30,6 +30,26 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   return match ? transform(match) : null
 }
 
+const EXPERIENCE_KEYWORD_PATTERN = /\b(?:experience|experienced|exp\.?)\b/i
+const EXPERIENCE_DURATION_PATTERN = /\b(?:\d+(?:\.\d+)?\+?\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr))\b/i
+const EXPERIENCE_LABEL_MAP = new Map([
+  ['no experience required', 'No experience required'],
+  ['fresher', 'Fresher'],
+  ['freshers', 'Fresher'],
+  ['experienced', 'Experienced'],
+  ['experienced professional', 'Experienced Professional'],
+  ['entry level', 'Entry Level'],
+  ['intern', 'Intern'],
+  ['internship', 'Internship'],
+  ['junior', 'Junior'],
+  ['associate', 'Associate'],
+  ['mid level', 'Mid Level'],
+  ['mid-level', 'Mid Level'],
+  ['mid senior level', 'Mid-Senior level'],
+  ['mid-senior level', 'Mid-Senior level'],
+  ['senior', 'Senior'],
+])
+
 const extractJsonObjectAfterMarker = (value, marker) => {
   const source = String(value)
   const markerIndex = source.indexOf(marker)
@@ -93,34 +113,38 @@ const normalizeAggregationMap = (aggregations = []) => Object.fromEntries(
     .map((item) => [item.field, item.value || {}]),
 )
 
-const extractExperienceSnippet = (value) => {
+const normalizeExperienceLabel = (value) => {
   const text = stripTags(value)
   if (!text) return null
-  const labeledMatch = extractFirst(
-    /(?:Experience(?:\s*&\s*Education)?|Work Experience)[.:]?\s*([^.]*\d+\+?\s*(?:-|to)?\s*\d*\s*years?[^.]*)/i,
-    text,
-  )
-  if (labeledMatch) {
-    const trimmed = normalizeWhitespace(
-      labeledMatch.replace(/[,:;\s-]+$/g, ''),
-    )
-    return trimmed ? `${trimmed}.` : null
-  }
+  const normalized = normalizeWhitespace(text)
+    ?.replace(/[.:;,\s-]+$/g, '')
+    .toLowerCase()
 
-  const matched = extractFirst(
-    /(\d+\+?\s*(?:-|to)?\s*\d*\s*years?[^.]*)/i,
-    text,
-  )
-  if (!matched) return null
-  if (!/\bexperience\b/i.test(matched)) return null
+  return normalized ? EXPERIENCE_LABEL_MAP.get(normalized) || null : null
+}
 
-  const trimmed = normalizeWhitespace(
-    matched
-      .replace(/\b(?:Bachelor|Master|Degree|Key Responsibilities|Required Skills)\b[\s\S]*$/i, '')
-      .replace(/[,:;\s-]+$/g, ''),
-  )
+const normalizeExperienceDuration = (value) => normalizeWhitespace(value)
+  ?.replace(/\s*\+\s*(?=[a-z])/gi, '+ ')
+  .replace(/\s*-\s*/g, ' - ')
+  .replace(/\s*\bto\b\s*/gi, ' to ')
+  .replace(/\b(?:yr|year)\b/gi, 'year')
+  .replace(/\b(?:yrs|years)\b/gi, 'years')
+  .replace(/\b(?:mo|month)\b/gi, 'month')
+  .replace(/\b(?:mos|months)\b/gi, 'months')
 
-  return trimmed ? `${trimmed}.` : null
+const extractExperienceDuration = (value, { requireKeyword = true } = {}) => {
+  const text = stripTags(value)
+  if (!text) return null
+  if (requireKeyword && !EXPERIENCE_KEYWORD_PATTERN.test(text)) return null
+
+  const matched = text.match(EXPERIENCE_DURATION_PATTERN)
+  return matched ? normalizeExperienceDuration(matched[0]) : null
+}
+
+const extractExperienceSnippet = (value, { requireKeyword = true, allowLabels = false } = {}) => {
+  const duration = extractExperienceDuration(value, { requireKeyword })
+  if (duration) return duration
+  return allowLabels ? normalizeExperienceLabel(value) : null
 }
 
 const extractQualificationSnippet = (value) => {
@@ -324,7 +348,10 @@ export const createPhenomScraper = ({
         requisitionId: normalizeWhitespace(job.reqId || job.jobId),
         department: normalizeWhitespace(job.category),
         employmentType: normalizeEmploymentType(job.type),
-        experienceRequired: extractExperienceSnippet(job.experience),
+        experienceRequired: extractExperienceSnippet(job.experience, {
+          requireKeyword: false,
+          allowLabels: true,
+        }),
         jobDescription: description,
         minimumQualification: null,
         preferredQualification: null,
@@ -355,6 +382,21 @@ export const createPhenomScraper = ({
 
     const description = stripTags(rawDescription)
     const requiredSkills = extractRequiredSkillsFromDescription(richDescription)
+    const explicitExperienceSentence = structuredJob?.experience_sentences?.[0]
+    const explicitExperienceLabel = normalizeExperienceLabel(explicitExperienceSentence)
+    const experienceRequired = explicitExperienceLabel === 'No experience required'
+      ? explicitExperienceLabel
+      : (
+          extractExperienceSnippet(explicitExperienceSentence, {
+            requireKeyword: false,
+          })
+          || extractExperienceSnippet(structuredJob?.experience, {
+            requireKeyword: false,
+          })
+          || extractExperienceSnippet(description)
+          || explicitExperienceLabel
+          || normalizeExperienceLabel(structuredJob?.experience)
+        )
 
     return {
       title: normalizeWhitespace(
@@ -384,11 +426,7 @@ export const createPhenomScraper = ({
           || structuredJob?.type
           || jobPosting?.employmentType,
       ),
-      experienceRequired: normalizeWhitespace(
-        structuredJob?.experience_sentences?.[0]
-          || extractExperienceSnippet(structuredJob?.experience)
-          || extractExperienceSnippet(description),
-      ),
+      experienceRequired,
       jobDescription: description,
       minimumQualification: normalizeQualificationRequirement(
         structuredJob?.education_sentences?.[0],

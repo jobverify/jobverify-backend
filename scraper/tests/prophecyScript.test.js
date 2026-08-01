@@ -109,6 +109,27 @@ const departmentsPayload = {
   ],
 }
 
+const greenhouseJobDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Senior DevOps Engineer - Prophecy</title>
+  </head>
+  <body>
+    <main>
+      <h1>Senior DevOps Engineer</h1>
+      <div class="content">
+        <p><strong>What You'll Need</strong></p>
+        <ul>
+          <li>5-10 years of overall systems/infrastructure engineering experience, including hands-on work building and operating infrastructure platform-as-a-service capabilities.</li>
+          <li>Strong hands-on knowledge of cloud services across at least one major cloud.</li>
+        </ul>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 const loadProphecyModule = async () => {
   try {
     return await import('../prophecy/script.js')
@@ -199,6 +220,22 @@ test('Prophecy extracts only India jobs from the verified Greenhouse departments
   ])
 })
 
+test('Prophecy extracts experience from the official Greenhouse detail page', async () => {
+  const prophecy = await loadProphecyModule()
+  const listing = prophecy.extractIndiaJobsFromDepartmentsPayload(departmentsPayload, {
+    scrapedAt: FIXED_SCRAPED_AT,
+  })[0]
+
+  assert.equal(prophecy.hasOfficialGreenhouseJobDetailSignal(greenhouseJobDetailHtml), true)
+  assert.deepEqual(
+    prophecy.extractGreenhouseJobDetail(greenhouseJobDetailHtml, listing),
+    {
+      ...listing,
+      experienceRequired: '5 - 10 years',
+    },
+  )
+})
+
 test('Prophecy run validates the first-party careers page before fetching the public Greenhouse departments API', async () => {
   const prophecy = await loadProphecyModule()
   const requests = []
@@ -209,6 +246,9 @@ test('Prophecy run validates the first-party careers page before fetching the pu
     fetchText: async (url) => {
       requests.push({ type: 'text', url })
       if (url === prophecy.CAREERS_URL) return officialCareersHtml
+      if (url === 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007') {
+        return greenhouseJobDetailHtml
+      }
       throw new Error(`Unexpected text URL ${url}`)
     },
     fetchJson: async (url) => {
@@ -227,6 +267,10 @@ test('Prophecy run validates the first-party careers page before fetching the pu
       type: 'json',
       url: 'https://boards-api.greenhouse.io/v1/boards/prophecysimpledatalabs/departments',
     },
+    {
+      type: 'text',
+      url: 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007',
+    },
   ])
 
   assert.deepEqual(jobs, [
@@ -242,7 +286,7 @@ test('Prophecy run validates the first-party careers page before fetching the pu
       sourceUrl: 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007',
       applyUrl: 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007#application',
       employmentType: null,
-      experienceRequired: null,
+      experienceRequired: '5 - 10 years',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],

@@ -185,6 +185,27 @@ const detailPage2Html = `
 </html>
 `
 
+const detailPageWithExperienceHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Consultant Job Details | Mastek Limited</title>
+    <meta itemprop="datePosted" content="Thu Jul 30 02:00:00 UTC 2026">
+  </head>
+  <body>
+    <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/talentcommunity/apply/57478644/?locale=en_US">Apply now</a>
+    <span itemprop="description" data-careersite-propertyid="description">
+      <span class="jobdescription">
+        <p>The role delivers information technology solutions to fulfil Banks business functional requirements.</p>
+        <p>Knowledge, Skills and Experience</p>
+        <p>Engineer / Postgraduate with 10+ years of experience in FLEXCUBE hands on experience with product designing and implementation.</p>
+        <p>Experience in any Core banking application implementation or experience as Functional Consultant or Business Analyst in Core Banking domain is mandatory.</p>
+      </span>
+    </span>
+  </body>
+</html>
+`
+
 const loadMastekModule = async () => {
   try {
     return await import('../mastek/script.js')
@@ -309,6 +330,25 @@ test('extractJobDetail builds the public Mastek apply handoff from the detail pa
       sourceUrl: 'https://careers.mastek.com/job/Pune-Oracle-HCM-Functional-Consultant-%28Payroll%29/47800844/',
     },
   )
+})
+
+test('extractJobDetail derives experienceRequired from the public Mastek detail description', async () => {
+  const mastek = await loadMastekModule()
+
+  const detail = mastek.extractJobDetail(detailPageWithExperienceHtml, {
+    title: 'Consultant',
+    location: 'Mumbai, India',
+    city: 'Mumbai',
+    country: 'India',
+    jobId: '57478644',
+    requisitionId: '136900',
+    sourceUrl: 'https://careers.mastek.com/job/Consultant/57478644/',
+    postingDate: '2026-07-30',
+  })
+
+  assert.equal(detail.experienceRequired, '10+ years')
+  assert.match(detail.jobDescription, /10\+ years of experience in FLEXCUBE/i)
+  assert.equal(detail.applyUrl, 'https://careers.mastek.com/talentcommunity/apply/57478644/?locale=en_US')
 })
 
 test('run validates the official Mastek careers handoff, paginates the mixed-global board, and keeps India jobs only', async () => {
