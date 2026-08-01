@@ -17,7 +17,7 @@ const repoRoot = path.resolve(backendDir, '..')
 const providersDir = path.join(backendDir, 'scraper-support', 'providers')
 
 export const DEFAULT_COMPANIES_CSV_PATH = path.join(repoRoot, 'new_Companies.csv')
-export const DEFAULT_RUNNER_PATH = path.join(backendDir, 'scraper', 'runner.js')
+export const DEFAULT_RUNNER_PATH = path.join(backendDir, 'scraper-support', 'runner.js')
 
 const normalizeRunnerArgs = (runnerArgs = []) =>
   runnerArgs
@@ -174,7 +174,7 @@ const printRunBanner = (config) => {
   }
 
   console.log(
-    '[csv-scrape] Launching the existing runner with SCRAPER_ONLY so retries, timeouts, and persistence remain centralized in scraper/runner.js.',
+    '[csv-scrape] Launching the existing runner with SCRAPER_ONLY so retries, timeouts, and persistence remain centralized in scraper-support/runner.js.',
   )
 }
 

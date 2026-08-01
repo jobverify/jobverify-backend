@@ -60,9 +60,9 @@ Scraper runner
 
 `/api/auth`, `/api/user`, `/api/scrape`, and `/api/admin` are mounted behind a small `no-store` response header helper.
 
-### `scraper/runner.js`
+### `scraper-support/runner.js`
 
-`scraper/runner.js` is the job collection entry point. It:
+`scraper-support/runner.js` is the job collection entry point. It:
 
 - loads the root `.env`
 - builds the scraper list from:
@@ -343,7 +343,7 @@ This is a smaller heartbeat-style route separate from the admin dashboard API:
 
 Primary files:
 
-- `scraper/runner.js`
+- `scraper-support/runner.js`
 - `scraper-support/utils/saveToDB.js`
 - `scraper-support/utils/scraperPersistence.js`
 - `scraper-support/utils/indiaLocationFilter.js`

@@ -8,7 +8,7 @@ import {
   runScraperWithTimeout,
   selectScrapersForRun,
   shouldClearExistingJobsBeforeRun,
-} from '../../scraper/runner.js'
+} from '../runner.js'
 
 const sampleScrapers = [
   { name: 'alpha' },

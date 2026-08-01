@@ -82,7 +82,7 @@ const resolveRunDir = (requestedRunDir) => {
 }
 
 const buildRunnerArgs = (options) => {
-  const args = ['scraper/runner.js']
+  const args = ['scraper-support/runner.js']
 
   if (options.parallel) args.push('--parallel')
   if (options.dryRun) args.push('--dry-run')

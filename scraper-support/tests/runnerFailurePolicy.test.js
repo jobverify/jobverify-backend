@@ -7,7 +7,7 @@ import {
   isLatePuppeteerTargetClose,
   resolveFailureAbortThreshold,
   shouldAbortPipelineAfterFailures,
-} from '../../scraper/runner.js'
+} from '../runner.js'
 
 test('isLatePuppeteerTargetClose recognizes a Puppeteer session-close rejection', () => {
   const error = new Error('Protocol error (Network.setUserAgentOverride): Session closed. Most likely the page has been closed.')

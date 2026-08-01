@@ -262,10 +262,10 @@ npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
 Equivalent direct commands:
 
 ```powershell
-node --use-system-ca scraper/runner.js
-node --use-system-ca scraper/runner.js --dry-run
-node --use-system-ca scraper/runner.js --parallel
-node --use-system-ca scraper/runner.js --parallel --dry-run
+node --use-system-ca scraper-support/runner.js
+node --use-system-ca scraper-support/runner.js --dry-run
+node --use-system-ca scraper-support/runner.js --parallel
+node --use-system-ca scraper-support/runner.js --parallel --dry-run
 ```
 
 ### Run A Specific Source Or Resume An Interrupted Run

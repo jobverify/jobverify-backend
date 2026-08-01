@@ -129,7 +129,7 @@ if ($env:NODE_OPTIONS -notmatch '(^|\s)--use-system-ca(\s|$)') {
 }
 
 $runnerArgs = [System.Collections.Generic.List[string]]::new()
-$runnerArgs.Add('scraper/runner.js')
+$runnerArgs.Add('scraper-support/runner.js')
 if ($isParallel) { $runnerArgs.Add('--parallel') }
 if ($isDryRun) { $runnerArgs.Add('--dry-run') }
 
