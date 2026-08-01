@@ -1,8 +1,8 @@
 import {
   fetchWorkdayJobsApiPage,
-} from '../myworkday/engine.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { CANONICAL_CITIES } from '../utils/cities.js'
+} from '../../scraper-support/myworkday/engine.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 
 const SOURCE = 'ptc'
 const COMPANY = 'PTC'

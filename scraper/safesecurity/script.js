@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
 
 export const CAREER_PAGE_URL = 'https://jobs.safe.security/'

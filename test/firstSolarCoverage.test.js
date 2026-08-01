@@ -4,11 +4,11 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const extensionPath = path.join(backendDir, 'scraper/providers/providerExtensions/firstsolar.json')
+const extensionPath = path.join(backendDir, 'scraper-support/providers/providerExtensions/firstsolar.json')
 const csvPath = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
 
 test('First Solar exact provider extension covers only the literal CSV company row', () => {

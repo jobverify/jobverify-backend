@@ -1,4 +1,4 @@
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const BASE_URL = 'https://careers.vestas.com'
 const SEARCH_PATH = '/search/?q=&locationsearch=India'

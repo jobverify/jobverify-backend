@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREERS_PAGE_URL = 'https://www.moengage.com/careers/'
 export const BOARD_URL = 'https://moengage.hire.trakstar.com/'

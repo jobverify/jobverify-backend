@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { normalizeScrapedJob } from '../scraper/utils/normalizeScrapedJob.js'
+import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js'
 
 test('normalizes a high-confidence experience requirement from a description when the scraper omits it', () => {
   const normalized = normalizeScrapedJob({

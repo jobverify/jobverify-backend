@@ -66,7 +66,7 @@ Scraper runner
 
 - loads the root `.env`
 - builds the scraper list from:
-  - `scraper/myworkday/companies.json`
+  - `scraper-support/myworkday/companies.json`
   - `scraper/rubrik/script.js`
   - `scraper/google/script.js`
 - supports:
@@ -344,10 +344,10 @@ This is a smaller heartbeat-style route separate from the admin dashboard API:
 Primary files:
 
 - `scraper/runner.js`
-- `scraper/utils/saveToDB.js`
-- `scraper/utils/scraperPersistence.js`
-- `scraper/utils/indiaLocationFilter.js`
-- `scraper/utils/cityNormalizer.js`
+- `scraper-support/utils/saveToDB.js`
+- `scraper-support/utils/scraperPersistence.js`
+- `scraper-support/utils/indiaLocationFilter.js`
+- `scraper-support/utils/cityNormalizer.js`
 - `src/utils/jobLocations.js`
 
 Live scraper flow:

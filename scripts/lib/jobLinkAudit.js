@@ -3,7 +3,7 @@ import http from "node:http";
 import https from "node:https";
 import tls from "node:tls";
 
-import { hasWorkdayOutageSignal } from "../../scraper/myworkday/engine.js";
+import { hasWorkdayOutageSignal } from "../../scraper-support/myworkday/engine.js";
 import { applyPublicJobLocationScope } from "../../src/utils/publicJobLocationScope.js";
 
 const HTTP_DEAD_STATUS_CODES = new Set([404, 410]);

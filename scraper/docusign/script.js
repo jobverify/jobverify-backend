@@ -1,4 +1,4 @@
-import { createJibeScraper } from '../shared/jibe.js'
+import { createJibeScraper } from '../../scraper-support/shared/jibe.js'
 
 export const createDocuSignScraper = (options = {}) => createJibeScraper({
   source: 'docusign',

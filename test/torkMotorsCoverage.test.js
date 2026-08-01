@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 test('Tork Motors resolves only to its exact-name official-domain provider', () => {
   const report = generateCompanyCoverageReport({

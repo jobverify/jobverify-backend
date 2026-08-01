@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'sendgrid'
 export const COMPANY = 'SendGrid'

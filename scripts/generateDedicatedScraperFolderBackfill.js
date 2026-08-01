@@ -2,18 +2,51 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
+import {
+  getDefaultDryRunRelativePath,
+  getDefaultScriptModulePath,
+  resolveScraperSourceDirectory,
+} from '../scraper-support/providers/sourcePaths.js'
+import {
+  loadWorkbookBatchAliases,
+  loadWorkbookBatchProviders,
+  buildCanonicalWorkbookInventory,
+} from './lib/workbookMigrationInventory.js'
+import {
+  materializeWorkbookProvider,
+} from './lib/workbookDedicatedFolderMaterializer.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
 const repoDir = path.resolve(backendDir, '..')
 const scraperDir = path.join(backendDir, 'scraper')
-const providerExtensionDir = path.join(scraperDir, 'providers', 'providerExtensions')
+const providerExtensionDir = path.join(
+  backendDir,
+  'scraper-support',
+  'providers',
+  'providerExtensions',
+)
+const aliasExtensionDir = path.join(
+  backendDir,
+  'scraper-support',
+  'providers',
+  'companyAliasExtensions',
+)
 const manifestPath = path.join(providerExtensionDir, 'zz-dedicated-scraper-folder-backfill.json')
 const legacyManifestPath = path.join(providerExtensionDir, 'dedicated-scraper-folder-backfill.json')
-const coverageArtifactPath = path.join(repoDir, 'artifacts', 'company-scraper-check-india-hiring-400.csv')
+const aliasOutputPath = path.join(aliasExtensionDir, 'zz-workbook-dedicated.json')
+const COVERAGE_ARTIFACT_BASENAME = 'company-scraper-check-india-hiring-400.csv'
 
 const TARGET_COVERAGE_TYPES = new Set(['provider_only', 'sentinel_placeholder'])
+
+export const resolveDefaultCoverageArtifactPath = ({ repoRoot = repoDir } = {}) => {
+  const legacyCoveragePath = path.join(repoRoot, COVERAGE_ARTIFACT_BASENAME)
+  if (existsSync(legacyCoveragePath)) return legacyCoveragePath
+  return path.join(repoRoot, 'artifacts', COVERAGE_ARTIFACT_BASENAME)
+}
+
+const coverageArtifactPath = resolveDefaultCoverageArtifactPath()
 
 const parseCsvLine = (line) => {
   const columns = []
@@ -74,8 +107,6 @@ const escapeCsv = (value) => {
   return text
 }
 
-const toJsLiteral = (value) => JSON.stringify(value, null, 2)
-
 const pickIfPresent = (target, key, value) => {
   if (value === undefined) return
   target[key] = value
@@ -100,8 +131,8 @@ const buildTargetManifestFromCoverage = ({ coverageRows, catalog }) => {
       source,
       companyName: provider.companyName || provider.company || row.company || source,
       adapter: 'script',
-      modulePath: `../${source}/script.js`,
-      dryRunFile: `${source}/jobs.json`,
+      modulePath: getDefaultScriptModulePath(provider),
+      dryRunFile: getDefaultDryRunRelativePath(provider),
       companyCareerPage: provider.companyCareerPage || null,
       companyDomain: provider.companyDomain || null,
       atsPlatform:
@@ -141,119 +172,6 @@ const buildTargetManifestFromCoverage = ({ coverageRows, catalog }) => {
   return manifest.sort((left, right) => left.source.localeCompare(right.source))
 }
 
-const createCatalogModuleObject = (provider) => {
-  const catalogObject = {
-    source: provider.source,
-    companyName: provider.companyName,
-    adapter: 'script',
-    modulePath: '__MODULE_PATH__',
-    dryRunFile: '__DRY_RUN_FILE__',
-    companyCareerPage: provider.companyCareerPage ?? null,
-    companyDomain: provider.companyDomain ?? null,
-    atsPlatform: provider.atsPlatform ?? null,
-    countryFilter: provider.countryFilter ?? 'India',
-    paginationStrategy: provider.paginationStrategy ?? null,
-    extractionStrategy: provider.extractionStrategy ?? null,
-    parser: provider.parser ?? 'custom-script',
-    normalizationProfile: provider.normalizationProfile ?? 'engineering-default',
-    verifiedOn: provider.verifiedOn ?? null,
-    verifiedSurfaceSummary: provider.verifiedSurfaceSummary ?? null,
-    backfillMode: provider.backfillMode,
-    originalAdapter: provider.originalAdapter ?? null,
-    originalAtsPlatform: provider.originalAtsPlatform ?? null,
-    originalModulePath: provider.originalModulePath ?? null,
-    originalDryRunFile: provider.originalDryRunFile ?? null,
-  }
-
-  pickIfPresent(catalogObject, 'baseUrl', provider.baseUrl)
-  pickIfPresent(catalogObject, 'locationCountry', provider.locationCountry)
-  pickIfPresent(catalogObject, 'officialBrandName', provider.officialBrandName)
-  pickIfPresent(catalogObject, 'homepageUrl', provider.homepageUrl)
-  pickIfPresent(catalogObject, 'officialHomepageUrl', provider.officialHomepageUrl)
-
-  return catalogObject
-}
-
-const renderCatalogModule = (provider) => {
-  const serialized = toJsLiteral(createCatalogModuleObject(provider))
-    .replace('"__MODULE_PATH__"', "path.join(currentDir, 'script.js')")
-    .replace('"__DRY_RUN_FILE__"', "path.join(currentDir, 'jobs.json')")
-
-  return `import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const PROVIDER_METADATA = ${serialized}
-
-export default PROVIDER_METADATA
-`
-}
-
-const renderSentinelScriptModule = () => `import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-import PROVIDER_METADATA from './catalog.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export { PROVIDER_METADATA }
-
-// Preserve the current verified-empty behavior behind a dedicated local scraper module.
-export const run = async () => []
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
-  const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, PROVIDER_METADATA.source)
-  }
-}
-`
-
-const renderWorkdayScriptModule = () => `import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-import { runWorkdayScraper } from '../myworkday/engine.js'
-
-import PROVIDER_METADATA from './catalog.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export { PROVIDER_METADATA }
-
-export const run = async ({ signal } = {}) =>
-  runWorkdayScraper({
-    company: PROVIDER_METADATA.companyName,
-    baseUrl: PROVIDER_METADATA.baseUrl,
-    locationCountry: PROVIDER_METADATA.locationCountry,
-    source: PROVIDER_METADATA.source,
-    scraperDir: currentDir,
-    ...(signal === undefined ? {} : { signal }),
-  })
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
-  const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, PROVIDER_METADATA.source)
-  }
-}
-`
-
-const renderScriptModule = (provider) =>
-  provider.backfillMode === 'workday'
-    ? renderWorkdayScriptModule(provider)
-    : renderSentinelScriptModule(provider)
-
 const loadSeedManifest = (manifestPaths = []) =>
   manifestPaths
     .filter((candidatePath) => existsSync(candidatePath))
@@ -261,26 +179,39 @@ const loadSeedManifest = (manifestPaths = []) =>
     .filter((value) => Array.isArray(value) && value.length > 0)
     .sort((left, right) => right.length - left.length)[0] || null
 
-const materializeSourceDirectory = (provider) => {
-  const sourceDir = path.join(scraperDir, provider.source)
-  mkdirSync(sourceDir, { recursive: true })
-  writeFileSync(path.join(sourceDir, 'catalog.js'), renderCatalogModule(provider), 'utf8')
-  writeFileSync(path.join(sourceDir, 'script.js'), renderScriptModule(provider), 'utf8')
-  writeFileSync(path.join(sourceDir, 'jobs.json'), '[]\n', 'utf8')
-}
-
 const classifyCoverageRow = ({ source, provider }) => {
-  const hasSourceDir = existsSync(path.join(scraperDir, source))
+  const hasSourceDir = existsSync(
+    resolveScraperSourceDirectory(provider || source, {
+      baseDir: scraperDir,
+      workday: provider?.atsPlatform === 'workday' || provider?.backfillMode === 'workday',
+    }),
+  )
   const isSharedSentinel =
     provider?.atsPlatform === 'workbook-exact-name-sentinel'
     || String(provider?.modulePath || '').includes('failClosedSentinel.js')
 
-  if (isSharedSentinel) return 'sentinel_placeholder'
   if (hasSourceDir) return 'dedicated_source_dir'
+  if (isSharedSentinel) return 'sentinel_placeholder'
   return 'provider_only'
 }
 
-const writeCoverageArtifact = ({ coverageRows, catalog }) => {
+const ensureDedicatedProviderDryRunFile = (
+  provider,
+  { scraperBaseDir = scraperDir } = {},
+) => {
+  const sourceDirectory = resolveScraperSourceDirectory(provider, {
+    baseDir: scraperBaseDir,
+    workday: provider?.atsPlatform === 'workday' || provider?.backfillMode === 'workday',
+  })
+  const dryRunFilePath = path.join(sourceDirectory, 'jobs.json')
+
+  if (existsSync(dryRunFilePath)) return
+
+  mkdirSync(sourceDirectory, { recursive: true })
+  writeFileSync(dryRunFilePath, '[]\n', 'utf8')
+}
+
+const writeCoverageArtifact = ({ coverageRows, catalog, coveragePath = coverageArtifactPath }) => {
   const providersBySource = new Map(catalog.map((provider) => [provider.source, provider]))
   const headers = ['company', 'source', 'has_backend_scraper_folder', 'coverage_type']
   const lines = [headers.join(',')]
@@ -289,7 +220,12 @@ const writeCoverageArtifact = ({ coverageRows, catalog }) => {
     const source = String(row.source || '').trim()
     const provider = providersBySource.get(source)
     const coverageType = classifyCoverageRow({ source, provider })
-    const hasSourceDir = existsSync(path.join(scraperDir, source))
+    const hasSourceDir = existsSync(
+      resolveScraperSourceDirectory(provider || source, {
+        baseDir: scraperDir,
+        workday: provider?.atsPlatform === 'workday' || provider?.backfillMode === 'workday',
+      }),
+    )
 
     lines.push([
       escapeCsv(row.company),
@@ -299,38 +235,112 @@ const writeCoverageArtifact = ({ coverageRows, catalog }) => {
     ].join(','))
   }
 
-  writeFileSync(coverageArtifactPath, `${lines.join('\n')}\n`, 'utf8')
+  mkdirSync(path.dirname(coveragePath), { recursive: true })
+  writeFileSync(coveragePath, `${lines.join('\n')}\n`, 'utf8')
 }
+
+const normalizeWorkbookManifestProvider = (provider = {}) => ({
+  ...provider,
+  adapter: 'script',
+  modulePath: getDefaultScriptModulePath(provider),
+  dryRunFile: getDefaultDryRunRelativePath(provider),
+  backfillMode: provider.modulePath?.includes('failClosedSentinel.js')
+    ? 'sentinel'
+    : provider.modulePath?.includes('verifiedCareersEmptyState.js')
+      ? 'verified-empty-state'
+      : 'live-copy',
+  originalAdapter: provider.originalAdapter ?? provider.adapter ?? null,
+  originalAtsPlatform: provider.originalAtsPlatform ?? provider.atsPlatform ?? null,
+  originalModulePath: provider.originalModulePath ?? provider.modulePath ?? null,
+  originalDryRunFile: provider.originalDryRunFile ?? (
+    provider.dryRunFile
+      ? path.join(scraperDir, provider.dryRunFile)
+      : null
+  ),
+})
 
 export const generateDedicatedScraperFolderBackfill = ({
   coveragePath = coverageArtifactPath,
-  outputManifestPath = manifestPath,
+  outputManifestPath,
+  outputAliasPath,
+  providerExtensionDir: providerExtensionDirectory = providerExtensionDir,
+  aliasExtensionDir: aliasExtensionDirectory = aliasExtensionDir,
+  scraperBaseDir = scraperDir,
 } = {}) => {
-  const coverageRows = parseCsvRows(readFileSync(coveragePath, 'utf8'))
-  const existingManifest = loadSeedManifest([outputManifestPath, legacyManifestPath])
-  const initialCatalog = getScraperCatalog()
-  const manifest = Array.isArray(existingManifest) && existingManifest.length > 0
-    ? existingManifest
-    : buildTargetManifestFromCoverage({
-      coverageRows,
-      catalog: initialCatalog,
+  const resolvedOutputManifestPath = outputManifestPath
+    || path.join(providerExtensionDirectory, path.basename(manifestPath))
+  const resolvedOutputAliasPath = outputAliasPath
+    || path.join(aliasExtensionDirectory, path.basename(aliasOutputPath))
+  const legacyManifestCandidatePath = path.join(
+    providerExtensionDirectory,
+    path.basename(legacyManifestPath),
+  )
+  const coverageRows = existsSync(coveragePath)
+    ? parseCsvRows(readFileSync(coveragePath, 'utf8'))
+    : []
+  const seedManifest = loadSeedManifest([resolvedOutputManifestPath, legacyManifestCandidatePath])
+  const workbookProviders = loadWorkbookBatchProviders({ providerExtensionDir: providerExtensionDirectory })
+  const workbookAliases = loadWorkbookBatchAliases({ aliasExtensionDir: aliasExtensionDirectory })
+  const { canonicalProviders, dedicatedOnlyProviders, conflicts } = buildCanonicalWorkbookInventory({
+    workbookProviders,
+    dedicatedProviders: Array.isArray(seedManifest) ? seedManifest : [],
+  })
+
+  if (conflicts.length > 0) {
+    throw new Error(`Workbook migration conflicts: ${conflicts.join(', ')}`)
+  }
+
+  const workbookManifestProviders = canonicalProviders
+    .filter((provider) => !dedicatedOnlyProviders.some((dedicatedProvider) => dedicatedProvider.source === provider.source))
+    .map((provider) => normalizeWorkbookManifestProvider(provider))
+  const dedicatedManifestProviders = dedicatedOnlyProviders.map((provider) => ({
+    ...provider,
+    modulePath: provider.adapter === 'script'
+      ? getDefaultScriptModulePath(provider)
+      : provider.modulePath,
+    dryRunFile: getDefaultDryRunRelativePath(provider),
+  }))
+  const manifest = [...dedicatedManifestProviders, ...workbookManifestProviders]
+    .sort((left, right) => left.source.localeCompare(right.source))
+
+  mkdirSync(path.dirname(resolvedOutputManifestPath), { recursive: true })
+  mkdirSync(path.dirname(resolvedOutputAliasPath), { recursive: true })
+  writeFileSync(resolvedOutputManifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
+  writeFileSync(resolvedOutputAliasPath, `${JSON.stringify(workbookAliases, null, 2)}\n`, 'utf8')
+
+  let livePromotedCount = 0
+  let sentinelGeneratedCount = 0
+
+  for (const provider of workbookManifestProviders) {
+    const result = materializeWorkbookProvider(provider, {
+      scraperDir: scraperBaseDir,
+      repoDir,
     })
 
-  mkdirSync(path.dirname(outputManifestPath), { recursive: true })
-  writeFileSync(outputManifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
+    if (result.materializationMode === 'live-copy') livePromotedCount += 1
+    else sentinelGeneratedCount += 1
+  }
 
-  for (const provider of manifest) {
-    materializeSourceDirectory(provider)
+  for (const provider of dedicatedManifestProviders) {
+    if (provider.adapter !== 'script') continue
+    ensureDedicatedProviderDryRunFile(provider, { scraperBaseDir })
   }
 
   const updatedCatalog = getScraperCatalog()
-  writeCoverageArtifact({ coverageRows, catalog: updatedCatalog })
+  if (coverageRows.length > 0) {
+    writeCoverageArtifact({ coverageRows, catalog: updatedCatalog, coveragePath })
+  }
 
   return {
     coveragePath,
-    manifestPath: outputManifestPath,
+    manifestPath: resolvedOutputManifestPath,
+    aliasPath: resolvedOutputAliasPath,
     generatedSourceCount: manifest.length,
-    generatedDirectoryCount: manifest.length,
+    generatedDirectoryCount: workbookManifestProviders.length,
+    livePromotedCount,
+    sentinelGeneratedCount,
+    aliasCount: Object.keys(workbookAliases).length,
+    conflictCount: conflicts.length,
   }
 }
 

@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { HFCL_CATALOG } from './catalog.js'
 

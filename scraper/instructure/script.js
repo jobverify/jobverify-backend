@@ -1,23 +1,27 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import PROVIDER_METADATA from './catalog.js'
+import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export { PROVIDER_METADATA }
+export const SOURCE = "instructure"
+export const COMPANY = "Instructure"
+export const CAREERS_URL = null
+export const DISPOSITION = "workbook-exact-name-sentinel"
+export const VERIFIED_ON = "2026-07-29"
+export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Instructure added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
 
-// Preserve the current verified-empty behavior behind a dedicated local scraper module.
-export const run = async () => []
+export const run = async () => createFailClosedSentinelScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
-    await saveToDB(jobs, PROVIDER_METADATA.source)
+    await saveToDB(jobs, SOURCE)
   }
 }

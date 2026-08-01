@@ -7,7 +7,7 @@ import test from 'node:test'
 import {
   getScraperCatalog,
   loadProviderExtensions,
-} from '../scraper/providers/index.js'
+} from '../scraper-support/providers/index.js'
 
 test('loadProviderExtensions merges sorted JSON files into a single provider list', () => {
   const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-provider-extensions-'))
@@ -90,7 +90,7 @@ test('getScraperCatalog includes providers loaded from extension files', () => {
 
     assert.ok(scriptProvider)
     assert.equal(scriptProvider.adapter, 'script')
-    assert.equal(scriptProvider.modulePath, '../testscriptbeta/script.js')
+    assert.match(scriptProvider.modulePath, /testscriptbeta[\\/]script\.js$/)
     assert.equal(scriptProvider.companyDomain, 'beta.example')
   } finally {
     rmSync(tempDir, { recursive: true, force: true })
@@ -136,7 +136,7 @@ test('getScraperCatalog prefers the later extension entry when sources collide',
     assert.equal(duplicates.length, 1)
     assert.equal(duplicates[0].companyName, 'Last Duplicate')
     assert.equal(duplicates[0].atsPlatform, 'dedicated-last')
-    assert.equal(duplicates[0].modulePath, '../duplicate-last/script.js')
+    assert.match(duplicates[0].modulePath, /duplicate-last[\\/]script\.js$/)
   } finally {
     rmSync(tempDir, { recursive: true, force: true })
   }

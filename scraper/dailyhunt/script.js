@@ -21,7 +21,7 @@ const isDirectExecution = process.argv[1]
   .endsWith('/scraper/dailyhunt/script.js')
 
 if (isDirectExecution || process.argv.includes('--dry-run')) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 
   if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(currentDir, 'jobs.json'))

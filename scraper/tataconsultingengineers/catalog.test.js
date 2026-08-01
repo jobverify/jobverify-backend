@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import {
   buildScrapers,
   getScraperCatalog,
-} from '../providers/index.js'
+} from '../../scraper-support/providers/index.js'
 
 test('getScraperCatalog includes Tata Consulting Engineers as an official SuccessFactors scraper', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'tataconsultingengineers')

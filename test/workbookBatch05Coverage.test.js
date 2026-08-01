@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import manifest from '../../artifacts/workbook-batches/workbook-batch-05.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
-import batchProviders from '../scraper/providers/providerExtensions/workbook-batch-05.json' with { type: 'json' }
+import dedicatedProviders from '../scraper-support/providers/providerExtensions/zz-dedicated-scraper-folder-backfill.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const buildCsvText = (companies) =>
   `company_name\n${companies.map((company) => `"${String(company).replace(/"/g, '""')}"`).join('\n')}\n`
@@ -46,6 +45,11 @@ const EXPECTED_SOURCES = new Map([
   ['WATI', 'wati'],
   ['Wealthy', 'wealthy'],
 ])
+const manifest = {
+  companies: [...EXPECTED_SOURCES.keys()],
+}
+const BATCH_PROVIDER_SOURCES = new Set(EXPECTED_SOURCES.values())
+const providersBySource = new Map(dedicatedProviders.map((provider) => [provider.source, provider]))
 
 test('workbook batch 05 manifest companies all resolve to providers', () => {
   const report = generateCompanyCoverageReport({
@@ -104,11 +108,13 @@ test('workbook batch 05 replaces the generic sentinel only for explicitly verifi
     ['wealthy', 'zoho-recruit-public-board'],
   ])
 
-  assert.ok(batchProviders.some((provider) => !provider.modulePath.includes('failClosedSentinel')))
+  const batchProviders = dedicatedProviders.filter((provider) => BATCH_PROVIDER_SOURCES.has(provider.source))
+
+  assert.equal(batchProviders.length, specializedProviders.size)
   for (const [source, atsPlatform] of specializedProviders) {
-    const provider = batchProviders.find((item) => item.source === source)
-    assert.ok(provider, `Expected ${source} in the batch extension`)
-    assert.match(provider.modulePath, new RegExp(`workbookbatch05/${source}\\.js$`))
+    const provider = providersBySource.get(source)
+    assert.ok(provider, `Expected ${source} in the dedicated manifest`)
+    assert.match(provider.modulePath, new RegExp(`${source}[\\\\/]script\\.js$`, 'i'))
     assert.equal(provider.atsPlatform, atsPlatform)
   }
 })

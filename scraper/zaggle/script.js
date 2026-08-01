@@ -112,7 +112,7 @@ export const run = async ({ fetchPage = defaultFetchPage } = {}) => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
   if (process.argv.includes('--dry-run')) {
     await saveToFile(jobs, path.join(currentDir, 'jobs.json'))

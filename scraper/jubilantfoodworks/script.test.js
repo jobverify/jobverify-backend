@@ -5,7 +5,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const fixturesDir = path.resolve(currentDir, '../tests/fixtures/jubilantfoodworks')
+const fixturesDir = path.resolve(currentDir, '../../scraper-support/tests/fixtures/jubilantfoodworks')
 
 const loadFixture = (name) => JSON.parse(
   fs.readFileSync(path.join(fixturesDir, name), 'utf8'),

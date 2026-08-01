@@ -1,0 +1,110 @@
+[
+  {
+    "title": "SailPoint Consultant",
+    "company": "SecurDI",
+    "department": null,
+    "location": "India",
+    "city": null,
+    "state": null,
+    "country": "India",
+    "jobId": "50211000005461100",
+    "requisitionId": "50211000005461100",
+    "sourceUrl": "https://securdi.zohorecruit.in/jobs/Careers/50211000005461100/SailPoint-Consultant?source=CareerSite",
+    "applyUrl": "https://securdi.zohorecruit.in/jobs/Careers/50211000005461100/SailPoint-Consultant?source=CareerSite",
+    "employmentType": "Full-time",
+    "experienceRequired": "3-5 Years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2025-01-14T18:30:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Apply now and be a catalyst in transforming the world of Identity Governance and Administration control. Company Overview: Secur DI is a global cybersecurity strategy and implementation company with a major focus on IAM (Identity Access Management) and PAM (Privileged Access Management). With integrity, accountability, diligence, quality, diversity, and time management as our core values, we strive to tackle our clients' most significant cybersecurity challenges. We aim to make a positive impact, surpass expectations, and establish ourselves as their trusted advisors. Working Model: Hybrid The working model will follow a hybrid approach, with 2 days of working from home and 3 days working from the office. We are looking to hire candidates based in the following cities: • Mumbai • Pune • Chennai • Bengaluru • Kolkata • Hyderabad • Gurgaon A day in the\n\nROLE:\nAs a Sail Point Consultant, you'll collaborate with clients to design tailored IAM solutions. Throughout the day, you'll collaborate with diverse teams, troubleshoot system performance, lead Agile projects, and mentor junior analysts. Your expertise will ensure seamless access and have a positive impact on clients' security. What you'll do: Design, deploy, implement, and integrate Sail Point with critical applications and infrastructure by providing timely, high-quality client service, meeting or exceeding client expectations, and coordinating consulting work plan and deliverables. Lead end-to-end deployment, integration, and optimization of Sail Point solutions in diverse client infrastructures. This includes troubleshooting, implementing, and configuring technical components. Manage and deliver client engagements, ensuring quality and value addition. Train and mentor entry-level professionals in IAM concepts. Take charge of project services and incidents as an escalation point while collaborating on multiple IAM projects, ensuring they meet business needs. Conduct research to address customer challenges effectively using knowledge of competitive solutions in Sail Point Assist Business Analysts in documenting detailed functional and technical requirements. Architect the solutions and troubleshoot any issues that arise, while ensuring timely, high-quality client service, and effective coordination of the consulting work plan and deliverables. Develop procedures, documentation, workflow diagrams, and scripts for continuous improvement and maintenance activities. Requirements What you'll bring: 3-5 years of experience with Sail Point implementations with client faced experience, in complex and diverse customer environments Crafted technical solutions by installing, integrating, and deploying identity management, access management, and access governance tools into existing client setups Managed projects throughout the SDLC, showcasing leadership and adaptability Thriving in dynamic settings, excelling independently while aligning with evolving business needs Demonstrated expertise in implementing Sail Point solutions, engaging with clients in complex environments Thorough knowledge and implementation experience of IGA, PAM, SSO, and MFA platforms Adaptability to new technologies/tools as per business requirements, including upcoming IDM tools Proficiency in programming/scripting languages like Python, Java, and Power Shell will be an added advantage Excellent written and oral communication skills, as well as strong interpersonal skills for effective communication with clients Ability to work independently and thrive in a fast-paced, high-energy environment Exceptional communication skills to convey intricate technical concepts clearly to both clients and junior analysts Holding accreditations for identity tools showcases commitment to staying update Benefits Career Development opportunities: At Secur DI, we believe in empowering our team members to thrive personally and professionally. We offer a diverse range of learning and developmental opportunities, designed to advance your skills and leadership capabilities. Diverse Learning: Tailored resources cater to individual learning styles, with interactive classrooms, team-based learning, and e Learning platforms Leadership Development: Nurture leadership skills with guidance from experienced professionals and mentors to become a confident and effective leader Challenging Assignments: Stimulating and rewarding assignments push boundaries, fostering career and personal growth Company Benefits and Perks: Comprehensive health insurance coverage Free yearly health coupons for parents Generous leave policy to support work-life balance Performance-based rewards and recognition programs Flexibility to work remotely/ from our Hyderabad office/ from any co-working space near you Recruiting Tips: Be punctual for all interviews. In the event of unforeseen circumstances, inform us promptly if you need to reschedule Be open and honest about your career aspirations, enabling us to understand your expectations and determine if Secur DI is the right fit for your goals. Interview Process: Pre-screening call: A quick phone call to assess communication skills and basic qualifications HR Interview: A detailed discussion with our HR team to understand your background, experience, and career aspirations Technical Interviews: Two rounds of technical interviews to evaluate your expertise in Saviynt implementations and related IAM concepts Culture Fit Interview: An interview focused on assessing your alignment with Secur DI's values and culture Management Rounds: Two rounds with our management to discuss your potential contributions and career growth at Secur DI We look forward to welcoming exceptional talent like you to Secur DI!",
+    "remoteStatus": "On-site",
+    "source": "securdi",
+    "link": "https://securdi.zohorecruit.in/jobs/Careers/50211000005461100/SailPoint-Consultant?source=CareerSite",
+    "scrapedAt": "2026-08-01T06:24:43.411Z",
+    "companyCareerPage": "https://securdi.com/careers/",
+    "companyDomain": "securdi.com",
+    "atsPlatform": "zohorecruit",
+    "originalTitle": "SailPoint Consultant",
+    "normalizedTitle": "SailPoint Consultant",
+    "jobCategory": "SailPoint Consultant",
+    "engineeringDomain": "Security",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2025-01-14T18:30:00.000Z",
+    "scrapedTimestamp": "2026-08-01T06:24:43.411Z",
+    "skillIds": [
+      "cybersecurity",
+      "python",
+      "java"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "cybersecurity",
+        "canonicalName": "Cybersecurity",
+        "category": "Security",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "cybersecurity"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-5 Years",
+      "minimumYears": 3,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-5 Years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Cybersecurity",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T06:24:43.416Z"
+  }
+]

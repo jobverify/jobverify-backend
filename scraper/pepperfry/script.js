@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { launchBrowser, createOptimizedPage } from '../utils/browser.js'
+import { launchBrowser, createOptimizedPage } from '../../scraper-support/utils/browser.js'
 
 import { PEPPERFRY_CATALOG } from './catalog.js'
 
@@ -166,7 +166,7 @@ export const createPepperfryScraper = () => ({
 export const run = async (options = {}) => createPepperfryScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -26,9 +26,50 @@ function Write-JsonFile {
   Set-Content -LiteralPath $Path -Value $json -Encoding UTF8
 }
 
+function Get-DotEnvValue {
+  param(
+    [string]$Path,
+    [string]$Key
+  )
+
+  if (-not (Test-Path -LiteralPath $Path)) {
+    return $null
+  }
+
+  foreach ($line in Get-Content -LiteralPath $Path) {
+    $trimmed = $line.Trim()
+    if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith('#')) {
+      continue
+    }
+
+    if ($trimmed -notmatch '^([^=]+)=(.*)$') {
+      continue
+    }
+
+    $candidateKey = $matches[1].Trim()
+    if ($candidateKey -ne $Key) {
+      continue
+    }
+
+    $value = $matches[2].Trim()
+    if ($value.Length -ge 2) {
+      $startsWithQuote = $value.StartsWith('"') -and $value.EndsWith('"')
+      $startsWithSingleQuote = $value.StartsWith("'") -and $value.EndsWith("'")
+      if ($startsWithQuote -or $startsWithSingleQuote) {
+        $value = $value.Substring(1, $value.Length - 2)
+      }
+    }
+
+    return $value
+  }
+
+  return $null
+}
+
 $currentDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $backendDir = Split-Path -Parent $currentDir
 $repoRoot = Split-Path -Parent $backendDir
+$dotEnvPath = Join-Path $backendDir '.env'
 $runLogsRoot = Join-Path $repoRoot 'artifacts\run-logs'
 
 $selectedRunDir =
@@ -63,10 +104,29 @@ if ($Live.IsPresent) {
   $isDryRun = $true
 }
 
-if (-not $env:SCRAPER_CONCURRENCY) { $env:SCRAPER_CONCURRENCY = '3' }
+$dotEnvScraperConcurrency = Get-DotEnvValue -Path $dotEnvPath -Key 'SCRAPER_CONCURRENCY'
+$dotEnvNodeOptions = Get-DotEnvValue -Path $dotEnvPath -Key 'NODE_OPTIONS'
+
+if (-not $env:SCRAPER_CONCURRENCY -and $dotEnvScraperConcurrency) {
+  $env:SCRAPER_CONCURRENCY = $dotEnvScraperConcurrency
+}
 if (-not $env:SCRAPER_FAILURE_ABORT_THRESHOLD) { $env:SCRAPER_FAILURE_ABORT_THRESHOLD = '1000' }
 if (-not $env:WORKDAY_SCRAPER_TIMEOUT_MS) { $env:WORKDAY_SCRAPER_TIMEOUT_MS = '210000' }
 if (-not $env:WORKDAY_REQUEST_TIMEOUT_MS) { $env:WORKDAY_REQUEST_TIMEOUT_MS = '20000' }
+if (-not $env:WORKDAY_DETAIL_FETCH_CONCURRENCY) { $env:WORKDAY_DETAIL_FETCH_CONCURRENCY = '1' }
+if (-not $env:NODE_OPTIONS) {
+  if ($dotEnvNodeOptions) {
+    $env:NODE_OPTIONS = $dotEnvNodeOptions
+  } else {
+    $env:NODE_OPTIONS = '--use-system-ca'
+  }
+} elseif ($env:NODE_OPTIONS -notmatch '(^|\s)--use-system-ca(\s|$)') {
+  $env:NODE_OPTIONS = "$($env:NODE_OPTIONS.Trim()) --use-system-ca"
+}
+
+if ($env:NODE_OPTIONS -notmatch '(^|\s)--use-system-ca(\s|$)') {
+  $env:NODE_OPTIONS = "$($env:NODE_OPTIONS.Trim()) --use-system-ca"
+}
 
 $runnerArgs = [System.Collections.Generic.List[string]]::new()
 $runnerArgs.Add('scraper/runner.js')
@@ -85,6 +145,8 @@ Write-JsonFile -Path $metadataPath -Value @{
     SCRAPER_FAILURE_ABORT_THRESHOLD = $env:SCRAPER_FAILURE_ABORT_THRESHOLD
     WORKDAY_SCRAPER_TIMEOUT_MS = $env:WORKDAY_SCRAPER_TIMEOUT_MS
     WORKDAY_REQUEST_TIMEOUT_MS = $env:WORKDAY_REQUEST_TIMEOUT_MS
+    WORKDAY_DETAIL_FETCH_CONCURRENCY = $env:WORKDAY_DETAIL_FETCH_CONCURRENCY
+    NODE_OPTIONS = $env:NODE_OPTIONS
     SCRAPER_ONLY = $env:SCRAPER_ONLY
     SCRAPER_START_AT = $env:SCRAPER_START_AT
     SCRAPER_START_AFTER = $env:SCRAPER_START_AFTER

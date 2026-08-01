@@ -5,10 +5,10 @@ import { fileURLToPath } from 'url'
 
 import connectDB from '../db/db.js'
 import Job from '../src/models/Job.js'
-import { launchBrowser, createOptimizedPage } from '../scraper/utils/browser.js'
-import { extractWorkdayDetailLocations } from '../scraper/myworkday/locationDetails.js'
+import { launchBrowser, createOptimizedPage } from '../scraper-support/utils/browser.js'
+import { extractWorkdayDetailLocations } from '../scraper-support/myworkday/locationDetails.js'
 import { formatStoredLocationLabel, getPrimaryStoredLocation } from '../src/utils/jobLocations.js'
-import { normalizeCity } from '../scraper/utils/cityNormalizer.js'
+import { normalizeCity } from '../scraper-support/utils/cityNormalizer.js'
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env') })
 

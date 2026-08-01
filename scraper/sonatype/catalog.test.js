@@ -3,8 +3,8 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog, hydrateProviderCatalogEntry } from '../../scraper-support/providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, './script.js')

@@ -1,0 +1,90 @@
+[
+  {
+    "title": "Senior Product Manager",
+    "company": "WeRize",
+    "department": null,
+    "location": "Bengaluru, IN",
+    "city": "Bengaluru",
+    "country": "India",
+    "jobId": "4446061402",
+    "requisitionId": "4446061402",
+    "sourceUrl": "https://in.linkedin.com/jobs/view/senior-product-manager-at-werize-4446061402?position=1&pageNum=0&refId=riO2R7l16s7B8iRodMu%2BcA%3D%3D&trackingId=JZPOqjFIE34Aqbh6JBXevQ%3D%3D",
+    "applyUrl": "https://in.linkedin.com/jobs/view/senior-product-manager-at-werize-4446061402?position=1&pageNum=0&refId=riO2R7l16s7B8iRodMu%2BcA%3D%3D&trackingId=JZPOqjFIE34Aqbh6JBXevQ%3D%3D",
+    "employmentType": "Full-time",
+    "experienceRequired": "4 - 8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-07-29T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "About We Rize Founded in 2019 by Vishal Chopra and Himanshu Gupta, We Rize is building India’s largest full stack fintech platform for 500 million underserved middle-class customers who live in 5000+ small towns of India. We Rize (Wortgage technologies pvt ltd) also owns RBI registered NBFC subsidiary (Wortgage Finance pvt ltd). This customer segments not served by private sector banks, Insurers and Mutual Fund companies due to their low ticket-size and lifetime value and is dependent on PSU/Govt. banks. PSU/Government banks rarely provide financial products beyond basic savings accounts and these customers lack access to unsecured loans, MSME loans, credit cards, affordable housing loans, loan against property , health and life insurance and investment products. We Rize manufactures innovative unsecured consumer credit, mortgages, loan against property, MSME loans,savings and insurance products designed for this customer base keeping in mind their needs, requirements and purchasing power, with a view to add a layer of financial security to their lives and enable access to credit. While customers in these geographies use smartphones, they need proper guidance and support when purchasing the right financial products for themselves. So, a pure digital model doesn’t work for this segment. We Rize has innovated on this front through its ‘Finance ki online dukaan (Social Shopify of Finance)’, a first of its kind social distribution tech platform in the financial services space that educates and enables local financially literate freelancers across these small towns to source business through online and offline channels, recommend the right financial product(s) to customers as well as provide after sales support. These freelancers, who are located in more than 5000+ towns and cities, earn as much as INR 30,000 a month from We Rize in commissions. Our social distribution platform supported by financially literate freelancers means exceptionally low cost of customer acquisition (CAC) and operations costs compared to both fully digital and on-the-ground financial services providers. Digital conversions among this target group are way lower when compared to upper income customers in metros and hence pure digital CAC doesn’t work for this segment. While companies like LIC and Fino Bank also rely on freelancer distribution, they deploy local on-field teams/branches to manage freelancers in every city. That results in very high CAC and operations costs for such companies. We Rize on the other hand, has been able to acquire, train and manage thousands of freelancers in 5000+ cities only through its tech platform and without any feet-on-street team of its own. This results in highly profitable business model for Werize. To know more about the company, please visit: https://www .werize.com/ Loc ation: Shilpitha Tech Park, Bellandur, Bangalore. Exper ience: 4\n- 8 years Type: Full-time, On-site Role Description: We are looking for a driven and detail-oriented Product Manager to own and scale key product areas end-to-end. This role involves translating business needs into clear product requirements, working closely with engineering, operations, design, and stakeholders, and ensuring timely delivery of high-impact product solutions. The ideal candidate has a strong understanding of product development, user journeys, and business workflows, with the ability to balance strategy, execution, and stakeholder management. Key\n\nRESPONSIBILITIES:\nProduct Ownership & Execution Own the product roadmap and execution for assigned product modules/features. Translate business requirements into clear Product Requirement Documents (PRDs), user stories, and acceptance criteria. Drive end-to-end product development from ideation to launch and post-launch optimization. Stakeholder Collaboration Act as the primary point of contact between business, engineering, design, operations, and external partners. Work closely with cross-functional teams to ensure alignment on scope, timelines, and priorities. Coordinate with internal and external stakeholders to gather feedback and incorporate it into product improvements. Problem Solving & Process Improvement Deeply understand user and operational workflows to identify gaps, inefficiencies, and opportunities. Proactively identify issues and propose scalable, data-driven solutions. Continuously improve product processes to enhance user experience, efficiency, and reliability. Data & Decision Making Use data, metrics, and user feedback to drive product decisions. Define success metrics and monitor product performance post-launch. Support business teams with insights derived from product usage and performance trends. Attributes we are looking for: 4–6 years of experience as a Product Manager, Business Analyst, or similar role. Strong experience in writing PRDs, user stories, and managing product backlogs. Solid understanding of software development lifecycle (SDLC) and agile methodologies. Strong problem-solving skills with the ability to break down complex problems into actionable solutions. Excellent communication and stakeholder management skills. Working knowledge of SQL (mandatory) for basic data analysis and validation. Ability to understand and reason through code logic (basic programming exposure preferred; deep coding not required).",
+    "source": "werize",
+    "link": "https://in.linkedin.com/jobs/view/senior-product-manager-at-werize-4446061402?position=1&pageNum=0&refId=riO2R7l16s7B8iRodMu%2BcA%3D%3D&trackingId=JZPOqjFIE34Aqbh6JBXevQ%3D%3D",
+    "scrapedAt": "2026-08-01T06:45:36.657Z",
+    "companyCareerPage": "https://in.linkedin.com/company/werize",
+    "companyDomain": "werize.com",
+    "atsPlatform": "linkedin-guest-search",
+    "originalTitle": "Senior Product Manager",
+    "normalizedTitle": "Senior Product Manager",
+    "jobCategory": "Senior Product Manager",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-29T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T06:45:36.657Z",
+    "skillIds": [
+      "sql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "About We Rize Founded in 2019 by Vishal Chopra and Himanshu Gupta, We Rize is building India’s largest full stack fintech platform for 500 million underserved middle-class customers who live in 5000+ small towns of India. We Rize (Wortgage technologies pvt ltd) also owns RBI registered NBFC subsidiary (Wortgage Finance pvt ltd). This customer segments not served by private sector banks, Insurers and Mutual Fund companies due to their low ticket-size and lifetime value and is dependent on PSU/Govt. banks. PSU/Government banks rarely provide financial products beyond basic savings accounts and these customers lack access to unsecured loans, MSME loans, credit cards, affordable housing loans, loan against property , health and life insurance and investment products. We Rize manufactures innovative unsecured consumer credit, mortgages, loan against property, MSME loans,savings and insurance products designed for this customer base keeping in mind their needs, requirements and purchasing power, with a view to add a layer of financial security to their lives and enable access to credit. While customers in these geographies use smartphones, they need proper guidance and support when purchasing the right financial products for themselves. So, a pure digital model doesn’t work for this segment. We Rize has innovated on this front through its ‘Finance ki online dukaan (Social Shopify of Finance)’, a first of its kind social distribution tech platform in the financial services space that educates and enables local financially literate freelancers across these small towns to source business through online and offline channels, recommend the right financial product(s) to customers as well as provide after sales support. These freelancers, who are located in more than 5000+ towns and cities, earn as much as INR 30,000 a month from We Rize in commissions. Our social distribution platform supported by financially literate freelancers means exceptionally low cost of customer acquisition (CAC) and operations costs compared to both fully digital and on-the-ground financial services providers. Digital conversions among this target group are way lower when compared to upper income customers in metros and hence pure digital CAC doesn’t work for this segment. While companies like LIC and Fino Bank also rely on freelancer distribution, they deploy local on-field teams/branches to manage freelancers in every city. That results in very high CAC and operations costs for such companies. We Rize on the other hand, has been able to acquire, train and manage thousands of freelancers in 5000+ cities only through its tech platform and without any feet-on-street team of its own. This results in highly profitable business model for Werize. To know more about the company, please visit: https://www .werize.com/ Loc ation: Shilpitha Tech Park, Bellandur, Bangalore. Exper ience: 4 - 8 years Type: Full-time, On-site Role Description: We are looking for a driven and detail-oriented Product Manager to own and scale key product areas end-to-end. This role involves translating business needs into clear product requirements, working closely with engineering, operations, design, and stakeholders, and ensuring timely delivery of high-impact product solutions. The ideal candidate has a strong understanding of product development, user journeys, and business workflows, with the ability to balance strategy, execution, and stakeholder management. Key RESPONSIBILITIES: Product Ownership & Execution Own the product roadmap and execution for assigned product modules/features. Translate business requirements into clear Product Requirement Documents (PRDs), user stories, and acceptance criteria. Drive end-to-end product development from ideation to launch and post-launch optimization. Stakeholder Collaboration Act as the primary point of contact between business, engineering, design, operations, and external partners. Work closely with cross-functional teams to ensure alignment on scope, timelines, and priorities. Coordinate with internal and external stakeholders to gather feedback and incorporate it into product improvements. Problem Solving & Process Improvement Deeply understand user and operational workflows to identify gaps, inefficiencies, and opportunities. Proactively identify issues and propose scalable, data-driven solutions. Continuously improve product processes to enhance user experience, efficiency, and reliability. Data & Decision Making Use data, metrics, and user feedback to drive product decisions. Define success metrics and monitor product performance post-launch. Support business teams with insights derived from product usage and performance trends. Attributes we are looking for: 4-6 years of experience as a Product Manager, Business Analyst, or similar role. Strong experience in writing PRDs, user stories, and managing product backlogs. Solid understanding of software development lifecycle (SDLC) and agile methodologies. Strong problem-solving skills with the ability to break down complex problems into actionable solutions. Excellent communication and stakeholder management skills. Working knowledge of SQL (mandatory) for basic data analysis and validation. Ability to understand and reason through code logic (basic programming exposure preferred; deep coding not required).",
+      "minimumYears": 4,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 - 8 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Product & Program Management",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T06:45:36.663Z"
+  }
+]

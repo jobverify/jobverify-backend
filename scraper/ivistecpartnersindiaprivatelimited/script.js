@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG } from './catalog.js'
 

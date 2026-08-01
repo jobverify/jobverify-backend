@@ -8,13 +8,13 @@ import { fileURLToPath } from 'node:url'
 import {
   generateCompanyCoverageReport,
   getCompanyAliasMap,
-} from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+} from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
 const repoRoot = path.resolve(backendDir, '..')
-const providersDir = path.join(backendDir, 'scraper', 'providers')
+const providersDir = path.join(backendDir, 'scraper-support', 'providers')
 
 export const DEFAULT_COMPANIES_CSV_PATH = path.join(repoRoot, 'new_Companies.csv')
 export const DEFAULT_RUNNER_PATH = path.join(backendDir, 'scraper', 'runner.js')

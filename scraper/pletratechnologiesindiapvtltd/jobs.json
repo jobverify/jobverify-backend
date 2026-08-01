@@ -1,0 +1,189 @@
+[
+  {
+    "title": "Business Development Manger",
+    "company": "Pletra Technologies India Pvt. Ltd.",
+    "location": "India",
+    "city": null,
+    "country": "India",
+    "jobId": "pletratechnologiesindiapvtltd-business-development-manger-india",
+    "requisitionId": "pletratechnologiesindiapvtltd-business-development-manger-india",
+    "sourceUrl": "https://pletratech.com/careers-pletra-technologies/",
+    "applyUrl": "https://pletratech.com/careers-pletra-technologies/",
+    "employmentType": "Full-time",
+    "experienceRequired": "5 to 8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-08-01T06:11:41.293Z",
+    "closingDate": null,
+    "jobDescription": "Should have 5 to 8 years experience. At least 3+ Years of experience in staff augmentation and Project management Hands on experience in IT Staffing Sales, Business Development, IT Talent Deployment, Contract Staffing, Staffing Sales, Client Acquisition, Hands-on Customer Relationship Management Need to handle and connect with C- level decision makers, handling domestic and International Clients. Must have experience in Salesforce staff augmentation and project implementation.",
+    "remoteStatus": "On-site",
+    "source": "pletratechnologiesindiapvtltd",
+    "link": "https://pletratech.com/careers-pletra-technologies/",
+    "scrapedAt": "2026-08-01T06:11:41.293Z",
+    "companyCareerPage": "https://pletratech.com/careers-pletra-technologies/",
+    "companyDomain": "pletratech.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Business Development Manger",
+    "normalizedTitle": "Business Development Manger",
+    "jobCategory": "Business Development Manger",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "department": null,
+    "salary": null,
+    "postedAt": "2026-08-01T06:11:41.293Z",
+    "scrapedTimestamp": "2026-08-01T06:11:41.293Z",
+    "skillIds": [
+      "salesforce"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "salesforce",
+        "canonicalName": "Salesforce",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Salesforce"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5 to 8 years",
+      "minimumYears": 5,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 to 8 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Product & Program Management",
+    "secondaryRoleDomains": [
+      "Sales & Customer Success"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T06:11:41.298Z"
+  },
+  {
+    "title": "Salesforce Trainer",
+    "company": "Pletra Technologies India Pvt. Ltd.",
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "pletratechnologiesindiapvtltd-salesforce-trainer-pune-india",
+    "requisitionId": "pletratechnologiesindiapvtltd-salesforce-trainer-pune-india",
+    "sourceUrl": "https://pletratech.com/careers-pletra-technologies/",
+    "applyUrl": "https://pletratech.com/careers-pletra-technologies/",
+    "employmentType": "Full-time",
+    "experienceRequired": "3+ years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-08-01T06:11:41.293Z",
+    "closingDate": null,
+    "jobDescription": "3+ years of experience as a Salesforce trainer Expertise in Admin, Development, LWC, Apex, and Trigger Excellent communication skills (verbal and written) Ability to present complex information clearly",
+    "remoteStatus": "On-site",
+    "source": "pletratechnologiesindiapvtltd",
+    "link": "https://pletratech.com/careers-pletra-technologies/",
+    "scrapedAt": "2026-08-01T06:11:41.293Z",
+    "companyCareerPage": "https://pletratech.com/careers-pletra-technologies/",
+    "companyDomain": "pletratech.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Salesforce Trainer",
+    "normalizedTitle": "Salesforce Trainer",
+    "jobCategory": "Salesforce Trainer",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "department": null,
+    "salary": null,
+    "postedAt": "2026-08-01T06:11:41.293Z",
+    "scrapedTimestamp": "2026-08-01T06:11:41.293Z",
+    "skillIds": [
+      "salesforce"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "salesforce",
+        "canonicalName": "Salesforce",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Salesforce"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3+ years",
+      "minimumYears": 3,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3+ years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Product & Program Management",
+    "secondaryRoleDomains": [
+      "Sales & Customer Success"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T06:11:41.300Z"
+  }
+]

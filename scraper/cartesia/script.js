@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createAshbyApiScraper } from '../utils/ashbyApi.js'
+import { createAshbyApiScraper } from '../../scraper-support/utils/ashbyApi.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,7 +22,7 @@ export const createScraper = createCartesiaScraper
 export const run = async (options = {}) => createCartesiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -11,21 +11,25 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env') })
 
-import { deleteAllJobsFromDB, saveToDB, saveToFile } from './utils/saveToDB.js'
-import { filterIndiaJobs } from './utils/indiaLocationFilter.js'
-import { withRetry } from './utils/retry.js'
+import { deleteAllJobsFromDB, saveToDB, saveToFile } from '../scraper-support/utils/saveToDB.js'
+import { filterIndiaJobs } from '../scraper-support/utils/indiaLocationFilter.js'
+import { withRetry } from '../scraper-support/utils/retry.js'
 import {
   upsertScraperStatus,
   writeScraperRun,
   ensureScrapersSeeded,
   markPipelineRunStarted,
   markPipelineRunFinished,
-} from './utils/scraperPersistence.js'
-export { classifyScraperError } from './utils/failureClassification.js'
-import { classifyScraperError } from './utils/failureClassification.js'
+} from '../scraper-support/utils/scraperPersistence.js'
+export { classifyScraperError } from '../scraper-support/utils/failureClassification.js'
+import { classifyScraperError } from '../scraper-support/utils/failureClassification.js'
+import {
+  resolveParallelWorkerConcurrency,
+  resolveRecommendedLocalDryRunConcurrency,
+} from '../scraper-support/utils/parallelConcurrency.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
-import { buildScrapers } from './providers/index.js'
+import { buildScrapers } from '../scraper-support/providers/index.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
@@ -553,12 +557,32 @@ export const runScraper = async (scraper, progressStr = '') => {
 const runAllParallel = async (startedAt = new Date()) => {
   const { scrapers, resumeMessage } = selectScrapersForRun(buildScrapers())
   const startTime = Date.now()
-  const concurrencyLimit = parseInt(process.env.SCRAPER_CONCURRENCY || '3', 10)
+  const recommendedDryRunConcurrency = resolveRecommendedLocalDryRunConcurrency()
+  const {
+    requested: requestedConcurrencyLimit,
+    effective: concurrencyLimit,
+    clamped: dryRunConcurrencyClamped,
+  } = resolveParallelWorkerConcurrency({
+    dryRun: isDryRun,
+    recommendedDryRunConcurrency,
+  })
   const failureAbortThreshold = resolveFailureAbortThreshold()
   const queue = [...scrapers]
   const summary = {}
 
   if (resumeMessage) console.log(`[runner] ${resumeMessage}`)
+  if (isDryRun && requestedConcurrencyLimit > recommendedDryRunConcurrency) {
+    const safetyMessage = `[runner] Local dry runs above concurrency ${recommendedDryRunConcurrency} can amplify Workday 429s and timeout noise.`
+    if (dryRunConcurrencyClamped) {
+      console.log(
+        `${safetyMessage} Requested ${requestedConcurrencyLimit}; clamping to ${concurrencyLimit}. Set SCRAPER_ALLOW_UNSAFE_DRY_RUN_CONCURRENCY=1 to bypass.`
+      )
+    } else {
+      console.log(
+        `${safetyMessage} Using requested concurrency ${concurrencyLimit} because SCRAPER_ALLOW_UNSAFE_DRY_RUN_CONCURRENCY is enabled.`
+      )
+    }
+  }
   console.log(`[runner] Launching parallel worker pool with concurrency limit: ${concurrencyLimit}`)
 
   let failedCount = 0

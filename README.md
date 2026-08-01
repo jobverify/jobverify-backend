@@ -39,7 +39,7 @@ Jobify-backend/
 ## Testing Conventions
 
 - Backend API and service tests live in `test/`.
-- Shared scraper engine, fixture-based regression tests, and legacy scraper tests live in `scraper/tests/`.
+- Shared scraper engine, fixture-based regression tests, and legacy scraper tests live in `scraper-support/tests/`.
 - New scraper-specific tests can stay next to the scraper as `scraper/<company>/script.test.js`.
 - Avoid reintroducing a top-level `tests/` folder. Keep backend tests in `test/` and scraper test assets under `scraper/`.
 

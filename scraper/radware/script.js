@@ -1,4 +1,4 @@
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
+import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 
 export const CAREERS_URL = 'https://www.radware.com/careers/'
 export const RADWARE_TALEO_JOBLIST_URL = 'https://radware.taleo.net/careersection/ex/joblist.ftl'

@@ -18,8 +18,8 @@ import {
   updateJobStatus,
   updateUserAccess,
 } from "../src/controllers/adminController.js";
-import { getScraperCatalog } from "../scraper/providers/index.js";
-import { getDiskBackedScraperSources } from "../scraper/providers/sourceInventory.js";
+import { getScraperCatalog } from "../scraper-support/providers/index.js";
+import { getDiskBackedScraperSources } from "../scraper-support/providers/sourceInventory.js";
 
 const createResponseDouble = () => {
   const result = {

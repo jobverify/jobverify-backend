@@ -1,0 +1,2019 @@
+[
+  {
+    "title": "Data Engineer DBT (Snowflake)",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Nagpur",
+    "city": "Nagpur",
+    "jobId": "14507",
+    "requisitionId": "48461",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-engineer-nagpur-2026072813454994?id=14507",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-engineer-nagpur-2026072813454994?id=14507",
+    "employmentType": "Full-time",
+    "experienceRequired": "3 to 6 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "DBT"
+    ],
+    "postingDate": "2026-07-28T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position: Data Engineer DBT (Snowflake) Purpose of the Position: This role seeks candidate who are passionate about data transformation and motivated to support enterprise-scale data modernisation initiatives. You will play a key role in assisting client in migration legacy ETL pipeline into dbt on Snowflake by developing scalable transformation models, improving data reliability, and ensuring consistency across analytical platform. The position contributes directly to enable modern ETL architecture that support business intelligence reporting and advanced analytical use cases. Location: Pune/ Bangalore/Chennai/ Nagpur Key Result Areas and Activities: Code conversion, refinement and optimization – Convert SSIS transformations into dbt staging/intermediate/mart models, review and validate tool converted dbt transformations to ensure accuracy maintainability alignment with enterprise modelling standards. Data validation and reconciliation\n- Perform source-to-target validation, row-level and column-level reconciliation and regression testing to ensure transformation accuracy during migration cycles. Incremental pipeline implementation\n- Implement incremental loading strategies, snapshots and dependency-aware model execution to support efficient and scalable transformation workflows. Documentation and lineage support\n- Maintain transformation documentation, mapping logic, testing evidence, and lineage metadata to support governance and audit readiness. Collaboration & Delivery Support\n- Work closely with Snowflake engineers, QA team and client stakeholders to resolve transformation discrepancies and ensure timely migration delivery ETL/ELT Development & Integration – Build and maintain ETL/ELT workflows using Snowflake-native features or external tools (DBT, Airflow).",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/senior-engineer-nagpur-2026072813454994?id=14507",
+    "scrapedAt": "2026-08-01T05:42:06.526Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Data Engineer DBT (Snowflake)",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-28T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:06.526Z",
+    "skillIds": [
+      "snowflake",
+      "airflow"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "airflow",
+        "canonicalName": "Airflow",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Airflow"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 to 6 years",
+      "minimumYears": 3,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 to 6 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.889Z"
+  },
+  {
+    "title": "Data Architect (DBT+ Snowflake)",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Bengaluru, Karnataka, India",
+    "city": "Bengaluru",
+    "jobId": "14425",
+    "requisitionId": "47630",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/architect-nagpur-2026060917452697?id=14425",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/architect-nagpur-2026060917452697?id=14425",
+    "employmentType": "Full-time",
+    "experienceRequired": "9 to 14 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "DBT",
+      "Snowflake",
+      "Architecture",
+      "Data Architecture"
+    ],
+    "postingDate": "2026-06-09T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position: Data Architect (DBT+ Snowflake) Purpose of the Position: The Cloud Data Architect will lead the design and implementation of a modern cloud-based data platform by collaborating with stakeholders to migrate existing SQL Server SSIS workloads to Snowflake using dbt-based ELT frameworks. This role focuses on defining scalable, reliable, and governed data transformation architecture aligned with business requirements. The role is expected to provide architectural oversight, guidance to delivery teams, and ensuring solution alignment across phases. Location: Pune/Chennai/Bangalore/Nagpur Type of Employment: Full-time Key Result Areas and Activities: Define target architecture for SSIS to Snowflake + dbt migration Establish Pipeline Architecture and dbt-based transformation framework including staging, intermediate, and mart layers Guide and perform conversion of SSIS packages into dbt models using various AI tools (Snow Convert/Cortex Code AI) with human in loop & manual refactoring ensuring consistency and scalability Define best practices for naming convention, data modelling, performance optimisation, and cost efficiency on Snowflake Design data validation, reconciliation, end to end testing and parallel run strategies for migration assurance Provide architectural oversight to ensure adherence to standards and solution design Collaborate with stakeholders to align migration approach with business needs Support governance, documentation, and lineage approach for audit readiness Enable CI/CD practices and version control for dbt deployments Identify risks and recommend mitigation strategies during migration lifecycle",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/architect-nagpur-2026060917452697?id=14425",
+    "scrapedAt": "2026-08-01T05:42:07.859Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Data Architect (DBT+ Snowflake)",
+    "normalizedTitle": "Data Architect (DBT+ Snowflake)",
+    "jobCategory": "Data Architect (DBT+ Snowflake)",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-06-09T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:07.859Z",
+    "skillIds": [
+      "snowflake",
+      "sql"
+    ],
+    "requiredSkillIds": [
+      "snowflake"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "9 to 14 years",
+      "minimumYears": 9,
+      "maximumYears": 14,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "9 to 14 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.892Z"
+  },
+  {
+    "title": "Solution Architect - Cloud and Data Engineering",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "13742",
+    "requisitionId": "41998",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-manager-pune-2025041713465280?id=13742",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-manager-pune-2025041713465280?id=13742",
+    "employmentType": "Full-time",
+    "experienceRequired": "14 to 20 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Azure - Big Data"
+    ],
+    "postingDate": "2025-04-17T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position: Solution Architect\n- Cloud and Data Engineering Location: Pune/Nagpur/Chennai/Bengaluru Type of Employment: Full-Time Purpose of the Position: Responsible to engage with clients in advisory & consulting, advance solutions, support presales as a solution architect, build capabilities, drive research & experimentation and nurture talent in cloud & data engineering. Key Result Areas and Activities: Engage with clients, delivery & market Architect solutions & coordinate their implementation Lead & support opportunities Guide research & experiments to address unmet needs Build & reuse knowledge & expertise Nurture & grow talent",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/senior-manager-pune-2025041713465280?id=13742",
+    "scrapedAt": "2026-08-01T05:42:09.265Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Solution Architect - Cloud and Data Engineering",
+    "normalizedTitle": "Solution Architect - Cloud and Data Engineering",
+    "jobCategory": "Solution Architect - Cloud and Data Engineering",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-04-17T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:09.265Z",
+    "skillIds": [
+      "azure"
+    ],
+    "requiredSkillIds": [
+      "azure"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "12-plus",
+    "experienceProfile": {
+      "rawText": "14 to 20 years",
+      "minimumYears": 14,
+      "maximumYears": 20,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "14 to 20 years",
+      "experienceBucket": "12-plus"
+    },
+    "experienceYears": [
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.894Z"
+  },
+  {
+    "title": "Senior Enterprise Data Platform Engineer",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Nagpur",
+    "city": "Nagpur",
+    "jobId": "14492",
+    "requisitionId": "48304",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-architect-nagpur-2026072311354568?id=14492",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-architect-nagpur-2026072311354568?id=14492",
+    "employmentType": "Full-time",
+    "experienceRequired": "10 to 15 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Databricks"
+    ],
+    "postingDate": "2026-07-23T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position: Senior Enterprise Data Platform Engineer Purpose of the Position: Lead the architecture and design of a modern enterprise data platform that enables scalable data products, analytics, AI, and business intelligence capabilities. The role is responsible for establishing enterprise data architecture standards, governance frameworks, engineering best practices, and technical oversight across multiple delivery teams. Location: Nagpur/Chennai/Bangalore/Nagpur Type of Employment: Full-time Key Result Areas and Activities: Lead the design, development, and implementation of scalable Data Lakehouse solutions on AWS and Databricks Evaluate and onboard data sources to support analytics, AI, and Generative AI initiatives Design and optimize data pipelines, data models, and integration frameworks to enable reliable and efficient data processing Implement and maintain data governance, lineage, metadata management, and data quality practices across data platforms Collaborate with business stakeholders, product teams, and technical teams to translate data and AI requirements into scalable data solutions Provide technical leadership to development teams, drive best practices, support solution design decisions, and ensure successful project delivery",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/senior-architect-nagpur-2026072311354568?id=14492",
+    "scrapedAt": "2026-08-01T05:42:10.573Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Senior Enterprise Data Platform Engineer",
+    "normalizedTitle": "Senior Enterprise Data Platform Engineer",
+    "jobCategory": "Senior Enterprise Data Platform Engineer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-23T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:10.573Z",
+    "skillIds": [
+      "databricks",
+      "aws",
+      "generative-ai"
+    ],
+    "requiredSkillIds": [
+      "databricks"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Generative AI"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "10 to 15 years",
+      "minimumYears": 10,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10 to 15 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.896Z"
+  },
+  {
+    "title": "Data Engineer - Snowflake",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Chennai, Tamil Nadu, India",
+    "city": "Chennai",
+    "jobId": "14165",
+    "requisitionId": "45970",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-mumbai-2026021019155616?id=14165",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-mumbai-2026021019155616?id=14165",
+    "employmentType": "Full-time",
+    "experienceRequired": "5 to 7 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Snowflake - Development",
+      "Azure Data Factory"
+    ],
+    "postingDate": "2026-02-10T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Data Engineer\n- Snowflake Location : Chennai Type of Employment : Full-Time Purpose of the Position : To design, develop, optimize, and manage Snowflakebased data solutions that support enterprise data warehousing, analytics, and reporting. The role ensures highquality data pipelines, secure data handling, and efficient performance across cloud-based data platforms. Key Result Areas and Activities : Snowflake Data Engineering & Development ? Develop and maintain scalable data pipelines, SQL scripts, and Snowflake objects (schemas, stages, tasks, streams, warehouses). Data Modeling & Architecture ? Implement dimensional models (star/snowflake schema), optimized warehouse structures, and data ingestion frameworks. Performance Optimization & Data Quality ? Tune SQL queries, optimize Snowflake compute cost, manage clustering, caching, and ensure data accuracy and reliability. ETL/ELT Development & Integration ? Build and maintain ETL/ELT workflows using Snowflake-native features or external tools (ADF, DBT, Airflow, Informatica). Governance, Security & Collaboration ? Manage role-based access, data sharing, auditing, and collaborate with BI, analytics, and cloud teams to deliver highquality data solutions.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-mumbai-2026021019155616?id=14165",
+    "scrapedAt": "2026-08-01T05:42:11.948Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Data Engineer - Snowflake",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-02-10T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:11.948Z",
+    "skillIds": [
+      "snowflake",
+      "azure",
+      "sql",
+      "airflow"
+    ],
+    "requiredSkillIds": [
+      "snowflake",
+      "azure"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "airflow",
+        "canonicalName": "Airflow",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Airflow"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5 to 7 years",
+      "minimumYears": 5,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 to 7 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.898Z"
+  },
+  {
+    "title": "Lead Data Engineer - Databricks (Rotational night shift)",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14403",
+    "requisitionId": "47242",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-nagpur-2026051217453324?id=14403",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-nagpur-2026051217453324?id=14403",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Databricks"
+    ],
+    "postingDate": "2026-05-12T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position: Lead Data Engineer\n- Databricks (Rotational Night Shift) Location: Pune/Nagpur/Chennai/Bangalore Type of Employment: FTE Purpose of the Position: To design, build, and optimize & support scalable data pipelines and solutions using Databricks and related technologies, to make faster, data-driven decisions as part of our clients data transformation journey. We are looking for data engineer with proficiency in data integration techniques, ETL processes and data pipeline architectures and well versed in Data Quality rules, principles and implementation. Key Result Areas and Activities: Data Pipeline Development & Support: Design, develop and optimize end to end batch and streaming data pipelines using Azure Databricks and Spark. Data Architecture Implementation: Apply Medallion Architecture to structure data layers (raw, enriched, curated). Data Quality & Governance: Ensure data accuracy, consistency, and governance using tools like Azure Purview and Unity Catalog. Performance Optimization: Optimize Spark jobs, Delta Lake tables, and SQL queries for efficiency and cost-effectiveness. Collaboration & Delivery: Work closely with analysts, architects, and business teams to deliver end-to-end data solutions.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-nagpur-2026051217453324?id=14403",
+    "scrapedAt": "2026-08-01T05:42:13.423Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Lead Data Engineer - Databricks (Rotational night shift)",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-05-12T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:13.423Z",
+    "skillIds": [
+      "databricks",
+      "azure",
+      "spark",
+      "sql"
+    ],
+    "requiredSkillIds": [
+      "databricks"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Spark"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Position: Lead Data Engineer - Databricks (Rotational Night Shift) Location: Pune/Nagpur/Chennai/Bangalore Type of Employment: FTE Purpose of the Position: To design, build, and optimize & support scalable data pipelines and solutions using Databricks and related technologies, to make faster, data-driven decisions as part of our clients data transformation journey. We are looking for data engineer with proficiency in data integration techniques, ETL processes and data pipeline architectures and well versed in Data Quality rules, principles and implementation. Key Result Areas and Activities: Data Pipeline Development & Support: Design, develop and optimize end to end batch and streaming data pipelines using Azure Databricks and Spark. Data Architecture Implementation: Apply Medallion Architecture to structure data layers (raw, enriched, curated). Data Quality & Governance: Ensure data accuracy, consistency, and governance using tools like Azure Purview and Unity Catalog. Performance Optimization: Optimize Spark jobs, Delta Lake tables, and SQL queries for efficiency and cost-effectiveness. Collaboration & Delivery: Work closely with analysts, architects, and business teams to deliver end-to-end data solutions.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.901Z"
+  },
+  {
+    "title": "Senior Data Engineer- DBT Snowflake",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14384",
+    "requisitionId": "47219",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/lead-nagpur-2026043013461889?id=14384",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/lead-nagpur-2026043013461889?id=14384",
+    "employmentType": "Full-time",
+    "experienceRequired": "7 to 9 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "DBT",
+      "Snowflake"
+    ],
+    "postingDate": "2026-04-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position: Senior Data Engineer- DBT Snowflake Purpose of the Position: This role seeks candidate who is passionate about building and optimising cloud-based data platform that support modern analytics initiatives. You will assist in implementing scalable Snowflake data pipeline building efficient ingestion, transformation workflows, and supporting migration from legacy ETL system to dbt-driven ELT architectures. The role contributes to improving data accessibility, performance, and consistency across enterprise analytics environment. Location: Pune/ Nagpur/ Chennai/ Bangalore Type of Employment: Full-time Key Result Areas and Activities: DBT Architecture Strategy & Standardization\n- Define enterprise dbt architecture standards, layering conversions, naming framework, and modular transformation design approaches supporting large scale modernisation programmes. Code conversion, refinement and optimization ? Convert complex SSIS transformations into dbt staging/intermediate/mart models, review and validate tool converted dbt transformations to ensure accuracy maintainability alignment with enterprise modelling standards. Legacy ETL Migration Enablement ? Lead transformation strategies of migrating SSIS pipelines to dbt-based ELT framework while ensuring consistency scalability and maintainability. Reusable Framework & Accelerator Development\n- Establish micros libraries, reusable template migration accelerator to improve delivery efficiency across multiple transformation streams. Data Quality & Validation Strategy\n- Define reconciliation strategies/methodologies, parallel-run validation framework, and transformation testing standard supporting enterprise analytics reliability. Performance Alignment with Snowflake Platform\n- Collaborate with snowflake engineering teams to optimise execution strategy clustering approaches and warehouse utilization. Governance, CI/CD & Delivery Oversight -Establish version control standards, CI/CD integration practice as, and documentation framework supporting controlled migration execution. Documentation and lineage support\n- Maintain transformation documentation, mapping logic, testing evidence, and lineage metadata to support governance and audit readiness. Collaboration & Delivery Support\n- Work closely with Snowflake engineers, QA team and client stakeholders to resolve transformation discrepancies and ensure timely migration delivery",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/lead-nagpur-2026043013461889?id=14384",
+    "scrapedAt": "2026-08-01T05:42:14.896Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Senior Data Engineer- DBT Snowflake",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-04-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:14.896Z",
+    "skillIds": [
+      "snowflake"
+    ],
+    "requiredSkillIds": [
+      "snowflake"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Snowflake"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "7 to 9 years",
+      "minimumYears": 7,
+      "maximumYears": 9,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "7 to 9 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      7,
+      8,
+      9
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.903Z"
+  },
+  {
+    "title": "Snowflake DBT Architect",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India;Nagpur, Maharashtra, India;Bengaluru, Karnataka, India;Chennai, Tamil Nadu, India",
+    "city": "Pune",
+    "jobId": "14406",
+    "requisitionId": "47109",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-manager-nagpur-2026051315461564?id=14406",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-manager-nagpur-2026051315461564?id=14406",
+    "employmentType": "Full-time",
+    "experienceRequired": "12 to 18 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Snowflake - Development"
+    ],
+    "postingDate": "2026-05-13T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Key Result Areas and Activities: Architect solutions & coordinate their implementation Guide research & experiments to address unmet needs Build & reuse knowledge & expertise Engage with clients, delivery & industry Lead & support opportunities",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/senior-manager-nagpur-2026051315461564?id=14406",
+    "scrapedAt": "2026-08-01T05:42:16.365Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Snowflake DBT Architect",
+    "normalizedTitle": "Snowflake DBT Architect",
+    "jobCategory": "Snowflake DBT Architect",
+    "engineeringDomain": "Research",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-05-13T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:16.365Z",
+    "skillIds": [
+      "snowflake"
+    ],
+    "requiredSkillIds": [
+      "snowflake"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Snowflake"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "12 to 18 years",
+      "minimumYears": 12,
+      "maximumYears": 18,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12 to 18 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [
+      "Data Science & AI"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.905Z"
+  },
+  {
+    "title": "Cloud Architect - Snowflake",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14110",
+    "requisitionId": "44934",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/cloud-architect-nagpur-2025120513471089?id=14110",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/cloud-architect-nagpur-2025120513471089?id=14110",
+    "employmentType": "Full-time",
+    "experienceRequired": "9 to 11 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Snowflake - Development"
+    ],
+    "postingDate": "2025-12-05T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Cloud Architect\n- Snowflake Location: Chennai/Pune/Bengaluru/Nagpur Type of Employment: Full-time Purpose of the Position : The Snowflake Architect will be responsible for designing, implementing, and optimizing data solutions using Snowflake. This role involves collaborating with cross-functional teams to ensure data architecture aligns with business goals, enhances data quality, and supports advanced analytics and reporting needs. The architect will play a key role in driving data strategy, ensuring scalability, and maintaining best practices in data management. Key Result Areas (KRAs): : Data Architecture Design : Develop and maintain scalable, efficient, and secure data architectures using Snowflake. Ensure alignment with business requirements and industry best practices. Data Quality and Governance : Implement and enforce data quality standards and governance policies. Monitor data integrity and accuracy across all data pipelines and storage solutions. Performance Optimization : Optimize data models, queries, and ETL/ELT processes for maximum performance and cost efficiency. Conduct regular performance tuning and troubleshooting. Collaboration and Communication : Work closely with data engineers, analysts, and business stakeholders to understand data needs and deliver solutions. Provide technical guidance and mentorship to team members. Innovation and Continuous Improvement : Stay updated with the latest trends and advancements in data technologies. Propose and implement innovative solutions to improve data processing, storage, and analysis capabilities.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/cloud-architect-nagpur-2025120513471089?id=14110",
+    "scrapedAt": "2026-08-01T05:42:17.740Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Cloud Architect - Snowflake",
+    "normalizedTitle": "Cloud Architect - Snowflake",
+    "jobCategory": "Cloud Architect - Snowflake",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-12-05T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:17.740Z",
+    "skillIds": [
+      "snowflake"
+    ],
+    "requiredSkillIds": [
+      "snowflake"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Snowflake"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "9 to 11 years",
+      "minimumYears": 9,
+      "maximumYears": 11,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "9 to 11 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      9,
+      10,
+      11
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.907Z"
+  },
+  {
+    "title": "Data Engineer - AWS AI",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14276",
+    "requisitionId": "46627",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/engineer-nagpur-202603301345494?id=14276",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/engineer-nagpur-202603301345494?id=14276",
+    "employmentType": "Full-time",
+    "experienceRequired": "3 to 7 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AWS"
+    ],
+    "postingDate": "2026-03-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Data Engineer\n- AWS AI Location: Pune/Nagpur/Chennai/Bangalore Type of Employment : Full-time Purpose of the Position: This role is ideal for individuals who are passionate about applying their expertise in AI Engineering, Data Engineering, programming, data analysis, and problem-solving to real-world challenges. As a key member of our engineering team, you will support clients on their AI journey by developing solutions that drive measurable business value. This position plays a critical role in advancing Infocepts? strategic goals by delivering data-driven insights and enabling transformative AI/ML programs. Key Result Areas and Activities: Data & Cloud Engineering: Design and maintain high-performance ETL/ELT pipelines on AWS using Py Spark, Python, SQL across EMR, Glue, Lambda, Step Functions, Redshift, and S3. Applied AI ? LLM, RAG, Agentic Workflows: Develop, fine-tune, and deploy LLMs (GPT?4 class, BERT, T5) for enterprise applications. Implement RAG using FAISS, Elasticsearch, Lang Chain, Llama Index, or similar frameworks for grounding, vector search, and knowledge retrieval. AI Platform & Tooling (Modern Stack): Work with emerging enterprise AI platforms including: Snowflake Cortex for secure LLM inferencing, embeddings, and feature pipelines Databricks Lakehouse AI / Databricks Genie for model training, inference, and agentic workloads. Architecture, Governance & Collaboration: Contribute to solution architecture, AI governance, data security, and model lifecycle frameworks.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/engineer-nagpur-202603301345494?id=14276",
+    "scrapedAt": "2026-08-01T05:42:19.616Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Data Engineer - AWS AI",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-03-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:19.616Z",
+    "skillIds": [
+      "aws",
+      "python",
+      "sql",
+      "snowflake",
+      "databricks"
+    ],
+    "requiredSkillIds": [
+      "aws"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Databricks"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 to 7 years",
+      "minimumYears": 3,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 to 7 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.909Z"
+  },
+  {
+    "title": "Data Engineer (Databricks Admin)",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14428",
+    "requisitionId": "46867",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-nagpur-202606161545256?id=14428",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-nagpur-202606161545256?id=14428",
+    "employmentType": "Full-time",
+    "experienceRequired": "5 to 9 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Databricks Platform administration"
+    ],
+    "postingDate": "2026-06-16T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Data Engineer (Databricks Admin) Location: Nagpur, Pune Type of Employment : Full-Time Purpose of the Position : Design, develop, support, and drive comprehensive data engineering solutions using Databricks Info Cepts is a global leader of end-to-end data and analytics solutions with nearly 20 years’ experience enabling customers to derive value from a variety of data-driven capabilities. Unique among its peers, Info Cepts operates with the scale of a global consulting firm, yet the expertise of a niche partner. Key Result Areas and Activities : Implement enhancements, monitor performance, troubleshoot issues, and deliver continuous support for Databricks jobs in the production environment and perform access management, cluster management for the same Conduct unit testing, integration testing, and troubleshooting of ETL processes to ensure data accuracy and reliability Manage deployment of Databricks ETL processes from development to production Respond to incidents reported by users or monitoring tools, ensuring swift resolution to minimize downtime Maintain detailed logs of incidents, resolutions, and troubleshooting steps for knowledge sharing and future reference Candidate needs to work in rotational shifts (including on-call, morning, afternoon, night and weekends shift) proving round the clock support for keeping the environments running and performing at optimal levels",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/assistant-manager-nagpur-202606161545256?id=14428",
+    "scrapedAt": "2026-08-01T05:42:26.612Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Data Engineer (Databricks Admin)",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-06-16T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:26.612Z",
+    "skillIds": [
+      "databricks"
+    ],
+    "requiredSkillIds": [
+      "databricks"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Databricks"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5 to 9 years",
+      "minimumYears": 5,
+      "maximumYears": 9,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 to 9 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.912Z"
+  },
+  {
+    "title": "Lead Data Engineer- Databricks",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14241",
+    "requisitionId": "46633",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/lead-nagpur-2026031711460635?id=14241",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/lead-nagpur-2026031711460635?id=14241",
+    "employmentType": "Full-time",
+    "experienceRequired": "7 to 10 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Databricks"
+    ],
+    "postingDate": "2026-03-17T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position: Lead Data Engineer\n- Databricks Location: Pune/Nagpur/Chennai/Bangalore Type of Employment: Full-Time Purpose of the Position: Develop, support and steer end-to-end business intelligence using Databricks. Key Result Areas and Activities : Work with business analysts and data architects to translate requirements into technical implementations Develop, implement, and maintain pyspark code through Databricks UI that enables data and analytics use cases for the client Code, test, and document new or modified data systems to create robust and scalable applications for data analytics",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/lead-nagpur-2026031711460635?id=14241",
+    "scrapedAt": "2026-08-01T05:42:28.047Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Lead Data Engineer- Databricks",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-03-17T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:28.047Z",
+    "skillIds": [
+      "databricks"
+    ],
+    "requiredSkillIds": [
+      "databricks"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Databricks"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "7 to 10 years",
+      "minimumYears": 7,
+      "maximumYears": 10,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "7 to 10 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      7,
+      8,
+      9,
+      10
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.914Z"
+  },
+  {
+    "title": "BI Architect - Tableau",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14420",
+    "requisitionId": "46732",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/analytics-architect-nagpur-2026060217452661?id=14420",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/analytics-architect-nagpur-2026060217452661?id=14420",
+    "employmentType": "Full-time",
+    "experienceRequired": "9 to 11 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Tableau - Development"
+    ],
+    "postingDate": "2026-06-02T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Key Result Areas and Activities: Stakeholder Engagement & Requirements – Collaborate with business teams to capture and translate business requirements into actionable deliverables Requirements & Solution Design – Gather & Translate complex business requirements into scalable Tableau dashboards and visualizations that drive data-driven decision-making. Ensure dashboards are intuitive, structured, and meet stakeholder priorities. Architecture and Design\n- Lead the architecture, design, and development of enterprise-wide Tableau analytics solutions. Collaborate with data engineers and database administrators to optimize data sources and ensure efficient data integration.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/analytics-architect-nagpur-2026060217452661?id=14420",
+    "scrapedAt": "2026-08-01T05:42:29.460Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "BI Architect - Tableau",
+    "normalizedTitle": "BI Architect - Tableau",
+    "jobCategory": "BI Architect - Tableau",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-06-02T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:29.460Z",
+    "skillIds": [
+      "tableau"
+    ],
+    "requiredSkillIds": [
+      "tableau"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "tableau",
+        "canonicalName": "Tableau",
+        "category": "Product, Design & Collaboration",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Tableau"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "9 to 11 years",
+      "minimumYears": 9,
+      "maximumYears": 11,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "9 to 11 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      9,
+      10,
+      11
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.916Z"
+  },
+  {
+    "title": "Data Engineer - AWS AI",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "13868",
+    "requisitionId": "43747",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/deputy-manager-nagpur-2025070115460055?id=13868",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/deputy-manager-nagpur-2025070115460055?id=13868",
+    "employmentType": "Full-time",
+    "experienceRequired": "3 to 7 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AWS"
+    ],
+    "postingDate": "2025-07-01T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Data Engineer\n- AWS AI Location: Pune/Nagpur/Chennai/Bangalore Type of Employment : Full-time Purpose of the Position: This role is ideal for individuals who are passionate about applying their expertise in AI Engineering, Data Engineering, programming, data analysis, and problem-solving to real-world challenges. As a key member of our engineering team, you will support clients on their AI journey by developing solutions that drive measurable business value. This position plays a critical role in advancing Infocepts’ strategic goals by delivering data-driven insights and enabling transformative AI/ML programs. Key Result Areas and Activities: Data & Cloud Engineering: Design and maintain high-performance ETL/ELT pipelines on AWS using Py Spark, Python, SQL across EMR, Glue, Lambda, Step Functions, Redshift, and S3. Applied AI – LLM, RAG, Agentic Workflows: Develop, fine-tune, and deploy LLMs (GPT‑4 class, BERT, T5) for enterprise applications. Implement RAG using FAISS, Elasticsearch, Lang Chain, Llama Index, or similar frameworks for grounding, vector search, and knowledge retrieval. AI Platform & Tooling (Modern Stack): Work with emerging enterprise AI platforms including: Snowflake Cortex for secure LLM inferencing, embeddings, and feature pipelines Databricks Lakehouse AI / Databricks Genie for model training, inference, and agentic workloads. Architecture, Governance & Collaboration: Contribute to solution architecture, AI governance, data security, and model lifecycle frameworks.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/deputy-manager-nagpur-2025070115460055?id=13868",
+    "scrapedAt": "2026-08-01T05:42:30.895Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Data Engineer - AWS AI",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-07-01T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:30.895Z",
+    "skillIds": [
+      "aws",
+      "python",
+      "sql",
+      "snowflake",
+      "databricks"
+    ],
+    "requiredSkillIds": [
+      "aws"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Databricks"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 to 7 years",
+      "minimumYears": 3,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 to 7 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.918Z"
+  },
+  {
+    "title": "Cloud Data Architect - Databricks",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14065",
+    "requisitionId": "44525",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/solution-architect-nagpur-2025111117452913?id=14065",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/solution-architect-nagpur-2025111117452913?id=14065",
+    "employmentType": "Full-time",
+    "experienceRequired": "12 to 17 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Databricks"
+    ],
+    "postingDate": "2025-11-11T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Cloud Data Architect\n- Databricks Location: Nagpur/Pune/Chennai/Bangalore Type of Employment: Full-Time Purpose of the Position: Design and optimize cloud-native data architectures on platforms like Databricks and Snowflake, enabling scalable data engineering, advanced analytics, and AI/ML solutions aligned with business needs. Key Result Areas and Activities: Design and implement Lakehouse architectures using Databricks, Delta Lake, and Apache Spark. Lead the development of data pipelines, ETL/ELT processes, and data integration strategies. Collaborate with business and technical teams to define data architecture standards, governance, and security models. Optimize performance and cost-efficiency of Databricks clusters and jobs. Provide technical leadership and mentorship to data engineers and developers. Integrate Databricks with cloud platforms (Azure, AWS, or GCP) and enterprise systems. Evaluate and recommend tools and technologies to enhance the data ecosystem. Ensure compliance with data privacy and regulatory requirements. Contribute to proposal and pre sales activities.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/solution-architect-nagpur-2025111117452913?id=14065",
+    "scrapedAt": "2026-08-01T05:42:32.343Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Cloud Data Architect - Databricks",
+    "normalizedTitle": "Cloud Data Architect - Databricks",
+    "jobCategory": "Cloud Data Architect - Databricks",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-11-11T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:32.343Z",
+    "skillIds": [
+      "databricks",
+      "snowflake",
+      "spark",
+      "azure",
+      "aws",
+      "gcp"
+    ],
+    "requiredSkillIds": [
+      "databricks"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Apache Spark"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "12 to 17 years",
+      "minimumYears": 12,
+      "maximumYears": 17,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12 to 17 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Data Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.920Z"
+  },
+  {
+    "title": "Presales Consultant - Enterprise",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14247",
+    "requisitionId": "46636",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/manager-nagpur-202603231545323?id=14247",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/manager-nagpur-202603231545323?id=14247",
+    "employmentType": "Full-time",
+    "experienceRequired": "8 to 12 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Presales",
+      "Banking",
+      "manufacturing"
+    ],
+    "postingDate": "2026-03-23T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : a { text-decoration: none; color: #464feb; } tr th, tr td { border: 1px solid #e6e6e6; } tr th { background-color: #f5f5f5; } Presales Consultant\n- Enterprise Location: Nagpur/Pune/Chennai/Bangalore Type of Employment: Full-Time a { text-decoration: none; color: #464feb; } tr th, tr td { border: 1px solid #e6e6e6; } tr th { background-color: #f5f5f5; } Purpose of the Position: As a Presales Consultant, you will work closely with sales, delivery, and practice teams to understand customer business needs and challenges through discovery sessions and RFPs. You will deliver strategic, industry competitive solution pitches and proposals. This role offers an opportunity to learn, grow, and influence the Infocepts revenue trajectory, while interacting with clients and prospects and representing Infocepts in industry forums through participation and presentations. a { text-decoration: none; color: #464feb; } tr th, tr td { border: 1px solid #e6e6e6; } tr th { background-color: #f5f5f5; } Key Result Areas and Activities: Client Engagement and Solutioning : Act as a single point of contact to coordinate and drive all new leads, both existing and new customers. Lead early stage client interactions including problem framing, solution design, and scoping. Meet prospects and participate in pre bid meetings to understand user requirements and define proposal response strategy. Translate business problems into technical solutions and vice versa, ensuring clarity and alignment. Proposal Development and Bid Management : Demonstrate thought leadership by identifying win themes and creating differentiated solution pitches that clearly articulate value. Manage proposal response end to end including bid management, proposal development, submission, orals, closure, win loss analysis, and artifact cataloging. Craft high quality proposals, solution documents, and effort estimations. Respond to RFPs and RFIs with well structured and competitive solutions. Thought Leadership and Workshops : Conduct client workshops, demos, and presentations to showcase Info Cepts capabilities. Deliver impactful business and technical presentations to clients at all levels. Attend trade shows and partner events including pre event outreach and post event follow up. Provide market and competitive intelligence on a periodic basis. Collaboration and Delivery Alignment : Collaborate with Sales, Practices, and Delivery teams to create winning proposals, estimates, and commercials. Ensure proposed solutions are feasible, scalable, and aligned with best practices. Ensure smooth transition between presales technical work and post sales delivery. Enhance presales process frameworks and templates to improve response quality and timelines. Create sales collateral including presentations, demos, scripts, and tools for sales teams.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/manager-nagpur-202603231545323?id=14247",
+    "scrapedAt": "2026-08-01T05:42:33.786Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Presales Consultant - Enterprise",
+    "normalizedTitle": "Presales Consultant - Enterprise",
+    "jobCategory": "Presales Consultant - Enterprise",
+    "engineeringDomain": "Process",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-03-23T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:33.786Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "8 to 12 years",
+      "minimumYears": 8,
+      "maximumYears": 12,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "8 to 12 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Other",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "low",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.924Z"
+  },
+  {
+    "title": "Architect - Data and AI",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "14277",
+    "requisitionId": "46628",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/architect-nagpur-2026033013460426?id=14277",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/architect-nagpur-2026033013460426?id=14277",
+    "employmentType": "Full-time",
+    "experienceRequired": "11 to 15 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Generative AI"
+    ],
+    "postingDate": "2026-03-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Architect\n- Data and AI Location: Nagpur/Pune/Chennai Type of Employment: Full-Time Purpose of the Position: The Senior Data & AI Architect will lead the design and implementation of scalable, secure, and governed AI ? driven data platforms on AWS, enabling advanced analytics, AI productivity tools, and next ? generation agentic AI systems. This role blends cloud architecture, data engineering, AI system design, Dev Ops, and governance, with a strong emphasis on enterprise-grade solutions that deliver measurable business value. The architect will act as a technical authority, defining reference architectures, guiding engineering teams, and ensuring best practices across data management, AI workflows, security, and cloud Fin Ops. Key Result Areas and Activities: Architect and deliver cloud-native AI and data platforms on AWS at enterprise scale. Design reusable data ingestion and processing frameworks supporting batch and streaming workloads. Lead implementation of agentic AI systems, RAG pipelines, and AI productivity enablers. Establish standards for data modeling, governance, quality, security, and Fin Ops. Drive CI/CD and Infrastructure-as-Code (Ia C) adoption across data and AI pipelines. Mentor engineering teams and review designs, code, and architectural decisions. Partner with business stakeholders to translate requirements into scalable technical solutions.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/architect-nagpur-2026033013460426?id=14277",
+    "scrapedAt": "2026-08-01T05:42:35.105Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Architect - Data and AI",
+    "normalizedTitle": "Architect - Data and AI",
+    "jobCategory": "Architect - Data and AI",
+    "engineeringDomain": "DevOps",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-03-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:35.105Z",
+    "skillIds": [
+      "generative-ai",
+      "aws"
+    ],
+    "requiredSkillIds": [
+      "generative-ai"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Generative AI"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "11 to 15 years",
+      "minimumYears": 11,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "11 to 15 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.926Z"
+  },
+  {
+    "title": "Senior Administrator - Analytics Platform",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "India",
+    "city": "India",
+    "jobId": "11348",
+    "requisitionId": "33384",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-analytics-platform-administrator-33384-india-microstrategy-administrator-power-bi-administrator-tableau-administrator-2023092612483621?id=11348",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/senior-analytics-platform-administrator-33384-india-microstrategy-administrator-power-bi-administrator-tableau-administrator-2023092612483621?id=11348",
+    "employmentType": "Full-time",
+    "experienceRequired": "7 to 9 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "MicroStrategy - Administrator / Power BI - Administrator / Tableau - Administrator"
+    ],
+    "postingDate": "2023-01-02T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Senior Administrator\n- Analytics Platform Location : Nagpur/Pune/Chennai Type of Employment : Full-Time Key Result Areas and Activites: ITIL Processes and Tech Modernization : Objectively support the setup of ITIL-driven processes and tech modernization initiatives while adhering to governance standards and reducing costs through automation. Focus on lowering costs by identifying and implementing automation opportunities and leveraging modern technologies. Promote and support democratization of technology to enable broader access and utilization across the organization. BI Platform Architecture and Setup : Design reference BI platform architecture blueprints for both on-premises and cloud deployments to ensure a robust and scalable setup. Install and configure BI platforms on-premises or on cloud Iaa S/Paa S/Saa S environments, coordinating with relevant cloud teams to provision necessary resources and capacities. Establish security controls for interactive and service usage, including monitoring and delegated administration to safeguard the environment. Monitoring, Maintenance, and Support : Use built-in tools, custom reports, and external agents to monitor usage, performance, and resource utilization of the BI platform. Perform regular health checks and audits, providing health and sizing recommendations to ensure optimal performance. Offer priority support during outages, planned deployments, and maintenance. Troubleshoot issues, conduct root cause analysis, and provide recommendations to prevent future problems. Automation and Documentation : Identify opportunities for automating manual tasks and develop scripts using CLI/APIs. Explore Dev Ops practices such as containerization and automated access approvals through ticketing integrations. Perform regular backups, simulate restores, and conduct disaster recovery (DR) exercises to ensure compliance and data protection. Maintain comprehensive documentation of configurations, standard operating procedures (SOPs), issues and root cause analyses (RCAs), and critical observations and recommendations",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/senior-analytics-platform-administrator-33384-india-microstrategy-administrator-power-bi-administrator-tableau-administrator-2023092612483621?id=11348",
+    "scrapedAt": "2026-08-01T05:42:36.631Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Senior Administrator - Analytics Platform",
+    "normalizedTitle": "Senior Administrator - Analytics Platform",
+    "jobCategory": "Senior Administrator - Analytics Platform",
+    "engineeringDomain": "DevOps",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2023-01-02T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:36.631Z",
+    "skillIds": [
+      "power-bi",
+      "tableau"
+    ],
+    "requiredSkillIds": [
+      "power-bi",
+      "tableau"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "power-bi",
+        "canonicalName": "Power BI",
+        "category": "Product, Design & Collaboration",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Power BI"
+      },
+      {
+        "skillId": "tableau",
+        "canonicalName": "Tableau",
+        "category": "Product, Design & Collaboration",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Tableau"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "7 to 9 years",
+      "minimumYears": 7,
+      "maximumYears": 9,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "7 to 9 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      7,
+      8,
+      9
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Finance & Operations"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.929Z"
+  },
+  {
+    "title": "Consultant - Data Science",
+    "company": "Infocepts.AI",
+    "department": "Employee",
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "jobId": "11416",
+    "requisitionId": "32946",
+    "sourceUrl": "https://infotalent.infocepts.com/infocepts/jobview/data-scientist-32946-india-r-python-dataiku-sagemaker-azureml-2023092615094713?id=11416",
+    "applyUrl": "https://infotalent.infocepts.com/infocepts/jobview/data-scientist-32946-india-r-python-dataiku-sagemaker-azureml-2023092615094713?id=11416",
+    "employmentType": "Full-time",
+    "experienceRequired": "11 to 15 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "R",
+      "Python",
+      "Dataiku",
+      "SageMaker",
+      "AzureML"
+    ],
+    "postingDate": "2023-01-06T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Position : Consultant\n- Data Science Location : Pune/Bangalore/Nagpur/Chennai Type of Employment : Full-Time Purpose of the Position : The Data Science Consultant will lead the design, development, and deployment of advanced data science solutions across business domains, with a strong focus on operational efficiency, forecasting, and AI integration. This role demands a blend of technical expertise, strategic thinking, and stakeholder collaboration to deliver measurable business impact through data-driven innovation. Key Result Areas and Activities : Advanced Model Development & Deployment : Build and deploy scalable machine learning and deep learning models (including CNNs and Gen AI solutions) for anomaly detection, forecasting, and optimization. Data Engineering & Processing : Design and implement efficient data pipelines using Python, Py Spark, and distributed computing frameworks to support large-scale analytics. Cross-functional Collaboration : Work closely with business stakeholders, software engineers, and Dev Ops teams to translate business needs into actionable data science solutions. Governance & Responsible AI Practices : Ensure models adhere to responsible AI principles including fairness, transparency, and auditability, and comply with data governance standards. Continuous Improvement & Innovation : Monitor model performance, conduct evaluations, and iterate to improve accuracy and reliability. Stay abreast of emerging AI/ML technologies and integrate them into solutions.",
+    "source": "infoceptsai",
+    "link": "https://infotalent.infocepts.com/infocepts/jobview/data-scientist-32946-india-r-python-dataiku-sagemaker-azureml-2023092615094713?id=11416",
+    "scrapedAt": "2026-08-01T05:42:38.885Z",
+    "country": "India",
+    "companyCareerPage": "https://www.infocepts.ai/careers/",
+    "companyDomain": "infocepts.ai",
+    "atsPlatform": "zwayam",
+    "originalTitle": "Consultant - Data Science",
+    "normalizedTitle": "Consultant - Data Science",
+    "jobCategory": "Consultant - Data Science",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2023-01-06T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:42:38.885Z",
+    "skillIds": [
+      "python",
+      "machine-learning"
+    ],
+    "requiredSkillIds": [
+      "python"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "machine learning"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "11 to 15 years",
+      "minimumYears": 11,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "11 to 15 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:42:38.932Z"
+  }
+]

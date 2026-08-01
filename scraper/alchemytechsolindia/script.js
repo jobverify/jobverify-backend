@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -227,7 +227,7 @@ export const createAlchemyTechsolIndiaScraper = ({
 export const run = async (options = {}) => createAlchemyTechsolIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

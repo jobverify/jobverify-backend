@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const inputPath = process.argv[2]
 
@@ -31,7 +31,7 @@ const report = generateCompanyCoverageReport({
 })
 
 const providerImportBase = path.dirname(
-  fileURLToPath(new URL('../scraper/providers/index.js', import.meta.url)),
+  fileURLToPath(new URL('../scraper-support/providers/index.js', import.meta.url)),
 )
 
 const missingModuleProviders = report.matched

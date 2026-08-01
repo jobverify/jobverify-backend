@@ -1,7 +1,7 @@
 import { chromium } from 'playwright'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { CANONICAL_CITIES } from '../utils/cities.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 
 const SOURCE = 'qlik'
 const COMPANY = 'Qlik'

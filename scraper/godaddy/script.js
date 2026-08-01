@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const SEARCH_URL = 'https://careers.godaddy/jobs/search?query=&location=India'
 const BROWSER_SEARCH_URL = 'https://careers.godaddy/jobs/search/india'
@@ -58,7 +58,7 @@ export const extractGoDaddySearchResults = (html = '') => {
 const isExplicitEmptyPage = (html) => EMPTY_RESULTS_PATTERN.test(stripTags(html))
 
 export const renderGoDaddySearchPage = async (url = BROWSER_SEARCH_URL) => {
-  const { launchBrowser, createOptimizedPage } = await import('../utils/browser.js')
+  const { launchBrowser, createOptimizedPage } = await import('../../scraper-support/utils/browser.js')
   let browser
   let lastError = null
   let lastStatus = null

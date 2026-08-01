@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('Graycommit is registered against its official careers page', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'graycommit')

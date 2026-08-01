@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const GRAPHQL_URL = 'https://wtcfns.hubspot.com/careers/graphql'
 const CAREERS_URL = 'https://www.hubspot.com/careers/jobs'

@@ -117,7 +117,7 @@ if (BASE_INDIA_FACET_ID !== INDIA_FACET_ID || BASE_RESULTS_POST_URL !== RESULTS_
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

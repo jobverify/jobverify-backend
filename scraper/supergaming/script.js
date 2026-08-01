@@ -1,23 +1,5 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+export const CAREERS_URL = 'https://www.supergaming.com/careers'
+export const CONTACT_EMAIL = 'hiring@supergaming.com'
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const SOURCE = 'supergaming'
-
+// SuperGaming publishes an email handoff here, not public job listings.
 export const run = async () => []
-
-const isDirectExecution = process.argv[1]
-  ?.replaceAll('\\', '/')
-  .endsWith('/scraper/supergaming/script.js')
-
-if (isDirectExecution || process.argv.includes('--dry-run')) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
-  const jobs = await run()
-
-  if (process.argv.includes('--dry-run')) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
-}

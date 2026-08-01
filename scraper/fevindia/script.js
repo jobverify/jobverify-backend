@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const OFFICIAL_CAREERS_HANDOFF_URL = 'https://www.fev.com/karriere/'
 export const LINKEDIN_COMPANY_URL = 'https://in.linkedin.com/company/fev-india'

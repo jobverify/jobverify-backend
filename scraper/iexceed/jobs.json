@@ -1,0 +1,689 @@
+[
+  {
+    "title": "Flutter Developer",
+    "company": "i-exceed technology solutions",
+    "department": "Flutter Developer",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "53943",
+    "requisitionId": "53943",
+    "sourceUrl": "https://www.i-exceed.com/careers/flutter-developer/",
+    "applyUrl": "https://www.i-exceed.com/careers/flutter-developer/",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Flutter",
+      "Dart",
+      "Mobile Application Developement",
+      "Native Android (Kotlin/Java)",
+      "iOS (Swift/Objective-C) Development"
+    ],
+    "postingDate": "2025-06-02T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Flutter, Dart, Mobile Application Developement, Native Android (Kotlin/Java), i OS (Swift/Objective-C) Development",
+    "source": "iexceed",
+    "link": "https://www.i-exceed.com/careers/flutter-developer/",
+    "scrapedAt": "2026-08-01T05:40:54.592Z",
+    "companyCareerPage": "https://www.i-exceed.com/careers/",
+    "companyDomain": "i-exceed.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Flutter Developer",
+    "normalizedTitle": "Flutter Developer",
+    "jobCategory": "Flutter Developer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-06-02T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:40:54.592Z",
+    "skillIds": [
+      "java"
+    ],
+    "requiredSkillIds": [
+      "java"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Flutter, Dart, Mobile Application Developement, Native Android (Kotlin/Java), i OS (Swift/Objective-C) Development",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:40:54.593Z"
+  },
+  {
+    "title": "Sr. Software Engineer – Java",
+    "company": "i-exceed technology solutions",
+    "department": "Sr. Software Engineer – Java",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "50895",
+    "requisitionId": "50895",
+    "sourceUrl": "https://www.i-exceed.com/careers/sr-software-engineer-java/",
+    "applyUrl": "https://www.i-exceed.com/careers/sr-software-engineer-java/",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Hibernate",
+      "Microservices",
+      "spring boot",
+      "core java",
+      "J2ee"
+    ],
+    "postingDate": "2025-03-17T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Hibernate, Microservices, spring boot, core java, J2ee",
+    "source": "iexceed",
+    "link": "https://www.i-exceed.com/careers/sr-software-engineer-java/",
+    "scrapedAt": "2026-08-01T05:40:54.592Z",
+    "companyCareerPage": "https://www.i-exceed.com/careers/",
+    "companyDomain": "i-exceed.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Sr. Software Engineer – Java",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-03-17T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:40:54.592Z",
+    "skillIds": [
+      "spring-boot",
+      "java"
+    ],
+    "requiredSkillIds": [
+      "spring-boot",
+      "java"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "spring boot"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Hibernate, Microservices, spring boot, core java, J2ee",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:40:54.594Z"
+  },
+  {
+    "title": "Sr. Software Engineer – JS",
+    "company": "i-exceed technology solutions",
+    "department": "Sr. Software Engineer – JS",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "50894",
+    "requisitionId": "50894",
+    "sourceUrl": "https://www.i-exceed.com/careers/sr-software-engineer-js/",
+    "applyUrl": "https://www.i-exceed.com/careers/sr-software-engineer-js/",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "JavaScript",
+      "JQuery",
+      "HTML",
+      "CSS",
+      "Typescript"
+    ],
+    "postingDate": "2025-03-17T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Java Script, JQuery, HTML, CSS, Typescript",
+    "source": "iexceed",
+    "link": "https://www.i-exceed.com/careers/sr-software-engineer-js/",
+    "scrapedAt": "2026-08-01T05:40:54.592Z",
+    "companyCareerPage": "https://www.i-exceed.com/careers/",
+    "companyDomain": "i-exceed.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Sr. Software Engineer – JS",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-03-17T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:40:54.592Z",
+    "skillIds": [
+      "javascript",
+      "typescript",
+      "java"
+    ],
+    "requiredSkillIds": [
+      "javascript",
+      "typescript"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "JavaScript"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Typescript"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Java Script, JQuery, HTML, CSS, Typescript",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:40:54.596Z"
+  },
+  {
+    "title": "Sr. Software Engineer – Android",
+    "company": "i-exceed technology solutions",
+    "department": "Sr. Software Engineer – Android",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "50892",
+    "requisitionId": "50892",
+    "sourceUrl": "https://www.i-exceed.com/careers/sr-software-engineer-android/",
+    "applyUrl": "https://www.i-exceed.com/careers/sr-software-engineer-android/",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Android",
+      "Kotlin",
+      "MVVM",
+      "MVC",
+      "Java Technical Lead"
+    ],
+    "postingDate": "2025-03-17T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Android, Kotlin, MVVM, MVC, Java Technical Lead",
+    "source": "iexceed",
+    "link": "https://www.i-exceed.com/careers/sr-software-engineer-android/",
+    "scrapedAt": "2026-08-01T05:40:54.592Z",
+    "companyCareerPage": "https://www.i-exceed.com/careers/",
+    "companyDomain": "i-exceed.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Sr. Software Engineer – Android",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2025-03-17T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:40:54.592Z",
+    "skillIds": [
+      "java"
+    ],
+    "requiredSkillIds": [
+      "java"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Android, Kotlin, MVVM, MVC, Java Technical Lead",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:40:54.597Z"
+  },
+  {
+    "title": "Technical Project Manager – Java",
+    "company": "i-exceed technology solutions",
+    "department": "Technical Project Manager – Java",
+    "location": "Bangalore, India; NCR, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "49639",
+    "requisitionId": "49639",
+    "sourceUrl": "https://www.i-exceed.com/careers/technical-project-manager-java-2/",
+    "applyUrl": "https://www.i-exceed.com/careers/technical-project-manager-java-2/",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Microservices",
+      "spring boot",
+      "core java",
+      "J2ee"
+    ],
+    "postingDate": "2024-11-20T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Hands on experience in architecture, design and implementation of Java /J2EE based projects",
+    "source": "iexceed",
+    "link": "https://www.i-exceed.com/careers/technical-project-manager-java-2/",
+    "scrapedAt": "2026-08-01T05:40:54.592Z",
+    "companyCareerPage": "https://www.i-exceed.com/careers/",
+    "companyDomain": "i-exceed.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Technical Project Manager – Java",
+    "normalizedTitle": "Technical Project Manager – Java",
+    "jobCategory": "Technical Project Manager – Java",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2024-11-20T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:40:54.592Z",
+    "skillIds": [
+      "spring-boot",
+      "java"
+    ],
+    "requiredSkillIds": [
+      "spring-boot",
+      "java"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "spring boot"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Hands on experience in architecture, design and implementation of Java /J2EE based projects",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Product & Program Management",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:40:54.600Z"
+  },
+  {
+    "title": "Lead – JS",
+    "company": "i-exceed technology solutions",
+    "department": "Lead – JS",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "41241",
+    "requisitionId": "41241",
+    "sourceUrl": "https://www.i-exceed.com/careers/lead-jsfy24in115fy24in115/",
+    "applyUrl": "https://www.i-exceed.com/careers/lead-jsfy24in115fy24in115/",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AJAX",
+      "JavaScript",
+      "JQuery",
+      "HTML",
+      "CSS"
+    ],
+    "postingDate": "2024-03-26T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Take the lead in software development with i-exceed as a Lead Software Engineer specializing in Java Script.",
+    "source": "iexceed",
+    "link": "https://www.i-exceed.com/careers/lead-jsfy24in115fy24in115/",
+    "scrapedAt": "2026-08-01T05:40:54.592Z",
+    "companyCareerPage": "https://www.i-exceed.com/careers/",
+    "companyDomain": "i-exceed.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Lead – JS",
+    "normalizedTitle": "Lead – JS",
+    "jobCategory": "Lead – JS",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2024-03-26T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:40:54.592Z",
+    "skillIds": [
+      "javascript",
+      "java"
+    ],
+    "requiredSkillIds": [
+      "javascript"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "JavaScript"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Take the lead in software development with i-exceed as a Lead Software Engineer specializing in Java Script.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:40:54.601Z"
+  },
+  {
+    "title": "Lead – Java",
+    "company": "i-exceed technology solutions",
+    "department": "Lead – Java",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "41238",
+    "requisitionId": "41238",
+    "sourceUrl": "https://www.i-exceed.com/careers/lead-javafy24in120/",
+    "applyUrl": "https://www.i-exceed.com/careers/lead-javafy24in120/",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Microservices",
+      "Java Technical Lead",
+      "core java",
+      "J2ee",
+      "Banking"
+    ],
+    "postingDate": "2024-03-26T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Lead transformative Java projects as a Lead Software Engineer. Oversee development, mentor teams, and contribute to cutting-edge solutions.",
+    "source": "iexceed",
+    "link": "https://www.i-exceed.com/careers/lead-javafy24in120/",
+    "scrapedAt": "2026-08-01T05:40:54.592Z",
+    "companyCareerPage": "https://www.i-exceed.com/careers/",
+    "companyDomain": "i-exceed.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Lead – Java",
+    "normalizedTitle": "Lead – Java",
+    "jobCategory": "Lead – Java",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2024-03-26T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:40:54.592Z",
+    "skillIds": [
+      "java"
+    ],
+    "requiredSkillIds": [
+      "java"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Lead transformative Java projects as a Lead Software Engineer. Oversee development, mentor teams, and contribute to cutting-edge solutions.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:40:54.602Z"
+  }
+]

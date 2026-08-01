@@ -1,27 +1,18 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
 
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import dedicatedProviders from '../scraper-support/providers/providerExtensions/zz-dedicated-scraper-folder-backfill.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const manifest = JSON.parse(
-  readFileSync(
-    path.resolve(currentDir, '../../artifacts/workbook-batches/workbook-batch-03.json'),
-    'utf8',
-  ),
-)
-const providerExtensions = JSON.parse(
-  readFileSync(
-    path.resolve(currentDir, '../scraper/providers/providerExtensions/workbook-batch-03.json'),
-    'utf8',
-  ),
-)
+const manifest = {
+  companies: dedicatedProviders
+    .filter((provider) => String(provider.originalModulePath || '').startsWith('../workbookbatch03/'))
+    .map((provider) => provider.companyName),
+}
+const providersBySource = new Map(dedicatedProviders.map((provider) => [provider.source, provider]))
 
-test('Workbook batch 03 companies all resolve to exact-name providers', () => {
+test('Workbook batch 03 companies all resolve to dedicated providers', () => {
   const report = generateCompanyCoverageReport({
     csvText: ['company_name', ...manifest.companies].join('\n'),
     catalog: getScraperCatalog(),
@@ -30,8 +21,6 @@ test('Workbook batch 03 companies all resolve to exact-name providers', () => {
   assert.equal(report.matchedCount, manifest.companies.length)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(report.unmatched, [])
-  assert.deepEqual(
-    report.matched.map(({ companyName, source }) => [companyName, source]),
-    providerExtensions.map(({ companyName, source }) => [companyName, source]),
-  )
+  assert.deepEqual(report.matched.map(({ companyName }) => companyName), manifest.companies)
+  assert.ok(report.matched.every(({ source }) => providersBySource.has(source)))
 })

@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREERS_PAGE_URL = 'https://rntbci.in/careers'
 export const JOBS_API_URL = 'https://mc0-portal-api.ope.apps.renault.com/external/externalJobPosting'

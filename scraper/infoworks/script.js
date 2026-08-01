@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
+import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 
 import { INFOWORKS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -144,7 +144,7 @@ export const createInfoworksScraper = () => ({
 export const run = async (options = {}) => createInfoworksScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,4 +1,4 @@
-import { normalizeCity } from "../../scraper/utils/cityNormalizer.js";
+import { normalizeCity } from "../../scraper-support/utils/cityNormalizer.js";
 
 const normalizeWhitespace = (value) => String(value ?? "")
   .normalize("NFKD")

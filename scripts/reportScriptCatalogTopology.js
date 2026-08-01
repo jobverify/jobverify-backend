@@ -9,14 +9,19 @@ import {
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
 const repoDir = path.resolve(backendDir, '..')
 const scraperDir = path.join(backendDir, 'scraper')
 const providersDir = path.join(scraperDir, 'providers')
-const providerExtensionsDir = path.join(providersDir, 'providerExtensions')
+const providerExtensionsDir = path.join(
+  backendDir,
+  'scraper-support',
+  'providers',
+  'providerExtensions',
+)
 const reportPath = path.join(backendDir, 'company_coverage_report.json')
 const outputDir = path.join(backendDir, 'artifacts', 'scraper-catalog')
 const SENTINEL_MODULE_BASENAME = 'failClosedSentinel.js'
@@ -167,7 +172,7 @@ export const writeCatalogTopologyArtifacts = ({
 
   const report = buildCatalogTopologyReport()
   const summaryPath = path.join(outputDirectory, 'summary.json')
-  const realMappingsPath = path.join(outputDirectory, 'real-workbookbatch06-mappings.json')
+  const realMappingsPath = path.join(outputDirectory, 'real-dedicated-script-mappings.json')
   const sentinelMappingsPath = path.join(outputDirectory, 'sentinel-placeholder-mappings.json')
 
   writeFileSync(summaryPath, `${JSON.stringify(report.summary, null, 2)}\n`)

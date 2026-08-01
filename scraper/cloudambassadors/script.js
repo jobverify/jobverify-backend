@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREERS_URL = 'https://cloudambassadors.com/careers'
 export const APPLICATION_URL = 'https://cloudambassadors.com/careers/apply'

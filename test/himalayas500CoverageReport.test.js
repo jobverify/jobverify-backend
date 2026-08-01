@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
-import { buildScrapers } from '../scraper/providers/index.js'
+import { buildScrapers } from '../scraper-support/providers/index.js'
 
 const artifactPath = path.join(
   import.meta.dirname,

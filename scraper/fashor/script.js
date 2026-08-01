@@ -1,29 +1,27 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const SOURCE = 'fashor'
-export const COMPANY_NAME = 'Fashor'
+export const SOURCE = "fashor"
+export const COMPANY = "Fashor"
+export const CAREERS_URL = null
+export const DISPOSITION = "workbook-exact-name-sentinel"
+export const VERIFIED_ON = "2026-07-25"
+export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 03 exact-name sentinel for Fashor added on Saturday, July 25, 2026. No trustworthy public careers surface has yet been verified for the exact Fashor company name, so this provider intentionally returns zero jobs until that changes."
 
-export const createBatchSentinelScraper = () => ({
-  async run() {
-    // Workbook coverage sentinel: never fabricate jobs for exact-name matches.
-    return []
-  },
-})
+export const run = async () => createFailClosedSentinelScraper().run()
 
-export const run = async (options = {}) => createBatchSentinelScraper().run(options)
-
-const isDirectExecution = process.argv[1]
-  ?.replaceAll('\\', '/')
-  .endsWith('/scraper/fashor/script.js')
-
-if (isDirectExecution || process.argv.includes('--dry-run')) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  else await saveToDB(jobs, SOURCE)
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
 }

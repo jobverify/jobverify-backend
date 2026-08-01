@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../shared/browserFetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { ARKA_FINCAP_CATALOG } from './catalog.js'
 
@@ -318,7 +318,7 @@ export const createArkaFincapScraper = ({
 export const run = async (options = {}) => createArkaFincapScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

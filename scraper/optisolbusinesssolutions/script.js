@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { OPTISOL_BUSINESS_SOLUTIONS_CATALOG } from './catalog.js'
 

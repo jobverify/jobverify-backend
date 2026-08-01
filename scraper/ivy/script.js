@@ -1,5 +1,5 @@
-import { createBrowserFetchSession } from '../shared/browserFetch.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'ivy'
 export const COMPANY = 'ivy'

@@ -17,10 +17,10 @@ import {
   ensureScrapersSeeded,
   markPipelineRunStarted,
   PIPELINE_SOURCE,
-} from "../../scraper/utils/scraperPersistence.js";
-import { getScraperCatalog } from "../../scraper/providers/index.js";
-import { getDiskBackedScraperSources } from "../../scraper/providers/sourceInventory.js";
-import { classifyScraperError } from "../../scraper/utils/failureClassification.js";
+} from "../../scraper-support/utils/scraperPersistence.js";
+import { getScraperCatalog } from "../../scraper-support/providers/index.js";
+import { getDiskBackedScraperSources } from "../../scraper-support/providers/sourceInventory.js";
+import { classifyScraperError } from "../../scraper-support/utils/failureClassification.js";
 import { refreshJobDatasetSummary } from "../services/jobDatasetSummaryService.js";
 
 const MAX_REGEX_FILTER_LENGTH = 80;

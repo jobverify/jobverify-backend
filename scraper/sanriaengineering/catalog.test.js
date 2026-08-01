@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('SANRIA Engineering is registered against its verified first-party careers page', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'sanriaengineering')

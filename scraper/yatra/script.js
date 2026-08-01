@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { filterIndiaJobs } from '../utils/indiaLocationFilter.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { filterIndiaJobs } from '../../scraper-support/utils/indiaLocationFilter.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'yatra'
 export const COMPANY = 'Yatra'
@@ -156,7 +156,7 @@ export const run = async ({ renderPage = renderYatraJobPortal, now } = {}) => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
   if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs.json'))
   else await saveToDB(jobs, SOURCE)

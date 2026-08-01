@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { saveToDB, saveToFile } from '../utils/saveToDB.js'
+import { saveToDB, saveToFile } from '../../scraper-support/utils/saveToDB.js'
 
 export const SOURCE = 'easemytrip'
 export const COMPANY = 'EaseMyTrip'

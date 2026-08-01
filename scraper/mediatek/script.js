@@ -1,8 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { filterIndiaJobs } from '../utils/indiaLocationFilter.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { filterIndiaJobs } from '../../scraper-support/utils/indiaLocationFilter.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const BASE_URL = 'https://careers.mediatek.com'
@@ -154,7 +154,7 @@ export const createMediatekScraper = ({ maxJobs = 100 } = {}) => ({
 export const run = async (options = {}) => createMediatekScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
   console.log(`Total MediaTek India jobs scraped: ${jobs.length}`)

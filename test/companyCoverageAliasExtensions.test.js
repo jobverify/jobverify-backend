@@ -4,8 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport, getCompanyAliasMap } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { generateCompanyCoverageReport, getCompanyAliasMap } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 test('getCompanyAliasMap merges base aliases with sorted extension files', () => {
   const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-company-aliases-'))

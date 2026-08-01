@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import {
   createOptimizedPage as defaultCreateOptimizedPage,
   launchBrowser as defaultLaunchBrowser,
-} from '../utils/browser.js'
+} from '../../scraper-support/utils/browser.js'
 
 import REPHRASE_AI_CATALOG from './catalog.js'
 
@@ -124,7 +124,7 @@ export const createRephraseAiScraper = () => ({
 export const run = async (options = {}) => createRephraseAiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

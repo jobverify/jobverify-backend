@@ -2,9 +2,9 @@ import { readdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCompanyName } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
-import { getDiskBackedScraperSources } from '../scraper/providers/sourceInventory.js'
+import { normalizeCompanyName } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
+import { getDiskBackedScraperSources } from '../scraper-support/providers/sourceInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')

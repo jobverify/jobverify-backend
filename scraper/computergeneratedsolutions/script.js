@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { COMPUTER_GENERATED_SOLUTIONS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -105,7 +105,7 @@ export const createComputerGeneratedSolutionsScraper = () => ({
 export const run = async (options = {}) => createComputerGeneratedSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 
   if (process.argv.includes('--dry-run')) {

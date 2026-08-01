@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'softprodigysystemsolutions'
 export const COMPANY = 'SoftProdigy System Solutions'

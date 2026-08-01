@@ -18,7 +18,7 @@ export const createAgNextScraper = () => ({
 export const run = async (options = {}) => createAgNextScraper().run(options)
 
 if (process.argv[1]?.replaceAll('\\', '/').endsWith('/scraper/agnext/script.js')) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 
   if (process.argv.includes('--dry-run')) {

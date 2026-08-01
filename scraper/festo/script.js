@@ -122,7 +122,7 @@ export const createFestoScraper = () => ({
 export const run = async () => createFestoScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Festo scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

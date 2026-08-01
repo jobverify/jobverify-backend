@@ -2,9 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { filterIndiaJobs } from "../../scraper/utils/indiaLocationFilter.js";
-import { normalizeScrapedJob } from "../../scraper/utils/normalizeScrapedJob.js";
-import { generateFingerprint } from "../../scraper/utils/saveToDB.js";
+import { filterIndiaJobs } from "../../scraper-support/utils/indiaLocationFilter.js";
+import { normalizeScrapedJob } from "../../scraper-support/utils/normalizeScrapedJob.js";
+import { generateFingerprint } from "../../scraper-support/utils/saveToDB.js";
 import {
   buildJobPostedAtCutoff,
   normalizeLifecycleDate,

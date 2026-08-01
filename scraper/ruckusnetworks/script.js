@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const BASE_URL = 'https://jobs.vistancenetworks.com/'
 export const CAREER_PAGE_URL = new URL('go/RUCKUS-Jobs/9892600/', BASE_URL).toString()

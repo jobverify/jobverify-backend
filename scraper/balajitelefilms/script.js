@@ -1,4 +1,4 @@
-import { createBrowserFetchSession } from '../shared/browserFetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 export const SOURCE = 'balajitelefilms'
 export const COMPANY = 'Balaji Telefilms'

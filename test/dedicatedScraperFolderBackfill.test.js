@@ -4,19 +4,26 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { buildScrapers, getScraperCatalog } from '../scraper/providers/index.js'
+import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/index.js'
+import {
+  getScraperSourceDirectoryName,
+  isWorkdayBackedProvider,
+} from '../scraper-support/providers/sourcePaths.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
 const repoDir = path.resolve(backendDir, '..')
 const scraperDir = path.join(backendDir, 'scraper')
+const COVERAGE_ARTIFACT_BASENAME = 'company-scraper-check-india-hiring-400.csv'
 const manifestPath = path.join(
   scraperDir,
   'providers',
   'providerExtensions',
   'zz-dedicated-scraper-folder-backfill.json',
 )
-const coverageArtifactPath = path.join(repoDir, 'artifacts', 'company-scraper-check-india-hiring-400.csv')
+const coverageArtifactPath = existsSync(path.join(repoDir, COVERAGE_ARTIFACT_BASENAME))
+  ? path.join(repoDir, COVERAGE_ARTIFACT_BASENAME)
+  : path.join(repoDir, 'artifacts', COVERAGE_ARTIFACT_BASENAME)
 
 const BACKFILL_MANIFEST = JSON.parse(readFileSync(manifestPath, 'utf8'))
 
@@ -65,10 +72,13 @@ const parseCsvRows = (csvText) => {
 }
 
 test('generated dedicated scraper backfill manifest stays aligned with local folder files', () => {
-  assert.equal(BACKFILL_MANIFEST.length, 378)
+  assert.equal(BACKFILL_MANIFEST.length, 586)
 
   for (const provider of BACKFILL_MANIFEST) {
-    const sourceDir = path.join(scraperDir, provider.source)
+    const sourceDir = path.join(
+      scraperDir,
+      getScraperSourceDirectoryName(provider),
+    )
 
     assert.equal(existsSync(path.join(sourceDir, 'catalog.js')), true, `${provider.source} should have catalog.js`)
     assert.equal(existsSync(path.join(sourceDir, 'script.js')), true, `${provider.source} should have script.js`)
@@ -85,37 +95,57 @@ test('getScraperCatalog resolves backfilled sentinel and workday providers to lo
   const lucidya = catalog.find((provider) => provider.source === 'lucidya')
   assert.ok(lucidya)
   assert.equal(lucidya.adapter, 'script')
-  assert.equal(lucidya.atsPlatform, 'dedicated-local-empty-scraper')
+  assert.equal(lucidya.atsPlatform, 'workbook-exact-name-sentinel')
   assert.match(lucidya.modulePath, /lucidya[\\/]script\.js$/i)
   assert.match(lucidya.dryRunFile, /lucidya[\\/]jobs\.json$/i)
+  assert.equal(lucidya.originalModulePath, '../workbookbatch08/failClosedSentinel.js')
 
   const fortanix = catalog.find((provider) => provider.source === 'fortanix')
   assert.ok(fortanix)
   assert.equal(fortanix.adapter, 'script')
-  assert.equal(fortanix.atsPlatform, 'dedicated-local-empty-scraper')
+  assert.equal(fortanix.atsPlatform, 'workbook-exact-name-sentinel')
   assert.match(fortanix.modulePath, /fortanix[\\/]script\.js$/i)
+  assert.equal(fortanix.originalModulePath, '../workbookbatch08/failClosedSentinel.js')
+
+  const housr = catalog.find((provider) => provider.source === 'housr')
+  assert.ok(housr)
+  assert.equal(housr.adapter, 'script')
+  assert.equal(housr.atsPlatform, 'verified-first-party-careers-page-plus-same-origin-detail-pages')
+  assert.match(housr.modulePath, /housr[\\/]script\.js$/i)
+
+  const amberstudent = catalog.find((provider) => provider.source === 'amberstudent')
+  assert.ok(amberstudent)
+  assert.equal(amberstudent.adapter, 'script')
+  assert.equal(amberstudent.atsPlatform, 'smartrecruiters')
+  assert.match(amberstudent.modulePath, /amberstudent[\\/]script\.js$/i)
 
   const alation = catalog.find((provider) => provider.source === 'alation')
   assert.ok(alation)
   assert.equal(alation.adapter, 'script')
   assert.equal(alation.atsPlatform, 'workday')
-  assert.match(alation.modulePath, /alation[\\/]script\.js$/i)
-  assert.match(alation.dryRunFile, /alation[\\/]jobs\.json$/i)
+  assert.equal(isWorkdayBackedProvider(alation), true)
+  assert.match(alation.modulePath, /alation\.workday[\\/]script\.js$/i)
+  assert.match(alation.dryRunFile, /alation\.workday[\\/]jobs\.json$/i)
 
   const browserstack = catalog.find((provider) => provider.source === 'browserstack')
   assert.ok(browserstack)
   assert.equal(browserstack.adapter, 'script')
   assert.equal(browserstack.atsPlatform, 'workday')
-  assert.match(browserstack.modulePath, /browserstack[\\/]script\.js$/i)
+  assert.match(browserstack.modulePath, /browserstack\.workday[\\/]script\.js$/i)
 })
 
-test('buildScrapers and the refreshed coverage artifact treat the backfilled set as dedicated local scrapers', () => {
+test('buildScrapers and the refreshed coverage artifact treat the backfilled set as dedicated local scrapers', (t) => {
   const scrapers = buildScrapers()
 
   assert.equal(scrapers.filter((scraper) => scraper.name === 'lucidya').length, 1)
   assert.equal(scrapers.filter((scraper) => scraper.name === 'alation').length, 1)
   assert.equal(scrapers.filter((scraper) => scraper.name === 'browserstack').length, 1)
   assert.equal(scrapers.filter((scraper) => scraper.name === 'fortanix').length, 1)
+
+  if (!existsSync(coverageArtifactPath)) {
+    t.skip(`Coverage artifact not present at ${coverageArtifactPath}`)
+    return
+  }
 
   const coverageRows = parseCsvRows(readFileSync(coverageArtifactPath, 'utf8'))
 

@@ -4,8 +4,8 @@ import test from 'node:test'
 import {
   buildScrapers,
   getScraperCatalog,
-} from '../providers/index.js'
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
+} from '../../scraper-support/providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
 
 test('getScraperCatalog includes Ruckus Networks as a SuccessFactors-backed branded script provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'ruckusnetworks')

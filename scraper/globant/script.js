@@ -1,5 +1,5 @@
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { CANONICAL_CITIES } from '../utils/cities.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 
 const API_URL = 'https://career.globant.com/api/sap/job-requisition-v1'
 const TARGET_URL = 'https://career.globant.com/job/Pune-Senior-Node_js-Developer-India-Maha-411057/571978017'

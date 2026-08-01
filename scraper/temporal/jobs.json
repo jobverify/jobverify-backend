@@ -1,0 +1,117 @@
+[
+  {
+    "title": "Staff Solutions Architect, Banking - India",
+    "company": "Temporal",
+    "department": "Solutions Architecture",
+    "location": "India",
+    "city": "India",
+    "country": "India",
+    "jobId": "5182398007",
+    "requisitionId": "963",
+    "sourceUrl": "https://job-boards.greenhouse.io/temporaltechnologies/jobs/5182398007",
+    "applyUrl": "https://job-boards.greenhouse.io/temporaltechnologies/jobs/5182398007",
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-07-13T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "About Us Temporal is an open source programming model that can simplify code, make applications more reliable, and help developers focus on the important things like delivering features faster. We are on a mission to be the reliable foundation of every developer’s toolbox, and are building the team that will make that happen. &nbsp; Our values guide us —they are present in how we show up, make decisions, and work together to make an impact. We’re curious, driven, collaborative, genuine and humble. &nbsp; Temporal is growing and we are looking for those who share our values, challenge 'standard' thinking, and want to influence our future. If you have a passion for improving the developer experience, building world-class open-source software and communities, and want to be a part of our amazing team, we'd love to hear from you! &nbsp; The Staff Solutions Architect is Temporal's primary customer-facing technical leader within the Banking team, &nbsp;with a focus on the&nbsp; APJ (India) region. In this crucial role, you’ll work directly with prospects and customers, guiding them in understanding the suitability of their applications for Temporal’s platform and showcasing the technical advantages of our cloud service. Your contribution is vital in positioning Temporal against alternative technologies, helping customer engineering teams expand production applications using Temporal, and owning the technical relationship with key decision-makers. Your role is integral to our success. What You’ll Do: Collaborate with prospects to determine if their applications fit Temporal’s platform well. Educate customers and prospects on the technical benefits and limitations of Temporal’s platform and cloud service. Position Temporal as a leading solution against competing technologies and architectural patterns. Foster an environment within customer engineering organizations to increase the adoption and expansion of Temporal in production environments. Partner closely with Account Executives to develop and execute comprehensive account plans. Manage and nurture relationships with technical decision-makers within customer organizations, ensuring they fully leverage Temporal’s capabilities. What You’ll Bring: Reside within Bangalore, India . Exceptional technical communication skills, including presenting, whiteboarding, and writing. Deep understanding of distributed system technologies, design principles, and best practices. Proficiency in building application prototypes and providing design, development, build, and deployment guidance using one or more of Temporal’s supported languages: Java, Golang, Type Script, Python, C# or PHP. Firm grasp of operational considerations in production environments, such as security, reliability, performance, cost management, and operations. Ability to provide insightful advice on architectural topics, including application patterns and platform architectures. Experience with at least one major cloud provider and familiarity with commonly used application development and production services. Serve as a strategic technical advisor to Sales Account Executives, assisting with scoping and sizing opportunities and offering guidance on technical fit and challenges. Nice to Haves Prior experience with Fin Tech and/or Fin Serve. Likes to learn new technical topics, often directly from Engineering Can come up to speed without any sales-specific training (i.e., from docs, videos &amp; conversations) Partners well with engineers working at customer organizations Compensation The estimated pay range for this role is &nbsp; ₹8,000,000\n- ₹10,000,000 &nbsp; This is a base salary and variable role with a 70/30 split. &nbsp; Compensation ranges reflect salary and commission compensation (when applicable) across several geographic markets. Employment offers carefully consider multiple factors, including prior experience, knowledge, expertise, skillset, market location, and job level assessed during the interview process. &nbsp; Employee benefits and perks below are for full-time employees, part-time or temporary positions are excluded.&nbsp; &nbsp; U.S. Benefits&nbsp; Unlimited PTO, 12 Holidays + 2 Floating Holidays 100% Premiums Coverage for Medical, Dental, and Vision AD&amp;D, LT &amp; ST Disability, and Life Insurance (Standard &amp; Supplemental Available) Empower 401K Plan Additional Perks for Learning &amp; Development, Lifestyle Spending, Home Office Setup, Professional Memberships, WFH Meals, Internet Stipend and more! International Benefits Paid Time Off (PTO) and Benefits outside the United States vary by country, and are issued in partnership with Remote.com .&nbsp; Additionally, Temporal offers perks to all international employees for learning &amp; career development, a lifestyle spending account, home office setup, professional memberships, work-from-home meals, and access to the Calm app for mental wellness. Travel Temporal is a globally distributed, collaborative team that values opportunities for in-person connection. Occasional travel may be required for company events, team offsites, and other meaningful moments that bring us together. &nbsp; Temporal Technologies is an Equal Opportunity Employer. Temporal Technologies does not discriminate on the basis of race, religion, color, sex, gender identity, sexual orientation, age, non-disqualifying physical or mental disability, national origin, veteran status, or any other basis covered by appropriate law. All employment is decided on the basis of qualifications, merit, and business need. We embrace and celebrate differences and diversity. &nbsp; Temporal is committed to providing access, equal opportunity, and reasonable accommodation for individuals with disabilities in employment, its services, programs, and activities. If you need to request a reasonable accommodation, please let your Recruiter know so we can assist. &nbsp; We are not working with external recruitment agencies, thanks.",
+    "source": "temporal",
+    "link": "https://job-boards.greenhouse.io/temporaltechnologies/jobs/5182398007",
+    "scrapedAt": "2026-08-01T05:45:07.654Z",
+    "companyCareerPage": "https://temporal.io/about",
+    "companyDomain": "temporal.io",
+    "atsPlatform": "greenhouse-board-api",
+    "originalTitle": "Staff Solutions Architect, Banking - India",
+    "normalizedTitle": "Staff Solutions Architect, Banking - India",
+    "jobCategory": "Staff Solutions Architect, Banking - India",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-13T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T05:45:07.654Z",
+    "skillIds": [
+      "java",
+      "go",
+      "typescript",
+      "python"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "go",
+        "canonicalName": "Go",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Golang"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Type Script"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "About Us Temporal is an open source programming model that can simplify code, make applications more reliable, and help developers focus on the important things like delivering features faster. We are on a mission to be the reliable foundation of every developer’s toolbox, and are building the team that will make that happen. &nbsp; Our values guide us -they are present in how we show up, make decisions, and work together to make an impact. We’re curious, driven, collaborative, genuine and humble. &nbsp; Temporal is growing and we are looking for those who share our values, challenge 'standard' thinking, and want to influence our future. If you have a passion for improving the developer experience, building world-class open-source software and communities, and want to be a part of our amazing team, we'd love to hear from you! &nbsp; The Staff Solutions Architect is Temporal's primary customer-facing technical leader within the Banking team, &nbsp;with a focus on the&nbsp; APJ (India) region. In this crucial role, you’ll work directly with prospects and customers, guiding them in understanding the suitability of their applications for Temporal’s platform and showcasing the technical advantages of our cloud service. Your contribution is vital in positioning Temporal against alternative technologies, helping customer engineering teams expand production applications using Temporal, and owning the technical relationship with key decision-makers. Your role is integral to our success. What You’ll Do: Collaborate with prospects to determine if their applications fit Temporal’s platform well. Educate customers and prospects on the technical benefits and limitations of Temporal’s platform and cloud service. Position Temporal as a leading solution against competing technologies and architectural patterns. Foster an environment within customer engineering organizations to increase the adoption and expansion of Temporal in production environments. Partner closely with Account Executives to develop and execute comprehensive account plans. Manage and nurture relationships with technical decision-makers within customer organizations, ensuring they fully leverage Temporal’s capabilities. What You’ll Bring: Reside within Bangalore, India . Exceptional technical communication skills, including presenting, whiteboarding, and writing. Deep understanding of distributed system technologies, design principles, and best practices. Proficiency in building application prototypes and providing design, development, build, and deployment guidance using one or more of Temporal’s supported languages: Java, Golang, Type Script, Python, C# or PHP. Firm grasp of operational considerations in production environments, such as security, reliability, performance, cost management, and operations. Ability to provide insightful advice on architectural topics, including application patterns and platform architectures. Experience with at least one major cloud provider and familiarity with commonly used application development and production services. Serve as a strategic technical advisor to Sales Account Executives, assisting with scoping and sizing opportunities and offering guidance on technical fit and challenges. Nice to Haves Prior experience with Fin Tech and/or Fin Serve. Likes to learn new technical topics, often directly from Engineering Can come up to speed without any sales-specific training (i.e., from docs, videos &amp; conversations) Partners well with engineers working at customer organizations Compensation The estimated pay range for this role is &nbsp; ₹8,000,000 - ₹10,000,000 &nbsp; This is a base salary and variable role with a 70/30 split. &nbsp; Compensation ranges reflect salary and commission compensation (when applicable) across several geographic markets. Employment offers carefully consider multiple factors, including prior experience, knowledge, expertise, skillset, market location, and job level assessed during the interview process. &nbsp; Employee benefits and perks below are for full-time employees, part-time or temporary positions are excluded.&nbsp; &nbsp; U.S. Benefits&nbsp; Unlimited PTO, 12 Holidays + 2 Floating Holidays 100% Premiums Coverage for Medical, Dental, and Vision AD&amp;D, LT &amp; ST Disability, and Life Insurance (Standard &amp; Supplemental Available) Empower 401K Plan Additional Perks for Learning &amp; Development, Lifestyle Spending, Home Office Setup, Professional Memberships, WFH Meals, Internet Stipend and more! International Benefits Paid Time Off (PTO) and Benefits outside the United States vary by country, and are issued in partnership with Remote.com .&nbsp; Additionally, Temporal offers perks to all international employees for learning &amp; career development, a lifestyle spending account, home office setup, professional memberships, work-from-home meals, and access to the Calm app for mental wellness. Travel Temporal is a globally distributed, collaborative team that values opportunities for in-person connection. Occasional travel may be required for company events, team offsites, and other meaningful moments that bring us together. &nbsp; Temporal Technologies is an Equal Opportunity Employer. Temporal Technologies does not discriminate on the basis of race, religion, color, sex, gender identity, sexual orientation, age, non-disqualifying physical or mental disability, national origin, veteran status, or any other basis covered by appropriate law. All employment is decided on the basis of qualifications, merit, and business need. We embrace and celebrate differences and diversity. &nbsp; Temporal is committed to providing access, equal opportunity, and reasonable accommodation for individuals with disabilities in employment, its services, programs, and activities. If you need to request a reasonable accommodation, please let your Recruiter know so we can assist. &nbsp; We are not working with external recruitment agencies, thanks.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Staff",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T05:45:07.677Z"
+  }
+]

@@ -1,5 +1,5 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { createBrowserFetchSession } from '../shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 export const OPENINGS_URL = 'https://www.cafecoffeeday.com/careers/openings'
 export const APPLY_URL = 'https://www.cafecoffeeday.com/careers/apply-now'

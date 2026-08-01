@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 
 const officialHomepageHtml = `
 <!doctype html>

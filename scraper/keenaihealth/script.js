@@ -1,0 +1,27 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+export const SOURCE = "keenaihealth"
+export const COMPANY = "Keenai Health"
+export const CAREERS_URL = null
+export const DISPOSITION = "workbook-exact-name-sentinel"
+export const VERIFIED_ON = "2026-07-25"
+export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 03 exact-name sentinel for Keenai Health added on Saturday, July 25, 2026. No trustworthy public careers surface has yet been verified for the exact Keenai Health company name, so this provider intentionally returns zero jobs until that changes."
+
+export const run = async () => createFailClosedSentinelScraper().run()
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

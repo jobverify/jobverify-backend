@@ -38,7 +38,7 @@ removePath(path.join(repoRoot, "tmp"));
 removePath(path.join(repoRoot, "scraper", "archive"));
 
 removeDirectChildren(repoRoot, (entryName) => /^tmp-.*\.js$/i.test(entryName));
-removeDirectChildren(path.join(repoRoot, "scraper", "tests", "fixtures"), (entryName) =>
+removeDirectChildren(path.join(repoRoot, "scraper-support", "tests", "fixtures"), (entryName) =>
   /^tmp/i.test(entryName)
 );
 

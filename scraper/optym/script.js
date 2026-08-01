@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const HOMEPAGE_URL = 'https://www.optym.com/'
 export const CAREERS_URL = 'https://www.optym.com/careers'

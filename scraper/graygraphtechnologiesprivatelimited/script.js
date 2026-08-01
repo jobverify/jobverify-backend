@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'graygraphtechnologiesprivatelimited'
 export const COMPANY = 'Graygraph Technologies Private Limited'

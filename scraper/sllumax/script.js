@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const COMPANY = 'SL LUMAX'
 export const OFFICIAL_COMPANY_PAGE_URL = 'https://www.slworld.com/about_eng/grobal_02_11.php'

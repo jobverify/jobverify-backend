@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const LISTINGS_URL = 'https://www.pega.com/about/careers/job-listings'
 const BASE_URL = 'https://www.pega.com'

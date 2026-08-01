@@ -6,7 +6,7 @@ import Job from "../src/models/Job.js";
 import { extractJobFilterSignals } from "../src/utils/jobFilterSignals.js";
 import { buildJobSearchKeys } from "../src/utils/jobSearchKeys.js";
 import { buildJobDerivedFields } from "../src/utils/jobDerivedFields.js";
-import { inferMissingExperienceRequired } from "../scraper/utils/normalizeScrapedJob.js";
+import { inferMissingExperienceRequired } from "../scraper-support/utils/normalizeScrapedJob.js";
 
 dotenv.config();
 

@@ -22,7 +22,7 @@ const USER_AGENT =
 let browserUtilsPromise
 
 const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../utils/browser.js')
+  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
   return browserUtilsPromise
 }
 
@@ -174,7 +174,7 @@ export const createMadStreetDenScraper = () => ({
 export const run = async (options = {}) => createMadStreetDenScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

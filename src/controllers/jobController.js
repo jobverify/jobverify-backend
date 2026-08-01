@@ -22,7 +22,7 @@ import {
   WORK_ARRANGEMENT_OPTIONS,
   resolveSkillTokens,
 } from "../constants/jobFilterTaxonomy.js";
-import { resolveJobType } from "../../scraper/utils/normalizeScrapedJob.js";
+import { resolveJobType } from "../../scraper-support/utils/normalizeScrapedJob.js";
 
 import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
@@ -33,7 +33,7 @@ import {
 import { normalizeJobSearchKey } from "../utils/jobSearchKeys.js";
 import { getValidIndiaCityForJob } from "../utils/publicJobLocationScope.js";
 import { normalizeLifecycleDate, startOfUtcDay } from "../utils/jobLifecycle.js";
-import { hasWorkdayOutageSignal } from "../../scraper/myworkday/engine.js";
+import { hasWorkdayOutageSignal } from "../../scraper-support/myworkday/engine.js";
 import {
   SearchInputError,
   buildJobSearchRequest,

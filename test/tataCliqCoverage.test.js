@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../scraper/providers/index.js'
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/index.js'
 
 test('Tata CLiQ resolves to its exact-name first-party provider', () => {
   const report = generateCompanyCoverageReport({

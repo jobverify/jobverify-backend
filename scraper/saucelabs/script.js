@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url'
 import {
   createOptimizedPage as defaultCreateOptimizedPage,
   launchBrowser as defaultLaunchBrowser,
-} from '../utils/browser.js'
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+} from '../../scraper-support/utils/browser.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SAUCE_LABS_CATALOG from './catalog.js'
 
@@ -267,7 +267,7 @@ export const createSauceLabsScraper = ({
 export const run = async (options = {}) => createSauceLabsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

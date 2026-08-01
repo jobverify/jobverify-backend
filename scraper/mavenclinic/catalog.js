@@ -3,21 +3,21 @@ import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const PROVIDER_METADATA = {
+const PROVIDER_METADATA = {
   "source": "mavenclinic",
   "companyName": "Maven Clinic",
   "adapter": "script",
   "modulePath": path.join(currentDir, 'script.js'),
   "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "companyCareerPage": null,
-  "companyDomain": null,
-  "atsPlatform": "dedicated-local-empty-scraper",
+  "atsPlatform": "workbook-exact-name-sentinel",
   "countryFilter": "India",
-  "paginationStrategy": "local-dedicated-empty-wrapper",
-  "extractionStrategy": "local-dedicated-empty-wrapper-return-empty",
+  "paginationStrategy": "none",
+  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
   "verifiedOn": "2026-07-29",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
   "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for Maven Clinic added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
   "backfillMode": "sentinel",
   "originalAdapter": "script",
@@ -27,3 +27,4 @@ export const PROVIDER_METADATA = {
 }
 
 export default PROVIDER_METADATA
+export { PROVIDER_METADATA }

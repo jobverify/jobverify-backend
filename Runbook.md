@@ -249,16 +249,23 @@ npm run scrape:parallel:dry
 ```
 
 ```powershell
+cd jobverify-backend
 $env:SCRAPER_CONCURRENCY = "10"
+$env:WORKDAY_DETAIL_FETCH_CONCURRENCY = "1"
+$env:NODE_OPTIONS = "--use-system-ca"
+$runStamp = Get-Date -Format "yyyyMMddTHHmmss"
+$logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
 ```
 
 Equivalent direct commands:
 
 ```powershell
-node scraper/runner.js
-node scraper/runner.js --dry-run
-node scraper/runner.js --parallel
-node scraper/runner.js --parallel --dry-run
+node --use-system-ca scraper/runner.js
+node --use-system-ca scraper/runner.js --dry-run
+node --use-system-ca scraper/runner.js --parallel
+node --use-system-ca scraper/runner.js --parallel --dry-run
 ```
 
 ### Run A Specific Source Or Resume An Interrupted Run
@@ -274,7 +281,7 @@ Remove-Item Env:SCRAPER_ONLY
 Resume at a source (including that source) after an interruption. The resume mode preserves jobs from sources before the restart point:
 
 ```powershell
-$env:SCRAPER_START_AT = "eko"
+$env:SCRAPER_START_AT = "lilt"
 npm run scrape:parallel
 Remove-Item Env:SCRAPER_START_AT
 ```
@@ -282,8 +289,12 @@ Remove-Item Env:SCRAPER_START_AT
 To continue strictly after a source that completed successfully, use `SCRAPER_START_AFTER` instead:
 
 ```powershell
+$env:SCRAPER_CONCURRENCY = "20"
 $env:SCRAPER_START_AFTER = "eko"
-npm run scrape:parallel
+$runStamp = Get-Date -Format "yyyyMMddTHHmmss"
+$logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline-batch2.log"
 Remove-Item Env:SCRAPER_START_AFTER
 ```
 
@@ -311,7 +322,7 @@ Dry-run output files are written under each scraper folder, for example:
 ```text
 scraper/google/jobs.json
 scraper/rubrik/jobs.json
-scraper/myworkday/<source>/jobs.json
+scraper-support/myworkday/<source>/jobs.json
 ```
 
 ## Admin Scraper Control

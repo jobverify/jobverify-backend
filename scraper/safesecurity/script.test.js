@@ -6,8 +6,8 @@ import {
   LEVER_ENDPOINT,
   createSafeSecurityScraper,
 } from './script.js'
-import { getScraperCatalog } from '../providers/index.js'
-import { getCompanyAliasMap } from '../providers/companyCoverage.js'
+import { getScraperCatalog } from '../../scraper-support/providers/index.js'
+import { getCompanyAliasMap } from '../../scraper-support/providers/companyCoverage.js'
 
 test('scrapes current Safe Security Lever postings for India', async () => {
   const requests = []

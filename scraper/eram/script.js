@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const HOMEPAGE_URL = 'https://eramholdings.com/'
 export const CAREER_PAGE_URL = 'https://eramholdings.com/career.php'

@@ -5,8 +5,8 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 
-import { getCompanyAliasMap } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { getCompanyAliasMap } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 import {
   buildCsvScrapeRunConfig,
   resolveScraperSourcesFromCsv,

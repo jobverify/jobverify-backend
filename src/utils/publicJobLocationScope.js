@@ -3,8 +3,8 @@
  * @module utils/publicJobLocationScope
  */
 
-import { normalizeCity } from "../../scraper/utils/cityNormalizer.js";
-import { CANONICAL_CITIES } from "../../scraper/utils/cities.js";
+import { normalizeCity } from "../../scraper-support/utils/cityNormalizer.js";
+import { CANONICAL_CITIES } from "../../scraper-support/utils/cities.js";
 import {
   buildJobPostedAtCutoff,
   normalizeLifecycleDate,

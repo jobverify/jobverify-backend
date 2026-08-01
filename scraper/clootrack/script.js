@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const COMPANY_NAME = 'Clootrack'
 export const CAREERS_URL = 'https://www.clootrack.com/careers'
