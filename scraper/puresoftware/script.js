@@ -1,57 +1,26 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'puresoftware'
 export const COMPANY = 'PureSoftware'
 export const OFFICIAL_BRAND = 'PureSoftware'
 export const CAREERS_URL = 'https://puresoftware.com/'
-export const DISPOSITION = 'verified-exact-name-public-company-surface'
+export const MOVED_URL = 'https://www.puresoftware.com/'
+export const HANDOFF_URL = 'https://www.happiestminds.com/'
+export const DISPOSITION = 'verified-first-party-placeholder-no-public-careers'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://puresoftware.com/ was the live PureSoftware exact-name public company surface reviewed for PureSoftware. Local repo evidence does not establish a stable enumerable public jobs contract, so this provider stays fail-closed until PureSoftware publishes a trustworthy exact-name public openings surface.'
+  'Verified on Tuesday, August 4, 2026 that runtime fetches to both https://puresoftware.com/ and https://www.puresoftware.com/ returned a Sucuri/Cloudproxy-served placeholder body of "TEST DIMPLE" instead of a trustworthy PureSoftware public jobs surface. The older static "We\'ve Moved" Happiest Minds handoff may still appear in other caches, but neither verified surface exposes an exact-company public jobs inventory for PureSoftware.'
 
-const REQUIRED_BRAND_PATTERN = /\bpuresoftware\b/i
-const TITLE_BRAND_PATTERN = /<title[^>]*>[\s\S]*?\bpuresoftware\b[\s\S]*?<\/title>/i
-const CANONICAL_SURFACE_PATTERN =
-  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/puresoftware\.com\/["'][^>]*>/i
-
-const LISTING_COPY_PATTERNS = [
-  /\bcurrent openings\b/i,
-  /\bopen positions\b/i,
-  /\bjob openings\b/i,
-  /\bopen roles\b/i,
-  /\bavailable positions\b/i,
-  /\bsearch jobs\b/i,
-  /\bview jobs\b/i,
-  /\bjoin our team\b/i,
-  /\bwe(?:'|’|â€™)re hiring\b/i,
-]
-
-const TRUSTED_ATS_HOST_PATTERNS = [
-  /boards\.greenhouse\.io/i,
-  /jobs\.lever\.co/i,
-  /jobs\.ashbyhq\.com/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs\.com/i,
-  /smartrecruiters\.com/i,
-  /jobvite\.com/i,
-  /workable\.com/i,
-  /bamboohr\.com/i,
-  /applytojob\.com/i,
-  /recruitee\.com/i,
-  /darwinbox/i,
-  /zohorecruit\.in/i,
-  /teamtailor\.com/i,
-  /keka\.com/i,
-]
-
-const SAME_ORIGIN_JOB_PATH_PATTERNS = [
-  /^\/careers?(?:\/|$)/i,
-  /^\/jobs?(?:\/|$)/i,
-  /^\/positions?(?:\/|$)/i,
-  /^\/roles?(?:\/|$)/i,
-  /^\/openings?(?:\/|$)/i,
-  /^\/join-us(?:\/|$)/i,
-  /^\/work-with-us(?:\/|$)/i,
-  /^\/hiring(?:\/|$)/i,
-  /^\/apply(?:\/|$)/i,
-]
+const MOVED_TITLE_PATTERN =
+  /<title[^>]*>\s*We(?:'|\u2019|&#8217;|&rsquo;)ve Moved\s*<\/title>/i
+const META_REFRESH_PATTERN =
+  /<meta\b[^>]+http-equiv=["']refresh["'][^>]+content=["'][^"']*url=https:\/\/www\.happiestminds\.com\/["'][^>]*>/i
+const SCRIPT_REDIRECT_PATTERN =
+  /window\.location\.href\s*=\s*["']https:\/\/www\.happiestminds\.com\/["']/i
+const REDIRECT_COPY_PATTERN = /\bRedirecting you in\b/i
+const VERIFIED_PLACEHOLDER_TEXT = 'TEST DIMPLE'
 
 const normalizeText = (value = '') =>
   String(value)
@@ -65,114 +34,105 @@ const normalizeText = (value = '') =>
     .replace(/\s+/g, ' ')
     .trim()
 
-const normalizePathname = (value = '') => {
+const normalizePageUrl = (value = '') => {
   const normalized = String(value).trim().replace(/\/+$/, '')
-  return normalized || '/'
+  return normalized ? `${normalized}/` : ''
 }
 
-const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
-  const urls = []
-  const matches = String(html).matchAll(
-    /(?:href|src|action|data-url|data-href|content)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
+const resolvePageUrl = (page = {}, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
+
+const normalizeHeaderMap = (headers = {}) =>
+  Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [String(key).toLowerCase(), String(value)]),
   )
 
-  for (const match of matches) {
-    const rawValue = match[1] || match[2] || match[3] || ''
-
-    try {
-      urls.push(new URL(rawValue, pageUrl))
-    } catch {
-      // Ignore malformed URLs and keep the sentinel fail-closed.
-    }
-  }
-
-  return urls
+const isKnownPlaceholderUrl = (value = '') => {
+  const finalUrl = normalizePageUrl(value)
+  return finalUrl === CAREERS_URL || finalUrl === MOVED_URL
 }
 
-const hasJobPostingMarkup = (html = '') => {
-  const blocks = String(html).matchAll(
-    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
-  )
-
-  for (const block of blocks) {
-    if (/\bJobPosting\b/i.test(block[1])) return true
-  }
-
-  return false
-}
-
-export const hasVerifiedCompanySurface = (html = '') => {
-  const rawHtml = String(html)
+export const isVerifiedMovedPage = (page = {}, requestedUrl = CAREERS_URL) => {
+  const rawHtml = String(page?.html ?? '')
   const text = normalizeText(rawHtml)
+  const finalUrl = normalizePageUrl(resolvePageUrl(page, requestedUrl))
 
-  return REQUIRED_BRAND_PATTERN.test(text)
-    && TITLE_BRAND_PATTERN.test(rawHtml)
-    && CANONICAL_SURFACE_PATTERN.test(rawHtml)
+  return Number(page?.status) === 200
+    && finalUrl === MOVED_URL
+    && MOVED_TITLE_PATTERN.test(rawHtml)
+    && META_REFRESH_PATTERN.test(rawHtml)
+    && SCRIPT_REDIRECT_PATTERN.test(rawHtml)
+    && REDIRECT_COPY_PATTERN.test(text)
 }
 
-export const detectPublicJobsSurface = (html = '', careersUrl = CAREERS_URL) => {
-  if (hasJobPostingMarkup(html)) return 'JobPosting markup'
+export const isVerifiedPlaceholderPage = (page = {}, requestedUrl = CAREERS_URL) => {
+  const text = normalizeText(page?.html ?? '')
+  const finalUrl = normalizePageUrl(resolvePageUrl(page, requestedUrl))
+  const headers = normalizeHeaderMap(page?.headers)
+  const server = headers.server ?? ''
+  const contentType = headers['content-type'] ?? ''
 
-  const text = normalizeText(html)
-  if (LISTING_COPY_PATTERNS.some((pattern) => pattern.test(text))) {
-    return 'listing copy'
-  }
-
-  const careersPage = new URL(careersUrl)
-  const careersPath = normalizePathname(careersPage.pathname)
-  const linkedUrls = extractLinkedUrls(html, careersUrl)
-
-  const atsUrl = linkedUrls.find((url) =>
-    TRUSTED_ATS_HOST_PATTERNS.some((pattern) => pattern.test(url.hostname)),
-  )
-  if (atsUrl) return atsUrl.toString()
-
-  const sameOriginJobUrl = linkedUrls.find((url) => {
-    if (url.origin !== careersPage.origin) return false
-
-    const pathname = normalizePathname(url.pathname)
-    if (pathname === careersPath) return false
-
-    return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
-  })
-
-  return sameOriginJobUrl ? sameOriginJobUrl.toString() : null
+  return Number(page?.status) === 200
+    && isKnownPlaceholderUrl(finalUrl)
+    && text === VERIFIED_PLACEHOLDER_TEXT
+    && /Sucuri\/Cloudproxy/i.test(server)
+    && /text\/html/i.test(contentType)
 }
 
-const assertVerifiedCompanySurface = (html = '') => {
-  if (hasVerifiedCompanySurface(html)) return
+export const isVerifiedKnownNoJobsSurface = (page = {}, requestedUrl = CAREERS_URL) =>
+  isVerifiedMovedPage(page, requestedUrl) || isVerifiedPlaceholderPage(page, requestedUrl)
+
+const assertVerifiedKnownNoJobsSurface = (page = {}, requestedUrl = CAREERS_URL) => {
+  if (isVerifiedKnownNoJobsSurface(page, requestedUrl)) return
 
   throw new Error(
-    'PureSoftware verified public company surface no longer matches the exact-name contract.',
+    'PureSoftware verified no-jobs first-party surface no longer matches the trusted placeholder or historical Happiest Minds handoff.',
   )
 }
 
 export const createPureSoftwareScraper = ({ careersUrl = CAREERS_URL } = {}) => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(careersUrl)
-    assertVerifiedCompanySurface(html)
+  async run({ fetchPage = defaultFetchPage, fetchHtml } = {}) {
+    const getPage =
+      typeof fetchHtml === 'function'
+        ? async (url) => ({
+            status: 200,
+            url: MOVED_URL,
+            html: await fetchHtml(url),
+          })
+        : fetchPage
 
-    const publicJobsSurface = detectPublicJobsSurface(html, careersUrl)
-    if (publicJobsSurface) {
-      throw new Error(
-        `PureSoftware public jobs surface changed materially: ${publicJobsSurface}`,
-      )
-    }
-
+    const landingPage = await getPage(careersUrl)
+    assertVerifiedKnownNoJobsSurface(landingPage, careersUrl)
     return []
   },
 })
 
 export const run = async (options = {}) => createPureSoftwareScraper().run(options)
 
-const defaultFetchHtml = async (url) => {
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
     },
+    redirect: 'follow',
   })
 
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
+  return {
+    status: response.status,
+    url: response.url,
+    headers: Object.fromEntries(response.headers),
+    html: await response.text(),
+  }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
 }

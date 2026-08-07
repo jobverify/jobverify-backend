@@ -15,6 +15,7 @@ import {
 const officialCareersHtml = `
   <html>
     <head>
+      <title>--> <!-- --> <!-- &raquo; Blog Archive --> <!-- --> <!--</title>
       <title>Careers - Workplace Options</title>
       <link rel="canonical" href="https://www.workplaceoptions.com/careers/" />
     </head>
@@ -30,7 +31,7 @@ const officialCareersHtml = `
         <h2>Global Offices</h2>
         <p>Bangalore</p>
       </section>
-      <footer>© 2026 Workplace Options. All Rights Reserved</footer>
+      <footer>Powered by care, connection, and community.</footer>
     </body>
   </html>
 `
@@ -39,6 +40,7 @@ const boardHtml = `
   <html>
     <head><title>Workplace Options - Career Page</title></head>
     <body>
+      <a href="#job_description">Skip To Job Description</a>
       <a href="https://www.workplaceoptions.com/">View Our Website</a>
       <p>Start your journey with us by browsing available jobs.</p>
       <h2>Current Openings</h2>
@@ -74,7 +76,7 @@ const boardHtml = `
           <div>Human Resources</div>
         </li>
       </ul>
-      <p>Powered by JazzHR</p>
+      <footer><span>Powered by</span> <img alt="JazzHr" src="/img/v1.1/logos/jazzhr-logo.png" /></footer>
     </body>
   </html>
 `

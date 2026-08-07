@@ -1,0 +1,1453 @@
+[
+  {
+    "title": "DevOps Architect",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "5",
+    "requisitionId": "5",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "10 - 13 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Defining Technical Strategy",
+      "CICD Design & Environment",
+      "Research on latest Technology",
+      "Security & Compliance"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "A CICD Architect is responsible for providing functional and/or technical expertise to plan, analyze, define, develop and delivery CI/CD capabilities for an application or group of applications w.r.t product/solutions. Assist in facilitating setting up environment, integration & automation of the entire deployment environment. The person is also responsible for hands-on problem-solving and ensuring Dev Sec Ops best practices and security by design. Defining Technical Strategy CICD Design & Environment Research on latest Technology Security & Compliance",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "originalTitle": "DevOps Architect",
+    "normalizedTitle": "DevOps Architect",
+    "jobCategory": "DevOps Architect",
+    "engineeringDomain": "DevOps",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "10 - 13 years",
+      "minimumYears": 10,
+      "maximumYears": 13,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10 - 13 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "DevOps & SRE",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.059Z"
+  },
+  {
+    "title": "Dot Net - Architect",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "6",
+    "requisitionId": "6",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "10 - 12 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      ".NET MVC",
+      "C#",
+      "Javascript",
+      "Sql Server"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "Strong knowledge of .NET MVC, Strong in C#, Javascript Familiarity with various design and architectural patterns Familiarity with Git source code management for code repository Good understanding of Sql Server Ability to write clean, readable, and easily maintainable code Understanding of fundamental design principles for building a scalable application Experience implementing automated testing platforms and unit test Nice to have: AWS Could watch monitoring skill\n\nRESPONSIBILITIES:\nShould be able to lead the team technically Manage to troubleshoot and solve Prod. issues on time Framework designing and code Review Should be able to take complete ownership of modules and projects",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "publicExperienceChecked": true,
+    "originalTitle": "Dot Net - Architect",
+    "normalizedTitle": "Dot Net - Architect",
+    "jobCategory": "Dot Net - Architect",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "javascript",
+      "sql",
+      "aws"
+    ],
+    "requiredSkillIds": [
+      "javascript",
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Javascript"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Sql"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "10 - 12 years",
+      "minimumYears": 10,
+      "maximumYears": 12,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10 - 12 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      10,
+      11,
+      12
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.062Z"
+  },
+  {
+    "title": "Program Manager",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "7",
+    "requisitionId": "7",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "12 - 15 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Program Management",
+      "Project Management",
+      "Technical Portfolio-.Net",
+      "Angular",
+      "Azure",
+      "Cloud",
+      "Delivery Management"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "At least 12 -14 years of experience in an IT company. Must be able to maintain smooth client relationships. Experience in executing the Development projects in technologies like .Net Core, Angular, Azure Dev Ops, Azure Cloud Managing multiple projects in Microsoft /Open Source technology for a team size between 30 to 50 people. Must have worked on multiple projects & must have handled multiple clients. Ability to smell business in existing accounts and report to the account managers / BD Managers. Extensive exposure of Requirement gathering, Research & Strategic planning, Leading end-to-end execution, delivery & Environment management of multi-million-dollar complex projects. $A forward-thinking person with strong communication, analytical & organizational skills; well organized with a track record that demonstrates self-motivation & creativity to achieve corporate goals.",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "publicExperienceChecked": true,
+    "originalTitle": "Program Manager",
+    "normalizedTitle": "Program Manager",
+    "jobCategory": "Program Manager",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "angular",
+      "azure"
+    ],
+    "requiredSkillIds": [
+      "angular",
+      "azure"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "12 - 15 years",
+      "minimumYears": 12,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12-15 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Product & Program Management",
+      "Frontend Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.065Z"
+  },
+  {
+    "title": "Sr. Software Engineer - Java_Angular",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "8",
+    "requisitionId": "8",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "4 - 7 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Java",
+      "Angular",
+      "Springboot",
+      "OOPS",
+      "Typescript",
+      "Relational Database"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "Strong understanding of object-oriented programming Hands on experience in JAVA (Preferrably Spring Boot) Good understanding and write code in Angular (Type Script) (HTML,Java Script,CSS) Good exposure on Relational database(any of those: MSSql, My Sql, Postgre Sql, Oracle etc ) Should have knowledge on project management tools Should have knowledge on source control tools Experience creating database schemas that represent and support business processes Worked in Agile Methodology Strong Communication skills, client handling skills Healthcare-Pharma domain-Good to have Good to Have below skills also: Python, Go Lang, .Net React Js Java Spring Boot Rest API Hibernate or any ORM framework (SQLAlchemy, .Net Entity Framework) Security, OAuth/Open ID connect framework AWS cloud skills (AWS Batch, Glue, Lambda, Cloud Formation etc) No Sql db: Mongo DB, Dynamo DB, Document DB, AWS Redshift etc 8)Linux shell scripting",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "originalTitle": "Sr. Software Engineer - Java_Angular",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "java",
+      "angular",
+      "spring-boot",
+      "typescript",
+      "javascript",
+      "sql",
+      "postgresql",
+      "python",
+      "go",
+      "aws",
+      "mongodb",
+      "linux"
+    ],
+    "requiredSkillIds": [
+      "java",
+      "angular",
+      "spring-boot",
+      "typescript"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Springboot"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Typescript"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Sql"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Postgre Sql"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "go",
+        "canonicalName": "Go",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Go"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "mongodb",
+        "canonicalName": "MongoDB",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Mongo DB"
+      },
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Linux"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 - 7 years",
+      "minimumYears": 4,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-7 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.067Z"
+  },
+  {
+    "title": "DotNet Fullstack Sr. Engineer",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "9",
+    "requisitionId": "9",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "4 - 7 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "ASP.Net",
+      ".Net Core",
+      "Angular 7",
+      "SQL",
+      "Azure Cloud"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "4-6 years as software engineer developing applications in a hosted web/Saa S environment 3+ years of full stack .NET programming and Web UI Architecture experience At least 3+ years of programming experience using Bootstrap, Angular.js and/or similar technologies Angular 4 or above Expertise in Java Script, Node.js, Bootstrap, CSS, HTML, Must have experience developing REST API and Micro Services Familiar with Agile and Scrum as well as Test-driven development process Must have experience working with relational (e.g. SQL Server) and non-relational DBs (e.g. Cosmos DB) Experience working in Azure cloud and its ecosystem Excellent verbal/written communication skills in English Passion for learning, continuous improvement, sharing and working in a team environment",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "publicExperienceChecked": true,
+    "originalTitle": "DotNet Fullstack Sr. Engineer",
+    "normalizedTitle": "DotNet Fullstack Sr. Engineer",
+    "jobCategory": "DotNet Fullstack Sr. Engineer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "angular",
+      "sql",
+      "azure",
+      "java",
+      "javascript",
+      "node-js"
+    ],
+    "requiredSkillIds": [
+      "angular",
+      "sql",
+      "azure"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      },
+      {
+        "skillId": "node-js",
+        "canonicalName": "Node.js",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Node.js"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 - 7 years",
+      "minimumYears": 4,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 - 7 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Full-Stack Engineering",
+    "secondaryRoleDomains": [
+      "Backend Engineering",
+      "Cloud & Infrastructure",
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.070Z"
+  },
+  {
+    "title": "Lead Engineer - Angular",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "10",
+    "requisitionId": "10",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "5 - 8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      ".Net",
+      "Angular JS",
+      "Angular 4",
+      "Javascript",
+      "Rest API",
+      "SQL"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "Bachelor about job openings and opportunities that can shape your dream career at Nitor Infotech, an Ascendion company. USA | India Requirements (Non-Negotiable) Applicants must meet all of the following criteria: Must currently reside in the United States. Must have authorization to work in the United States. Must possess an established network within the North American ISV/Saa S ecosystem. Must have successfully sold Product Engineering, Digital Engineering, Data Engineering, AI Engineering, Platform Engineering, or Software Engineering services to software product companies Must have experience engaging senior technology and product executives Must have a strong understanding of emerging AI trends including Generative AI and Agentic AI. Key responsibilities Own and drive the end-to-end sales cycle: prospecting → qualification → proposal → negotiation → closure Acquire net-new logos within ISVs and Saa S companies (North America focus preferred) Build and execute account strategies targeting technology and product stakeholders Translate complex technology offerings into clear business value Lead discovery and solution conversations with senior technical buyers Partner with Pre-Sales and Delivery to craft differentiated proposals Maintain strong pipeline discipline, forecasting, and CRM hygiene Convert qualified leads from Inside Sales into revenue-generating opportunities Build long-term relationships and drive multi-threaded account engagement What success looks like (KPIs) New logo acquisition Revenue growth Deal conversion rates and average deal size Pipeline coverage and forecast accuracy Sales cycle efficiency Strategic account penetration Required qualifications & experience 10+ years in Business Development / Sales for Product Engineering or Technology Services Proven track record of closing deals with ISVs/Saa S companies Strong understanding of software product development lifecycle and modern tech stacks Expert deal-crafting capabilities Experience selling across Cloud, Data, AI/ML, Gen AI Exposure to agentic AI / next-gen automation paradigms Ability to engage and influence senior technical stakeholders Experience managing complex, multi-stakeholder sales cycles Strong negotiation and commercial acumen Comfortable working across North American time zones Location of Work: Nitor Infotech Inc. | 900 National Pkwy, Suite 210, Schaumburg, IL 60173 To contact or to apply please send resumes to HR Manager, Nitor Infotech Inc., 900 National Pkwy, Suite 210, Schaumburg, IL 60173, or Email: Shweta.virmani@nitorinfotech.com . \" />",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "description": "Bachelor about job openings and opportunities that can shape your dream career at Nitor Infotech, an Ascendion company. USA | India Requirements (Non-Negotiable) Applicants must meet all of the following criteria: Must currently reside in the United States. Must have authorization to work in the United States. Must possess an established network within the North American ISV/Saa S ecosystem. Must have successfully sold Product Engineering, Digital Engineering, Data Engineering, AI Engineering, Platform Engineering, or Software Engineering services to software product companies Must have experience engaging senior technology and product executives Must have a strong understanding of emerging AI trends including Generative AI and Agentic AI. Key responsibilities Own and drive the end-to-end sales cycle: prospecting → qualification → proposal → negotiation → closure Acquire net-new logos within ISVs and Saa S companies (North America focus preferred) Build and execute account strategies targeting technology and product stakeholders Translate complex technology offerings into clear business value Lead discovery and solution conversations with senior technical buyers Partner with Pre-Sales and Delivery to craft differentiated proposals Maintain strong pipeline discipline, forecasting, and CRM hygiene Convert qualified leads from Inside Sales into revenue-generating opportunities Build long-term relationships and drive multi-threaded account engagement What success looks like (KPIs) New logo acquisition Revenue growth Deal conversion rates and average deal size Pipeline coverage and forecast accuracy Sales cycle efficiency Strategic account penetration Required qualifications & experience 10+ years in Business Development / Sales for Product Engineering or Technology Services Proven track record of closing deals with ISVs/Saa S companies Strong understanding of software product development lifecycle and modern tech stacks Expert deal-crafting capabilities Experience selling across Cloud, Data, AI/ML, Gen AI Exposure to agentic AI / next-gen automation paradigms Ability to engage and influence senior technical stakeholders Experience managing complex, multi-stakeholder sales cycles Strong negotiation and commercial acumen Comfortable working across North American time zones Location of Work: Nitor Infotech Inc. | 900 National Pkwy, Suite 210, Schaumburg, IL 60173 To contact or to apply please send resumes to HR Manager, Nitor Infotech Inc., 900 National Pkwy, Suite 210, Schaumburg, IL 60173, or Email: Shweta.virmani@nitorinfotech.com . \" />",
+    "publicExperienceChecked": true,
+    "originalTitle": "Lead Engineer - Angular",
+    "normalizedTitle": "Lead Engineer - Angular",
+    "jobCategory": "Lead Engineer - Angular",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "angular",
+      "javascript",
+      "sql",
+      "generative-ai"
+    ],
+    "requiredSkillIds": [
+      "angular",
+      "javascript",
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Javascript"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Generative AI"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5 - 8 years",
+      "minimumYears": 5,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 - 8 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [
+      "Frontend Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.076Z"
+  },
+  {
+    "title": "Lead Python Engineer",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "11",
+    "requisitionId": "11",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "7 - 10 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Python",
+      "Djnago",
+      "GraphQL",
+      "Data Structures",
+      "Javascript",
+      "Cloud"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "Responsibilities – Write effective, scalable code Work with team to develop back-end components to improve responsiveness and overall performance Integrate user-facing elements into applications Test and debug programs Improve functionality of existing systems Implement security and data protection solutions Assess and prioritize feature requests Core must haves – Level appropriate Python skills and knowledge Django experience (but any ORM will do) Data structures Schema design Graph QL API implementation is a bonus (can be learned) Exposure to javascript (j Query, React JS, Angular JS, or any other frameworks) Some leadership experience appropriate to level Motivation to learn and improve Discipline in communication and task management",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "publicExperienceChecked": true,
+    "originalTitle": "Lead Python Engineer",
+    "normalizedTitle": "Lead Python Engineer",
+    "jobCategory": "Lead Python Engineer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "python",
+      "javascript",
+      "django",
+      "react",
+      "angular"
+    ],
+    "requiredSkillIds": [
+      "python",
+      "javascript"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Javascript"
+      },
+      {
+        "skillId": "django",
+        "canonicalName": "Django",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Django"
+      },
+      {
+        "skillId": "react",
+        "canonicalName": "React",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "javascript (j Query, React"
+      },
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Angular"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "7 - 10 years",
+      "minimumYears": 7,
+      "maximumYears": 10,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "7 - 10 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      7,
+      8,
+      9,
+      10
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Frontend Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.079Z"
+  },
+  {
+    "title": "Senior Software Engineer (Golang)",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "18",
+    "requisitionId": "18",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "4 - 6 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Go",
+      "node",
+      "Node.Js",
+      "PGSQL",
+      "GCP",
+      "Javascript",
+      "Typescript"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "4-6 years as software engineer developing applications in Go / Node (backend) Must have experience working with PGSQL for database Javascript/Typescript experience must Experience in Cloud: GCP (MUST HAVE) Github experience and ecosystem Must have experience developing REST API, Webservices and Micro Services Familiar with Agile and Scrum as well as Test-driven development process Experience working in Azure cloud and its ecosystem Excellent verbal/written communication skills in English Passion for learning, continuous improvement, sharing and working in a team environment",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "publicExperienceChecked": true,
+    "originalTitle": "Senior Software Engineer (Golang)",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "node-js",
+      "gcp",
+      "javascript",
+      "typescript",
+      "go",
+      "azure"
+    ],
+    "requiredSkillIds": [
+      "node-js",
+      "gcp",
+      "javascript",
+      "typescript"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "node-js",
+        "canonicalName": "Node.js",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Node.Js"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Javascript"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Typescript"
+      },
+      {
+        "skillId": "go",
+        "canonicalName": "Go",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Golang"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 - 6 years",
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-6 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.081Z"
+  },
+  {
+    "title": "Senior Software Engineer(Cypree)",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "19",
+    "requisitionId": "19",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "3 - 6 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Automation Testing",
+      "Cypress",
+      "API Testing"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "3 to 5 years of experience into Automation testing with Cypress BDD. QA Automation around APIs, Front end web based testing. Candidate should be able to automate script in Cypress Tool Detailed knowledge of application functions, bug fixing, and testing protocols Advanced programming skills including automation systems and databases. Hands-on experience in API testing (REST Webservices) API Testing, API Validation and performace testing Strong Database knowledge. Ability to write complex SQL queries Strong communication (written and verbal) skills to interact with Customer",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "publicExperienceChecked": true,
+    "originalTitle": "Senior Software Engineer(Cypree)",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "sql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 - 6 years",
+      "minimumYears": 3,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-6 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.084Z"
+  },
+  {
+    "title": "Senior Software Engineer- Data Engineer",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "20",
+    "requisitionId": "20",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "3 - 5 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Postgresql",
+      "Netezza",
+      "SQL Query",
+      "PLSQL",
+      "Data Warehousing",
+      "Unix Shell Scripting"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "Assemble large, complex data sets that meet functional / non-functional business requirements. Identify, design, and implement internal process improvements: automating manual processes, optimizing data delivery, re-designing infrastructure for greater scalability, etc. Build the infrastructure required for optimal extraction, transformation, and loading of data from a wide variety of data sources using SQL, MPP Data warehouse and Azure",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "publicExperienceChecked": true,
+    "originalTitle": "Senior Software Engineer- Data Engineer",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "postgresql",
+      "sql",
+      "azure"
+    ],
+    "requiredSkillIds": [
+      "postgresql",
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Postgresql"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 - 5 years",
+      "minimumYears": 3,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 - 5 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.086Z"
+  },
+  {
+    "title": "Senior Software Engineer- React.JS",
+    "company": "Nitor Infotech, an Ascendion company",
+    "department": null,
+    "location": "Pune, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "21",
+    "requisitionId": "21",
+    "sourceUrl": "https://careers.nitorinfotech.com/opening",
+    "applyUrl": "https://careers.nitorinfotech.com/opening",
+    "employmentType": "Full-time",
+    "experienceRequired": "4 - 6 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "html",
+      "Redux",
+      "CSS",
+      ".Net",
+      "MongoDB",
+      "React.Js"
+    ],
+    "postingDate": "2026-08-03T22:38:04.727Z",
+    "closingDate": null,
+    "jobDescription": "4-6 years exp Should be strong in React 16.8, Redux, ES6+ features, HTML, CSS, JS Good to have .net and mongodb about job openings and opportunities that can shape your dream career at Nitor Infotech, an Ascendion company. USA | India Requirements (Non-Negotiable) Applicants must meet all of the following criteria: Must currently reside in the United States. Must have authorization to work in the United States. Must possess an established network within the North American ISV/Saa S ecosystem. Must have successfully sold Product Engineering, Digital Engineering, Data Engineering, AI Engineering, Platform Engineering, or Software Engineering services to software product companies Must have experience engaging senior technology and product executives Must have a strong understanding of emerging AI trends including Generative AI and Agentic AI. Key responsibilities Own and drive the end-to-end sales cycle: prospecting → qualification → proposal → negotiation → closure Acquire net-new logos within ISVs and Saa S companies (North America focus preferred) Build and execute account strategies targeting technology and product stakeholders Translate complex technology offerings into clear business value Lead discovery and solution conversations with senior technical buyers Partner with Pre-Sales and Delivery to craft differentiated proposals Maintain strong pipeline discipline, forecasting, and CRM hygiene Convert qualified leads from Inside Sales into revenue-generating opportunities Build long-term relationships and drive multi-threaded account engagement What success looks like (KPIs) New logo acquisition Revenue growth Deal conversion rates and average deal size Pipeline coverage and forecast accuracy Sales cycle efficiency Strategic account penetration Required qualifications & experience 10+ years in Business Development / Sales for Product Engineering or Technology Services Proven track record of closing deals with ISVs/Saa S companies Strong understanding of software product development lifecycle and modern tech stacks Expert deal-crafting capabilities Experience selling across Cloud, Data, AI/ML, Gen AI Exposure to agentic AI / next-gen automation paradigms Ability to engage and influence senior technical stakeholders Experience managing complex, multi-stakeholder sales cycles Strong negotiation and commercial acumen Comfortable working across North American time zones Location of Work: Nitor Infotech Inc. | 900 National Pkwy, Suite 210, Schaumburg, IL 60173 To contact or to apply please send resumes to HR Manager, Nitor Infotech Inc., 900 National Pkwy, Suite 210, Schaumburg, IL 60173, or Email: Shweta.virmani@nitorinfotech.com . \" />",
+    "source": "nitorinfotech",
+    "companyCareerPage": "https://careers.nitorinfotech.com",
+    "companyDomain": "nitorinfotech.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://careers.nitorinfotech.com/opening",
+    "scrapedAt": "2026-08-03T22:38:04.727Z",
+    "description": "4-6 years exp Should be strong in React 16.8, Redux, ES6+ features, HTML, CSS, JS Good to have .net and mongodb about job openings and opportunities that can shape your dream career at Nitor Infotech, an Ascendion company. USA | India Requirements (Non-Negotiable) Applicants must meet all of the following criteria: Must currently reside in the United States. Must have authorization to work in the United States. Must possess an established network within the North American ISV/Saa S ecosystem. Must have successfully sold Product Engineering, Digital Engineering, Data Engineering, AI Engineering, Platform Engineering, or Software Engineering services to software product companies Must have experience engaging senior technology and product executives Must have a strong understanding of emerging AI trends including Generative AI and Agentic AI. Key responsibilities Own and drive the end-to-end sales cycle: prospecting → qualification → proposal → negotiation → closure Acquire net-new logos within ISVs and Saa S companies (North America focus preferred) Build and execute account strategies targeting technology and product stakeholders Translate complex technology offerings into clear business value Lead discovery and solution conversations with senior technical buyers Partner with Pre-Sales and Delivery to craft differentiated proposals Maintain strong pipeline discipline, forecasting, and CRM hygiene Convert qualified leads from Inside Sales into revenue-generating opportunities Build long-term relationships and drive multi-threaded account engagement What success looks like (KPIs) New logo acquisition Revenue growth Deal conversion rates and average deal size Pipeline coverage and forecast accuracy Sales cycle efficiency Strategic account penetration Required qualifications & experience 10+ years in Business Development / Sales for Product Engineering or Technology Services Proven track record of closing deals with ISVs/Saa S companies Strong understanding of software product development lifecycle and modern tech stacks Expert deal-crafting capabilities Experience selling across Cloud, Data, AI/ML, Gen AI Exposure to agentic AI / next-gen automation paradigms Ability to engage and influence senior technical stakeholders Experience managing complex, multi-stakeholder sales cycles Strong negotiation and commercial acumen Comfortable working across North American time zones Location of Work: Nitor Infotech Inc. | 900 National Pkwy, Suite 210, Schaumburg, IL 60173 To contact or to apply please send resumes to HR Manager, Nitor Infotech Inc., 900 National Pkwy, Suite 210, Schaumburg, IL 60173, or Email: Shweta.virmani@nitorinfotech.com . \" />",
+    "publicExperienceChecked": true,
+    "originalTitle": "Senior Software Engineer- React.JS",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T22:38:04.727Z",
+    "scrapedTimestamp": "2026-08-03T22:38:04.727Z",
+    "skillIds": [
+      "mongodb",
+      "react",
+      "generative-ai"
+    ],
+    "requiredSkillIds": [
+      "mongodb",
+      "react"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "mongodb",
+        "canonicalName": "MongoDB",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "MongoDB"
+      },
+      {
+        "skillId": "react",
+        "canonicalName": "React",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "React.Js"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Generative AI"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 - 6 years",
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 - 6 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T22:38:06.092Z"
+  }
+]

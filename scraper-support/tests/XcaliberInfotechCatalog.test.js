@@ -4,10 +4,11 @@ import test from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/xcaliberinfotech/script.js')
+const dryRunFile = path.resolve(currentDir, '../../scraper/xcaliberinfotech/jobs.json')
 
 const blockedCareersHtml = `
 <html>
@@ -57,7 +58,7 @@ test('Xcaliber Infotech local catalog captures the verified fail-closed careers-
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.verifiedOn, '2026-07-18')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.dryRunFile, /xcaliberinfotech[\\/]jobs\.json$/i)
+  assert.equal(provider.dryRunFile, dryRunFile)
   assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Search For Open Positions/i)
   assert.match(provider.verifiedSurfaceSummary, /You are being redirected/i)
@@ -94,4 +95,11 @@ test('Xcaliber Infotech hydrated local catalog stays script-runner compatible fo
   assert.equal(provider.companyDomain, 'xcaliberinfotech.com')
   assert.match(provider.modulePath, /xcaliberinfotech[\\/]script\.js$/i)
   assert.equal(typeof module.run, 'function')
+})
+
+test('Xcaliber Infotech aggregated provider catalog resolves its dry-run file inside the current repo scraper directory', () => {
+  const provider = getScraperCatalog().find((item) => item.source === 'xcaliberinfotech')
+
+  assert.ok(provider, 'Expected xcaliberinfotech in the aggregated scraper catalog')
+  assert.equal(provider.dryRunFile, dryRunFile)
 })

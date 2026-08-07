@@ -61,6 +61,27 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /recruitcrm/i,
 ]
 
+const VERIFIED_PUBLIC_JOBS_SIGNAL_PATTERNS = [
+  /\bcurrent openings?\b/i,
+  /\bopen positions?\b/i,
+  /\bjob openings?\b/i,
+  /\bvacanc(?:y|ies)\b/i,
+  /\bapply now\b/i,
+  /"@type"\s*:\s*"JobPosting"/i,
+  /jobs\.lever\.co/i,
+  /boards\.greenhouse\.io/i,
+  /job-boards\.greenhouse\.io/i,
+  /ashbyhq\.com/i,
+  /myworkdayjobs/i,
+  /workdayjobs/i,
+  /smartrecruiters/i,
+  /jobvite/i,
+  /freshteam/i,
+  /darwinbox/i,
+  /zohorecruit/i,
+  /recruitcrm/i,
+]
+
 const decodeBasicEntities = (value) => {
   let decoded = String(value ?? '')
 
@@ -74,6 +95,7 @@ const decodeBasicEntities = (value) => {
 const normalizeWhitespace = (value) => decodeBasicEntities(String(value ?? ''))
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
+  .replace(/\s+([,.;:!?])/g, '$1')
   .trim()
 
 const extractVisibleText = (html) => normalizeWhitespace(
@@ -147,7 +169,7 @@ export const hasOfficialAboutSignal = (html) => {
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/techcovery\.in\/about-us\/["']/i.test(page)
     && visibleText.includes('About Us')
     && visibleText.includes('Techcovery has expertise in enterprise consulting and training in niche digital technologies.')
-    && visibleText.includes('We work closely with various organizations to fulfill needs for upskilling and reskilling the workforce to take on more advanced work in various technologies.')
+    && /We work closely with various organizations to fulfill needs for upskilling and reskilling the workforce to take on more advanced work in various technologies\s*\./i.test(visibleText)
 }
 
 export const hasOfficialContactSignal = (html) => {
@@ -168,16 +190,35 @@ export const hasUnexpectedPublicJobsSignal = (html) => {
   )
 }
 
-export const isVerifiedMissingJobsRoute = ({ status, url, html }) =>
-  Number(status) === 404
+const hasVerifiedPublicJobsSignal = (html) => {
+  const haystacks = [String(html ?? ''), extractVisibleText(html)]
+
+  return VERIFIED_PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) =>
+    haystacks.some((haystack) => pattern.test(haystack)),
+  )
+}
+
+export const isVerifiedHomepagePage = ({ status, url, html }) =>
+  [200, 500].includes(Number(status))
   && isSameOfficialDomain(url)
-  && !hasUnexpectedPublicJobsSignal(html)
+  && hasOfficialHomepageSignal(html)
+
+export const isVerifiedMissingJobsRoute = ({ status, url, html }) => {
+  const page = String(html ?? '')
+  const visibleText = extractVisibleText(page)
+
+  return Number(status) === 404
+    && isSameOfficialDomain(url)
+    && /<title>\s*Page not found\s*(?:&#8211;|â€“|-)\s*Techcovery\s*<\/title>/i.test(page)
+    && visibleText.includes('Page not found')
+    && !hasVerifiedPublicJobsSignal(page)
+}
 
 export const createTechcoverySolutionsScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (!isVerifiedHomepagePage(homepage)) {
       throw new Error('Techcovery Solutions verified homepage no longer matches the known first-party surface')
     }
 
@@ -219,7 +260,17 @@ export const createTechcoverySolutionsScraper = () => ({
 
 export const run = async (options = {}) => createTechcoverySolutionsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const isDirectExecution = (() => {
+  if (!process.argv[1]) return false
+
+  try {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

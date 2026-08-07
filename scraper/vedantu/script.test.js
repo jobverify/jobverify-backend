@@ -13,7 +13,7 @@ const officialCareersHtml = `
   <main>
     <h1>Find Your Role</h1>
     <a href="https://courses.vedantu.com/acads-career-page/" target="_blank">Academic roles</a>
-    <a href="https://www.linkedin.com/jobs/search/?currentJobId=4399637113&f_C=3139796&geoId=92000000&origin=COMPANY_PAGE_JOBS_CLUSTER_EXPANSION&originToLandingJobPostings=4399637113%2C4394757689%2C4400750377%2C4392857261%2C4389532762%2C4389534337%2C4388933368%2C4389567642%2C4397271687" target="_blank">Corporate jobs</a>
+    <a href="https://www.linkedin.com/jobs/search/?currentJobId=4399637113&amp;f_C=3139796&amp;geoId=92000000&amp;origin=COMPANY_PAGE_JOBS_CLUSTER_EXPANSION&amp;originToLandingJobPostings=4399637113%2C4394757689%2C4400750377%2C4392857261%2C4389532762%2C4389534337%2C4388933368%2C4389567642%2C4397271687" target="_blank">Corporate jobs</a>
   </main>
 `
 

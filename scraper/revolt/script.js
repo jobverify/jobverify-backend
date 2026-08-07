@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -47,6 +48,12 @@ const toTitleCase = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
   .replace(/\b[a-z]/g, (match) => match.toUpperCase()) || null
 
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  return /^full\s*time$/i.test(normalized) ? 'Full-time' : normalized
+}
+
 const normalizeLocation = (value) => {
   const normalized = toTitleCase(value)
   if (!normalized) return null
@@ -91,11 +98,158 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes('Apply Filter')
 }
 
-export const extractJobOpenings = (html) => {
-  if (!hasOfficialCareersSignal(html)) {
-    throw new Error('Revolt verified first-party careers page no longer matches the trusted public surface')
+const normalizeExperienceRequired = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  if (/^0(?:\s*years?)?$/i.test(normalized)) return 'No experience required'
+
+  const rangeMatch = normalized.match(/^(\d+)\s*(?:-|to|–|—)\s*(\d+)\s*(?:years?|yrs?)?$/i)
+  if (rangeMatch) {
+    return `${rangeMatch[1]}-${rangeMatch[2]} years`
   }
 
+  const openEndedMatch = normalized.match(/^(\d+)\s*\+\s*(?:years?|yrs?)?$/i)
+  if (openEndedMatch) {
+    return `${openEndedMatch[1]}+ years`
+  }
+
+  const singleYearMatch = normalized.match(/^(\d+)\s*(?:years?|yrs?)?$/i)
+  if (singleYearMatch) {
+    return `${singleYearMatch[1]} years`
+  }
+
+  const experienceProfile = extractJobFilterSignals({
+    description: `Experience: ${normalized}`,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+const extractJsonArrayBlock = (value, startIndex) => {
+  const page = String(value ?? '')
+  const arrayStart = page.indexOf('[', startIndex)
+  if (arrayStart < 0) return null
+
+  let depth = 0
+  for (let index = arrayStart; index < page.length; index += 1) {
+    if (page[index] === '[') depth += 1
+    if (page[index] === ']') depth -= 1
+    if (depth === 0) return page.slice(arrayStart, index + 1)
+  }
+
+  return null
+}
+
+const parseStructuredJobsArray = (payload, { escaped }) => {
+  if (!payload) return []
+
+  const normalizedPayload = escaped
+    ? payload.replace(/\\"/g, '"').replace(/\\\//g, '/')
+    : payload
+
+  try {
+    const parsed = JSON.parse(normalizedPayload)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+export const extractStructuredInitialJobs = (html) => {
+  const page = String(html ?? '')
+  const markerMatch = page.match(/\\?"initialJobs\\?"\s*:\s*\[/)
+  if (!markerMatch || typeof markerMatch.index !== 'number') {
+    return []
+  }
+
+  const payload = extractJsonArrayBlock(page, markerMatch.index)
+  const parsedJobs = parseStructuredJobsArray(payload, {
+    escaped: markerMatch[0].includes('\\"'),
+  })
+
+  return parsedJobs.map((record = {}) => ({
+    requisition_date: normalizeWhitespace(record.requisition_date),
+    department: normalizeWhitespace(record.department),
+    designation: normalizeWhitespace(record.designation),
+    location: normalizeWhitespace(record.location),
+    exp: normalizeWhitespace(record.exp),
+    qualifications: normalizeWhitespace(record.qualifications),
+    short_text: normalizeWhitespace(record.short_text),
+    type: normalizeWhitespace(record.type),
+  }))
+}
+
+const buildStructuredJob = (record = {}) => {
+  const title = normalizeWhitespace(record.designation)
+  const department = normalizeWhitespace(record.department)
+  const location = normalizeWhitespace(record.location)
+  const description = normalizeWhitespace(record.short_text)
+  const normalizedLocation = formatLocation(location)
+  const jobSlug = slugify(`${SOURCE}-${title}-${department}-${location}`)
+  const experienceRequired = normalizeExperienceRequired(record.exp)
+
+  if (!title || !department || !location || !normalizedLocation || !jobSlug) {
+    return null
+  }
+
+  return {
+    title,
+    company: COMPANY,
+    location: normalizedLocation,
+    city: toCity(location),
+    country: 'India',
+    department,
+    jobId: jobSlug,
+    requisitionId: jobSlug,
+    sourceUrl: CAREERS_URL,
+    applyUrl: CAREERS_URL,
+    employmentType: normalizeEmploymentType(record.type),
+    experienceRequired,
+    minimumQualification: normalizeWhitespace(record.qualifications),
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: normalizeWhitespace(record.requisition_date),
+    closingDate: null,
+    jobDescription: description,
+    publicExperienceChecked: Boolean(description) && !experienceRequired,
+  }
+}
+
+const mergeStructuredJobs = (cardJobs, structuredJobs) => {
+  const mergedJobsById = new Map(
+    (Array.isArray(cardJobs) ? cardJobs : [])
+      .map((job) => [job.jobId, job]),
+  )
+
+  for (const structuredJob of Array.isArray(structuredJobs) ? structuredJobs : []) {
+    if (!structuredJob) continue
+    const existingJob = mergedJobsById.get(structuredJob.jobId)
+
+    mergedJobsById.set(structuredJob.jobId, {
+      ...(existingJob || {}),
+      ...structuredJob,
+      employmentType: structuredJob.employmentType || existingJob?.employmentType || null,
+      minimumQualification: structuredJob.minimumQualification || existingJob?.minimumQualification || null,
+      jobDescription: structuredJob.jobDescription || existingJob?.jobDescription || null,
+      publicExperienceChecked:
+        structuredJob.publicExperienceChecked === true
+        || existingJob?.publicExperienceChecked === true,
+    })
+  }
+
+  return [...mergedJobsById.values()]
+}
+
+const extractVisibleCardJobs = (html) => {
   const blocks = String(html ?? '').split(/<div data-slot="card" class="/i).slice(1)
   const jobs = []
 
@@ -146,6 +300,20 @@ export const extractJobOpenings = (html) => {
       jobDescription: description,
     })
   }
+
+  return jobs
+}
+
+export const extractJobOpenings = (html) => {
+  if (!hasOfficialCareersSignal(html)) {
+    throw new Error('Revolt verified first-party careers page no longer matches the trusted public surface')
+  }
+
+  const cardJobs = extractVisibleCardJobs(html)
+  const structuredJobs = extractStructuredInitialJobs(html).map(buildStructuredJob).filter(Boolean)
+  const jobs = structuredJobs.length > 0
+    ? mergeStructuredJobs(cardJobs, structuredJobs)
+    : cardJobs
 
   if (jobs.length === 0) {
     throw new Error('Revolt verified first-party careers page no longer exposes inline public role cards')

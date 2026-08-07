@@ -76,7 +76,7 @@ const careersWithPublicJobsHtml = `
 </html>
 `
 
-test('Turbo Energy validates the verified homepage handoff and empty careers shell', async () => {
+test('Turbo Energy validates the verified homepage identity and empty careers shell', async () => {
   const turboEnergy = await loadTurboEnergyModule()
 
   assert.equal(turboEnergy.SOURCE, 'turboenergy')
@@ -109,17 +109,17 @@ test('Turbo Energy returns no jobs while the official careers page stays in the 
   assert.deepEqual(jobs, [])
 })
 
-test('Turbo Energy fails closed when the official handoff breaks or the careers page starts listing jobs', async () => {
+test('Turbo Energy fails closed when the homepage identity breaks or the careers page starts listing jobs', async () => {
   const turboEnergy = await loadTurboEnergyModule()
 
   await assert.rejects(
     turboEnergy.createTurboEnergyScraper().run({
       fetchText: async (url) => {
         if (url === turboEnergy.HOMEPAGE_URL) {
-          return officialHomepageHtml.replace(
-            'https://www.turboenergy.co.in/careers/',
-            'https://www.turboenergy.co.in/vendor-opportunities/',
-          )
+          return '<html><head><title>Another Company</title></head><body><p>Unrelated homepage</p></body></html>'
+        }
+        if (url === turboEnergy.CAREERS_URL) {
+          return officialCareersHtml
         }
 
         throw new Error(`Unexpected URL: ${url}`)

@@ -25,7 +25,7 @@ const buildChromiumLaunchArgs = () =>
   process.env.PUPPETEER_DISABLE_SANDBOX ? ['--no-sandbox'] : []
 
 const shouldUseBrowserFallback = (error) =>
-  /connect timeout|getaddrinfo enotfound|fetch failed/i.test(String(error))
+  /http 403|connect timeout|getaddrinfo enotfound|fetch failed/i.test(String(error))
 
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
 
@@ -33,13 +33,32 @@ const locationValue = (value) => clean(
   typeof value === 'string' ? value : (value?.name || value?.location),
 )
 
+const isIndiaLocation = (value) => {
+  const location = locationValue(value)
+  return /\bindia\b/i.test(location) || /(?:^|,\s*)IN(?:$|,)/i.test(location)
+}
+
 const chooseIndiaLocation = (position = {}) => {
-  const locations = (Array.isArray(position.locations) ? position.locations : [position.location])
-    .map(locationValue)
-    .filter(Boolean)
-  return locations
-    .filter((location) => /\bindia\b/i.test(location))
-    .sort((left, right) => (/^india$/i.test(left) ? 1 : 0) - (/^india$/i.test(right) ? 1 : 0))[0]
+  const locations = Array.isArray(position.locations) ? position.locations : [position.location]
+  const standardizedLocations = Array.isArray(position.standardizedLocations)
+    ? position.standardizedLocations
+    : []
+  const candidates = locations
+    .map((location, index) => ({
+      location: locationValue(location),
+      standardizedLocation: locationValue(standardizedLocations[index]),
+    }))
+    .filter(({ location, standardizedLocation }) => location || standardizedLocation)
+
+  const matchedCandidate = candidates.find(({ location, standardizedLocation }) =>
+    isIndiaLocation(location) || isIndiaLocation(standardizedLocation))
+  if (matchedCandidate) {
+    return matchedCandidate.location || matchedCandidate.standardizedLocation
+  }
+
+  return candidates
+    .map(({ standardizedLocation }) => standardizedLocation)
+    .filter(isIndiaLocation)[0]
     || null
 }
 
@@ -87,10 +106,12 @@ const loadJsonWithBrowser = async (url, options = {}) => {
 
   try {
     const page = await browser.newPage({ userAgent: BROWSER_HEADERS['User-Agent'] })
-    await page.goto(CAREERS_URL, { waitUntil: 'domcontentloaded', timeout: 60000 })
+    await page.goto(CAREERS_URL, { waitUntil: 'networkidle', timeout: 90000 })
+    await page.waitForTimeout(5000)
 
     const result = await page.evaluate(async ({ requestUrl, headers }) => {
       const response = await fetch(requestUrl, {
+        credentials: 'include',
         headers,
       })
 
@@ -237,8 +258,10 @@ export const createQlikScraper = ({
           employmentType: clean(position.employmentType) || null,
           remoteStatus: deriveWorkMode(
             position.workLocationType,
+            position.workLocationOption,
             position.locationType,
             detail.workLocationType,
+            detail.workLocationOption,
             location,
           ),
           jobDescription: detail.jobDescription ?? null,

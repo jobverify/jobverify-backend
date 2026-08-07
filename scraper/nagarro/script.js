@@ -26,6 +26,7 @@ export const SMARTRECRUITERS_DETAIL_API_URL_TEMPLATE =
   NAGARRO_CATALOG.smartRecruitersDetailApiUrlTemplate
 export const SMARTRECRUITERS_APPLY_URL =
   'https://join.smartrecruiters.com/Nagarro1/338a6454-a0d3-4121-a6c2-51696acb91a3-website-applications'
+export const DETAIL_FETCH_CONCURRENCY = 8
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -67,11 +68,86 @@ export const hasOfficialJobSearchSignal = (html = '') => {
 
 export const hasVerifiedSmartRecruitersBoardSignal = (html = '') => {
   const page = normalizeWhitespace(html) || ''
+  const hasLegacyIndiaBuckets =
+    /Bengaluru,\s*,?\s*India/i.test(page)
+    && /Remote,\s*,?\s*India/i.test(page)
+  const hasCurrentBoardChrome =
+    /\bHome Page\b/i.test(page)
+    && /\bSearch job openings\b/i.test(page)
+    && /\bClear search results\b/i.test(page)
 
   return /Careers at Nagarro/i.test(page)
     && /Jobs at Nagarro/i.test(page)
-    && /Bengaluru, India/i.test(page)
-    && /Remote, India/i.test(page)
+    && (hasLegacyIndiaBuckets || hasCurrentBoardChrome)
+}
+
+const hasRichPublicDetailPayload = (job = {}) => (
+  [
+    job.jobDescription,
+    job.minimumQualification,
+    job.preferredQualification,
+  ]
+    .map((value) => normalizeWhitespace(value))
+    .filter(Boolean)
+    .join(' ')
+    .length >= 120
+)
+
+const NAGARRO_MOTIVATIONAL_SHELL_PHRASES = [
+  'by this point in your career, it is not just about the tech you know or how well you can code',
+  'it is about what more you want to do with that knowledge',
+  'were you given the tools to go beyond solving for x',
+  'can you help your teammates proceed in the right direction',
+  'you have begun to prove your worth in our industry',
+  'at nagarro, we love breaking new ground and doing unprecedented stuff',
+]
+
+const hasMotivationalShellDetailPayload = (job = {}) => {
+  const description = normalizeWhitespace(job.jobDescription)?.toLowerCase() || ''
+
+  return Boolean(description)
+    && NAGARRO_MOTIVATIONAL_SHELL_PHRASES.some((phrase) => description.includes(phrase))
+}
+
+const hasPrivacyNoticeOnlyDetailPayload = (job = {}) => {
+  const description = normalizeWhitespace(job.jobDescription)
+  const minimumQualification = normalizeWhitespace(job.minimumQualification)
+  const preferredQualification = normalizeWhitespace(job.preferredQualification)
+
+  return !description
+    && !minimumQualification
+    && Boolean(preferredQualification)
+    && /application privacy notice|applicant(?:%20|\s+)privacy(?:%20|\s+)notice/i.test(preferredQualification)
+}
+
+const buildSparsePublicDetailSummary = (job = {}) =>
+  `Official Nagarro SmartRecruiters posting for ${job.title}. `
+  + 'The public detail API exposed only the applicant privacy notice, '
+  + 'so the live source posting should be reviewed for responsibilities and experience requirements.'
+
+const buildMotivationalShellSummary = (job = {}) =>
+  `Official Nagarro SmartRecruiters posting for ${job.title}. `
+  + 'The public detail API exposed only generic Nagarro motivational copy for this role, '
+  + 'so the live source posting should be reviewed for responsibilities and experience requirements.'
+
+const resolvePreferredPublicDescription = (job = {}) => {
+  if (hasMotivationalShellDetailPayload(job)) {
+    return buildMotivationalShellSummary(job)
+  }
+
+  if (job.jobDescription) {
+    return job.jobDescription
+  }
+
+  if (job.minimumQualification) {
+    return job.minimumQualification
+  }
+
+  if (hasPrivacyNoticeOnlyDetailPayload(job)) {
+    return buildSparsePublicDetailSummary(job)
+  }
+
+  return null
 }
 
 const createApiProvider = () => ({
@@ -109,6 +185,7 @@ const createApiProvider = () => ({
     },
     detail: {
       enabled: true,
+      concurrency: DETAIL_FETCH_CONCURRENCY,
       urlTemplate: SMARTRECRUITERS_DETAIL_API_URL_TEMPLATE,
       method: 'GET',
       mapping: {
@@ -171,7 +248,12 @@ export const createNagarroScraper = ({
 
     const verifiedJobs = jobs.map((job) => ({
       ...job,
+      jobDescription: resolvePreferredPublicDescription(job),
       department: typeof job.department === 'string' ? job.department : null,
+      publicExperienceChecked:
+        job.publicExperienceChecked === true
+        || hasRichPublicDetailPayload(job)
+        || hasPrivacyNoticeOnlyDetailPayload(job),
     }))
 
     for (const job of verifiedJobs) {

@@ -9,7 +9,9 @@ export const MAGNIT_GLOBAL_CATALOG = {
   officialBrandName: 'Magnit',
   adapter: 'script',
   modulePath: path.join(currentDir, 'script.js'),
-  companyCareerPage: 'https://magnitglobal.com/us/en/company/careers.html',
+  companyCareerPage: 'https://magnitglobal.com/about/careers',
+  legacyCareerPageUrl: 'https://magnitglobal.com/us/en/company/careers.html',
+  verifiedSampleJobUrl: 'https://jobs.dayforcehcm.com/prounlimited/CANDIDATEPORTAL/jobs/7245',
   companyDomain: 'magnitglobal.com',
   atsPlatform: 'dayforce',
   countryFilter: 'India',
@@ -21,10 +23,12 @@ export const MAGNIT_GLOBAL_CATALOG = {
   dayforceJobBoardCode: 'CANDIDATEPORTAL',
   dayforceJobBoardId: 1,
   dayforceLocale: 'en-US',
-  dayforceBaseUrl: 'https://jobs.dayforcehcm.com/en-US/prounlimited/CANDIDATEPORTAL',
-  verifiedOn: '2026-07-18',
+  dayforceBaseUrl: 'https://jobs.dayforcehcm.com/prounlimited/CANDIDATEPORTAL',
+  verifiedOn: '2026-08-03',
+  verifiedPublicPostingCount: 25,
+  verifiedIndiaRoleCount: 14,
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://magnitglobal.com/us/en/company/careers.html is the live first-party Magnit careers page and that its India Search Careers handoff resolves to the public Dayforce board at https://jobs.dayforcehcm.com/en-US/prounlimited/CANDIDATEPORTAL. Browser-backed verification on the same date confirmed the public Dayforce jobposting search contract returning live postings, including India roles such as Analyst, Accounts Payable in Vadodara.',
+    'Verified on Monday, August 3, 2026 that the legacy Magnit careers route redirects the live first-party experience to https://magnitglobal.com/about/careers and that its India Learn More handoff resolves to the public Dayforce board at https://jobs.dayforcehcm.com/prounlimited/CANDIDATEPORTAL. Browser-backed verification on the same date confirmed the public Dayforce jobposting search contract returning 25 public postings overall, with 14 India roles after location normalization, including System Administrator - ERP in Bengaluru.',
 }
 
 export default MAGNIT_GLOBAL_CATALOG

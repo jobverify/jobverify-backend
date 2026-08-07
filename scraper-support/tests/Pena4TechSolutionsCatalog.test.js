@@ -26,7 +26,7 @@ test('Pena4 Tech Solutions exports local provider metadata for the verified firs
     companyName: 'Pena4 Tech Solutions',
     officialBrandName: 'Pena4',
     adapter: 'script',
-    modulePath: '../../scraper/pena4techsolutions/script.js',
+    modulePath: '../pena4techsolutions/script.js',
     homepageUrl: 'https://www.pena4.com/',
     companyCareerPage: 'https://www.pena4.com/jobs.php',
     atsPlatform: 'official-first-party-jobs-page',
@@ -36,9 +36,9 @@ test('Pena4 Tech Solutions exports local provider metadata for the verified firs
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'pena4.com',
-    verifiedOn: '2026-07-17',
+    verifiedOn: '2026-08-04',
     verifiedSurfaceSummary:
-      'Verified on Friday, July 17, 2026 that https://www.pena4.com/jobs.php was the live first-party Pena4 jobs page, that it publicly exposed the Inpatient Medical Coder listing alongside region-specific vacancy messaging, and that the page included a first-party application form plus outbound Indeed and LinkedIn job links.',
+      'Verified on Tuesday, August 4, 2026 that https://www.pena4.com/jobs.php was the live first-party Pena4 jobs page, that it publicly exposed the Inpatient Medical Coder listing while older Pena4 job cards remained only inside commented HTML, and that the page included a first-party application form plus outbound Indeed and LinkedIn job links.',
     dryRunFile: 'pena4techsolutions/jobs.json',
   })
 

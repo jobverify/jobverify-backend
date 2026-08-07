@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that the exact-name Fullerton India homepage at https://fullertonindia.com/ now redirects to the live SMFG India Credit site at https://www.smfgindiacredit.com/, that the official careers page is https://www.smfgindiacredit.com/careers.aspx, and that the first-party careers page exposes the public Workline jobs entry URL https://app52.workline.hr/Candidate/GeneralOpening.aspx which resolves to https://app52.workline.hr/Cportal/GeneralOpening.aspx. The scraper uses the standard public Workline listing endpoint https://app52.workline.hr/CPortal/generalopening.aspx/GetCurrentopening for extraction and fails closed if that public contract differs at runtime.'
+  'Verified on August 2, 2026 that the exact-name Fullerton India homepage at https://fullertonindia.com/ now redirects to the live SMFG India Credit site at https://www.smfgindiacredit.com/, that the homepage and careers surface are now rendered with attributed Next.js title tags while preserving the same careers handoff to https://www.smfgindiacredit.com/careers.aspx, and that the first-party careers page still exposes the public Workline jobs entry URL https://app52.workline.hr/Candidate/GeneralOpening.aspx which resolves to https://app52.workline.hr/Cportal/GeneralOpening.aspx. The scraper uses the standard public Workline listing endpoint https://app52.workline.hr/CPortal/generalopening.aspx/GetCurrentopening for extraction and fails closed if that public contract differs at runtime.'
 
 export const FULLERTON_INDIA_CATALOG = {
   source: 'fullertonindia',
@@ -27,7 +27,7 @@ export const FULLERTON_INDIA_CATALOG = {
     'verified-redirected-homepage+verified-first-party-careers-page+workline-handoff+currentopening-json-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

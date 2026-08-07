@@ -11,15 +11,16 @@ const officialHomepageWithoutJobs = `
   <html>
     <head><title>Drut</title></head>
     <body>
-      <nav>
+      <div class="footer-menu">
         <a>HOME</a><a>ABOUT DRUT</a><a>ABOUT US</a><a>RESOURCES</a>
-        <a>BLOGS</a><a>SURVEY</a><a>MEDIA</a><a>CONTACT US</a>
-      </nav>
+        <a>BLOGS</a><a>SURVEY</a><a>MEDIA</a>
+      </div>
       <main>
         <h2>FIND A DRUT</h2>
         <p>Risk | Automate | Compliance</p>
         <h3>WHAT IS DRUT?</h3>
         <p>drut. is a robotics-based automation GRC platform.</p>
+        <a>CONTACT US</a>
       </main>
       <footer>Copyright © 2026 - drut | All Rights Reserved</footer>
     </body>

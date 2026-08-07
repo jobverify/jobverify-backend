@@ -20,6 +20,8 @@ test('Stratogent Technology Services local catalog captures the verified email-o
   assert.equal(provider.companyName, 'Stratogent Technology Services')
   assert.equal(provider.companyCareerPage, 'https://www.stratogent.com/careers/')
   assert.equal(provider.atsPlatform, 'official-company-careers-no-public-jobs')
+  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.match(provider.verifiedSurfaceSummary, /ptp\.cloud\/careers\/india/i)
   assert.match(provider.verifiedSurfaceSummary, /always hiring/i)
   assert.match(provider.verifiedSurfaceSummary, /careers-india@stratogent.com/i)
 })

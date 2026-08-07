@@ -5,16 +5,15 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Personal Banking, NRI Banking, Business Loans | Karur Vysya Bank</title>
+    <title>Karur Vysya Bank - KVB</title>
   </head>
   <body>
     <header>
-      <a href="https://careers.karurvysya.bank.in/karurvysyabank/jobslist">Careers</a>
+      <a href="https://careers.karurvysya.bank.in" target="_blank" rel="noopener noreferrer">Careers</a>
     </header>
     <main>
       <h1>Karur Vysya Bank</h1>
-      <p>Personal Banking</p>
-      <p>Business Loans</p>
+      <p>Contact : customersupport@kvb.bank.in</p>
     </main>
   </body>
 </html>
@@ -30,7 +29,7 @@ const careersShellHtml = `
   <body>
     <app-root></app-root>
     <script src="runtime.36d5a07efd54c143.js"></script>
-    <script src="main.92af9ef27720e0e0.js"></script>
+    <script src="main.5dad6d4d821af268.js"></script>
     <script>
       if (location.hostname.includes('impl.openings.co') || location.hostname.includes('preprod1.openings.co')) {
         console.log('internal openings host')
@@ -41,12 +40,16 @@ const careersShellHtml = `
 `
 
 const companyConfigPayload = {
-  company: {
-    id: 15551,
-    companyName: 'Karur Vysya Bank',
-    careerSiteUrl: 'careers.karurvysya.bank.in',
-    website: 'https://www.kvb.co.in/',
-    domainName: 'careers.karurvysya.bank.in',
+  responseStatus: 'SUCCESS',
+  responseCode: 200,
+  reponseObject: {
+    company: {
+      id: 15551,
+      companyName: 'Karur Vysya Bank',
+      careerSiteUrl: 'careers.karurvysya.bank.in',
+      website: 'https://www.kvb.co.in/',
+      domainName: 'careers.karurvysya.bank.in',
+    },
   },
   configurationSeo: {
     pageTitle: 'Karur Vysya Bank - Careers',
@@ -56,42 +59,48 @@ const companyConfigPayload = {
 
 const searchPayload = [
   {
-    jobTitle: 'Cluster Sales Manager - GL',
-    departmentName: 'Agri Banking Group',
-    location: 'Karur',
-    jobCode: 'KVB10080',
-    referenceNumber: 'KVB10080',
-    jobUrl: 'cluster-sales-manager-gl-karur-2025061119013220',
-    experienceUIField: '3-8 years',
-    displayStatus: 'Open',
-    createDate: '01-Apr-2025',
-    skillSet: 'Sales, Relationship Management',
-    shortDescription: '<p>Drive gold loan sales across the cluster.</p>',
+    _source: {
+      jobTitle: 'Cluster Sales Manager - GL',
+      departmentName: 'Agri Banking Group',
+      location: 'Karur',
+      jobCode: 'KVB10080',
+      referenceNumber: 'KVB10080',
+      jobUrl: 'cluster-sales-manager-gl-karur-2025061119013220',
+      experienceUIField: '3-8 years',
+      displayStatus: 'Open',
+      createDate: '01-Apr-2025',
+      skillSet: 'Sales, Relationship Management',
+      shortDescription: '<p>Drive gold loan sales across the cluster.</p>',
+    },
   },
   {
-    jobTitle: 'Product Mgr.-Prod.&Partnership',
-    departmentName: 'Product',
-    location: 'Delhi, India;Bangalore, Karnataka, India;Chennai, Tamil Nadu, India',
-    jobCode: 'KVB10101',
-    referenceNumber: 'KVB10101',
-    jobUrl: 'product-mgr-prod-partnership-all-branches-2025062618181035',
-    experienceUIField: '3-10 years',
-    displayStatus: 'Open',
-    createdDate: '2025-06-26T00:00:00',
-    skillsToEvaluate: 'Payments, Partnerships',
-    shortDescription: '<p>Own product and partnership growth initiatives.</p>',
+    _source: {
+      jobTitle: 'Product Mgr.-Prod.&Partnership',
+      departmentName: 'Product',
+      location: 'Delhi, India;Bangalore, Karnataka, India;Chennai, Tamil Nadu, India',
+      jobCode: 'KVB10101',
+      referenceNumber: 'KVB10101',
+      jobUrl: 'product-mgr-prod-partnership-all-branches-2025062618181035',
+      experienceUIField: '3-10 years',
+      displayStatus: 'Open',
+      createdDate: '2025-06-26T00:00:00',
+      skillsToEvaluate: 'Payments, Partnerships',
+      shortDescription: '<p>Own product and partnership growth initiatives.</p>',
+    },
   },
   {
-    jobTitle: 'Archived Role',
-    departmentName: 'Operations',
-    location: 'Chennai, Tamil Nadu, India',
-    jobCode: 'KVB99999',
-    referenceNumber: 'KVB99999',
-    jobUrl: 'archived-role-2025061119013999',
-    experienceUIField: '2-4 years',
-    displayStatus: 'Closed',
-    createDate: '11-Jun-2025',
-    shortDescription: '<p>This closed role should be ignored.</p>',
+    _source: {
+      jobTitle: 'Archived Role',
+      departmentName: 'Operations',
+      location: 'Chennai, Tamil Nadu, India',
+      jobCode: 'KVB99999',
+      referenceNumber: 'KVB99999',
+      jobUrl: 'archived-role-2025061119013999',
+      experienceUIField: '2-4 years',
+      displayStatus: 'Closed',
+      createDate: '11-Jun-2025',
+      shortDescription: '<p>This closed role should be ignored.</p>',
+    },
   },
 ]
 
@@ -299,11 +308,13 @@ test('Karur Vysya Bank fails closed when the verified homepage, careers shell, o
       fetchJson: async (url) => {
         if (url === karurVysyaBank.COMPANY_CONFIGURATION_URL) {
           return {
-            company: {
-              id: 1,
-              companyName: 'Unexpected Company',
-              careerSiteUrl: 'example.com',
-              domainName: 'example.com',
+            reponseObject: {
+              company: {
+                id: 1,
+                companyName: 'Unexpected Company',
+                careerSiteUrl: 'example.com',
+                domainName: 'example.com',
+              },
             },
           }
         }

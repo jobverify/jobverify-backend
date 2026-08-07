@@ -208,12 +208,51 @@ test('Jupiter run verifies the trusted first-party careers surface before return
   assert.equal(jobs[0].title, 'Devops Engineer - SDE 2')
 })
 
+test('Jupiter can recover with browser-backed careers and Keka payloads when direct requests time out', async () => {
+  const jupiter = await loadModule()
+  const browserTextUrls = []
+  const browserJsonUrls = []
+
+  const jobs = await jupiter.createJupiterScraper({
+    maxJobs: 1,
+    now: () => '2026-08-02T00:00:00.000Z',
+  }).run({
+    fetchText: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: jupiter.money:443, timeout: 10000ms)')
+    },
+    fetchJson: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: jupiter.keka.com:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      if (url === jupiter.CAREERS_PAGE_URL) return CAREERS_PAGE_HTML
+      throw new Error(`Unexpected browser text URL: ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      browserJsonUrls.push(url)
+      if (url === jupiter.CAREER_PORTAL_INFO_URL) return CAREER_PORTAL_INFO
+      if (url === jupiter.ACTIVE_JOBS_URL) return ACTIVE_JOBS_PAYLOAD
+      throw new Error(`Unexpected browser JSON URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [jupiter.CAREERS_PAGE_URL])
+  assert.deepEqual(browserJsonUrls, [
+    jupiter.CAREER_PORTAL_INFO_URL,
+    jupiter.ACTIVE_JOBS_URL,
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'jupiter')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T00:00:00.000Z')
+})
+
 test('Jupiter fails closed when the verified careers handoff no longer points to the official Keka board', async () => {
   const jupiter = await loadModule()
 
   await assert.rejects(
     jupiter.createJupiterScraper().run({
       fetchText: async () => '<html><body><h1>Join us</h1><a href="https://example.com/jobs">View all openings</a></body></html>',
+      fetchBrowserText: async () => '<html><body><h1>Join us</h1><a href="https://example.com/jobs">View all openings</a></body></html>',
       fetchJson: async () => ACTIVE_JOBS_PAYLOAD,
     }),
     /verified first-party careers page/i,

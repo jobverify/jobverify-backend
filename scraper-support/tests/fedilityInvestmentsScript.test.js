@@ -28,6 +28,22 @@ const jobsPageHtml = `
 </html>
 `
 
+const cloudflareChallengeHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+    <meta name="robots" content="noindex,nofollow">
+  </head>
+  <body>
+    <p>jobs.fidelity.com</p>
+    <p>Enable JavaScript and cookies to continue</p>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
+    <h1>Please wait while we verify your browser</h1>
+  </body>
+</html>
+`
+
 const jobsXml = `<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <source>
   <publisher>Fidelity Investments Careers</publisher>
@@ -135,7 +151,7 @@ test('Fedility Investments helpers stay pinned to the verified Fidelity India jo
   assert.equal(fedilityInvestments.SOURCE, 'fedilityinvestments')
   assert.equal(fedilityInvestments.COMPANY, 'Fedility Investments')
   assert.equal(fedilityInvestments.OFFICIAL_BRAND_NAME, 'Fidelity Investments')
-  assert.equal(fedilityInvestments.VERIFIED_ON, '2026-07-15')
+  assert.equal(fedilityInvestments.VERIFIED_ON, '2026-08-02')
   assert.equal(fedilityInvestments.JOBS_PAGE_URL, JOBS_PAGE_URL)
   assert.equal(fedilityInvestments.JOBS_XML_URL, JOBS_XML_URL)
   assert.equal(
@@ -143,6 +159,10 @@ test('Fedility Investments helpers stay pinned to the verified Fidelity India jo
     DETAIL_URL,
   )
   assert.equal(fedilityInvestments.hasOfficialJobsPageSignal(jobsPageHtml), true)
+  assert.equal(
+    fedilityInvestments.hasCloudflareChallengePageSignal(cloudflareChallengeHtml),
+    true,
+  )
   assert.equal(fedilityInvestments.hasOfficialJobsFeedSignal(jobsXml), true)
   assert.equal(fedilityInvestments.normalizeEmploymentType('Regular'), 'Full-time')
 })
@@ -215,7 +235,7 @@ test('run validates the verified Fidelity India page and XML feed once, then dec
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === JOBS_PAGE_URL) return jobsPageHtml
+      if (url === JOBS_PAGE_URL) return cloudflareChallengeHtml
       if (url === JOBS_XML_URL) return jobsXml
       throw new Error(`Unexpected Fedility Investments URL: ${url}`)
     },
@@ -257,7 +277,7 @@ test('run fails closed when the verified Fidelity India jobs page or XML feed co
     fedilityInvestments.createFedilityInvestmentsScraper().run({
       fetchText: async (url) => {
         if (url === JOBS_PAGE_URL) {
-          return jobsPageHtml.replace('Find the right match for your skills and location.', 'Explore careers')
+          return jobsPageHtml.replace('<h1>Search Jobs</h1>', '<h1>Explore careers</h1>')
         }
         throw new Error(`Unexpected Fedility Investments URL: ${url}`)
       },

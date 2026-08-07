@@ -5,19 +5,20 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const HOMEPAGE_URL = 'https://www.gulfasia.com/'
-export const CAREERS_URL = 'https://www.gulfasia.com/careers'
-export const JOBS_URL = 'https://www.gulfasia.com/jobs'
+export const HOMEPAGE_URL = 'https://gulfasia.com/'
+export const CAREERS_URL = 'https://gulfasia.com/careers'
+export const JOBS_URL = 'https://gulfasia.com/jobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PARKED_TITLE_PATTERN =
-  /<title>\s*gulfasia\.com(?:&nbsp;|\s*-\s*)This website is for sale!(?:&nbsp;|\s*-\s*)gulfasia Resources and Information\.\s*<\/title>/i
+  /<title>\s*gulfasia\.com[\s\S]*?This website is for sale![\s\S]*?gulfasia Resources and Information\.\s*<\/title>/i
 const PARKED_DESCRIPTION_PATTERN =
   /This website is for sale!\s*gulfasia\.com is your first and best source for information about gulfasia\./i
 const SEDO_LOGO_PATTERN = /img\.sedoparking\.com\/templates\/logos\/sedo_logo\.png/i
 const PARKED_SCRIPT_PATTERN = /euob\.iseaskies\.com\/sxp\/i\/581749a3c1e7922374ca9b3d4dff0407\.js/i
+const PARKED_CHEQ_PATTERN = /CHEQ_BLOCKED_REASONS/i
 const PUBLIC_JOB_BOARD_PATTERN =
   /\b(open roles|open positions|current openings|job openings|available positions|apply now|apply here|join our team|we are hiring|careers at)\b|jobs\.lever\.co|boards\.greenhouse\.io|ashbyhq\.com|workable\.com|smartrecruiters|workdayjobs/i
 
@@ -29,7 +30,7 @@ export const hasParkedDomainSignal = (html) => {
   return PARKED_TITLE_PATTERN.test(page)
     && PARKED_DESCRIPTION_PATTERN.test(page)
     && SEDO_LOGO_PATTERN.test(page)
-    && PARKED_SCRIPT_PATTERN.test(page)
+    && (PARKED_SCRIPT_PATTERN.test(page) || PARKED_CHEQ_PATTERN.test(page))
 }
 
 export const hasPublicJobBoardSignal = (html) => PUBLIC_JOB_BOARD_PATTERN.test(normalizeWhitespace(html))

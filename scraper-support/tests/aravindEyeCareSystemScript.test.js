@@ -246,13 +246,14 @@ test('Aravind Eye Care System scraper constants stay pinned to the verified firs
   assert.equal(aravind.PAGE_SITEMAP_URL, 'https://aravind.org/page-sitemap.xml')
   assert.equal(aravind.JOB_LISTINGS_AJAX_URL, 'https://aravind.org/jm-ajax/get_listings/')
   assert.equal(aravind.JOB_LISTINGS_API_URL, 'https://aravind.org/wp-json/wp/v2/job-listings')
-  assert.deepEqual(aravind.KNOWN_LIVE_JOB_LINKS, [
-    'https://aravind.org/job/driver/',
-    'https://aravind.org/job/ac-mechanic/',
-    'https://aravind.org/job/data-engineering-jd/',
-  ])
   assert.equal(aravind.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(aravind.hasOfficialCareersPageSignal(careersPageHtml), true)
+  assert.equal(
+    aravind.hasOfficialCareersPageSignal(
+      careersPageHtml.replace('<option value="294">AuroiTech-Madurai</option>', ''),
+    ),
+    true,
+  )
   assert.equal(aravind.hasExpectedPageSitemapSignal(pageSitemapXml), true)
   assert.deepEqual(aravind.extractSitemapUrls(pageSitemapXml), [
     'https://aravind.org/',
@@ -432,6 +433,44 @@ test('Aravind Eye Care System run validates the known first-party shell and retu
   assert.ok(Date.parse(jobs[0].scrapedAt))
 })
 
+test('Aravind Eye Care System treats verified empty public feeds as zero current openings', async () => {
+  const aravind = await loadScriptModule()
+  const emptyAjaxPayload = {
+    found_jobs: false,
+    max_num_pages: 0,
+    html: '<li class="no_job_listings_found">There are no listings matching your search.</li>',
+  }
+
+  assert.equal(aravind.hasExpectedAjaxListingsSignal(emptyAjaxPayload), true)
+  assert.equal(aravind.hasExpectedJobListingsApiSignal([]), true)
+
+  const jobs = await aravind.createAravindEyeCareSystemScraper().run({
+    fetchPage: async (url) => {
+      if (url === aravind.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+      if (url === aravind.CAREERS_PAGE_URL) {
+        return {
+          status: 200,
+          url,
+          html: careersPageHtml.replace('<option value="294">AuroiTech-Madurai</option>', ''),
+        }
+      }
+      if (url === aravind.PAGE_SITEMAP_URL) {
+        return { status: 200, url, html: pageSitemapXml }
+      }
+      throw new Error(`Unexpected Aravind page URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (url === aravind.JOB_LISTINGS_AJAX_URL) return emptyAjaxPayload
+      if (url === aravind.JOB_LISTINGS_API_URL) return []
+      throw new Error(`Unexpected Aravind JSON URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Aravind Eye Care System fails closed when the verified homepage, careers page, sitemap, or public feeds drift', async () => {
   const aravind = await loadScriptModule()
 
@@ -510,8 +549,9 @@ test('Aravind Eye Care System fails closed when the verified homepage, careers p
       fetchJson: async (url) => {
         if (url === aravind.JOB_LISTINGS_AJAX_URL) {
           return {
-            ...ajaxPayload,
-            html: ajaxPayload.html.replace('https://aravind.org/job/data-engineering-jd/', 'https://aravind.org/job/unknown-role/'),
+            found_jobs: true,
+            max_num_pages: 1,
+            html: '<li class="no_job_listings_found">There are no listings matching your search.</li>',
           }
         }
 
@@ -544,7 +584,7 @@ test('Aravind Eye Care System fails closed when the verified homepage, careers p
         }
 
         if (url === aravind.JOB_LISTINGS_API_URL) {
-          return sampleRestPayload.slice(0, 2)
+          return [{ status: 'publish', type: 'job_listing', title: { rendered: '' }, link: '' }]
         }
 
         throw new Error(`Unexpected Aravind JSON URL: ${url}`)

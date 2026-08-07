@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-15T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-01T00:00:00.000Z'
 
 const officialCareersSurface = {
   url: 'https://www.delhivery.com/careers',
@@ -25,6 +25,17 @@ const officialCareersSurface = {
   ],
 }
 
+const officialCareersSurfaceWithoutVisibleJobsLabel = {
+  ...officialCareersSurface,
+  text: [
+    'Build a career at Delhivery',
+    'Join a dynamic team of over 74,000 employees shaping the future of logistics in India',
+    'Corporate Jobs',
+    'Warehouse Jobs',
+    'Delivery Jobs',
+  ].join(' '),
+}
+
 const publicDarwinboxHomeSurface = {
   url: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/home',
   title: 'Delhivery Limited',
@@ -35,6 +46,13 @@ const publicDarwinboxHomeSurface = {
       href: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/allJobs',
     },
   ],
+}
+
+const minimalPublicDarwinboxHomeSurface = {
+  url: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/home',
+  title: 'Delhivery Limited',
+  text: 'Delhivery Limited -',
+  links: [],
 }
 
 const listingPayload = {
@@ -129,7 +147,7 @@ test('Delhivery scraper keeps the verified first-party careers handoff and publi
   assert.equal(delhivery.COMPANY_NAME, 'Delhivery')
   assert.equal(delhivery.SOURCE, 'delhivery')
   assert.equal(delhivery.OFFICIAL_BRAND_NAME, 'Delhivery Limited')
-  assert.equal(delhivery.VERIFIED_ON, '2026-07-15')
+  assert.equal(delhivery.VERIFIED_ON, '2026-08-01')
   assert.equal(delhivery.HOMEPAGE_URL, 'https://www.delhivery.com/')
   assert.equal(delhivery.OFFICIAL_CAREERS_URL, 'https://www.delhivery.com/careers')
   assert.equal(
@@ -154,7 +172,12 @@ test('Delhivery scraper keeps the verified first-party careers handoff and publi
     'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/jobDetails/dbx-job-1',
   )
   assert.equal(delhivery.hasOfficialDelhiveryCareersSignals(officialCareersSurface), true)
+  assert.equal(
+    delhivery.hasOfficialDelhiveryCareersSignals(officialCareersSurfaceWithoutVisibleJobsLabel),
+    true,
+  )
   assert.equal(delhivery.hasPublicDarwinboxHomeSignal(publicDarwinboxHomeSurface), true)
+  assert.equal(delhivery.hasPublicDarwinboxHomeSignal(minimalPublicDarwinboxHomeSurface), true)
   assert.equal(
     delhivery.hasOfficialDelhiveryCareersSignals({
       ...officialCareersSurface,
@@ -230,6 +253,44 @@ test('Delhivery scraper keeps the verified first-party careers handoff and publi
     jobDescription: '<p>Manage partner development across multiple stations.</p>',
   })
   assert.equal(delhivery.transformDelhiveryJob(listingPayload.data[3]), null)
+})
+
+test('Delhivery official surface capture uses a full browser page so the live Nuxt careers content can hydrate', async () => {
+  const delhivery = await loadDelhiveryModule()
+  const calls = []
+  const fakePage = {
+    goto: async (url, options) => {
+      calls.push(['goto', url, options?.waitUntil])
+    },
+    waitForFunction: async (...args) => {
+      calls.push(['waitForFunction', args[2], args[3]])
+    },
+    title: async () => officialCareersSurface.title,
+    evaluate: async () => officialCareersSurface.text,
+    $$eval: async () => officialCareersSurface.links,
+    url: () => officialCareersSurface.url,
+  }
+  const fakeBrowser = {
+    newPage: async () => {
+      calls.push(['newPage'])
+      return fakePage
+    },
+    close: async () => {
+      calls.push(['close'])
+    },
+  }
+
+  const surface = await delhivery.captureOfficialCareersSurface({
+    launchBrowserImpl: async () => fakeBrowser,
+  })
+
+  assert.deepEqual(surface, officialCareersSurface)
+  assert.deepEqual(calls, [
+    ['newPage'],
+    ['goto', 'https://www.delhivery.com/careers', 'domcontentloaded'],
+    ['waitForFunction', 'Jobs at Delhivery', 'i'],
+    ['close'],
+  ])
 })
 
 test('Delhivery run verifies the careers handoff, verifies the public Darwinbox home shell, and returns normalized India jobs', async () => {

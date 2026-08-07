@@ -32,9 +32,12 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
   return /StoreKing\s*-\s*AI-Powered Digital Retail OS/i.test(page)
+    && /Turning Kirana Stores into Bright Stores/i.test(page)
     && /AI-Powered Retail OS - For Stores\. To Consumers\./i.test(page)
+    && /ANY STORE\./i.test(page)
+    && /ONLINE\.5 MINUTES\./i.test(page)
     && /Localcube Commerce Pvt Ltd/i.test(page)
-    && /https:\/\/storeking\.in\/contact/i.test(page)
+    && /(href=["']\/contact["']|Contact us)/i.test(page)
 }
 
 export const hasAboutPageSignal = (html) => {
@@ -44,13 +47,13 @@ export const hasAboutPageSignal = (html) => {
     && /Since 2015/i.test(page)
     && /Be Part of the StoreKing Story/i.test(page)
     && /Explore Careers/i.test(page)
-    && /https:\/\/storeking\.in\/contact/i.test(page)
+    && /(href=["']\/contact["']|Contact us)/i.test(page)
 }
 
 export const hasContactPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /StoreKing Retail OS - Contact & Retailer Registration/i.test(page)
+  return /StoreKing Retail OS - Contact\s*&(?:amp;)?\s*Retailer Registration/i.test(page)
     && /Localcube Commerce Pvt Ltd/i.test(page)
     && /hello@storeking\.in/i.test(page)
     && /How Can We Help You Today\?/i.test(page)
@@ -61,7 +64,7 @@ export const hasVerifiedMissingRouteSignal = (html) => {
   const page = String(html ?? '')
 
   return /Page not found/i.test(page)
-    && /<link rel=["']canonical["'] href=["']https:\/\/storeking\.in\/["']/i.test(page)
+    && /<link rel=["']canonical["'] href=["']https:\/\/storeking\.in\/?["']/i.test(page)
 }
 
 export const isVerifiedMissingRouteError = (error, url) =>
@@ -95,11 +98,6 @@ const assertVerifiedMissingRoute = async (fetchText, url) => {
 
 export const createStoreKingScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('StoreKing homepage no longer matches the verified official site')
-    }
-
     const aboutHtml = await fetchText(ABOUT_URL)
     if (!hasAboutPageSignal(aboutHtml)) {
       throw new Error('StoreKing about page no longer matches the verified careers contact handoff')

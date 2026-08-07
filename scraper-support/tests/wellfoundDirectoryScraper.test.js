@@ -8,7 +8,7 @@ import {
 } from '../wellfoundDirectory/engine.js'
 
 const provider = {
-  source: 'wfappliedintuition',
+  source: 'applied-intuition.wellfoundDirectory',
   companyName: 'Applied Intuition',
   companyCareerPage: 'https://wellfound.com/startups/location/bangalore?page=2',
   wellfoundDirectoryPageUrl: 'https://wellfound.com/startups/location/bangalore?page=2',
@@ -67,7 +67,7 @@ test('extractWellfoundJobs maps public Wellfound job links into Jobify job recor
       link: 'https://wellfound.com/jobs/1234567-autonomy-software-engineer',
       applyUrl: 'https://wellfound.com/jobs/1234567-autonomy-software-engineer',
       sourceUrl: 'https://wellfound.com/jobs/1234567-autonomy-software-engineer',
-      source: 'wfappliedintuition',
+      source: 'applied-intuition.wellfoundDirectory',
       jobId: '1234567',
       requisitionId: '1234567',
       department: null,
@@ -85,7 +85,7 @@ test('extractWellfoundJobs maps public Wellfound job links into Jobify job recor
       link: 'https://wellfound.com/jobs/7654321-simulation-engineer',
       applyUrl: 'https://wellfound.com/jobs/7654321-simulation-engineer',
       sourceUrl: 'https://wellfound.com/jobs/7654321-simulation-engineer',
-      source: 'wfappliedintuition',
+      source: 'applied-intuition.wellfoundDirectory',
       jobId: '7654321',
       requisitionId: '7654321',
       department: null,
@@ -119,7 +119,8 @@ test('Wellfound-directory scraper falls back to a truthful aggregate hiring sign
   assert.equal(jobs[0].title, 'Current openings at Applied Intuition')
   assert.equal(jobs[0].company, 'Applied Intuition')
   assert.equal(jobs[0].location, 'Bangalore, India')
-  assert.equal(jobs[0].source, 'wfappliedintuition')
+  assert.equal(jobs[0].source, 'applied-intuition.wellfoundDirectory')
   assert.equal(jobs[0].sourceUrl, 'https://wellfound.com/company/applied-intuition/jobs')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.match(jobs[0].jobDescription, /231 current openings/i)
 })

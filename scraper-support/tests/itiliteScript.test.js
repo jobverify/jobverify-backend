@@ -97,6 +97,7 @@ test('Itilite extracts the verified first-party India careers cards into conserv
       postingDate: null,
       closingDate: null,
       jobDescription: 'Official ITILITE India careers page lists Account Executive - US Sales in Remote, India. Apply via LinkedIn.',
+      publicExperienceChecked: true,
     },
     {
       title: 'Lead Software Engineer',
@@ -117,6 +118,7 @@ test('Itilite extracts the verified first-party India careers cards into conserv
       postingDate: null,
       closingDate: null,
       jobDescription: 'Official ITILITE India careers page lists Lead Software Engineer in Bangalore, India. Apply via LinkedIn.',
+      publicExperienceChecked: true,
     },
     {
       title: 'Associate Travel Support',
@@ -137,6 +139,7 @@ test('Itilite extracts the verified first-party India careers cards into conserv
       postingDate: null,
       closingDate: null,
       jobDescription: 'Official ITILITE India careers page lists Associate Travel Support in Bangalore, India. Apply via LinkedIn.',
+      publicExperienceChecked: true,
     },
   ])
 })
@@ -177,6 +180,7 @@ test('Itilite run fetches the verified first-party India careers page and decora
       postingDate: null,
       closingDate: null,
       jobDescription: 'Official ITILITE India careers page lists Account Executive - US Sales in Remote, India. Apply via LinkedIn.',
+      publicExperienceChecked: true,
       source: 'itilite',
       link: 'https://www.linkedin.com/jobs/view/4110847363',
       scrapedAt: FIXED_SCRAPED_AT,
@@ -200,6 +204,7 @@ test('Itilite run fetches the verified first-party India careers page and decora
       postingDate: null,
       closingDate: null,
       jobDescription: 'Official ITILITE India careers page lists Lead Software Engineer in Bangalore, India. Apply via LinkedIn.',
+      publicExperienceChecked: true,
       source: 'itilite',
       link: 'https://www.linkedin.com/jobs/view/3880037975',
       scrapedAt: FIXED_SCRAPED_AT,

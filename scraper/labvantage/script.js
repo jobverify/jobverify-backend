@@ -97,6 +97,7 @@ export const createLabvantageSolutionsScraper = ({
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the LabVantage Solutions India careers section.',
+      publicExperienceChecked: true,
       remoteStatus: null,
       scrapedAt: new Date().toISOString(),
     }))

@@ -17,9 +17,9 @@ export const INGENERO_TECHNOLOGIES_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'ingenero.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://ingenero.com/career/ is the live first-party Ingenero careers page and that it currently exposes a CV Submission Form with Name, Email, and Upload CV fields plus India office contact details, but no trustworthy public requisition list, role detail pages, or job-specific apply routes. This provider therefore stays fail-closed.',
+    'Verified on Sunday, August 2, 2026 that https://ingenero.com/career/ remained the live first-party Ingenero careers page and that it currently exposes a CV Submission Form with Name, Email, and Upload CV fields plus India office contact details, but no trustworthy public requisition list, role detail pages, or job-specific apply routes. This provider therefore stays fail-closed.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

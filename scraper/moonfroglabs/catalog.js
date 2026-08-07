@@ -22,9 +22,9 @@ export const MOONFROG_LABS_CATALOG = {
     'verified-homepage+verified-careers-no-openings-message+verified-missing-common-job-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://moonfroglabs.com/ is the live first-party homepage, that https://moonfroglabs.com/careers/ is the branded careers page, and that the careers page explicitly says "No Open Positions Currently" while directing speculative applicants to hr@moonfroglabs.com and LinkedIn. Verified that https://moonfroglabs.com/recruitment-privacy-policy/ is the live recruitment privacy page for Moonfrog Labs Private Limited, and that adjacent first-party routes https://moonfroglabs.com/jobs/ and https://moonfroglabs.com/open-positions/ returned 404 responses. There is no trustworthy public jobs surface for Moonfrog Labs on the verified date.',
+    'Verified on Monday, August 3, 2026 that https://moonfroglabs.com/ remained the live first-party homepage, that https://moonfroglabs.com/careers/ remained the branded careers page, and that the careers page still explicitly says "No Open Positions Currently" while directing speculative applicants to hr@moonfroglabs.com and LinkedIn. Verified that https://moonfroglabs.com/recruitment-privacy-policy/ remained the live recruitment privacy page for Moonfrog Labs Private Limited, and that adjacent first-party routes https://moonfroglabs.com/jobs/ and https://moonfroglabs.com/open-positions/ still returned 404 responses. There is no trustworthy public jobs surface for Moonfrog Labs on the verified date.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

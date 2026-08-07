@@ -80,21 +80,33 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes('red balloon aerospace private limited')
-    && /href=["'][^"']*\/about\/["']/i.test(page)
-    && /href=["'][^"']*\/team\/["']/i.test(page)
-    && /href=["'][^"']*\/jobs\/["']/i.test(page)
-    && /href=["'][^"']*\/contact\/["']/i.test(page)
-    && normalized.includes('vijayawada')
+  return normalized.includes('red balloon aerospace')
+    && (
+      normalized.includes('near-space infrastructure')
+      || normalized.includes('high altitude stratospheric platforms')
+    )
+    && /href=["'][^"']*\/about\/?["']/i.test(page)
+    && /href=["'][^"']*\/team\/?["']/i.test(page)
+    && /href=["'][^"']*\/jobs\/?["']/i.test(page)
+    && /href=["'][^"']*\/contact\/?["']/i.test(page)
 }
 
 export const hasOfficialJobsSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('jobs')
-    && normalized.includes('select a position')
-    && normalized.includes('upload resume / cv')
+  return normalized.includes('careers')
+    && normalized.includes('join us')
     && normalized.includes('submit')
+    && (
+      normalized.includes('loading jobs')
+      || normalized.includes('select a position')
+      || normalized.includes('choose one')
+    )
+    && (
+      normalized.includes('upload resume / cv')
+      || normalized.includes('resume/cv upload')
+      || normalized.includes('upload resume')
+    )
 }
 
 export const hasOfficialContactSignal = (html) => {

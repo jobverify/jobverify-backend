@@ -25,7 +25,7 @@ const CAREERS_PAGE_HTML = `
         <a href="mailto:career@quadeye.com">career@quadeye.com</a>
       </div>
       <h3>We are looking for enthusiastic candidates for below profiles!</h3>
-      <a href="https://www.quadeye.com/careers/">Check All The Openings</a>
+      <a href="https://www.quadeye.com/careers/"><span>Check All The Openings</span></a>
       <link
         rel="stylesheet"
         href="https://static.zohocdn.com/recruit/embed_careers_site/css/v1.1/embed_jobs.css"
@@ -52,8 +52,9 @@ const PORTAL_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Jobs at Careers</title>
+    <title>Jobs at PeoplePlus</title>
     <meta property="og:url" content="https://quadeye.zohorecruit.in/jobs/Careers" />
+    <meta property="og:site_name" content="Quadeye" />
   </head>
   <body>
     <input id="pageJson" type="hidden" value="{}" />
@@ -139,7 +140,7 @@ test('QuadEye helper exports stay pinned to the verified official careers page, 
   assert.equal(quadeye.SOURCE, 'quadeye')
   assert.equal(quadeye.COMPANY, 'QuadEye')
   assert.equal(quadeye.OFFICIAL_BRAND_NAME, 'Quadeye')
-  assert.equal(quadeye.VERIFIED_ON, '2026-07-17')
+  assert.equal(quadeye.VERIFIED_ON, '2026-08-04')
   assert.equal(quadeye.HOMEPAGE_URL, 'https://www.quadeye.com/')
   assert.equal(quadeye.CAREERS_PAGE_URL, 'https://www.quadeye.com/careers/')
   assert.equal(quadeye.CAREERS_PORTAL_URL, 'https://quadeye.zohorecruit.in/jobs/Careers/')
@@ -191,7 +192,7 @@ test('QuadEye run validates the verified first-party page, public portal, API, a
   const requestedJson = []
 
   const jobs = await quadeye.createQuadEyeScraper({
-    now: () => '2026-07-17T09:30:00.000Z',
+    now: () => '2026-08-04T09:30:00.000Z',
   }).run({
     fetchText: async (url) => {
       requestedTexts.push(url)
@@ -246,7 +247,7 @@ test('QuadEye run validates the verified first-party page, public portal, API, a
       closingDate: null,
       jobDescription: 'Build and enhance in-house web applications used in high-paced trading environments.',
       remoteStatus: 'On-site',
-      scrapedAt: '2026-07-17T09:30:00.000Z',
+      scrapedAt: '2026-08-04T09:30:00.000Z',
     },
   ])
 })

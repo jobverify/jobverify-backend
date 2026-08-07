@@ -51,15 +51,41 @@ const ensureIndiaSuffix = (value) => {
 
 const buildSourceUrl = (id) => `${REDIRECTED_CAREERS_PAGE_URL}#job-${id}`
 
-const extractEmbeddedJobsArray = (html = '') => {
-  const match = String(html ?? '').match(/"initialJobs"\s*:\s*(\[[\s\S]*?\])\s*[\},]/)
-  if (!match) return null
+const parseJobsArrayCandidate = (value) => {
+  if (!value) return null
 
-  try {
-    return JSON.parse(match[1])
-  } catch {
-    return null
+  const candidates = [
+    value,
+    value.replace(/\\"/g, '"').replace(/\\\\\//g, '/'),
+  ]
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate)
+    } catch {
+      continue
+    }
   }
+
+  return null
+}
+
+const extractEmbeddedJobsArray = (html = '') => {
+  const page = String(html ?? '')
+  const candidates = [
+    page.match(/"initialJobs"\s*:\s*(\[[\s\S]*?\])\s*[\},]/)?.[1] ?? null,
+    page.match(/\\"initialJobs\\":(\[[\s\S]*?\])(?:,\\"|[}\]])/)?.[1] ?? null,
+    page.replace(/\\"/g, '"').match(/"initialJobs"\s*:\s*(\[[\s\S]*?\])\s*[\},]/)?.[1] ?? null,
+  ].filter(Boolean)
+
+  for (const candidate of candidates) {
+    const parsed = parseJobsArrayCandidate(candidate)
+    if (Array.isArray(parsed)) {
+      return parsed
+    }
+  }
+
+  return null
 }
 
 const isIndiaLocation = (location) => {

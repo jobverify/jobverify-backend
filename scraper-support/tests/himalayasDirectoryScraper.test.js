@@ -8,10 +8,11 @@ import {
 } from '../himalayasDirectory/engine.js'
 
 const provider = {
-  source: 'hmacvauctions',
+  source: 'acv-auctions.himalayas.app',
   companyName: 'ACV Auctions',
   adapter: 'himalayasDirectory',
   companyCareerPage: 'https://himalayas.app/jobs/countries/india/software-engineering?page=2',
+  companyDomain: 'acv-auctions.himalayas.app',
   atsPlatform: 'himalayas-remote-jobs-api',
   countryFilter: 'India',
   himalayasSearchQuery: 'ACV Auctions',
@@ -109,14 +110,16 @@ test('Himalayas scraper maps matching India-eligible API jobs and skips unrelate
   assert.equal(jobs[0].location, 'Worldwide / India eligible')
   assert.equal(jobs[0].city, 'Remote')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].source, 'hmacvauctions')
+  assert.equal(jobs[0].source, 'acv-auctions.himalayas.app')
   assert.equal(jobs[0].jobId, '4000986855')
   assert.equal(jobs[0].department, 'Product & Technology')
   assert.equal(jobs[0].employmentType, 'Full Time')
   assert.equal(jobs[0].postingDate, '2026-02-14')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].remoteStatus, 'Remote')
   assert.match(jobs[0].jobDescription, /Build Java services/)
   assert.equal(jobs[1].location, 'India')
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
 test('Himalayas scraper falls back to the workbook hiring signal when API search is empty', async () => {
@@ -139,6 +142,7 @@ test('Himalayas scraper falls back to the workbook hiring signal when API search
   assert.equal(jobs[0].title, 'Current remote openings at ACV Auctions')
   assert.equal(jobs[0].location, 'India eligible remote')
   assert.equal(jobs[0].city, 'Remote')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.match(jobs[0].jobDescription, /Software Engineer V, ACVMax/)
   assert.match(jobs[0].jobDescription, /Verified on 2026-07-23/)
 })
@@ -154,5 +158,6 @@ test('Himalayas scraper falls back to the workbook hiring signal when the API is
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Current remote openings at ACV Auctions')
   assert.equal(jobs[0].sourceUrl, provider.companyCareerPage)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.match(jobs[0].jobDescription, /Software Engineer V, ACVMax/)
 })

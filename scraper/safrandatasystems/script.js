@@ -1,6 +1,7 @@
 import path from 'node:path'
-import { execFile } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -58,6 +59,10 @@ const toAbsoluteUrl = (value, baseUrl = COMPANY_PAGE_URL) => {
 
 const normalizeHost = (value) => String(value || '').replace(/^www\./i, '').toLowerCase()
 
+export const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|attention required!|just a moment|cloudflare|captcha|challenge|access denied|blocked/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const urlTargetsExactCompany = (value) => {
   try {
     const parsed = new URL(value, COMPANY_PAGE_URL)
@@ -108,7 +113,7 @@ const hasExactCompanyFilterSelected = (html) => {
 export const hasFilteredJobsPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Offres d&#0*39;emploi\s*\|\s*Safran\s*<\/title>/i.test(page)
+  return /<title>\s*Offres d(?:'|&#0*39;)emploi\s*\|\s*Safran\s*<\/title>/i.test(page)
     && hasExactCompanyFilterSelected(page)
     && /c-structured-news-list__results--nb/i.test(page)
 }
@@ -284,39 +289,9 @@ export const extractJobDetail = (card, html) => {
   }
 }
 
-const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, reject) => {
-  const command = process.platform === 'win32' ? 'curl.exe' : 'curl'
-  const args = [
-    '-L',
-    '--compressed',
-    '-A',
-    USER_AGENT,
-    '-H',
-    `Accept: ${SAFRAN_HEADERS.Accept}`,
-    '-H',
-    `Accept-Language: ${SAFRAN_HEADERS['Accept-Language']}`,
-    url,
-  ]
-
-  execFileImpl(command, args, (error, stdout, stderr) => {
-    if (error) {
-      reject(error)
-      return
-    }
-
-    const output = String(stdout ?? '')
-    if (!output.trim()) {
-      reject(new Error(stderr || `Empty curl response for ${url}`))
-      return
-    }
-
-    resolve(output)
-  })
-})
-
 export const createDefaultFetchText = ({
   fetchImpl = fetch,
-  execFileImpl = execFile,
+  fetchBrowserText,
 } = {}) => async (url) => {
   try {
     const response = await fetchImpl(url, { headers: SAFRAN_HEADERS })
@@ -324,19 +299,52 @@ export const createDefaultFetchText = ({
       return response.text()
     }
 
-    return runCurlRequest(url, execFileImpl)
-  } catch {
-    return runCurlRequest(url, execFileImpl)
+    const error = new Error(`HTTP ${response.status} for ${url}`)
+    if (fetchBrowserText && shouldUseBrowserFallback(error)) {
+      return fetchBrowserText(url)
+    }
+
+    throw error
+  } catch (error) {
+    if (fetchBrowserText && shouldUseBrowserFallback(error)) {
+      return fetchBrowserText(url)
+    }
+
+    throw error
   }
 }
-
-const defaultFetchText = createDefaultFetchText()
 
 export const createSafranDataSystemsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const companyPageHtml = await fetchText(COMPANY_PAGE_URL)
+  async run({ fetchText, fetchBrowserText, now: overrideNow } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
+    }
+
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+
+      if (![200, 304].includes(page.status)) {
+        throw new Error(`HTTP ${page.status} for ${url}`)
+      }
+
+      return page.html
+    })
+
+    const fetchTextImpl = fetchText || createDefaultFetchText({
+      fetchBrowserText: browserTextFetcher,
+    })
+
+    try {
+    const companyPageHtml = await fetchTextImpl(COMPANY_PAGE_URL)
     if (!hasOfficialCompanyPageSignal(companyPageHtml)) {
       throw new Error('Safran Data Systems official company page no longer matches the verified first-party surface')
     }
@@ -353,7 +361,7 @@ export const createSafranDataSystemsScraper = ({
     while (nextPageUrl && !seenPageUrls.has(nextPageUrl)) {
       seenPageUrls.add(nextPageUrl)
 
-      const pageHtml = await fetchText(nextPageUrl)
+      const pageHtml = await fetchTextImpl(nextPageUrl)
       if (!hasFilteredJobsPageSignal(pageHtml)) {
         throw new Error('Safran Data Systems exact company filter no longer resolves to the verified first-party jobs page')
       }
@@ -375,7 +383,7 @@ export const createSafranDataSystemsScraper = ({
     const jobs = []
 
     for (const card of cardsByUrl.values()) {
-      const detailHtml = await fetchText(card.sourceUrl)
+      const detailHtml = await fetchTextImpl(card.sourceUrl)
       const job = extractJobDetail(card, detailHtml)
 
       jobs.push({
@@ -387,6 +395,11 @@ export const createSafranDataSystemsScraper = ({
     }
 
     return jobs.sort((left, right) => left.title.localeCompare(right.title))
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 

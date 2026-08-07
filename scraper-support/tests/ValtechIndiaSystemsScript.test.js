@@ -1,51 +1,68 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const listingHtml = `
+const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Jobs list - Valtech India</title>
+    <title>Career | Valtech</title>
   </head>
   <body>
-    <h1>Jobs list</h1>
-    <div class="job-listing">
-      <a href="https://careers.india.valtech.com/jobs/5421672-java-lead-developer">Java - Lead Developer</a>
-      <p>Mobility Business Unit · Gandhinagar</p>
-    </div>
-    <div class="job-listing">
-      <a href="https://careers.india.valtech.com/jobs/5395703-frontend-technical-lead">Frontend Lead</a>
-      <p>Digital XP · Bengaluru</p>
-    </div>
+    <h1>Wanted: Innovators, Thinkers, Doers</h1>
+    <p>At Valtech, our employees are our best asset.</p>
+    <a href="/en-in/career/jobs/4944510101/" class="row slide-fade-in" data-om-job="SAP Commerce/Hybris Lead developer | Bengaluru">
+      <div class="eight column">
+        <h4 class="jobs__list__title">SAP Commerce/Hybris Lead developer</h4>
+      </div>
+      <div class="four column">
+        <h5 class="jobs__list__city">Bengaluru</h5>
+      </div>
+    </a>
+    <a href="/en-in/career/jobs/4945513101/" class="row slide-fade-in" data-om-job="Salesforce Marketing Cloud Developer Sr | Brazil - Remote">
+      <div class="eight column">
+        <h4 class="jobs__list__title">Salesforce Marketing Cloud Developer Sr</h4>
+      </div>
+      <div class="four column">
+        <h5 class="jobs__list__city">Brazil - Remote</h5>
+      </div>
+    </a>
+    <a href="/en-in/career/jobs/">View All Jobs</a>
   </body>
 </html>
 `
 
-const detailHtml = `
+const indiaDetailHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>SAP Commerce/Hybris Lead developer | Valtech</title>
+  </head>
   <body>
-    <p>Vendors Teamtailor</p>
-    <nav>Career menu</nav>
-    <div>Mobility Business Unit · Gandhinagar</div>
-    <h1>Java - Lead Developer</h1>
-    <a href="/jobs/5421672-java-lead-developer/apply">Apply for this job</a>
-    <p>We are Valtech Mobility, a strategic business unit of Valtech Group.</p>
-    <h2>Mandatory mindset, skillset and experience</h2>
-    <ul>
-      <li>Hands on experience in building Java applications using Java 8 (and above), Spring Boot and Hibernate</li>
-      <li>Skilled in TDD approach</li>
-    </ul>
-    <h2>Ideal candidates should also have</h2>
-    <ul>
-      <li>Experience with automation of software integration, testing, delivery, and deployment</li>
-    </ul>
-    <div>Department</div>
-    <div>Mobility Business Unit</div>
-    <div>Role</div>
-    <div>Developer</div>
-    <div>Locations</div>
-    <div>Gandhinagar</div>
+    <h1 class="masthead-sticky__hgroup__title">SAP Commerce/Hybris Lead developer</h1>
+    <h2 class="masthead-sticky__hgroup__subtitle">Bengaluru</h2>
+    <a href="https://job-boards.eu.greenhouse.io/valtech/jobs/4944510101" class="job-detail__apply-link">Apply</a>
+    <h3>Why Valtech?</h3>
+    <p>We're advisors, visionaries, creative and techies.</p>
+    <h3>The opportunity</h3>
+    <p>At Valtech, you'll find an environment designed for continuous learning, meaningful impact, and professional growth.</p>
+  </body>
+</html>
+`
+
+const brazilDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Salesforce Marketing Cloud Developer Sr | Valtech</title>
+  </head>
+  <body>
+    <h1 class="masthead-sticky__hgroup__title">Salesforce Marketing Cloud Developer Sr</h1>
+    <h2 class="masthead-sticky__hgroup__subtitle">Brazil - Remote</h2>
+    <a href="https://job-boards.eu.greenhouse.io/valtech/jobs/4945513101" class="job-detail__apply-link">Apply</a>
+    <h3>Why Valtech?</h3>
+    <p>We're advisors, visionaries, creative and techies.</p>
+    <h3>The opportunity</h3>
+    <p>At Valtech, you'll find an environment designed for continuous learning, meaningful impact, and professional growth.</p>
   </body>
 </html>
 `
@@ -58,59 +75,58 @@ const loadModule = async () => {
   }
 }
 
-test('Valtech India Systems validates the Teamtailor listing page and extracts job cards', async () => {
+test('Valtech India Systems validates the live Valtech careers page and extracts visible job cards', async () => {
   const valtech = await loadModule()
 
   assert.equal(valtech.SOURCE, 'valtechindiasystems')
   assert.equal(valtech.COMPANY, 'Valtech India Systems')
-  assert.equal(valtech.JOBS_URL, 'https://careers.india.valtech.com/jobs')
-  assert.equal(valtech.hasOfficialJobsPageSignal(listingHtml), true)
+  assert.equal(valtech.JOBS_URL, 'https://www.valtech.com/en-in/career/')
+  assert.equal(valtech.hasOfficialJobsPageSignal(careersHtml), true)
 
-  const listings = valtech.extractJobListings(listingHtml)
+  const listings = valtech.extractJobListings(careersHtml)
   assert.equal(listings.length, 2)
-  assert.equal(listings[0].title, 'Java - Lead Developer')
-  assert.equal(listings[0].department, 'Mobility Business Unit')
-  assert.equal(listings[0].location, 'Gandhinagar, India')
+  assert.equal(listings[0].title, 'SAP Commerce/Hybris Lead developer')
+  assert.equal(listings[0].location, 'Bengaluru, India')
+  assert.equal(listings[1].title, 'Salesforce Marketing Cloud Developer Sr')
+  assert.equal(listings[1].location, 'Brazil - Remote')
 })
 
-test('Valtech India Systems run enriches first-party Teamtailor jobs from the detail page', async () => {
+test('Valtech India Systems run keeps only India roles from the Valtech careers page and detail pages', async () => {
   const valtech = await loadModule()
   const requestedUrls = []
 
   const jobs = await valtech.createValtechindiasystemsScraper({
-    now: () => '2026-07-18T00:00:00.000Z',
+    now: () => '2026-08-06T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === valtech.JOBS_URL) return listingHtml
-      if (url === 'https://careers.india.valtech.com/jobs/5421672-java-lead-developer') return detailHtml
-      if (url === 'https://careers.india.valtech.com/jobs/5395703-frontend-technical-lead') {
-        return detailHtml
-          .replace(/Java - Lead Developer/g, 'Frontend Lead')
-          .replace(/Mobility Business Unit/g, 'Digital XP')
-          .replace(/Gandhinagar/g, 'Bengaluru')
-      }
+      if (url === valtech.JOBS_URL) return careersHtml
+      if (url === 'https://www.valtech.com/en-in/career/jobs/4944510101/') return indiaDetailHtml
+      if (url === 'https://www.valtech.com/en-in/career/jobs/4945513101/') return brazilDetailHtml
       throw new Error(`Unexpected Valtech fixture URL: ${url}`)
     },
   })
 
   assert.deepEqual(requestedUrls, [
     valtech.JOBS_URL,
-    'https://careers.india.valtech.com/jobs/5421672-java-lead-developer',
-    'https://careers.india.valtech.com/jobs/5395703-frontend-technical-lead',
+    'https://www.valtech.com/en-in/career/jobs/4944510101/',
+    'https://www.valtech.com/en-in/career/jobs/4945513101/',
   ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].applyUrl, 'https://careers.india.valtech.com/jobs/5421672-java-lead-developer/apply')
-  assert.equal(jobs[1].location, 'Bengaluru, India')
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'SAP Commerce/Hybris Lead developer')
+  assert.equal(jobs[0].location, 'Bengaluru, India')
+  assert.equal(jobs[0].city, 'Bangalore')
+  assert.equal(jobs[0].applyUrl, 'https://job-boards.eu.greenhouse.io/valtech/jobs/4944510101')
+  assert.match(jobs[0].jobDescription, /At Valtech/i)
 })
 
-test('Valtech India Systems fails closed when the Teamtailor contract drifts', async () => {
+test('Valtech India Systems fails closed when the Valtech careers-page contract drifts', async () => {
   const valtech = await loadModule()
 
   await assert.rejects(
     valtech.createValtechindiasystemsScraper().run({
-      fetchText: async () => listingHtml.replace('Jobs list - Valtech India', 'Other Company'),
+      fetchText: async () => careersHtml.replace('Wanted: Innovators, Thinkers, Doers', 'Other Company'),
     }),
-    /verified teamtailor listing page/i,
+    /verified valtech careers page/i,
   )
 })

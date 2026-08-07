@@ -3,7 +3,7 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { buildScrapers, getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/sureprep/script.js')
@@ -25,11 +25,34 @@ test('SurePrep local catalog captures the verified no-public-jobs exact-name sur
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://sureprep.com/')
   assert.equal(provider.companyDomain, 'sureprep.com')
+  assert.equal(provider.homepageUrl, 'https://tax.thomsonreuters.com/en/sureprep')
+  assert.equal(provider.loginUrl, 'https://production.sureprep.com/')
+  assert.equal(provider.parentCareersUrl, 'https://www.thomsonreuters.com/en/careers')
   assert.equal(provider.atsPlatform, 'no-public-jobs-surface')
-  assert.equal(provider.paginationStrategy, 'fail-closed')
-  assert.equal(provider.extractionStrategy, 'verified-login-surface-without-public-jobs')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.paginationStrategy, 'fail-closed-sentinel')
+  assert.equal(
+    provider.extractionStrategy,
+    'verified-sureprep-root-redirect-to-thomson-reuters-product-page+verified-production-login+generic-parent-careers-link-without-sureprep-jobs',
+  )
+  assert.equal(provider.verifiedOn, '2026-08-05')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Thomson Reuters/i)
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /production\.sureprep\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /tax\.thomsonreuters\.com\/en\/sureprep/i)
+})
+
+test('SurePrep is registered consistently in the provider catalog and scraper registry', () => {
+  const provider = getScraperCatalog().find((item) => item.source === 'sureprep')
+
+  assert.ok(provider, 'Expected SurePrep provider to be present in customProviders.json')
+  assert.equal(provider.companyCareerPage, 'https://sureprep.com/')
+  assert.equal(provider.homepageUrl, 'https://tax.thomsonreuters.com/en/sureprep')
+  assert.equal(provider.loginUrl, 'https://production.sureprep.com/')
+  assert.equal(provider.parentCareersUrl, 'https://www.thomsonreuters.com/en/careers')
+  assert.equal(provider.companyDomain, 'sureprep.com')
+
+  const scraper = buildScrapers().find((item) => item.name === 'sureprep')
+  assert.ok(scraper, 'Expected buildScrapers() to return the SurePrep scraper')
+  assert.equal(scraper.provider.source, 'sureprep')
+  assert.match(scraper.dryRunFile, /sureprep[\\/]jobs\.json$/i)
 })

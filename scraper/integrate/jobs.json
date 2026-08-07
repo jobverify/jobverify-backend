@@ -1,0 +1,91 @@
+[
+  {
+    "title": "NetSuite Financial Analyst",
+    "jobId": null,
+    "requisitionId": null,
+    "department": "Finance & Accounting",
+    "location": "Remote (India)",
+    "city": null,
+    "country": "India",
+    "employmentType": "Salaried, full-time",
+    "experienceRequired": "2-5 years",
+    "jobDescription": "[object Object] Responsibilities\n1. Net Suite Administration & Optimization Develop, update, and maintain saved searches, financial reports, dashboards, KPIs, and custom views. Build and automate workflows, approval processes, and scripts to reduce manual tasks and improve data reliability. Maintain Net Suite data integrity across GL, AP, AR, Cash Management, and other core modules. Troubleshoot issues and serve as a Net Suite subject matter expert for the team.\n2. Automation & Process Improvement Identify manual or repetitive tasks within accounting and propose automation using Net Suite workflows, customizations, or integration tools. Analyze existing processes end-to-end and recommend ways to strengthen accuracy, efficiency, and visibility. Support continuous improvement initiatives and implement best practices for accounting operations.\n3. Financial Systems Integrations Assist with evaluating, implementing, and maintaining integrations between Net Suite and external systems (e.g., payroll, CRM, banking, AR/AP tools). Troubleshoot integration errors and ensure data flows are accurate and timely. Recommend integration platforms or middleware when beneficial.\n4. Daily Accounting & Operational Support Support the US accounting team with day-to-day activities such as: Vouching invoices and assisting with AP support tasks. Matching invoices to POs, verifying supporting documents, and ensuring coding accuracy. Assist with month-end close by ensuring data is accurate, reports are updated, and workflows are operating correctly. Build and maintain daily/weekly cash reports, liquidity dashboards, and bank reconciliation support tools.\n5. Cross‑Functional Support & Communication Work with US-based Accounting, FP&A, Operations, and external partners to understand requirements and implement solutions. Communicate proactively across time zones and manage expectations effectively. Qualifications & Skills required: Bachelor’s degree in Accounting, Finance, Information Systems, or related field. 2–5 years of hands-on Net Suite experience (administrator, analyst, or advanced user). Strong understanding of accounting workflows, AP/AR processes, and month-end close cycles. Experience automating processes and building saved searches/workflows in Net Suite. Familiarity with system integrations or middleware tools. Excellent communication skills and ability to work with US teams in an overlapping schedule. Strong understanding of reconciliation logic, and error‑proofing techniques in spreadsheets. Preferred: Suite Script familiarity (plus, not required). Experience with financial tools such as Ramp, Salesforce, Tally, or similar. Prior experience supporting a US-based accounting or finance team. Work Environment: India-based role supporting US Headquarters. Flexibility for US time zones required. Apply now Finance & Accounting Remote (India) Share on: Apply now Terms of service Privacy Cookies Powered by Rippling",
+    "requiredSkills": [],
+    "postingDate": "2026-02-19T00:00:00.000Z",
+    "sourceUrl": "https://ats.rippling.com/integratecom-inc/jobs/ed62f8df-b1fa-4cb5-b4e2-5379e865c34e",
+    "applyUrl": "https://ats.rippling.com/integratecom-inc/jobs/ed62f8df-b1fa-4cb5-b4e2-5379e865c34e",
+    "company": "Integrate",
+    "link": "https://ats.rippling.com/integratecom-inc/jobs/ed62f8df-b1fa-4cb5-b4e2-5379e865c34e",
+    "source": "integrate",
+    "scrapedAt": "2026-08-01T14:52:29.240Z",
+    "companyCareerPage": "https://www.integrate.com/company/careers/",
+    "companyDomain": "integrate.com",
+    "atsPlatform": "official-company-careers-rippling-embed",
+    "originalTitle": "NetSuite Financial Analyst",
+    "normalizedTitle": "NetSuite Financial Analyst",
+    "jobCategory": "NetSuite Financial Analyst",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Salaried, full-time",
+    "state": null,
+    "remoteStatus": "Remote",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "salary": null,
+    "postedAt": "2026-02-19T00:00:00.000Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T14:52:29.240Z",
+    "skillIds": [
+      "salesforce"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "salesforce",
+        "canonicalName": "Salesforce",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Salesforce"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2-5 years",
+      "minimumYears": 2,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2-5 years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-03T01:46:26.423Z",
+    "description": "[object Object] Responsibilities\n1. Net Suite Administration & Optimization Develop, update, and maintain saved searches, financial reports, dashboards, KPIs, and custom views. Build and automate workflows, approval processes, and scripts to reduce manual tasks and improve data reliability. Maintain Net Suite data integrity across GL, AP, AR, Cash Management, and other core modules. Troubleshoot issues and serve as a Net Suite subject matter expert for the team.\n2. Automation & Process Improvement Identify manual or repetitive tasks within accounting and propose automation using Net Suite workflows, customizations, or integration tools. Analyze existing processes end-to-end and recommend ways to strengthen accuracy, efficiency, and visibility. Support continuous improvement initiatives and implement best practices for accounting operations.\n3. Financial Systems Integrations Assist with evaluating, implementing, and maintaining integrations between Net Suite and external systems (e.g., payroll, CRM, banking, AR/AP tools). Troubleshoot integration errors and ensure data flows are accurate and timely. Recommend integration platforms or middleware when beneficial.\n4. Daily Accounting & Operational Support Support the US accounting team with day-to-day activities such as: Vouching invoices and assisting with AP support tasks. Matching invoices to POs, verifying supporting documents, and ensuring coding accuracy. Assist with month-end close by ensuring data is accurate, reports are updated, and workflows are operating correctly. Build and maintain daily/weekly cash reports, liquidity dashboards, and bank reconciliation support tools.\n5. Cross‑Functional Support & Communication Work with US-based Accounting, FP&A, Operations, and external partners to understand requirements and implement solutions. Communicate proactively across time zones and manage expectations effectively. Qualifications & Skills required: Bachelor’s degree in Accounting, Finance, Information Systems, or related field. 2–5 years of hands-on Net Suite experience (administrator, analyst, or advanced user). Strong understanding of accounting workflows, AP/AR processes, and month-end close cycles. Experience automating processes and building saved searches/workflows in Net Suite. Familiarity with system integrations or middleware tools. Excellent communication skills and ability to work with US teams in an overlapping schedule. Strong understanding of reconciliation logic, and error‑proofing techniques in spreadsheets. Preferred: Suite Script familiarity (plus, not required). Experience with financial tools such as Ramp, Salesforce, Tally, or similar. Prior experience supporting a US-based accounting or finance team. Work Environment: India-based role supporting US Headquarters. Flexibility for US time zones required. Apply now Finance & Accounting Remote (India) Share on: Apply now Terms of service Privacy Cookies Powered by Rippling",
+    "publicExperienceChecked": true
+  }
+]

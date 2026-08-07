@@ -36,6 +36,32 @@ const careersHtml = `
 </html>
 `
 
+const liveLikeCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs at Appiness Interactive</title>
+  </head>
+  <body>
+    <h2>Current Openings</h2>
+    <div>Role SEO Expert</div>
+    <div>Experience 1-4 Years</div>
+    <div>Location Bangalore</div>
+    <div>Job Details Apply</div>
+    <div>Submit Application</div>
+    <div>Role Python Developer</div>
+    <div>Experience 2-5 Years</div>
+    <div>Location Bangalore</div>
+    <div>Job Details Apply</div>
+    <div>Submit Application</div>
+    <div>Role MERN Stack Developer</div>
+    <div>Experience 3-6 Years</div>
+    <div>Location Bangalore</div>
+    <div>Job Details Apply</div>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/appinessinteractive/script.js')
@@ -44,13 +70,13 @@ const loadModule = async () => {
   }
 }
 
-test('Appiness Interactive helpers stay pinned to the verified first-party careers roles from Saturday, July 18, 2026', async () => {
+test('Appiness Interactive helpers stay pinned to the verified first-party careers roles from Saturday, August 1, 2026', async () => {
   const appiness = await loadModule()
 
   assert.equal(appiness.SOURCE, 'appinessinteractive')
   assert.equal(appiness.COMPANY, 'Appiness Interactive')
   assert.equal(appiness.CAREERS_URL, 'https://www.appinessworld.com/careers/job-details/')
-  assert.equal(appiness.VERIFIED_ON, '2026-07-18')
+  assert.equal(appiness.VERIFIED_ON, '2026-08-01')
   assert.equal(appiness.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(appiness.hasOfficialCareersSignal('<html><body><h1>Careers</h1></body></html>'), false)
   assert.deepEqual(appiness.extractJobs(careersHtml), [
@@ -139,6 +165,14 @@ test('Appiness Interactive helpers stay pinned to the verified first-party caree
       remoteStatus: 'On-site',
     },
   ])
+  assert.deepEqual(
+    appiness.extractJobs(liveLikeCareersHtml).map((job) => [job.title, job.experienceRequired, job.location]),
+    [
+      ['SEO Expert', '1-4 Years', 'Bangalore, India'],
+      ['Python Developer', '2-5 Years', 'Bangalore, India'],
+      ['MERN Stack Developer', '3-6 Years', 'Bangalore, India'],
+    ],
+  )
 })
 
 test('Appiness Interactive run validates the verified careers page before decorating extracted jobs', async () => {

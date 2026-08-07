@@ -22,6 +22,11 @@ test('NEC Corporation is registered as a verified first-party zero-job scraper w
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'nec.com')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(
+    provider.verifiedSurfaceSummary,
+    /single r&d recruit surface at .*rd-recruit\/index\.html.*without public job listings/i,
+  )
   assert.match(provider.modulePath, /neccorporation[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'NEC Corporation'), false)
 })

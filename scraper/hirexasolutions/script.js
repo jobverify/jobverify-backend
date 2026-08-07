@@ -35,10 +35,28 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const extractPlaceholderTitles = (html = '') => [...String(html ?? '').matchAll(
-  /<h4\b[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>([\s\S]*?)<\/h4>/gi,
+  /<div\b[^>]*class=["'][^"']*\bmarquee-item\b[^"']*["'][^>]*>[\s\S]*?<h4\b[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>([\s\S]*?)<\/h4>/gi,
 )]
   .map((match) => normalizeWhitespace(match[1]))
   .filter(Boolean)
+
+const extractLikelyJobLinks = (html = '') => [...String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)]
+  .map((match) => {
+    try {
+      return new URL(match[1], CAREERS_URL)
+    } catch {
+      return null
+    }
+  })
+  .filter(Boolean)
+  .filter((url) => {
+    const pathname = url.pathname.replace(/\/+$/g, '').toLowerCase()
+
+    if (pathname === '/careers') return false
+    if (['/europe-jobs', '/india-jobs', '/usa-jobs'].includes(pathname)) return false
+
+    return /\/(?:job|jobs|career|careers)\/.+/.test(pathname)
+  })
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -53,12 +71,10 @@ export const hasOfficialCareersSignal = (html = '') => {
 }
 
 export const hasPublicJobsSignal = (html = '') => {
-  const page = String(html ?? '')
-  const titles = extractPlaceholderTitles(page)
+  const titles = extractPlaceholderTitles(html)
   if (titles.some((title) => title !== 'NetCraft')) return true
 
-  return /href=["'][^"']*hirexa\.com\/careers\/[^"']+["']/i.test(page)
-    || /href=["'][^"']*(?:\/jobs?\/|\/careers?\/)[^"']*["']/i.test(page)
+  return extractLikelyJobLinks(html).length > 0
 }
 
 export const createHirexaSolutionsScraper = () => ({

@@ -1,6 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -14,6 +17,10 @@ const COMPANY = 'Indium Software'
 const SOURCE = 'indiumsoftware'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -45,8 +52,21 @@ const normalizeEmploymentType = (value) => {
   return normalizeWhitespace(value)
 }
 
+const extractExperienceRequired = (jobDescription) => {
+  const { experienceProfile } = extractJobFilterSignals({
+    description: jobDescription,
+  })
+
+  return experienceProfile?.confidence === 'high'
+    ? experienceProfile.evidence || null
+    : null
+}
+
 const hasInputWithId = (html, id) =>
   new RegExp(`<input\\b(?=[^>]*\\bid=["']${id}["'])[^>]*>`, 'i').test(String(html ?? ''))
+
+const hasElementWithId = (html, id) =>
+  new RegExp(`\\bid=["']${id}["']`, 'i').test(String(html ?? ''))
 
 export const hasOfficialPortalSignal = (html) => {
   const page = String(html ?? '')
@@ -56,7 +76,7 @@ export const hasOfficialPortalSignal = (html) => {
     && /Current Openings/i.test(page)
     && hasInputWithId(page, 'pageJson')
     && hasInputWithId(page, 'moduleMeta')
-    && hasInputWithId(page, 'jobs')
+    && hasElementWithId(page, 'jobs')
 }
 
 const isIndiaJob = (record = {}) => /india/i.test(normalizeWhitespace(record.Country) || '')
@@ -78,6 +98,9 @@ export const extractIndiaJobs = (payload) =>
       const jobId = normalizeWhitespace(record.id)
       const sourceUrl = normalizeWhitespace(record.$url)
       const { location, city, state, country } = normalizeLocation(record)
+      const jobDescription = normalizeWhitespace(record.Job_Description)
+      const experienceRequired = extractExperienceRequired(jobDescription)
+      const hasPublicDetailEvidence = Boolean(jobDescription && jobDescription.length >= 80)
 
       if (!title || !jobId || !sourceUrl || !location || !country) return null
 
@@ -94,41 +117,40 @@ export const extractIndiaJobs = (payload) =>
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeEmploymentType(record.Job_Type),
-        experienceRequired: null,
+        experienceRequired,
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
         postingDate: normalizeWhitespace(record.Date_Opened),
         closingDate: null,
-        jobDescription: normalizeWhitespace(record.Job_Description),
+        jobDescription,
+        publicExperienceChecked: hasPublicDetailEvidence && !experienceRequired,
         remoteStatus: record.Remote_Job ? 'Remote' : 'On-site',
       }
     })
     .filter(Boolean)
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
+const defaultFetchText = (url) =>
+  fetchTextWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    attempts: 1,
+    label: SOURCE,
+    timeoutMs: 15000,
   })
 
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
-
-const defaultFetchJson = async (url) => {
-  const response = await fetch(url, {
+const defaultFetchJson = (url) =>
+  fetchJsonWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/json,text/plain,*/*',
     },
+    attempts: 1,
+    label: SOURCE,
+    timeoutMs: 15000,
   })
-
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.json()
-}
 
 export const createIndiumSoftwareScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -136,27 +158,97 @@ export const createIndiumSoftwareScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
-    if (!hasOfficialPortalSignal(portalHtml)) {
-      throw new Error('Response is not the verified official Indium careers portal')
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          settleTimeMs: 4000,
+        })
+      }
+
+      return browserSession
     }
 
-    const payload = await fetchJson(CAREERS_API_URL)
-    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
-      throw new Error('Indium Software public jobs API no longer returns the verified success payload')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+
+      if (![200, 304].includes(page.status)) {
+        throw new Error(`HTTP ${page.status} for ${url}`)
+      }
+
+      return page.html
+    })
+
+    const browserJsonFetcher = fetchBrowserJson || (async (url, landingUrl = CAREERS_PORTAL_URL) => {
+      const session = await getBrowserSession()
+      return session.fetchJson(url, {
+        landingUrl,
+        headers: {
+          Accept: 'application/json,text/plain,*/*',
+        },
+      })
+    })
+
+    const fetchTextWithBrowserFallback = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const jobs = extractIndiaJobs(payload)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const fetchJsonWithBrowserFallback = async (url, landingUrl = CAREERS_PORTAL_URL) => {
+      try {
+        return await fetchJson(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+        return browserJsonFetcher(url, landingUrl)
+      }
+    }
+
+    const shouldPreferBrowserJson = fetchJson === defaultFetchJson
+
+    try {
+      const portalHtml = await fetchTextWithBrowserFallback(CAREERS_PORTAL_URL)
+      if (!hasOfficialPortalSignal(portalHtml)) {
+        throw new Error('Response is not the verified official Indium careers portal')
+      }
+
+      const payload = shouldPreferBrowserJson
+        ? await browserJsonFetcher(CAREERS_API_URL, CAREERS_PORTAL_URL)
+        : await fetchJsonWithBrowserFallback(CAREERS_API_URL)
+      if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
+        throw new Error('Indium Software public jobs API no longer returns the verified success payload')
+      }
+
+      const jobs = extractIndiaJobs(payload)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 

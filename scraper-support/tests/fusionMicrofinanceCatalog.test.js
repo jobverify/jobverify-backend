@@ -73,7 +73,7 @@ test('Fusion Microfinance local catalog captures the verified first-party career
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /fusionmicrofinance[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/fusionfin\.com\//i)

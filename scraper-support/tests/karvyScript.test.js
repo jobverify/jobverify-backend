@@ -2,31 +2,27 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 const parkedHomepageHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Porkbun Marketplace: The domain karvy.com is for sale.</title>
-  </head>
+<html>
+  <head><title>403 Forbidden</title></head>
   <body>
-    <main>
-      <h1>This domain is for sale!</h1>
-      <p>Porkbun Marketplace</p>
-      <p>Buy now price</p>
-    </main>
+    <center><h1>403 Forbidden</h1></center>
   </body>
 </html>
 `
 
-const contaminatedLegacyRootHtml = `
+const officialLegacyRootHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>KEMBANGTOTO: Data Akurat Karvyonline Akses Prediksi Togel Pasaran Toto Macau Resmi</title>
+    <title>Karvy Online - Leading Stock Broking Company in India</title>
   </head>
   <body>
     <main>
-      <h1>KEMBANGTOTO - Olah Data Togel</h1>
-      <p>Data akurat togel pasaran toto macau resmi.</p>
+      <h1>Leading Stock Broking Company in India</h1>
+      <p>Mutual Funds</p>
+      <p>Open Demat Account Online in 15 Mins</p>
+      <a href="/join-us/career">Careers</a>
+      <a href="/join-us/career.html"><img alt="Join us" src="/assets/images/join-us-mbanner.jpg" /></a>
     </main>
   </body>
 </html>
@@ -78,7 +74,7 @@ const loadKarvyModule = async () => {
   }
 }
 
-test('Karvy sentinel helpers stay pinned to the verified parked exact-name domain and stale legacy careers contract', async () => {
+test('Karvy sentinel helpers stay pinned to the verified inactive exact-name domain and stale legacy careers contract', async () => {
   const karvy = await loadKarvyModule()
 
   assert.equal(karvy.SOURCE, 'karvy')
@@ -91,13 +87,13 @@ test('Karvy sentinel helpers stay pinned to the verified parked exact-name domai
   assert.equal(karvy.LEGACY_HOMEPAGE_URL, 'https://www.karvyonline.com/')
   assert.equal(karvy.CAREERS_URL, 'https://www.karvyonline.com/join-us/career/')
   assert.equal(karvy.hasParkedHomepageSignal(parkedHomepageHtml), true)
-  assert.equal(karvy.hasContaminatedLegacyRootSignal(contaminatedLegacyRootHtml), true)
+  assert.equal(karvy.hasOfficialLegacyRootSignal(officialLegacyRootHtml), true)
   assert.equal(karvy.hasStaleCareerPageSignal(staleCareerPageHtml), true)
   assert.equal(karvy.hasPublicJobsSignal(staleCareerPageHtml), false)
   assert.equal(karvy.hasPublicJobsSignal(publicJobsHtml), true)
 })
 
-test('Karvy returns [] only while the verified exact-name domain is parked and the legacy surface remains untrustworthy', async () => {
+test('Karvy returns [] only while the verified exact-name domain stays inactive and the linked legacy careers page remains resume-only', async () => {
   const karvy = await loadKarvyModule()
   const requestedUrls = []
 
@@ -107,7 +103,7 @@ test('Karvy returns [] only while the verified exact-name domain is parked and t
 
       if (karvy.PARKED_HOMEPAGE_URLS.includes(url)) {
         return {
-          status: 200,
+          status: 403,
           url,
           finalUrl: url,
           html: parkedHomepageHtml,
@@ -119,7 +115,7 @@ test('Karvy returns [] only while the verified exact-name domain is parked and t
           status: 200,
           url,
           finalUrl: url,
-          html: contaminatedLegacyRootHtml,
+          html: officialLegacyRootHtml,
         }
       }
 
@@ -144,7 +140,7 @@ test('Karvy returns [] only while the verified exact-name domain is parked and t
   assert.deepEqual(jobs, [])
 })
 
-test('Karvy fails closed when the parked domain or stale no-public-careers contract changes', async () => {
+test('Karvy fails closed when the inactive exact-name domain or stale no-public-careers contract changes', async () => {
   const karvy = await loadKarvyModule()
 
   await assert.rejects(
@@ -170,7 +166,7 @@ test('Karvy fails closed when the parked domain or stale no-public-careers contr
       fetchPage: async (url) => {
         if (karvy.PARKED_HOMEPAGE_URLS.includes(url)) {
           return {
-            status: 200,
+            status: 403,
             url,
             finalUrl: url,
             html: parkedHomepageHtml,
@@ -197,7 +193,7 @@ test('Karvy fails closed when the parked domain or stale no-public-careers contr
       fetchPage: async (url) => {
         if (karvy.PARKED_HOMEPAGE_URLS.includes(url)) {
           return {
-            status: 200,
+            status: 403,
             url,
             finalUrl: url,
             html: parkedHomepageHtml,
@@ -209,7 +205,7 @@ test('Karvy fails closed when the parked domain or stale no-public-careers contr
             status: 200,
             url,
             finalUrl: url,
-            html: contaminatedLegacyRootHtml,
+            html: officialLegacyRootHtml,
           }
         }
 

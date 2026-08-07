@@ -26,6 +26,11 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractFirst = (pattern, value) => {
+  const match = String(value ?? '').match(pattern)
+  return match ? match[1] : null
+}
+
 const slugify = (value) => normalizeWhitespace(value)
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -60,20 +65,42 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title>\s*Discover Jobs/i.test(rawHtml)
     && normalized.includes('Discover Jobs')
-    && /Location\s*:|Posted on/i.test(normalized)
-  }
+    && (
+      /Location\s*:|Posted on/i.test(normalized)
+      || hasVerifiedSubscriptionShell(rawHtml)
+    )
+}
+
+export const hasVerifiedSubscriptionShell = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /<title>\s*Discover Jobs/i.test(rawHtml)
+    && normalized.includes('Join our community')
+    && normalized.includes('Be the first one to get alerts when we post new job opportunities')
+    && /subscription-form/i.test(rawHtml)
+}
 
 export const extractJobCards = (html = '') => Array.from(
-  String(html ?? '').matchAll(
-    /<article[^>]*>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>[\s\S]*?<h2[^>]*>([\s\S]*?)<\/h2>[\s\S]*?<p>\s*Location\s*:\s*([^<]+)<\/p>[\s\S]*?<p>\s*Posted on\s*([^<]+)<\/p>[\s\S]*?<\/article>/gi,
-  ),
-  (match) => ({
-    title: normalizeWhitespace(match[2]),
-    location: `${normalizeWhitespace(match[3])}, India`,
-    city: normalizeWhitespace(match[3]),
-    postingDate: toIsoDate(normalizeWhitespace(match[4])),
-    detailUrl: toAbsoluteUrl(match[1]),
-  }),
+  String(html ?? '').matchAll(/<(article|li)\b[^>]*>([\s\S]*?)<\/\1>/gi),
+  (match) => {
+    const block = match[2]
+    const title = normalizeWhitespace(
+      extractFirst(/<h2[^>]*>([\s\S]*?)<\/h2>/i, block)
+        || extractFirst(/<p[^>]*class=["'][^"']*\bsearch-headding\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i, block),
+    )
+    const location = normalizeWhitespace(extractFirst(/<p>\s*Location\s*:\s*([^<]+)<\/p>/i, block))
+    const postedOn = normalizeWhitespace(extractFirst(/<p>\s*Posted on\s*([^<]+)<\/p>/i, block))
+    const detailUrl = toAbsoluteUrl(extractFirst(/<a[^>]+href=["']([^"']+)["']/i, block))
+
+    return {
+      title,
+      location: location ? `${location}, India` : null,
+      city: location,
+      postingDate: toIsoDate(postedOn),
+      detailUrl,
+    }
+  },
 ).filter((job) => job.title && job.detailUrl)
 
 export const createBeoSoftwareScraper = () => ({
@@ -86,6 +113,10 @@ export const createBeoSoftwareScraper = () => ({
 
     const cards = extractJobCards(careersHtml)
     if (cards.length === 0) {
+      if (hasVerifiedSubscriptionShell(careersHtml)) {
+        return []
+      }
+
       throw new Error('BEO Software official careers page exposes no structured public job cards')
     }
 

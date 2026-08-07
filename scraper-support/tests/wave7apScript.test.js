@@ -249,6 +249,7 @@ test('Diksha Technologies run enumerates first-party paginated job cards', async
   assert.equal(jobs[0].location, 'Bangalore')
   assert.equal(jobs[0].workplaceType, 'WFO')
   assert.equal(jobs[0].experienceRequired, 'Junior')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.match(jobs[0].applyUrl, /\/job\//i)
 })
 

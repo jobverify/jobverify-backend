@@ -14,6 +14,9 @@ const loadLogicFruitModule = async () => {
 const careersPageHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Current Jobs Opening - Logic Fruit Technologies</title>
+  </head>
   <body>
     <main>
       <h1>Create Your Future With Us!</h1>
@@ -21,30 +24,55 @@ const careersPageHtml = `
       <nav>
         <a href="https://www.logic-fruit.com/career/">Career</a>
         <a href="https://www.logic-fruit.com/career/jobs-current-opening/">Current Openings</a>
-        <a href="https://www.logic-fruit.com/career/application-form/">Application Form</a>
       </nav>
+      <p>Open Positions In Logic Fruit</p>
 
-      <section>
-        <h2>All Positions</h2>
-
-        <h2><a href="https://www.logic-fruit.com/career/executive-assistant-to-ceo/">Executive Assistant to CEO</a></h2>
-        <ul><li>Gurugram</li></ul>
-
-        <h2><a href="https://www.logic-fruit.com/career/rf-architect/">RF Architect</a></h2>
-        <ul><li>Gurugram/Bengaluru</li></ul>
-
-        <h2><a href="https://www.logic-fruit.com/career/verification-lead/">Verification Lead</a></h2>
-        <ul><li>Gurugram</li></ul>
-      </section>
-
-      <section>
-        <h2>FPGA</h2>
-        <h2><a href="https://www.logic-fruit.com/career/rf-architect/">RF Architect</a></h2>
-        <ul><li>Gurugram/Bengaluru</li></ul>
-
-        <h2><a href="https://www.logic-fruit.com/career/fpga-rtl-engineer/">FPGA RTL Engineer</a></h2>
-        <ul><li>Gurugram/Bengaluru</li></ul>
-      </section>
+      <div class="elementor-widget-tp-tabs-tours">
+        <div class="theplus-tabs-content-wrapper">
+          <div class="elementor-tab-title elementor-tab-mobile-title text-center" tabindex="2001" data-tab="1" role="tab"><span>All Positions</span></div>
+          <div id="elementor-tab-content-2007" class="elementor-tab-content elementor-clearfix plus-tab-content" data-tab="1" role="tabpanel">
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/executive-assistant-to-ceo/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/executive-assistant-to-ceo/">Executive Assistant to CEO</a></h2>
+              <span class="elementor-icon-list-text">Gurugram</span>
+            </div>
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/rf-architect/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/rf-architect/">RF Architect</a></h2>
+              <span class="elementor-icon-list-text">Gurugram/Bengaluru</span>
+            </div>
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/verification-lead/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/verification-lead/">Verification Lead</a></h2>
+              <span class="elementor-icon-list-text">Gurugram</span>
+            </div>
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/project-lead-fpga/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/project-lead-fpga/">Project Lead - FPGA</a></h2>
+              <span class="elementor-icon-list-text">Gurugram/Bengaluru</span>
+            </div>
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/it-expert/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/it-expert/">IT Expert</a></h2>
+              <span class="elementor-icon-list-text">Gurugram</span>
+            </div>
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/fpga-rtl-engineer/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/fpga-rtl-engineer/">FPGA RTL Engineer</a></h2>
+              <span class="elementor-icon-list-text">Gurugram</span>
+            </div>
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/director-sr-director-fpga-hw-engineering/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/director-sr-director-fpga-hw-engineering/">Director / Sr Director - FPGA &amp; HW Engineering</a></h2>
+              <span class="elementor-icon-list-text">Gurugram</span>
+            </div>
+          </div>
+          <div class="elementor-tab-title elementor-tab-mobile-title text-center" tabindex="2002" data-tab="2" role="tab"><span>R&D Management</span></div>
+          <div id="elementor-tab-content-2008" class="elementor-tab-content elementor-clearfix plus-tab-content" data-tab="2" role="tabpanel">
+            <div data-tp-sc-link="/career/jobs-current-opening/technical-writer/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="/career/jobs-current-opening/technical-writer/">Technical Writer</a></h2>
+              <span class="elementor-icon-list-text">Gurugram</span>
+            </div>
+            <div data-tp-sc-link="https://www.logic-fruit.com/career/jobs-current-opening/fpga-rtl-engineer/" class="elementor-column">
+              <h2 class="elementor-heading-title elementor-size-default"><a href="https://www.logic-fruit.com/career/jobs-current-opening/fpga-rtl-engineer/">FPGA RTL Engineer</a></h2>
+              <span class="elementor-icon-list-text">Gurugram/Bengaluru</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </body>
 </html>
@@ -64,32 +92,64 @@ test('Logic Fruit Technologies scraper validates the official careers surface an
       title: 'Executive Assistant to CEO',
       location: 'Gurugram, India',
       city: 'Gurgaon',
-      sourceUrl: 'https://www.logic-fruit.com/career/executive-assistant-to-ceo/',
-      applyUrl: 'https://www.logic-fruit.com/career/application-form/',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/executive-assistant-to-ceo/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/executive-assistant-to-ceo/',
       remoteStatus: 'On-site',
     },
     {
       title: 'RF Architect',
       location: 'Gurugram / Bengaluru, India',
       city: 'Gurgaon',
-      sourceUrl: 'https://www.logic-fruit.com/career/rf-architect/',
-      applyUrl: 'https://www.logic-fruit.com/career/application-form/',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/rf-architect/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/rf-architect/',
       remoteStatus: 'On-site',
     },
     {
       title: 'Verification Lead',
       location: 'Gurugram, India',
       city: 'Gurgaon',
-      sourceUrl: 'https://www.logic-fruit.com/career/verification-lead/',
-      applyUrl: 'https://www.logic-fruit.com/career/application-form/',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/verification-lead/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/verification-lead/',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Project Lead - FPGA',
+      location: 'Gurugram / Bengaluru, India',
+      city: 'Gurgaon',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/project-lead-fpga/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/project-lead-fpga/',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'IT Expert',
+      location: 'Gurugram, India',
+      city: 'Gurgaon',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/it-expert/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/it-expert/',
       remoteStatus: 'On-site',
     },
     {
       title: 'FPGA RTL Engineer',
       location: 'Gurugram / Bengaluru, India',
       city: 'Gurgaon',
-      sourceUrl: 'https://www.logic-fruit.com/career/fpga-rtl-engineer/',
-      applyUrl: 'https://www.logic-fruit.com/career/application-form/',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/fpga-rtl-engineer/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/fpga-rtl-engineer/',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Director / Sr Director - FPGA & HW Engineering',
+      location: 'Gurugram, India',
+      city: 'Gurgaon',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/director-sr-director-fpga-hw-engineering/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/director-sr-director-fpga-hw-engineering/',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Technical Writer',
+      location: 'Gurugram, India',
+      city: 'Gurgaon',
+      sourceUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/technical-writer/',
+      applyUrl: 'https://www.logic-fruit.com/career/jobs-current-opening/technical-writer/',
       remoteStatus: 'On-site',
     },
   ])
@@ -99,7 +159,9 @@ test('Logic Fruit Technologies run decorates the official openings with shared s
   const logicFruit = await loadLogicFruitModule()
 
   const requestedUrls = []
-  const jobs = await logicFruit.createLogicFruitTechnologiesScraper().run({
+  const jobs = await logicFruit.createLogicFruitTechnologiesScraper({
+    now: () => '2026-08-03T00:00:00.000Z',
+  }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       return careersPageHtml
@@ -107,12 +169,13 @@ test('Logic Fruit Technologies run decorates the official openings with shared s
   })
 
   assert.deepEqual(requestedUrls, [logicFruit.CAREERS_URL])
-  assert.equal(jobs.length, 4)
+  assert.equal(jobs.length, 8)
   assert.equal(jobs[0].company, 'Logic Fruit Technologies')
   assert.equal(jobs[0].source, 'logicfruittechnologies')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.equal(jobs[0].link, jobs[0].sourceUrl)
+  assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
+  assert.equal(jobs[0].scrapedAt, '2026-08-03T00:00:00.000Z')
   assert.notEqual(jobs[0].jobId, jobs[1].jobId)
 })
 

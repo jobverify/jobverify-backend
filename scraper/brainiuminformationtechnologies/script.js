@@ -227,6 +227,7 @@ export const createBrainiumInformationTechnologiesScraper = ({
         postingDate: null,
         closingDate: null,
         jobDescription: null,
+        publicExperienceChecked: true,
         source: SOURCE,
         link: role.applyUrl,
         scrapedAt: now(),

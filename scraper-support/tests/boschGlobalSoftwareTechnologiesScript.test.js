@@ -110,7 +110,7 @@ const sampleDetailPayloadByRef = {
             text: '<p>Deep architecture and cloud platform knowledge.</p>',
           },
           additionalInformation: {
-            text: '<p>Experience : 10+ years</p>',
+            text: '<p>10+</p>',
           },
         },
       },
@@ -147,10 +147,85 @@ test('extractSearchResults maps Bosch Global Software Technologies listings and 
     postingDate: '2026-06-30T08:00:00.000Z',
     closingDate: null,
     jobDescription: 'Bosch Global Software Technologies builds software and engineering solutions. Build embedded sensing software for next-generation products. Strong C++ and system design experience. Experience : 6+ years',
+    publicExperienceChecked: true,
   })
   assert.equal(jobs[1].company, 'Bosch Global Software Technologies')
   assert.equal(jobs[1].city, 'Coimbatore')
   assert.equal(jobs[1].jobId, 'REF310002B')
+  assert.equal(jobs[1].experienceRequired, '10+ years')
+  assert.equal(jobs[1].publicExperienceChecked, true)
+})
+
+test('extractSearchResults normalizes bare Bosch experience bands that use alternate separators', async () => {
+  const bgst = await loadBgstModule()
+  assert.ok(bgst)
+
+  const jobs = bgst.extractSearchResults({
+    listingPayload: {
+      _embedded: {
+        'rh:result': [
+          {
+            meta: [{ count: 1 }],
+            data: [
+              {
+                refNumber: 'REF310003C',
+                name: 'Tech Lead - MASTRO',
+                releasedDate: '2026-06-28T08:00:00.000Z',
+                jobUrl: 'REF310003C-tech-lead-mastro',
+                function: {
+                  id: 'engineering',
+                  label: 'Engineering',
+                },
+                location: {
+                  workLocation: 'Bengaluru',
+                  country: 'in',
+                  hybrid: true,
+                  city: 'Bengaluru',
+                  remote: false,
+                },
+                legal_entity: {
+                  valueId: 'Robert Bosch Engineering and Business Solutions Private Ltd.',
+                  valueLabel: 'Bosch Global Software Technologies Private Limited',
+                },
+                type_of_contract: {
+                  valueLabel: 'Unlimited',
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+    detailPayloadByRef: {
+      REF310003C: [
+        {
+          releasedDate: '2026-06-28T08:00:00.000Z',
+          refNumber: 'REF310003C',
+          name: 'Tech Lead - MASTRO',
+          jobAd: {
+            sections: {
+              companyDescription: {
+                text: '<p>Bosch Global Software Technologies builds software and engineering solutions.</p>',
+              },
+              jobDescription: {
+                text: '<p>Lead cross-functional delivery for cloud-based industrial software.</p>',
+              },
+              qualifications: {
+                text: '<p>Bachelor degree in Computer Science</p>',
+              },
+              additionalInformation: {
+                text: '<p>8~12</p>',
+              },
+            },
+          },
+        },
+      ],
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].experienceRequired, '8-12 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run fetches Bosch Global Software Technologies listings and details through the public Bosch content API', async () => {

@@ -82,7 +82,7 @@ test('Fivetran helpers stay pinned to the verified first-party careers page and 
   assert.equal(fivetran.SOURCE, 'fivetran')
   assert.equal(fivetran.COMPANY, 'Fivetran')
   assert.equal(fivetran.OFFICIAL_BRAND_NAME, 'Fivetran')
-  assert.equal(fivetran.VERIFIED_ON, '2026-07-15')
+  assert.equal(fivetran.VERIFIED_ON, '2026-08-02')
   assert.equal(fivetran.CAREERS_URL, CAREERS_URL)
   assert.equal(fivetran.GREENHOUSE_ALERT_URL, GREENHOUSE_ALERT_URL)
   assert.equal(fivetran.GREENHOUSE_BOARD_SLUG, 'fivetran')
@@ -110,11 +110,11 @@ test('Fivetran helpers stay pinned to the verified first-party careers page and 
   )
   assert.equal(
     fivetran.normalizeGreenhouseJobUrl('https://job-boards.greenhouse.io/fivetran/jobs/9100001002', 9100001002),
-    'https://job-boards.greenhouse.io/fivetran/jobs/9100001002?gh_jid=9100001002',
+    'https://www.fivetran.com/careers/job?gh_jid=9100001002',
   )
   assert.equal(
     fivetran.normalizeGreenhouseJobUrl('https://boards.greenhouse.io/fivetran/jobs/9100002002?gh_jid=9100002002', 9100002002),
-    'https://job-boards.greenhouse.io/fivetran/jobs/9100002002?gh_jid=9100002002',
+    'https://www.fivetran.com/careers/job?gh_jid=9100002002',
   )
 })
 
@@ -145,8 +145,8 @@ test('Fivetran extracts jobs from the derived Greenhouse payload and preserves c
         location: 'Bengaluru, India',
         city: 'Bengaluru',
         country: 'India',
-        link: 'https://job-boards.greenhouse.io/fivetran/jobs/9100001002?gh_jid=9100001002',
-        applyUrl: 'https://job-boards.greenhouse.io/fivetran/jobs/9100001002?gh_jid=9100001002',
+        link: 'https://www.fivetran.com/careers/job?gh_jid=9100001002',
+        applyUrl: 'https://www.fivetran.com/careers/job?gh_jid=9100001002',
         department: 'Engineering',
         postingDate: '2026-07-10',
         remoteStatus: 'Hybrid',
@@ -157,8 +157,8 @@ test('Fivetran extracts jobs from the derived Greenhouse payload and preserves c
         location: 'Remote - United States',
         city: 'Remote - United States',
         country: 'United States',
-        link: 'https://job-boards.greenhouse.io/fivetran/jobs/9100002002?gh_jid=9100002002',
-        applyUrl: 'https://job-boards.greenhouse.io/fivetran/jobs/9100002002?gh_jid=9100002002',
+        link: 'https://www.fivetran.com/careers/job?gh_jid=9100002002',
+        applyUrl: 'https://www.fivetran.com/careers/job?gh_jid=9100002002',
         department: 'Sales',
         postingDate: '2026-07-12',
         remoteStatus: 'Remote',
@@ -206,7 +206,7 @@ test('Fivetran run validates the first-party careers page and Greenhouse board r
   assert.equal(jobs[0].source, 'fivetran')
   assert.equal(
     jobs[0].link,
-    'https://job-boards.greenhouse.io/fivetran/jobs/9100001002?gh_jid=9100001002',
+    'https://www.fivetran.com/careers/job?gh_jid=9100001002',
   )
 })
 

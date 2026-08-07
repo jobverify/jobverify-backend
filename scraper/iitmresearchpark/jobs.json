@@ -1,0 +1,79 @@
+[
+  {
+    "jobId": "senior-manager-legal",
+    "requisitionId": "senior-manager-legal",
+    "title": "Senior Manager - Legal",
+    "company": "IITM Research Park",
+    "businessUnit": null,
+    "department": "Management | Regulatory Compliance",
+    "location": null,
+    "city": null,
+    "country": "India",
+    "link": "https://respark.iitm.ac.in/img/carrer/JD-%20Legal.docx",
+    "applyUrl": "https://respark.iitm.ac.in/img/carrer/JD-%20Legal.docx",
+    "sourceUrl": "https://respark.iitm.ac.in/careers/",
+    "source": "iitmresearchpark",
+    "employmentType": "Full-time",
+    "experienceRequired": "15 Years",
+    "jobDescription": "The Senior Manager\n- Legal will be responsible for managing the legal, contractual, regulatory, compliance, governance, and liaison functions of IITMRP... Service Cookies Settings -->",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Management",
+      "Regulatory Compliance"
+    ],
+    "postingDate": "2026-08-04T23:33:24.984Z",
+    "closingDate": "2026-08-15T00:00:00.000Z",
+    "scrapedAt": "2026-08-04T23:33:24.984Z",
+    "companyCareerPage": "https://respark.iitm.ac.in/careers/",
+    "companyDomain": "respark.iitm.ac.in",
+    "atsPlatform": "official-company-careers",
+    "description": "The Senior Manager\n- Legal will be responsible for managing the legal, contractual, regulatory, compliance, governance, and liaison functions of IITMRP... Service Cookies Settings -->",
+    "publicExperienceChecked": true,
+    "originalTitle": "Senior Manager - Legal",
+    "normalizedTitle": "Senior Manager - Legal",
+    "jobCategory": "Senior Manager - Legal",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": null,
+    "salary": null,
+    "postedAt": "2026-08-04T23:33:24.984Z",
+    "scrapedTimestamp": "2026-08-04T23:33:24.984Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "12-plus",
+    "experienceProfile": {
+      "rawText": "15 Years",
+      "minimumYears": 15,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "medium",
+      "evidence": "15 years",
+      "experienceBucket": "12-plus"
+    },
+    "experienceYears": [
+      15
+    ],
+    "seniority": "Senior Manager",
+    "primaryRoleDomain": "Legal & Compliance",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Not specified",
+    "filterSignals": {
+      "confidence": {
+        "experience": "medium",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "low"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T23:33:25.083Z"
+  }
+]

@@ -132,6 +132,7 @@ test('extractSearchResults maps AlgoUniversity visible job cards plus JSON-LD me
     postingDate: '2026-03-17T00:00:00.000Z',
     closingDate: null,
     jobDescription: 'Work directly with the founder on creative marketing campaigns and founder office priorities.',
+    publicExperienceChecked: true,
     remoteStatus: 'Remote',
   })
   assert.equal(jobs[1].title, 'Software Developer / Software Engineer')
@@ -197,5 +198,6 @@ test('run fetches the AlgoUniversity careers page and decorates jobs', async () 
   assert.equal(jobs[0].source, 'algouniversity')
   assert.equal(jobs[0].link, 'https://www.algouniversity.com/careers/?role=3#apply-section')
   assert.equal(jobs[0].company, 'AlgoUniversity')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

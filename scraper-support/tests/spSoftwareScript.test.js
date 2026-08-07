@@ -24,6 +24,31 @@ const careersPageHtml = `
 </html>
 `
 
+const currentCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>SPSoft</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="assets/images/splogo.png">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="mat-typography">
+    <app-root></app-root>
+    <script src="runtime.js" defer></script>
+    <script src="polyfills.js" defer></script>
+    <script src="scripts.js" defer></script>
+    <script src="vendor.js" defer></script>
+    <script src="main.js" defer></script>
+  </body>
+</html>
+`
+
 const careersBundleText = `
 careers@spsoftglobal.com
 #001582-
@@ -36,7 +61,41 @@ Web API
 SQL Server
 `
 
-test('SP Software constants stay pinned to the verified first-party careers route and Angular bundle', async () => {
+const compiledCareersBundleText = `
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](30, "#001582-");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](31, "Java Developer: 5-8 Yrs, Location: Hyderabad (WFO) ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](35, "Job Description:");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](38, " Strong Core Java 8 or above Java EE hands on skills including design patterns. ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](40, " Strong experience in handling Multithreading, Data Structures, concurrency scenarios. ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](42, " Hands-on experience with Spring components viz. MVC, JDBC, Batch, Security, Boot, etc. ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](44, " Hands on experience in writing & optimizing (analyzing query plans) SQL queries on Database like SQL server OR Oracle. ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](46, " Practical experience with Rest APIs, XML, JAXB, JSON in creating a layered system. ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](48, " Hands-on experience with API development & Application Deployment. ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](56, "Skills Set:");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](57, "OOPS, Java APIs, Java Web Services, Java, Restful, Design Patterns, Spring Boot, Hibernate, SQL, GIT, etc.");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](60, "Educational Qualification:");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](61, "Bachelor or master's degree in Computer Science.");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](63, "Send your CV to: ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](64, "careers@spsoftglobal.com");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](70, "#001585-");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](71, " .NET Developer: 3-6 Yrs, Location: Hyderabad (WFO) ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](75, "Job Description:");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](78, " Good knowledge of OOPS, C#, ASP.NET 4.0/4.5/4.6, SQL Server 2008-12, Ajax, Web services. ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](80, "Good to have exposure to .NET Core");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](82, " Knowledge of MVC 3/4, Multilingual, XML and XSLT, 3-tier architecture ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](84, "Knowledge of SQL queries, stored procedures");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](86, " Good understanding of Web services (SOAP/REST) and Web applications ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](88, "Good Knowledge of Entity Framework, LINQ and REST APIs");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](90, "Knowledge of GIT");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](98, "Skills Set:");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](99, "OOPS, C#, ASP.NET MVC, .NET Framework, Web Services, WCF, WPF, Restful, Design Patterns, Oracle, PostgreSQL, GIT, etc.");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](102, "Educational Qualification:");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](103, "Bachelor or master's degree in Computer Science.");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](105, "Send your CV to ");
+_angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵtext"](106, "careers@spsoftglobal.com");
+`
+
+test('SP Software constants stay pinned to the verified first-party careers route and current shell-plus-bundle contract', async () => {
   const spSoftware = await loadModule()
 
   assert.equal(spSoftware.SOURCE, 'spsoftware')
@@ -48,6 +107,11 @@ test('SP Software constants stay pinned to the verified first-party careers rout
   )
   assert.equal(spSoftware.CAREERS_EMAIL, 'careers@spsoftglobal.com')
   assert.equal(spSoftware.hasOfficialCareersPageSignal(careersPageHtml), true)
+  assert.equal(spSoftware.hasOfficialCareersPageSignal(currentCareersPageHtml), true)
+  assert.equal(
+    spSoftware.hasOfficialCareersPageSignal('<html><head><title>SPSoft</title></head><body></body></html>'),
+    false,
+  )
   assert.equal(spSoftware.hasVerifiedCareerBundleSignal(careersBundleText), true)
 })
 
@@ -102,6 +166,12 @@ test('SP Software extracts India roles from the compiled careers bundle', async 
   ])
 })
 
+test('SP Software extracts India roles from the live compiled Angular text nodes', async () => {
+  const spSoftware = await loadModule()
+
+  assert.equal(spSoftware.extractIndiaJobs(compiledCareersBundleText).length, 2)
+})
+
 test('SP Software run validates the first-party careers shell and decorates bundle-derived India jobs', async () => {
   const spSoftware = await loadModule()
   const requestedUrls = []
@@ -109,7 +179,7 @@ test('SP Software run validates the first-party careers shell and decorates bund
   const jobs = await spSoftware.createSpSoftwareScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === spSoftware.CAREERS_URL) return careersPageHtml
+      if (url === spSoftware.CAREERS_URL) return currentCareersPageHtml
       if (url === spSoftware.CAREERS_BUNDLE_URL) return careersBundleText
       throw new Error(`Unexpected text URL: ${url}`)
     },

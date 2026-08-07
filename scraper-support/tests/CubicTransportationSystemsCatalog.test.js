@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Cubic Transportation Systems local catalog captures the verified Workday shell and blocked enumeration contract', async () => {
+test('Cubic Transportation Systems local catalog captures the verified Incapsula block, public Workday board, and CTS subset counts', async () => {
   const { CUBIC_TRANSPORTATION_SYSTEMS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(CUBIC_TRANSPORTATION_SYSTEMS_CATALOG)
 
@@ -26,21 +26,29 @@ test('Cubic Transportation Systems local catalog captures the verified Workday s
   assert.equal(provider.companyName, 'Cubic Transportation Systems')
   assert.equal(provider.officialBrandName, 'Cubic Transportation Systems')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.cubic.com/careers')
-  assert.equal(provider.officialWorkdayBoardUrl, 'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers')
+  assert.equal(provider.companyCareerPage, 'https://www.cubic.com/global-careers')
+  assert.equal(provider.officialWorkdayBoardUrl, 'https://cubic.wd1.myworkdayjobs.com/cubic_global_careers/jobs')
   assert.equal(provider.companyDomain, 'cubic.com')
-  assert.equal(provider.atsPlatform, 'workday-board-blocked-enumeration')
+  assert.equal(provider.atsPlatform, 'workday-jobs-api-with-detail-jsonld')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-careers-handoff-plus-blocked-workday-api')
+  assert.equal(provider.paginationStrategy, 'workday-cxs-offset-pagination-until-short-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-cubic-careers-page+verified-workday-board+verified-cts-job-details+blocked-global-jobs-enumeration+fail-closed-sentinel',
+    'verified-cubic-global-careers-handoff-or-incapsula-block+verified-workday-board+india-summary-candidate-filter+detail-jsonld-business-unit-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Program Planner/i)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.equal(provider.verifiedPublicJobCount, 87)
+  assert.equal(provider.verifiedIndiaBoardJobCount, 35)
+  assert.equal(provider.verifiedIndiaJobCount, 30)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /global-careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /Incapsula interstitial/i)
+  assert.match(provider.verifiedSurfaceSummary, /87 public global postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /35 India-addressed postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /30 India postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Site Reliability Engineer/i)
   assert.match(provider.verifiedSurfaceSummary, /Head of Technology and Service Operations/i)
-  assert.match(provider.verifiedSurfaceSummary, /HTTP 500/i)
+  assert.match(provider.verifiedSurfaceSummary, /cubic_global_careers\/jobs/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /cubictransportationsystems[\\/]jobs\.json$/i)
 })

@@ -1,0 +1,669 @@
+[
+  {
+    "title": "Jr Software Engineer - Dot Net Full Stack",
+    "company": "Bytestrone",
+    "department": "Jr Software Engineer",
+    "location": "Kochi, India",
+    "city": "Kochi",
+    "state": null,
+    "country": "India",
+    "jobId": "1",
+    "requisitionId": "1",
+    "sourceUrl": "https://bytestrone.com/en/job/1/",
+    "applyUrl": "https://bytestrone.com/en/job/1/",
+    "employmentType": "Full-time",
+    "experienceRequired": "0 to 3 years of experience.",
+    "minimumQualification": "0 to 3 years of experience. Proven experience as a Full Stack Developer or similar role. Experience developing desktop and mobile applications. Knowledge of multiple front-end languages and libraries (e.g., HTML/ CSS, JavaScript, XML, jQuery). Knowledge of multiple back-end languages (e.g., .NET, Java, Python) and JavaScript frameworks (e.g., Angular, React, Node.js). Familiarity with databases (e.g., MySQL, MongoDB), web servers (e.g., Apache) and UI/UX design. Excellent communication and teamwork skills. Great attention to detail. Organizational skills. An analytical mind. Degree in Computer Science, Statistics, or relevant field.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      ".NET"
+    ],
+    "postingDate": "2026-08-01T14:31:01.955Z",
+    "closingDate": null,
+    "jobDescription": "We are looking for a Full Stack Developer to produce scalable software solutions. You'll be part of a cross-functional team that's responsible for the full software development life cycle, from conception to deployment. As a Full Stack Developer, you should be comfortable around both front-end and back-end coding languages, development frameworks and third-party libraries. You should also be a team player with a knack for visual design and utility. If you're also familiar with Agile methodologies, we'd like to meet you. Requirements And Skill: 0 to 3 years of experience. Proven experience as a Full Stack Developer or similar role. Experience developing desktop and mobile applications. Knowledge of multiple front-end languages and libraries (e.g., HTML/ CSS, Java Script, XML, j Query). Knowledge of multiple back-end languages (e.g., .NET, Java, Python) and Java Script frameworks (e.g., Angular, React, Node.js). Familiarity with databases (e.g., My SQL, Mongo DB), web servers (e.g., Apache) and UI/UX design. Excellent communication and teamwork skills. Great attention to detail. Organizational skills. An analytical mind. Degree in Computer Science, Statistics, or relevant field.\n\nRESPONSIBILITIES:\nWork with development teams and product managers to ideate software solutions. Design client-side and server-side architecture. Build the front-end of applications through appealing visual design. Develop and manage well-functioning databases and applications. Write effective APIs. Test software to ensure responsiveness and efficiency. Troubleshoot, debug and upgrade software. Create security and data protection settings. Build features and applications with a mobile responsive design. Write technical documentation. Work with data scientists and analysts to improve software.",
+    "remoteStatus": "Remote",
+    "source": "bytestrone",
+    "companyCareerPage": "https://bytestrone.com/en/position/",
+    "companyDomain": "bytestrone.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://bytestrone.com/en/job/1/",
+    "scrapedAt": "2026-08-01T14:31:01.955Z",
+    "originalTitle": "Jr Software Engineer - Dot Net Full Stack",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2026-08-01T14:31:01.955Z",
+    "scrapedTimestamp": "2026-08-01T14:31:01.955Z",
+    "skillIds": [
+      "javascript",
+      "java",
+      "python",
+      "angular",
+      "node-js",
+      "mysql",
+      "mongodb",
+      "sql"
+    ],
+    "requiredSkillIds": [
+      "javascript",
+      "java",
+      "python",
+      "angular",
+      "node-js",
+      "mysql",
+      "mongodb"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "JavaScript"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "node-js",
+        "canonicalName": "Node.js",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Node.js"
+      },
+      {
+        "skillId": "mysql",
+        "canonicalName": "MySQL",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "MySQL"
+      },
+      {
+        "skillId": "mongodb",
+        "canonicalName": "MongoDB",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "MongoDB"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0 to 3 years of experience. 0 to 3 years of experience. Proven experience as a Full Stack Developer or similar role. Experience developing desktop and mobile applications. Knowledge of multiple front-end languages and libraries (e.g., HTML/ CSS, JavaScript, XML, jQuery). Knowledge of multiple back-end languages (e.g., .NET, Java, Python) and JavaScript frameworks (e.g., Angular, React, Node.js). Familiarity with databases (e.g., MySQL, MongoDB), web servers (e.g., Apache) and UI/UX design. Excellent communication and teamwork skills. Great attention to detail. Organizational skills. An analytical mind. Degree in Computer Science, Statistics, or relevant field.",
+      "minimumYears": 0,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0 to 3 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:45.146Z"
+  },
+  {
+    "title": "Sr Software Engineer - Dot Net Full Stack",
+    "company": "Bytestrone",
+    "department": "Sr Software Engineer",
+    "location": "Kochi, India",
+    "city": "Kochi",
+    "state": null,
+    "country": "India",
+    "jobId": "2",
+    "requisitionId": "2",
+    "sourceUrl": "https://bytestrone.com/en/job/2/",
+    "applyUrl": "https://bytestrone.com/en/job/2/",
+    "employmentType": "Full-time",
+    "experienceRequired": "5 to 9 years of experience.",
+    "minimumQualification": "5 to 9 years of experience. DOTNET Core / .NET 6+ and C# proficiency Solid understanding of RESTful APIs and microservices Frontend development experience (Angular/React/Vue.js) Knowledge of HTML, CSS, JavaScript/TypeScript Entity Framework Core and SQL Server/PostgreSQL Git and Agile development practices",
+    "preferredQualification": "Cloud experience (Azure/AWS/GCP) Containerization with Docker, experience with Kubernetes Experience with messaging systems (e.g., Kafka, RabbitMQ) Familiarity with CI/CD pipelines and DevOps tools",
+    "requiredSkills": [
+      ".NET"
+    ],
+    "postingDate": "2026-08-01T14:31:01.955Z",
+    "closingDate": null,
+    "jobDescription": "We are looking for a Full Stack Developer to produce scalable software solutions. You'll be part of a cross-functional team that's responsible for the full software development life cycle, from conception to deployment. As a Full Stack Developer, you should be comfortable around both front-end and back-end coding languages, development frameworks and third-party libraries. You should also be a team player with a knack for visual design and utility. If you're also familiar with Agile methodologies, we'd like to meet you. Requirements And Skill: 5 to 9 years of experience. DOTNET Core / .NET 6+ and C# proficiency Solid understanding of RESTful APIs and microservices Frontend development experience (Angular/React/Vue.js) Knowledge of HTML, CSS, Java Script/Type Script Entity Framework Core and SQL Server/Postgre SQL Git and Agile development practices\n\nRESPONSIBILITIES:\nDevelop robust and scalable Web APIs using .NET Core/.NET 6+ Implement front-end components using Angular, React, or similar Ensure performance, scalability, and security of the application Contribute to design and technical discussions Maintain high-quality code and participate in code reviews Collaborate with cross-functional teams for product delivery Provide guidance to junior team members Assist in planning and estimating development tasks\n\nPREFERRED\n\nQUALIFICATIONS:\n\nCloud experience (Azure/AWS/GCP) Containerization with Docker, experience with Kubernetes Experience with messaging systems (e.g., Kafka, Rabbit MQ) Familiarity with CI/CD pipelines and Dev Ops tools",
+    "remoteStatus": "On-site",
+    "source": "bytestrone",
+    "companyCareerPage": "https://bytestrone.com/en/position/",
+    "companyDomain": "bytestrone.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://bytestrone.com/en/job/2/",
+    "scrapedAt": "2026-08-01T14:31:01.955Z",
+    "originalTitle": "Sr Software Engineer - Dot Net Full Stack",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2026-08-01T14:31:01.955Z",
+    "scrapedTimestamp": "2026-08-01T14:31:01.955Z",
+    "skillIds": [
+      "angular",
+      "vue",
+      "javascript",
+      "typescript",
+      "sql",
+      "postgresql",
+      "azure",
+      "aws",
+      "gcp",
+      "docker",
+      "kubernetes",
+      "kafka",
+      "java",
+      "react"
+    ],
+    "requiredSkillIds": [
+      "angular",
+      "vue",
+      "javascript",
+      "typescript",
+      "sql",
+      "postgresql"
+    ],
+    "preferredSkillIds": [
+      "azure",
+      "aws",
+      "gcp",
+      "docker",
+      "kubernetes",
+      "kafka"
+    ],
+    "jobSkills": [
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "vue",
+        "canonicalName": "Vue",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Vue.js"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "JavaScript"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "TypeScript"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "PostgreSQL"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Kafka"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "react",
+        "canonicalName": "React",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "components using Angular, React"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5 to 9 years of experience. 5 to 9 years of experience. DOTNET Core / .NET 6+ and C# proficiency Solid understanding of RESTful APIs and microservices Frontend development experience (Angular/React/Vue.js) Knowledge of HTML, CSS, JavaScript/TypeScript Entity Framework Core and SQL Server/PostgreSQL Git and Agile development practices Cloud experience (Azure/AWS/GCP) Containerization with Docker, experience with Kubernetes Experience with messaging systems (e.g., Kafka, RabbitMQ) Familiarity with CI/CD pipelines and DevOps tools",
+      "minimumYears": 5,
+      "maximumYears": 9,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 to 9 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:45.148Z"
+  },
+  {
+    "title": "Software Engineer - Dot Net Full Stack",
+    "company": "Bytestrone",
+    "department": "Software Engineer",
+    "location": "Kochi, India",
+    "city": "Kochi",
+    "state": null,
+    "country": "India",
+    "jobId": "6",
+    "requisitionId": "6",
+    "sourceUrl": "https://bytestrone.com/en/job/6/",
+    "applyUrl": "https://bytestrone.com/en/job/6/",
+    "employmentType": "Full-time",
+    "experienceRequired": "3 to 6 years of experience.",
+    "minimumQualification": "3 to 6 years of experience. DOTNET Core / .NET 6+ and C# proficiency Solid understanding of RESTful APIs and microservices Frontend development experience (Angular/React/Vue.js) Knowledge of HTML, CSS, JavaScript/TypeScript Entity Framework Core and SQL Server/PostgreSQL Git and Agile development practices Good Communication skills",
+    "preferredQualification": "Cloud experience (Azure/AWS/GCP) Containerization with Docker, experience with Kubernetes Experience with messaging systems (e.g., Kafka, RabbitMQ) Familiarity with CI/CD pipelines and DevOps tools",
+    "requiredSkills": [
+      ".NET"
+    ],
+    "postingDate": "2026-08-01T14:31:01.955Z",
+    "closingDate": null,
+    "jobDescription": "We are seeking a skilled and driven Software Engineer\n- .NET Core with strong expertise in .NET Core Web API and full-stack development. You will be responsible for building scalable, high-performance web applications, collaborating across teams, and contributing to architecture and best practices. Requirements And Skill: 3 to 6 years of experience. DOTNET Core / .NET 6+ and C# proficiency Solid understanding of RESTful APIs and microservices Frontend development experience (Angular/React/Vue.js) Knowledge of HTML, CSS, Java Script/Type Script Entity Framework Core and SQL Server/Postgre SQL Git and Agile development practices Good Communication skills\n\nRESPONSIBILITIES:\nDevelop robust and scalable Web APIs using .NET Core/.NET 6+ Implement front-end components using Angular, React, or similar Ensure performance, scalability, and security of the application Contribute to design and technical discussions Maintain high-quality code and participate in code reviews Collaborate with cross-functional teams for product delivery\n\nPREFERRED\n\nQUALIFICATIONS:\n\nCloud experience (Azure/AWS/GCP) Containerization with Docker, experience with Kubernetes Experience with messaging systems (e.g., Kafka, Rabbit MQ) Familiarity with CI/CD pipelines and Dev Ops tools",
+    "remoteStatus": "On-site",
+    "source": "bytestrone",
+    "companyCareerPage": "https://bytestrone.com/en/position/",
+    "companyDomain": "bytestrone.com",
+    "atsPlatform": "official-company-careers",
+    "link": "https://bytestrone.com/en/job/6/",
+    "scrapedAt": "2026-08-01T14:31:01.955Z",
+    "originalTitle": "Software Engineer - Dot Net Full Stack",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2026-08-01T14:31:01.955Z",
+    "scrapedTimestamp": "2026-08-01T14:31:01.955Z",
+    "skillIds": [
+      "angular",
+      "vue",
+      "javascript",
+      "typescript",
+      "sql",
+      "postgresql",
+      "azure",
+      "aws",
+      "gcp",
+      "docker",
+      "kubernetes",
+      "kafka",
+      "java",
+      "react"
+    ],
+    "requiredSkillIds": [
+      "angular",
+      "vue",
+      "javascript",
+      "typescript",
+      "sql",
+      "postgresql"
+    ],
+    "preferredSkillIds": [
+      "azure",
+      "aws",
+      "gcp",
+      "docker",
+      "kubernetes",
+      "kafka"
+    ],
+    "jobSkills": [
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "vue",
+        "canonicalName": "Vue",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Vue.js"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "JavaScript"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "TypeScript"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "PostgreSQL"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": true,
+        "confidence": "high",
+        "extractionSource": "preferredQualification",
+        "matchedPhrase": "Kafka"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "react",
+        "canonicalName": "React",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "components using Angular, React"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 to 6 years of experience. 3 to 6 years of experience. DOTNET Core / .NET 6+ and C# proficiency Solid understanding of RESTful APIs and microservices Frontend development experience (Angular/React/Vue.js) Knowledge of HTML, CSS, JavaScript/TypeScript Entity Framework Core and SQL Server/PostgreSQL Git and Agile development practices Good Communication skills Cloud experience (Azure/AWS/GCP) Containerization with Docker, experience with Kubernetes Experience with messaging systems (e.g., Kafka, RabbitMQ) Familiarity with CI/CD pipelines and DevOps tools",
+      "minimumYears": 3,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 to 6 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:45.150Z"
+  }
+]

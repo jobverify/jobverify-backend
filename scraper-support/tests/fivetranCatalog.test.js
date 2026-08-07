@@ -48,7 +48,7 @@ test('Fivetran catalog captures the verified first-party careers page and Greenh
   assert.equal(FIVETRAN_CATALOG.parser, 'custom-script')
   assert.equal(FIVETRAN_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(FIVETRAN_CATALOG.companyDomain, 'fivetran.com')
-  assert.equal(FIVETRAN_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(FIVETRAN_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(FIVETRAN_CATALOG.modulePath, modulePath)
   assert.match(FIVETRAN_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.fivetran\.com\/careers/i)
   assert.match(
@@ -62,6 +62,10 @@ test('Fivetran catalog captures the verified first-party careers page and Greenh
   assert.match(
     FIVETRAN_CATALOG.verifiedSurfaceSummary,
     /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/fivetran\/jobs\?content=true/i,
+  )
+  assert.match(
+    FIVETRAN_CATALOG.verifiedSurfaceSummary,
+    /https:\/\/www\.fivetran\.com\/careers\/job\?gh_jid=\.\.\.\./i,
   )
   assert.match(FIVETRAN_CATALOG.verifiedSurfaceSummary, /Bengaluru \| India/i)
   assert.match(FIVETRAN_CATALOG.verifiedSurfaceSummary, /Sydney \| Australia/i)

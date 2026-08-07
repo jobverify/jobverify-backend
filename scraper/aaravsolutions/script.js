@@ -43,9 +43,12 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Aarav Solutions\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Careers\s*-\s*)?Aarav Solutions\s*<\/title>/i.test(page)
     && normalized.includes('Careers')
-    && normalized.includes('You At Aarav')
+    && (
+      normalized.includes('You At Aarav')
+      || normalized.includes('Life at Aarav Solutions')
+    )
     && normalized.includes('Discover your new career with Aarav Solutions.')
     && /class=["'][^"']*job-board-wrapper[^"']*["']/i.test(page)
     && /class=["'][^"']*job-tabs[^"']*["']/i.test(page)

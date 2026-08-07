@@ -160,9 +160,56 @@ test('Okta extracts experience from the official first-party job detail page', a
       postingDate: null,
       closingDate: null,
       jobDescription: "Okta is seeking an experienced Senior Adobe Experience Cloud Engineer with a deep understanding of Adobe's tech stack to join our growing team. BS Computer Science or other technical degree. 3+ years of related overall technology experience Experience in Adobe Experience Manager (required)",
+      publicExperienceChecked: true,
       remoteStatus: null,
     },
   )
+})
+
+test('Okta handles the live-style public detail shell with nested heading markup and trims the apply form', async () => {
+  const okta = await loadOktaModule()
+  const listing = okta.extractIndiaJobsFromJobListing(JOB_LISTING_HTML)[0]
+  const liveShapeHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Senior AEM Engineer | Okta</title>
+    <meta name="description" content="Secure Every Identity, from AI to Human. Okta is seeking an experienced Senior Adobe Experience Cloud Engineer. Qualifications include 3+ years of related overall technology experience." />
+  </head>
+  <body>
+    <main role="main" class="layout__content">
+      <section class="Breadcrumb"><a href="/company/careers/">Careers</a></section>
+      <article class="PageFull">
+        <h1>
+          <span> Senior AEM Engineer</span>
+        </h1>
+        <p>Bengaluru, India</p>
+        <p>Secure Every Identity, from AI to Human</p>
+        <p>Okta is seeking an experienced Senior Adobe Experience Cloud Engineer with a deep understanding of Adobe's tech stack to join our growing team.</p>
+        <p>Responsibilities</p>
+        <p>Lead the development and implementation of custom solutions.</p>
+        <p>Qualifications</p>
+        <p>BS Computer Science or other technical degree. 3+ years of related overall technology experience.</p>
+        <p>The Okta Experience</p>
+      </article>
+      <div class="Job__formwrapper">
+        <h3>Apply</h3>
+        <label>First Name</label>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
+  assert.equal(okta.hasOfficialJobDetailSignal(liveShapeHtml), true)
+
+  const detail = okta.extractJobDetail(liveShapeHtml, listing)
+  assert.equal(detail.title, 'Senior AEM Engineer')
+  assert.equal(detail.experienceRequired, '3+ years')
+  assert.equal(detail.publicExperienceChecked, true)
+  assert.match(detail.jobDescription, /Secure Every Identity, from AI to Human/)
+  assert.match(detail.jobDescription, /3\+ years of related overall technology experience/)
+  assert.doesNotMatch(detail.jobDescription, /Apply First Name/)
 })
 
 test('Okta run validates the first-party landing page before extracting India roles from the official listing page', async () => {
@@ -202,6 +249,7 @@ test('Okta run validates the first-party landing page before extracting India ro
   )
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
   assert.equal(jobs[0].experienceRequired, '3+ years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('Okta fails closed when either the careers landing page or the first-party listing page drifts', async () => {

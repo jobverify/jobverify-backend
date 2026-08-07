@@ -37,6 +37,16 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(value)
 
 const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[^>]+>/g, ' '))
 
+const normalizeExperienceRequired = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  if (/^\d+(?:\.\d+)?$/.test(normalized)) return `${normalized} years`
+  if (/^\d+(?:\.\d+)?\s*(?:-|to)\s*\d+(?:\.\d+)?$/i.test(normalized)) {
+    return `${normalized} years`
+  }
+  return normalized
+}
+
 const slugify = (value) => String(value ?? '')
   .toLowerCase()
   .replace(/&/g, ' and ')
@@ -106,13 +116,14 @@ export const createRealTimeDataServicesScraper = ({
           jobId,
           requisitionId: jobId,
           employmentType: normalizeWhitespace(position.mode),
-          experienceRequired: normalizeWhitespace(position.experience),
+          experienceRequired: normalizeExperienceRequired(position.experience),
           minimumQualification: null,
           preferredQualification: null,
           requiredSkills: [],
           postingDate: normalizeWhitespace(position.posted_date),
           closingDate: null,
           jobDescription: normalizeWhitespace(position.description) || entry.department,
+          publicExperienceChecked: true,
           remoteStatus: /remote/i.test(position.mode) ? 'Remote' : 'On-site',
           source: SOURCE,
           link: entry.departmentUrl,

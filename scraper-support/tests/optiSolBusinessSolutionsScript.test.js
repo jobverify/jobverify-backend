@@ -7,89 +7,74 @@ const careersLandingHtml = `
   <body>
     <h1>MORE THAN JUST A JOB</h1>
     <h2>Jobs at OptiSol</h2>
-    <a href="https://www.optisolbusiness.com/current-openings">Learn More</a>
+    <a href="http://www.optisolbusiness.com/current-openings">Learn More</a>
   </body>
 </html>
 `
 
-const archivePageOneHtml = `
+const currentOpeningsHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Job Openings at OptiSol Chennai, Madurai | Hiring Software Developers | Web &amp; Mobile App Developers</title>
+  </head>
   <body>
-    <h1>Full Time</h1>
-    <article>
-      <a href="https://www.optisolbusiness.com/jobs/solution-architect-digital-services">
-        Solution Architect – Digital Services
-      </a>
-    </article>
-    <article>
-      <a href="https://www.optisolbusiness.com/jobs/java-developer">
-        Java Developer (Spring Boot / Kafka / Integration Specialist)
-      </a>
-    </article>
-    <a class="page-numbers" href="https://www.optisolbusiness.com/job-type/full-time/page/2/">2</a>
+    <h2>Let's grow together</h2>
+    <div id="rec_job_listing_div"></div>
+    <script type="text/javascript" src="https://static.zohocdn.com/recruit/embed_careers_site/javascript/v1.1/embed_jobs.js"></script>
+    <script type="text/javascript">
+      rec_embed_js.load({
+        widget_id: "rec_job_listing_div",
+        page_name: "Careers",
+        source: "CareerSite",
+        site: "https://optisolbusiness.zohorecruit.in",
+        brand_color: "#6875E2",
+        empty_job_msg: "No current Openings"
+      });
+    </script>
   </body>
 </html>
 `
 
-const archivePageTwoHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Full Time</h1>
-    <article>
-      <a href="https://www.optisolbusiness.com/jobs/pl-sql-developer">
-        PL/SQL Developer
-      </a>
-    </article>
-  </body>
-</html>
-`
-
-const solutionArchitectHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Solution Architect – Digital Services</h1>
-    <p>Full Time</p>
-    <p>Chennai, Hybrid</p>
-    <p>Experience: 8+ years</p>
-    <section class="job-description">
-      <p>Lead enterprise-grade digital transformation projects and cloud-native solution design.</p>
-    </section>
-  </body>
-</html>
-`
-
-const javaDeveloperHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Java Developer (Spring Boot / Kafka / Integration Specialist)</h1>
-    <p>Full Time</p>
-    <p>Chennai</p>
-    <p>Experience: 1 to 3 years</p>
-    <section class="job-description">
-      <p>Build scalable backend services and integrations with Spring Boot and Kafka.</p>
-    </section>
-  </body>
-</html>
-`
-
-const plSqlDeveloperHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>PL/SQL Developer</h1>
-    <p>Full Time</p>
-    <p>Madurai</p>
-    <p>Experience: 2-5 Years</p>
-    <section class="job-description">
-      <p>Design and optimize PL/SQL procedures, functions, packages, and triggers.</p>
-    </section>
-  </body>
-</html>
-`
+const apiPayload = {
+  code: 'success',
+  data: [
+    {
+      Posting_Title: 'Digital Marketing Associate',
+      Is_Locked: false,
+      City: 'Chennai',
+      State: 'Tamil Nadu',
+      Job_Description: `
+        <p><strong>Experience:</strong> 1–2 Years</p>
+        <p><strong>Location:</strong> Chennai (Work from Office)</p>
+        <p><strong>Employment Type:</strong> FTE (Full-time)</p>
+        <p>We are looking for a creative and data-driven Digital Marketing Executive to join our growing marketing team.</p>
+      `,
+      Job_Type: 'Full time',
+      Job_Opening_Name: 'Digital Marketing Associate',
+      Country: 'India',
+      $url: 'https://optisolbusiness.zohorecruit.in/jobs/Careers/183543000002852061/Digital-Marketing-Associate?source=CareerSite',
+      id: '183543000002852061',
+      Publish: true,
+      Date_Opened: '06/24/2026',
+      Remote_Job: false,
+    },
+    {
+      Posting_Title: 'Senior Product Marketing Manager',
+      Is_Locked: false,
+      City: 'Austin',
+      Country: 'United States',
+      Job_Description: '<p>Experience: 8+ Years</p>',
+      Job_Type: 'Full time',
+      Job_Opening_Name: 'Senior Product Marketing Manager',
+      $url: 'https://optisolbusiness.zohorecruit.in/jobs/Careers/2/Senior-Product-Marketing-Manager?source=CareerSite',
+      id: '2',
+      Publish: true,
+      Date_Opened: '06/20/2026',
+      Remote_Job: true,
+    },
+  ],
+}
 
 const loadModule = async () => {
   try {
@@ -99,23 +84,22 @@ const loadModule = async () => {
   }
 }
 
-test('OptiSol Business Solutions validates the first-party careers landing and archive pages', async () => {
+test('OptiSol Business Solutions validates the live first-party landing page and Zoho widget handoff', async () => {
   const optisol = await loadModule()
 
   assert.equal(optisol.CAREERS_LANDING_URL, 'https://www.optisolbusiness.com/join-with-us')
-  assert.equal(optisol.JOBS_ARCHIVE_URL, 'https://www.optisolbusiness.com/job-type/full-time')
+  assert.equal(optisol.CURRENT_OPENINGS_URL, 'https://www.optisolbusiness.com/current-openings')
+  assert.equal(optisol.CAREERS_PORTAL_URL, 'https://optisolbusiness.zohorecruit.in/jobs/Careers')
+  assert.equal(optisol.CAREERS_API_URL, 'https://optisolbusiness.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite')
   assert.equal(optisol.hasOfficialCareersLandingSignal(careersLandingHtml), true)
-  assert.equal(optisol.hasVerifiedJobArchiveSignal(archivePageOneHtml), true)
+  assert.equal(optisol.hasOfficialCurrentOpeningsSignal(currentOpeningsHtml), true)
   assert.deepEqual(
-    optisol.extractArchiveJobLinks(archivePageOneHtml),
-    [
-      'https://www.optisolbusiness.com/jobs/solution-architect-digital-services',
-      'https://www.optisolbusiness.com/jobs/java-developer',
-    ],
+    optisol.extractIndiaJobs(apiPayload).map((job) => [job.title, job.location, job.experienceRequired]),
+    [['Digital Marketing Associate', 'Chennai, India', '1-2 years']],
   )
 })
 
-test('OptiSol Business Solutions run follows the archive pages and extracts same-domain job details', async () => {
+test('OptiSol Business Solutions run follows the current openings page and public Zoho API', async () => {
   const optisol = await loadModule()
   const requestedUrls = []
 
@@ -123,46 +107,62 @@ test('OptiSol Business Solutions run follows the archive pages and extracts same
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === optisol.CAREERS_LANDING_URL) return careersLandingHtml
-      if (url === optisol.JOBS_ARCHIVE_URL) return archivePageOneHtml
-      if (url === 'https://www.optisolbusiness.com/job-type/full-time/page/2/') return archivePageTwoHtml
-      if (url === 'https://www.optisolbusiness.com/jobs/solution-architect-digital-services') {
-        return solutionArchitectHtml
-      }
-      if (url === 'https://www.optisolbusiness.com/jobs/java-developer') return javaDeveloperHtml
-      if (url === 'https://www.optisolbusiness.com/jobs/pl-sql-developer') return plSqlDeveloperHtml
-      throw new Error(`Unexpected OptiSol URL: ${url}`)
+      if (url === optisol.CURRENT_OPENINGS_URL) return currentOpeningsHtml
+      throw new Error(`Unexpected OptiSol text URL: ${url}`)
     },
-    now: () => '2026-07-18T00:00:00.000Z',
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      if (url === optisol.CAREERS_API_URL) return apiPayload
+      throw new Error(`Unexpected OptiSol json URL: ${url}`)
+    },
+    now: () => '2026-08-03T00:00:00.000Z',
   })
 
   assert.deepEqual(requestedUrls, [
     optisol.CAREERS_LANDING_URL,
-    optisol.JOBS_ARCHIVE_URL,
-    'https://www.optisolbusiness.com/job-type/full-time/page/2/',
-    'https://www.optisolbusiness.com/jobs/solution-architect-digital-services',
-    'https://www.optisolbusiness.com/jobs/java-developer',
-    'https://www.optisolbusiness.com/jobs/pl-sql-developer',
+    optisol.CURRENT_OPENINGS_URL,
+    optisol.CAREERS_API_URL,
   ])
-  assert.deepEqual(
-    jobs.map((job) => [job.title, job.location, job.experienceRequired, job.source]),
-    [
-      ['Solution Architect – Digital Services', 'Chennai, India', '8+ years', 'optisolbusinesssolutions'],
-      ['Java Developer (Spring Boot / Kafka / Integration Specialist)', 'Chennai, India', '1-3 years', 'optisolbusinesssolutions'],
-      ['PL/SQL Developer', 'Madurai, India', '2-5 years', 'optisolbusinesssolutions'],
-    ],
-  )
+  assert.deepEqual(jobs, [
+    {
+      title: 'Digital Marketing Associate',
+      company: 'OptiSol Business Solutions',
+      department: null,
+      location: 'Chennai, India',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      country: 'India',
+      jobId: '183543000002852061',
+      requisitionId: '183543000002852061',
+      sourceUrl: 'https://optisolbusiness.zohorecruit.in/jobs/Careers/183543000002852061/Digital-Marketing-Associate?source=CareerSite',
+      applyUrl: 'https://optisolbusiness.zohorecruit.in/jobs/Careers/183543000002852061/Digital-Marketing-Associate?source=CareerSite',
+      employmentType: 'Full-time',
+      experienceRequired: '1-2 years',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: '2026-06-24',
+      closingDate: null,
+      jobDescription: 'Experience: 1–2 Years Location: Chennai (Work from Office) Employment Type: FTE (Full-time) We are looking for a creative and data-driven Digital Marketing Executive to join our growing marketing team.',
+      remoteStatus: 'On-site',
+      source: 'optisolbusinesssolutions',
+      link: 'https://optisolbusiness.zohorecruit.in/jobs/Careers/183543000002852061/Digital-Marketing-Associate?source=CareerSite',
+      scrapedAt: '2026-08-03T00:00:00.000Z',
+    },
+  ])
 })
 
-test('OptiSol Business Solutions fails closed when the verified archive contract drifts', async () => {
+test('OptiSol Business Solutions fails closed when the verified current openings widget drifts', async () => {
   const optisol = await loadModule()
 
   await assert.rejects(
     optisol.createOptiSolBusinessSolutionsScraper().run({
       fetchText: async (url) => {
         if (url === optisol.CAREERS_LANDING_URL) return careersLandingHtml
-        return archivePageOneHtml.replace('Full Time', 'Archive elsewhere')
+        return currentOpeningsHtml.replace('https://optisolbusiness.zohorecruit.in', 'https://example.zohorecruit.in')
       },
+      fetchJson: async () => apiPayload,
     }),
-    /verified jobs archive/i,
+    /verified current openings page/i,
   )
 })

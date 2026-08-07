@@ -1,3 +1,5 @@
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+
 export const CAREERS_URL = 'https://twimbit.com/careers'
 
 const normalizeText = (value) => {
@@ -80,6 +82,9 @@ const inferRemoteStatus = (lines) => {
   return null
 }
 
+const shouldUseBrowserFallback = (error) =>
+  /HTTP 403\b|cloudflare|just a moment|forbidden/i.test(String(error?.message ?? error ?? ''))
+
 const parseDetailPage = ({ html, detailUrl, now }) => {
   const lines = htmlToLines(html)
   const title = extractHeading(html)
@@ -116,20 +121,50 @@ export const createTwimbitScraper = ({
   careersUrl = CAREERS_URL,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const careersHtml = await fetchHtml(careersUrl)
-    const detailUrls = [...new Set(extractAnchors(careersHtml)
-      .map(({ href }) => toSameOriginRoleUrl(href, careersUrl))
-      .filter(Boolean))]
+  async run({ fetchHtml = defaultFetchHtml, fetchBrowserHtml } = {}) {
+    let browserSession = null
 
-    if (detailUrls.length === 0) return []
+    const getBrowserHtml = async (url) => {
+      if (typeof fetchBrowserHtml === 'function') {
+        return fetchBrowserHtml(url)
+      }
 
-    const jobs = await Promise.all(detailUrls.map(async (detailUrl) => {
-      const detailHtml = await fetchHtml(detailUrl)
-      return parseDetailPage({ html: detailHtml, detailUrl, now })
-    }))
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession()
+      }
 
-    return jobs.filter(Boolean)
+      return browserSession.fetchText(url, { referer: careersUrl })
+    }
+
+    const fetchHtmlWithFallback = async (url) => {
+      try {
+        return await fetchHtml(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) throw error
+        return getBrowserHtml(url)
+      }
+    }
+
+    try {
+      const careersHtml = await fetchHtmlWithFallback(careersUrl)
+      const detailUrls = [...new Set(extractAnchors(careersHtml)
+        .map(({ href }) => toSameOriginRoleUrl(href, careersUrl))
+        .filter(Boolean))]
+
+      if (detailUrls.length === 0) return []
+
+      const jobs = []
+      for (const detailUrl of detailUrls) {
+        const detailHtml = await fetchHtmlWithFallback(detailUrl)
+        jobs.push(parseDetailPage({ html: detailHtml, detailUrl, now }))
+      }
+
+      return jobs.filter(Boolean)
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

@@ -31,14 +31,11 @@ const careersHomeHtml = `
 <body>
   <section class="Hero-search">
     <form action="https://careers.expediagroup.com/jobs" method="GET" class="Hero-search__form">
-      <input type="text" name="keyword" placeholder="Search by keyword/title">
-      <select name="filter[country]">
-        <option value="">All</option>
-        <option value="India">India</option>
-        <option value="United States">United States</option>
-      </select>
+      <input type="text" name="keyword" placeholder="Enter keyword/title">
       <a href="https://careers.expediagroup.com/jobs">Search Jobs</a>
     </form>
+    <h2>Search Expedia Group Jobs</h2>
+    <p>We currently have 165 openings in 15 countries.</p>
     <p>Explore careers in Gurgaon, India.</p>
   </section>
 </body>
@@ -59,13 +56,13 @@ const jobsPageZeroHtml = `
       <li class="Results__list__item">
         <div class="Results__list__header">
           <div class="Results__list__content">
-            <a href="/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/" class="view-job-button">
+            <a href="/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/" class="view-job-button">
               <h3 class="Results__list__title h4 text-blue-2">Machine Learning Engineer II</h3>
-              <h4 class="Results__list__location h5">India - Bangalore</h4>
+              <h4 class="Results__list__location h5">India - Haryāna - Gurgaon</h4>
               <p>Technology</p>
             </a>
           </div>
-          <a href="/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/" class="Results__list__button view-job-button">
+          <a href="/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/" class="Results__list__button view-job-button">
             View Job
           </a>
         </div>
@@ -125,12 +122,12 @@ const detailPageHtml = `
 <!doctype html>
 <html lang="en-US">
 <head>
-  <title>Machine Learning Engineer II in Bangalore, Bangalore | Expedia Group | Careers</title>
-  <link rel="canonical" href="https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/" />
+  <title>Machine Learning Engineer II in Gurgaon, Haryāna | Expedia Group | Careers</title>
+  <link rel="canonical" href="https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/" />
 </head>
 <body>
   <section class="Hero--apply">
-    <a href="https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply?" class="Hero__button button button--primary page_apply_link hero">
+    <a href="https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?" class="Hero__button button button--primary page_apply_link hero">
       Apply Now
     </a>
   </section>
@@ -142,20 +139,20 @@ const detailPageHtml = `
   </section>
   <div class="Sidenav">
     <ul class="Info__list">
-      <li class="Info__list__item"><p><a href="https://careers.expediagroup.com/jobs/location/BANGALORE/Bangalore/" class="underline">India - Bangalore</a></p></li>
+      <li class="Info__list__item"><p><a href="https://careers.expediagroup.com/jobs/location/HARYANA/Gurgaon/" class="underline">India - Haryāna - Gurgaon</a></p></li>
       <li class="Info__list__item"><p><a href="https://careers.expediagroup.com/jobs/category/Technology/" class="underline">Technology</a></p></li>
       <li class="Info__list__item"><p>Full-Time Regular</p></li>
-      <li class="Info__list__item"><p>07/14/2026</p></li>
-      <li class="Info__list__item"><p>ID # R-107194</p></li>
+      <li class="Info__list__item"><p>07/24/2026</p></li>
+      <li class="Info__list__item"><p>ID # R-108134</p></li>
     </ul>
   </div>
   <script type="application/ld+json">${JSON.stringify({
     '@context': 'http://schema.org',
     '@type': 'JobPosting',
-    datePosted: '2026-07-14',
+    datePosted: '2026-07-24',
     title: 'Machine Learning Engineer II',
     description: detailDescriptionHtml,
-    identifier: 'R-107194',
+    identifier: 'R-108134',
     hiringOrganization: {
       '@type': 'Organization',
       name: 'Expedia Group',
@@ -180,7 +177,7 @@ test('Expedia helpers stay pinned to the verified first-party careers, jobs, pag
   assert.equal(expedia.SOURCE, 'expedia')
   assert.equal(expedia.COMPANY, 'Expedia')
   assert.equal(expedia.OFFICIAL_BRAND_NAME, 'Expedia Group')
-  assert.equal(expedia.VERIFIED_ON, '2026-07-15')
+  assert.equal(expedia.VERIFIED_ON, '2026-08-02')
   assert.equal(expedia.HOMEPAGE_URL, 'https://careers.expediagroup.com/')
   assert.equal(expedia.CAREERS_URL, 'https://careers.expediagroup.com/')
   assert.equal(expedia.JOBS_URL, 'https://careers.expediagroup.com/jobs/')
@@ -202,7 +199,7 @@ test('Expedia helpers stay pinned to the verified first-party careers, jobs, pag
   assert.equal(
     expedia.hasOfficialJobDetailSignal(
       detailPageHtml,
-      'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/',
+      'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
     ),
     true,
   )
@@ -216,13 +213,13 @@ test('Expedia extracts only India job cards from the verified first-party jobs p
       title: 'Machine Learning Engineer II',
       company: 'Expedia',
       department: 'Technology',
-      location: 'India - Bangalore',
-      city: 'Bangalore',
+      location: 'India - Haryāna - Gurgaon',
+      city: 'Gurgaon',
       country: 'India',
-      jobId: 'R-107194',
-      requisitionId: 'R-107194',
-      sourceUrl: 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/',
-      applyUrl: 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/',
+      jobId: 'R-108134',
+      requisitionId: 'R-108134',
+      sourceUrl: 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
+      applyUrl: 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
       employmentType: null,
       experienceRequired: null,
       minimumQualification: null,
@@ -243,16 +240,16 @@ test('Expedia detail extraction lifts the first-party detail fields and Workday 
 
   assert.equal(job.title, 'Machine Learning Engineer II')
   assert.equal(job.department, 'Technology')
-  assert.equal(job.location, 'India - Bangalore')
-  assert.equal(job.city, 'Bangalore')
+  assert.equal(job.location, 'India - Haryāna - Gurgaon')
+  assert.equal(job.city, 'Gurgaon')
   assert.equal(job.country, 'India')
   assert.equal(
     job.applyUrl,
-    'https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply?',
+    'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
   )
   assert.equal(job.employmentType, 'Full-Time Regular')
-  assert.equal(job.postingDate, '2026-07-14')
-  assert.equal(job.requisitionId, 'R-107194')
+  assert.equal(job.postingDate, '2026-07-24')
+  assert.equal(job.requisitionId, 'R-108134')
   assert.match(job.jobDescription, /At Expedia Group, we help travelers explore the world/i)
   assert.match(job.jobDescription, /In this role, you will:/i)
   assert.match(job.jobDescription, /Minimum Qualifications:/i)
@@ -287,7 +284,7 @@ test('run validates the verified first-party careers handoff, follows rel-next p
       if (url === expedia.HOMEPAGE_URL) return careersHomeHtml
       if (url === expedia.JOBS_URL) return jobsPageZeroHtml
       if (url === 'https://careers.expediagroup.com/jobs/?&mypage=1') return jobsPageOneHtml
-      if (url === 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/') {
+      if (url === 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/') {
         return detailPageHtml
       }
 
@@ -299,20 +296,20 @@ test('run validates the verified first-party careers handoff, follows rel-next p
     'https://careers.expediagroup.com/',
     'https://careers.expediagroup.com/jobs/',
     'https://careers.expediagroup.com/jobs/?&mypage=1',
-    'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/',
+    'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
   ])
   assert.deepEqual(jobs, [
     {
       title: 'Machine Learning Engineer II',
       company: 'Expedia',
       department: 'Technology',
-      location: 'India - Bangalore',
-      city: 'Bangalore',
+      location: 'India - Haryāna - Gurgaon',
+      city: 'Gurgaon',
       country: 'India',
-      jobId: 'R-107194',
-      requisitionId: 'R-107194',
-      sourceUrl: 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/',
-      applyUrl: 'https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply?',
+      jobId: 'R-108134',
+      requisitionId: 'R-108134',
+      sourceUrl: 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
+      applyUrl: 'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
       employmentType: 'Full-Time Regular',
       experienceRequired: null,
       minimumQualification: "Bachelor's degree in Computer Science or a related technical field; or equivalent related professional experience.",
@@ -323,12 +320,12 @@ test('run validates the verified first-party careers handoff, follows rel-next p
         'Experience designing and implementing scalable, fault-tolerant, and high-throughput ML services.',
         'Ability to influence ML system designs within a team or product area.',
       ],
-      postingDate: '2026-07-14',
+      postingDate: '2026-07-24',
       closingDate: null,
       jobDescription: "At Expedia Group, we help travelers explore the world, one journey at a time. In this role, you will: Design, develop, test, and maintain scalable machine learning services. Collaborate with product managers and data scientists on ML system design. Minimum Qualifications: Bachelor's degree in Computer Science or a related technical field; or equivalent related professional experience. 2+ years of relevant professional experience. Preferred Qualifications: Experience designing and implementing scalable, fault-tolerant, and high-throughput ML services. Ability to influence ML system designs within a team or product area.",
       remoteStatus: null,
       source: 'expedia',
-      link: 'https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply?',
+      link: 'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
@@ -360,7 +357,7 @@ test('run fails closed when the verified Expedia careers, jobs, or detail contra
         if (url === expedia.HOMEPAGE_URL) return careersHomeHtml
         if (url === expedia.JOBS_URL) return jobsPageZeroHtml
         return detailPageHtml.replace(
-          'https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply?',
+          'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
           'https://example.com/apply',
         )
       },

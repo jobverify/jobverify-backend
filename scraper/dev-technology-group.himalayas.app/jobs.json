@@ -1,0 +1,126 @@
+[
+  {
+    "title": "Mid and Senior ServiceNow Developers (Always Recruiting)",
+    "company": "Dev Technology Group",
+    "location": "Worldwide / India eligible",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "Worldwide / India eligible",
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "applyUrl": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "sourceUrl": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "source": "dev-technology-group.himalayas.app",
+    "jobId": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "requisitionId": "https://himalayas.app/companies/dev-technology-group/jobs/mid-and-senior-servicenow-developers-always-recruiting",
+    "department": "ServiceNow-Development",
+    "employmentType": "Full Time",
+    "experienceRequired": "5+ years",
+    "postingDate": "1970-01-21T00:00:00.000Z",
+    "expiresAt": "1970-01-21",
+    "jobDescription": "Dev's Talent Network is designed to create a network of talented applicants who are interested in working for Dev Technology and are waiting for a job opening that matches their skills and experience. Here you will find positions we are \"always recruiting\" as well as an opportunity to share your resume with Dev, even if the job position you seek is not listed here today. The Dev Talent Network is acommunityofhighly qualified technical and management professionalsrecognized by Dev to demonstrate strong alignment with our company culture.The Dev Talent Network is comprised of candidates, referrals, Dev alumni, andfellow colleagues with whom we have worked in the past. We’re excited to evolve the Dev Talent Networkso our membersstay connected with Dev and discover new career opportunities with us. Clearance: Public Trust or the ability to obtain a Public Trust clearance Dev Technology Group is looking for talented Service Now application developers at many levels of experience with specific, tangible experience in the following: Object oriented development experience focused on Javascript What You'll Be Doing: Serve as a Service Now developer on a cross-functional development team; Design and develop custom scoped applications on the Now Platform to meet business requirements, including implementation of client scripts, business rules, workflows, and custom Service Portal widgets Collaborate with application teams to design and implement data interfaces with other enterprise application systems Create and configure Business Rules, UI Policies, UI Actions, Client Scripts and ACLs including advanced scripting of each Develop and manage operational metrics reporting and dashboards Support the development and analysis of customer requirements and assist with the development of user stories Perform application testing Required Education, Skills and Experience: Bachelor’s degree in a related discipline, with 5+ years of relevant experience 5 or more years of development experience using the Service Now platform Experience with use of Agile methodologies for software development In depth knowledge of development on the Service Now Platform, including client and server scripting, Service Now REST APIs, and custom widget development in Service Portal. Experience with working to support a Federal Law Enforcement agency a plus. Experience developing, updating, and interpreting Java Script on the Service Now platform Knowledge of Service Now development and configuration best practices Knowledge of Service Now database hierarchies and design Experience with development, customization, and administration of multiple components of Service Now Excellent communications skills Excellent teamwork skills Preferred Education Skills and Experience: Service Now Systems Administration certification strongly preferred Experience with Angular Experience or training with React ***By submitting your information you agree our talent recruitment team may use your contact information to reach out to you regarding new opportunities that may be applicable to your experience. Originally posted on Himalayas",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T22:56:03.626Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
+    "companyDomain": "dev-technology-group.himalayas.app",
+    "originalTitle": "Mid and Senior ServiceNow Developers (Always Recruiting)",
+    "normalizedTitle": "Mid and Senior ServiceNow Developers (Always Recruiting)",
+    "jobCategory": "Mid and Senior ServiceNow Developers (Always Recruiting)",
+    "engineeringDomain": "Networking",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "1970-01-21T00:00:00.000Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T22:56:03.626Z",
+    "skillIds": [
+      "javascript",
+      "java",
+      "angular"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Javascript"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Angular"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5+ years",
+      "minimumYears": 5,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5+ years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Frontend Engineering",
+    "secondaryRoleDomains": [
+      "Backend Engineering",
+      "Software Engineering"
+    ],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T22:56:22.595Z"
+  }
+]

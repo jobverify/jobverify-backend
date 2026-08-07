@@ -63,6 +63,25 @@ const buildCareersHtml = () => `
 </html>
 `
 
+const buildDetailHtml = () => `
+<!doctype html>
+<html>
+  <body>
+    <h1>Cloud Architect</h1>
+    <p>Location: Hyderabad, Hybrid - 3 Days from Office</p>
+    <p>Experience: 8-10 Years</p>
+    <div>
+      <h2>Desired Skills and Knowledge</h2>
+      <ul>
+        <li>8+ years of experience in cloud infrastructure and architecture.</li>
+        <li>Deep understanding of AWS services and networking.</li>
+      </ul>
+    </div>
+    <h3>Apply for this position</h3>
+  </body>
+</html>
+`
+
 test('extractSearchResults maps AutoRABIT JSON-LD postings and keeps only India roles', async () => {
   const autorabit = await loadAutoRABITModule()
   assert.ok(autorabit)
@@ -89,6 +108,7 @@ test('extractSearchResults maps AutoRABIT JSON-LD postings and keeps only India 
     postingDate: '2026-02-02T00:00:00.000Z',
     closingDate: null,
     jobDescription: 'Lead design, security, and deployment of scalable cloud architectures.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
 })
@@ -104,14 +124,20 @@ test('run fetches the AutoRABIT careers page and decorates jobs', async () => {
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === autorabit.CAREER_PAGE_URL) return buildCareersHtml()
+      if (url === 'https://autorabit.applytojob.com/apply/ByksQiOipi/Cloud-Architect') return buildDetailHtml()
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
   assert.equal(autorabit.buildSearchUrl(), autorabit.CAREER_PAGE_URL)
-  assert.deepEqual(requestedUrls, [autorabit.CAREER_PAGE_URL])
+  assert.deepEqual(requestedUrls, [
+    autorabit.CAREER_PAGE_URL,
+    'https://autorabit.applytojob.com/apply/ByksQiOipi/Cloud-Architect',
+  ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'autorabit')
   assert.equal(jobs[0].link, 'https://autorabit.applytojob.com/apply/ByksQiOipi/Cloud-Architect')
+  assert.equal(jobs[0].experienceRequired, '8-10 Years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

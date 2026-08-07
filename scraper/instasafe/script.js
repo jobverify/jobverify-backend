@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { INSTASAFE_CATALOG } from './catalog.js'
 
@@ -21,6 +23,10 @@ export const CAREERS_API_URL = INSTASAFE_CATALOG.careersApiUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -54,8 +60,9 @@ const getLocation = (record = {}) => [record.City, record.State, record.Country]
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Instasafe Careers \| Instasafe Jobs\s*<\/title>/i.test(page)
+  return normalized?.includes('Instasafe Careers | Instasafe Jobs')
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/instasafe\.com\/careers\/["']/i.test(page)
     && /Grow with InstaSafe/i.test(page)
     && /Our Openings/i.test(page)
@@ -65,7 +72,7 @@ export const hasOfficialCareersPageSignal = (html) => {
 export const hasOfficialPortalSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Jobs at Instasafe Technologies Pvt Ltd\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Jobs at Instasafe Technologies Pvt Ltd\s*<\/title>/i.test(page)
     && /meta property=["']og:url["'] content=["']https:\/\/instasafe\.zohorecruit\.com\/jobs\/Careers["']/i.test(page)
     && hasInputWithId(page, 'pageJson')
     && hasInputWithId(page, 'moduleMeta')
@@ -110,29 +117,27 @@ export const extractIndiaJobs = (payload) => (Array.isArray(payload?.data) ? pay
   })
   .filter(Boolean)
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
+const defaultFetchText = (url) =>
+  fetchTextWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    attempts: 1,
+    label: SOURCE,
+    timeoutMs: 15000,
   })
 
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
-
-const defaultFetchJson = async (url) => {
-  const response = await fetch(url, {
+const defaultFetchJson = (url) =>
+  fetchJsonWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/json,text/plain,*/*',
     },
+    attempts: 1,
+    label: SOURCE,
+    timeoutMs: 15000,
   })
-
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.json()
-}
 
 export const createInstaSafeScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -141,31 +146,101 @@ export const createInstaSafeScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
   } = {}) {
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersPageSignal(careersPageHtml)) {
-      throw new Error('Response is not the verified official InstaSafe careers page')
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          settleTimeMs: 4000,
+        })
+      }
+
+      return browserSession
     }
 
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
-    if (!hasOfficialPortalSignal(portalHtml)) {
-      throw new Error('Response is not the verified official InstaSafe careers portal')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+
+      if (![200, 304].includes(page.status)) {
+        throw new Error(`HTTP ${page.status} for ${url}`)
+      }
+
+      return page.html
+    })
+
+    const browserJsonFetcher = fetchBrowserJson || (async (url, landingUrl = CAREERS_PORTAL_URL) => {
+      const session = await getBrowserSession()
+      return session.fetchJson(url, {
+        landingUrl,
+        headers: {
+          Accept: 'application/json,text/plain,*/*',
+        },
+      })
+    })
+
+    const fetchTextWithBrowserFallback = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const payload = await fetchJson(CAREERS_API_URL)
-    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
-      throw new Error('InstaSafe public jobs API no longer returns the verified success payload')
+    const fetchJsonWithBrowserFallback = async (url, landingUrl = CAREERS_PORTAL_URL) => {
+      try {
+        return await fetchJson(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserJsonFetcher(url, landingUrl)
+      }
     }
 
-    const jobs = extractIndiaJobs(payload)
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const shouldPreferBrowserJson = fetchJson === defaultFetchJson
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+    try {
+      const careersPageHtml = await fetchTextWithBrowserFallback(CAREERS_PAGE_URL)
+      if (!hasOfficialCareersPageSignal(careersPageHtml)) {
+        throw new Error('Response is not the verified official InstaSafe careers page')
+      }
+
+      const portalHtml = await fetchTextWithBrowserFallback(CAREERS_PORTAL_URL)
+      if (!hasOfficialPortalSignal(portalHtml)) {
+        throw new Error('Response is not the verified official InstaSafe careers portal')
+      }
+
+      const payload = shouldPreferBrowserJson
+        ? await browserJsonFetcher(CAREERS_API_URL, CAREERS_PORTAL_URL)
+        : await fetchJsonWithBrowserFallback(CAREERS_API_URL)
+      if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
+        throw new Error('InstaSafe public jobs API no longer returns the verified success payload')
+      }
+
+      const jobs = extractIndiaJobs(payload)
+      const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 

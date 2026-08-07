@@ -21,6 +21,39 @@ const indiaListing = {
   absoluteUrl: 'https://jobs.continental.com/en/detail-page/job-detail/REF97252H-p-c7e537bc6244c0a1d9a5c8edb0e5ae72/production-shift-supervisor-/',
 }
 
+const detailHtml = `
+  <html>
+    <head>
+      <title>Production Shift Supervisor | Continental</title>
+      <meta property="og:title" content="Production Shift Supervisor" />
+    </head>
+    <body>
+      <h1>Production Shift Supervisor</h1>
+      <h2>Your tasks</h2>
+      <div class="c-jobdetails__section__content" data-accordion-target="contentsection-job-description">
+        <div class="c-readmore">
+          <p>Lead production operations and maintain shift discipline.</p>
+        </div>
+      </div>
+      <h2>Your profile</h2>
+      <div class="c-jobdetails__section__content" data-accordion-target="contentsection-qualifications">
+        <div class="c-readmore">
+          <p>3-5 years of experience in manufacturing supervision.</p>
+        </div>
+      </div>
+    </body>
+  </html>
+`
+
+const removedDetailHtml = `
+  <html>
+    <body>
+      <p>We are sorry. We were unable to find any job opportunities for this inquiry.</p>
+      <p>This vacancy has been removed.</p>
+    </body>
+  </html>
+`
+
 test('buildIndiaSearchRequest uses Continental\'s official India location payload', async () => {
   const { buildIndiaSearchRequest, INDIA_LOCATION, RESULTS_API_URL } = await loadContinentalModule()
 
@@ -69,9 +102,54 @@ test('extractSearchResults keeps Continental India listings and maps public API 
   }])
 })
 
+test('extractJobDetailFromHtml parses Continental detail pages and skips removed vacancies', async () => {
+  const { extractJobDetailFromHtml } = await loadContinentalModule()
+
+  assert.deepEqual(extractJobDetailFromHtml(detailHtml, {
+    title: 'Production Shift Supervisor',
+    company: 'Continental',
+    department: 'Manufacturing Operations and Production',
+    location: 'Meerut, India',
+    city: 'Meerut',
+    country: 'India',
+    jobId: 'REF97252H',
+    requisitionId: 'REF97252H',
+    sourceUrl: indiaListing.absoluteUrl,
+    applyUrl: indiaListing.absoluteUrl,
+    employmentType: null,
+    remoteStatus: 'On-site',
+    postingDate: '2026-07-02T06:58:29.671Z',
+    closingDate: null,
+    requiredSkills: [],
+    jobDescription: 'Field of work: Manufacturing Operations and Production. Flexibility: Onsite Job.',
+  }), {
+    title: 'Production Shift Supervisor',
+    company: 'Continental',
+    department: 'Manufacturing Operations and Production',
+    location: 'Meerut, India',
+    city: 'Meerut',
+    country: 'India',
+    jobId: 'REF97252H',
+    requisitionId: 'REF97252H',
+    sourceUrl: indiaListing.absoluteUrl,
+    applyUrl: indiaListing.absoluteUrl,
+    employmentType: null,
+    remoteStatus: 'On-site',
+    postingDate: '2026-07-02T06:58:29.671Z',
+    closingDate: null,
+    requiredSkills: [],
+    jobDescription: 'Lead production operations and maintain shift discipline.\n\n3-5 years of experience in manufacturing supervision.',
+    experienceRequired: '3-5 years',
+    publicExperienceChecked: true,
+  })
+
+  assert.equal(extractJobDetailFromHtml(removedDetailHtml, indiaListing), null)
+})
+
 test('run paginates Continental\'s official India results and decorates runner fields', async () => {
   const { RESULTS_API_URL, createContinentalScraper } = await loadContinentalModule()
   const requestedPages = []
+  const requestedDetails = []
   const scraper = createContinentalScraper()
 
   const jobs = await scraper.run({
@@ -100,11 +178,21 @@ test('run paginates Continental\'s official India results and decorates runner f
         },
       }
     },
+    fetchText: async (url) => {
+      requestedDetails.push(url)
+      return detailHtml
+    },
   })
 
   assert.deepEqual(requestedPages, ['1', '2'])
+  assert.deepEqual(requestedDetails, [
+    indiaListing.absoluteUrl,
+    'https://jobs.continental.com/en/detail-page/job-detail/REF97252H-p-c7e537bc6244c0a1d9a5c8edb0e5ae72/production-shift-supervisor-/',
+  ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'continental')
   assert.equal(jobs[0].link, indiaListing.absoluteUrl)
+  assert.equal(jobs[0].experienceRequired, '3-5 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })

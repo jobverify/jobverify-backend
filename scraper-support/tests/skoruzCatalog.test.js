@@ -40,26 +40,28 @@ test('Skoruz local catalog captures the verified fail-closed careers surface', a
   assert.equal(provider.companyCareerPage, 'https://www.skoruz.com/careers/')
   assert.equal(provider.embeddedIndiaJobsUrl, 'https://talenthire.ceipal.in/Jobs/listing/MTAz')
   assert.equal(provider.companyDomain, 'skoruz.com')
-  assert.equal(provider.atsPlatform, 'official-careers-page-with-untrusted-ceipal-embed')
+  assert.equal(provider.atsPlatform, 'official-careers-page-with-public-us-postings-and-untrusted-ceipal-embed')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'single-first-party-careers-page+india-ceipal-iframe-trust-failure-sentinel',
+    'single-first-party-careers-page+visible-us-postings+india-ceipal-timeout-sentinel',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+us-empty-state+india-untrusted-iframe-return-empty',
+    'verified-careers-page+extract-public-us-postings+india-untrusted-iframe-fallback',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /skoruz[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.skoruz\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/talenthire\.ceipal\.in\/Jobs\/listing\/MTAz/i)
-  assert.match(provider.verifiedSurfaceSummary, /Currently, no openings available/i)
-  assert.match(provider.verifiedSurfaceSummary, /trust relationship|could not connect/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 1, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Network and Computer Systems Administrator/i)
+  assert.match(provider.verifiedSurfaceSummary, /San Jose, CA/i)
+  assert.match(provider.verifiedSurfaceSummary, /timed out|could not connect/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Skoruz'), false)
 
   assert.equal(skoruz.PROVIDER_METADATA.source, SKORUZ_CATALOG.source)

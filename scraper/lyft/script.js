@@ -29,6 +29,10 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1],
+)
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -104,8 +108,9 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasVerifiedCareersShellSignal = (html) => {
   const page = String(html ?? '')
+  const title = extractTitle(page) || ''
 
-  return /<title>\s*Lyft Careers\s*<\/title>/i.test(page)
+  return title === 'Lyft Careers'
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.lyft\.com\/careers["']/i.test(page)
     && /WORKING AT LYFT/i.test(page)
     && /Search job openings/i.test(page)

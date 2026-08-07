@@ -5,16 +5,13 @@ const officialCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers - Netcore Cloud</title>
+    <title>Careers - Netcore</title>
   </head>
   <body>
     <main>
-      <h1>We’ve Got Big Plans - and You Can Join Us on Our Journey!</h1>
-      <p>A Great Place to Work for 6 Years in a Row</p>
-      <h2>View Job Openings</h2>
-      <a href="https://netcorecloud.com/careers-list?job_category=sales">Sales</a>
-      <a href="https://netcorecloud.com/careers-list?job_category=engineering">Engineering</a>
-      <a href="https://netcorecloud.com/careers-list?job_category=customer_success">Customer Success</a>
+      <h1>Join the community shaping the future of Agentic Marketing here.</h1>
+      <p>Support Login English Portuguese</p>
+      <p>Please wait while you are redirected to the right page...</p>
     </main>
   </body>
 </html>
@@ -24,13 +21,11 @@ const redirectShellHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers list - Netcore Cloud</title>
+    <title>Careers list - Netcore</title>
   </head>
   <body>
     <section>
-      <h2>Compliance and Recognition Accolades</h2>
-      <p>6,500+ Brands</p>
-      <p>Netcore Cloud Pvt. Ltd.</p>
+      <p>Support Login English Portuguese</p>
       <p>Please wait while you are redirected to the right page...</p>
       <img alt="loading" src="/loading.gif">
     </section>
@@ -73,7 +68,7 @@ const loadNetcoreCloudModule = async () => {
   }
 }
 
-test('Netcore Cloud sentinel helpers stay pinned to the verified careers and redirect-shell contracts', async () => {
+test('Netcore Cloud sentinel helpers stay pinned to the Monday, August 3, 2026 careers and redirect-shell contracts', async () => {
   const netcoreCloud = await loadNetcoreCloudModule()
 
   assert.equal(netcoreCloud.SOURCE, 'netcorecloud')
@@ -86,7 +81,7 @@ test('Netcore Cloud sentinel helpers stay pinned to the verified careers and red
     'https://netcorecloud.com/careers-list?job_category=engineering',
   )
   assert.equal(netcoreCloud.COMPANY_DOMAIN, 'netcorecloud.com')
-  assert.equal(netcoreCloud.VERIFIED_ON, '2026-07-16')
+  assert.equal(netcoreCloud.VERIFIED_ON, '2026-08-03')
   assert.equal(
     netcoreCloud.hasVerifiedNetcoreCareersSignal(officialCareersHtml),
     true,

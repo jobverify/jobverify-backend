@@ -12,6 +12,9 @@ export const CONTACT_URL = 'https://royal-atlas.com/contact-us/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const VERIFIED_CAREERS_EMAIL = 'hr@royal-atlas.com'
+const VERIFIED_CONTACT_EMAIL = 'info@royal-atlas.com'
+
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bcurrent openings\b/i,
@@ -47,6 +50,27 @@ const normalizeWhitespace = (value) =>
     .replace(/\s+/g, ' ')
     .trim()
 
+const decodeCloudflareEmail = (encodedValue) => {
+  const encoded = String(encodedValue ?? '').trim()
+  if (!/^[a-f0-9]+$/i.test(encoded) || encoded.length < 4 || encoded.length % 2 !== 0) {
+    return null
+  }
+
+  try {
+    const key = Number.parseInt(encoded.slice(0, 2), 16)
+    let decoded = ''
+
+    for (let index = 2; index < encoded.length; index += 2) {
+      const value = Number.parseInt(encoded.slice(index, index + 2), 16)
+      decoded += String.fromCharCode(value ^ key)
+    }
+
+    return decoded.toLowerCase()
+  } catch {
+    return null
+  }
+}
+
 const toAbsoluteUrl = (value) => {
   try {
     return new URL(value, HOMEPAGE_URL)
@@ -77,7 +101,14 @@ const defaultFetchPage = async (url) => {
 }
 
 export const extractApplicationEmail = (html) => {
-  const match = String(html ?? '').match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i)
+  const page = String(html ?? '')
+  const cloudflareProtectedEmail = page.match(/data-cfemail=["']([a-f0-9]+)["']/i)?.[1]
+  const decodedCloudflareEmail = decodeCloudflareEmail(cloudflareProtectedEmail)
+  if (decodedCloudflareEmail) {
+    return decodedCloudflareEmail
+  }
+
+  const match = page.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i)
   return match?.[0]?.toLowerCase() ?? null
 }
 
@@ -85,26 +116,31 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes('royal atlas general contracting')
+  return normalized.includes('building a strong foundation for the future')
+    && normalized.includes('about royal atlas')
+    && normalized.includes('royal atlas general contracting')
     && /href=["'][^"']*\/careers\/["']/i.test(page)
     && /href=["'][^"']*\/contact-us\/["']/i.test(page)
-    && normalized.includes('integrated infrastructure and contracting services')
+    && normalized.includes('earthwork, aggregates supply & heavy equipment rentals')
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('careers')
-    && normalized.includes('please send your resume and cover letter to info@royal-atlas.com')
-    && normalized.includes('experienced professionals')
+  return normalized.includes('join our team')
+    && normalized.includes('our people are our greatest asset')
+    && normalized.includes('please send your resume and a cover letter to')
+    && extractApplicationEmail(html) === VERIFIED_CAREERS_EMAIL
 }
 
 export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('royal atlas general contracting')
-    && normalized.includes('info@royal-atlas.com')
-    && normalized.includes('united arab emirates')
+  return normalized.includes('write to us')
+    && normalized.includes('office no 604, regal tower')
+    && normalized.includes('+9714 883 8384')
+    && normalized.includes('jebel ali freezone - dubai')
+    && extractApplicationEmail(html) === VERIFIED_CONTACT_EMAIL
 }
 
 export const extractSuspiciousPublicJobLinks = (html) => {
@@ -160,7 +196,7 @@ export const createRoyalAtlasScraper = () => ({
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Royal Atlas verified careers page no longer matches the known first-party surface')
     }
-    if (extractApplicationEmail(careersPage.html) !== 'info@royal-atlas.com') {
+    if (extractApplicationEmail(careersPage.html) !== VERIFIED_CAREERS_EMAIL) {
       throw new Error('Royal Atlas verified email-only careers surface changed')
     }
     if (hasUnexpectedPublicJobsSignal(careersPage.html)) {

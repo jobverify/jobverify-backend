@@ -15,7 +15,6 @@ const REQUEST_TIMEOUT_MS = 15000
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bopen positions\b/i,
-  /\bapply now\b/i,
   /jobs\.lever\.co/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
@@ -77,9 +76,12 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return normalized.includes('station-s')
-    && normalized.includes('the startup studio')
+    && (
+      normalized.includes('the startup studio')
+      || normalized.includes('t h e s t a r t u p s t u d i o')
+    )
+    && normalized.includes("let's get your venture started in sri city")
     && normalized.includes('sri city, ap, india')
-    && normalized.includes('info@station-s.org')
     && /careers\.php/i.test(String(html ?? ''))
 }
 
@@ -91,6 +93,7 @@ export const hasOfficialCareersShellSignal = (html) => {
 
   return /station-s/i.test(normalized)
     && /join our team/i.test(normalized)
+    && /building the future of operations technology/i.test(normalized)
     && /all categories/i.test(normalized)
     && /job title category experience location/i.test(normalized)
     && !hasPublicJobsSignal(html)

@@ -38,6 +38,7 @@ const isOfficialCareersUrl = (value) => {
 export const extractOfficialJobs = (html = '') => {
   const data = extractNextData(html)
   const jobs = data?.props?.pageProps?.data?.jobs
+    ?? data?.props?.pageProps?.jobs
 
   if (!Array.isArray(jobs)) return null
 

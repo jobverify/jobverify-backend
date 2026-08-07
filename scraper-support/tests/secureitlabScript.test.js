@@ -146,6 +146,7 @@ test('SecureITLab validates the verified official careers page and extracts remo
     postingDate: null,
     closingDate: null,
     jobDescription: 'Monitors networks for security breaches, investigates incidents, and implements security measures.',
+    publicExperienceChecked: true,
     remoteStatus: 'Remote',
   })
   assert.deepEqual(
@@ -174,6 +175,7 @@ test('run fetches the SecureITLab careers page and decorates runner metadata', a
   assert.equal(jobs[0].source, 'secureitlab')
   assert.equal(jobs[0].link, 'mailto:work@secureitlab.com')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run fails closed when the verified SecureITLab careers surface changes unexpectedly', async () => {

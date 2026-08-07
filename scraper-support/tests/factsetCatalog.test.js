@@ -15,7 +15,7 @@ test('getScraperCatalog includes FactSet as a Workday-backed script provider', (
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.companyCareerPage, 'https://www.factset.com/careers')
   assert.equal(provider.companyDomain, 'factset.com')
-  assert.match(provider.modulePath, /factset[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /factset(?:\.workday)?[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable FactSet scraper without changing the runner contract', () => {

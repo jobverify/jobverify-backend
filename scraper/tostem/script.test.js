@@ -12,13 +12,16 @@ const loadModule = async () => {
 const homepageHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Leading Aluminium Windows and Doors Manufacturer, Supplier Company | Tostem India</title>
+    </head>
     <body>
       <main>
-        <h1>TOSTEM - World's Leading Aluminium Windows and Doors Brand</h1>
+        <h1>Japanese Innovation in Window Design</h1>
         <a href="https://www.tostemindia.com/career/">Career</a>
       </main>
       <footer>
-        <p>LIXIL WINDOW SYSTEMS PRIVATE LIMITED</p>
+        <p>LIXIL WINDOW SYSTEM</p>
       </footer>
     </body>
   </html>
@@ -27,18 +30,21 @@ const homepageHtml = `
 const careersHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Tostem India Jobs Vacancy Recruitment, Career Portal for Fresher &amp; Experienced Job Opening</title>
+    </head>
     <body>
       <main>
-        <h1>Career</h1>
+        <h1>Japanese Innovation in Window Design</h1>
         <nav>
           <a href="https://www.tostemindia.com/">Home</a>
           <a href="https://www.tostemindia.com/career/">Career</a>
         </nav>
       </main>
       <footer>
-        <p>LIXIL WINDOW SYSTEMS PRIVATE LIMITED</p>
+        <p>LIXIL WINDOW SYSTEM</p>
         <p>Email: support.lwsindia@lixil.com</p>
-        <p>© 2022-2025 TOSTEM India. All rights reserved.</p>
+        <p>&copy; 2022-2025 TOSTEM India. All rights reserved.</p>
       </footer>
     </body>
   </html>

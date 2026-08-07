@@ -136,8 +136,9 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return (
     normalized.includes('visual project management platform for your teams - nimblework')
-    && normalized.includes('visual. intelligent. adaptable.')
-    && normalized.includes("nimble - one platform for all your work management needs!")
+    && normalized.includes('the delivery intelligence layer for human + agentic teams')
+    && normalized.includes('ai-first where it counts. intelligent by design.')
+    && normalized.includes('meet nimble - the ai-powered work management that adapts to you!')
     && normalized.includes('nimblework, inc')
     && extractCareersUrl(page) === CAREERS_URL
   )

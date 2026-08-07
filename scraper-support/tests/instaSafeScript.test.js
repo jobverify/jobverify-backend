@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-16T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-02T00:00:00.000Z'
 
 const careersPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Instasafe Careers | Instasafe Jobs</title>
-    <link rel="canonical" href="https://instasafe.com/careers/" />
+    <title data-react-helmet="true">Instasafe Careers | Instasafe Jobs</title>
+    <link data-react-helmet="true" rel="canonical" href="https://instasafe.com/careers/" />
   </head>
   <body>
     <h1>Grow with InstaSafe</h1>
@@ -92,11 +92,13 @@ const loadModule = async () => {
 
 test('InstaSafe constants stay pinned to the verified careers page and public Zoho Recruit surfaces', async () => {
   const instasafe = await loadModule()
+  const liveLikeCareersPageHtml = careersPageHtml
+    .replace('<title data-react-helmet="true">Instasafe Careers | Instasafe Jobs</title>', '<title>\n      Instasafe Careers | Instasafe Jobs\n    </title>')
 
   assert.equal(instasafe.SOURCE, 'instasafe')
   assert.equal(instasafe.COMPANY, 'InstaSafe')
   assert.equal(instasafe.OFFICIAL_BRAND_NAME, 'Instasafe Technologies Pvt Ltd')
-  assert.equal(instasafe.VERIFIED_ON, '2026-07-16')
+  assert.equal(instasafe.VERIFIED_ON, '2026-08-02')
   assert.equal(instasafe.HOMEPAGE_URL, 'https://instasafe.com/')
   assert.equal(instasafe.CAREERS_PAGE_URL, 'https://instasafe.com/careers/')
   assert.equal(instasafe.CAREERS_PORTAL_URL, 'https://instasafe.zohorecruit.com/jobs/Careers/')
@@ -106,6 +108,7 @@ test('InstaSafe constants stay pinned to the verified careers page and public Zo
   )
   assert.match(instasafe.VERIFIED_SURFACE_SUMMARY, /public Zoho Recruit portal/i)
   assert.equal(instasafe.hasOfficialCareersPageSignal(careersPageHtml), true)
+  assert.equal(instasafe.hasOfficialCareersPageSignal(liveLikeCareersPageHtml), true)
   assert.equal(instasafe.hasOfficialPortalSignal(portalHtml), true)
 })
 
@@ -197,6 +200,44 @@ test('run validates the verified InstaSafe surface before fetching and decoratin
     jobs[0].link,
     'https://instasafe.zohorecruit.com/jobs/Careers/435765000016075043/Backend-Developer---Golang?source=CareerSite',
   )
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})
+
+test('run can recover with browser-backed careers surfaces and API when direct requests time out', async () => {
+  const instasafe = await loadModule()
+  const browserTextUrls = []
+  const browserJsonUrls = []
+
+  const jobs = await instasafe.createInstaSafeScraper({
+    maxJobs: 1,
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: instasafe.com:443, timeout: 10000ms)')
+    },
+    fetchJson: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: instasafe.zohorecruit.com:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      if (url === instasafe.CAREERS_PAGE_URL) return careersPageHtml
+      if (url === instasafe.CAREERS_PORTAL_URL) return portalHtml
+      assert.fail(`Unexpected InstaSafe browser HTML request: ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      browserJsonUrls.push(url)
+      if (url === instasafe.CAREERS_API_URL) return apiPayload
+      assert.fail(`Unexpected InstaSafe browser JSON request: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [
+    instasafe.CAREERS_PAGE_URL,
+    instasafe.CAREERS_PORTAL_URL,
+  ])
+  assert.deepEqual(browserJsonUrls, [instasafe.CAREERS_API_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'instasafe')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
 })
 

@@ -137,6 +137,7 @@ test('Brainium Information Technologies run returns structured jobs from the ver
       ['Senior DevOps / Platform Engineer', 'Cloud & DevOps', 'Kolkata', 'India', 'brainiuminformationtechnologies', FIXED_SCRAPED_AT],
     ],
   )
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('Brainium Information Technologies falls back to a browser-rendered careers page when the direct request is blocked', async () => {
@@ -156,6 +157,7 @@ test('Brainium Information Technologies falls back to a browser-rendered careers
 
   assert.equal(jobs.length, 3)
   assert.equal(jobs[0].applyUrl, 'https://www.brainiuminfotech.com/careers#open-positions')
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('Brainium Information Technologies fails closed when the verified careers surface no longer exposes open roles', async () => {

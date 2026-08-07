@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { INSTABASE_CATALOG } from './catalog.js'
@@ -133,20 +134,30 @@ export const hasOfficialCareersSignal = (html) => {
   return /Empowering AI for all/i.test(page)
     && /View Open Positions/i.test(page)
     && /href=["']\/careers\/jobs["']/i.test(page)
-    && /Pension and Provident Funds in UK and India/i.test(page)
+    && /(?:Why Instabase|Benefits and perks|Urgency of now)/i.test(page)
     && /Bengaluru/i.test(page)
-    && /Come Join us in creating the future/i.test(page)
 }
 
 export const hasVerifiedJobsPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /Find your dream job/i.test(page)
-    && /Open positions/i.test(page)
+  return /Open positions/i.test(page)
     && /job-boards\.greenhouse\.io\/instabase\/jobs\/\d+/i.test(page)
     && /Apply Now/i.test(page)
     && /Load More/i.test(page)
   }
+
+const inferExperienceRequired = (decodedDescription) => {
+  const { experienceProfile } = extractJobFilterSignals({
+    jobDescription: decodedDescription,
+  })
+
+  if (experienceProfile?.confidence !== 'high' || !normalizeWhitespace(experienceProfile.evidence)) {
+    return null
+  }
+
+  return normalizeWhitespace(experienceProfile.evidence)?.replace(/\s*-\s*/g, '-')
+}
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {
   const canonicalJobId = normalizeWhitespace(jobId)
@@ -197,6 +208,7 @@ export const extractIndiaJobsFromGreenhousePayload = (
         officeLocations,
         decodedDescription,
       })
+      const experienceRequired = inferExperienceRequired(decodedDescription)
 
       if (companyName && companyName.toLowerCase() !== OFFICIAL_BRAND_NAME.toLowerCase()) {
         throw new Error('Instabase Greenhouse jobs API no longer maps to the verified company identity')
@@ -220,7 +232,7 @@ export const extractIndiaJobsFromGreenhousePayload = (
         requisitionId: normalizeWhitespace(job?.requisition_id),
         department: normalizeWhitespace(job?.departments?.[0]?.name),
         employmentType: null,
-        experienceRequired: null,
+        experienceRequired,
         jobDescription: decodedDescription || null,
         minimumQualification: null,
         preferredQualification: null,

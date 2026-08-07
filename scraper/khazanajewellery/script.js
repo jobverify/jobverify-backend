@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 import { KHAZANA_JEWELLERY_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -78,14 +76,22 @@ export const hasKhazanaCareersSignal = (html = '') => {
     && text.includes(CAREERS_APPLY_EMAIL)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  const html = await response.text()
+  if (response.ok || response.status === 403) {
+    return html
+  }
+
+  throw new Error(`HTTP ${response.status} for ${url}`)
+}
 
 export const createKhazanaJewelleryScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {

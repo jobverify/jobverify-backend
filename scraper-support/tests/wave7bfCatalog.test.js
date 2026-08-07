@@ -150,7 +150,8 @@ test('Betsol local catalog captures the verified first-party linkout and public 
   assert.equal(provider.atsPlatform, 'smartrecruiters-board-html')
   assert.equal(provider.paginationStrategy, 'exact-name-smartrecruiters-board-grouped-by-location')
   assert.match(provider.verifiedSurfaceSummary, /Cloudflare challenge/i)
-  assert.match(provider.verifiedSurfaceSummary, /Bengaluru, India/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /15 India roles/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

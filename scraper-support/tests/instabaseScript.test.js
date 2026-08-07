@@ -11,9 +11,9 @@ const officialCareersHtml = `
     <section>
       <h1>Empowering AI for all</h1>
       <a href="/careers/jobs">View Open Positions</a>
-      <p>Pension and Provident Funds in UK and India</p>
+      <a href="/why-instabase">Why Instabase</a>
+      <p>Urgency of now</p>
       <p>Our office hubs include San Francisco, New York, London, and Bengaluru.</p>
-      <p>Come Join us in creating the future</p>
     </section>
   </body>
 </html>
@@ -27,7 +27,6 @@ const jobsPageHtml = `
   </head>
   <body>
     <section>
-      <h1>Find your dream job</h1>
       <h2>Open positions</h2>
       <article>
         <h3>Product Marketing Manager, Competitive Intelligence (AI)</h3>
@@ -55,8 +54,8 @@ const greenhousePayload = {
       company_name: 'Instabase',
       updated_at: '2026-07-10T17:17:05-04:00',
       first_published: '2026-07-08T02:11:56-04:00',
-      content: '&lt;p&gt;Build resilient backend systems for the AI platform.&lt;/p&gt;',
-      departments: [{ name: 'Engineering' }],
+      content: '&lt;p&gt;Build resilient backend systems for the AI platform.&lt;/p&gt;&lt;h3&gt;About you:&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;2+ years of professional software development experience with strong CS fundamentals.&lt;/li&gt;&lt;/ul&gt;',
+      departments: [{ name: 'Infra Engineering' }],
       offices: [{ location: 'Bengaluru, India' }],
       metadata: [{ name: 'Country', value: 'India' }],
     },
@@ -146,7 +145,7 @@ test('Instabase extracts only India jobs from the verified Greenhouse payload an
         country: 'India',
         link: 'https://job-boards.greenhouse.io/instabase/jobs/8560504002',
         applyUrl: 'https://job-boards.greenhouse.io/instabase/jobs/8560504002#application',
-        department: 'Engineering',
+        department: 'Infra Engineering',
       },
       {
         title: 'Staff Accountant',
@@ -161,6 +160,7 @@ test('Instabase extracts only India jobs from the verified Greenhouse payload an
   )
   assert.equal(jobs[0].source, 'instabase')
   assert.match(jobs[0].jobDescription, /backend systems/i)
+  assert.equal(jobs[0].experienceRequired, '2+ years')
 })
 
 test('Instabase run validates the first-party pages before fetching the Greenhouse jobs API', async () => {

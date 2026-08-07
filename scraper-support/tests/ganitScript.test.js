@@ -61,6 +61,42 @@ const officialCareersHtml = `
   </html>
 `
 
+const currentOfficialCareersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Ganit | Data Speaks</title>
+    </head>
+    <body>
+      <main>
+        <section>
+          <h1>Discover why Ganit</h1>
+          <p>Democratize AI and ML for world-class clients.</p>
+        </section>
+
+        <section>
+          <h2>Current Opportunities</h2>
+          <div class="job-card">
+            <h3>Sr Executive - Sales Location - Delhi</h3>
+            <a
+              href="https://ganitinc.zohorecruit.in/jobs/Careers/37458000001567097/Sr-Executive---Sales?source=CareerSite"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              know more
+            </a>
+          </div>
+        </section>
+
+        <section>
+          <h2>Intern @ Ganit</h2>
+          <p>We take in interns all year long.</p>
+        </section>
+      </main>
+    </body>
+  </html>
+`
+
 test('Ganit constants and official page signal stay pinned to the verified public careers page', async () => {
   const ganit = await loadGanitModule()
 
@@ -71,6 +107,34 @@ test('Ganit constants and official page signal stay pinned to the verified publi
     ganit.hasOfficialCareersSignal(officialCareersHtml),
     true,
   )
+})
+
+test('Ganit accepts the current official careers shell and extracts India roles from the single-card live layout', async () => {
+  const ganit = await loadGanitModule()
+
+  assert.equal(ganit.hasOfficialCareersSignal(currentOfficialCareersHtml), true)
+  assert.deepEqual(ganit.extractIndiaJobs(currentOfficialCareersHtml), [
+    {
+      title: 'Sr Executive - Sales',
+      company: 'Ganit',
+      department: null,
+      location: 'Delhi',
+      city: 'Delhi',
+      country: 'India',
+      jobId: '37458000001567097',
+      requisitionId: '37458000001567097',
+      sourceUrl: 'https://ganitinc.zohorecruit.in/jobs/Careers/37458000001567097/Sr-Executive---Sales?source=CareerSite',
+      applyUrl: 'https://ganitinc.zohorecruit.in/jobs/Careers/37458000001567097/Sr-Executive---Sales?source=CareerSite',
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+    },
+  ])
 })
 
 test('extractIndiaJobs keeps India roles from the official Ganit careers page and preserves Zoho detail handoff URLs', async () => {

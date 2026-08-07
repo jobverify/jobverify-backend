@@ -35,7 +35,7 @@ const isBlockedNetworkError = (error) => {
   const message = String(error?.message ?? '')
   const code = String(error?.code ?? '')
 
-  return /socket hang up|unable to connect|timed out|econnreset|enotfound|ehostunreach/i.test(`${message} ${code}`)
+  return /socket hang up|unable to connect|timed out|connect timeout|timeout:|econnreset|enotfound|ehostunreach|und_err_connect_timeout/i.test(`${message} ${code}`)
 }
 
 const defaultFetchPage = async (url) => ({

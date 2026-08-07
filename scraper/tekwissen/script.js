@@ -78,6 +78,7 @@ const extractJsonProp = (html, propName) => {
     new RegExp(`'${propName}'\\s*:\\s*'([^']+)'`, 'i'),
     new RegExp(`${propName}\\s*:\\s*"([^"]+)"`, 'i'),
     new RegExp(`${propName}\\s*:\\s*'([^']+)'`, 'i'),
+    new RegExp(`\\\\"${propName}\\\\\"\\s*:\\s*\\\\"([^"\\\\]+)\\\\"`, 'i'),
   ]
 
   for (const pattern of patterns) {

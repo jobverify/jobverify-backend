@@ -34,9 +34,9 @@ test('BEO Software local catalog captures the verified first-party jobs surface'
     provider.extractionStrategy,
     'verified-first-party-careers-page+same-page-job-list+first-party-detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Web Developer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Technical Lead/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Full-Stack Node\.js Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Full-Stack Developer/i)
 })

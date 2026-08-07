@@ -96,8 +96,16 @@ export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return normalized.includes('careers')
-    && normalized.includes('send your resume and your goals to careers@sagardefence.com')
-    && normalized.includes('next-generation defence systems')
+    && normalized.includes('careers@sagardefence.com')
+    && (
+      normalized.includes('send your resume and your goals to careers@sagardefence.com')
+      || normalized.includes("send us your resume and goals to careers@sagardefence.com")
+    )
+    && (
+      normalized.includes('next-generation defence systems')
+      || normalized.includes('challenging and conducive work environment')
+      || normalized.includes('strength of a company lies in its human resources')
+    )
 }
 
 export const hasOfficialContactSignal = (html) => {

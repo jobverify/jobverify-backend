@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
@@ -19,6 +21,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const PAGE_SIZE = 20
+const DETAIL_FETCH_CONCURRENCY = 4
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
 const normalizeWhitespace = (value) => {
@@ -269,7 +272,39 @@ export const createTechwaveConsultingScraper = ({
       }
     }
 
-    return jobs
+    return mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailHtml = await fetchText(job.sourceUrl || job.link)
+          if (!detailHtml) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailHtml,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            postingDate: detail.postingDate || job.postingDate,
+            requisitionId: detail.requisitionId || job.requisitionId,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 

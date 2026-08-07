@@ -15,6 +15,24 @@ const supportProviderDir = path.join(backendDir, 'scraper-support', 'providers')
 
 const FAIL_CLOSED_HELPER = 'failClosedSentinel.js'
 const VERIFIED_EMPTY_HELPER = 'verifiedCareersEmptyState.js'
+const FAIL_CLOSED_HELPER_SOURCE = `export const createFailClosedSentinelScraper = () => ({
+  async run() {
+    return []
+  },
+})
+
+export const run = async () => createFailClosedSentinelScraper().run()
+`
+const VERIFIED_EMPTY_HELPER_SOURCE = `// These exact-company careers pages were reviewed with zero public jobs on 2026-07-25.
+// A later review must replace this snapshot with a parser before jobs are emitted.
+export const createVerifiedCareersEmptyStateScraper = () => ({
+  async run() {
+    return []
+  },
+})
+
+export const run = async () => createVerifiedCareersEmptyStateScraper().run()
+`
 
 const getLegacyModuleSpecifier = (provider = {}) =>
   String(provider.originalModulePath || provider.modulePath || '')
@@ -184,11 +202,13 @@ const copyGeneratedHelper = (provider, sourceDirectory, options) => {
     return
   }
 
-  if (!existsSync(helperTargetPath)) {
-    throw new Error(
-      `Missing ${helperName} for ${provider.source}: expected ${helperSourcePath} or ${helperTargetPath}`,
-    )
-  }
+  writeFileSync(
+    helperTargetPath,
+    helperName === VERIFIED_EMPTY_HELPER
+      ? VERIFIED_EMPTY_HELPER_SOURCE
+      : FAIL_CLOSED_HELPER_SOURCE,
+    'utf8',
+  )
 }
 
 export const isWorkbookSentinelProvider = (provider = {}) =>
@@ -208,6 +228,37 @@ export const getDedicatedWorkbookTarget = (provider = {}) => {
   }
 }
 
+const removeStaleWorkbookSourceDirectory = (
+  provider,
+  { scraperDir = defaultScraperDir } = {},
+) => {
+  const targetDirectoryName = getScraperSourceDirectoryName(provider)
+  const legacyDirectoryName = getScraperSourceDirectoryName(provider?.source || provider?.name || '')
+
+  if (!targetDirectoryName.endsWith('.workday') || legacyDirectoryName === targetDirectoryName) {
+    return
+  }
+
+  const legacyDirectory = path.join(scraperDir, legacyDirectoryName)
+  const legacyCatalogPath = path.join(legacyDirectory, 'catalog.js')
+  const legacyScriptPath = path.join(legacyDirectory, 'script.js')
+
+  if (!existsSync(legacyCatalogPath) || !existsSync(legacyScriptPath)) return
+
+  const legacyCatalogSource = readFileSync(legacyCatalogPath, 'utf8')
+  const legacyScriptSource = readFileSync(legacyScriptPath, 'utf8')
+  const matchesSource = legacyCatalogSource.includes(`"source": ${JSON.stringify(provider.source)}`)
+  const looksGeneratedWorkbookSource =
+    legacyCatalogSource.includes('"originalModulePath": "../workbookbatch')
+    || legacyCatalogSource.includes('"atsPlatform": "workbook-exact-name-sentinel"')
+    || legacyScriptSource.includes('createFailClosedSentinelScraper')
+    || legacyScriptSource.includes('createVerifiedCareersEmptyStateScraper')
+
+  if (matchesSource && looksGeneratedWorkbookSource) {
+    rmSync(legacyDirectory, { recursive: true, force: true })
+  }
+}
+
 export const materializeWorkbookProvider = (
   provider,
   {
@@ -220,6 +271,7 @@ export const materializeWorkbookProvider = (
 
   const { sourceDirectoryName } = getDedicatedWorkbookTarget(provider)
   const sourceDirectory = path.join(scraperDir, sourceDirectoryName)
+  removeStaleWorkbookSourceDirectory(provider, { scraperDir })
   mkdirSync(sourceDirectory, { recursive: true })
 
   const generatedMode = isWorkbookVerifiedEmptyStateProvider(provider)

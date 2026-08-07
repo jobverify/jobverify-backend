@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -8,6 +9,7 @@ const config = loadConfig(currentDir)
 
 const ORIGIN = 'https://www.globallogic.com'
 const FETCH_TIMEOUT_MS = 15000
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const createFetchTimeoutSignal = (timeoutMs = FETCH_TIMEOUT_MS) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
@@ -175,7 +177,17 @@ const extractSectionContent = (html, heading) => extractFirst(
   html,
 )
 
-const extractSectionText = (html, heading) => stripTags(extractSectionContent(html, heading))
+const extractCurrentSectionContent = (html, heading) => extractFirst(
+  new RegExp(
+    `<h4[^>]*>\\s*${escapeRegExp(heading)}\\s*<\\/h4>\\s*([\\s\\S]*?)(?=<h4[^>]*>|<form\\b|<div[^>]+class="[^"]*job_apply_form[^"]*"|$)`,
+    'i',
+  ),
+  html,
+)
+
+const extractSectionText = (html, heading) => stripTags(
+  extractSectionContent(html, heading) || extractCurrentSectionContent(html, heading),
+)
 
 const extractListItems = (html) => [...String(html ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
   .map((match) => stripTags(match[1]))
@@ -188,13 +200,19 @@ const extractOverviewValue = (html, label) => stripTags(
       'i',
     ),
     html,
+  ) || extractFirst(
+    new RegExp(
+      `<span[^>]*>\\s*${escapeRegExp(label)}\\s*<\\/span>\\s*<p[^>]*>\\s*([\\s\\S]*?)\\s*<\\/p>`,
+      'i',
+    ),
+    html,
   ),
 )
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+      'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     signal: createFetchTimeoutSignal(),
@@ -206,6 +224,10 @@ const defaultFetchText = async (url) => {
 
   return response.text()
 }
+
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|redirect count exceeded|incapsula|forbidden|blocked|challenge/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const buildSearchPageUrl = (page = 1) => {
   const normalizedPage = Math.max(1, Number(page) || 1)
@@ -223,15 +245,46 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
 )]
   .map((match) => {
     const sourceUrl = toAbsoluteUrl(match[1])
+    const anchorHtml = match[0]
     const cardHtml = match[2]
     const jobId = extractJobId(match[0]) || extractJobId(sourceUrl)
+    const isCurrentJobBoxCard = /\bjob_box\b/i.test(anchorHtml)
     const title = stripTrailingJobId(
-      extractByClass(cardHtml, 'job-title') || extractFirst(/<h[1-6][^>]*>\s*([\s\S]*?)\s*<\/h[1-6]>/i, cardHtml, (item) => item[1]),
+      extractByClass(cardHtml, 'job-title')
+      || extractFirst(/<h[1-6][^>]*>\s*([\s\S]*?)\s*<\/h[1-6]>/i, cardHtml, (item) => item[1]),
       jobId,
     )
-    const country = extractByClass(cardHtml, 'job-country')
-    const city = extractByClass(cardHtml, 'job-city')
-    const parsedLocation = parseLocation(country && city ? `${country} - ${city}` : country || city)
+
+    const parsedLocation = (() => {
+      if (isCurrentJobBoxCard) {
+        const locationTokens = [...cardHtml.matchAll(
+          /<span[^>]+class="[^"]*\bjob_location\b[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
+        )]
+          .map((item) => stripTags(item[1]))
+          .filter(Boolean)
+
+        const country = locationTokens.find((value) => /^India$/i.test(value)) ? 'India' : null
+        const city = locationTokens.find((value) => !/^India$/i.test(value)) || null
+
+        if (country !== 'India') {
+          return {
+            location: null,
+            city: null,
+            country: null,
+          }
+        }
+
+        return {
+          location: city ? `India - ${city}` : 'India',
+          city,
+          country,
+        }
+      }
+
+      const country = extractByClass(cardHtml, 'job-country')
+      const city = extractByClass(cardHtml, 'job-city')
+      return parseLocation(country && city ? `${country} - ${city}` : country || city)
+    })()
 
     if (!sourceUrl || !jobId || !title || parsedLocation.country !== 'India') {
       return null
@@ -296,7 +349,11 @@ export const extractJobDetail = (html, listing = {}) => {
     applyUrl: sourceUrl,
     employmentType: listing.employmentType || null,
     experienceRequired: extractOverviewValue(html, 'Experience') || listing.experienceRequired || null,
-    minimumQualification: requirementItems[0] || listing.minimumQualification || null,
+    minimumQualification:
+      requirementItems[0]
+      || extractSectionText(html, 'Requirements')
+      || listing.minimumQualification
+      || null,
     preferredQualification: null,
     requiredSkills: skills.length > 0 ? skills : (listing.requiredSkills || []),
     postingDate: normalizePostingDate(
@@ -313,46 +370,56 @@ export const createGlobalLogicScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
+    const browserTextFallback = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText: options.fetchBrowserText,
+      userAgent: USER_AGENT,
+      shouldUseBrowserFallback: isBrowserFallbackError,
+    })
     const jobs = []
     const seenJobIds = new Set()
 
-    for (let page = 1; page <= maxPages; page += 1) {
-      const searchHtml = await fetchText(buildSearchPageUrl(page))
-      const listings = extractSearchResults(searchHtml)
+    try {
+      for (let page = 1; page <= maxPages; page += 1) {
+        const searchHtml = await browserTextFallback.fetchText(buildSearchPageUrl(page))
+        const listings = extractSearchResults(searchHtml)
 
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
+        for (const listing of listings) {
+          if (seenJobIds.has(listing.jobId)) continue
+          seenJobIds.add(listing.jobId)
 
-        let job = listing
-        try {
-          const detailHtml = await fetchText(listing.sourceUrl)
-          job = {
-            ...listing,
-            ...extractJobDetail(detailHtml, listing),
+          let job = listing
+          try {
+            const detailHtml = await browserTextFallback.fetchText(listing.sourceUrl)
+            job = {
+              ...listing,
+              ...extractJobDetail(detailHtml, listing),
+            }
+          } catch {
+            job = listing
           }
-        } catch {
-          job = listing
+
+          jobs.push({
+            ...job,
+            source: 'globallogic',
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: new Date().toISOString(),
+          })
+
+          if (maxJobs && jobs.length >= maxJobs) {
+            return jobs
+          }
         }
 
-        jobs.push({
-          ...job,
-          source: 'globallogic',
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+        if (!hasNextSearchPage(searchHtml)) {
+          break
         }
       }
 
-      if (!hasNextSearchPage(searchHtml)) {
-        break
-      }
+      return jobs
+    } finally {
+      await browserTextFallback.close()
     }
-
-    return jobs
   },
 })
 

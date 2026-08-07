@@ -27,6 +27,17 @@ const loadScript = async () => {
 
 const sampleHomePage = `<!doctype html>
 <html>
+  <head>
+    <title>Careers at Cornerstone | Grow Your Future with Us</title>
+  </head>
+  <body>
+    <a href="https://cornerstone.csod.com/ux/ats/careersite/2/home?c=cornerstone">Search Open Positions</a>
+    <p>Careers View open job opportunities.</p>
+  </body>
+</html>`
+
+const sampleJobsBoardPage = `<!doctype html>
+<html>
   <body>
     <script>
       if(!csod.context || !csod.context.token) csod.context={"corp":"cornerstone","cultureID":1,"cultureName":"en-US","endpoints":{"cloud":"https://us-galaxy.api.csod.com/","api":"/"},"token":"cornerstone-public-token"};
@@ -116,16 +127,17 @@ test('Cornerstone OnDemand local catalog captures the verified public CSOD contr
   assert.equal(provider.paginationStrategy, 'public-csod-search-api-with-postings-window')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+public-csod-search-api+india-location-filter+extended-postings-window',
+    'verified-first-party-careers-page-handoff+public-csod-board-context+india-location-filter+extended-postings-window',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.equal(provider.verifiedPublicJobCount, 82)
-  assert.equal(provider.verifiedIndiaJobCount, 8)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.equal(provider.verifiedPublicJobCount, 69)
+  assert.equal(provider.verifiedIndiaJobCount, 42)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /cornerstoneondemand[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /Search Open Positions/i)
+  assert.match(provider.verifiedSurfaceSummary, /public board page rather than the marketing handoff page/i)
   assert.match(provider.verifiedSurfaceSummary, /postingsWithinDays=3650/i)
   assert.equal(report.matchedCount, 1)
   assert.equal(report.unmatchedCount, 0)
@@ -138,7 +150,8 @@ test('Cornerstone OnDemand maps the public CSOD search payload into shared India
   assert.equal(cornerstone.OFFICIAL_JOBS_BOARD_URL, 'https://cornerstone.csod.com/ux/ats/careersite/2/home?c=cornerstone')
   assert.equal(cornerstone.CAREER_SITE_ID, 2)
   assert.equal(cornerstone.DEFAULT_POSTINGS_WITHIN_DAYS, 3650)
-  assert.equal(cornerstone.extractContextFromHomePage(sampleHomePage).token, 'cornerstone-public-token')
+  assert.equal(cornerstone.hasOfficialCareersSignal(sampleHomePage), true)
+  assert.equal(cornerstone.extractContextFromHomePage(sampleJobsBoardPage).token, 'cornerstone-public-token')
   assert.deepEqual(cornerstone.buildSearchRequest(), {
     careerSiteId: 2,
     careerSitePageId: 2,
@@ -196,7 +209,9 @@ test('Cornerstone OnDemand run uses the public CSOD search API with the extended
   }).run({
     fetchText: async (url) => {
       requests.push({ type: 'text', url })
-      return sampleHomePage
+      if (url === cornerstone.CAREER_PAGE_URL) return sampleHomePage
+      if (url === cornerstone.OFFICIAL_JOBS_BOARD_URL) return sampleJobsBoardPage
+      throw new Error(`Unexpected HTML URL: ${url}`)
     },
     fetchJson: async (url, options = {}) => {
       requests.push({ type: 'json', url, options })
@@ -216,6 +231,7 @@ test('Cornerstone OnDemand run uses the public CSOD search API with the extended
 
   const searchRequest = requests.find((request) => request.url === 'https://us-galaxy.api.csod.com/rec-job-search/external/jobs')
   assert.equal(requests[0].url, cornerstone.CAREER_PAGE_URL)
+  assert.equal(requests[1].url, cornerstone.OFFICIAL_JOBS_BOARD_URL)
   assert.ok(searchRequest)
   assert.equal(JSON.parse(searchRequest.options.body).postingsWithinDays, 3650)
   assert.equal(jobs.length, 2)

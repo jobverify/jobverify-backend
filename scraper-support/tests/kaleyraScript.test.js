@@ -14,6 +14,41 @@ const readHtmlFixture = (name) => readFileSync(path.join(fixturesDir, name), 'ut
 
 const verifiedHomepageHtml = readHtmlFixture('homepage.html')
 const verifiedCareersHtml = readHtmlFixture('careers-portal.html')
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Tata Communications Kaleyra Transforming Total Experience</title>
+    <link rel="canonical" href="https://www.tatacommunications.com/kaleyra">
+  </head>
+  <body>
+    <nav>
+      <a href="https://jobs.tatacommunications.com/home">Careers</a>
+      <a href="https://kaleyra.io/">Kaleyra.io Login</a>
+    </nav>
+    <main>
+      <a href="https://www.tatacommunications.com/kaleyra">Go To Home</a>
+      <h2>Customer Experience Platform (Kaleyra.ai)</h2>
+      <p>Our Interaction Fabric helps your teams work better together.</p>
+    </main>
+  </body>
+</html>
+`
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <base href="/">
+    <meta property="og:site_name" content="Career Portal">
+    <meta property="og:title" content="Career Opportunities">
+    <meta property="og:description" content="Explore exciting career opportunities">
+    <title>Career Portal</title>
+  </head>
+  <body>
+    <script src="flutter_bootstrap.js" async></script>
+  </body>
+</html>
+`
 
 const loadKaleyraModule = async () => {
   try {
@@ -34,6 +69,8 @@ test('Kaleyra sentinel recognizes the verified homepage handoff and shared Tata 
   assert.equal(kaleyra.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(kaleyra.hasVerifiedSharedCareersPortalSignal(verifiedCareersHtml), true)
   assert.equal(kaleyra.hasKaleyraSpecificJobsSignal(verifiedCareersHtml), false)
+  assert.equal(kaleyra.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(kaleyra.hasVerifiedSharedCareersPortalSignal(currentCareersHtml), true)
 })
 
 test('Kaleyra returns no jobs only while the verified first-party shared-parent careers handoff remains unchanged', async () => {

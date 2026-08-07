@@ -9,7 +9,7 @@ import { hydrateProviderCatalogEntry } from '../providers/index.js'
 import { loadConfig } from '../utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const providerDir = path.resolve(currentDir, '../../scraper/telstra')
+const providerDir = path.resolve(currentDir, '../../scraper/telstra.workday')
 const modulePath = path.resolve(providerDir, 'script.js')
 
 const loadCatalogModule = async () => {
@@ -59,14 +59,13 @@ test('Telstra local catalog captures the verified first-party careers handoff an
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.match(provider.dryRunFile, /telstra.workday[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.telstra\.com\.au\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/telstra\.wd3\.myworkdayjobs\.com\/Telstra_Careers/i)
   assert.match(provider.verifiedSurfaceSummary, /wday\/cxs\/telstra\/Telstra_Careers\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /WFM Specialist/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /Customer Service Consultant - International Voice Process/i,
@@ -116,7 +115,7 @@ test('Telstra hydrated local catalog stays script-runner compatible for later sh
   assert.equal(provider.companyCareerPage, 'https://www.telstra.com.au/careers')
   assert.equal(provider.companyDomain, 'telstra.com.au')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /telstra[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /telstra\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /telstra.workday[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
 })

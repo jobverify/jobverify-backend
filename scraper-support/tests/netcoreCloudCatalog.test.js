@@ -53,13 +53,15 @@ test('Netcore Cloud local catalog captures the verified redirect-shell sentinel 
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /netcorecloud[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcorecloud\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcorecloud\.com\/careers-list\?job_category=engineering/i)
-  assert.match(provider.verifiedSurfaceSummary, /403/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcore\.ai\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcore\.ai\/careers-list\?job_category=engineering/i)
+  assert.match(provider.verifiedSurfaceSummary, /redirect\/loading shell/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 
   assert.equal(

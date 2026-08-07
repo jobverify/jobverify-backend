@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -80,8 +80,24 @@ export const hasOfficialCareersSignal = (html) => {
   return /careers-hero-button/i.test(page)
     && /See Current Job Openings/i.test(page)
     && /explore-opportunities/i.test(page)
-    && /\/data\/careers\/experiencedJobs\.json/i.test(page)
-    && /\/data\/careers\/fresherJobs\.json/i.test(page)
+}
+
+export const parseJobsFeedResponseText = (value) => {
+  const raw = String(value ?? '').trim()
+  if (!raw) return []
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) {
+      throw new Error('HashedIn Technologies jobs feed changed; refusing to scrape')
+    }
+    return parsed
+  } catch (error) {
+    if (/HashedIn Technologies jobs feed changed/i.test(String(error?.message || error))) {
+      throw error
+    }
+    throw new Error('HashedIn Technologies jobs feed changed; refusing to scrape')
+  }
 }
 
 export const extractJobsFromFeed = (feed, department) => {
@@ -153,7 +169,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchFeedText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
@@ -163,7 +179,7 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 })
 
 export const createHashedInTechnologiesScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now: overrideNow } = {}) {
+  async run({ fetchText = defaultFetchText, fetchFeedText = defaultFetchFeedText, now: overrideNow } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('HashedIn Technologies official homepage signal changed; refusing to scrape')
@@ -174,8 +190,14 @@ export const createHashedInTechnologiesScraper = ({ now = () => new Date().toISO
       throw new Error('HashedIn Technologies official careers surface changed; refusing to scrape')
     }
 
-    const experiencedJobs = extractJobsFromFeed(await fetchJson(EXPERIENCED_JOBS_URL), 'experienced')
-    const fresherJobs = extractJobsFromFeed(await fetchJson(FRESHER_JOBS_URL), 'fresher')
+    const experiencedJobs = extractJobsFromFeed(
+      parseJobsFeedResponseText(await fetchFeedText(EXPERIENCED_JOBS_URL)),
+      'experienced',
+    )
+    const fresherJobs = extractJobsFromFeed(
+      parseJobsFeedResponseText(await fetchFeedText(FRESHER_JOBS_URL)),
+      'fresher',
+    )
 
     return [...experiencedJobs, ...fresherJobs].map((job) => ({
       ...job,

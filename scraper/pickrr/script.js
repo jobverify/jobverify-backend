@@ -64,10 +64,14 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasVerifiedLifeAtPickrrSignal = (html) => {
   const page = String(html ?? '')
+  const hasVerifiedSelfReference =
+    /href="https:\/\/(?:www\.)?pickrr\.com\/life-at-pickrr\/?"/i.test(page)
+    || /<link[^>]+rel="canonical"[^>]+href="https:\/\/(?:www\.)?pickrr\.com\/life-at-pickrr\/?"/i.test(page)
+    || /<meta[^>]+property="og:url"[^>]+content="https:\/\/(?:www\.)?pickrr\.com\/life-at-pickrr\/?"/i.test(page)
 
   return /<title>\s*Life at Pickrr - Grow your Career with Pickrr\s*<\/title>/i.test(page)
     && /Pickrr believes that each one of us should be able to find our dream career/i.test(page)
-    && /href="https:\/\/www\.pickrr\.com\/life-at-pickrr\/"/i.test(page)
+    && hasVerifiedSelfReference
     && /Come join us/i.test(page)
     && /Pickrr Growth Story/i.test(page)
     && /Life at Pickrr/i.test(page)
@@ -124,7 +128,7 @@ export const createPickrrScraper = () => ({
     }
 
     const careers404Page = await fetchPage(CAREERS_404_URL)
-    if (careers404Page.status !== 404 || !hasVerifiedNotFoundCareersSignal(careers404Page.html)) {
+    if (![200, 404].includes(Number(careers404Page.status)) || !hasVerifiedNotFoundCareersSignal(careers404Page.html)) {
       throw new Error('Pickrr verified careers not-found contract no longer matches the official first-party surface')
     }
 

@@ -5,7 +5,7 @@ import companyAliases from '../../scraper-support/providers/companyAliases.json'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Storeys Real Estate is registered as a verified first-party marketing-only careers sentinel without aliases', () => {
+test('Storeys Real Estate is registered as a verified broken first-party careers sentinel without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'storeysrealestate')
 
   assert.ok(provider, 'Expected Storeys Real Estate provider to be registered in customProviders.json')
@@ -17,11 +17,14 @@ test('Storeys Real Estate is registered as a verified first-party marketing-only
   assert.equal(provider.paginationStrategy, 'none-static-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'blocked-static-careers-marketing-page-plus-apply-modal-no-public-job-list',
+    'verified-broken-wordpress-json-careers-surface-plus-unavailable-api-no-public-job-list',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'storeys.ae')
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /critical error on this website/i)
+  assert.match(provider.verifiedSurfaceSummary, /api\/v1\/careers/i)
   assert.match(provider.modulePath, /storeysrealestate[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Storeys Real Estate'), false)
 })

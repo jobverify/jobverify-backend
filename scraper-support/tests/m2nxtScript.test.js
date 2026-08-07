@@ -13,7 +13,7 @@ const loadM2nxtModule = async () => {
 }
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const fixturesDir = path.join(currentDir, '..', 'm2nxt', 'fixtures')
+const fixturesDir = path.join(currentDir, '..', '..', 'scraper', 'm2nxt', 'fixtures')
 const homepageHtml = fs.readFileSync(path.join(fixturesDir, 'homepage.html'), 'utf8')
 const careersHtml = fs.readFileSync(path.join(fixturesDir, 'careers.html'), 'utf8')
 
@@ -60,4 +60,5 @@ test('m2nxt Solutions (P) Ltd scraper returns the verified public openings from 
   )
   assert.equal(jobs[0].applyUrl, 'mailto:Ahalya.k@m2nxt.com')
   assert.equal(jobs[0].location, 'Bangalore, Karnataka, India')
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })

@@ -46,33 +46,44 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractVisibleJobCards = (html = '') => {
   const page = String(html ?? '')
+  const buildCard = ({ title, details, href }) => {
+    const normalizedTitle = normalizeWhitespace(title)
+    const normalizedDetails = normalizeWhitespace(details)
 
-  return [...page.matchAll(/<section[^>]*class=["'][^"']*job-card[^"']*["'][^>]*>([\s\S]*?)<\/section>/gi)]
+    if (!normalizedTitle || !normalizedDetails || !href) {
+      return null
+    }
+
+    return {
+      title: normalizedTitle,
+      location: normalizedDetails.replace(/[A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th),\s+\d{4}\s*/i, '').trim(),
+      postingDate: parsePostingDate(normalizedDetails),
+      applyUrl: new URL(href, CAREERS_URL).toString(),
+    }
+  }
+
+  const legacyCards = [...page.matchAll(/<section[^>]*class=["'][^"']*job-card[^"']*["'][^>]*>([\s\S]*?)<\/section>/gi)]
     .map((match) => {
       const block = match[1]
-      const titleMatch = block.match(/<h1>([\s\S]*?)<\/h1>/i)
-      const detailsMatch = block.match(/<h4>([\s\S]*?)<\/h4>/i)
-      const linkMatch = block.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)
-
-      const title = titleMatch ? normalizeWhitespace(titleMatch[1]) : null
-      const details = detailsMatch ? normalizeWhitespace(detailsMatch[1]) : null
-      const postingDate = parsePostingDate(details)
-      const location = details
-        ? details.replace(/[A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th),\s+\d{4}\s*/i, '').trim()
-        : null
-
-      if (!title || !details || !linkMatch) {
-        return null
-      }
-
-      return {
-        title,
-        location,
-        postingDate,
-        applyUrl: new URL(linkMatch[1], CAREERS_URL).toString(),
-      }
+      return buildCard({
+        title: block.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? null,
+        details: block.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i)?.[1] ?? null,
+        href: block.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1] ?? null,
+      })
     })
     .filter(Boolean)
+
+  const currentCards = [...page.matchAll(
+    /<div[^>]*class=["'][^"']*oc-item[^"']*["'][^>]*>[\s\S]*?<h1[^>]*>([\s\S]*?)<\/h1>[\s\S]*?<h4[^>]*>([\s\S]*?)<\/h4>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/gi,
+  )]
+    .map((match) => buildCard({
+      title: match[1],
+      details: match[2],
+      href: match[3],
+    }))
+    .filter(Boolean)
+
+  return [...new Map([...legacyCards, ...currentCards].map((card) => [card.applyUrl, card])).values()]
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

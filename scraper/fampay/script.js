@@ -169,9 +169,9 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /<title>\s*FamApp: Make payments with your own UPI and Card\s*<\/title>/i.test(page)
-    && text.includes('#jointhefam')
-    && text.includes('be a part of the team setting the bar for new-world work culture')
+  return text.includes('#jointhefam')
+    && text.includes('be a part of the team setting the bar for')
+    && text.includes('new-world work culture')
     && text.includes('so like, what does fam do?')
     && text.includes('famapp by trio (formerly fampay) focuses on financial inclusion of the next generation')
 }
@@ -186,8 +186,8 @@ export const hasCareersBundleJobsHandoff = (bundle = '') =>
 export const hasOfficialJobsShellSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*FamApp: Make payments with your own UPI and Card\s*<\/title>/i.test(page)
-    && /"page"\s*:\s*"\/jobs"/i.test(page)
+  return /"page"\s*:\s*"\/jobs"/i.test(page)
+    && /__NEXT_DATA__/i.test(page)
 }
 
 export const hasVerifiedJobsBundleReference = (html = '') =>
@@ -205,7 +205,6 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
     && text.includes('fam home page')
     && /https:\/\/jobs\.lever\.co\/fampay\/[a-z0-9-]+/i.test(page)
 }

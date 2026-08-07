@@ -146,20 +146,18 @@ test('Wissen Technology local catalog captures the verified first-party openings
   assert.equal(provider.source, 'wissentechnology')
   assert.equal(provider.officialBrandName, 'Wissen')
   assert.equal(provider.homepageUrl, 'https://www.wissen.com/')
-  assert.equal(
-    provider.companyCareerPage,
-    'https://www.wissen.com/career/opportunities-wissen-technology?p=job%2FoKedhfwc',
-  )
+  assert.equal(provider.companyCareerPage, 'https://www.wissen.com/career/opportunities-wissen-technology')
   assert.equal(provider.contactPageUrl, 'https://www.wissen.com/contact/writetous')
-  assert.equal(provider.atsPlatform, 'first-party-openings-page-with-contact-handoff')
-  assert.equal(provider.paginationStrategy, 'single-first-party-openings-page')
+  assert.equal(provider.atsPlatform, 'first-party-webflow-openings-page-with-contact-handoff')
+  assert.equal(provider.paginationStrategy, 'single-first-party-webflow-openings-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-openings-page+visible-job-cards+write-to-us-contact-handoff',
+    'verified-webflow-openings-page+cms-job-items+detail-route-deduping+write-to-us-contact-handoff',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-06')
   assert.match(provider.verifiedSurfaceSummary, /Senior Level Java Technical Lead/i)
   assert.match(provider.verifiedSurfaceSummary, /Data Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Data Architect/i)
   assert.match(provider.verifiedSurfaceSummary, /www\.wissen\.com\/contact\/writetous/i)
 
   assertCatalogMatchesBacklogRow({

@@ -14,14 +14,14 @@ export const EXCELRA_KNOWLEDGE_SOLUTIONS_CATALOG = {
   companyDomain: 'excelra.com',
   atsPlatform: 'first-party-careers-page-darwinbox-job-links',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-current-openings-page',
+  paginationStrategy: 'single-first-party-current-openings-page-via-browser-rendered-html',
   extractionStrategy:
-    'verified-first-party-careers-page+visible-opening-cards+darwinbox-apply-links+india-location-filter',
+    'verified-first-party-careers-page+browser-rendered-opening-cards+darwinbox-apply-links+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.excelra.com/careers/ was the live exact-name Excelra careers page for the backlog row Excelra Knowledge Solutions, that it exposed a Current openings section with visible cards including Senior Business Analyst, Software Developer, and System Administrator in Hyderabad, India, and that each card linked to an official Excelra Darwinbox detail URL under https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/.',
+    'Verified on Sunday, August 2, 2026 that https://www.excelra.com/careers/ is still the live exact-name Excelra careers page for the backlog row Excelra Knowledge Solutions, that direct raw HTTP now returns a Cloudflare 403 challenge, and that a normal browser session renders the first-party Current openings cards with visible India roles including Senior DevOps Engineer, Software Tester, and Software Developer in Hyderabad, India. Each visible card still links to an official Excelra Darwinbox detail URL under https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'excelraknowledgesolutions/jobs.json',
 }

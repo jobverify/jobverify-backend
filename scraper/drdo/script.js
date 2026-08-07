@@ -85,6 +85,7 @@ export const extractVacancies = (html) => {
         postingDate: dateToIso(getCardValue(cardHtml, 'vacanciess-date-publish-content')),
         closingDate: dateToIso(getCardValue(cardHtml, 'vacanciess-due-date-content')),
         jobDescription: 'Official DRDO vacancy announcement. Review the official posting for eligibility and application details.',
+        publicExperienceChecked: true,
       }
     })
     .filter(Boolean)

@@ -18,6 +18,50 @@ const fixturesDir = path.join(currentDir, 'fixtures', 'kanini')
 const homepageHtml = readFileSync(path.join(fixturesDir, 'homepage.html'), 'utf8')
 const careersHtml = readFileSync(path.join(fixturesDir, 'careers.html'), 'utf8')
 const openPositionsHtml = readFileSync(path.join(fixturesDir, 'open-positions-empty.html'), 'utf8')
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Your partner in AI journey | KANINI</title>
+    <link rel="canonical" href="https://kanini.com/">
+  </head>
+  <body>
+    <nav>
+      <a href="/careers/">Careers</a>
+      <a href="/careers/open-positions/">Open Positions</a>
+    </nav>
+    <main>
+      <h1>Your partner in AI journey</h1>
+      <h2>Get Agile. Go Digital.</h2>
+      <p>Let's blaze the trail for tomorrow's transformation</p>
+      <p>Engineering Solutions for Better Customer Experiences</p>
+    </main>
+    <footer>KANINI Software Solutions Inc</footer>
+  </body>
+</html>
+`
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers - KANINI</title>
+  </head>
+  <body>
+    <main>
+      <h1>Welcome to the happier way to work</h1>
+      <section>
+        <h2>At KANINI, we are building a more human tech.</h2>
+        <p>Our people come to work because it makes them happy.</p>
+      </section>
+      <section>
+        <h2>Explore our open positions</h2>
+        <a href="/careers/open-positions">View Open Positions</a>
+        <a href="/careers/open-positions">Join Us</a>
+      </section>
+    </main>
+  </body>
+</html>
+`
 
 test('KANINI scraper keeps the verified first-party URLs and empty-state signals pinned', async () => {
   const kanini = await loadKaniniModule()
@@ -28,7 +72,10 @@ test('KANINI scraper keeps the verified first-party URLs and empty-state signals
   assert.equal(kanini.CAREERS_URL, 'https://kanini.com/careers/')
   assert.equal(kanini.OPEN_POSITIONS_URL, 'https://kanini.com/careers/open-positions/')
   assert.equal(kanini.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(kanini.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(kanini.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(kanini.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.equal(kanini.extractOpenPositionsUrl(currentCareersHtml), 'https://kanini.com/careers/open-positions')
   assert.equal(kanini.hasZeroJobsSignal(openPositionsHtml), true)
 })
 
@@ -79,10 +126,7 @@ test('KANINI scraper fails closed when the verified first-party surface drifts o
       fetchText: async (url) => {
         if (url === kanini.HOMEPAGE_URL) return homepageHtml
         if (url === kanini.CAREERS_URL) {
-          return careersHtml.replace(
-            'https://kanini.com/careers/open-positions/',
-            'https://jobs.kanini.com/apply/software-engineer',
-          )
+          return careersHtml.replace(/https:\/\/kanini\.com\/careers\/open-positions\/?/g, 'https://jobs.kanini.com/apply/software-engineer')
         }
 
         throw new Error(`Unexpected URL: ${url}`)

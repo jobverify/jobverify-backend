@@ -17,9 +17,8 @@ const OFFICIAL_HOMEPAGE_HTML = `
   </head>
   <body>
     <section>
-      <h2>Build the next big tech with us</h2>
-      <p>Join seasoned experts in building the future of tech in an inclusive and exciting work environment.</p>
-      <a href="https://cambridgetechnology.freshteam.com/jobs">See Open Positions</a>
+      <h2>Cambridge Technology</h2>
+      <a href="https://cambridgetechnology.freshteam.com/jobs/search?utf8=%E2%9C%93&query=&branch_id=&remote=0&remote=1&commit=Go">See Open Positions</a>
     </section>
   </body>
 </html>
@@ -86,6 +85,22 @@ const LISTING_HTML = `
         </li>
       </ul>
     </div>
+  </body>
+</html>
+`
+
+const ZERO_RESULTS_LISTING_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers</title>
+  </head>
+  <body>
+    <h2>Careers</h2>
+    <p>Choose Location</p>
+    <label>Remote jobs only</label>
+    <h3>Open Positions</h3>
+    <p>No jobs found</p>
   </body>
 </html>
 `
@@ -160,21 +175,20 @@ test('Cambridge Technology Enterprises local catalog captures the verified first
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.cambridgetech.com/')
   assert.equal(provider.companyCareerPage, 'https://www.cambridgetech.com/')
-  assert.equal(provider.officialJobsBoardUrl, 'https://cambridgetechnology.freshteam.com/jobs')
+  assert.equal(provider.officialJobsBoardUrl, 'https://cambridgetechnology.freshteam.com/jobs/search?utf8=%E2%9C%93&query=&branch_id=&remote=0&remote=1&commit=Go')
   assert.equal(provider.atsPlatform, 'freshteam')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'official-homepage-plus-public-freshteam-board')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage-handoff+public-freshteam-board+detail-page-apply-surface',
+    'verified-homepage-handoff+public-freshteam-board-or-zero-state+detail-page-apply-surface',
   )
   assert.equal(provider.companyDomain, 'cambridgetech.com')
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.equal(provider.verifiedPublicJobCount, 8)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /cambridgetechnology\.freshteam\.com\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Business Analyst/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Engineer \/ Lead - EDI/i)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /cambridgetechnology\.freshteam\.com\/jobs\/search/i)
+  assert.match(provider.verifiedSurfaceSummary, /No jobs found/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /cambridgetechnologyenterprises[\\/]jobs\.json$/i)
 
@@ -217,12 +231,12 @@ test('Cambridge Technology Enterprises scraper validates the homepage handoff, p
   assert.equal(cambridge.hasOfficialHomepageSignal(OFFICIAL_HOMEPAGE_HTML), true)
   assert.equal(
     cambridge.extractFreshteamJobsUrl(OFFICIAL_HOMEPAGE_HTML),
-    'https://cambridgetechnology.freshteam.com/jobs',
+    'https://cambridgetechnology.freshteam.com/jobs/search?utf8=%E2%9C%93&query=&branch_id=&remote=0&remote=1&commit=Go',
   )
   assert.equal(cambridge.hasOfficialJobsBoardSignal(LISTING_HTML), true)
   assert.deepEqual(requestedUrls, [
     cambridge.OFFICIAL_HOMEPAGE_URL,
-    cambridge.LISTING_URL,
+    'https://cambridgetechnology.freshteam.com/jobs/search?utf8=%E2%9C%93&query=&branch_id=&remote=0&remote=1&commit=Go',
     'https://cambridgetechnology.freshteam.com/jobs/2WE1ZMkfs7C8/business-analyst',
   ])
   assert.deepEqual(jobs, [
@@ -255,4 +269,22 @@ test('Cambridge Technology Enterprises scraper validates the homepage handoff, p
       scrapedAt: '2026-07-18T00:00:00.000Z',
     },
   ])
+})
+
+test('Cambridge Technology Enterprises returns [] when the verified Freshteam board is in the current zero-results state', async () => {
+  const cambridge = await loadScriptModule()
+
+  const jobs = await cambridge.createCambridgeTechnologyEnterprisesScraper().run({
+    fetchText: async (url) => {
+      if (url === cambridge.OFFICIAL_HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
+      if (url === 'https://cambridgetechnology.freshteam.com/jobs/search?utf8=%E2%9C%93&query=&branch_id=&remote=0&remote=1&commit=Go') {
+        return ZERO_RESULTS_LISTING_HTML
+      }
+
+      throw new Error(`Unexpected Cambridge Technology Enterprises URL: ${url}`)
+    },
+  })
+
+  assert.equal(cambridge.hasOfficialJobsBoardSignal(ZERO_RESULTS_LISTING_HTML), true)
+  assert.deepEqual(jobs, [])
 })

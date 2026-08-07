@@ -135,6 +135,7 @@ test('extractSearchResults maps Stashfin inline public cards into shared scraper
     postingDate: null,
     closingDate: null,
     jobDescription: "We're looking for a mid-level Product Designer to join our team.",
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
   assert.equal(jobs[1].title, 'UX Designer')
@@ -165,6 +166,7 @@ test('run fetches the verified Stashfin careers page and decorates inline jobs',
   assert.equal(jobs[0].source, 'stashfin')
   assert.equal(jobs[0].link, 'https://www.stashfin.com/careers')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[1].jobId, 'ux-designer-gurgaon-india')
 })
 

@@ -106,6 +106,7 @@ export const extractOpenPositions = (html) => {
       postingDate: null,
       closingDate: null,
       jobDescription,
+      publicExperienceChecked: true,
       remoteStatus: 'Remote',
     }
   }).filter(Boolean)

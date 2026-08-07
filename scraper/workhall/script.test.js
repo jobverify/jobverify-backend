@@ -30,6 +30,22 @@ const homepageHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <html>
+    <head>
+      <title>Work Hall - Private Offices &amp; Co-working Space</title>
+    </head>
+    <body>
+      <main>
+        <h1>re think your workspace</h1>
+        <p>We create spaces for people to do their life's best work with the backing of a robust community.</p>
+        <a href="/book-space">BOOK MY SPACE</a>
+        <a href="/book-tour">BOOK MY TOUR</a>
+      </main>
+    </body>
+  </html>
+`
+
 const notFoundRoute = {
   status: 404,
   url: 'https://workhall.co/careers',
@@ -87,4 +103,8 @@ test('run returns an empty list only when Workhall exposes no public careers sur
 
   assert.deepEqual(requestedUrls, [HOMEPAGE_URL, ...CAREERS_ROUTE_URLS])
   assert.deepEqual(jobs, [])
+})
+
+test('Workhall recognizes the current coworking homepage shell as the official no-public-jobs surface', () => {
+  assert.equal(hasOfficialHomepageSignal(currentHomepageHtml), true)
 })

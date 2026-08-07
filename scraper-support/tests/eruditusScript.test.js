@@ -13,6 +13,8 @@ const homepageHtml = `
     <link rel="canonical" href="https://eruditus.com" />
   </head>
   <body>
+    <p>Learn. From the world’s best.</p>
+    <p>Eruditus was founded in 2010 to make world-class executive education accessible globally.</p>
     <footer>
       <h4>Eruditus</h4>
       <a href="https://eruditus.com/about-us/">About Us</a>
@@ -23,7 +25,7 @@ const homepageHtml = `
       <a href="https://eruditus.com/policies/">Policies</a>
       <a href="https://eruditus.com/privacy-policy/">Privacy Policy</a>
       <a href="https://eruditus.com/cookie-policy/">Cookie Policy</a>
-      <a href="https://eruditus.com/contact-us/">Contact Us</a>
+      <a href="https://eruditus.com/contact/">Contact Us</a>
       <a href="https://www.linkedin.com/company/eruditus-education" target="_blank">LinkedIn</a>
     </footer>
   </body>

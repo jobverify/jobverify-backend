@@ -1,18 +1,56 @@
 import assert from 'node:assert/strict'
-import path from 'node:path'
 import test from 'node:test'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../scraper/iqnextsynconext/fixtures',
-)
+const verifiedHomepageHtml = `
+<!doctype html>
+<html lang="en" data-wf-domain="www.iqnext.io">
+  <head>
+    <title>IoT Based Platform for Smart Building Management - IQnext</title>
+    <link rel="canonical" href="https://www.iqnext.io/" />
+  </head>
+  <body>
+    <main>
+      <p>IQnext is a centralised platform that is redefining building operations.</p>
+      <p>Building operations efficiency energy maintenance made exceptionally easy.</p>
+      <p>Trusted by forward thinking buildings.</p>
+    </main>
+  </body>
+</html>
+`
 
-const readHtmlFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
+const verifiedCareersHtml = `
+<!doctype html>
+<html lang="en" data-wf-domain="www.iqnext.io">
+  <head>
+    <title>Careers | IQnext</title>
+    <link rel="canonical" href="https://www.iqnext.io/careers" />
+  </head>
+  <body>
+    <main>
+      <h1>Your ideas can power the future of sustainable spaces</h1>
+      <p>Take ownership, grow faster, and make an impact that matters.</p>
+      <p>See Open Positions</p>
+      <p>Why Join IQnext</p>
+      <p>Transforming an Industry</p>
+      <a href="https://angel.co/company/iqnext/jobs">See Open Positions</a>
+      <a href="https://angel.co/company/iqnext/jobs">See our open positions</a>
+    </main>
+  </body>
+</html>
+`
 
-const verifiedHomepageHtml = readHtmlFixture('homepage.html')
-const verifiedCareers404Html = readHtmlFixture('careers-404.html')
+const verifiedWellfoundChallengeHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>wellfound.com</title>
+  </head>
+  <body>
+    <p id="cmsg">Please enable JS and disable any ad blocker</p>
+    <script src="https://ct.captcha-delivery.com/c.js"></script>
+  </body>
+</html>
+`
 
 const loadIqnextSynconextModule = async () => {
   try {
@@ -22,43 +60,31 @@ const loadIqnextSynconextModule = async () => {
   }
 }
 
-test('IQnext (Synconext) validates the verified homepage and missing first-party careers routes', async () => {
+test('IQnext (Synconext) validates the verified IQnext homepage, careers page, and challenge-gated Wellfound handoff', async () => {
   const iqnextSynconext = await loadIqnextSynconextModule()
 
   assert.equal(iqnextSynconext.SOURCE, 'iqnextsynconext')
   assert.equal(iqnextSynconext.COMPANY, 'IQnext (Synconext)')
-  assert.equal(iqnextSynconext.HOMEPAGE_URL, 'https://www.synconext.com/')
-  assert.deepEqual(iqnextSynconext.NO_PUBLIC_CAREERS_ROUTE_URLS, [
-    'https://www.synconext.com/careers',
-    'https://www.synconext.com/careers/',
-    'https://www.synconext.com/career',
-    'https://www.synconext.com/career/',
-    'https://www.synconext.com/jobs',
-    'https://www.synconext.com/jobs/',
-  ])
+  assert.equal(iqnextSynconext.HOMEPAGE_URL, 'https://www.iqnext.io/')
+  assert.equal(iqnextSynconext.CAREERS_URL, 'https://www.iqnext.io/careers')
+  assert.equal(iqnextSynconext.WELLFOUND_JOBS_URL, 'https://wellfound.com/company/iqnext/jobs')
   assert.equal(iqnextSynconext.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
-  assert.equal(iqnextSynconext.hasPublicJobsSignal(verifiedHomepageHtml), false)
+  assert.equal(iqnextSynconext.hasOfficialCareersSignal(verifiedCareersHtml), true)
   assert.equal(
-    iqnextSynconext.isVerifiedMissingCareersRoute({
-      status: 404,
-      url: iqnextSynconext.NO_PUBLIC_CAREERS_ROUTE_URLS[0],
-      headers: {},
-      html: verifiedCareers404Html,
+    iqnextSynconext.extractWellfoundJobsUrl(verifiedCareersHtml),
+    'https://wellfound.com/company/iqnext/jobs',
+  )
+  assert.equal(
+    iqnextSynconext.isVerifiedWellfoundChallenge({
+      status: 403,
+      url: 'https://wellfound.com/company/iqnext/jobs',
+      html: verifiedWellfoundChallengeHtml,
     }),
     true,
   )
-  assert.equal(
-    iqnextSynconext.isVerifiedMissingCareersRoute({
-      status: 200,
-      url: iqnextSynconext.NO_PUBLIC_CAREERS_ROUTE_URLS[0],
-      headers: {},
-      html: '<html><body><h1>Careers</h1><a href="/jobs/design-engineer">Apply now</a></body></html>',
-    }),
-    false,
-  )
 })
 
-test('IQnext (Synconext) returns no jobs only while the verified homepage and missing careers routes remain unchanged', async () => {
+test('IQnext (Synconext) returns no jobs only while the verified IQnext careers handoff remains challenge-gated on Wellfound', async () => {
   const iqnextSynconext = await loadIqnextSynconextModule()
   const requestedUrls = []
 
@@ -75,12 +101,21 @@ test('IQnext (Synconext) returns no jobs only while the verified homepage and mi
         }
       }
 
-      if (iqnextSynconext.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {
+      if (url === iqnextSynconext.CAREERS_URL) {
         return {
-          status: 404,
+          status: 200,
           url,
           headers: {},
-          html: verifiedCareers404Html,
+          html: verifiedCareersHtml,
+        }
+      }
+
+      if (url === iqnextSynconext.WELLFOUND_JOBS_URL) {
+        return {
+          status: 403,
+          url,
+          headers: {},
+          html: verifiedWellfoundChallengeHtml,
         }
       }
 
@@ -90,12 +125,13 @@ test('IQnext (Synconext) returns no jobs only while the verified homepage and mi
 
   assert.deepEqual(requestedUrls, [
     iqnextSynconext.HOMEPAGE_URL,
-    ...iqnextSynconext.NO_PUBLIC_CAREERS_ROUTE_URLS,
+    iqnextSynconext.CAREERS_URL,
+    iqnextSynconext.WELLFOUND_JOBS_URL,
   ])
   assert.deepEqual(jobs, [])
 })
 
-test('IQnext (Synconext) fails closed when the homepage or missing careers route contract changes', async () => {
+test('IQnext (Synconext) fails closed when the IQnext homepage, careers handoff, or challenge-gated Wellfound board changes', async () => {
   const iqnextSynconext = await loadIqnextSynconextModule()
 
   await assert.rejects(
@@ -110,12 +146,7 @@ test('IQnext (Synconext) fails closed when the homepage or missing careers route
           }
         }
 
-        return {
-          status: 404,
-          url,
-          headers: {},
-          html: verifiedCareers404Html,
-        }
+        throw new Error(`Unexpected URL: ${url}`)
       },
     }),
     /verified official homepage/i,
@@ -133,23 +164,54 @@ test('IQnext (Synconext) fails closed when the homepage or missing careers route
           }
         }
 
-        if (url === iqnextSynconext.NO_PUBLIC_CAREERS_ROUTE_URLS[0]) {
+        if (url === iqnextSynconext.CAREERS_URL) {
           return {
             status: 200,
             url,
             headers: {},
-            html: '<html><body>Open Positions</body></html>',
+            html: verifiedCareersHtml.replaceAll('https://angel.co/company/iqnext/jobs', 'https://jobs.example.com/iqnext'),
           }
         }
 
-        return {
-          status: 404,
-          url,
-          headers: {},
-          html: verifiedCareers404Html,
-        }
+        throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /careers routes changed materially or now expose public jobs/i,
+    /verified Wellfound jobs handoff/i,
+  )
+
+  await assert.rejects(
+    iqnextSynconext.createIqnextSynconextScraper().run({
+      fetchPage: async (url) => {
+        if (url === iqnextSynconext.HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url,
+            headers: {},
+            html: verifiedHomepageHtml,
+          }
+        }
+
+        if (url === iqnextSynconext.CAREERS_URL) {
+          return {
+            status: 200,
+            url,
+            headers: {},
+            html: verifiedCareersHtml,
+          }
+        }
+
+        if (url === iqnextSynconext.WELLFOUND_JOBS_URL) {
+          return {
+            status: 200,
+            url,
+            headers: {},
+            html: '<html><body><h1>Public jobs are now reachable</h1></body></html>',
+          }
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    }),
+    /challenge-gated public surface/i,
   )
 })

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
@@ -77,10 +78,15 @@ const extractJobIdFromUrl = (value) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const text = stripTags(page) || ''
 
-  return /<title>\s*Positions\s*-\s*Careers\s*-\s*Coinbase\s*<\/title>/i.test(page)
-    && /<h1[^>]*>\s*Open positions\s*<\/h1>/i.test(page)
-    && /Submit a general application/i.test(page)
+  return /<title[^>]*>\s*Positions\s*-\s*Careers\s*-\s*Coinbase\s*<\/title>/i.test(page)
+    && /Open positions/i.test(text)
+    && (
+      /Submit a general application/i.test(page)
+      || /data-testid=["']positions-department["']/i.test(page)
+      || /\/careers\/positions\/\d+/i.test(page)
+    )
 }
 
 export const normalizeCoinbaseJobUrl = (value) => {
@@ -139,16 +145,58 @@ export const extractIndiaJobCardsFromCareersPage = (html) => {
     }
   }
 
-  return jobs
+  if (jobs.length > 0) {
+    return jobs
+  }
+
+  const fallbackJobs = []
+  const seenSourceUrls = new Set()
+
+  for (const match of String(html).matchAll(
+    /<a[^>]+href=["']([^"']*\/careers\/positions\/\d+[^"']*)["'][^>]*>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>[\s\S]*?<\/a>\s*<p[^>]*>([\s\S]*?)<\/p>/gi,
+  )) {
+    const sourceUrl = normalizeCoinbaseJobUrl(match[1])
+    const title = stripTags(match[2])
+    const location = stripTags(match[3])
+    const isIndiaRole = looksLikeIndiaLocation(location)
+
+    if (isIndiaRole && !sourceUrl) {
+      throw new Error('Coinbase careers page no longer exposes the verified first-party Coinbase detail URLs')
+    }
+
+    if (!title || !location || !sourceUrl || !isIndiaRole || seenSourceUrls.has(sourceUrl)) continue
+    seenSourceUrls.add(sourceUrl)
+
+    fallbackJobs.push({
+      title,
+      location,
+      department: null,
+      sourceUrl,
+      jobId: extractJobIdFromUrl(sourceUrl),
+    })
+  }
+
+  return fallbackJobs
 }
 
 const extractDetailTitle = (html) => stripTags(
   String(html ?? '').match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1],
 )
 
-const extractDetailLocation = (html) => stripTags(
-  String(html ?? '').match(/<h1[^>]*>[\s\S]*?<\/h1>\s*<p[^>]*>([\s\S]*?)<\/p>/i)?.[1],
-)
+const extractDetailLocation = (html) => {
+  const afterTitle = String(html ?? '').split(/<h1[^>]*>[\s\S]*?<\/h1>/i)[1] || ''
+  const paragraphLocation = afterTitle.match(/^\s*<p[^>]*>([\s\S]*?)<\/p>/i)?.[1]
+  if (paragraphLocation) {
+    return stripTags(paragraphLocation)
+  }
+
+  const leadingChunk = afterTitle.slice(0, 2000)
+  const spanValues = [...leadingChunk.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
+    .map((match) => stripTags(match[1]))
+    .filter(Boolean)
+
+  return spanValues.find((value) => !/^Job ID#:/i.test(value)) || null
+}
 
 const extractRequisitionId = (html) =>
   normalizeWhitespace(
@@ -158,7 +206,7 @@ const extractRequisitionId = (html) =>
 const extractGreenhouseApplyUrl = (html) =>
   normalizeWhitespace(
     String(html ?? '').match(
-      /<a[^>]+href=["'](https:\/\/(?:job-boards\.)?greenhouse\.io\/[^"']+)["'][^>]*>\s*Apply now\s*<\/a>/i,
+      /<a[^>]+href=["'](https:\/\/(?:job-boards\.)?greenhouse\.io\/[^"']+)["'][^>]*>[\s\S]*?Apply now[\s\S]*?<\/a>/i,
     )?.[1],
   )
 
@@ -168,6 +216,11 @@ const extractJobDescription = (html) => {
   )?.[1]
 
   if (sectionHtml) return stripTags(sectionHtml)
+
+  const currentShellFallback = String(html ?? '').match(
+    /Apply now[\s\S]*?<\/a>([\s\S]*?)(?:Position ID:|Pay Transparency Notice:|<h2[^>]*>[\s\S]*?Disclosures)/i,
+  )?.[1]
+  if (currentShellFallback) return stripTags(currentShellFallback)
 
   const fallbackHtml = String(html ?? '').match(
     /Apply now\s*<\/a>([\s\S]*?)Job ID#:/i,
@@ -214,6 +267,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -223,48 +277,59 @@ export const createCoinbaseScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const textFetcher = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+    })
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Coinbase careers page no longer matches the verified official Coinbase careers surface')
+    try {
+      const careersHtml = await textFetcher.fetchText(CAREERS_URL)
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Coinbase careers page no longer matches the verified official Coinbase careers surface')
+      }
+
+      const listings = extractIndiaJobCardsFromCareersPage(careersHtml)
+      const selectedListings = Number.isFinite(maxJobs) ? listings.slice(0, maxJobs) : listings
+
+      const jobs = []
+      for (const listing of selectedListings) {
+        const detail = extractJobDetail(await textFetcher.fetchText(listing.sourceUrl), listing)
+        const remoteStatus = inferRemoteStatus(detail.location)
+
+        jobs.push({
+          title: detail.title,
+          company: COMPANY,
+          location: detail.location,
+          city: deriveCity(detail.location),
+          country: 'India',
+          link: listing.sourceUrl,
+          applyUrl: listing.sourceUrl,
+          sourceUrl: listing.sourceUrl,
+          source: SOURCE,
+          jobId: listing.jobId,
+          requisitionId: detail.requisitionId,
+          department: listing.department,
+          employmentType: null,
+          experienceRequired: null,
+          jobDescription: detail.jobDescription,
+          minimumQualification: null,
+          preferredQualification: null,
+          requiredSkills: [],
+          postingDate: null,
+          remoteStatus,
+          scrapedAt: now(),
+        })
+      }
+
+      return jobs
+    } finally {
+      await textFetcher.close()
     }
-
-    const listings = extractIndiaJobCardsFromCareersPage(careersHtml)
-    const selectedListings = Number.isFinite(maxJobs) ? listings.slice(0, maxJobs) : listings
-
-    const jobs = []
-    for (const listing of selectedListings) {
-      const detail = extractJobDetail(await fetchText(listing.sourceUrl), listing)
-      const remoteStatus = inferRemoteStatus(detail.location)
-
-      jobs.push({
-        title: detail.title,
-        company: COMPANY,
-        location: detail.location,
-        city: deriveCity(detail.location),
-        country: 'India',
-        link: listing.sourceUrl,
-        applyUrl: listing.sourceUrl,
-        sourceUrl: listing.sourceUrl,
-        source: SOURCE,
-        jobId: listing.jobId,
-        requisitionId: detail.requisitionId,
-        department: listing.department,
-        employmentType: null,
-        experienceRequired: null,
-        jobDescription: detail.jobDescription,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: null,
-        remoteStatus,
-        scrapedAt: now(),
-      })
-    }
-
-    return jobs
   },
 })
 

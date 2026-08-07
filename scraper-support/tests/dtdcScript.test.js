@@ -12,6 +12,27 @@ const homepageHtml = `
     <h1>Leading Courier and Logistics Company in India</h1>
     <a href="https://www.dtdc.com/career/">Career</a>
     <a href="https://www.dtdc.com/contact-us/">Contact Us</a>
+    <!--
+      <div class="job-card">
+        <h5>Manager - Operations</h5>
+        <a href="#" class="btn-primary">View Jobs</a>
+      </div>
+    -->
+  </body>
+</html>
+`
+
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="canonical" href="https://www.dtdc.com/in/">
+  </head>
+  <body>
+    <p>www.dtdc.com is DTDC's only official website.</p>
+    <h1>Leading Courier and Logistics Company in India</h1>
+    <a href="https://www.dtdc.com/career/">Career</a>
+    <a href="https://www.dtdc.com/contact-us/">Contact Us</a>
   </body>
 </html>
 `
@@ -119,6 +140,7 @@ test('DTDC pins the verified homepage, career page, robots contract, and sitemap
     'https://www.dtdc.com/work-with-us/',
   ])
   assert.equal(dtdc.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(dtdc.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(dtdc.hasResumeDropCareersSignal(careersPageHtml), true)
   assert.equal(dtdc.hasPublicJobListingSignal(careersPageHtml), false)
   assert.equal(dtdc.hasPublicJobListingSignal(publicJobsHtml), true)

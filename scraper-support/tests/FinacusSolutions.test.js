@@ -28,6 +28,31 @@ const careersHtml = `
 </html>
 `
 
+const detailHtml = `
+<h3>Sales Coordinator</h3>
+<div class="career-posttop"></div>
+<div class="career-offset-content bullet-list singlepostcontent">
+  <ul>
+    <li><strong>Department</strong> : Sales</li>
+    <li><strong>Designation</strong> : Sales Coordinator</li>
+    <li><strong>Open Positions</strong> : 2 Position</li>
+    <li><strong>Location</strong> : Mumbai</li>
+    <li><strong>Gender</strong> : Female/ Male</li>
+    <li><strong>Work Experience</strong> : 2+ years</li>
+  </ul>
+  <h5>Key Skills</h5>
+  <ul>
+    <li>Strong organizational and multitasking abilities.</li>
+    <li>Excellent communication and interpersonal skills.</li>
+  </ul>
+  <h4>Role &amp; Responsibility</h4>
+  <ol>
+    <li>Coordinate and follow up with clients on sales leads.</li>
+    <li>Prepare and present detailed and accurate sales reports.</li>
+  </ol>
+</div>
+`
+
 const loadCatalogModule = async () => {
   try {
     return await import('../../scraper/finacussolutions/catalog.js')
@@ -130,6 +155,53 @@ test('Finacus Solutions run validates the first-party careers page and maps inli
       remoteStatus: null,
     },
   ])
+  assert.deepEqual(finacus.extractJobDetail(detailHtml, {
+    title: 'Sales Coordinator',
+    company: 'Finacus Solutions',
+    department: null,
+    location: 'India',
+    city: null,
+    state: null,
+    country: 'India',
+    jobId: '233',
+    requisitionId: '233',
+    sourceUrl: 'https://www.finacus.co.in/careers/',
+    applyUrl: 'https://www.finacus.co.in/careers/',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+    remoteStatus: null,
+  }), {
+    title: 'Sales Coordinator',
+    company: 'Finacus Solutions',
+    department: 'Sales',
+    location: 'Mumbai',
+    city: 'Mumbai',
+    state: null,
+    country: 'India',
+    jobId: '233',
+    requisitionId: '233',
+    sourceUrl: 'https://www.finacus.co.in/careers/',
+    applyUrl: 'https://www.finacus.co.in/careers/',
+    employmentType: null,
+    experienceRequired: '2+ years',
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription:
+      'Department : Sales Designation : Sales Coordinator Open Positions : 2 Position Location : Mumbai Gender : Female/ Male Work Experience : 2+ years Key Skills Strong organizational and multitasking abilities. Excellent communication and interpersonal skills. Role & Responsibility Coordinate and follow up with clients on sales leads. Prepare and present detailed and accurate sales reports.',
+    remoteStatus: null,
+    description:
+      'Department : Sales Designation : Sales Coordinator Open Positions : 2 Position Location : Mumbai Gender : Female/ Male Work Experience : 2+ years Key Skills Strong organizational and multitasking abilities. Excellent communication and interpersonal skills. Role & Responsibility Coordinate and follow up with clients on sales leads. Prepare and present detailed and accurate sales reports.',
+    publicExperienceChecked: true,
+  })
 
   const jobs = await finacus.createFinacusSolutionsScraper({
     now: () => FIXED_SCRAPED_AT,
@@ -138,11 +210,19 @@ test('Finacus Solutions run validates the first-party careers page and maps inli
       assert.equal(url, finacus.CAREERS_PAGE_URL)
       return careersHtml
     },
+    fetchDetailText: async (jobId) => {
+      assert.equal(jobId, '233')
+      return detailHtml
+    },
   })
 
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'finacussolutions')
   assert.equal(jobs[0].link, 'https://www.finacus.co.in/careers/')
+  assert.equal(jobs[0].department, 'Sales')
+  assert.equal(jobs[0].location, 'Mumbai')
+  assert.equal(jobs[0].experienceRequired, '2+ years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
 })
 

@@ -35,7 +35,7 @@ const dotnetDetailHtml = `
       <h1>.NET Developer (Fresher)</h1>
       <p>Experience: 0-1 Year</p>
       <p>Location: Chennai, India</p>
-      <a href="/careers/dotnet-developer-fresher/apply/">I'm Interested</a>
+      <a href="/careers/dotnet-developer-fresher/apply/">I&#8217;m Interested</a>
       <h2>Job Description</h2>
       <p>Develop and maintain Syncfusion components for web, desktop, and mobile platforms.</p>
       <p>Support long-term product quality and continuous delivery.</p>
@@ -65,7 +65,7 @@ const testingDetailHtml = `
       <h1>Testing Engineer (Experienced)</h1>
       <p>Experience: 1-3 Years</p>
       <p>Location: Chennai, India</p>
-      <a href="/careers/testing-engineer-experience/apply/">I'm Interested</a>
+      <a href="/careers/testing-engineer-experience/apply/">I&#8217;m Interested</a>
       <h2>Job Description</h2>
       <p>Validate component quality through manual and automated testing workflows.</p>
       <p>Work with developers to resolve regressions quickly.</p>
@@ -101,7 +101,7 @@ test('Syncfusion helpers stay pinned to the verified careers page and same-domai
   assert.equal(syncfusion.COMPANY, 'Syncfusion')
   assert.equal(syncfusion.OFFICIAL_BRAND_NAME, 'Syncfusion')
   assert.equal(syncfusion.CAREERS_URL, 'https://www.syncfusion.com/careers/')
-  assert.equal(syncfusion.VERIFIED_ON, '2026-07-17')
+  assert.equal(syncfusion.VERIFIED_ON, '2026-08-05')
   assert.deepEqual(syncfusion.VERIFIED_JOB_DETAIL_URLS, [
     'https://www.syncfusion.com/careers/dotnet-developer-fresher/',
     'https://www.syncfusion.com/careers/dotnet-developer-experience/',

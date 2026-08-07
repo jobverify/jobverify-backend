@@ -25,8 +25,8 @@ const officialCareersHtml = `
   </head>
   <body>
     <main>
-      <h1>Help banking time travel &amp; have fun doing it</h1>
-      <p>Our creed isn't relentless disruption. It's to always do the right thing.</p>
+      <h1>Help banking time travel &amp; have fun doing it 😇</h1>
+      <p>Our creed isn\u2019t relentless disruption. It\u2019s to always do the right thing \u2013 both for the team and our users.</p>
       <a href="https://jobs.lever.co/epifi">VIEW OPEN ROLES</a>
     </main>
   </body>
@@ -48,7 +48,10 @@ const officialLeverBoardHtml = `
     <a href="https://jobs.lever.co/epifi/08c743e8-2b29-4f78-827e-5bd90476ed86">Ai Engg Intern</a>
     <a href="https://jobs.lever.co/epifi/f1417887-7e7f-4a03-9c39-8017752d659c">GTM - sales</a>
     <a href="https://tetriz.ai">Workloom Home Page</a>
-    <p>Jobs powered by Lever</p>
+    <a href="https://www.lever.co/job-seeker-support/" class="image-link">
+      <span>Jobs powered by </span>
+      <img alt="Lever logo" src="/img/lever-logo-full.svg" />
+    </a>
   </body>
 </html>
 `

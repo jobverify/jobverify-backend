@@ -47,43 +47,62 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /Jobs at Appiness Interactive/i.test(page)
     && text.includes('Current Openings')
-    && text.includes('Role SEO Expert')
-    && text.includes('Role Senior Software Engineer - Java')
+    && /\bRole\b/i.test(text)
+    && /\bExperience\b/i.test(text)
+    && /\bLocation\b/i.test(text)
+}
+
+const buildJob = (title, experienceRequired, city) => {
+  const normalizedTitle = normalizeWhitespace(title)
+  const normalizedExperience = normalizeWhitespace(experienceRequired)
+  const normalizedCity = normalizeWhitespace(city)
+  const jobId = slugify(normalizedTitle)
+
+  return {
+    title: normalizedTitle,
+    company: COMPANY,
+    department: null,
+    location: `${normalizedCity}, India`,
+    city: normalizedCity,
+    country: 'India',
+    jobId,
+    requisitionId: jobId,
+    sourceUrl: CAREERS_URL,
+    applyUrl: CAREERS_URL,
+    employmentType: null,
+    experienceRequired: normalizedExperience,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+    remoteStatus: 'On-site',
+  }
 }
 
 export const extractJobs = (html = '') => {
-  const matches = [...String(html ?? '').matchAll(
+  const page = String(html ?? '')
+  const matches = [...page.matchAll(
     /Role\s+([^<\n]+?)\s*<\/div>\s*<div>\s*Experience\s+([^<\n]+?)\s*<\/div>\s*<div>\s*Location\s+([^<\n]+?)\s*<\/div>/gi,
   )]
 
-  return matches.map((match) => {
-    const title = normalizeWhitespace(match[1])
-    const experienceRequired = normalizeWhitespace(match[2])
-    const city = normalizeWhitespace(match[3])
-    const jobId = slugify(title)
+  if (matches.length > 0) {
+    return matches.map((match) => buildJob(match[1], match[2], match[3]))
+  }
 
-    return {
-      title,
-      company: COMPANY,
-      department: null,
-      location: `${city}, India`,
-      city,
-      country: 'India',
-      jobId,
-      requisitionId: jobId,
-      sourceUrl: CAREERS_URL,
-      applyUrl: CAREERS_URL,
-      employmentType: null,
-      experienceRequired,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    }
-  })
+  const text = normalizeWhitespace(
+    page
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' '),
+  )
+
+  if (!text) return []
+
+  return [...text.matchAll(
+    /(?:Current Openings|Submit Application)\s+Role\s+(.+?)\s+Experience\s+(.+?)\s+Location\s+(.+?)\s+Job Details Apply/gi,
+  )].map((match) => buildJob(match[1], match[2], match[3]))
 }
 
 export const createAppinessInteractiveScraper = ({ maxJobs = null } = {}) => ({

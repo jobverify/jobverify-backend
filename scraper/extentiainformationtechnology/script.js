@@ -36,6 +36,14 @@ const slugify = (value) => String(value ?? '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+const extractJobSlug = (value) => {
+  try {
+    return new URL(String(value ?? '')).pathname.split('/').filter(Boolean).at(-1) || null
+  } catch {
+    return null
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -48,15 +56,17 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialExtentiaCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page)
+  const title = stripTags(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '')
 
-  return text.includes('Careers Opportunities')
+  return title.includes('Exciting Career Opportunities at Extentia')
+    && text.includes('Careers Opportunities')
     && text.includes('More Details')
-    && page.includes('Page 2')
+    && /Page\s*2|e-page-0431873=2/i.test(page)
   }
 
 const extractPaginationUrls = (html = '') => {
   const urls = new Set([CAREERS_URL])
-  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Page\s+\d+\s*<\/a>/gi)) {
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Page\s*\d+\s*<\/a>/gi)) {
     urls.add(new URL(match[1], CAREERS_URL).toString())
   }
   return [...urls]
@@ -64,12 +74,22 @@ const extractPaginationUrls = (html = '') => {
 
 export const extractRoleCards = (html = '', pageUrl = CAREERS_URL) =>
   [...String(html ?? '').matchAll(
-    /<a[^>]+href=["']([^"']+)["'][^>]*>\s*([^<]+?)\s*<\/a>[\s\S]*?<li[^>]*>\s*([^<]+?)\s*<\/li>[\s\S]*?<li[^>]*>\s*([^<]+?)\s*<\/li>[\s\S]*?More Details/gi,
+    /<h2[^>]*>\s*<a[^>]+href=["']([^"']*\/job\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h2>/gi,
   )].map((match) => {
-    const sourceUrl = new URL(match[1], pageUrl).toString()
+    const source = String(html ?? '')
+    const contextStart = Math.max(0, (match.index ?? 0) - 1500)
+    const context = source.slice(contextStart, match.index ?? 0)
+    const terms = [...context.matchAll(
+      /<[^>]+class=["'][^"']*elementor-post-info__terms-list-item[^"']*["'][^>]*>([\s\S]*?)<\/[^>]+>/gi,
+    )]
+      .map((term) => stripTags(term[1]))
+      .filter(Boolean)
+
+    const sourceUrl = match[1] ? new URL(match[1], pageUrl).toString() : null
     const title = stripTags(match[2])
-    const location = stripTags(match[3])
-    const employmentType = stripTags(match[4])
+    const location = terms.at(-2) || null
+    const employmentType = terms.at(-1) || null
+    const jobSlug = extractJobSlug(sourceUrl)
 
     return {
       title,
@@ -77,7 +97,7 @@ export const extractRoleCards = (html = '', pageUrl = CAREERS_URL) =>
       employmentType,
       sourceUrl,
       applyUrl: sourceUrl,
-      jobId: `${SOURCE}-${slugify(title)}-${slugify(location)}`,
+      jobId: jobSlug ? `${SOURCE}-${jobSlug}` : `${SOURCE}-${slugify(title)}-${slugify(location)}`,
     }
   }).filter((job) => job.title && job.location && job.employmentType && job.sourceUrl)
 

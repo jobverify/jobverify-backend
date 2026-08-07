@@ -174,11 +174,11 @@ export const createExaScraper = ({
     }
 
     const verifiedBundleUrl = extractVerifiedCareersBundleUrl(careersHtml)
-    if (verifiedBundleUrl !== CAREERS_BUNDLE_URL) {
+    if (!verifiedBundleUrl) {
       throw new Error('Exa verified careers bundle handoff changed')
     }
 
-    const bundleScript = await fetchText(CAREERS_BUNDLE_URL)
+    const bundleScript = await fetchText(verifiedBundleUrl)
     if (!hasVerifiedCareersBundleSignal(bundleScript)) {
       throw new Error('Exa verified careers bundle no longer matches the known Ashby handoff')
     }

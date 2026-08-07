@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'arivihan'
 export const COMPANY = 'Arivihan'
-export const VERIFIED_ON = '2026-07-30'
+export const VERIFIED_ON = '2026-08-01'
 export const HOMEPAGE_URL = 'https://www.arivihan.com/'
 export const ABOUT_URL = 'https://www.arivihan.com/about'
 export const CAREERS_URL = 'https://www.arivihan.com/careers'
@@ -38,6 +38,9 @@ const PUBLIC_JOB_PATTERNS = [
   /icims/i,
   /taleo/i,
 ]
+
+const OFFICIAL_TITLE_PATTERN =
+  /<title>\s*Arivihan\s*(?:-|–|â€“)\s*India(?:'|’|â€™)?s First Fully Automated Vernacular Online Learning Platform\s*<\/title>/i
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -83,16 +86,30 @@ const matchesExpectedUrl = (value, expected) => {
   }
 }
 
-export const hasOfficialCompanySignal = (html = '') => {
+export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Arivihan\s*(?:-|–)\s*India(?:'|’)?s First Fully Automated Vernacular Online Learning Platform\s*<\/title>/i.test(page)
+  return OFFICIAL_TITLE_PATTERN.test(page)
+    && normalized.includes('Home')
+    && normalized.includes('About')
+    && normalized.includes('Contact')
+    && normalized.includes('Blogs')
+    && normalized.includes('Results')
+}
+
+export const hasOfficialAboutPageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return OFFICIAL_TITLE_PATTERN.test(page)
     && normalized.includes('About Us')
     && normalized.includes('Our Mission')
-    && normalized.includes("India's 1st Ever Fully Automated Online Learning Platform")
     && normalized.includes('Ritesh Singh')
 }
+
+export const hasOfficialCompanySignal = (html = '') =>
+  hasOfficialHomepageSignal(html) || hasOfficialAboutPageSignal(html)
 
 export const pageExposesPublicJobListings = (html = '') =>
   PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -109,11 +126,12 @@ const assertVerifiedCompanyPage = ({
   page,
   expectedUrl,
   routeLabel,
+  signalMatcher,
 }) => {
   if (
     Number(page.status) !== 200
     || !matchesExpectedUrl(page.url, expectedUrl)
-    || !hasOfficialCompanySignal(page.html)
+    || !signalMatcher(page.html)
   ) {
     throw new Error(`The verified ${routeLabel} for Arivihan no longer matches the official company surface`)
   }
@@ -130,6 +148,7 @@ export const createArivihanScraper = () => ({
       page: homepage,
       expectedUrl: HOMEPAGE_URL,
       routeLabel: 'homepage',
+      signalMatcher: hasOfficialHomepageSignal,
     })
 
     const aboutPage = await fetchPage(ABOUT_URL)
@@ -137,6 +156,7 @@ export const createArivihanScraper = () => ({
       page: aboutPage,
       expectedUrl: ABOUT_URL,
       routeLabel: 'about page',
+      signalMatcher: hasOfficialAboutPageSignal,
     })
 
     const careersPage = await fetchPage(CAREERS_URL)

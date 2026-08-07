@@ -2,6 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 const restrictedHtml = 'Access is restricted'
+const tlsMismatchPage = {
+  status: 0,
+  html: '',
+  errorCode: 'ERR_TLS_CERT_ALTNAME_INVALID',
+  errorReason: "Host: otipy.com. is not in the cert's altnames: DNS:gps.vendors.intusystems.info",
+}
 
 const jobsHtml = `
 <html>
@@ -20,18 +26,19 @@ const loadModule = async () => {
   }
 }
 
-test('Otipy sentinel pins the verified blocked first-party public surface from Friday, July 17, 2026', async () => {
+test('Otipy sentinel pins the verified blocked first-party public surface from Monday, August 3, 2026', async () => {
   const otipy = await loadModule()
 
   assert.equal(otipy.SOURCE, 'otipy')
   assert.equal(otipy.COMPANY, 'Otipy')
   assert.equal(otipy.OFFICIAL_BRAND_NAME, 'Otipy')
-  assert.equal(otipy.VERIFIED_ON, '2026-07-17')
+  assert.equal(otipy.VERIFIED_ON, '2026-08-03')
   assert.equal(otipy.HOMEPAGE_URL, 'https://otipy.com/')
   assert.equal(otipy.CAREERS_URL, 'https://otipy.com/careers')
   assert.equal(otipy.JOBS_URL, 'https://otipy.com/jobs')
-  assert.match(otipy.VERIFIED_SURFACE_SUMMARY, /403 Forbidden/i)
-  assert.match(otipy.VERIFIED_SURFACE_SUMMARY, /Access is restricted/i)
+  assert.match(otipy.VERIFIED_SURFACE_SUMMARY, /Monday, August 3, 2026/i)
+  assert.match(otipy.VERIFIED_SURFACE_SUMMARY, /ERR_TLS_CERT_ALTNAME_INVALID/i)
+  assert.match(otipy.VERIFIED_SURFACE_SUMMARY, /gps\.vendors\.intusystems\.info/i)
 
   assert.equal(
     otipy.isRestrictedSurface({
@@ -40,6 +47,7 @@ test('Otipy sentinel pins the verified blocked first-party public surface from F
     }),
     true,
   )
+  assert.equal(otipy.isRestrictedSurface(tlsMismatchPage), true)
   assert.equal(otipy.hasPublicJobsSignal(restrictedHtml), false)
   assert.equal(otipy.hasPublicJobsSignal(jobsHtml), true)
 })
@@ -53,11 +61,7 @@ test('Otipy returns [] only while the official homepage and public job routes st
       requestedUrls.push(url)
 
       if ([otipy.HOMEPAGE_URL, otipy.CAREERS_URL, otipy.JOBS_URL].includes(url)) {
-        return {
-          status: 403,
-          url,
-          html: restrictedHtml,
-        }
+        return { ...tlsMismatchPage, url }
       }
 
       throw new Error(`Unexpected Otipy URL: ${url}`)
@@ -90,11 +94,7 @@ test('Otipy fails closed when the blocked first-party contract changes materiall
     otipy.createOtipyScraper().run({
       fetchPage: async (url) => {
         if (url === otipy.HOMEPAGE_URL) {
-          return {
-            status: 403,
-            url,
-            html: restrictedHtml,
-          }
+          return { ...tlsMismatchPage, url }
         }
 
         return {

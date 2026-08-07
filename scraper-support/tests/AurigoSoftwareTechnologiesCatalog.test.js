@@ -40,21 +40,22 @@ test('Aurigo Software Technologies local catalog captures the verified first-par
   assert.equal(provider.companyCareerPage, 'https://careers.aurigo.com/')
   assert.equal(
     provider.searchResultsUrl,
-    'https://careers.aurigo.com/search/?createNewAlert=false&locationsearch=&q=',
+    'https://careers.aurigo.com/search/?locale=en_US&previewLink=true&referrerSave=false&searchResultView=LIST',
   )
   assert.equal(provider.companyDomain, 'aurigo.com')
-  assert.equal(provider.atsPlatform, 'official-first-party-search-results')
+  assert.equal(provider.atsPlatform, 'official-first-party-search-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'page-number')
-  assert.equal(provider.extractionStrategy, 'html-search-results')
+  assert.equal(provider.paginationStrategy, 'api-page-number')
+  assert.equal(provider.extractionStrategy, 'jobs2web-search-shell+first-party-jobs-api')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /aurigo[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Explore open positions at Aurigo/i)
-  assert.match(provider.verifiedSurfaceSummary, /Manager - Legal/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Software Engineer I - DevOps/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 1, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /services\/recruiting\/v1\/jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /Director of Product/i)
+  assert.match(provider.verifiedSurfaceSummary, /Software Engineer II/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Aurigo Software Technologies'), false)
 
   assert.equal(aurigo.PROVIDER_METADATA.source, AURIGO_CATALOG.source)

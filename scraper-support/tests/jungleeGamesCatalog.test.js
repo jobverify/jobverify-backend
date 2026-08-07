@@ -27,7 +27,7 @@ test('Junglee Games local catalog captures the verified fail-closed careers cont
   assert.equal(JUNGLEE_GAMES_CATALOG.companyName, 'Junglee Games')
   assert.equal(JUNGLEE_GAMES_CATALOG.officialBrandName, 'Junglee Games')
   assert.equal(JUNGLEE_GAMES_CATALOG.adapter, 'script')
-  assert.equal(JUNGLEE_GAMES_CATALOG.modulePath, '../../scraper/jungleegames/script.js')
+  assert.equal(JUNGLEE_GAMES_CATALOG.modulePath, '../jungleegames/script.js')
   assert.equal(JUNGLEE_GAMES_CATALOG.homepageUrl, 'https://www.jungleegames.com/')
   assert.equal(JUNGLEE_GAMES_CATALOG.companyCareerPage, 'https://www.jungleegames.com/grow.php')
   assert.equal(
@@ -50,13 +50,14 @@ test('Junglee Games local catalog captures the verified fail-closed careers cont
   )
   assert.equal(JUNGLEE_GAMES_CATALOG.parser, 'custom-script')
   assert.equal(JUNGLEE_GAMES_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(JUNGLEE_GAMES_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(JUNGLEE_GAMES_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(JUNGLEE_GAMES_CATALOG.dryRunFile, 'jungleegames/jobs.json')
   assert.match(JUNGLEE_GAMES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.jungleegames\.com\/grow\.php/i)
   assert.match(
     JUNGLEE_GAMES_CATALOG.verifiedSurfaceSummary,
     /https:\/\/www\.jungleegames\.com\/grow-inner-page\.php\?id=56613313BB/i,
   )
+  assert.match(JUNGLEE_GAMES_CATALOG.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
   assert.match(JUNGLEE_GAMES_CATALOG.verifiedSurfaceSummary, /no trustworthy current jobs index/i)
 
   assert.equal(jungleeGames.PROVIDER_METADATA.source, JUNGLEE_GAMES_CATALOG.source)

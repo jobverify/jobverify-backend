@@ -67,6 +67,8 @@ const VERIFIED_ROLE_TITLES = [
   'US IT Recruiter',
 ]
 
+const DETAIL_URL_PATTERN = /https:\/\/www\.sereneinfosolutions\.in\/job\/[^"'#?]+\/?/i
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
@@ -83,8 +85,11 @@ export const hasOfficialCareersSignal = (html = '') => {
 export const hasOfficialJobsSignal = (html = '') => {
   const page = String(html ?? '')
   const title = (extractTitle(page) || '').toLowerCase()
+  const detailUrls = extractJobListings(page)
 
   return title === 'job listing - serene info solutions'
+    && page.includes('View Job')
+    && detailUrls.length >= 3
     && VERIFIED_ROLE_TITLES.every((roleTitle) => page.includes(roleTitle))
 }
 
@@ -110,31 +115,75 @@ export const extractJobListings = (html = '') => {
   const seenSlugs = new Set()
 
   for (const match of String(html ?? '').matchAll(
-    /<article\b[^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi,
+    /<a\b[^>]*href=["'](https:\/\/www\.sereneinfosolutions\.in\/job\/[^"']+\/?)["'][^>]*>[\s\S]*?View Job[\s\S]*?<\/a>/gi,
   )) {
-    const articleHtml = match[1]
-    const title = normalizeWhitespace(articleHtml.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1])
-    const descriptionParts = Array.from(
-      articleHtml.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi),
-      (part) => normalizeWhitespace(part[1]),
-    ).filter(Boolean)
-    const jobDescription = normalizeWhitespace(descriptionParts.join(' '))
-    const slug = slugify(title)
+    const detailUrl = normalizeWhitespace(match[1])
+    const prefix = String(html ?? '').slice(Math.max(0, match.index - 2000), match.index)
+    const title = normalizeWhitespace(
+      [...prefix.matchAll(/<h1[^>]*class=["'][^"']*elementor-heading-title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/gi)]
+        .at(-1)?.[1],
+    )
+    const slug = slugify(detailUrl?.split('/').filter(Boolean).at(-1))
 
-    if (!title || !jobDescription || !slug || seenSlugs.has(slug)) continue
+    if (!title || !detailUrl || !slug || seenSlugs.has(slug)) continue
 
     seenSlugs.add(slug)
     listings.push({
       slug,
       title,
-      sourceUrl: `${JOBS_URL}#${slug}`,
-      applyUrl: APPLICATION_URL,
-      experienceRequired: extractRoleExperience(jobDescription),
-      jobDescription,
+      detailUrl,
     })
   }
 
   return listings
+}
+
+export const hasOfficialJobDetailSignal = (html = '') => {
+  const page = String(html ?? '')
+  const title = (extractTitle(page) || '').toLowerCase()
+
+  return title.endsWith(' - serene info solutions')
+    && /<link rel="canonical" href="https:\/\/www\.sereneinfosolutions\.in\/job\//i.test(page)
+    && page.includes(APPLICATION_URL)
+    && /Apply Now/i.test(page)
+}
+
+export const extractJobDetail = (html = '', listing = {}) => {
+  const canonicalUrl = normalizeWhitespace(
+    String(html ?? '').match(/<link rel="canonical" href="([^"]+)"/i)?.[1],
+  )
+  const title = normalizeWhitespace(
+    String(html ?? '').match(/<h1[^>]*class=["'][^"']*elementor-heading-title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1],
+  ) || listing.title
+  const detailUrl = canonicalUrl || listing.detailUrl
+  const slug = slugify(detailUrl?.split('/').filter(Boolean).at(-1))
+  const text = normalizeWhitespace(html) || ''
+  const contentStart = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1
+  const bodyText = contentStart >= 0 ? text.slice(contentStart + title.length).trim() : text
+  const locationSummary = normalizeWhitespace(
+    bodyText.match(/^([\s\S]*?)\s+(?:Overview|Responsibilities|Qualifications)\b/i)?.[1],
+  )
+  const description = normalizeWhitespace(
+    bodyText
+      .replace(/\bApply Now\b[\s\S]*$/i, '')
+      .replace(/\bHave a question\?.*$/i, '')
+      .replace(/\bRequest a callback\..*$/i, '')
+      .trim(),
+  )
+
+  if (!title || !detailUrl || !slug) {
+    return null
+  }
+
+  return {
+    slug,
+    title,
+    sourceUrl: detailUrl,
+    applyUrl: APPLICATION_URL,
+    experienceRequired: extractRoleExperience(description),
+    jobDescription: description,
+    locationSummary,
+  }
 }
 
 export const createSereneScraper = ({
@@ -164,13 +213,29 @@ export const createSereneScraper = ({
       throw new Error('The verified Serene jobs page did not expose any public job listings')
     }
 
-    const limitedJobs = maxJobs ? extractedJobs.slice(0, maxJobs) : extractedJobs
+    const detailedJobs = []
+
+    for (const listing of extractedJobs) {
+      const detailHtml = await fetchText(listing.detailUrl)
+      if (!hasOfficialJobDetailSignal(detailHtml)) {
+        throw new Error(`The verified Serene job detail page changed materially: ${listing.detailUrl}`)
+      }
+
+      const detail = extractJobDetail(detailHtml, listing)
+      if (!detail) {
+        throw new Error(`The verified Serene job detail page no longer returns a normalized job: ${listing.detailUrl}`)
+      }
+
+      detailedJobs.push(detail)
+    }
+
+    const limitedJobs = maxJobs ? detailedJobs.slice(0, maxJobs) : detailedJobs
 
     return limitedJobs.map((job) => ({
       title: job.title,
       company: COMPANY_NAME,
       department: null,
-      location: 'India',
+      location: job.locationSummary || 'India',
       city: null,
       country: 'India',
       jobId: job.slug,

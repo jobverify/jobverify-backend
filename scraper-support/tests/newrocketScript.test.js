@@ -13,11 +13,11 @@ const officialHomepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>NewRocket | ServiceNow Partner | Go Beyond Workflows</title>
+    <title>NewRocket | Anthropic and ServiceNow Partner | AI workflows that customers trust</title>
   </head>
   <body>
     <header>
-      <div>Trusted AI - ServiceNow Partner</div>
+      <div>Trusted AI, Anthropic and ServiceNow Partner</div>
       <div>Go Beyond Workflows to Solve Business Problems With the Power of ServiceNow</div>
       <nav>
         <a href="/about">About Us</a>

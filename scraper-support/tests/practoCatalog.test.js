@@ -23,7 +23,7 @@ test('Practo catalog captures the verified July 26, 2026 hidden-and-closed caree
   assert.equal(PRACTO_CATALOG.homepageUrl, 'https://www.practo.com/')
   assert.equal(PRACTO_CATALOG.companyCareerPage, 'https://careers.practo.com/practo/')
   assert.equal(PRACTO_CATALOG.companyDomain, 'practo.com')
-  assert.equal(PRACTO_CATALOG.atsPlatform, 'zwayam-hidden-closed-sentinel')
+  assert.equal(PRACTO_CATALOG.atsPlatform, 'zwayam-no-public-jobs-sentinel')
   assert.equal(PRACTO_CATALOG.countryFilter, 'India')
   assert.equal(
     PRACTO_CATALOG.paginationStrategy,

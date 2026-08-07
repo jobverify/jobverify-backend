@@ -216,6 +216,7 @@ const mergePostingDetail = (job, detail = {}) => ({
     ? detail.requiredSkills
     : job.requiredSkills,
   experienceRequired: detail.experienceRequired ?? job.experienceRequired,
+  publicExperienceChecked: detail.publicExperienceChecked ?? job.publicExperienceChecked ?? false,
   requisitionId: detail.requisitionId ?? job.requisitionId,
 })
 

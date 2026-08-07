@@ -126,6 +126,21 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /Appy Pie Career/i.test(text) && /Current Search/i.test(text)
 }
 
+export const extractOpeningCounts = (html = '') => [...String(html ?? '').matchAll(
+  /<span[^>]*class=["'][^"']*noofjobs[^"']*["'][^>]*>\s*\((\d+)\)\s*<\/span>/gi,
+)]
+  .map((match) => Number.parseInt(match[1], 10))
+  .filter(Number.isFinite)
+
+export const hasVerifiedNoOpeningsSignal = (html = '') => {
+  const text = normalizeWhitespace(html) || ''
+  const counts = extractOpeningCounts(html)
+  return counts.length > 0
+    && counts.every((count) => count === 0)
+    && /\b0\s+Results\b/i.test(text)
+    && /\bNo jobs found\b/i.test(text)
+}
+
 export const extractJobDetailUrls = (html = '') => [...new Set(
   [...String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)]
     .map((match) => toAbsoluteUrl(match[1]))
@@ -201,6 +216,9 @@ export const run = async ({
 
   const detailUrls = extractJobDetailUrls(listingHtml)
   if (detailUrls.length === 0) {
+    if (hasVerifiedNoOpeningsSignal(listingHtml)) {
+      return []
+    }
     throw new Error('Appy Pie verified careers page no longer exposes public role detail URLs')
   }
 

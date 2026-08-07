@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that the official Sapphire Foods careers landing page at https://www.sapphire.terbiumsolutions.com/careers links to live public role pages at https://www.sapphire.terbiumsolutions.com/careers/store-careers and https://www.sapphire.terbiumsolutions.com/careers/corporate-careers. The store careers page publicly listed roles including Assistant Restaurant Manager, while the corporate careers page publicly listed roles including Manager - Treasury ( Finance & Accounts), with visible role titles, brands, locations, vacancies, and Know More links on the verified date.'
+  'Verified on Tuesday, August 4, 2026 that the previously verified Sapphire Foods careers routes on https://www.sapphire.terbiumsolutions.com still belong to the official first-party host but now return the same branded "Page not found" shell for the landing, store, and corporate careers pages. Because the public role inventory is no longer exposed on those official routes as of Tuesday, August 4, 2026, the scraper now treats that consistent branded 404 state as a verified empty condition and returns no jobs.'
 
 export const SAPPHIRE_FOODS_CATALOG = {
   source: 'sapphirefoods',
@@ -21,14 +21,14 @@ export const SAPPHIRE_FOODS_CATALOG = {
   companyDomain: 'sapphirefoods.in',
   atsPlatform: 'official-company-site-public-role-pages',
   countryFilter: 'India',
-  paginationStrategy: 'official-store-and-corporate-pages-no-pagination',
+  paginationStrategy: 'verified-branded-404-empty-state-or-store-and-corporate-pages-no-pagination',
   extractionStrategy:
-    'verified-careers-landing+verified-store-careers-page+verified-corporate-careers-page+role-card-link-extraction',
+    'verified-branded-404-empty-state-or-verified-careers-landing+verified-store-careers-page+verified-corporate-careers-page+role-card-link-extraction',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedSampleStoreRoleTitle: 'Assistant Restaurant Manager',
   verifiedSampleCorporateRoleTitle: 'Manager - Treasury ( Finance & Accounts)',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

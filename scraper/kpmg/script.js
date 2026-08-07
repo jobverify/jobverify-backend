@@ -2,11 +2,13 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 const API_BASE_URL = 'https://ejgk.fa.em2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions'
+export const DETAIL_API_BASE_URL = 'https://ejgk.fa.em2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails'
 const PUBLIC_CAREERS_BASE_URL = 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites'
 const DEFAULT_LOCATION = 'India'
 const DEFAULT_LIMIT = 24
@@ -21,11 +23,31 @@ const REQUEST_HEADERS = {
 const normalizeWhitespace = (value) => {
   if (value == null) return null
   const normalized = String(value)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&ndash;|&#8211;/gi, '-')
+    .replace(/&mdash;|&#8212;/gi, '-')
+    .replace(/&amp;/gi, '&')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
   return normalized || null
 }
+
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|hr)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, ' ')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+:/g, ':'),
+)
 
 const toTitleCase = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -53,7 +75,7 @@ const extractCity = (location) => normalizeLocation(location)?.split(',')[0] || 
 
 const joinDescriptionParts = (...parts) => normalizeWhitespace(
   parts
-    .map((part) => normalizeWhitespace(part))
+    .map((part) => stripTags(part))
     .filter(Boolean)
     .join(' '),
 )
@@ -68,6 +90,14 @@ const getRequisitionList = (payload) => {
   }
 
   return []
+}
+
+const getRequisitionDetail = (payload) => {
+  if (Array.isArray(payload?.items) && payload.items[0]) {
+    return payload.items[0]
+  }
+
+  return payload || {}
 }
 
 const isIndiaJob = (record = {}) => {
@@ -90,12 +120,34 @@ export const buildSearchUrl = ({
 export const buildJobDetailUrl = ({ siteNumber = SITE_NUMBERS[0], jobId }) =>
   `${PUBLIC_CAREERS_BASE_URL}/${siteNumber}/job/${jobId}`
 
+export const buildJobDetailApiUrl = ({ siteNumber = SITE_NUMBERS[0], jobId }) =>
+  `${DETAIL_API_BASE_URL}?expand=all&onlyData=true&finder=ById;Id=%22${normalizeWhitespace(jobId) || ''}%22,siteNumber=${siteNumber}`
+
+const extractExperienceRequired = ({
+  title,
+  minimumQualification,
+  jobDescription,
+}) => (
+  extractJobFilterSignals({
+    title,
+    minimumQualification,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || null
+)
+
 const toJob = (record = {}, { siteNumber = SITE_NUMBERS[0] } = {}) => {
   const jobId = normalizeWhitespace(record.Id)
   const detailUrl = jobId ? buildJobDetailUrl({ siteNumber, jobId }) : null
+  const title = normalizeWhitespace(record.Title)
+  const minimumQualification = normalizeWhitespace(record.StudyLevel || record.ExternalQualificationsStr)
+  const jobDescription = joinDescriptionParts(
+    record.ShortDescriptionStr,
+    record.ExternalResponsibilitiesStr,
+  )
 
   return {
-    title: normalizeWhitespace(record.Title),
+    title,
     company: 'KPMG',
     department: normalizeWhitespace(record.Department || record.JobFunction || record.JobFamily),
     location: normalizeLocation(record.PrimaryLocation),
@@ -105,22 +157,77 @@ const toJob = (record = {}, { siteNumber = SITE_NUMBERS[0] } = {}) => {
     sourceUrl: detailUrl,
     applyUrl: detailUrl,
     employmentType: 'Full-time',
-    experienceRequired: null,
-    minimumQualification: normalizeWhitespace(record.StudyLevel || record.ExternalQualificationsStr),
+    experienceRequired: extractExperienceRequired({
+      title,
+      minimumQualification,
+      jobDescription,
+    }),
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: normalizeWhitespace(record.PostedDate),
     closingDate: normalizeWhitespace(record.PostingEndDate),
-    jobDescription: joinDescriptionParts(
-      record.ShortDescriptionStr,
-      record.ExternalResponsibilitiesStr,
-    ),
+    jobDescription,
   }
 }
 
 export const extractSearchResults = (payload, options = {}) => getRequisitionList(payload)
   .filter((record) => isIndiaJob(record))
   .map((record) => toJob(record, options))
+
+export const extractJobDetail = (payload, listing = {}, { siteNumber = SITE_NUMBERS[0] } = {}) => {
+  const detail = getRequisitionDetail(payload)
+  const title = normalizeWhitespace(detail.Title) || listing.title || null
+  const minimumQualification = normalizeWhitespace(detail.StudyLevel || detail.ExternalQualificationsStr) || listing.minimumQualification || null
+  const jobDescription = joinDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ShortDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ExternalQualificationsStr,
+  ) || listing.jobDescription || null
+  const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
+  const location = normalizeLocation(detail.PrimaryLocation) || listing.location || null
+  const detailUrl = jobId ? buildJobDetailUrl({ siteNumber, jobId }) : listing.sourceUrl || listing.applyUrl || null
+
+  return {
+    title,
+    company: 'KPMG',
+    department: normalizeWhitespace(detail.Department || detail.JobFunction || detail.JobFamily) || listing.department || null,
+    location,
+    city: extractCity(location) || listing.city || null,
+    jobId,
+    requisitionId: jobId || listing.requisitionId || null,
+    sourceUrl: detailUrl,
+    applyUrl: detailUrl,
+    employmentType: normalizeWhitespace(detail.JobSchedule || detail.RequisitionType || detail.JobType || detail.WorkerType || detail.ContractType) || listing.employmentType || 'Full-time',
+    experienceRequired: extractExperienceRequired({
+      title,
+      minimumQualification,
+      jobDescription,
+    }) || listing.experienceRequired || null,
+    minimumQualification,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: normalizeWhitespace(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
+    closingDate: normalizeWhitespace(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
+    jobDescription,
+    publicExperienceChecked: true,
+  }
+}
+
+export const extractPaginationSummary = (payload, { page = 0 } = {}) => {
+  const summary = payload?.items?.[0] || {}
+  const pageSize = Number(summary.Limit) || DEFAULT_LIMIT
+  const totalCount = Number(summary.TotalJobsCount) || 0
+  const nextOffset = (Math.max(0, Number(page) || 0) + 1) * pageSize
+
+  return {
+    hasNext: nextOffset < totalCount,
+    pageSize,
+    nextOffset,
+    totalCount,
+  }
+}
 
 const fetchJson = async (url, fetchImpl = fetch) => {
   const response = await fetchImpl(url, { headers: REQUEST_HEADERS })
@@ -150,10 +257,21 @@ export const createKpmgScraper = ({
           if (seenUrls.has(key)) continue
           seenUrls.add(key)
 
+          let detail = job
+          try {
+            const detailPayload = await fetchJson(buildJobDetailApiUrl({
+              siteNumber,
+              jobId: job.jobId,
+            }), fetchImpl)
+            detail = extractJobDetail(detailPayload, job, { siteNumber })
+          } catch {
+            detail = job
+          }
+
           jobs.push({
-            ...job,
+            ...detail,
             source: 'kpmg',
-            link: job.applyUrl || job.sourceUrl,
+            link: detail.applyUrl || detail.sourceUrl,
             scrapedAt: new Date().toISOString(),
           })
 
@@ -162,11 +280,9 @@ export const createKpmgScraper = ({
           }
         }
 
-        const totalCount = Number(payload?.items?.[0]?.TotalJobsCount)
-        const limit = Number(payload?.items?.[0]?.Limit) || DEFAULT_LIMIT
-        const nextOffset = (page + 1) * limit
+        const summary = extractPaginationSummary(payload, { page })
 
-        if (pageJobs.length < limit || (Number.isFinite(totalCount) && nextOffset >= totalCount)) {
+        if (!summary.hasNext) {
           break
         }
       }

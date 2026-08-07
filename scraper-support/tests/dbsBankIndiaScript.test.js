@@ -222,10 +222,19 @@ test('DBS Bank India run validates the verified first-party handoff and extracts
     },
   })
 
-  assert.deepEqual(requestedPages, [
+  assert.deepEqual(requestedPages.slice(0, 2), [
     dbsBankIndia.CAREERS_URL,
     dbsBankIndia.WORKDAY_BOARD_URL,
   ])
+  assert.deepEqual(
+    requestedPages.slice(2).sort(),
+    [
+      'https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Bye-Pass-Road-Madurai/Personal-Banker_230000FK',
+      'https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Kolkata-DBIL/Associate--Relationship-Manager--Credit-Program-Small--Small-Medium-Enterprises_WD86720',
+      'https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Hyderabad-DBIL/Assistant-Vice-President---Regional-Sales-Manager--Consumer-Banking-Group_WD86755',
+      'https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Regional-Office-Mumbai/Vice-President--Treasures-Private-Client--Consumer-Banking-Group_WD86416',
+    ].sort(),
+  )
   assert.deepEqual(requestedJsonBodies, [
     JSON.parse(dbsBankIndia.buildUnfilteredJobsRequestBody({ offset: 0 })),
     JSON.parse(

@@ -1,13 +1,16 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
+export const SOURCE = 'ltimindtree'
+export const COMPANY = 'LTIMindtree'
 const BASE_URL = 'https://careers.ltimindtree.com'
 const SEARCH_PATH = '/search/?createNewAlert=false&q=&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=India'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -198,60 +201,71 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const fetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
+  attempts: 1,
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+  allowInsecureTlsHosts: [
+    'careers.ltimindtree.com',
+    'careers.ltm.com',
+  ],
+})
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
+export const createLtimindtreeScraper = () => ({
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const listingPage = await fetchPage(buildIndiaSearchUrl())
+    if (listingPage.status !== 200) {
+      throw new Error(`HTTP ${listingPage.status} for ${buildIndiaSearchUrl()}`)
+    }
 
-  return response.text()
-}
+    const listings = extractSearchResults(listingPage.html)
+    const jobs = []
+    const seenJobIds = new Set()
 
-export const run = async () => {
-  const listingHtml = await fetchText(buildIndiaSearchUrl())
-  const listings = extractSearchResults(listingHtml)
-  const jobs = []
-  const seenJobIds = new Set()
+    for (const listing of listings) {
+      if (seenJobIds.has(listing.jobId)) continue
+      seenJobIds.add(listing.jobId)
 
-  for (const listing of listings) {
-    if (seenJobIds.has(listing.jobId)) continue
-    seenJobIds.add(listing.jobId)
+      const detailPage = await fetchPage(listing.sourceUrl)
+      if (detailPage.status !== 200) {
+        throw new Error(`HTTP ${detailPage.status} for ${listing.sourceUrl}`)
+      }
 
-    const detailHtml = await fetchText(listing.sourceUrl)
-    const detail = extractJobDetail(detailHtml, listing)
+      const detail = extractJobDetail(detailPage.html, listing)
 
-    jobs.push({
-      jobId: detail.jobId || listing.jobId,
-      requisitionId: detail.requisitionId || listing.requisitionId,
-      title: detail.title || listing.title,
-      company: 'LTIMindtree',
-      department: null,
-      location: detail.location || listing.location,
-      city: detail.city || listing.city,
-      link: detail.applyUrl || listing.sourceUrl,
-      applyUrl: detail.applyUrl || listing.sourceUrl,
-      sourceUrl: detail.sourceUrl || listing.sourceUrl,
-      source: 'ltimindtree',
-      employmentType: detail.employmentType,
-      experienceRequired: detail.experienceRequired,
-      jobDescription: detail.jobDescription,
-      minimumQualification: detail.minimumQualification,
-      preferredQualification: detail.preferredQualification,
-      requiredSkills: detail.requiredSkills,
-      postingDate: detail.postingDate || listing.postingDate,
-      closingDate: detail.closingDate,
-      scrapedAt: new Date().toISOString(),
-    })
-  }
+      jobs.push({
+        jobId: detail.jobId || listing.jobId,
+        requisitionId: detail.requisitionId || listing.requisitionId,
+        title: detail.title || listing.title,
+        company: COMPANY,
+        department: null,
+        location: detail.location || listing.location,
+        city: detail.city || listing.city,
+        link: detail.applyUrl || listing.sourceUrl,
+        applyUrl: detail.applyUrl || listing.sourceUrl,
+        sourceUrl: detail.sourceUrl || listing.sourceUrl,
+        source: SOURCE,
+        employmentType: detail.employmentType,
+        experienceRequired: detail.experienceRequired,
+        jobDescription: detail.jobDescription,
+        minimumQualification: detail.minimumQualification,
+        preferredQualification: detail.preferredQualification,
+        requiredSkills: detail.requiredSkills,
+        postingDate: detail.postingDate || listing.postingDate,
+        closingDate: detail.closingDate,
+        scrapedAt: new Date().toISOString(),
+      })
+    }
 
-  return jobs
-}
+    return jobs
+  },
+})
+
+export const run = async (options = {}) => createLtimindtreeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
@@ -265,7 +279,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
     console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
   } else {
-    const result = await saveToDB(jobs, 'ltimindtree')
+    const result = await saveToDB(jobs, SOURCE)
     console.log('DB result:', result)
     process.exit(0)
   }

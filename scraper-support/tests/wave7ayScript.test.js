@@ -207,7 +207,7 @@ test('Zebra Technologies verifies the first-party careers handoff and delegates 
   assert.equal(zebra.SOURCE, 'zebratechnologies')
   assert.equal(zebra.COMPANY_NAME, 'Zebra Technologies')
   assert.equal(zebra.OFFICIAL_BRAND_NAME, 'Zebra')
-  assert.equal(zebra.VERIFIED_ON, '2026-07-18')
+  assert.equal(zebra.VERIFIED_ON, '2026-08-01')
   assert.equal(zebra.CAREERS_URL, 'https://www.zebra.com/us/en/about-zebra/careers.html')
   assert.equal(zebra.WORKDAY_BASE_URL, 'https://zebra.wd501.myworkdayjobs.com/Zebra_careers')
   assert.equal(zebra.INDIA_LOCATION_COUNTRY, 'c4f78be1a8f14da0ab49ce1162348a5e')

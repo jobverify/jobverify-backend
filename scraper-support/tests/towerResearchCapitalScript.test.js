@@ -10,6 +10,8 @@ const CAREERS_HTML = `
   <body>
     <section>
       <h1>Build Your Career at Tower</h1>
+      <p>Continuous investment in top trading and engineering talent is our not-so-secret sauce.</p>
+      <p>Explore our open roles and move one step closer to reaching your full potential.</p>
       <a href="https://tower-research.com/roles/">Explore Open Roles</a>
     </section>
   </body>
@@ -43,7 +45,71 @@ const GREENHOUSE_PAYLOAD = {
       requisition_id: 'REQ-7912545',
       content: '&lt;p&gt;Lead automation initiatives across AI operations.&lt;/p&gt;',
       departments: [{ name: 'Core AI and Machine Learning' }],
-      offices: [{ location: 'Gurgaon, Haryana, India' }],
+      offices: [{ location: 'Gurgaon, Haryana, India', name: 'Gurgaon' }],
+    },
+    {
+      id: 16619,
+      title: 'Experienced Quantitative Trader',
+      location: { name: 'Multiple Locations' },
+      absolute_url: 'https://www.tower-research.com/open-positions/?gh_jid=16619',
+      company_name: 'Tower Research Capital',
+      updated_at: '2025-10-13T10:36:21-04:00',
+      requisition_id: '798',
+      content: '&lt;p&gt;Trade globally across Tower&apos;s markets business.&lt;/p&gt;',
+      departments: [{ name: 'Quantitative Research & Trading' }],
+      offices: [
+        { location: 'Amsterdam, Noord-Holland, Netherlands', name: 'Amsterdam' },
+        { location: 'Gurgaon, Haryana, India', name: 'Gurgaon' },
+        { location: 'Singapore', name: 'Singapore' },
+      ],
+    },
+    {
+      id: 8040185,
+      title: 'Senior Associate, Payroll & Benefits',
+      location: { name: 'Hong Kong' },
+      absolute_url: 'https://www.tower-research.com/open-positions/?gh_jid=8040185',
+      company_name: 'Tower Research Capital',
+      updated_at: '2026-06-30T22:40:01-04:00',
+      requisition_id: 'R2592',
+      content: '&lt;p&gt;Hong Kong variant.&lt;/p&gt;',
+      departments: [{ name: 'Human Resources' }],
+      offices: [
+        { location: 'Gurgaon, Haryana, India', name: 'Gurgaon' },
+        { location: 'Hong Kong Island, Hong Kong', name: 'Hong Kong' },
+        { location: 'Singapore', name: 'Singapore' },
+      ],
+    },
+    {
+      id: 8040186,
+      title: 'Senior Associate, Payroll & Benefits',
+      location: { name: 'Gurgaon' },
+      absolute_url: 'https://www.tower-research.com/open-positions/?gh_jid=8040186',
+      company_name: 'Tower Research Capital',
+      updated_at: '2026-06-30T22:40:02-04:00',
+      requisition_id: 'R2592',
+      content: '&lt;p&gt;Gurgaon variant.&lt;/p&gt;',
+      departments: [{ name: 'Human Resources' }],
+      offices: [
+        { location: 'Gurgaon, Haryana, India', name: 'Gurgaon' },
+        { location: 'Hong Kong Island, Hong Kong', name: 'Hong Kong' },
+        { location: 'Singapore', name: 'Singapore' },
+      ],
+    },
+    {
+      id: 8040184,
+      title: 'Senior Associate, Payroll & Benefits',
+      location: { name: 'Singapore' },
+      absolute_url: 'https://www.tower-research.com/open-positions/?gh_jid=8040184',
+      company_name: 'Tower Research Capital',
+      updated_at: '2026-06-30T22:40:00-04:00',
+      requisition_id: 'R2592',
+      content: '&lt;p&gt;Singapore variant.&lt;/p&gt;',
+      departments: [{ name: 'Human Resources' }],
+      offices: [
+        { location: 'Gurgaon, Haryana, India', name: 'Gurgaon' },
+        { location: 'Hong Kong Island, Hong Kong', name: 'Hong Kong' },
+        { location: 'Singapore', name: 'Singapore' },
+      ],
     },
     {
       id: 7704976,
@@ -55,7 +121,7 @@ const GREENHOUSE_PAYLOAD = {
       requisition_id: 'REQ-7704976',
       content: '&lt;p&gt;Canada-only role.&lt;/p&gt;',
       departments: [{ name: 'Information Security and Enterprise Engineering' }],
-      offices: [{ location: 'Montreal, Quebec, Canada' }],
+      offices: [{ location: 'Montreal, Quebec, Canada', name: 'Montreal' }],
     },
   ],
 }
@@ -68,7 +134,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Tower Research Capital verifies the first-party careers pages and extracts India jobs from the Greenhouse payload', async () => {
+test('Tower Research Capital verifies the first-party careers pages and extracts only India-primary or India-inclusive multi-location jobs', async () => {
   const towerResearchCapital = await loadScriptModule()
 
   assert.equal(towerResearchCapital.SOURCE, 'towerresearchcapital')
@@ -92,10 +158,9 @@ test('Tower Research Capital verifies the first-party careers pages and extracts
   )
 
   const jobs = towerResearchCapital.extractIndiaJobsFromGreenhousePayload(GREENHOUSE_PAYLOAD, {
-    scrapedAt: '2026-07-17T00:00:00.000Z',
+    scrapedAt: '2026-08-06T00:00:00.000Z',
   })
 
-  assert.equal(jobs.length, 1)
   assert.deepEqual(
     jobs.map((job) => ({
       title: job.title,
@@ -116,16 +181,42 @@ test('Tower Research Capital verifies the first-party careers pages and extracts
         applyUrl: 'https://www.tower-research.com/open-positions/?gh_jid=7912545',
         department: 'Core AI and Machine Learning',
       },
+      {
+        title: 'Experienced Quantitative Trader',
+        location: 'Gurgaon, Haryana, India',
+        city: 'Gurgaon',
+        country: 'India',
+        link: 'https://www.tower-research.com/open-positions/?gh_jid=16619',
+        applyUrl: 'https://www.tower-research.com/open-positions/?gh_jid=16619',
+        department: 'Quantitative Research & Trading',
+      },
+      {
+        title: 'Senior Associate, Payroll & Benefits',
+        location: 'Gurgaon, Haryana, India',
+        city: 'Gurgaon',
+        country: 'India',
+        link: 'https://www.tower-research.com/open-positions/?gh_jid=8040186',
+        applyUrl: 'https://www.tower-research.com/open-positions/?gh_jid=8040186',
+        department: 'Human Resources',
+      },
     ],
   )
   assert.match(jobs[0].jobDescription, /Lead automation initiatives/i)
+  assert.equal(
+    jobs.some((job) => job.link === 'https://www.tower-research.com/open-positions/?gh_jid=8040185'),
+    false,
+  )
+  assert.equal(
+    jobs.some((job) => job.link === 'https://www.tower-research.com/open-positions/?gh_jid=8040184'),
+    false,
+  )
 })
 
 test('Tower Research Capital run validates the verified first-party pages before fetching the Greenhouse jobs API and fails closed on drift', async () => {
   const towerResearchCapital = await loadScriptModule()
   const requested = []
 
-  const jobs = await towerResearchCapital.createTowerResearchCapitalScraper({ maxJobs: 1 }).run({
+  const jobs = await towerResearchCapital.createTowerResearchCapitalScraper({ maxJobs: 2 }).run({
     fetchText: async (url) => {
       requested.push({ type: 'text', url })
       if (url === towerResearchCapital.CAREERS_URL) return CAREERS_HTML
@@ -136,7 +227,7 @@ test('Tower Research Capital run validates the verified first-party pages before
       requested.push({ type: 'json', url, options })
       return GREENHOUSE_PAYLOAD
     },
-    now: () => '2026-07-17T00:00:00.000Z',
+    now: () => '2026-08-06T00:00:00.000Z',
   })
 
   assert.deepEqual(requested, [
@@ -148,15 +239,19 @@ test('Tower Research Capital run validates the verified first-party pages before
       options: { method: 'GET' },
     },
   ])
-  assert.equal(jobs.length, 1)
+  assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'towerresearchcapital')
   assert.equal(jobs[0].link, 'https://www.tower-research.com/open-positions/?gh_jid=7912545')
+  assert.equal(jobs[1].link, 'https://www.tower-research.com/open-positions/?gh_jid=16619')
 
   await assert.rejects(
     towerResearchCapital.createTowerResearchCapitalScraper().run({
       fetchText: async (url) => {
         if (url === towerResearchCapital.CAREERS_URL) {
-          return CAREERS_HTML.replace('Explore Open Roles', 'Browse Careers')
+          return CAREERS_HTML.replace(
+            'Explore our open roles and move one step closer to reaching your full potential.',
+            'Browse our open roles.',
+          )
         }
         throw new Error(`Unexpected Tower Research Capital fixture URL: ${url}`)
       },

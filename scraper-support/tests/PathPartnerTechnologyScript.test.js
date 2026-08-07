@@ -9,58 +9,230 @@ const loadScriptModule = async () => {
   }
 }
 
-test('PathPartner Technology recognizes the verified blocked fetch state', async () => {
+test('PathPartner Technology recognizes the verified no-public-careers surface', async () => {
   const pathpartner = await loadScriptModule()
 
   assert.equal(pathpartner.SOURCE, 'pathpartnertechnology')
-  assert.equal(pathpartner.CAREERS_URL, 'https://www.pathpartnertech.com/career/')
+  assert.equal(pathpartner.HOMEPAGE_URL, 'https://pathpartnertech.com/')
+  assert.equal(pathpartner.ABOUT_URL, 'https://pathpartnertech.com/about/')
+  assert.equal(pathpartner.PAGE_SITEMAP_URL, 'https://pathpartnertech.com/page-sitemap.xml')
+  assert.equal(pathpartner.CAREERS_URL, 'https://pathpartnertech.com/career/')
+  assert.equal(pathpartner.CAREERS_ALIAS_URL, 'https://pathpartnertech.com/careers/')
+  assert.equal(pathpartner.JOBS_URL, 'https://pathpartnertech.com/jobs/')
   assert.equal(
-    pathpartner.isExpectedBlockedFetchError(new Error('Recv failure: Connection was reset')),
+    pathpartner.hasOfficialHomepageSignal(`
+      <title>Home - Pathpartnertech</title>
+      <main>
+        PathPartner Technology is now a part of KPIT Group
+        Empowering Next-Generation Mobility Solutions
+        About Us
+      </main>
+    `),
     true,
   )
   assert.equal(
-    pathpartner.isExpectedBlockedFetchError(new Error('Could not establish trust relationship for the SSL/TLS secure channel')),
+    pathpartner.hasOfficialAboutPageSignal(`
+      <title>About Us - Pathpartnertech</title>
+      <main>
+        About Us
+        PathPartner provides its clients the advantage of top-of-the-line technologies.
+        OUR MISSION
+        Empowering the Future of Automotive Software
+        Our Journey So Far
+      </main>
+    `),
+    true,
+  )
+  assert.equal(
+    pathpartner.hasExpectedPageSitemapSurface(`
+      <urlset>
+        <url><loc>https://pathpartnertech.com/</loc></url>
+        <url><loc>https://pathpartnertech.com/about/</loc></url>
+      </urlset>
+    `),
+    true,
+  )
+  assert.equal(
+    pathpartner.isVerifiedMissingCareerRoute({
+      status: 404,
+      url: pathpartner.CAREERS_URL,
+      html: '<title>Page not found - Pathpartnertech</title>',
+    }, pathpartner.CAREERS_URL),
     true,
   )
 })
 
-test('PathPartner Technology returns [] only for the verified blocked careers fetch', async () => {
+test('PathPartner Technology returns [] only while the verified first-party surface exposes no public careers routes', async () => {
   const pathpartner = await loadScriptModule()
+  const pages = new Map([
+    [
+      pathpartner.HOMEPAGE_URL,
+      {
+        status: 200,
+        url: pathpartner.HOMEPAGE_URL,
+        html: `
+          <title>Home - Pathpartnertech</title>
+          <main>
+            PathPartner Technology is now a part of KPIT Group
+            Empowering Next-Generation Mobility Solutions
+            About Us
+          </main>
+        `,
+      },
+    ],
+    [
+      pathpartner.ABOUT_URL,
+      {
+        status: 200,
+        url: pathpartner.ABOUT_URL,
+        html: `
+          <title>About Us - Pathpartnertech</title>
+          <main>
+            About Us
+            PathPartner provides its clients the advantage of top-of-the-line technologies.
+            OUR MISSION
+            Empowering the Future of Automotive Software
+            Our Journey So Far
+          </main>
+        `,
+      },
+    ],
+    [
+      pathpartner.PAGE_SITEMAP_URL,
+      {
+        status: 200,
+        url: pathpartner.PAGE_SITEMAP_URL,
+        html: `
+          <urlset>
+            <url><loc>https://pathpartnertech.com/</loc></url>
+            <url><loc>https://pathpartnertech.com/about/</loc></url>
+          </urlset>
+        `,
+      },
+    ],
+    [
+      pathpartner.CAREERS_URL,
+      {
+        status: 404,
+        url: pathpartner.CAREERS_URL,
+        html: '<title>Page not found - Pathpartnertech</title>',
+      },
+    ],
+    [
+      pathpartner.CAREERS_ALIAS_URL,
+      {
+        status: 404,
+        url: pathpartner.CAREERS_ALIAS_URL,
+        html: '<title>Page not found - Pathpartnertech</title>',
+      },
+    ],
+    [
+      pathpartner.JOBS_URL,
+      {
+        status: 404,
+        url: pathpartner.JOBS_URL,
+        html: '<title>Page not found - Pathpartnertech</title>',
+      },
+    ],
+  ])
 
   const jobs = await pathpartner.createPathPartnerTechnologyScraper().run({
-    fetchText: async () => {
-      throw new Error('Recv failure: Connection was reset')
+    fetchPage: async (url) => {
+      const page = pages.get(url)
+      if (!page) {
+        assert.fail(`Unexpected page fetch: ${url}`)
+      }
+      return page
     },
   })
 
   assert.deepEqual(jobs, [])
 })
 
-test('PathPartner Technology fails closed when the fetch behavior changes', async () => {
+test('PathPartner Technology fails closed when a checked first-party route starts exposing public job listings', async () => {
   const pathpartner = await loadScriptModule()
+  const pages = new Map([
+    [
+      pathpartner.HOMEPAGE_URL,
+      {
+        status: 200,
+        url: pathpartner.HOMEPAGE_URL,
+        html: `
+          <title>Home - Pathpartnertech</title>
+          <main>
+            PathPartner Technology is now a part of KPIT Group
+            Empowering Next-Generation Mobility Solutions
+            About Us
+          </main>
+        `,
+      },
+    ],
+    [
+      pathpartner.ABOUT_URL,
+      {
+        status: 200,
+        url: pathpartner.ABOUT_URL,
+        html: `
+          <title>About Us - Pathpartnertech</title>
+          <main>
+            About Us
+            PathPartner provides its clients the advantage of top-of-the-line technologies.
+            OUR MISSION
+            Empowering the Future of Automotive Software
+            Our Journey So Far
+          </main>
+        `,
+      },
+    ],
+    [
+      pathpartner.PAGE_SITEMAP_URL,
+      {
+        status: 200,
+        url: pathpartner.PAGE_SITEMAP_URL,
+        html: `
+          <urlset>
+            <url><loc>https://pathpartnertech.com/</loc></url>
+            <url><loc>https://pathpartnertech.com/about/</loc></url>
+          </urlset>
+        `,
+      },
+    ],
+    [
+      pathpartner.CAREERS_URL,
+      {
+        status: 404,
+        url: pathpartner.CAREERS_URL,
+        html: '<title>Page not found - Pathpartnertech</title>',
+      },
+    ],
+    [
+      pathpartner.CAREERS_ALIAS_URL,
+      {
+        status: 404,
+        url: pathpartner.CAREERS_ALIAS_URL,
+        html: '<title>Page not found - Pathpartnertech</title>',
+      },
+    ],
+    [
+      pathpartner.JOBS_URL,
+      {
+        status: 200,
+        url: pathpartner.JOBS_URL,
+        html: '<title>Jobs - Pathpartnertech</title><main>Current Openings Apply Now</main>',
+      },
+    ],
+  ])
 
   await assert.rejects(
     pathpartner.createPathPartnerTechnologyScraper().run({
-      fetchText: async () => '<html><body>reachable now</body></html>',
+      fetchPage: async (url) => {
+        const page = pages.get(url)
+        if (!page) {
+          assert.fail(`Unexpected page fetch: ${url}`)
+        }
+        return page
+      },
     }),
-    /became publicly fetchable/i,
+    /verified no-public-careers route changed/i,
   )
-})
-
-test('PathPartner Technology can recover with browser-backed verification when direct requests fail generically', async () => {
-  const pathpartner = await loadScriptModule()
-  const browserUrls = []
-
-  const jobs = await pathpartner.createPathPartnerTechnologyScraper().run({
-    fetchText: async () => {
-      throw new TypeError('fetch failed')
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-      throw new Error('Could not establish trust relationship for the SSL/TLS secure channel')
-    },
-  })
-
-  assert.deepEqual(browserUrls, [pathpartner.CAREERS_URL])
-  assert.deepEqual(jobs, [])
 })

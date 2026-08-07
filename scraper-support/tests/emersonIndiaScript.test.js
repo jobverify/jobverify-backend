@@ -13,11 +13,13 @@ const officialCareersHtml = `
       <h1>Careers at Emerson</h1>
       <p>Let’s Go… and change the world</p>
       <p>We want you to join us in our bold aspiration to make the world healthier, safer, smarter and more sustainable.</p>
-      <a href="https://hdjq.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs">
-        Let's Find Your Role
+      <a href="https://hdjq.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs" target="_blank" rel="noopener noreferrer">
+        <button type="button">
+          <span>Let's Find Your Role</span>
+        </button>
       </a>
-      <a href="https://hdjq.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1">
-        Explore All Opportunities
+      <a href="/en/corporate/careers/career-opportunities" title="Explore All Opportunities">
+        <p>Explore All Opportunities</p>
       </a>
     </main>
   </body>
@@ -216,6 +218,7 @@ test('extractSearchResults and extractJobDetail normalize Emerson India requisit
       'Job Summary: We are seeking an experienced FP&A professional to join our finance team. In this Role, Your Responsibilities Will Be: Lead preparation of annual budgets, quarterly forecasts, and long-term financial models. Collaborate with business units to understand assumptions and key drivers of financial performance.',
     remoteStatus: null,
     siteNumber: 'CX_1',
+    publicExperienceChecked: true,
   })
 })
 
@@ -258,6 +261,7 @@ test('run verifies the first-party careers handoff before calling the public Ora
     'https://hdjq.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/26002023',
   )
   assert.equal(jobs[0].scrapedAt, '2026-07-15T00:00:00.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run fails closed when the verified Emerson careers page or Oracle shell drifts materially', async () => {
@@ -267,7 +271,10 @@ test('run fails closed when the verified Emerson careers page or Oracle shell dr
     emerson.createEmersonIndiaScraper({
       fetchText: async (url) => {
         if (url === emerson.CAREERS_URL) {
-          return officialCareersHtml.replace('Explore All Opportunities', 'Browse Roles')
+          return officialCareersHtml.replace(
+            '/en/corporate/careers/career-opportunities',
+            '/en/corporate/careers/growth-opportunities',
+          )
         }
         throw new Error(`Unexpected text URL: ${url}`)
       },

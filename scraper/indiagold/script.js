@@ -1,26 +1,28 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { INDIAGOLD_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const SOURCE = 'indiagold'
-export const COMPANY = 'Indiagold'
-export const VERIFIED_ON = '2026-07-16'
-export const HOMEPAGE_URL = 'https://indiagold.co/'
-export const CAREERS_PAGE_URL = 'https://indiagold.co/join-us'
-export const CAREERS_API_URL =
-  'https://indiagold.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite&extra_fields=%5B%22State%22%2C%22Salary%22%2C%22Industry%22%5D'
-export const GENERAL_APPLICATION_FORM_URL =
-  'https://indiagold.zohorecruit.in/forms/38b7f90a5d50181c7e90b5fb206f7906c671dc7d5b1e459876d880446809e996'
-export const PROVIDER_METADATA = {
-  source: SOURCE,
-  companyCareerPage: CAREERS_PAGE_URL,
-}
+export const SOURCE = INDIAGOLD_CATALOG.source
+export const COMPANY = INDIAGOLD_CATALOG.companyName
+export const VERIFIED_ON = INDIAGOLD_CATALOG.verifiedOn
+export const HOMEPAGE_URL = INDIAGOLD_CATALOG.homepageUrl
+export const CAREERS_PAGE_URL = INDIAGOLD_CATALOG.companyCareerPage
+export const CAREERS_API_URL = INDIAGOLD_CATALOG.careersApiUrl
+export const CAREERS_PORTAL_URL = 'https://indiagold.zohorecruit.in/jobs/Careers'
+export const GENERAL_APPLICATION_FORM_URL = INDIAGOLD_CATALOG.generalApplicationFormUrl
+export const PROVIDER_METADATA = INDIAGOLD_CATALOG
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const decodeHtmlEntities = (value) =>
   String(value ?? '')
@@ -64,8 +66,8 @@ export const hasOfficialCareersPageSignal = (html) => {
 
   return /<title>\s*indiagold\s*-\s*join us\s*<\/title>/i.test(page)
     && /SEE ALL POSITIONS/i.test(page)
-    && /careers@indiagold\.co/i.test(page)
-    && /seeAllPosition|Open Opportunities/i.test(page)
+    && /Great Places to Work Certified/i.test(page)
+    && /\bJoin Us\b/i.test(page)
 }
 
 export const extractIndiaJobs = (payload) =>
@@ -119,6 +121,7 @@ const defaultFetchText = (url) =>
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    attempts: 1,
     label: SOURCE,
     timeoutMs: 15000,
   })
@@ -129,6 +132,7 @@ const defaultFetchJson = (url) =>
       'User-Agent': USER_AGENT,
       Accept: 'application/json,text/plain,*/*',
     },
+    attempts: 1,
     label: SOURCE,
     timeoutMs: 15000,
   })
@@ -137,31 +141,101 @@ export const createIndiagoldScraper = ({ maxJobs = null } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersPageSignal(careersPageHtml)) {
-      throw new Error('Response is not the verified official Indiagold careers page')
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          settleTimeMs: 4000,
+        })
+      }
+
+      return browserSession
     }
 
-    const payload = await fetchJson(CAREERS_API_URL)
-    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
-      throw new Error('Indiagold public jobs API no longer returns the verified success payload')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+
+      if (![200, 304].includes(page.status)) {
+        throw new Error(`HTTP ${page.status} for ${url}`)
+      }
+
+      return page.html
+    })
+
+    const browserJsonFetcher = fetchBrowserJson || (async (url, landingUrl = CAREERS_PORTAL_URL) => {
+      const session = await getBrowserSession()
+      return session.fetchJson(url, {
+        landingUrl,
+        headers: {
+          Accept: 'application/json,text/plain,*/*',
+        },
+      })
+    })
+
+    const fetchTextWithBrowserFallback = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const jobs = extractIndiaJobs(payload)
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const fetchJsonWithBrowserFallback = async (url, landingUrl = CAREERS_PORTAL_URL) => {
+      try {
+        return await fetchJson(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+        return browserJsonFetcher(url, landingUrl)
+      }
+    }
+
+    const shouldPreferBrowserJson = fetchJson === defaultFetchJson
+
+    try {
+      const careersPageHtml = await fetchTextWithBrowserFallback(CAREERS_PAGE_URL)
+      if (!hasOfficialCareersPageSignal(careersPageHtml)) {
+        throw new Error('Response is not the verified official Indiagold careers page')
+      }
+
+      const payload = shouldPreferBrowserJson
+        ? await browserJsonFetcher(CAREERS_API_URL, CAREERS_PORTAL_URL)
+        : await fetchJsonWithBrowserFallback(CAREERS_API_URL)
+      if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
+        throw new Error('Indiagold public jobs API no longer returns the verified success payload')
+      }
+
+      const jobs = extractIndiaJobs(payload)
+      const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 
-export const run = async () => createIndiagoldScraper().run()
+export const run = async (options = {}) => createIndiagoldScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

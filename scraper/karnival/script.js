@@ -60,8 +60,18 @@ export const extractSitemapUrls = (xml) => {
   return [...matches].map((match) => match[1].trim())
 }
 
+const normalizeSitemapUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? '').trim())
+    const pathname = url.pathname.replace(/\/+$/, '') || '/'
+    return `${url.origin}${pathname}`
+  } catch {
+    return String(value ?? '').trim().replace(/\/+$/, '')
+  }
+}
+
 export const hasVerifiedSitemapSignal = (xml) => {
-  const urls = extractSitemapUrls(xml)
+  const urls = extractSitemapUrls(xml).map(normalizeSitemapUrl)
   const expectedUrls = [
     'https://www.karnival.com/',
     'https://www.karnival.com/contact',

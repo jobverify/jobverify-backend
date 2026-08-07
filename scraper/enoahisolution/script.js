@@ -54,12 +54,11 @@ export const hasZeroOpeningsSignal = (html = '') => {
 }
 
 export const hasTrustworthyPublicJobsSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = normalizeWhitespace(page).toLowerCase()
+  const text = normalizeWhitespace(html).toLowerCase()
 
   return /\bapply now\b/.test(text)
-    || /class=["'][^"']*job[_-]listing/i.test(page)
-    || /class=["'][^"']*job-card/i.test(page)
+    || /\bread more\b/.test(text)
+    || (/\bexperience\b/.test(text) && /\bcurrent job opportunities\b/.test(text) && !/\bno job openings\b/.test(text))
 }
 
 export const createENoahISolutionScraper = () => ({

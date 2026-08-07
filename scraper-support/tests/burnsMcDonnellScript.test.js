@@ -103,6 +103,7 @@ test('mapBurnsJob converts Jobsyn India results into shared scraper fields', asy
     postingDate: '2026-06-30T12:33:06Z',
     closingDate: null,
     jobDescription: '**Description** Lead project controls delivery for engineering programs.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
 })
@@ -140,5 +141,8 @@ test('run paginates across the Burns & McDonnell India Jobsyn feed', async () =>
   assert.equal(jobs[0].link, 'https://burnsmcd.jobs/mumbai-ind/project-controls-engineer-ens-contract/0010E69A037C405785F92A99FD4560E7/job/')
   assert.equal(jobs[1].requisitionId, '263067')
   assert.equal(jobs[2].city, 'Bengaluru')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[1].publicExperienceChecked, true)
+  assert.equal(jobs[2].publicExperienceChecked, true)
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

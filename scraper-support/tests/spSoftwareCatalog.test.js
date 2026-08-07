@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('SP Software local catalog captures the verified first-party Angular careers bundle contract', async () => {
+test('SP Software local catalog captures the verified first-party SPA shell and careers bundle contract', async () => {
   const { SP_SOFTWARE_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(SP_SOFTWARE_CATALOG)
 
@@ -34,10 +34,12 @@ test('SP Software local catalog captures the verified first-party Angular career
     provider.extractionStrategy,
     'verified-first-party-careers-route+compiled-angular-careers-bundle',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.companyDomain, 'spsoftglobal.com')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /runtime\.js/i)
+  assert.match(provider.verifiedSurfaceSummary, /main\.js/i)
   assert.match(provider.verifiedSurfaceSummary, /Java Developer/i)
   assert.match(provider.verifiedSurfaceSummary, /\.NET Developer/i)
 })

@@ -51,7 +51,7 @@ test('Expleo catalog captures the verified first-party careers page and India iC
   )
   assert.equal(EXPLEO_CATALOG.parser, 'custom-script')
   assert.equal(EXPLEO_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(EXPLEO_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(EXPLEO_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(EXPLEO_CATALOG.modulePath, expleoModulePath)
   assert.match(EXPLEO_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.expleo\.com\/en\//i)
   assert.match(EXPLEO_CATALOG.verifiedSurfaceSummary, /https:\/\/expleo-jobs-in-en\.icims\.com\//i)

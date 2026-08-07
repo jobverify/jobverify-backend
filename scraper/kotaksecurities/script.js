@@ -24,12 +24,14 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const DARWINBOX_PAGE_SIZE = 100
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
   source: SOURCE,
   companyId: DARWINBOX_COMPANY_ID,
   origin: DARWINBOX_ORIGIN,
+  pageSize: DARWINBOX_PAGE_SIZE,
 })
 
 const normalizeWhitespace = (value) => {

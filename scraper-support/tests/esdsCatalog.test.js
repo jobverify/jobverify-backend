@@ -24,7 +24,7 @@ const loadEsdsModule = async () => {
   }
 }
 
-test('ESDS local catalog captures the verified first-party careers and detail surface', async () => {
+test('ESDS local catalog captures the verified first-party careers page plus Darwinbox portal handoff', async () => {
   const { ESDS_CATALOG } = await loadCatalogModule()
   const esds = await loadEsdsModule()
 
@@ -36,6 +36,16 @@ test('ESDS local catalog captures the verified first-party careers and detail su
   assert.equal(ESDS_CATALOG.officialCareersLandingUrl, 'https://www.esds.co.in/careers/')
   assert.equal(ESDS_CATALOG.companyCareerPage, 'https://www.esds.co.in/careers/')
   assert.equal(
+    ESDS_CATALOG.officialCareersHandoffUrl,
+    'https://esds.darwinbox.in/ms/candidatev2/main/careers/home',
+  )
+  assert.equal(ESDS_CATALOG.darwinboxOrigin, 'https://esds.darwinbox.in')
+  assert.equal(ESDS_CATALOG.darwinboxCompanyId, 'main')
+  assert.equal(
+    ESDS_CATALOG.publicAllJobsUrl,
+    'https://esds.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
+  assert.equal(
     ESDS_CATALOG.officialJobDetailExampleUrl,
     'https://www.esds.co.in/career-details/a688746f77752a',
   )
@@ -43,34 +53,41 @@ test('ESDS local catalog captures the verified first-party careers and detail su
     ESDS_CATALOG.darwinboxApplyHandoffUrlExample,
     'https://esds.darwinbox.in/ms/candidate/candidate/login?redirect=%2Fms%2Fcandidate%2Fcareers%2Fa688746f77752a___apply%3D1',
   )
-  assert.equal(ESDS_CATALOG.atsPlatform, 'first-party-careers-page-plus-darwinbox-apply-handoff')
+  assert.equal(ESDS_CATALOG.atsPlatform, 'darwinbox')
   assert.equal(ESDS_CATALOG.countryFilter, 'India')
-  assert.equal(ESDS_CATALOG.paginationStrategy, 'single-first-party-careers-page-html')
+  assert.equal(
+    ESDS_CATALOG.paginationStrategy,
+    'verified-first-party-careers-page-plus-darwinbox-browser-session-pagination',
+  )
   assert.equal(
     ESDS_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page-html+first-party-job-detail-html+darwinbox-apply-handoff',
+    'verified-first-party-careers-page-html+darwinbox-browser-session-listing-api+job-id-intersection',
   )
   assert.equal(ESDS_CATALOG.parser, 'custom-script')
   assert.equal(ESDS_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(ESDS_CATALOG.companyDomain, 'esds.co.in')
-  assert.equal(ESDS_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(ESDS_CATALOG.verifiedOn, '2026-08-02')
   assert.match(ESDS_CATALOG.dryRunFile, /esds[\\/]jobs\.json$/i)
   assert.equal(ESDS_CATALOG.modulePath, esdsModulePath)
   assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.esds\.co\.in\/careers\//i)
   assert.match(
     ESDS_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/www\.esds\.co\.in\/career-details\/a688746f77752a/i,
+    /https:\/\/esds\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/allJobs/i,
   )
   assert.match(
     ESDS_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/esds\.darwinbox\.in\/ms\/candidate\/candidate\/login\?redirect=/i,
+    /https:\/\/www\.esds\.co\.in\/career-details\/a688746f77752a/i,
   )
-  assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /Head of Engineering/i)
-  assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /Python Engineer/i)
+  assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /Data Center Project Manager/i)
+  assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /Compliance Specialist/i)
 
   assert.equal(esds.PROVIDER_METADATA.source, ESDS_CATALOG.source)
   assert.equal(esds.PROVIDER_METADATA.companyName, ESDS_CATALOG.companyName)
   assert.equal(esds.PROVIDER_METADATA.companyCareerPage, ESDS_CATALOG.companyCareerPage)
+  assert.equal(
+    esds.PROVIDER_METADATA.officialCareersHandoffUrl,
+    ESDS_CATALOG.officialCareersHandoffUrl,
+  )
   assert.equal(
     esds.PROVIDER_METADATA.officialJobDetailExampleUrl,
     ESDS_CATALOG.officialJobDetailExampleUrl,

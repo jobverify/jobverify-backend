@@ -55,7 +55,6 @@ const VERIFIED_BOARD_HTML = `
         <p>New York City, NY</p>
       </li>
     </ul>
-    <p>Powered by JazzHR</p>
   </body>
 </html>
 `
@@ -63,6 +62,9 @@ const VERIFIED_BOARD_HTML = `
 const VERIFIED_DETAIL_HTML = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Director of Partnerships - Brij - Career Page</title>
+  </head>
   <body>
     <main>
       <h1>Director of Partnerships</h1>
@@ -75,7 +77,6 @@ const VERIFIED_DETAIL_HTML = `
         every unknown shopper into a known customer.
       </p>
       <p>Apply for this position</p>
-      <p>Powered by JazzHR</p>
     </main>
   </body>
 </html>
@@ -96,7 +97,7 @@ test('Brij helper signals stay pinned to the verified first-party careers page a
 
   assert.equal(brij.SOURCE, 'brij')
   assert.equal(brij.COMPANY, 'Brij')
-  assert.equal(brij.VERIFIED_ON, '2026-07-30')
+  assert.equal(brij.VERIFIED_ON, '2026-08-01')
   assert.equal(brij.CAREERS_URL, 'https://brij.ai/careers')
   assert.equal(brij.BOARD_URL, 'https://brij.applytojob.com/apply')
   assert.equal(brij.hasOfficialCareersSignal(VERIFIED_CAREERS_HTML), true)

@@ -1,3 +1,6 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 export const SOURCE = 'scapic'
 export const COMPANY = 'Scapic'
 export const OFFICIAL_BRAND = 'Scapic'
@@ -6,11 +9,17 @@ export const DISPOSITION = 'verified-parent-careers-surface-acquisition-context-
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://www.flipkartcareers.com/jobslist was the live parent-company careers surface reviewed for Scapic after its Flipkart acquisition. This batch only pins the exact workbook name to the verified public company surface, and no batch-04 company-specific openings parser has been promoted for the acquired brand context yet, so the provider remains fail-closed and returns no jobs until a verifiable public openings flow is implemented.'
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 const TITLE_PARENT_SURFACE_PATTERN =
   /<title[^>]*>[\s\S]*\bflipkart\b[\s\S]*\bcareers?\b[\s\S]*<\/title>/i
 const CANONICAL_SURFACE_PATTERN =
   /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/www\.flipkartcareers\.com\/jobslist\/?["'][^>]*>/i
 const REQUIRED_TEXT_PATTERNS = [/\bflipkart\b/i, /\bcareers?\b/i]
+const CURRENT_PARENT_SURFACE_PATTERNS = [
+  /\bexplore for opportunities here\b/i,
+  /\bcurrent openings\b/i,
+]
 const SCAPIC_SIGNAL_PATTERN = /\bscapic\b/i
 
 const normalizeText = (value = '') =>
@@ -66,8 +75,11 @@ export const hasVerifiedParentCareersSurface = (html = '') => {
   const text = normalizeText(rawHtml)
 
   return TITLE_PARENT_SURFACE_PATTERN.test(rawHtml)
-    && CANONICAL_SURFACE_PATTERN.test(rawHtml)
     && REQUIRED_TEXT_PATTERNS.every((pattern) => pattern.test(text))
+    && (
+      CANONICAL_SURFACE_PATTERN.test(rawHtml)
+      || CURRENT_PARENT_SURFACE_PATTERNS.every((pattern) => pattern.test(text))
+    )
 }
 
 export const detectScapicSpecificSignal = (html = '', pageUrl = CAREERS_URL) => {
@@ -110,6 +122,25 @@ export const createScapicScraper = ({ careersUrl = CAREERS_URL } = {}) => ({
 
 export const run = async (options = {}) => createScapicScraper().run(options)
 
+export const runStandalone = async ({
+  argv = process.argv,
+  runScraper = run,
+  saveToFileImpl,
+  saveToDbImpl,
+} = {}) => {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = argv.includes('--dry-run')
+  const jobs = await runScraper()
+
+  if (isDryRun) {
+    ;(saveToFileImpl || saveToFile)(jobs, path.join(currentDir, 'jobs.json'))
+    return jobs
+  }
+
+  await (saveToDbImpl || saveToDB)(jobs, SOURCE)
+  return jobs
+}
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -125,4 +156,8 @@ const defaultFetchPage = async (url) => {
     url: response.url,
     html: await response.text(),
   }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await runStandalone()
 }

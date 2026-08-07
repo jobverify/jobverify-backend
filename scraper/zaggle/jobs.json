@@ -1,0 +1,137 @@
+[
+  {
+    "title": "Engineering Manager",
+    "company": "Zaggle",
+    "location": "Hyderabad",
+    "city": "Hyderabad",
+    "country": "India",
+    "link": "https://www.linkedin.com/jobs/view/4439129675/",
+    "applyUrl": "https://www.linkedin.com/jobs/view/4439129675/",
+    "sourceUrl": "https://www.zaggle.in/careers",
+    "source": "zaggle",
+    "companyCareerPage": "https://www.zaggle.in/careers",
+    "companyDomain": "zaggle.in",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Engineering Manager",
+    "normalizedTitle": "Engineering Manager",
+    "jobCategory": "Engineering Manager",
+    "engineeringDomain": "Cloud",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "department": null,
+    "jobDescription": "Job Description Job Title: Engineering Manager Location: Hyderabad Zaggle is a leading B2B2C Saa S Fin Tech company transforming enterprise spend management through intelligent automation and payment innovation. As one of India's few profitable and publicly listed new-age companies (NSE: ZAGGLE), Zaggle enables organizations to digitize and streamline employee expenses, benefits, rewards, vendor payments, and channel incentives through a unified software and payments platform. Our solutions are trusted by leading enterprises across BFSI, Technology, Healthcare, Manufacturing, FMCG, Infrastructure, and Automotive, including TATA Steel, Persistent Systems, Toshiba, Inox, Wockhardt, and Greenply. Zaggle also partners with leading banking institutions such as Kotak Mahindra Bank, ICICI Bank, SBI Cards, Yes Bank, and Indus Ind Bank to offer multiple payment instruments including corporate cards, virtual cards, and prepaid cards. As we continue to expand our Zoyer Procure-to-Pay (P2P) platform, we are looking for an Implementation Project Manager to drive successful customer implementations and ensure seamless onboarding of enterprise clients. Visit us at www.zaggle.in to know more about us! Role Overview: We are seeking an experienced Engineering Manager to lead and grow high-performing engineering teams building secure, scalable, and reliable Saa S products for the fintech domain. The role combines technical leadership, people management, and delivery ownership to ensure successful product execution and continuous improvement. Key\n\nRESPONSIBILITIES:\nLead, mentor, and develop engineering teams, fostering a culture of ownership and collaboration. Drive the design, development, and delivery of scalable, secure, and high-quality software. Partner with Product, Design, QA, Dev Ops, and other stakeholders to deliver business priorities. Own sprint planning, execution, release management, and engineering delivery metrics. Promote engineering best practices, code quality, CI/CD, Dev Ops, and automation. Ensure platform reliability, performance, security, and compliance with applicable fintech standards. Support hiring, performance management, and career development of team members. Drive continuous improvement through process optimization and technical innovation. Experience &\n\nQUALIFICATIONS:\nBachelor’s degree in computer science, Engineering, or a related field. 10+ years of software engineering experience, including 3+ years in an engineering leadership role. Experience building and scaling Saa S products, preferably in the fintech domain. Strong understanding of cloud platforms (AWS, Azure, or GCP), microservices, APIs, and modern software development practices. Programming languages and frameworks such as Java, Springboot. Experience with Agile methodologies, CI/CD pipelines, and Dev Ops practices. Excellent leadership, communication, stakeholder management, and problem-solving skills. Success Measures: Timely delivery of high-quality software. High team engagement and engineering productivity. Strong platform reliability, security, and operational excellence. Continuous improvement in engineering processes and customer outcomes. Apply Now Implementation Sales Help us Redefine the Fin Tech Industry Apply Now Solutions Procure To Pay Cards & Payments Employee Benefits Tax Solutions Business Recurring Expenses Employee Travel & Expenses Channel Partner Rewards Fleet Management Employee Purchase Program By Functions Finance Human Resources Sales & Marketing Operations & Admin Partnerships Zaggle Ecosystem Tax Spanner 86400 (Formerly Mobileware Technologies Pvt. Ltd.) Retail Credit Cards Cards Prepaid Cards Commercial Credit Cards Retail Credit Cards Closed Loop Cards Forex Services Resources Knowledge Hub Case Studies Company About Zaggle Contact Us Careers Trust Center FAQ&#x27;s Investor Relations By Company Size Mid Sized Companies Enterprises Support Contact Back To Top Phone Number 1860 500 1231 Email [email&#160;protected] Monday to Saturday, 10 AM to 7 PM Grievance Policy Refund Policy Privacy Policy Terms and Conditions © Zaggle 2026\n- All Rights Reserved",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "10+ years",
+    "salary": null,
+    "jobId": null,
+    "requisitionId": null,
+    "postedAt": "2026-08-01T15:45:46.805Z",
+    "postingDate": "2026-08-01T15:45:46.805Z",
+    "closingDate": null,
+    "scrapedAt": "2026-08-01T15:45:46.805Z",
+    "scrapedTimestamp": "2026-08-01T15:45:46.805Z",
+    "skillIds": [
+      "aws",
+      "azure",
+      "gcp",
+      "java",
+      "spring-boot"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Springboot"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "10+ years",
+      "minimumYears": 10,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10+ years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T23:19:46.626Z",
+    "description": "Job Description Job Title: Engineering Manager Location: Hyderabad Zaggle is a leading B2B2C Saa S Fin Tech company transforming enterprise spend management through intelligent automation and payment innovation. As one of India's few profitable and publicly listed new-age companies (NSE: ZAGGLE), Zaggle enables organizations to digitize and streamline employee expenses, benefits, rewards, vendor payments, and channel incentives through a unified software and payments platform. Our solutions are trusted by leading enterprises across BFSI, Technology, Healthcare, Manufacturing, FMCG, Infrastructure, and Automotive, including TATA Steel, Persistent Systems, Toshiba, Inox, Wockhardt, and Greenply. Zaggle also partners with leading banking institutions such as Kotak Mahindra Bank, ICICI Bank, SBI Cards, Yes Bank, and Indus Ind Bank to offer multiple payment instruments including corporate cards, virtual cards, and prepaid cards. As we continue to expand our Zoyer Procure-to-Pay (P2P) platform, we are looking for an Implementation Project Manager to drive successful customer implementations and ensure seamless onboarding of enterprise clients. Visit us at www.zaggle.in to know more about us! Role Overview: We are seeking an experienced Engineering Manager to lead and grow high-performing engineering teams building secure, scalable, and reliable Saa S products for the fintech domain. The role combines technical leadership, people management, and delivery ownership to ensure successful product execution and continuous improvement. Key\n\nRESPONSIBILITIES:\nLead, mentor, and develop engineering teams, fostering a culture of ownership and collaboration. Drive the design, development, and delivery of scalable, secure, and high-quality software. Partner with Product, Design, QA, Dev Ops, and other stakeholders to deliver business priorities. Own sprint planning, execution, release management, and engineering delivery metrics. Promote engineering best practices, code quality, CI/CD, Dev Ops, and automation. Ensure platform reliability, performance, security, and compliance with applicable fintech standards. Support hiring, performance management, and career development of team members. Drive continuous improvement through process optimization and technical innovation. Experience &\n\nQUALIFICATIONS:\nBachelor’s degree in computer science, Engineering, or a related field. 10+ years of software engineering experience, including 3+ years in an engineering leadership role. Experience building and scaling Saa S products, preferably in the fintech domain. Strong understanding of cloud platforms (AWS, Azure, or GCP), microservices, APIs, and modern software development practices. Programming languages and frameworks such as Java, Springboot. Experience with Agile methodologies, CI/CD pipelines, and Dev Ops practices. Excellent leadership, communication, stakeholder management, and problem-solving skills. Success Measures: Timely delivery of high-quality software. High team engagement and engineering productivity. Strong platform reliability, security, and operational excellence. Continuous improvement in engineering processes and customer outcomes. Apply Now Implementation Sales Help us Redefine the Fin Tech Industry Apply Now Solutions Procure To Pay Cards & Payments Employee Benefits Tax Solutions Business Recurring Expenses Employee Travel & Expenses Channel Partner Rewards Fleet Management Employee Purchase Program By Functions Finance Human Resources Sales & Marketing Operations & Admin Partnerships Zaggle Ecosystem Tax Spanner 86400 (Formerly Mobileware Technologies Pvt. Ltd.) Retail Credit Cards Cards Prepaid Cards Commercial Credit Cards Retail Credit Cards Closed Loop Cards Forex Services Resources Knowledge Hub Case Studies Company About Zaggle Contact Us Careers Trust Center FAQ&#x27;s Investor Relations By Company Size Mid Sized Companies Enterprises Support Contact Back To Top Phone Number 1860 500 1231 Email [email&#160;protected] Monday to Saturday, 10 AM to 7 PM Grievance Policy Refund Policy Privacy Policy Terms and Conditions © Zaggle 2026\n- All Rights Reserved",
+    "publicExperienceChecked": true
+  }
+]

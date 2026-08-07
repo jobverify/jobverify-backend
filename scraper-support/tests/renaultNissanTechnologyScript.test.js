@@ -13,7 +13,7 @@ const loadRenaultNissanTechnologyModule = async () => {
 
 const readJsonFixture = (name) => JSON.parse(
   fs.readFileSync(
-    path.join(process.cwd(), 'scraper', 'tests', 'fixtures', 'renaultnissantechnology', name),
+    path.join(process.cwd(), 'scraper-support', 'tests', 'fixtures', 'renaultnissantechnology', name),
     'utf8',
   ),
 )
@@ -38,6 +38,7 @@ test('extractSearchResults keeps only India jobs from the verified RNTBCI public
       applyUrl: 'https://alliancewd.wd3.myworkdayjobs.com/renault-group-careers/job/Chennai/Data-Governance-Leader--Deputy-Manager-_JOBREQ_50237852-1',
       employmentType: 'Full-time',
       experienceRequired: null,
+      publicExperienceChecked: true,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [
@@ -63,6 +64,7 @@ test('extractSearchResults keeps only India jobs from the verified RNTBCI public
       applyUrl: 'https://alliancewd.wd3.myworkdayjobs.com/renault-group-careers/job/Chennai/Cloud-Support-Engineer----Level-3--Senior-Engineer-_JOBREQ_50242089',
       employmentType: 'Full-time',
       experienceRequired: null,
+      publicExperienceChecked: true,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [

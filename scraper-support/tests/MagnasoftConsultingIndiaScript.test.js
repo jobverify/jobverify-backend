@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+const CAREERS_URL = 'https://www.magnasoft.com/careers/'
+const JOBS_BOARD_URL = 'https://magnasoft.zohorecruit.in/jobs/Careers'
+
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -8,35 +11,36 @@ const careersHtml = `
     <title>Careers - Magnasoft</title>
   </head>
   <body>
-    <h1>Careers</h1>
-    <p>Offices: USA | UK | Netherlands | India</p>
-    <a href="https://www.magnasoft.com/talk-to-us/">Talk to Us</a>
-    <form>
-      <label>Full Name</label>
-      <input name="fullName" />
-      <button>Contact Us</button>
-    </form>
+    <main>
+      <h1>Careers</h1>
+      <p>Talk to Us</p>
+      <p>Contact Us</p>
+      <script>
+        rec_embed_js.load({
+          site:"https://magnasoft.zohorecruit.in",
+          empty_job_msg:"No current Openings"
+        });
+      </script>
+    </main>
   </body>
 </html>
 `
 
-const driftHtml = `
+const jobsBoardHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers - Magnasoft</title>
+    <title>Jobs at Magnasoft Consulting India Pvt. Ltd.</title>
   </head>
   <body>
-    <h1>Careers</h1>
-    <article class="job-card">
-      <h2>GIS Engineer</h2>
-      <a href="/careers/gis-engineer">Apply Now</a>
-    </article>
+    <input type="hidden" value="[{&#34;Industry&#34;:&#34;Technology&#34;,&#34;Remote_Job&#34;:false,&#34;Job_Type&#34;:&#34;Full time&#34;,&#34;Job_Opening_Name&#34;:&#34;AIML Engineer&#34;,&#34;Posting_Title&#34;:&#34;AIML Engineer&#34;,&#34;Country&#34;:&#34;India&#34;,&#34;Is_Locked&#34;:false,&#34;id&#34;:&#34;148491000003493001&#34;,&#34;City&#34;:&#34;Bangalore South&#34;,&#34;Publish&#34;:true,&#34;Keep_on_Career_Site&#34;:false},{&#34;Industry&#34;:&#34;Communications&#34;,&#34;Remote_Job&#34;:true,&#34;Job_Type&#34;:&#34;Full time&#34;,&#34;Job_Opening_Name&#34;:&#34;Account Executive - Telecom (US Candidates only)&#34;,&#34;Posting_Title&#34;:&#34;Account Executive - Telecom (US Candidates only)&#34;,&#34;Country&#34;:null,&#34;Is_Locked&#34;:false,&#34;id&#34;:&#34;148491000003293016&#34;,&#34;City&#34;:null,&#34;Publish&#34;:true,&#34;Keep_on_Career_Site&#34;:false},{&#34;Industry&#34;:&#34;Technology&#34;,&#34;Remote_Job&#34;:false,&#34;Job_Type&#34;:&#34;Full time&#34;,&#34;Job_Opening_Name&#34;:&#34;Principle AI Engineer&#34;,&#34;Posting_Title&#34;:&#34;Principle AI Engineer&#34;,&#34;Country&#34;:&#34;India&#34;,&#34;Is_Locked&#34;:false,&#34;id&#34;:&#34;148491000003359004&#34;,&#34;City&#34;:&#34;Bengaluru&#34;,&#34;Publish&#34;:true,&#34;Keep_on_Career_Site&#34;:false}]" id="jobs">
+    <input type="hidden" value="{&#34;list_url&#34;:&#34;https://magnasoft.zohorecruit.in/jobs/Careers&#34;}" id="meta">
+    <div>Magnasoft Consulting India Pvt. Ltd.</div>
   </body>
 </html>
 `
 
-const loadModule = async () => {
+const loadMagnasoftModule = async () => {
   try {
     return await import('../../scraper/magnasoftconsultingindia/script.js')
   } catch {
@@ -44,32 +48,78 @@ const loadModule = async () => {
   }
 }
 
-test('Magnasoft Consulting India stays pinned to the verified careers shell without public job cards', async () => {
-  const magnasoft = await loadModule()
+test('Magnasoft Consulting India validates the first-party shell and extracts India jobs from the Zoho board payload', async () => {
+  const magnasoft = await loadMagnasoftModule()
 
+  assert.equal(magnasoft.SOURCE, 'magnasoftconsultingindia')
+  assert.equal(magnasoft.COMPANY, 'Magnasoft Consulting India')
+  assert.equal(magnasoft.VERIFIED_ON, '2026-08-03')
+  assert.equal(magnasoft.CAREERS_URL, CAREERS_URL)
+  assert.equal(magnasoft.JOBS_BOARD_URL, JOBS_BOARD_URL)
   assert.equal(magnasoft.hasOfficialCareersShellSignal(careersHtml), true)
-  assert.equal(magnasoft.hasPublicJobsSignal(careersHtml), false)
+  assert.equal(magnasoft.hasOfficialJobsBoardSignal(jobsBoardHtml), true)
+  assert.equal(magnasoft.extractHiddenInputValue(jobsBoardHtml, 'jobs') != null, true)
+
+  assert.deepEqual(magnasoft.extractBoardJobs(jobsBoardHtml), [
+    {
+      title: 'AIML Engineer',
+      company: 'Magnasoft Consulting India',
+      department: 'Technology',
+      location: 'Bangalore South, India',
+      city: 'Bangalore South',
+      country: 'India',
+      jobId: '148491000003493001',
+      requisitionId: '148491000003493001',
+      sourceUrl: 'https://magnasoft.zohorecruit.in/jobs/Careers/148491000003493001/AIML-Engineer?source=CareerSite',
+      applyUrl: 'https://magnasoft.zohorecruit.in/jobs/Careers/148491000003493001/AIML-Engineer?source=CareerSite',
+      employmentType: 'Full-time',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+    },
+    {
+      title: 'Principle AI Engineer',
+      company: 'Magnasoft Consulting India',
+      department: 'Technology',
+      location: 'Bengaluru, India',
+      city: 'Bengaluru',
+      country: 'India',
+      jobId: '148491000003359004',
+      requisitionId: '148491000003359004',
+      sourceUrl: 'https://magnasoft.zohorecruit.in/jobs/Careers/148491000003359004/Principle-AI-Engineer?source=CareerSite',
+      applyUrl: 'https://magnasoft.zohorecruit.in/jobs/Careers/148491000003359004/Principle-AI-Engineer?source=CareerSite',
+      employmentType: 'Full-time',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+    },
+  ])
 })
 
-test('Magnasoft Consulting India run validates the verified first-party shell and stays fail-closed', async () => {
-  const magnasoft = await loadModule()
+test('Magnasoft Consulting India scraper returns only the India jobs from the verified Zoho board', async () => {
+  const magnasoft = await loadMagnasoftModule()
+  const requestedUrls = []
+
   const jobs = await magnasoft.createMagnasoftConsultingIndiaScraper().run({
     fetchText: async (url) => {
-      assert.equal(url, magnasoft.CAREERS_URL)
-      return careersHtml
+      requestedUrls.push(url)
+      if (url === CAREERS_URL) return careersHtml
+      if (url === JOBS_BOARD_URL) return jobsBoardHtml
+      throw new Error(`Unexpected Magnasoft Consulting India URL: ${url}`)
     },
   })
 
-  assert.deepEqual(jobs, [])
-})
-
-test('Magnasoft Consulting India fails closed when the verified no-public-jobs shell drifts into listings', async () => {
-  const magnasoft = await loadModule()
-
-  await assert.rejects(
-    magnasoft.createMagnasoftConsultingIndiaScraper().run({
-      fetchText: async () => driftHtml,
-    }),
-    /appears to expose public jobs/i,
-  )
+  assert.deepEqual(requestedUrls, [CAREERS_URL, JOBS_BOARD_URL])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'magnasoftconsultingindia')
+  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })

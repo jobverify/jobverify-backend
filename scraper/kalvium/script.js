@@ -58,7 +58,7 @@ const getPublicPageProps = (html) => extractNextData(html)?.props?.pageProps ?? 
 export const hasCareersSurfaceSignal = (html) => {
   const page = String(html ?? '')
 
-  return /Careers at\s*Kalvium/i.test(page)
+  return (/Careers at\s*Kalvium/i.test(page) || /<title>\s*Kalvium\s*<\/title>/i.test(page))
     && /Loading jobs\.\.\./i.test(page)
     && /Hiring Powered By/i.test(page)
     && /__NEXT_DATA__/i.test(page)

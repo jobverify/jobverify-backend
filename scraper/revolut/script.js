@@ -6,6 +6,7 @@ import {
   launchBrowser as defaultLaunchBrowser,
 } from '../../scraper-support/utils/browser.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { enrichJobsWithPublicExperience } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
 import REVOLUT_CATALOG from './catalog.js'
 
@@ -18,7 +19,11 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
-export const POSITION_URL_LOCALE = 'en-US'
+export const POSITION_URL_LOCALE = 'en-IN'
+// Revolut's Cloudflare-protected detail pages intermittently fail under
+// parallel browser fetches, so keep the live enrichment path serialized.
+const DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY = 1
+const DEFAULT_NAVIGATION_TIMEOUT_MS = 120000
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -30,6 +35,15 @@ const normalizeWhitespace = (value) => {
 }
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
+
+const slugifyPositionTitle = (value) => normalizeWhitespace(value)
+  ?.normalize('NFKD')
+  .toLowerCase()
+  .replace(/&/g, ' and ')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .replace(/-+/g, '-')
+  || null
 
 const isIndiaLocation = (location = {}) =>
   /india/i.test(normalizeWhitespace(location.country) || '')
@@ -70,8 +84,24 @@ export const hasOfficialCareersSignal = (html) => {
     && /Join the people creating a one-stop shop for financial freedom/i.test(source)
 }
 
-export const buildPositionDetailUrl = (jobId) =>
-  `${PROVIDER_METADATA.officialCareersGlobalUrl}position/${encodeURIComponent(String(jobId ?? ''))}/`
+export const buildPositionDetailUrl = (jobId, title = null) => {
+  const normalizedId = normalizeWhitespace(jobId)
+  if (!normalizedId) return null
+
+  const slug = slugifyPositionTitle(title)
+  const baseUrl = `https://www.revolut.com/${POSITION_URL_LOCALE}/careers/position/`
+
+  return slug
+    ? `${baseUrl}${slug}-${encodeURIComponent(normalizedId)}/`
+    : `${baseUrl}${encodeURIComponent(normalizedId)}/`
+}
+
+export const buildPositionApplyUrl = (jobId) => {
+  const normalizedId = normalizeWhitespace(jobId)
+  if (!normalizedId) return null
+
+  return `https://www.revolut.com/${POSITION_URL_LOCALE}/careers/apply/${encodeURIComponent(normalizedId)}/`
+}
 
 export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? positions : [])
   .map((position) => {
@@ -83,7 +113,12 @@ export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? posit
       return null
     }
 
-    const sourceUrl = buildPositionDetailUrl(jobId)
+    const sourceUrl = buildPositionDetailUrl(jobId, title)
+    const applyUrl = buildPositionApplyUrl(jobId)
+
+    if (!sourceUrl || !applyUrl) {
+      return null
+    }
 
     return {
       title,
@@ -96,7 +131,7 @@ export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? posit
       jobId,
       requisitionId: jobId,
       sourceUrl,
-      applyUrl: sourceUrl,
+      applyUrl,
       employmentType: null,
       experienceRequired: null,
       minimumQualification: null,
@@ -113,10 +148,13 @@ export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? posit
 export const createRevolutScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now: defaultNow = () => new Date().toISOString(),
+  experienceEnrichmentConcurrency = DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY,
+  navigationTimeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS,
 } = {}) => ({
   async run({
     launchBrowser = defaultLaunchBrowser,
     createOptimizedPage = defaultCreateOptimizedPage,
+    fetchPublicJobText = null,
     now = defaultNow,
   } = {}) {
     let browser
@@ -125,7 +163,10 @@ export const createRevolutScraper = ({
       browser = await launchBrowser()
       const page = await createOptimizedPage(browser)
 
-      await page.goto(CAREERS_PAGE_URL, { waitUntil: 'networkidle2' })
+      await page.goto(CAREERS_PAGE_URL, {
+        waitUntil: 'networkidle2',
+        timeout: navigationTimeoutMs,
+      })
 
       const careersHtml = await page.content()
       if (!hasOfficialCareersSignal(careersHtml)) {
@@ -142,9 +183,41 @@ export const createRevolutScraper = ({
 
       const indiaJobs = extractIndiaJobs(positions)
       const selectedJobs = maxJobs ? indiaJobs.slice(0, maxJobs) : indiaJobs
+      const shouldEnrichPublicDetails =
+        typeof fetchPublicJobText === 'function'
+        || (
+          launchBrowser === defaultLaunchBrowser
+          && createOptimizedPage === defaultCreateOptimizedPage
+        )
+      const liveBrowserFetchPublicJobText = async (url) => {
+        const detailPage = await createOptimizedPage(browser)
 
-      return selectedJobs.map((job) => ({
+        try {
+          await detailPage.goto(url, {
+            waitUntil: 'networkidle2',
+            timeout: navigationTimeoutMs,
+          })
+          return await detailPage.content()
+        } finally {
+          await detailPage.close()
+        }
+      }
+      const jobsWithPublicDetails = shouldEnrichPublicDetails
+        ? await enrichJobsWithPublicExperience(selectedJobs, {
+            fetchText: typeof fetchPublicJobText === 'function'
+              ? fetchPublicJobText
+              : liveBrowserFetchPublicJobText,
+            useBrowserFallback: false,
+            concurrency: Math.min(
+              experienceEnrichmentConcurrency,
+              Math.max(1, selectedJobs.length),
+            ),
+          })
+        : selectedJobs
+
+      return jobsWithPublicDetails.map((job) => ({
         ...job,
+        publicExperienceChecked: job.publicExperienceChecked === true,
         source: SOURCE,
         link: job.applyUrl,
         scrapedAt: now(),

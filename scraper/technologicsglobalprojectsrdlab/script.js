@@ -132,9 +132,10 @@ const defaultFetchText = (url) => withRetry(async () => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasCareersEntryLink = /href=["']https:\/\/technologics\.in\/(?:jobs|careers)\/?["']/i.test(page)
 
   return /<title>\s*No\.1 PLC SCADA Training Institute In Bangalore\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/technologics\.in\/jobs\/["']/i.test(page)
+    && hasCareersEntryLink
     && /href=["']https:\/\/technologics\.in\/lab\/["']/i.test(page)
     && /href=["']https:\/\/technologics\.in\/about-us\/["']/i.test(page)
     && normalized.includes('For Immediate Assistance Call Us +919738171920')

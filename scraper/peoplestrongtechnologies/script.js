@@ -67,6 +67,112 @@ export const hasBrokenJobsApiSignal = (text = '') => (
   /Could not find method getRequisitionListWithPaginationBySolrBundle/i.test(String(text ?? ''))
 )
 
+const normalizeWhitespace = (value = '') =>
+  String(value ?? '').replace(/\s+/g, ' ').trim() || null
+
+const unique = (values = []) => [...new Set(values.filter(Boolean))]
+
+const normalizeExperience = (value = '') => normalizeWhitespace(value)
+
+const buildJobDetailUrl = (job = {}) => {
+  const explicitUrl = normalizeWhitespace(job.jobDetailUrl)
+  if (explicitUrl) {
+    try {
+      return new URL(explicitUrl, HOMEPAGE_URL).toString()
+    } catch {
+      // Fall through to the verified code-based route.
+    }
+  }
+
+  const jobCode = normalizeWhitespace(job.jobCode)
+  if (!jobCode) return null
+  return `${HOMEPAGE_URL.replace(/\/$/, '')}/job/detail/${jobCode.replaceAll('/', '_')}`
+}
+
+const parseLocation = (value = '') => {
+  const segments = String(value ?? '')
+    .split('>')
+    .map((segment) => normalizeWhitespace(segment))
+    .filter(Boolean)
+    .filter((segment) => !/region/i.test(segment))
+
+  if (segments.length === 0) {
+    return {
+      location: null,
+      city: null,
+      country: null,
+    }
+  }
+
+  const country = segments[0] || null
+  const city = segments.length >= 2 ? segments[segments.length - 2] : null
+  const location = [...segments].reverse().join(', ')
+
+  return {
+    location,
+    city,
+    country,
+  }
+}
+
+const extractSkills = (skills = {}) => unique([
+  ...(Array.isArray(skills?.mustTohave) ? skills.mustTohave : []),
+  ...(Array.isArray(skills?.goodtohave) ? skills.goodtohave : []),
+].map((skill) => normalizeWhitespace(skill)))
+
+const buildJobDescription = (job = {}, locationLabel, skills) => [
+  normalizeWhitespace(job.organizationUnitComplete)
+    ? `Organization: ${normalizeWhitespace(job.organizationUnitComplete)}`
+    : null,
+  locationLabel ? `Location hierarchy: ${locationLabel}` : null,
+  normalizeExperience(job.expRange) ? `Experience: ${normalizeExperience(job.expRange)}` : null,
+  skills.length > 0 ? `Skills: ${skills.join(', ')}` : null,
+].filter(Boolean).join(' ')
+
+export const extractJobsFromApiResponse = (text = '') => {
+  if (hasBrokenJobsApiSignal(text)) {
+    return []
+  }
+
+  const payload = JSON.parse(String(text ?? '{}'))
+  const records = Array.isArray(payload?.response) ? payload.response : []
+
+  return records.flatMap((record) => {
+    const detailUrl = buildJobDetailUrl(record)
+    if (!detailUrl) return []
+
+    const locationLabel = normalizeWhitespace(record.locationHierarchyComplete || record.locationHierarchy)
+    const { location, city, country } = parseLocation(locationLabel)
+    if (country !== 'India') return []
+
+    const skills = extractSkills(record.skills)
+    const title = normalizeWhitespace(record.jobTitle)
+    if (!title || !location) return []
+
+    return [{
+      title,
+      company: COMPANY,
+      department: normalizeWhitespace(record.organizationUnit) || null,
+      location,
+      city,
+      country,
+      jobId: normalizeWhitespace(record.jobCode) || detailUrl,
+      requisitionId: normalizeWhitespace(record.requisitionId) || normalizeWhitespace(record.jobCode) || detailUrl,
+      sourceUrl: detailUrl,
+      applyUrl: detailUrl,
+      employmentType: normalizeWhitespace(record.employmentTenureType) || null,
+      experienceRequired: normalizeExperience(record.expRange),
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: skills,
+      postingDate: normalizeWhitespace(record.jobPostedDate),
+      closingDate: normalizeWhitespace(record.jobClosureDate),
+      jobDescription: buildJobDescription(record, locationLabel, skills),
+      remoteStatus: 'On-site',
+    }]
+  })
+}
+
 export const createPeopleStrongTechnologiesScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
@@ -93,11 +199,16 @@ export const createPeopleStrongTechnologiesScraper = () => ({
     }
 
     const apiResponse = await fetchApiText(JOBS_API_URL)
-    if (apiResponse.status !== 200 || !hasBrokenJobsApiSignal(apiResponse.text)) {
-      throw new Error('PeopleStrong public jobs API no longer matches the verified broken state')
+    if (apiResponse.status !== 200) {
+      throw new Error('PeopleStrong public jobs API no longer matches the verified first-party surface')
     }
 
-    return []
+    const jobs = extractJobsFromApiResponse(apiResponse.text)
+    if (jobs.length === 0 && !hasBrokenJobsApiSignal(apiResponse.text)) {
+      throw new Error('PeopleStrong public jobs API no longer returns the verified requisition payload')
+    }
+
+    return jobs
   },
 })
 

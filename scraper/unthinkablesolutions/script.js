@@ -34,9 +34,12 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialUnthinkableCareersSignal = (html = '') => {
   const text = normalizeWhitespace(html)
-  return text.includes('Build Your Career with Us')
+  return /<title>\s*Career \| Unthinkable Solutions\s*<\/title>/i.test(String(html ?? ''))
+    && text.includes('Believe in being Fundamentally different?')
+    && text.includes('Come, be a part of team that challenges the status quo.')
+    && text.includes('Our Commitment to You')
     && text.includes('Open Vacancies')
-    && text.includes('Get in touch')
+    && text.includes('List of available open vacancies for unthinkable')
   }
 
 export const pageExposesStructuredJobListings = (html = '') => {
@@ -63,7 +66,7 @@ export const createUnthinkableSolutionsScraper = () => ({
 
 export const run = async (options = {}) => createUnthinkableSolutionsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

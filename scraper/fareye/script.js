@@ -38,6 +38,8 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/[\u2018\u2019\u201b]/g, "'")
+  .replace(/[\u201c\u201d]/g, '"')
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
 
@@ -116,21 +118,20 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   return extractTitle(page) === 'First choice for last-mile | FarEye'
     && /href=["']https:\/\/fareye\.com\/about\/careers["']/i.test(page)
-  }
+}
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
   return extractTitle(page) === 'Careers | FarEye'
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/fareye\.com\/about\/careers["']/i.test(page)
-    && normalized.includes('Join Us In Architecting The Future Of Last-Mile Excellence')
-    && normalized.includes('We’re looking for the dreamers, the thinkers, the doers')
+    && /Who is FarEye\?/i.test(normalized)
+    && /We're problem-solvers,\s*thinkers,\s*and intrapreneurs\./i.test(normalized)
     && normalized.includes('Explore our open positions.')
     && normalized.includes('Join us')
     && normalized.includes('Explore open positions')
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_DARWINBOX_HANDOFF_URL
-  }
+}
 
 export const hasDarwinboxLoginRedirectSignal = (page = {}) => (
   Number(page?.status) === 200

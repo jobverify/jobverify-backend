@@ -5,7 +5,7 @@ const listingsHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Join Our Team | RNF Technologies</title>
+    <title>| RNF Technologies</title>
   </head>
   <body>
     <main>
@@ -61,6 +61,36 @@ const reactNativeDetailHtml = `
 </html>
 `
 
+const reactDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>React Developer | RNF Technologies</title>
+  </head>
+  <body>
+    <nav>Current Openings > React Developer</nav>
+    <h1>React Developer</h1>
+    <p>Development</p>
+    <a href="/join-our-team/current-openings/204/apply">Apply</a>
+    <section>
+      Job Role:
+      <ul>
+        <li>Understand client requirements and functional specifications</li>
+        <li>Write well-designed, testable, efficient code</li>
+      </ul>
+    </section>
+    <section>
+      Must Have Skills
+      <ul>
+        <li>Strong proficiency with JavaScript</li>
+        <li>Good knowledge of HTML5 and CSS3</li>
+      </ul>
+    </section>
+    <a href="/join-our-team/current-openings/204/apply">Apply</a>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/rnftechnologies/script.js')
@@ -74,7 +104,8 @@ test('RNF Technologies keeps the verified first-party current openings table and
   const listings = rnf.extractJobListings(listingsHtml)
   const detail = rnf.extractJobDetail(reactNativeDetailHtml, listings[0])
 
-  assert.equal(rnf.CAREERS_URL, 'https://www.rnftechnologies.com/join-our-team/current-openings')
+  assert.equal(rnf.CAREERS_URL, 'https://rnftechnologies.com/join-our-team/current-openings')
+  assert.equal(rnf.hasOfficialDetailSignal(reactDetailHtml, listings[1]), true)
   assert.equal(rnf.hasOfficialListingsSignal(listingsHtml), true)
   assert.deepEqual(
     listings.map((job) => [job.title, job.location, job.sourceUrl]),
@@ -82,12 +113,12 @@ test('RNF Technologies keeps the verified first-party current openings table and
       [
         'React Native Developer',
         'Noida, UP, India',
-        'https://www.rnftechnologies.com/join-our-team/current-openings/react-native-developer',
+        'https://rnftechnologies.com/join-our-team/current-openings/react-native-developer',
       ],
       [
         'React Developer',
         'Noida, UP, India',
-        'https://www.rnftechnologies.com/join-our-team/current-openings/react-developer',
+        'https://rnftechnologies.com/join-our-team/current-openings/react-developer',
       ],
     ],
   )
@@ -101,8 +132,8 @@ test('RNF Technologies keeps the verified first-party current openings table and
     country: 'India',
     jobId: 'react-native-developer',
     requisitionId: 'react-native-developer',
-    sourceUrl: 'https://www.rnftechnologies.com/join-our-team/current-openings/react-native-developer',
-    applyUrl: 'https://www.rnftechnologies.com/join-our-team/current-openings/216/apply',
+    sourceUrl: 'https://rnftechnologies.com/join-our-team/current-openings/react-native-developer',
+    applyUrl: 'https://rnftechnologies.com/join-our-team/current-openings/216/apply',
     employmentType: null,
     experienceRequired: '3+ Years',
     minimumQualification: null,
@@ -111,6 +142,27 @@ test('RNF Technologies keeps the verified first-party current openings table and
     postingDate: null,
     closingDate: null,
     jobDescription: 'Build React Native apps for enterprise clients.',
+    remoteStatus: 'On-site',
+  })
+  assert.deepEqual(rnf.extractJobDetail(reactDetailHtml, listings[1]), {
+    title: 'React Developer',
+    company: 'RNF Technologies',
+    department: null,
+    location: 'Noida, UP, India',
+    city: 'Noida',
+    country: 'India',
+    jobId: 'react-developer',
+    requisitionId: 'react-developer',
+    sourceUrl: 'https://rnftechnologies.com/join-our-team/current-openings/react-developer',
+    applyUrl: 'https://rnftechnologies.com/join-our-team/current-openings/204/apply',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: ['Strong proficiency with JavaScript', 'Good knowledge of HTML5 and CSS3'],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: 'Understand client requirements and functional specifications Write well-designed, testable, efficient code',
     remoteStatus: 'On-site',
   })
 })
@@ -123,7 +175,7 @@ test('RNF Technologies run decorates verified current-opening jobs from the firs
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === rnf.CAREERS_URL) return listingsHtml
-      if (url === 'https://www.rnftechnologies.com/join-our-team/current-openings/react-native-developer') {
+      if (url === 'https://rnftechnologies.com/join-our-team/current-openings/react-native-developer') {
         return reactNativeDetailHtml
       }
       throw new Error(`Unexpected RNF URL: ${url}`)
@@ -133,15 +185,15 @@ test('RNF Technologies run decorates verified current-opening jobs from the firs
 
   assert.deepEqual(requestedUrls, [
     rnf.CAREERS_URL,
-    'https://www.rnftechnologies.com/join-our-team/current-openings/react-native-developer',
+    'https://rnftechnologies.com/join-our-team/current-openings/react-native-developer',
   ])
   assert.deepEqual(
     jobs.map((job) => [job.title, job.applyUrl, job.source, job.link, job.scrapedAt]),
     [[
       'React Native Developer',
-      'https://www.rnftechnologies.com/join-our-team/current-openings/216/apply',
+      'https://rnftechnologies.com/join-our-team/current-openings/216/apply',
       'rnftechnologies',
-      'https://www.rnftechnologies.com/join-our-team/current-openings/216/apply',
+      'https://rnftechnologies.com/join-our-team/current-openings/216/apply',
       '2026-07-18T00:00:00.000Z',
     ]],
   )
@@ -161,7 +213,9 @@ test('RNF Technologies fails closed when the verified listings or detail surface
     rnf.createRNFTechnologiesScraper({ maxJobs: 1 }).run({
       fetchText: async (url) => {
         if (url === rnf.CAREERS_URL) return listingsHtml
-        return reactNativeDetailHtml.replace('Relevant Experience: 3+ Years', 'Details unavailable')
+        return reactNativeDetailHtml
+          .replace('Job Description', 'Overview')
+          .replace('Skills', 'Capabilities')
       },
     }),
     /verified rnf technologies detail page/i,

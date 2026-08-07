@@ -43,6 +43,9 @@ const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /\bopen positions\b/i,
   /\bopen roles\b/i,
   /\bcurrent openings\b/i,
+]
+
+const PUBLIC_BOARD_URL_PATTERNS = [
   /\bjobs\.lever\.co\b/i,
   /\bboards\.greenhouse\.io\b/i,
   /\bmyworkdayjobs\b/i,
@@ -81,7 +84,9 @@ const defaultFetchPage = async (url) => {
 const getFinalUrl = (page, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
 
 export const hasPublicJobSignal = (html = '') =>
-  PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+  PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalizeWhitespace(html)))
+  || [...String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["']/gi)]
+    .some((match) => PUBLIC_BOARD_URL_PATTERNS.some((pattern) => pattern.test(match[1])))
 
 export const extractParentCareersUrlFromHomepage = (html = '') => {
   const match = /href=["'](https:\/\/www\.dreamsports\.group\/careers\/?)["']/i.exec(String(html ?? ''))
@@ -90,9 +95,11 @@ export const extractParentCareersUrlFromHomepage = (html = '') => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*India's Biggest Fantasy Sports Platform: Play for Free\. Win Big\.\s*<\/title>/i.test(rawHtml)
+  return /India's Biggest Fantasy Sports Platform: Play for Free\. Win Big\./i.test(normalized)
     && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.dream11\.com\/["']/i.test(rawHtml)
+    && /\bSporta Technologies Private Limited\b/i.test(normalized)
     && extractParentCareersUrlFromHomepage(rawHtml) === LINKED_CAREERS_URL
 }
 
@@ -110,12 +117,11 @@ export const hasParentCareersLandingSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*DreamSports\s*<\/title>/i.test(rawHtml)
+  return /\bDreamSports\b/i.test(rawHtml)
     && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.dreamsports\.group\/careers["']/i.test(rawHtml)
     && /\bLIFE AT DREAM SPORTS\b/i.test(normalized)
     && /Game On\.\s*Build Big\./i.test(normalized)
-    && /\bSoftware Development Engineer II - ML Platform,\s*Dream11\b/i.test(normalized)
-    && /\bResearch Scientist,\s*Dream11\b/i.test(normalized)
+    && /Solving real problems across sports,\s*technology,\s*and financial empowerment\./i.test(normalized)
     && /\bSporta Technologies Pvt Ltd\b/i.test(normalized)
     && !hasPublicJobSignal(rawHtml)
 }

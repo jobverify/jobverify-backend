@@ -11,17 +11,19 @@ export const MITRATECH_CATALOG = {
   modulePath: path.join(currentDir, 'script.js'),
   homepageUrl: 'https://mitratech.com/',
   companyCareerPage: 'https://mitratech.com/about-us/careers/',
-  atsPlatform: 'official-careers-route-blocked-by-cloudflare',
+  greenhouseBoardUrl: 'https://job-boards.greenhouse.io/mitratech',
+  greenhouseJobsApiUrl: 'https://boards-api.greenhouse.io/v1/boards/mitratech/jobs',
+  atsPlatform: 'greenhouse',
   countryFilter: 'India',
-  paginationStrategy: 'direct-careers-route-validation-return-empty-when-blocked',
-  extractionStrategy: 'verified-careers-route+cloudflare-interstitial+no-trustworthy-direct-public-jobs-surface',
+  paginationStrategy: 'greenhouse-jobs-api',
+  extractionStrategy: 'verified-first-party-careers-page+greenhouse-board-handoff+greenhouse-jobs-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'mitratech.com',
   dryRunFile: 'mitratech/jobs.json',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://mitratech.com/about-us/careers/ remained Mitratech\'s official careers route, but direct unauthenticated fetches from the scraper environment returned a Cloudflare "Attention Required!" interstitial with "Sorry, you have been blocked" instead of a trustworthy first-party jobs surface.',
+    'Verified on Saturday, August 1, 2026 that https://mitratech.com/about-us/careers/ is the live official Mitratech careers page, that it links candidates to the official public Greenhouse board at https://job-boards.greenhouse.io/mitratech, and that the Greenhouse jobs feed at https://boards-api.greenhouse.io/v1/boards/mitratech/jobs?content=true exposes India roles including Principal Data Engineer and Senior Product Designer on the verified date.',
 }
 
 export default MITRATECH_CATALOG

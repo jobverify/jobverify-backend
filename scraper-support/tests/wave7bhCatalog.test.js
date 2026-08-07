@@ -63,12 +63,12 @@ const companyFixtures = [
       atsPlatform: 'first-party-careers-page',
       countryFilter: 'India',
       paginationStrategy: 'single-first-party-openings-list',
-      extractionStrategy: 'first-party-html-opening-cards+apply-link-extraction',
+      extractionStrategy: 'first-party-current-openings-accordion+company-role-detail-link-extraction',
       parser: 'custom-script',
       normalizationProfile: 'engineering-default',
-      verifiedOn: '2026-07-18',
+      verifiedOn: '2026-08-01',
       verifiedSurfaceSummary:
-        'Verified on Saturday, July 18, 2026 that https://www.contus.com/careers.php is CONTUS TECH\'s live first-party careers page and that the public HTML lists current openings with role titles, Chennai locations, and Apply Now links to company-hosted application routes.',
+        'Verified on Saturday, August 1, 2026 that https://www.contus.com/careers.php is CONTUS TECH\'s live first-party careers page and that the public HTML exposes a Current Openings accordion with active role titles, Chennai locations, and Apply Now links to company-hosted PHP role detail pages.',
     },
   },
   {
@@ -83,14 +83,14 @@ const companyFixtures = [
       companyDomain: 'smartims.com',
       atsPlatform: 'first-party-careers-page-with-current-openings',
       countryFilter: 'India',
-      paginationStrategy: 'single-first-party-careers-page-current-openings-section',
+      paginationStrategy: 'single-first-party-current-openings-accordion',
       extractionStrategy:
-        'first-party-html-region-links+current-job-openings-block-extraction+apply-email-detection',
+        'first-party-accordion-openings+cloudflare-email-decode+structured-field-extraction',
       parser: 'custom-script',
       normalizationProfile: 'engineering-default',
-      verifiedOn: '2026-07-18',
+      verifiedOn: '2026-08-04',
       verifiedSurfaceSummary:
-        'Verified on Saturday, July 18, 2026 that https://www.smartims.com/careers/ is Smart IMS\'s live first-party careers page, that it exposes region selectors including Smart IMS India, and that the public HTML currently publishes parseable Current Job Openings blocks with role titles, experience, locations, and apply-by-email instructions.',
+        'Verified on Tuesday, August 4, 2026 that https://www.smartims.com/careers/ is Smart IMS\'s live first-party careers page and that the public HTML exposes a Current Job Openings accordion with three Hyderabad listings and Cloudflare-protected apply-by-email links that decode to Indiacareers@SmartIMS.com, including Data Engineer II, Java Backend Software Development Engineer (SDE-2), and Front End Developer.',
     },
   },
   {
@@ -106,19 +106,20 @@ const companyFixtures = [
       atsPlatform: 'first-party-openings-page',
       countryFilter: 'India',
       paginationStrategy: 'single-first-party-openings-page',
-      extractionStrategy: 'first-party-html-role-headings+shared-meta-line+apply-route-extraction',
+      extractionStrategy:
+        'first-party-role-rows-or-legacy-opening-cards+shared-meta-line+company-hosted-detail-route-or-shared-apply-route-extraction',
       parser: 'custom-script',
       normalizationProfile: 'engineering-default',
-      verifiedOn: '2026-07-18',
+      verifiedOn: '2026-08-02',
       verifiedSurfaceSummary:
-        'Verified on Saturday, July 18, 2026 that https://www.doodleblue.com/careers/openings/ is doodleblue innovation\'s live first-party openings page and that the public HTML lists current role headings with shared Chennai, India / Full time / experienced metadata plus a first-party apply route.',
+        'Verified on Sunday, August 2, 2026 that https://www.doodleblue.com/careers/openings/ is doodleblue innovation\'s live first-party openings page and that the public HTML currently lists six role headings with shared Chennai, India / Full time / experienced metadata plus company-hosted detail routes under /careers/openings/view/, including Full stack Developer (Reactjs+Nodejs) 2+ years, React Native Developer 3+ years, and Project Managers 3+ years.',
     },
   },
 ]
 
 const loadModule = async (relativePath) => {
   try {
-    return await import(relativePath)
+    return await import(new URL(relativePath, import.meta.url).href)
   } catch {
     assert.fail(`Expected module at ${relativePath}`)
   }
@@ -126,13 +127,13 @@ const loadModule = async (relativePath) => {
 
 for (const fixture of companyFixtures) {
   test(`${fixture.expected.companyName} local catalog matches the verified first-party contract`, async () => {
-    const catalogModule = await loadModule(`../${fixture.moduleDir}/catalog.js`)
-    const scriptModule = await loadModule(`../${fixture.moduleDir}/script.js`)
+    const catalogModule = await loadModule(`../../scraper/${fixture.moduleDir}/catalog.js`)
+    const scriptModule = await loadModule(`../../scraper/${fixture.moduleDir}/script.js`)
     const actualCatalog = catalogModule[fixture.exportName]
 
     assert.deepEqual(actualCatalog, {
       ...fixture.expected,
-      modulePath: path.resolve(currentDir, '..', fixture.moduleDir, 'script.js'),
+      modulePath: path.resolve(currentDir, '..', '..', 'scraper', fixture.moduleDir, 'script.js'),
     })
     assert.equal(catalogModule.default, actualCatalog)
     assert.equal(scriptModule.PROVIDER_METADATA.source, actualCatalog.source)

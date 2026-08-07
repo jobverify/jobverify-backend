@@ -1,145 +1,119 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createDarwinboxScraper } from '../darwinbox/script.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+
+import { PRIMESOFT_ENTERPRISE_CATALOG } from './catalog.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const config = loadConfig(currentDir)
 
-export const SOURCE = 'primesoftenterprise'
-export const COMPANY = 'Primesoft Enterprise'
-export const HOMEPAGE_URL = 'https://www.primesoftindia.com/'
-export const CAREERS_ROUTE_URLS = [
-  'https://www.primesoftindia.com/careers',
-  'https://www.primesoftindia.com/careers/',
-  'https://www.primesoftindia.com/career',
-  'https://www.primesoftindia.com/career/',
-  'https://www.primesoftindia.com/jobs',
-  'https://www.primesoftindia.com/jobs/',
-  'https://www.primesoftindia.com/join-us',
-  'https://www.primesoftindia.com/join-us/',
-  'https://www.primesoftindia.com/current-openings',
-  'https://www.primesoftindia.com/current-openings/',
-]
+export const PROVIDER_METADATA = PRIMESOFT_ENTERPRISE_CATALOG
+export const SOURCE = PROVIDER_METADATA.source
+export const COMPANY_NAME = PROVIDER_METADATA.companyName
+export const COMPANY = COMPANY_NAME
+export const OFFICIAL_SITE_URL = PROVIDER_METADATA.homepageUrl
+export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const OFFICIAL_CAREERS_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffUrl
+export const DARWINBOX_ORIGIN = PROVIDER_METADATA.darwinboxOrigin
+export const DARWINBOX_COMPANY_ID = PROVIDER_METADATA.darwinboxCompanyId
+export const PUBLIC_PORTAL_URL =
+  `${DARWINBOX_ORIGIN}/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/allJobs`
+export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
-const PUBLIC_JOBS_SIGNAL_PATTERNS = [
-  /"@type"\s*:\s*"JobPosting"/i,
-  /\bcurrent openings\b/i,
-  /\bopen positions\b/i,
-  /\bjob openings\b/i,
-  /\bsearch jobs\b/i,
-  /\bapply now\b/i,
-  /\bjob description\b/i,
-  /\bjoin our team\b/i,
-  /boards\.greenhouse\.io/i,
-  /jobs\.lever\.co/i,
-  /ashbyhq\.com/i,
-  /workdayjobs/i,
-  /myworkdayjobs/i,
-  /smartrecruiters/i,
-  /jobvite/i,
-]
+const darwinboxScraper = createDarwinboxScraper({
+  companyName: COMPANY_NAME,
+  source: SOURCE,
+  companyId: DARWINBOX_COMPANY_ID,
+  origin: DARWINBOX_ORIGIN,
+})
 
-const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;/gi, "'")
-  .replace(/&quot;/gi, '"')
-  .replace(/&amp;/gi, '&')
-  .replace(/\u00a0/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim()
+const normalizeWhitespace = (value) => {
+  if (value == null) return null
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+  const normalized = String(value)
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+    .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 
-  return {
-    status: response.status,
-    url: response.url,
-    headers: {
-      server: response.headers.get('server'),
-      platform: response.headers.get('platform'),
-      panel: response.headers.get('panel'),
-      location: response.headers.get('location'),
-      'content-type': response.headers.get('content-type'),
-    },
-    html: await response.text(),
-  }
+  return normalized || null
 }
 
-export const hasPublicJobsSignal = (html) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
-
-export const isVerifiedBlockedHomepage = (page = {}) => {
-  if (Number(page?.status) !== 403) {
-    return false
-  }
-
-  if (hasPublicJobsSignal(page?.html)) {
-    return false
-  }
-
-  const rawHtml = String(page?.html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-  const server = String(page?.headers?.server ?? '')
-  const platform = String(page?.headers?.platform ?? '')
-  const panel = String(page?.headers?.panel ?? '')
-
-  return /<title>\s*403 Forbidden\s*<\/title>/i.test(rawHtml)
-    && /\b403\b/.test(normalized)
-    && /\bForbidden\b/i.test(normalized)
-    && /Access to this resource on the server is denied!/i.test(normalized)
-    && /LiteSpeed/i.test(server)
-    && /hostinger/i.test(platform)
-    && /hpanel/i.test(panel)
+const extractTitle = (html) => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1])
 }
 
-export const isVerifiedAbsentCareersRoute = (page = {}) => {
-  if (Number(page?.status) !== 404) {
-    return false
-  }
+export const extractOfficialDarwinboxUrl = (html = '') => {
+  const match = String(html ?? '').match(
+    /https:\/\/primesoft\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/allJobs/i,
+  )
 
-  if (hasPublicJobsSignal(page?.html)) {
-    return false
-  }
-
-  const rawHtml = String(page?.html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-
-  return /<title>\s*This Page Does Not Exist\s*<\/title>/i.test(rawHtml)
-    && /This Page Does Not Exist/i.test(normalized)
-    && /Sorry, the page you are looking for could not be found\./i.test(normalized)
-    && /It'?s just an accident that was not intentional\./i.test(normalized)
+  return normalizeWhitespace(match?.[0])
 }
 
-export const createPrimesoftEnterpriseScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+export const hasOfficialPrimesoftCareersSignals = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
 
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Primesoft Enterprise homepage now exposes a public jobs surface')
+  return extractTitle(page) === 'Careers at PrimeSoft | Shape the Future of Work with AI & IT'
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/primesoft\.net\/careers\/["']/i.test(page)
+    && text.includes('For all India open positions click the link below')
+    && text.includes('jobs@primesoft.net (India)')
+    && text.includes('Canada')
+    && /https:\/\/primesoft\.net\/jobs\/sr-software-engineering\//i.test(page)
+}
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: 'primesoftenterprise-official',
+  timeoutMs: 15000,
+})
+
+export const createPrimesoftEnterpriseScraper = ({
+  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  now = () => new Date().toISOString(),
+  darwinboxScraper: delegatedDarwinboxScraper = darwinboxScraper,
+} = {}) => ({
+  async run({
+    maxPages = config.maxPages,
+    fetchText = defaultFetchText,
+    fetchListingPage,
+  } = {}) {
+    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+
+    if (!hasOfficialPrimesoftCareersSignals(careersHtml)) {
+      throw new Error('The verified Primesoft Enterprise careers page no longer matches the verified public surface')
     }
 
-    if (!isVerifiedBlockedHomepage(homepage)) {
-      throw new Error('Primesoft Enterprise verified homepage no longer matches the blocked homepage contract')
+    if (extractOfficialDarwinboxUrl(careersHtml) !== OFFICIAL_CAREERS_HANDOFF_URL) {
+      throw new Error('The verified Primesoft Enterprise careers page no longer links to the official Darwinbox handoff')
     }
 
-    for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
+    const jobs = await delegatedDarwinboxScraper.run({
+      maxPages,
+      maxJobs,
+      fetchListingPage,
+    })
+    const scrapedAt = now()
 
-      if (!isVerifiedAbsentCareersRoute(careersRoute)) {
-        throw new Error('Primesoft Enterprise careers routes changed materially or now expose public jobs')
-      }
-    }
-
-    return []
+    return jobs.map((job) => ({
+      ...job,
+      scrapedAt,
+    }))
   },
 })
 

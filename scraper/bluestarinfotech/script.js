@@ -73,7 +73,8 @@ export const hasRedirectShellSignal = (html) => {
 
 export const hasParkedLanderRedirect = (response = {}) =>
   Number(response?.status) === 307
-  && /^https:\/\/www\.afternic\.com\/forsale\/www\.bsil\.com\b/i.test(String(response?.location ?? ''))
+  && /^(?:https:\/\/www\.afternic\.com\/forsale\/www\.bsil\.com\b|https:\/\/forsale\.godaddy\.com\/forsale\/www\.bsil\.com\b)/i
+    .test(String(response?.location ?? ''))
 
 export const createBlueStarInfotechScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

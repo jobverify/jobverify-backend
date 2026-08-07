@@ -27,12 +27,12 @@ export const hasVerifiedCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /<title>\s*Innoval Digital Solutions\s*\|\s*Company\s*<\/title>/i.test(page)
+  return /<title>\s*About Innoval Digital Solutions\s*\|\s*SAP Compliance Experts\s*\|\s*Innoval Digital Solutions\s*<\/title>/i.test(page)
     && text.includes('company')
     && text.includes('careers')
-    && text.includes("we're hiring across engineering, quality assurance, and digital delivery teams")
-    && text.includes('see open roles and apply')
-    && text.includes('grow with ivl')
+    && text.includes('life @ ivl')
+    && text.includes('enterprise intelligent solutions on sap btp')
+    && text.includes('sap btp certified cmmi l5')
   }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

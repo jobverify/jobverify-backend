@@ -11,9 +11,10 @@ const teamPageHtml = `
     <link rel="canonical" href="https://www.instamojo.com/company/team/" />
   </head>
   <body>
-    <h1>Join the Instamojo team</h1>
-    <p>Interested in one of our open roles? Apply here or write to careers@instamojo.com.</p>
-    <a href="https://recruiterflow.com/instamojo/jobs">Join the team</a>
+    <h1>People That Put The Mojo (Magic) In Instamojo</h1>
+    <p>Discover the people of Instamojo that power lakhs of Indian eCommerce businesses. Meet the team, apply for roles or just hit us up to have a conversation.</p>
+    <p>Apply to open roles or refer folks that are looking to make an impact on thousands of small businesses in India. You can also write to us at careers@instamojo.com.</p>
+    <a href="https://recruiterflow.com/instamojo/jobs">Apply here</a>
   </body>
 </html>
 `

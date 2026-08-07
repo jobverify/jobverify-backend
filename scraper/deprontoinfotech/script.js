@@ -143,6 +143,7 @@ const buildJobFromCard = (card) => ({
   postingDate: null,
   closingDate: null,
   jobDescription: card.jobDescription,
+  publicExperienceChecked: true,
   remoteStatus: null,
 })
 

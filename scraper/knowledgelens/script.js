@@ -17,7 +17,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/[\u2018\u2019]/g, "'")
   .replace(/&quot;/gi, '"')
+  .replace(/[\u201c\u201d]/g, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
@@ -56,6 +58,17 @@ export const defaultFetchPage = async (url, {
   }
 }
 
+export const isRetiredHomepageTimeoutError = (error) => {
+  const message = String(error?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return /UND_ERR_CONNECT_TIMEOUT/i.test(combined)
+    || /Connect Timeout Error/i.test(combined)
+    || /\btimed out\b/i.test(combined)
+}
+
 const normalizeUrlString = (value) => String(value ?? '').replace(/\/+$/, '')
 
 export const isRetiredAnnouncementUrl = (value) =>
@@ -68,9 +81,9 @@ export const hasRetiredHomepageSignal = (html) => {
   return /<title>\s*Rockwell Acquires Knowledge Lens\s*\|\s*Kalypso\s*<\/title>/i.test(rawHtml)
     && normalized.includes('knowledge lens integration with rockwell automation complete')
     && normalized.includes('march 1, 2025')
-    && normalized.includes('knowledge lens is now fully integrated into rockwell automation')
+    && normalized.includes("we're proud to share that knowledge lens is now fully integrated into rockwell automation")
     && normalized.includes('the knowledge lens website has been retired')
-    && /href="https:\/\/kalypso\.com\/"/i.test(rawHtml)
+    && normalized.includes('explore kalypso.com')
 }
 
 export const hasParentCareersSignal = (html) => {
@@ -90,7 +103,16 @@ export const hasBrandSpecificOpeningsSignal = (html) =>
 
 export const createKnowledgeLensScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const retiredHomepage = await fetchPage(HOMEPAGE_URL)
+    let retiredHomepage
+    try {
+      retiredHomepage = await fetchPage(HOMEPAGE_URL)
+    } catch (error) {
+      if (!isRetiredHomepageTimeoutError(error)) {
+        throw error
+      }
+
+      retiredHomepage = await fetchPage(RETIRED_ANNOUNCEMENT_URL)
+    }
 
     if (
       retiredHomepage.status !== 200

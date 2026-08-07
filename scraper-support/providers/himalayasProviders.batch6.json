@@ -1,10 +1,10 @@
 [
   {
-    "source": "hmklaviyo",
+    "source": "klaviyo.himalayas.app",
     "companyName": "Klaviyo",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Klaviyo+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "klaviyo.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -23,14 +23,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Klaviyo+official+careers+India+software+jobs) for Klaviyo: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmklaviyo/jobs.json"
+    "dryRunFile": "klaviyo.himalayas.app/jobs.json"
   },
   {
-    "source": "hmbraze",
+    "source": "braze.himalayas.app",
     "companyName": "Braze",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Braze+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "braze.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -49,14 +49,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Braze+official+careers+India+software+jobs) for Braze: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmbraze/jobs.json"
+    "dryRunFile": "braze.himalayas.app/jobs.json"
   },
   {
-    "source": "hmiterable",
+    "source": "iterable.himalayas.app",
     "companyName": "Iterable",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Iterable+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "iterable.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -75,14 +75,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Iterable+official+careers+India+software+jobs) for Iterable: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmiterable/jobs.json"
+    "dryRunFile": "iterable.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcustomerio",
+    "source": "customer-io.himalayas.app",
     "companyName": "Customer.io",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Customer.io+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "customer-io.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -101,14 +101,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Customer.io+official+careers+India+software+jobs) for Customer.io: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcustomerio/jobs.json"
+    "dryRunFile": "customer-io.himalayas.app/jobs.json"
   },
   {
-    "source": "hmactivecampaign",
+    "source": "activecampaign.himalayas.app",
     "companyName": "ActiveCampaign",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=ActiveCampaign+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "activecampaign.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -127,14 +127,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=ActiveCampaign+official+careers+India+software+jobs) for ActiveCampaign: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmactivecampaign/jobs.json"
+    "dryRunFile": "activecampaign.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcampaignmonitor",
+    "source": "campaign-monitor.himalayas.app",
     "companyName": "Campaign Monitor",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Campaign+Monitor+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "campaign-monitor.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -153,14 +153,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Campaign+Monitor+official+careers+India+software+jobs) for Campaign Monitor: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcampaignmonitor/jobs.json"
+    "dryRunFile": "campaign-monitor.himalayas.app/jobs.json"
   },
   {
-    "source": "hmgetresponse",
+    "source": "getresponse.himalayas.app",
     "companyName": "GetResponse",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=GetResponse+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "getresponse.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -179,14 +179,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=GetResponse+official+careers+India+software+jobs) for GetResponse: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmgetresponse/jobs.json"
+    "dryRunFile": "getresponse.himalayas.app/jobs.json"
   },
   {
-    "source": "hmomnisend",
+    "source": "omnisend.himalayas.app",
     "companyName": "Omnisend",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Omnisend+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "omnisend.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -205,14 +205,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Omnisend+official+careers+India+software+jobs) for Omnisend: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmomnisend/jobs.json"
+    "dryRunFile": "omnisend.himalayas.app/jobs.json"
   },
   {
-    "source": "hminsider",
+    "source": "insider.himalayas.app",
     "companyName": "Insider",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Insider+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "insider.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -231,14 +231,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Insider+official+careers+India+software+jobs) for Insider: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hminsider/jobs.json"
+    "dryRunFile": "insider.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdynamicyield",
+    "source": "dynamic-yield.himalayas.app",
     "companyName": "Dynamic Yield",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Dynamic+Yield+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "dynamic-yield.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -257,14 +257,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Dynamic+Yield+official+careers+India+software+jobs) for Dynamic Yield: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmdynamicyield/jobs.json"
+    "dryRunFile": "dynamic-yield.himalayas.app/jobs.json"
   },
   {
-    "source": "hmnosto",
+    "source": "nosto.himalayas.app",
     "companyName": "Nosto",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Nosto+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "nosto.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -283,14 +283,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Nosto+official+careers+India+software+jobs) for Nosto: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmnosto/jobs.json"
+    "dryRunFile": "nosto.himalayas.app/jobs.json"
   },
   {
-    "source": "hmalgolia",
+    "source": "algolia.himalayas.app",
     "companyName": "Algolia",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Algolia+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "algolia.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -309,14 +309,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Algolia+official+careers+India+software+jobs) for Algolia: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmalgolia/jobs.json"
+    "dryRunFile": "algolia.himalayas.app/jobs.json"
   },
   {
-    "source": "hmconstructorio",
+    "source": "constructor-io.himalayas.app",
     "companyName": "Constructor.io",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Constructor.io+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "constructor-io.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -335,14 +335,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Constructor.io+official+careers+India+software+jobs) for Constructor.io: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmconstructorio/jobs.json"
+    "dryRunFile": "constructor-io.himalayas.app/jobs.json"
   },
   {
-    "source": "hmsearchspring",
+    "source": "searchspring.himalayas.app",
     "companyName": "Searchspring",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Searchspring+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "searchspring.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -361,14 +361,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Searchspring+official+careers+India+software+jobs) for Searchspring: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmsearchspring/jobs.json"
+    "dryRunFile": "searchspring.himalayas.app/jobs.json"
   },
   {
-    "source": "hmlucidworks",
+    "source": "lucidworks.himalayas.app",
     "companyName": "Lucidworks",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Lucidworks+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "lucidworks.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -387,14 +387,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Lucidworks+official+careers+India+software+jobs) for Lucidworks: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmlucidworks/jobs.json"
+    "dryRunFile": "lucidworks.himalayas.app/jobs.json"
   },
   {
-    "source": "hmelasticpath",
+    "source": "elastic-path.himalayas.app",
     "companyName": "Elastic Path",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Elastic+Path+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "elastic-path.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -413,14 +413,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Elastic+Path+official+careers+India+software+jobs) for Elastic Path: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmelasticpath/jobs.json"
+    "dryRunFile": "elastic-path.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcommercetools",
+    "source": "commercetools.himalayas.app",
     "companyName": "commercetools",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=commercetools+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "commercetools.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -439,14 +439,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=commercetools+official+careers+India+software+jobs) for commercetools: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcommercetools/jobs.json"
+    "dryRunFile": "commercetools.himalayas.app/jobs.json"
   },
   {
-    "source": "hmvtex",
+    "source": "vtex.himalayas.app",
     "companyName": "VTEX",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=VTEX+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "vtex.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -465,14 +465,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=VTEX+official+careers+India+software+jobs) for VTEX: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmvtex/jobs.json"
+    "dryRunFile": "vtex.himalayas.app/jobs.json"
   },
   {
-    "source": "hmbigcommerce",
+    "source": "bigcommerce.himalayas.app",
     "companyName": "BigCommerce",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=BigCommerce+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "bigcommerce.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -491,14 +491,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=BigCommerce+official+careers+India+software+jobs) for BigCommerce: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmbigcommerce/jobs.json"
+    "dryRunFile": "bigcommerce.himalayas.app/jobs.json"
   },
   {
-    "source": "hmshopware",
+    "source": "shopware.himalayas.app",
     "companyName": "Shopware",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Shopware+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "shopware.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -517,14 +517,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Shopware+official+careers+India+software+jobs) for Shopware: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmshopware/jobs.json"
+    "dryRunFile": "shopware.himalayas.app/jobs.json"
   },
   {
-    "source": "hmspryker",
+    "source": "spryker.himalayas.app",
     "companyName": "Spryker",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Spryker+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "spryker.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -543,14 +543,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Spryker+official+careers+India+software+jobs) for Spryker: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmspryker/jobs.json"
+    "dryRunFile": "spryker.himalayas.app/jobs.json"
   },
   {
-    "source": "hmmirakl",
+    "source": "mirakl.himalayas.app",
     "companyName": "Mirakl",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Mirakl+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "mirakl.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -569,14 +569,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Mirakl+official+careers+India+software+jobs) for Mirakl: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmmirakl/jobs.json"
+    "dryRunFile": "mirakl.himalayas.app/jobs.json"
   },
   {
-    "source": "hmchanneladvisor",
+    "source": "channeladvisor.himalayas.app",
     "companyName": "ChannelAdvisor",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=ChannelAdvisor+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "channeladvisor.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -595,14 +595,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=ChannelAdvisor+official+careers+India+software+jobs) for ChannelAdvisor: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmchanneladvisor/jobs.json"
+    "dryRunFile": "channeladvisor.himalayas.app/jobs.json"
   },
   {
-    "source": "hmrithum",
+    "source": "rithum.himalayas.app",
     "companyName": "Rithum",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Rithum+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "rithum.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -621,14 +621,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Rithum+official+careers+India+software+jobs) for Rithum: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmrithum/jobs.json"
+    "dryRunFile": "rithum.himalayas.app/jobs.json"
   },
   {
-    "source": "hmakeneo",
+    "source": "akeneo.himalayas.app",
     "companyName": "Akeneo",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Akeneo+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "akeneo.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -647,14 +647,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Akeneo+official+careers+India+software+jobs) for Akeneo: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmakeneo/jobs.json"
+    "dryRunFile": "akeneo.himalayas.app/jobs.json"
   },
   {
-    "source": "hmsalsify",
+    "source": "salsify.himalayas.app",
     "companyName": "Salsify",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Salsify+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "salsify.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -673,14 +673,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Salsify+official+careers+India+software+jobs) for Salsify: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmsalsify/jobs.json"
+    "dryRunFile": "salsify.himalayas.app/jobs.json"
   },
   {
-    "source": "hmpimcore",
+    "source": "pimcore.himalayas.app",
     "companyName": "Pimcore",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Pimcore+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "pimcore.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -699,14 +699,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Pimcore+official+careers+India+software+jobs) for Pimcore: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmpimcore/jobs.json"
+    "dryRunFile": "pimcore.himalayas.app/jobs.json"
   },
   {
-    "source": "hminriver",
+    "source": "inriver.himalayas.app",
     "companyName": "inRiver",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=inRiver+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "inriver.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -725,14 +725,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=inRiver+official+careers+India+software+jobs) for inRiver: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hminriver/jobs.json"
+    "dryRunFile": "inriver.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcontentserv",
+    "source": "contentserv.himalayas.app",
     "companyName": "Contentserv",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Contentserv+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "contentserv.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -751,14 +751,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Contentserv+official+careers+India+software+jobs) for Contentserv: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcontentserv/jobs.json"
+    "dryRunFile": "contentserv.himalayas.app/jobs.json"
   },
   {
-    "source": "hmstibosystems",
+    "source": "stibo-systems.himalayas.app",
     "companyName": "Stibo Systems",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Stibo+Systems+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "stibo-systems.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -777,14 +777,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Stibo+Systems+official+careers+India+software+jobs) for Stibo Systems: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmstibosystems/jobs.json"
+    "dryRunFile": "stibo-systems.himalayas.app/jobs.json"
   },
   {
-    "source": "hmsyndigo",
+    "source": "syndigo.himalayas.app",
     "companyName": "Syndigo",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Syndigo+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "syndigo.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -803,14 +803,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Syndigo+official+careers+India+software+jobs) for Syndigo: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmsyndigo/jobs.json"
+    "dryRunFile": "syndigo.himalayas.app/jobs.json"
   },
   {
-    "source": "hmpowerreviews",
+    "source": "powerreviews.himalayas.app",
     "companyName": "PowerReviews",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=PowerReviews+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "powerreviews.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -829,14 +829,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=PowerReviews+official+careers+India+software+jobs) for PowerReviews: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmpowerreviews/jobs.json"
+    "dryRunFile": "powerreviews.himalayas.app/jobs.json"
   },
   {
-    "source": "hmyotpo",
+    "source": "yotpo.himalayas.app",
     "companyName": "Yotpo",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Yotpo+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "yotpo.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -855,14 +855,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Yotpo+official+careers+India+software+jobs) for Yotpo: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmyotpo/jobs.json"
+    "dryRunFile": "yotpo.himalayas.app/jobs.json"
   },
   {
-    "source": "hmtrustpilot",
+    "source": "trustpilot.himalayas.app",
     "companyName": "Trustpilot",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Trustpilot+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "trustpilot.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -881,14 +881,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Trustpilot+official+careers+India+software+jobs) for Trustpilot: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmtrustpilot/jobs.json"
+    "dryRunFile": "trustpilot.himalayas.app/jobs.json"
   },
   {
-    "source": "hmfeefo",
+    "source": "feefo.himalayas.app",
     "companyName": "Feefo",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Feefo+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "feefo.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -907,14 +907,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Feefo+official+careers+India+software+jobs) for Feefo: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmfeefo/jobs.json"
+    "dryRunFile": "feefo.himalayas.app/jobs.json"
   },
   {
-    "source": "hmreviewsio",
+    "source": "reviews-io.himalayas.app",
     "companyName": "Reviews.io",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Reviews.io+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "reviews-io.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -933,14 +933,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Reviews.io+official+careers+India+software+jobs) for Reviews.io: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmreviewsio/jobs.json"
+    "dryRunFile": "reviews-io.himalayas.app/jobs.json"
   },
   {
-    "source": "hmtotango",
+    "source": "totango.himalayas.app",
     "companyName": "Totango",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Totango+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "totango.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -959,14 +959,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Totango+official+careers+India+software+jobs) for Totango: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmtotango/jobs.json"
+    "dryRunFile": "totango.himalayas.app/jobs.json"
   },
   {
-    "source": "hmchurnzero",
+    "source": "churnzero.himalayas.app",
     "companyName": "ChurnZero",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=ChurnZero+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "churnzero.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -985,14 +985,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=ChurnZero+official+careers+India+software+jobs) for ChurnZero: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmchurnzero/jobs.json"
+    "dryRunFile": "churnzero.himalayas.app/jobs.json"
   },
   {
-    "source": "hmplanhat",
+    "source": "planhat.himalayas.app",
     "companyName": "Planhat",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Planhat+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "planhat.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1011,14 +1011,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Planhat+official+careers+India+software+jobs) for Planhat: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmplanhat/jobs.json"
+    "dryRunFile": "planhat.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcatalystsoftware",
+    "source": "catalyst-software.himalayas.app",
     "companyName": "Catalyst Software",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Catalyst+Software+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "catalyst-software.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1037,14 +1037,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Catalyst+Software+official+careers+India+software+jobs) for Catalyst Software: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcatalystsoftware/jobs.json"
+    "dryRunFile": "catalyst-software.himalayas.app/jobs.json"
   },
   {
-    "source": "hmclientsuccess",
+    "source": "clientsuccess.himalayas.app",
     "companyName": "ClientSuccess",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=ClientSuccess+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "clientsuccess.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1063,14 +1063,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=ClientSuccess+official+careers+India+software+jobs) for ClientSuccess: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmclientsuccess/jobs.json"
+    "dryRunFile": "clientsuccess.himalayas.app/jobs.json"
   },
   {
-    "source": "hmvitally",
+    "source": "vitally.himalayas.app",
     "companyName": "Vitally",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Vitally+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "vitally.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1089,14 +1089,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Vitally+official+careers+India+software+jobs) for Vitally: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmvitally/jobs.json"
+    "dryRunFile": "vitally.himalayas.app/jobs.json"
   },
   {
-    "source": "hmadasupport",
+    "source": "ada-support.himalayas.app",
     "companyName": "Ada Support",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Ada+Support+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ada-support.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1115,14 +1115,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Ada+Support+official+careers+India+software+jobs) for Ada Support: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmadasupport/jobs.json"
+    "dryRunFile": "ada-support.himalayas.app/jobs.json"
   },
   {
-    "source": "hmforethought",
+    "source": "forethought.himalayas.app",
     "companyName": "Forethought",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Forethought+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "forethought.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1141,14 +1141,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Forethought+official+careers+India+software+jobs) for Forethought: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmforethought/jobs.json"
+    "dryRunFile": "forethought.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcresta",
+    "source": "cresta.himalayas.app",
     "companyName": "Cresta",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Cresta+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "cresta.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1167,14 +1167,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Cresta+official+careers+India+software+jobs) for Cresta: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcresta/jobs.json"
+    "dryRunFile": "cresta.himalayas.app/jobs.json"
   },
   {
-    "source": "hmuniphore",
+    "source": "uniphore.himalayas.app",
     "companyName": "Uniphore",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Uniphore+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "uniphore.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1193,14 +1193,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Uniphore+official+careers+India+software+jobs) for Uniphore: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmuniphore/jobs.json"
+    "dryRunFile": "uniphore.himalayas.app/jobs.json"
   },
   {
-    "source": "hmyellowai",
+    "source": "yellow-ai.himalayas.app",
     "companyName": "Yellow.ai",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Yellow.ai+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "yellow-ai.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1219,14 +1219,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Yellow.ai+official+careers+India+software+jobs) for Yellow.ai: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmyellowai/jobs.json"
+    "dryRunFile": "yellow-ai.himalayas.app/jobs.json"
   },
   {
-    "source": "hmkoreai",
+    "source": "kore-ai.himalayas.app",
     "companyName": "Kore.ai",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Kore.ai+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "kore-ai.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1245,14 +1245,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Kore.ai+official+careers+India+software+jobs) for Kore.ai: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmkoreai/jobs.json"
+    "dryRunFile": "kore-ai.himalayas.app/jobs.json"
   },
   {
-    "source": "hmamelia",
+    "source": "amelia.himalayas.app",
     "companyName": "Amelia",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Amelia+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "amelia.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1271,14 +1271,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Amelia+official+careers+India+software+jobs) for Amelia: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmamelia/jobs.json"
+    "dryRunFile": "amelia.himalayas.app/jobs.json"
   },
   {
-    "source": "hmliveperson",
+    "source": "liveperson.himalayas.app",
     "companyName": "LivePerson",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=LivePerson+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "liveperson.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1297,14 +1297,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=LivePerson+official+careers+India+software+jobs) for LivePerson: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmliveperson/jobs.json"
+    "dryRunFile": "liveperson.himalayas.app/jobs.json"
   },
   {
-    "source": "hmtalkdesk",
+    "source": "talkdesk.himalayas.app",
     "companyName": "Talkdesk",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Talkdesk+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "talkdesk.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1323,14 +1323,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Talkdesk+official+careers+India+software+jobs) for Talkdesk: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmtalkdesk/jobs.json"
+    "dryRunFile": "talkdesk.himalayas.app/jobs.json"
   },
   {
-    "source": "hmaircall",
+    "source": "aircall.himalayas.app",
     "companyName": "Aircall",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Aircall+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "aircall.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1349,14 +1349,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Aircall+official+careers+India+software+jobs) for Aircall: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmaircall/jobs.json"
+    "dryRunFile": "aircall.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcloudtalk",
+    "source": "cloudtalk.himalayas.app",
     "companyName": "CloudTalk",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=CloudTalk+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "cloudtalk.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1375,14 +1375,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=CloudTalk+official+careers+India+software+jobs) for CloudTalk: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcloudtalk/jobs.json"
+    "dryRunFile": "cloudtalk.himalayas.app/jobs.json"
   },
   {
-    "source": "hmjustcall",
+    "source": "justcall.himalayas.app",
     "companyName": "JustCall",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=JustCall+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "justcall.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1401,14 +1401,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=JustCall+official+careers+India+software+jobs) for JustCall: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmjustcall/jobs.json"
+    "dryRunFile": "justcall.himalayas.app/jobs.json"
   },
   {
-    "source": "hmvonagebusiness",
+    "source": "vonage-business.himalayas.app",
     "companyName": "Vonage Business",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Vonage+Business+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "vonage-business.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1427,14 +1427,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Vonage+Business+official+careers+India+software+jobs) for Vonage Business: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmvonagebusiness/jobs.json"
+    "dryRunFile": "vonage-business.himalayas.app/jobs.json"
   },
   {
-    "source": "hmsinch",
+    "source": "sinch.himalayas.app",
     "companyName": "Sinch",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Sinch+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "sinch.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1453,14 +1453,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Sinch+official+careers+India+software+jobs) for Sinch: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmsinch/jobs.json"
+    "dryRunFile": "sinch.himalayas.app/jobs.json"
   },
   {
-    "source": "hminfobip",
+    "source": "infobip.himalayas.app",
     "companyName": "Infobip",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Infobip+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "infobip.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1479,14 +1479,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Infobip+official+careers+India+software+jobs) for Infobip: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hminfobip/jobs.json"
+    "dryRunFile": "infobip.himalayas.app/jobs.json"
   },
   {
-    "source": "hmbird",
+    "source": "bird.himalayas.app",
     "companyName": "Bird",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Bird+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "bird.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1505,14 +1505,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Bird+official+careers+India+software+jobs) for Bird: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmbird/jobs.json"
+    "dryRunFile": "bird.himalayas.app/jobs.json"
   },
   {
-    "source": "hmmessagemedia",
+    "source": "messagemedia.himalayas.app",
     "companyName": "MessageMedia",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=MessageMedia+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "messagemedia.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1531,14 +1531,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=MessageMedia+official+careers+India+software+jobs) for MessageMedia: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmmessagemedia/jobs.json"
+    "dryRunFile": "messagemedia.himalayas.app/jobs.json"
   },
   {
-    "source": "hmbandwidth",
+    "source": "bandwidth.himalayas.app",
     "companyName": "Bandwidth",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Bandwidth+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "bandwidth.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1557,14 +1557,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Bandwidth+official+careers+India+software+jobs) for Bandwidth: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmbandwidth/jobs.json"
+    "dryRunFile": "bandwidth.himalayas.app/jobs.json"
   },
   {
-    "source": "hmtelnyx",
+    "source": "telnyx.himalayas.app",
     "companyName": "Telnyx",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Telnyx+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "telnyx.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1583,14 +1583,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Telnyx+official+careers+India+software+jobs) for Telnyx: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmtelnyx/jobs.json"
+    "dryRunFile": "telnyx.himalayas.app/jobs.json"
   },
   {
-    "source": "hmroutemobile",
+    "source": "route-mobile.himalayas.app",
     "companyName": "Route Mobile",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Route+Mobile+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "route-mobile.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1609,14 +1609,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Route+Mobile+official+careers+India+software+jobs) for Route Mobile: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmroutemobile/jobs.json"
+    "dryRunFile": "route-mobile.himalayas.app/jobs.json"
   },
   {
-    "source": "hmozonetel",
+    "source": "ozonetel.himalayas.app",
     "companyName": "Ozonetel",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Ozonetel+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ozonetel.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1635,14 +1635,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Ozonetel+official+careers+India+software+jobs) for Ozonetel: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmozonetel/jobs.json"
+    "dryRunFile": "ozonetel.himalayas.app/jobs.json"
   },
   {
-    "source": "hmfastly",
+    "source": "fastly.himalayas.app",
     "companyName": "Fastly",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Fastly+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "fastly.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1661,14 +1661,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Fastly+official+careers+India+software+jobs) for Fastly: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmfastly/jobs.json"
+    "dryRunFile": "fastly.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdigitalocean",
+    "source": "digitalocean.himalayas.app",
     "companyName": "DigitalOcean",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=DigitalOcean+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "digitalocean.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1687,14 +1687,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=DigitalOcean+official+careers+India+software+jobs) for DigitalOcean: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmdigitalocean/jobs.json"
+    "dryRunFile": "digitalocean.himalayas.app/jobs.json"
   },
   {
-    "source": "hmovhcloud",
+    "source": "ovhcloud.himalayas.app",
     "companyName": "OVHcloud",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=OVHcloud+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ovhcloud.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1713,14 +1713,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=OVHcloud+official+careers+India+software+jobs) for OVHcloud: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmovhcloud/jobs.json"
+    "dryRunFile": "ovhcloud.himalayas.app/jobs.json"
   },
   {
-    "source": "hmscaleway",
+    "source": "scaleway.himalayas.app",
     "companyName": "Scaleway",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Scaleway+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "scaleway.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1739,14 +1739,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Scaleway+official+careers+India+software+jobs) for Scaleway: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmscaleway/jobs.json"
+    "dryRunFile": "scaleway.himalayas.app/jobs.json"
   },
   {
-    "source": "hmvultr",
+    "source": "vultr.himalayas.app",
     "companyName": "Vultr",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Vultr+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "vultr.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1765,14 +1765,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Vultr+official+careers+India+software+jobs) for Vultr: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmvultr/jobs.json"
+    "dryRunFile": "vultr.himalayas.app/jobs.json"
   },
   {
-    "source": "hmlinode",
+    "source": "linode.himalayas.app",
     "companyName": "Linode",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Linode+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "linode.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1791,14 +1791,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Linode+official+careers+India+software+jobs) for Linode: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmlinode/jobs.json"
+    "dryRunFile": "linode.himalayas.app/jobs.json"
   },
   {
-    "source": "hmequinix",
+    "source": "equinix.himalayas.app",
     "companyName": "Equinix",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Equinix+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "equinix.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1817,14 +1817,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Equinix+official+careers+India+software+jobs) for Equinix: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmequinix/jobs.json"
+    "dryRunFile": "equinix.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcoreweave",
+    "source": "coreweave.himalayas.app",
     "companyName": "CoreWeave",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=CoreWeave+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "coreweave.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1843,14 +1843,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=CoreWeave+official+careers+India+software+jobs) for CoreWeave: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcoreweave/jobs.json"
+    "dryRunFile": "coreweave.himalayas.app/jobs.json"
   },
   {
-    "source": "hmlambdalabs",
+    "source": "lambda-labs.himalayas.app",
     "companyName": "Lambda Labs",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Lambda+Labs+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "lambda-labs.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1869,14 +1869,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Lambda+Labs+official+careers+India+software+jobs) for Lambda Labs: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmlambdalabs/jobs.json"
+    "dryRunFile": "lambda-labs.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcrusoe",
+    "source": "crusoe.himalayas.app",
     "companyName": "Crusoe",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Crusoe+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "crusoe.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1895,14 +1895,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Crusoe+official+careers+India+software+jobs) for Crusoe: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmcrusoe/jobs.json"
+    "dryRunFile": "crusoe.himalayas.app/jobs.json"
   },
   {
-    "source": "hmvercel",
+    "source": "vercel.himalayas.app",
     "companyName": "Vercel",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Vercel+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "vercel.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1921,14 +1921,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Vercel+official+careers+India+software+jobs) for Vercel: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmvercel/jobs.json"
+    "dryRunFile": "vercel.himalayas.app/jobs.json"
   },
   {
-    "source": "hmnetlify",
+    "source": "netlify.himalayas.app",
     "companyName": "Netlify",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Netlify+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "netlify.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1947,14 +1947,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Netlify+official+careers+India+software+jobs) for Netlify: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmnetlify/jobs.json"
+    "dryRunFile": "netlify.himalayas.app/jobs.json"
   },
   {
-    "source": "hmrender",
+    "source": "render.himalayas.app",
     "companyName": "Render",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Render+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "render.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1973,14 +1973,14 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Render+official+careers+India+software+jobs) for Render: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmrender/jobs.json"
+    "dryRunFile": "render.himalayas.app/jobs.json"
   },
   {
-    "source": "hmflyio",
+    "source": "fly-io.himalayas.app",
     "companyName": "Fly.io",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://www.bing.com/search?q=Fly.io+official+careers+India+software+jobs",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "fly-io.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1999,6 +1999,6 @@
     "notes": "Established software/technology employer candidate; not individually validated in this workbook.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://www.bing.com/search?q=Fly.io+official+careers+India+software+jobs) for Fly.io: Use the live India job search link to view current openings; location evidence: India / India-eligible remote; verify on listing.",
-    "dryRunFile": "hmflyio/jobs.json"
+    "dryRunFile": "fly-io.himalayas.app/jobs.json"
   }
 ]

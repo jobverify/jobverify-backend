@@ -34,10 +34,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasVerifiedBoardSignal = (html) => {
   const normalized = normalizeWhitespace(html)
-  return normalized.includes('Jobs at Betsol LLC')
+  return /<title[^>]*>\s*Careers at BETSOL\s*<\/title>/i.test(String(html ?? ''))
+    && normalized.includes('Jobs at Betsol LLC')
     && normalized.includes('Bengaluru, India')
-    && normalized.includes('Telecom Voice Operations Engineer')
-    && normalized.includes('ServiceNow QA Engineer')
+    && /https:\/\/jobs\.smartrecruiters\.com\/Betsol\//i.test(String(html ?? ''))
     && (/href="https:\/\/www\.betsol\.com\/"/i.test(String(html ?? ''))
       || normalized.includes('Home Page'))
 }

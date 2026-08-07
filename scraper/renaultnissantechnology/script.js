@@ -86,6 +86,7 @@ export const extractSearchResults = (payload) => {
       const location = normalizeLocation(entry.location, entry.locationCountry)
       const jobId = normalizeWhitespace(entry.jobpostingID)
       const requisitionId = normalizeWhitespace(entry.jobRequisitionId)
+      const jobDescription = stripHtml(entry.jobPostingDescription)
 
       if (!title || !sourceUrl || !location || !jobId || !requisitionId) {
         return null
@@ -104,12 +105,13 @@ export const extractSearchResults = (payload) => {
         applyUrl: sourceUrl,
         employmentType: normalizeEmploymentType(entry.contractType),
         experienceRequired: null,
+        publicExperienceChecked: Boolean(jobDescription),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: extractListItems(entry.jobPostingDescription),
         postingDate: normalizeWhitespace(entry.startDate),
         closingDate: null,
-        jobDescription: stripHtml(entry.jobPostingDescription),
+        jobDescription,
       }
     })
     .filter(Boolean)

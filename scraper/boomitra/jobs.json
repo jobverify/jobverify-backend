@@ -1,0 +1,159 @@
+[
+  {
+    "title": "Full Stack Developer",
+    "company": "Boomitra",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "state": null,
+    "country": "India",
+    "jobId": "full-stack-developer-2025-04",
+    "requisitionId": null,
+    "sourceUrl": "https://boomitra.com/wp-content/uploads/2025/04/Full-Stack-Developer.pdf",
+    "applyUrl": "mailto:careers@boomitra.com",
+    "employmentType": "Full-time",
+    "experienceRequired": "2-4 years",
+    "minimumQualification": "Bachelor's or Master's Degree in Computer Science or Engineering",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Node.js",
+      "Express.js",
+      "JavaScript",
+      "TypeScript",
+      "React.js",
+      "Next.js"
+    ],
+    "postingDate": "2026-08-02T07:53:14.330Z",
+    "closingDate": null,
+    "jobDescription": "Full Stack Developer (Bangalore, India) As a Full Stack Developer at Boomitra, you’ll be at the heart of building the digital tools that power climate action on a global scale. From designing scalable applications to developing APIs and real-time features, you’ll help bring our vision to life through innovative, high-performance software solutions. This role offers a unique opportunity to apply your technical expertise to real-world environmental challenges—developing platforms that support farmers, carbon projects, and the fight against climate change. The ideal candidate is a strong generalist with hands-on experience across the tech stack, a deep understanding of cloud-based architecture, and a passion for building clean, scalable, and impactful technology. Learn more and apply We are growing fast! Interested in joining the team, but don’t see the perfect role? Send your resume and cover letter to careers@boomitra.com",
+    "source": "boomitra",
+    "link": "mailto:careers@boomitra.com",
+    "scrapedAt": "2026-08-02T07:53:14.330Z",
+    "companyCareerPage": "https://boomitra.com/careers/",
+    "companyDomain": "boomitra.com",
+    "atsPlatform": "official-company-site-pdf-application",
+    "originalTitle": "Full Stack Developer",
+    "normalizedTitle": "Full Stack Developer",
+    "jobCategory": "Full Stack Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-02T07:53:14.330Z",
+    "scrapedTimestamp": "2026-08-02T07:53:14.330Z",
+    "skillIds": [
+      "node-js",
+      "express",
+      "javascript",
+      "typescript",
+      "react",
+      "next-js"
+    ],
+    "requiredSkillIds": [
+      "node-js",
+      "express",
+      "javascript",
+      "typescript",
+      "react",
+      "next-js"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "node-js",
+        "canonicalName": "Node.js",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Node.js"
+      },
+      {
+        "skillId": "express",
+        "canonicalName": "Express",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Express.js"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "JavaScript"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "TypeScript"
+      },
+      {
+        "skillId": "react",
+        "canonicalName": "React",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "React.js"
+      },
+      {
+        "skillId": "next-js",
+        "canonicalName": "Next.js",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Next.js"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2-4 years Bachelor's or Master's Degree in Computer Science or Engineering",
+      "minimumYears": 2,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2-4 years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Full-Stack Engineering",
+    "secondaryRoleDomains": [
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T07:53:14.370Z"
+  }
+]

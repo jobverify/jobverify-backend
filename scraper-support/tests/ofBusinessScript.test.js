@@ -84,6 +84,11 @@ const pageTwoJobs = {
     whatWeAreLookingFor: '<p>Must have relevant recruitment experience.</p>',
     whatWeAreOffering: '<p>Fast-track Career Growth</p>',
   },
+  'job-placeholder': {
+    _id: 'job-placeholder',
+    jobCode: 202401,
+    'link-jobs-1-all': '/jobs-1/',
+  },
 }
 
 const buildCategoriesPageHtml = ({
@@ -155,12 +160,13 @@ test('OfBusiness verifies the official careers homepage, embedded Wix warmup dat
   assert.equal(ofBusiness.SOURCE, 'ofbusiness')
   assert.equal(ofBusiness.COMPANY, 'OfBusiness')
   assert.equal(ofBusiness.OFFICIAL_BRAND_NAME, 'OfBusiness')
-  assert.equal(ofBusiness.VERIFIED_ON, '2026-07-17')
+  assert.equal(ofBusiness.VERIFIED_ON, '2026-08-01')
   assert.equal(ofBusiness.CAREERS_HOME_URL, 'https://www.ofbcareers.com/')
   assert.equal(ofBusiness.CATEGORIES_URL, 'https://www.ofbcareers.com/categories')
   assert.equal(ofBusiness.WIX_WARMUP_DATA_SCRIPT_ID, 'wix-warmup-data')
   assert.equal(ofBusiness.PAGINATION_QUERY_PARAM, 'comp-lyh6vd88_page')
-  assert.match(ofBusiness.VERIFIED_SURFACE_SUMMARY, /72 unique public postings/i)
+  assert.match(ofBusiness.VERIFIED_SURFACE_SUMMARY, /72 unique records/i)
+  assert.match(ofBusiness.VERIFIED_SURFACE_SUMMARY, /71 valid public postings/i)
 
   assert.equal(ofBusiness.hasOfficialCareersHomeSignal(careersHomeHtml), true)
   assert.equal(ofBusiness.hasOfficialCategoriesSignal(categoriesPageOneHtml), true)
@@ -241,6 +247,7 @@ test('OfBusiness paginates the official categories board and deduplicates first-
   assert.equal(jobs[0].atsPlatform, 'wix-embedded-data')
   assert.equal(jobs[0].scrapedAt, '2026-07-17T12:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs.some((job) => job.jobId === 'job-placeholder'), false)
 })
 
 test('OfBusiness fails closed when the official careers or pagination contract drifts materially', async () => {

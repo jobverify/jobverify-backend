@@ -49,19 +49,23 @@ export const hasPublicJobsSignal = (html = '') =>
 
 export const hasParkedHomepageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
-  return normalized.includes('porkbun marketplace')
+  return (
+    normalized.includes('porkbun marketplace')
     && normalized.includes('this domain is for sale')
     && normalized.includes('karvy.com is for sale')
     && normalized.includes('buy now price')
+  ) || (
+    normalized.includes('403 forbidden')
+    && !hasPublicJobsSignal(html)
+  )
 }
 
-export const hasContaminatedLegacyRootSignal = (html = '') => {
+export const hasOfficialLegacyRootSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
-  return normalized.includes('kembangtoto')
-    && (
-      normalized.includes('olah data togel')
-      || normalized.includes('data akurat karvyonline')
-    )
+  return normalized.includes('leading stock broking company in india')
+    && normalized.includes('mutual funds')
+    && normalized.includes('open demat account online in 15 mins')
+    && /href=["'][^"']*\/join-us\/career(?:\/|\.html)?["']/i.test(String(html ?? ''))
     && !hasPublicJobsSignal(html)
 }
 
@@ -106,7 +110,7 @@ export const createKarvyScraper = () => ({
       if (hasPublicJobsSignal(page.html)) {
         throw new Error(`Karvy parked exact-name domain now exposes public jobs: ${url}`)
       }
-      if (Number(page.status) !== 200 || !hasParkedHomepageSignal(page.html)) {
+      if (![200, 403].includes(Number(page.status)) || !hasParkedHomepageSignal(page.html)) {
         throw new Error(`Karvy parked exact-name domain contract changed: ${url}`)
       }
     }
@@ -115,8 +119,8 @@ export const createKarvyScraper = () => ({
     if (hasPublicJobsSignal(legacyHomepage.html)) {
       throw new Error('Karvy legacy homepage now exposes public jobs')
     }
-    if (Number(legacyHomepage.status) !== 200 || !hasContaminatedLegacyRootSignal(legacyHomepage.html)) {
-      throw new Error('Karvy legacy homepage no longer matches the verified untrustworthy-root contract')
+    if (Number(legacyHomepage.status) !== 200 || !hasOfficialLegacyRootSignal(legacyHomepage.html)) {
+      throw new Error('Karvy legacy homepage no longer matches the verified first-party careers handoff surface')
     }
 
     const careersPage = await fetchPage(CAREERS_URL)

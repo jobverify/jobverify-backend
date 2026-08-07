@@ -40,18 +40,19 @@ test('Sage Intacct local catalog captures the verified shared Sage careers-hub s
   assert.equal(provider.paginationStrategy, 'shared-sage-careers-hub-without-exact-brand-job-surface')
   assert.equal(
     provider.extractionStrategy,
-    'verified-sage-intacct-product-page+verified-sage-careers-hub+verified-india-locations-no-exact-brand-job-surface-return-empty',
+    'verified-sage-intacct-product-page+browser-verified-sage-careers-hub+verified-india-locations-no-exact-brand-job-surface-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sage\.com\/en-us\/sage-business-cloud\/intacct\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sage\.com\/en-us\/company\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sage\.com\/en-us\/company\/careers\/locations\//i)
   assert.match(provider.verifiedSurfaceSummary, /Bangalore/i)
   assert.match(provider.verifiedSurfaceSummary, /Mohali/i)
   assert.match(provider.verifiedSurfaceSummary, /Pune/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare 403/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy exact-name public jobs surface/i)
   assert.equal(provider.modulePath, sageIntacctModulePath)
   assert.match(provider.dryRunFile, /sageintacct[\\/]jobs\.json$/i)

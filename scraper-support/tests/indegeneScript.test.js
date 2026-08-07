@@ -100,6 +100,7 @@ test('extractSearchResults parses the current SuccessFactors payload, keeps Indi
     postingDate: '10/07/2026',
     closingDate: '17/07/2026',
     jobDescription: null,
+    publicExperienceChecked: true,
   })
   assert.deepEqual(jobs[1], {
     title: 'Senior Project Associate',
@@ -121,6 +122,7 @@ test('extractSearchResults parses the current SuccessFactors payload, keeps Indi
     postingDate: '13/07/2026',
     closingDate: '13/08/2026',
     jobDescription: null,
+    publicExperienceChecked: true,
   })
 })
 
@@ -235,6 +237,8 @@ test('run pages through the public jobs API, dedupes repeated India requisitions
   assert.equal(jobs[0].source, 'indegene')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-09T12:34:56.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[1].state, 'Karnataka')
   assert.equal(jobs[1].jobId, '12984')
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })

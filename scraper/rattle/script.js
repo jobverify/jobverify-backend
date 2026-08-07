@@ -7,6 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'rattle'
 export const COMPANY = 'Rattle'
+export const OFFICIAL_SITE_URL = 'https://www.gorattle.com/'
 export const GREENHOUSE_BOARD_URL = 'https://job-boards.greenhouse.io/rattle'
 export const GREENHOUSE_JOBS_API_URL = 'https://boards-api.greenhouse.io/v1/boards/rattle/jobs'
 
@@ -36,6 +37,55 @@ const inferCity = (location) => {
 }
 
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
+
+const normalizeGreenhouseBoardUrl = (value) => {
+  try {
+    const url = new URL(value)
+    const hostname = url.hostname.replace(/^www\./i, '').toLowerCase()
+    const pathname = url.pathname.replace(/\/+$/, '')
+
+    if (!['boards.greenhouse.io', 'job-boards.greenhouse.io'].includes(hostname)) {
+      return null
+    }
+
+    if (pathname !== '/rattle') {
+      return null
+    }
+
+    return GREENHOUSE_BOARD_URL
+  } catch {
+    return null
+  }
+}
+
+export const extractOfficialCareersLink = (html) => {
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href="([^"]+)"[^>]*>\s*Careers\s*<\/a>/gi)) {
+    const normalized = normalizeGreenhouseBoardUrl(match[1])
+    if (normalized) {
+      return normalized
+    }
+  }
+
+  return null
+}
+
+export const hasOfficialSiteSignal = (html) => {
+  const normalized = normalizeWhitespace(html)
+
+  return normalized?.includes('The AI layer your CRM always needed')
+    && normalized.includes('A new product by Rattle')
+    && normalized.includes('Meet Von: The AI data scientist for revenue teams')
+    && extractOfficialCareersLink(html) === GREENHOUSE_BOARD_URL
+}
+
+export const isVerifiedMissingGreenhouseBoardPage = ({ status, url, html }) => (
+  Number(status) === 404
+  && normalizeGreenhouseBoardUrl(url) === GREENHOUSE_BOARD_URL
+  && (
+    /<title>\s*Page not found\s*<\/title>/i.test(String(html ?? ''))
+    || /Page not found/i.test(normalizeWhitespace(html))
+  )
+)
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {
   const canonicalJobId = normalizeWhitespace(jobId)
@@ -117,16 +167,57 @@ const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
   signal,
 })
 
+const defaultFetchPage = async (url, { signal } = {}) => {
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+      Accept: 'text/html,application/xhtml+xml',
+      Referer: OFFICIAL_SITE_URL,
+    },
+    redirect: 'follow',
+    signal,
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+const isMissingGreenhouseApiError = (error) =>
+  /HTTP 404\b/i.test(String(error?.message ?? error ?? ''))
+
 export const createRattleScraper = () => ({
   async run({
     fetchJson = defaultFetchJson,
+    fetchPage = defaultFetchPage,
     now = () => new Date().toISOString(),
     signal,
   } = {}) {
-    return extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { signal }),
-      { scrapedAt: now() },
-    )
+    try {
+      return extractIndiaJobsFromGreenhousePayload(
+        await fetchJson(buildGreenhouseJobsApiUrl(), { signal }),
+        { scrapedAt: now() },
+      )
+    } catch (error) {
+      if (!isMissingGreenhouseApiError(error)) {
+        throw error
+      }
+
+      const officialSitePage = await fetchPage(OFFICIAL_SITE_URL, { signal })
+      if (Number(officialSitePage.status) !== 200 || !hasOfficialSiteSignal(officialSitePage.html)) {
+        throw new Error('Rattle official site no longer matches the verified first-party careers handoff')
+      }
+
+      const greenhouseBoardPage = await fetchPage(GREENHOUSE_BOARD_URL, { signal })
+      if (!isVerifiedMissingGreenhouseBoardPage(greenhouseBoardPage)) {
+        throw new Error('Rattle Greenhouse board no longer matches the verified missing-board state')
+      }
+
+      return []
+    }
   },
 })
 

@@ -12,19 +12,41 @@ const CONTACT_PAGE_HTML = `
 </html>
 `
 
-const CAREERS_HUB_HTML = `
+const CHALLENGE_HTML = `
+<!doctype html>
 <html>
   <body>
-    TIBCO, Cloud Software Group is now one of the world’s largest cloud solution providers.
-    <a href="https://careers.cloud.com/jobs/search">Search Jobs</a>
+    <noscript>
+      <h1>JavaScript is disabled</h1>
+      In order to continue, we need to verify that you're not a robot.
+    </noscript>
+  </body>
+</html>
+`
+
+const CAREERS_HUB_HTML = `
+<html>
+  <head><title>Careers Home - Cloud Software Group</title></head>
+  <body>
+    <h1>Innovate and grow within Cloud Software Group</h1>
+    <p>Cloud Software Group is one of the world's largest cloud solution providers, serving more than 100 million users around the globe.</p>
+    <h2>Ready to apply? Search for open roles.</h2>
+    <a href="https://careers.cloud.com/jobs/search">See all opportunities</a>
   </body>
 </html>
 `
 
 const CAREERS_SEARCH_HTML = `
 <html>
+  <head><title>Career Search - Cloud Software Group</title></head>
   <body>
-    Search Jobs
+    Find your next career opportunity
+    Country
+    India
+    Brand
+    Citrix
+    Cloud Software Group Corporate
+    Spotfire
     Non-TIBCO Office
     <a href="https://careers.cloud.com/jobs/lead-account-technical-strategist-remote-illinois-united-states">Lead Account Technical Strategist</a>
   </body>
@@ -56,9 +78,15 @@ test('TIBCO Software returns [] while the current official handoff stays a gener
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === tibco.CAREERS_URL) return CONTACT_PAGE_HTML
+      if (url === tibco.CAREERS_HUB_URL) return CHALLENGE_HTML
+      if (url === tibco.CAREERS_SEARCH_URL) return CHALLENGE_HTML
+      throw new Error(`Unexpected TIBCO text URL: ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      requestedUrls.push(url)
       if (url === tibco.CAREERS_HUB_URL) return CAREERS_HUB_HTML
       if (url === tibco.CAREERS_SEARCH_URL) return CAREERS_SEARCH_HTML
-      throw new Error(`Unexpected TIBCO URL: ${url}`)
+      throw new Error(`Unexpected TIBCO browser URL: ${url}`)
     },
   })
 
@@ -66,6 +94,8 @@ test('TIBCO Software returns [] while the current official handoff stays a gener
   assert.deepEqual(requestedUrls, [
     tibco.CAREERS_URL,
     tibco.CAREERS_HUB_URL,
+    tibco.CAREERS_HUB_URL,
+    tibco.CAREERS_SEARCH_URL,
     tibco.CAREERS_SEARCH_URL,
   ])
 })
@@ -76,6 +106,7 @@ test('TIBCO Software fails closed when the official careers handoff drifts mater
   await assert.rejects(
     tibco.createTibcoSoftwareScraper().run({
       fetchText: async () => '<html><body>Unexpected</body></html>',
+      fetchBrowserText: async () => '<html><body>Unexpected</body></html>',
     }),
     /verified official contact page/i,
   )

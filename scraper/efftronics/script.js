@@ -321,9 +321,10 @@ const buildJob = ({ title, minimumQualification, requiredSkills, detailText }) =
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = stripTags(page)
   return /<title>\s*Efftronics Systems Pvt\. Ltd\.\s*<\/title>/i.test(page)
     && /href=["']https:\/\/www\.efftronics\.com\/careers["']/i.test(page)
-    && /YOUR ONE-STOP DESTINATION FOR END-TO-END SMART SOLUTIONS/i.test(page)
+    && /YOUR ONE-STOP DESTINATION FOR END-TO-END SMART SOLUTIONS/i.test(normalized)
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -344,10 +345,6 @@ export const extractPublicListings = (html) => {
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
   label: SOURCE,
   timeoutMs: 15000,
 })

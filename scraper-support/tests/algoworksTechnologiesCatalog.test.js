@@ -34,8 +34,8 @@ test('Algoworks Technologies local catalog captures the first-party careers page
     provider.extractionStrategy,
     'verified-first-party-careers-page+resume-email-handoff+no-first-party-job-listings',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Email the Careers team/i)
   assert.match(provider.verifiedSurfaceSummary, /no structured first-party openings/i)
   assert.equal(provider.modulePath, modulePath)

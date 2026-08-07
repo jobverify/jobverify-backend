@@ -70,18 +70,19 @@ const parseLocation = (location) => {
 
 const detailLocationFromJsonLd = (jobPosting) => {
   const address = jobPosting?.jobLocation?.address || {}
+  const country = address.addressCountry === 'IN'
+    ? 'India'
+    : normalizeWhitespace(address.addressCountry)
   const parts = [
     normalizeWhitespace(address.addressLocality),
     normalizeWhitespace(address.addressRegion),
-    normalizeWhitespace(address.addressCountry),
+    country,
   ].filter(Boolean)
 
   return {
     location: parts.join(', ') || null,
     city: normalizeWhitespace(address.addressLocality),
-    country: address.addressCountry === 'IN'
-      ? 'India'
-      : normalizeWhitespace(address.addressCountry),
+    country,
   }
 }
 
@@ -103,21 +104,36 @@ const parseJobPostingJsonLd = (html) => {
 }
 
 export const pageIndicatesOfficialCareersHandoff = (html) => {
+  const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
+  const hasLinkSet =
+    rawHtml.includes('https://www.linkedin.com/company/lixil-global/jobs/')
+    && rawHtml.includes('https://careers.lixilamericas.com/')
+    && rawHtml.includes('https://www.lixil.co.jp/corporate/recruit/')
+  const hasLegacyHandoffCopy =
+    normalized.includes('apply directly on linkedin or on our dedicated regional career websites')
+  const hasCurrentHandoffCopy =
+    /<title[^>]*>\s*Careers\s*\|\s*LIXIL\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('a home for everyone')
+    && normalized.includes('your career can help shape that future')
 
   return (
-    normalized.includes('apply directly on linkedin or on our dedicated regional career websites')
-    && normalized.includes('linkedin.com/company/lixil-global/jobs')
-    && normalized.includes('careers.lixilamericas.com')
-    && normalized.includes('lixil.co.jp/corporate/recruit')
+    hasLinkSet
+    && (hasLegacyHandoffCopy || hasCurrentHandoffCopy)
   )
 }
 
 export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
+  /<li[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<\/li>/gi,
 )]
   .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
+    const [, jobId] = match
+    const block = match[0]
+    const rawHref = block.match(/<a class="base-card__full-link[^"]*" href="([^"]+)"/i)?.[1]
+    const rawTitle = block.match(/<h3 class="(?:base-search-card__title|base-main-card__title)[^"]*">\s*([\s\S]*?)\s*<\/h3>/i)?.[1]
+    const rawCompany = block.match(/<h4 class="(?:base-search-card__subtitle|base-main-card__subtitle)[^"]*">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>/i)?.[1]
+    const rawLocation = block.match(/<span class="(?:job-search-card__location|main-job-card__location)[^"]*">\s*([\s\S]*?)\s*<\/span>/i)?.[1]
+    const postingDate = block.match(/<time class="(?:job-search-card__listdate|main-job-card__listdate(?:--new)?)[^"]*" datetime="([^"]+)"/i)?.[1]
     const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
     const title = stripTags(rawTitle)
     const company = stripTags(rawCompany)
@@ -197,12 +213,23 @@ export const createLixilScraper = () => ({
     for (const listing of listings) {
       const detailHtml = await fetchText(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml)
+      const mergedLocation = (
+        detail.location
+        && listing.location
+        && detail.country === listing.country
+        && listing.location.length > detail.location.length
+      )
+        ? listing.location
+        : detail.location
 
       enrichedJobs.push({
         ...listing,
         ...Object.fromEntries(
           Object.entries(detail).filter(([, value]) => value != null),
         ),
+        location: mergedLocation || listing.location,
+        city: detail.city || listing.city,
+        country: detail.country || listing.country,
       })
     }
 

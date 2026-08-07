@@ -13,8 +13,9 @@ const verifiedHomepageHtml = `
         <a href="/careers">Careers</a>
       </header>
       <main>
-        <h1>Touching Lives Through Engineering</h1>
-        <p>MEIL is a $5bn multi-sector infrastructure company from India taking giant strides globally.</p>
+        <h1>Know About Meil</h1>
+        <p>Megha Engineering &amp; Infrastructures Ltd (MEIL) is a $5bn multi-sector infrastructure company from India taking giant strides globally.</p>
+        <p>Touching Lives Through Engineering</p>
       </main>
     </body>
   </html>

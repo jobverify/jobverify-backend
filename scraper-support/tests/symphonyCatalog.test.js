@@ -45,16 +45,15 @@ test('Symphony local catalog captures the verified first-party no-openings senti
   assert.equal(provider.paginationStrategy, 'single-verified-careers-page-no-openings-sentinel')
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+resume-email+no-openings-banner+fail-closed-sentinel',
+    'verified-careers-page+no-openings-banner+fail-closed-sentinel',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-05')
   assert.match(provider.dryRunFile, /symphony[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/symphonylimited\.com\/careers\/current-openings\//i)
-  assert.match(provider.verifiedSurfaceSummary, /careers@symphonylimited\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /There are no current openings/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Symphony'), false)
 

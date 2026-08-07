@@ -70,27 +70,62 @@ export const hasMergedParentHomepageSignal = (html = '') => {
     && /\bFincare Corporate NetBanking\b/i.test(normalized)
 }
 
+export const hasMergedParentHomepageCloudflareSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(rawHtml)
+    && /\bEnable JavaScript and cookies to continue\b/i.test(normalized)
+}
+
 export const isVerifiedMergedHomepageRedirect = (page = {}) =>
-  Number(page.status) === 200
-  && normalizeUrl(page.url) === normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)
-  && hasMergedParentHomepageSignal(page.html)
+  normalizeUrl(page.url) === normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)
+  && (
+    (
+      Number(page.status) === 200
+      && hasMergedParentHomepageSignal(page.html)
+    )
+    || (
+      Number(page.status) === 403
+      && hasMergedParentHomepageCloudflareSignal(page.html)
+    )
+  )
+
+export const isExpectedLegacyRetiredDomainFailure = (error) => {
+  const message = String(error?.message ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const combined = `${message} ${causeMessage} ${causeCode}`
+
+  return /\bENOTFOUND\b|\bgetaddrinfo\b|\bcould not resolve host\b|\bnxdomain\b/i.test(combined)
+}
 
 export const createFincareSmallFinanceBankScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const legacyHomepage = await fetchPage(LEGACY_HOMEPAGE_URL)
-    if (normalizeUrl(legacyHomepage.url) !== normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)) {
-      throw new Error('Fincare Small Finance Bank verified legacy Fincare homepage redirect no longer matches the pinned AU homepage handoff')
-    }
-    if (!isVerifiedMergedHomepageRedirect(legacyHomepage)) {
+    const mergedParentHomepage = await fetchPage(MERGED_PARENT_HOMEPAGE_URL)
+    if (!isVerifiedMergedHomepageRedirect(mergedParentHomepage)) {
       throw new Error('Fincare Small Finance Bank verified merged AU homepage no longer matches the pinned public surface')
     }
 
-    const legacyHomepageNoWww = await fetchPage(LEGACY_HOMEPAGE_NO_WWW_URL)
-    if (normalizeUrl(legacyHomepageNoWww.url) !== normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)) {
-      throw new Error('Fincare Small Finance Bank verified legacy Fincare no-www homepage redirect no longer matches the pinned AU homepage handoff')
-    }
-    if (!isVerifiedMergedHomepageRedirect(legacyHomepageNoWww)) {
-      throw new Error('Fincare Small Finance Bank verified merged AU homepage no longer matches the pinned no-www public surface')
+    for (const legacyUrl of [LEGACY_HOMEPAGE_URL, LEGACY_HOMEPAGE_NO_WWW_URL]) {
+      let legacyHomepage = null
+
+      try {
+        legacyHomepage = await fetchPage(legacyUrl)
+      } catch (error) {
+        if (isExpectedLegacyRetiredDomainFailure(error)) {
+          continue
+        }
+
+        throw error
+      }
+
+      if (normalizeUrl(legacyHomepage.url) !== normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)) {
+        throw new Error(`Fincare Small Finance Bank verified legacy Fincare homepage redirect no longer matches the pinned AU homepage handoff: ${legacyUrl}`)
+      }
+      if (!isVerifiedMergedHomepageRedirect(legacyHomepage)) {
+        throw new Error(`Fincare Small Finance Bank verified merged AU homepage no longer matches the pinned legacy public surface: ${legacyUrl}`)
+      }
     }
 
     return []

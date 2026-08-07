@@ -8,20 +8,6 @@ const homepageHtml = `
 <html lang="en">
   <head>
     <title>DronaHQ | Enterprise platform to build apps and agents faster</title>
-    <script type="application/ld+json">
-      {
-        "@type": "Organization",
-        "name": "DronaHQ",
-        "url": "https://www.dronahq.com/",
-        "foundingOrganization": {
-          "@type": "Organization",
-          "name": "Deltecs Infotech Pvt Ltd"
-        },
-        "sameAs": [
-          "https://www.linkedin.com/company/deltecs-infotech"
-        ]
-      }
-    </script>
   </head>
   <body>
     <nav>
@@ -29,8 +15,8 @@ const homepageHtml = `
       <a href="/pricing/">Pricing</a>
     </nav>
     <main>
-      <h1>DronaHQ</h1>
-      <p>DronaHQ is a low-code and agentic AI platform to build internal apps, AI agents, and automations faster.</p>
+      <h1>The code was never the hard part.</h1>
+      <p>A new kind of development toolkit for everything around apps.</p>
     </main>
     <footer>Copyright © Deltecs Infotech Pvt Ltd. All Rights Reserved.</footer>
   </body>
@@ -298,7 +284,7 @@ test('Deltecs scraper keeps the verified DronaHQ homepage, careers listing cards
   assert.equal(deltecs.PUBLIC_BRAND_NAME, 'DronaHQ')
   assert.equal(deltecs.OFFICIAL_BRAND_NAME, 'Deltecs Infotech Pvt Ltd')
   assert.equal(deltecs.SOURCE, 'deltecs')
-  assert.equal(deltecs.VERIFIED_AT, '2026-07-15')
+  assert.equal(deltecs.VERIFIED_AT, '2026-08-01')
   assert.equal(deltecs.HOMEPAGE_URL, 'https://www.dronahq.com/')
   assert.equal(deltecs.CAREERS_URL, 'https://www.dronahq.com/careers/')
   assert.equal(deltecs.hasOfficialHomepageSignal(homepageHtml), true)

@@ -29,9 +29,10 @@ const contactPage = {
       <body>
         <main>
           <h1>Contact Us</h1>
-          <p>Happy to Help</p>
+          <h2>Advertising</h2>
+          <h2>Editorial</h2>
           <h2>Guru99's Headquarters</h2>
-          <p>Titanium City Center, Ahmedabad, Gujarat, India</p>
+          <p>Physical Address Titanium City Center, Ahmedabad, Gujarat, India</p>
         </main>
       </body>
     </html>

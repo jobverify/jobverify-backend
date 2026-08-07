@@ -147,7 +147,8 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return text.includes('Your journey to Do Big starts here!')
+  return /<title>\s*Tata Tele Business Services\s*-\s*Careers\s*<\/title>/i.test(page)
+    && text.includes('Your journey to Do Big starts here!')
     && text.includes('Work on technology that matters.')
     && new RegExp(
       `<a[^>]+href=["']${OFFICIAL_JOBS_HANDOFF_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>\\s*View All Openings\\s*<`,
@@ -162,9 +163,9 @@ export const hasOfficialCandidateExperienceSignal = (html = '') => {
     && /<meta[^>]+property=["']og:title["'][^>]+content=["']Tata Teleservices Career Portal Careers["'][^>]*>/i.test(page)
     && /<meta[^>]+property=["']og:description["'][^>]+content=["']Join Our Team["'][^>]*>/i.test(page)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Tata Teleservices Career Portal["'][^>]*>/i.test(page)
-    && /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*>/i.test(page)
     && /data-apibaseurl=["']https:\/\/fa-evmm-saasfaprod1\.fa\.ocs\.oraclecloud\.com:443["']/i.test(page)
-    && /data-sitenumber=["']CX_1["']/i.test(page)
+    && /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_(?:1|1001)\/?["'][^>]*>/i.test(page)
+    && /data-sitenumber=["']CX_(?:1|1001)["']/i.test(page)
 }
 
 export const hasVerifiedTataListingSignal = (payload = {}) => {

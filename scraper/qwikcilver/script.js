@@ -25,16 +25,25 @@ const PUBLIC_JOB_BOARD_PATTERNS = [
 
 const normalizeWhitespace = (value) =>
   String(value ?? '')
+    .replace(/&ndash;|&#8211;|&#x2013;/gi, '-')
+    .replace(/&mdash;|&#8212;|&#x2014;/gi, '-')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
-    .replace(/&#39;|&apos;|&rsquo;/gi, "'")
-    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&#x27;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2018\u2019]/g, "'")
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+
+const extractTitle = (html) => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1] ?? '')
+}
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -55,16 +64,17 @@ const defaultFetchPage = async (url) => {
 export const hasVerifiedParentCareersSurface = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const title = extractTitle(rawHtml)
 
-  return rawHtml.includes('<title>Careers at Pine Labs – Join Our Fintech Innovation Team</title>')
+  return title === 'Careers at Pine Labs - Join Our Fintech Innovation Team'
     && rawHtml.includes(
       'Explore exciting career opportunities at Pine Labs. Be part of a dynamic fintech company driving innovation in digital payments and merchant solutions.',
     )
-    && rawHtml.includes('href="https://www.pinelabs.com/careers"')
+    && /href=["']https:\/\/www\.pinelabs\.com\/careers["']/i.test(rawHtml)
     && rawHtml.includes('Pine Labs Logo')
     && rawHtml.includes('/contact-sales')
     && normalized.includes('Careers at Pine Labs')
-    && normalized.includes('Join our fintech innovation team.')
+    && /Join our fintech innovation team\.?/i.test(normalized)
 }
 
 export const hasQwikcilverJobsSignal = (html) =>

@@ -1,6 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const CLIENT_GUID = '28fad22cfe584b879917858203dd97ce'
@@ -26,6 +28,30 @@ const extractExperienceRequired = (html) => {
   return match ? normalizeWhitespace(match[1]) : null
 }
 
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(
+    String(jobDescription ?? '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, ' '),
+  )
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
 export const buildSearchRequestPayload = ({
   pageNo = 1,
   keyword = '',
@@ -47,28 +73,33 @@ export const buildSearchRequestPayload = ({
   Is100CoverageTurnedOn: false,
 })
 
-export const normalizeJobListing = (document = {}) => ({
-  title: normalizeWhitespace(firstValue(document.title)),
-  company: COMPANY_NAME,
-  location: normalizeWhitespace(firstValue(document.primarylocation) || firstValue(document.location)),
-  city: normalizeWhitespace(firstValue(document.primarycity) || firstValue(document.city)),
-  country: normalizeWhitespace(firstValue(document.primarycountry) || firstValue(document.country)),
-  link: normalizeWhitespace(firstValue(document.link)),
-  applyUrl: normalizeWhitespace(firstValue(document.externalapplyurl)),
-  sourceUrl: normalizeWhitespace(firstValue(document.link)),
-  source: SOURCE,
-  jobId: normalizeWhitespace(firstValue(document.jobrequisitionid)),
-  requisitionId: normalizeWhitespace(firstValue(document.jobrequisitionid)),
-  department: normalizeWhitespace(firstValue(document.category) || firstValue(document.jobfamilygroup)),
-  employmentType: null,
-  experienceRequired: extractExperienceRequired(firstValue(document.jobdescription)),
-  jobDescription: firstValue(document.jobdescription) || null,
-  minimumQualification: null,
-  preferredQualification: null,
-  requiredSkills: [],
-  postingDate: normalizeWhitespace(firstValue(document.created_moment)),
-  scrapedAt: new Date().toISOString(),
-})
+export const normalizeJobListing = (document = {}) => {
+  const jobDescription = firstValue(document.jobdescription) || null
+
+  return {
+    title: normalizeWhitespace(firstValue(document.title)),
+    company: COMPANY_NAME,
+    location: normalizeWhitespace(firstValue(document.primarylocation) || firstValue(document.location)),
+    city: normalizeWhitespace(firstValue(document.primarycity) || firstValue(document.city)),
+    country: normalizeWhitespace(firstValue(document.primarycountry) || firstValue(document.country)),
+    link: normalizeWhitespace(firstValue(document.link)),
+    applyUrl: normalizeWhitespace(firstValue(document.externalapplyurl)),
+    sourceUrl: normalizeWhitespace(firstValue(document.link)),
+    source: SOURCE,
+    jobId: normalizeWhitespace(firstValue(document.jobrequisitionid)),
+    requisitionId: normalizeWhitespace(firstValue(document.jobrequisitionid)),
+    department: normalizeWhitespace(firstValue(document.category) || firstValue(document.jobfamilygroup)),
+    employmentType: null,
+    experienceRequired: extractExperienceRequired(jobDescription) || inferExperienceFromDescription(jobDescription),
+    jobDescription,
+    publicExperienceChecked: Boolean(jobDescription),
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: normalizeWhitespace(firstValue(document.created_moment)),
+    scrapedAt: new Date().toISOString(),
+  }
+}
 
 const defaultFetchJson = async (url, options = {}) => {
   const response = await fetch(url, {

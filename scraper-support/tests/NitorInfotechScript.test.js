@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-03T00:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
@@ -11,7 +11,7 @@ const careersHtml = `
   </head>
   <body>
     <h1>Careers at Nitor Infotech, an Ascendion Company</h1>
-    <a href="https://careers.nitorinfotech.com/opening">View Our Current Openings</a>
+    <a href="/opening">View Our Current Openings</a>
   </body>
 </html>
 `

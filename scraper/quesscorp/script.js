@@ -217,16 +217,20 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 
 export const hasOfficialCandidateExperienceSignal = (html = '') => {
   const page = String(html ?? '')
+  const hasOracleSiteConfig = (
+    /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*data-apibaseurl=["']https:\/\/fa-eumz-saasfaprod1\.fa\.ocs\.oraclecloud\.com:443["'][^>]*data-sitenumber=["']CX_1["'][^>]*>/i.test(page)
+    || (
+      /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*>/i.test(page)
+      && /apiBaseUrl:\s*['"]https:\/\/fa-eumz-saasfaprod1\.fa\.ocs\.oraclecloud\.com:443['"]/i.test(page)
+      && /siteNumber:\s*['"]CX_1['"]/i.test(page)
+    )
+  )
 
   return /<title>\s*Quess Career site\s*<\/title>/i.test(page)
     && /<meta[^>]+property=["']og:title["'][^>]+content=["']Quess Career site Careers["'][^>]*>/i.test(page)
     && /<meta[^>]+property=["']og:description["'][^>]+content=["']Join Our Team["'][^>]*>/i.test(page)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Quess Career site["'][^>]*>/i.test(page)
-    && /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*>/i.test(page)
-    && /apiBaseUrl:\s*['"]https:\/\/fa-eumz-saasfaprod1\.fa\.ocs\.oraclecloud\.com:443['"]/i.test(page)
-    && /siteName:\s*['"]Quess Career site['"]/i.test(page)
-    && /siteCode:\s*['"]Quess Career site['"]/i.test(page)
-    && /siteNumber:\s*['"]CX_1['"]/i.test(page)
+    && hasOracleSiteConfig
 }
 
 export const hasVerifiedQuessListingSignal = (payload = {}) => {

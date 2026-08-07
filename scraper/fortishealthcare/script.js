@@ -224,15 +224,21 @@ export const hasOfficialCareersPageSignal = (html) => {
 
 export const hasOfficialCandidateExperienceSignal = (html) => {
   const page = String(html ?? '')
+  const hasOracleSiteConfig = (
+    /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*data-apibaseurl=["']https:\/\/fa-ermg-saasfaprod1\.fa\.ocs\.oraclecloud\.com:443["'][^>]*data-sitenumber=["']CX_1["'][^>]*>/i.test(page)
+    || (
+      /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*>/i.test(page)
+      && /apiBaseUrl:\s*['"]https:\/\/fa-ermg-saasfaprod1\.fa\.ocs\.oraclecloud\.com:443['"]/i.test(page)
+      && /siteNumber:\s*['"]CX_1['"]/i.test(page)
+    )
+  )
 
   return /<title>\s*Fortis Career\s*<\/title>/i.test(page)
     && /<meta[^>]+property=["']og:title["'][^>]+content=["']Fortis Career Careers["'][^>]*>/i.test(page)
+    && /<meta[^>]+property=["']og:description["'][^>]+content=["']All for Hope["'][^>]*>/i.test(page)
+    && /<meta[^>]+property=["']og:image["'][^>]+content=["']https:\/\/www\.fortishealthcare\.com\/static_new\/img\/fortis-logo\.png["'][^>]*>/i.test(page)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Fortis Career["'][^>]*>/i.test(page)
-    && /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*>/i.test(page)
-    && /apiBaseUrl:\s*['"]https:\/\/fa-ermg-saasfaprod1\.fa\.ocs\.oraclecloud\.com:443['"]/i.test(page)
-    && /siteCode:\s*['"]FT01['"]/i.test(page)
-    && /siteNumber:\s*['"]CX_1['"]/i.test(page)
-    && /logoImageUrl:\s*['"]https:\/\/www\.fortishealthcare\.com\/static_new\/img\/fortis-logo\.png['"]/i.test(page)
+    && hasOracleSiteConfig
 }
 
 export const hasVerifiedFortisListingSignal = (payload) => {
@@ -348,6 +354,7 @@ export const extractJobDetail = (payload, listing = {}) => {
     ) || listing.jobDescription || null,
     remoteStatus: normalizeWhitespace(detail.WorkplaceType) || listing.remoteStatus || null,
     siteNumber: SITE_NUMBER,
+    publicExperienceChecked: true,
   }
 }
 

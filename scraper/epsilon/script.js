@@ -9,7 +9,9 @@ export const SOURCE = 'epsilon'
 export const COMPANY = 'Epsilon'
 export const CAREERS_URL = 'https://www.epsilon.com/apac/careers-at-epsilon'
 export const PUBLIC_JOBS_BOARD_URL = 'https://careers.publicisgroupe.com/epsilon/jobs'
+export const INDIA_LOCATION_URL = 'https://careers.publicisgroupe.com/epsilon/jobs/locations/country/India?lang=en-US'
 export const JOBS_API_BASE_URL = 'https://careers.publicisgroupe.com/api/jobs'
+export const PUBLIC_JOB_DETAIL_BASE_URL = 'https://careers.publicisgroupe.com/jobs'
 export const JOBS_PER_PAGE = 10
 
 const USER_AGENT =
@@ -47,6 +49,11 @@ const getFirstListValue = (value) => normalizeList(value)[0] || null
 
 const getJobData = (job) => job?.data || job || {}
 
+const extractTitle = (html) => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1])
+}
+
 const buildLocation = (job = {}) => [
   normalizeWhitespace(job.city),
   normalizeWhitespace(job.state),
@@ -55,7 +62,7 @@ const buildLocation = (job = {}) => [
 
 const buildSourceUrl = (slugOrId) => {
   const normalized = normalizeWhitespace(slugOrId)
-  return normalized ? `${PUBLIC_JOBS_BOARD_URL}/${normalized}?lang=en-us` : null
+  return normalized ? `${PUBLIC_JOB_DETAIL_BASE_URL}/${normalized}?lang=en-us` : null
 }
 
 export const buildJobsApiUrl = (page = 1) => {
@@ -77,8 +84,35 @@ export const hasOfficialCareersSignal = (html) => {
     && /(Explore all jobs|Open positions)/i.test(page)
 }
 
+export const hasOfficialPublicBoardErrorSignal = (html) => {
+  const page = String(html ?? '')
+  const title = extractTitle(page) || ''
+  const text = (normalizeWhitespace(page) || '').toLowerCase()
+
+  return /epsilon/i.test(title)
+    && text.includes('oops')
+    && text.includes('an error occurred')
+    && text.includes('general error')
+    && text.includes('connect with us')
+}
+
+export const hasVisiblePublicJobLink = (html) => (
+  /href=["'][^"']*\/jobs\/\d+[^"']*["']/i.test(String(html ?? ''))
+  || /href=["'][^"']*\/epsilon\/jobs\/\d+[^"']*["']/i.test(String(html ?? ''))
+)
+
 export const hasJibeSignal = (payload) =>
   payload && Array.isArray(payload.jobs) && Number.isInteger(payload.totalCount)
+
+export const isVerifiedPublicBoardOutage = ({
+  boardHtml,
+  indiaLocationHtml,
+}) => (
+  hasOfficialPublicBoardErrorSignal(boardHtml)
+  && hasOfficialPublicBoardErrorSignal(indiaLocationHtml)
+  && !hasVisiblePublicJobLink(boardHtml)
+  && !hasVisiblePublicJobLink(indiaLocationHtml)
+)
 
 export const extractSearchResults = (payload) => (payload.jobs || [])
   .map((job) => getJobData(job))
@@ -141,10 +175,36 @@ export const createEpsilonScraper = ({
     const jobs = []
 
     for (let page = 1; page <= maxPages; page += 1) {
-      const payload = await fetchJson(buildJobsApiUrl(page))
+      let payload
+
+      try {
+        payload = await fetchJson(buildJobsApiUrl(page))
+      } catch (error) {
+        if (page === 1) {
+          const [boardHtml, indiaLocationHtml] = await Promise.all([
+            fetchText(PUBLIC_JOBS_BOARD_URL),
+            fetchText(INDIA_LOCATION_URL),
+          ])
+
+          if (isVerifiedPublicBoardOutage({ boardHtml, indiaLocationHtml })) {
+            return []
+          }
+        }
+
+        throw error
+      }
 
       if (!hasJibeSignal(payload)) {
         if (page === 1) {
+          const [boardHtml, indiaLocationHtml] = await Promise.all([
+            fetchText(PUBLIC_JOBS_BOARD_URL),
+            fetchText(INDIA_LOCATION_URL),
+          ])
+
+          if (isVerifiedPublicBoardOutage({ boardHtml, indiaLocationHtml })) {
+            return []
+          }
+
           throw new Error('Epsilon public Jibe API response changed')
         }
         break

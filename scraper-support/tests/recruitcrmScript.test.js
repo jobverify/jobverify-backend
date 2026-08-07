@@ -29,8 +29,15 @@ const boardShellHtml = `
     <script>
       self.__next_f.push([1,"{\\"project\\":{\\"_id\\":\\"68944694418f3334810e6b3b\\",\\"name\\":\\"Recruit CRM Careers\\"},\\"account\\":{\\"_id\\":\\"6838449a4c201efb4db9e96f\\",\\"uuid\\":\\"9fddca43-735a-4037-9865-a2daaf8e1e8f\\",\\"companyName\\":\\"Recruit CRM\\",\\"domainUrl\\":\\"https://careers.recruitcrm.io\\"}}"])
     </script>
+    <script src="/_next/static/chunks/app/layout-58288282ab1b6fe0.js"></script>
   </body>
 </html>
+`
+
+const layoutBundleJs = `
+"use strict";
+let getJobs=(0,createServerReference)("7febb022f05380eb95c91d8e2c918f197ae0003ade",callServer,void 0,findSourceMapURL,"getJobs")
+let searchJobs=(0,createServerReference)("7f4f631f2b8ce3307a1f727bdad631ca6a0c5fba61",callServer,void 0,findSourceMapURL,"searchJobs")
 `
 
 const jobsActionResponse = `
@@ -69,6 +76,10 @@ test('Recruit CRM scraper validates the official careers handoff and parses the 
   assert.equal(recruitCrm.JOBS_URL, 'https://careers.recruitcrm.io/')
   assert.equal(recruitCrm.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.equal(recruitCrm.extractBoardUuid(boardShellHtml), '9fddca43-735a-4037-9865-a2daaf8e1e8f')
+  assert.equal(
+    recruitCrm.extractGetJobsActionIdFromBundle(layoutBundleJs),
+    '7febb022f05380eb95c91d8e2c918f197ae0003ade',
+  )
   assert.deepEqual(
     recruitCrm.extractListingsFromActionResponse(jobsActionResponse).map((job) => ({
       jobId: job.jobId,
@@ -192,6 +203,23 @@ test('Recruit CRM scraper returns only the India jobs exposed on the verified pu
       },
     ],
   )
+})
+
+test('Recruit CRM scraper discovers the live getJobs action id from the published bundle', async () => {
+  const recruitCrm = await loadRecruitCrmModule()
+  const requestedAssets = []
+
+  const actionId = await recruitCrm.discoverGetJobsActionId(boardShellHtml, {
+    fetchAssetText: async (url) => {
+      requestedAssets.push(url)
+      return layoutBundleJs
+    },
+  })
+
+  assert.equal(actionId, '7febb022f05380eb95c91d8e2c918f197ae0003ade')
+  assert.deepEqual(requestedAssets, [
+    'https://careers.recruitcrm.io/_next/static/chunks/app/layout-58288282ab1b6fe0.js',
+  ])
 })
 
 test('Recruit CRM scraper fails closed when the verified board uuid disappears', async () => {

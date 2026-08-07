@@ -89,7 +89,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
   return title === 'DEN Networks - Top Cable Service Provider in India'
     && /href=["']https:\/\/dennetworks\.com\/careers["']/i.test(page)
-    && text.includes('DEN Networks - Top cable service provider')
+    && /DEN Networks - Top Cable Service Provider/i.test(text)
     && text.includes('DEN Networks Ltd. - All Rights Reserved')
 }
 

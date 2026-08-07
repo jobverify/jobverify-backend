@@ -128,13 +128,15 @@ const extractApplyUrl = (html = '', detailUrl) =>
   ) || detailUrl
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = (stripTags(html) || '').toLowerCase()
+  const rawHtml = String(html ?? '')
+  const normalized = (stripTags(rawHtml) || '').toLowerCase()
 
-  return normalized.includes('join us')
-    && normalized.includes('associate sales')
-    && normalized.includes('enterprise sales manager')
-    && normalized.includes('manager - legal')
-    && normalized.includes("thanks for checking out our job openings")
+  return normalized.includes('job category')
+    && normalized.includes('all categories')
+    && normalized.includes('location')
+    && normalized.includes('all locations')
+    && normalized.includes('job type')
+    && normalized.includes('all types')
 }
 
 export const extractJobCards = (html = '') => {
@@ -163,11 +165,17 @@ export const extractJobCards = (html = '') => {
 }
 
 export const hasOfficialJobDetailSignal = (html = '') => {
-  const normalized = (stripTags(html) || '').toLowerCase()
+  const rawHtml = String(html ?? '')
+  const normalized = (stripTags(rawHtml) || '').toLowerCase()
 
   return normalized.includes('job description')
-    && normalized.includes('about times internet')
+    && (
+      normalized.includes('about times internet')
+      || normalized.includes('about times limited')
+      || normalized.includes('about the company')
+    )
     && normalized.includes('apply now')
+    && /<title>\s*.+job at times internet\b/i.test(rawHtml)
 }
 
 export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {}) => {

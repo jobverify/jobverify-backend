@@ -10,6 +10,16 @@ export const COMPANY = 'LifeSigns'
 export const HOMEPAGE_URL = 'https://www.lifesigns.us/'
 export const CAREERS_URL = 'https://www.lifesigns.us/careers/'
 export const EXPECTED_ROLE_CARDS = {
+  '/careers/junior-video-editor/': {
+    title: 'Junior Video Editor',
+    employmentType: 'Full-Time',
+    city: 'Chennai',
+  },
+  '/careers/junior-visual-designer/': {
+    title: 'Junior Visual Designer',
+    employmentType: 'Full-Time',
+    city: 'Chennai',
+  },
   '/careers/lead-network-engineer/': {
     title: 'Lead Network Engineer',
     employmentType: 'Full-Time',
@@ -71,6 +81,14 @@ const buildJobId = (pathname) => {
     .at(-1)
 
   return slug ? `${SOURCE}-${slug}` : null
+}
+
+const buildRoleUrl = (pathname) => {
+  try {
+    return new URL(normalizePathname(pathname) || '', HOMEPAGE_URL).toString()
+  } catch {
+    return CAREERS_URL
+  }
 }
 
 export const hasOfficialHomepageSignal = (snapshot = {}) => {
@@ -168,6 +186,7 @@ export const extractVerifiedOpenRoles = (snapshot) => {
   return expectedPaths.map((pathname) => {
     const expected = EXPECTED_ROLE_CARDS[pathname]
     const jobId = buildJobId(pathname)
+    const roleUrl = buildRoleUrl(pathname)
 
     if (!cardsByPath.has(pathname) || !jobId) {
       throw new Error(`LifeSigns missing verified opening "${pathname}"`)
@@ -182,8 +201,8 @@ export const extractVerifiedOpenRoles = (snapshot) => {
       country: 'India',
       jobId,
       requisitionId: jobId,
-      sourceUrl: CAREERS_URL,
-      applyUrl: CAREERS_URL,
+      sourceUrl: roleUrl,
+      applyUrl: roleUrl,
       employmentType: expected.employmentType,
       experienceRequired: null,
       minimumQualification: null,

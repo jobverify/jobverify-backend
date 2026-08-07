@@ -5,8 +5,8 @@ const careersHtml = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <title>Lyft Careers</title>
-    <link rel="canonical" href="https://www.lyft.com/careers" />
+    <title data-next-head="">Lyft Careers</title>
+    <link rel="canonical" href="https://www.lyft.com/careers" data-testid="canonical-link" data-next-head="" />
   </head>
   <body>
     <main>

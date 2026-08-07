@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { ECLERX_CATALOG } from './catalog.js'
 
@@ -191,7 +192,7 @@ export const hasOfficialCareersPageSignal = (html) => {
 
   return /<title>\s*Careers at eClerx \| Technology, Analytics &amp; Digital Jobs Worldwide\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/eclerx\.com\/careers\/["']/i.test(page)
-    && /href=["']\/job-portal["'][^>]*>\s*Explore jobs\s*</i.test(page)
+    && /href=["'](?:https:\/\/eclerx\.com)?\/(?:careers\/)?job-portal\/?(?:#[^"']*)?["'][^>]*>\s*Explore jobs\s*</i.test(page)
     && text.includes('Explore career opportunities at eClerx across technology, analytics, digital, financial markets, customer operations and more.')
 }
 
@@ -258,6 +259,19 @@ export const extractJobDetail = (payload, listing = {}) => {
   const location = getEffectiveLocation(detail) || listing.location || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
   const sourceUrl = listing.sourceUrl || buildJobDetailUrl(jobId)
+  const minimumQualification = normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
+    || listing.minimumQualification
+    || null
+  const jobDescription = joinDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ShortDescriptionStr,
+  ) || listing.jobDescription || null
+  const { experienceProfile } = extractJobFilterSignals({
+    title: normalizeWhitespace(detail.Title) || listing.title || null,
+    minimumQualification,
+    jobDescription,
+  })
 
   return {
     title: normalizeWhitespace(detail.Title) || listing.title || null,
@@ -273,10 +287,10 @@ export const extractJobDetail = (payload, listing = {}) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: getEmploymentType(detail) || listing.employmentType || null,
-    experienceRequired: null,
-    minimumQualification: normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
-      || listing.minimumQualification
-      || null,
+    experienceRequired: experienceProfile?.confidence === 'high'
+      ? normalizeWhitespace(experienceProfile.evidence)?.replace(/\s*-\s*/g, '-')
+      : null,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: Array.isArray(detail.skills)
       ? detail.skills
@@ -285,13 +299,10 @@ export const extractJobDetail = (payload, listing = {}) => {
       : listing.requiredSkills || [],
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ExternalDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-      detail.ShortDescriptionStr,
-    ) || listing.jobDescription || null,
+    jobDescription,
     remoteStatus: normalizeRemoteStatus(detail.WorkplaceType) || listing.remoteStatus || null,
     siteNumber: SITE_NUMBER,
+    publicExperienceChecked: true,
   }
 }
 

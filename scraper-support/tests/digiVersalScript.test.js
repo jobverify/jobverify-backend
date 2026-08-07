@@ -111,12 +111,36 @@ const androidDeveloperDetailHtml = `
 </html>
 `
 
+const digitalMarketingExecutiveDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Digital Marketing Executive | SEO Executive - Digiversal</title>
+    <meta
+      name="description"
+      content="Join DigiVersal as a Digital Marketing Executive in Noida! Elevate your SEO skills, drive lead generation, and grow with an innovative, dynamic team. Apply now!"
+    />
+  </head>
+  <body>
+    <main>
+      <div>Careers Digital Marketing Executive (SEO Executive)</div>
+      <p>Join DigiVersal as a Digital Marketing Executive in Noida and grow search visibility and leads.</p>
+      <p>Responsibilities: Strong understanding about advanced link building. Execute effective off-page SEO strategies, including link-building, citations, and outreach.</p>
+      <div>Project Location(s): Sector 6, Noida</div>
+      <div>Education: Any Graduate</div>
+      <div>Experience: 6 Months to 3 Years</div>
+      <div>Apply Now</div>
+    </main>
+  </body>
+</html>
+`
+
 test('DigiVersal helpers stay pinned to the verified root redirect, careers cards, and same-domain detail-page contract', async () => {
   const digiversal = await loadDigiVersalModule()
 
   assert.equal(digiversal.SOURCE, 'digiversal')
   assert.equal(digiversal.COMPANY, 'DigiVersal')
-  assert.equal(digiversal.VERIFIED_AT, '2026-07-15')
+  assert.equal(digiversal.VERIFIED_AT, '2026-08-01')
   assert.equal(digiversal.ROOT_URL, 'https://digiversal.in/')
   assert.equal(digiversal.HOMEPAGE_URL, 'https://www.digiversal.co/')
   assert.equal(digiversal.CAREERS_URL, 'https://www.digiversal.co/careers/')
@@ -164,6 +188,26 @@ test('DigiVersal helpers stay pinned to the verified root redirect, careers card
       experienceRequired: '3-5 years',
       minimumQualification: 'BE/BTech/ME/MTech/MCA/MSc degree required',
       department: 'Technology',
+    },
+  )
+  assert.equal(
+    digiversal.hasJobDetailSignal(
+      digitalMarketingExecutiveDetailHtml,
+      'Digital Marketing Executive (SEO Executive)',
+    ),
+    true,
+  )
+  assert.deepEqual(
+    digiversal.extractJobDetail(
+      digitalMarketingExecutiveDetailHtml,
+      'Digital Marketing Executive (SEO Executive)',
+    ),
+    {
+      jobDescription:
+        'Join DigiVersal as a Digital Marketing Executive in Noida and grow search visibility and leads. Responsibilities: Strong understanding about advanced link building. Execute effective off-page SEO strategies, including link-building, citations, and outreach.',
+      experienceRequired: '6 Months to 3 Years',
+      minimumQualification: 'Any Graduate',
+      department: null,
     },
   )
   assert.equal(digiversal.parsePostingDate('July 2026'), '2026-07-01')

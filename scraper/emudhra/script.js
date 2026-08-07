@@ -24,7 +24,6 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bjobposting\b/i,
   /\bsearch jobs\b/i,
-  /\bapply now\b/i,
   /\bjob description\b/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
@@ -55,6 +54,9 @@ const extractTitle = (html = '') => {
   return normalizeWhitespace(match?.[1]) || null
 }
 
+const matchesCareersTitle = (title, market) =>
+  new RegExp(`^Careers at eMudhra [\\u2013-] Join Our Innovative Team - ${market}$`, 'i').test(String(title ?? ''))
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -80,14 +82,17 @@ export const hasHomepageSignal = (html = '') => {
 
   return extractTitle(rawHtml) === 'eMudhra | Digital Signature & PKI Services in India'
     && normalized.includes('Your Digital Trust and Cybersecurity, Powered by eMudhra')
-    && normalized.includes('Sign, Secure, Succeed.')
+    && (
+      normalized.includes('Sign, Secure, Succeed.')
+      || normalized.includes('Sign smarter. Approve faster. Go fully paperless with ease.')
+    )
 }
 
 export const hasIndiaCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return extractTitle(rawHtml) === 'Careers at eMudhra – Join Our Innovative Team - India'
+  return matchesCareersTitle(extractTitle(rawHtml), 'India')
     && normalized.includes('Current Openings')
     && normalized.includes('Open Positions')
     && normalized.includes('Explore Opportunities')
@@ -101,7 +106,7 @@ export const hasGlobalCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return extractTitle(rawHtml) === 'Careers at eMudhra – Join Our Innovative Team - USA'
+  return matchesCareersTitle(extractTitle(rawHtml), 'USA')
     && normalized.includes('Current Openings')
     && normalized.includes('Open Positions')
     && normalized.includes('Explore Opportunities')

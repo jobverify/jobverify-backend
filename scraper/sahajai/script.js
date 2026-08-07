@@ -124,7 +124,7 @@ export const extractListings = (html) => {
   const jobs = []
   const seen = new Set()
 
-  for (const match of String(html ?? '').matchAll(/<h3>([\s\S]*?)<\/h3>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>\s*Know More\s*<\/a>/gi)) {
+  for (const match of String(html ?? '').matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>\s*Know More\s*<\/a>/gi)) {
     const title = normalizeWhitespace(match[1])
     const sourceUrl = toAbsoluteUrl(match[2])
     const jobId = slugFromUrl(sourceUrl)

@@ -27,7 +27,12 @@ const NICE_FILTERED_CAREERS_HTML = `
   </head>
   <body>
     <main>
-      <h1>India - Pune</h1>
+      <h1>Careers at NiCE</h1>
+      <label for="location">Location</label>
+      <select id="location" name="location">
+        <option value="USA - Remote">USA - Remote</option>
+        <option value="India - Pune" selected="">India - Pune</option>
+      </select>
       <article>
         <a href="https://boards.eu.greenhouse.io/nice/jobs/4913142101?gh_jid=4913142101">
           Data Scientist, Actimize
@@ -146,7 +151,7 @@ test('NICE Actimize helpers stay pinned to the verified handoff page, filtered N
   assert.equal(niceActimize.SOURCE, 'niceactimize')
   assert.equal(niceActimize.COMPANY, 'NICE Actimize')
   assert.equal(niceActimize.OFFICIAL_BRAND_NAME, 'NICE Actimize')
-  assert.equal(niceActimize.VERIFIED_ON, '2026-07-18')
+  assert.equal(niceActimize.VERIFIED_ON, '2026-08-03')
   assert.equal(niceActimize.ACTIMIZE_HANDOFF_URL, 'https://www.niceactimize.com/get-in-touch')
   assert.equal(
     niceActimize.NICE_FILTERED_CAREERS_URL,
@@ -237,6 +242,30 @@ test('NICE Actimize fails closed when the handoff page, filtered NICE page, or G
       fetchText: async (url) => {
         if (url === niceActimize.ACTIMIZE_HANDOFF_URL) return ACTIMIZE_HANDOFF_HTML
         return '<html><body>No Actimize roles</body></html>'
+      },
+      fetchJson: async () => GREENHOUSE_PAYLOAD,
+    }),
+    /filtered NICE careers page/i,
+  )
+
+  await assert.rejects(
+    niceActimize.createNiceActimizeScraper().run({
+      fetchText: async (url) => {
+        if (url === niceActimize.ACTIMIZE_HANDOFF_URL) return ACTIMIZE_HANDOFF_HTML
+        return `
+          <!doctype html>
+          <html>
+            <body>
+              <h1>Careers at NiCE</h1>
+              <select>
+                <option value="India - Pune">India - Pune</option>
+              </select>
+              <a href="https://boards.eu.greenhouse.io/nice/jobs/4913142101?gh_jid=4913142101">
+                Data Scientist, Actimize
+              </a>
+            </body>
+          </html>
+        `
       },
       fetchJson: async () => GREENHOUSE_PAYLOAD,
     }),

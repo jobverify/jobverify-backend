@@ -1080,3 +1080,111 @@ test('runApiPortalScraper supports Twilio-style search/detail APIs with detail-o
     scrapedAt: jobs[0].scrapedAt,
   })
 })
+
+test('runApiPortalScraper honors provider-scoped detail concurrency without changing job mapping', async () => {
+  let activeDetailRequests = 0
+  let maxActiveDetailRequests = 0
+
+  const jobs = await runApiPortalScraper({
+    provider: {
+      source: 'micron-concurrency-fixture',
+      companyName: 'Micron Concurrency Fixture',
+      companyCareerPage: 'https://careers.example.com/careers',
+      countryFilter: 'India',
+      atsPlatform: 'eightfold',
+      config: {
+        discovery: {
+          listingApiUrl: 'https://careers.example.com/api/pcsx/search',
+        },
+        request: {
+          method: 'GET',
+          query: {
+            domain: 'example.com',
+            query: '',
+            location: 'India',
+          },
+        },
+        pagination: {
+          strategy: 'single-page',
+          resultsPath: 'data.positions',
+        },
+        mapping: {
+          title: 'name',
+          location: 'locations.0',
+          jobId: 'id',
+          requisitionId: 'displayJobId',
+          department: 'department',
+          sourceUrl: {
+            path: 'data',
+            valuePath: 'publicUrl',
+          },
+          applyUrl: {
+            path: 'data',
+            valuePath: 'publicUrl',
+          },
+        },
+        detail: {
+          enabled: true,
+          concurrency: 2,
+          urlTemplate: 'https://careers.example.com/api/pcsx/position_details?position_id={{jobId}}',
+          method: 'GET',
+          mapping: {
+            jobDescription: 'data.jobDescription',
+          },
+        },
+      },
+    },
+    fetchJson: async (url) => {
+      if (url.includes('/api/pcsx/search')) {
+        return {
+          data: {
+            positions: [
+              {
+                id: 101,
+                displayJobId: 'JR101',
+                name: 'Job 101',
+                locations: ['Hyderabad, Telangana, India'],
+                department: 'Engineering',
+              },
+              {
+                id: 102,
+                displayJobId: 'JR102',
+                name: 'Job 102',
+                locations: ['Hyderabad, Telangana, India'],
+                department: 'Engineering',
+              },
+              {
+                id: 103,
+                displayJobId: 'JR103',
+                name: 'Job 103',
+                locations: ['Hyderabad, Telangana, India'],
+                department: 'Engineering',
+              },
+            ],
+          },
+        }
+      }
+
+      if (url.includes('/api/pcsx/position_details?position_id=')) {
+        const positionId = Number(url.match(/position_id=(\d+)/)?.[1])
+        activeDetailRequests += 1
+        maxActiveDetailRequests = Math.max(maxActiveDetailRequests, activeDetailRequests)
+        await new Promise((resolve) => setTimeout(resolve, 25))
+        activeDetailRequests -= 1
+
+        return {
+          data: {
+            publicUrl: `https://careers.example.com/careers/job/${positionId}`,
+            jobDescription: `<p>Detail for ${positionId}</p>`,
+          },
+        }
+      }
+
+      throw new Error(`Unexpected fixture URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.equal(maxActiveDetailRequests, 2)
+  assert.match(jobs[0].jobDescription, /Detail for 101/)
+})

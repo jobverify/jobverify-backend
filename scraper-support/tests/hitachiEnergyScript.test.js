@@ -20,6 +20,24 @@ const fixturesDir = path.join(
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 const readJsonFixture = (name) => JSON.parse(readFixture(name))
+const detailPageHtml = `
+<script>
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    "path": "/careers/open-jobs/details/JID3-204484",
+    "pageID": "3-204484",
+    "title": "Electrical Design Engineer - Auxiliary.-3-204484",
+    "pageTitle": "Open Jobs",
+    "description": "The opportunity Hitachi Energy seeks an Electrical Design Engineer. Your background 5\\x26#43; years of experience in design engineering and 3\\x26#43; years of experience with auxiliary systems.",
+    "siteSection": "careers",
+    "pageTemplate": "job-detail-page",
+    "language": "en",
+    "country": "India",
+    "productName": "",
+    "groupOwner": "not_set"
+  });
+</script>
+`
 
 test('buildListingApiUrl keeps Hitachi Energy requests on the official public jobs feed', async () => {
   const {
@@ -73,7 +91,19 @@ test('extractSearchResults maps official Hitachi Energy India listings and keeps
   })
 })
 
-test('run keeps Hitachi Energy on the official feed and returns India jobs without requiring detail fetches', async () => {
+test('extractJobDetail reads the public Hitachi detail data-layer payload and marks pages as checked', async () => {
+  const { extractJobDetail } = await loadHitachiEnergyModule()
+
+  const detail = extractJobDetail(detailPageHtml, {
+    title: 'Electrical Design Engineer â€“ Auxiliary.',
+    sourceUrl: 'https://www.hitachienergy.com/careers/open-jobs/details/JID3-204484',
+  })
+
+  assert.match(detail.jobDescription, /5\+ years of experience in design engineering/i)
+  assert.equal(detail.publicExperienceChecked, true)
+})
+
+test('run keeps Hitachi Energy on the official feed and enriches India jobs from the public detail pages', async () => {
   const {
     LISTING_API_URL,
     createHitachiEnergyScraper,
@@ -90,14 +120,24 @@ test('run keeps Hitachi Energy on the official feed and returns India jobs witho
       }
       throw new Error(`Unexpected Hitachi Energy URL: ${url}`)
     },
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      assert.equal(url, 'https://www.hitachienergy.com/careers/open-jobs/details/JID3-204484')
+      return detailPageHtml
+    },
   })
 
-  assert.deepEqual(requestedUrls, [LISTING_API_URL])
+  assert.deepEqual(requestedUrls, [
+    LISTING_API_URL,
+    'https://www.hitachienergy.com/careers/open-jobs/details/JID3-204484',
+  ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'Hitachi Energy')
   assert.equal(jobs[0].source, 'hitachienergy')
   assert.equal(jobs[0].jobId, 'JID3-204484')
   assert.equal(jobs[0].city, 'Chennai')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription, /5\+ years of experience in design engineering/i)
   assert.equal(
     jobs[0].applyUrl,
     'https://hitachi.wd1.myworkdayjobs.com/hitachi/job/Chennai-Tamil-Nadu-India/Electrical-Design-Engineer---Auxiliary_R0131013/apply',

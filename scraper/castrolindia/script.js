@@ -203,6 +203,13 @@ export const hasOfficialBpSearchSignal = ({ status, url, html } = {}) => {
     && /algoliasearch|instantsearch|production_bp_jobs/i.test(page)
 }
 
+export const hasNoOpenRolesSignal = (html) => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return normalized.includes('there are no open roles')
+    || normalized.includes('no matching jobs found')
+}
+
 const firstValue = (value) => {
   if (Array.isArray(value)) return normalizeWhitespace(value[0])
   return normalizeWhitespace(value)
@@ -317,6 +324,10 @@ export const createCastrolIndiaScraper = () => ({
     const bpSearchPage = await fetchPage(BP_SEARCH_APPLY_URL)
     if (!hasOfficialBpSearchSignal(bpSearchPage)) {
       throw new Error('Castrol India verified public BP jobs surface changed')
+    }
+
+    if (hasNoOpenRolesSignal(bpSearchPage.html)) {
+      return []
     }
 
     const jobs = extractBpIndiaJobs(

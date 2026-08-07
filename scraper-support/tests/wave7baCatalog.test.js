@@ -58,9 +58,12 @@ test('Novigo Solutions local catalog captures the verified first-party careers p
     provider.extractionStrategy,
     'verified-first-party-careers-page+visible-inline-role-sections+same-page-apply-form',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /\.Net Developer/i)
   assert.match(provider.verifiedSurfaceSummary, /Angular Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /RPA Ui Path Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /MS SQL Developer/i)
   assert.match(provider.verifiedSurfaceSummary, /Bangalore \/ Mangalore \/ Remote work during Pandemic/i)
 
   assertCatalogMatchesBacklogRow({
@@ -123,7 +126,8 @@ test('Mobiloitte Technologies local catalog captures the verified first-party ca
     provider.extractionStrategy,
     'verified-first-party-careers-page+no-jobs-found-state+resume-drop-fallback',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /No Jobs Found/i)
   assert.match(provider.verifiedSurfaceSummary, /Send Your Resume/i)
   assert.match(provider.verifiedSurfaceSummary, /careers@mobiloitte\.com/i)
@@ -167,7 +171,7 @@ test('Competent Software local catalog captures the verified first-party careers
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Vserve Ebusiness Solutions local catalog captures the verified homepage contact contract and fail-closed job-inquiry email', async () => {
+test('Vserve Ebusiness Solutions local catalog captures the verified careers page and embedded Zoho job portal contract', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/vserveebusinesssolutions/catalog.js',
     'VSERVE_EBUSINESS_SOLUTIONS_CATALOG',
@@ -178,17 +182,17 @@ test('Vserve Ebusiness Solutions local catalog captures the verified homepage co
   assert.equal(provider.source, 'vserveebusinesssolutions')
   assert.equal(provider.officialBrandName, 'Vserve eBusiness Solutions')
   assert.equal(provider.homepageUrl, 'https://vservesolution.com/')
-  assert.equal(provider.companyCareerPage, 'https://vservesolution.com/')
-  assert.equal(provider.atsPlatform, 'first-party-homepage-job-inquiry-email')
-  assert.equal(provider.paginationStrategy, 'homepage-contact-section-only')
+  assert.equal(provider.companyCareerPage, 'https://vservesolution.com/careers/')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page-plus-embedded-zoho-recruit-portal')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-embedded-zoho-job-table')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+job-inquiry-email+no-public-openings-surface+fail-closed-sentinel',
+    'verified-first-party-careers-page+embedded-zoho-job-table+detail-pages+india-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /99 Wall Street #625/i)
-  assert.match(provider.verifiedSurfaceSummary, /jobopenings@vservesolution\.com/i)
-  assert.match(provider.verifiedSurfaceSummary, /no public careers page or openings list/i)
+  assert.equal(provider.verifiedOn, '2026-08-06')
+  assert.match(provider.verifiedSurfaceSummary, /recruit\.zoho\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Full Stack Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Pasig/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

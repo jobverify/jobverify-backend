@@ -37,7 +37,7 @@ test('Wellfound generated providers expose stable source ids and workbook hiring
   const xpay = wellfoundProviders.find((provider) => provider.companyName === 'xPay')
 
   assert.ok(appliedIntuition)
-  assert.equal(appliedIntuition.source, 'wfappliedintuition')
+  assert.equal(appliedIntuition.source, 'applied-intuition.wellfoundDirectory')
   assert.equal(appliedIntuition.adapter, 'wellfoundDirectory')
   assert.equal(appliedIntuition.companyCareerPage, 'https://wellfound.com/startups/location/bangalore?page=2')
   assert.equal(appliedIntuition.wellfoundOpeningsShown, 231)
@@ -46,19 +46,19 @@ test('Wellfound generated providers expose stable source ids and workbook hiring
   assert.match(appliedIntuition.verifiedSurfaceSummary, /231 current openings/i)
 
   assert.ok(xpay)
-  assert.equal(xpay.source, 'wfxpay')
+  assert.equal(xpay.source, 'xpay.wellfoundDirectory')
   assert.equal(xpay.wellfoundOpeningsShown, 1)
 })
 
 test('buildScrapers exposes runnable Wellfound-directory scrapers without duplicating existing catalog matches', () => {
   const catalog = getScraperCatalog()
   const scrapers = buildScrapers()
-  const wellfoundScraper = scrapers.find((scraper) => scraper.name === 'wfappliedintuition')
+  const wellfoundScraper = scrapers.find((scraper) => scraper.name === 'applied-intuition.wellfoundDirectory')
 
   assert.equal(wellfoundProviders.some((provider) => provider.companyName === '6sense'), false)
   assert.equal(catalog.filter((provider) => provider.companyName === '6sense').length, 1)
   assert.ok(wellfoundScraper)
   assert.equal(typeof wellfoundScraper.run, 'function')
   assert.equal(wellfoundScraper.provider.adapter, 'wellfoundDirectory')
-  assert.match(wellfoundScraper.dryRunFile, /wfappliedintuition[\\/]jobs\.json$/)
+  assert.match(wellfoundScraper.dryRunFile, /applied-intuition\.wellfoundDirectory[\\/]jobs\.json$/)
 })

@@ -40,7 +40,7 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Join Us, Careers in Software Engineering | Noduco | Noduco</title>
+    <title>Software Engineering Careers &amp; Open Roles | Noduco | Noduco</title>
     <meta name="description" content="Join a culture of engineering excellence and human partnership.">
     <link rel="canonical" href="https://noduco.com/careers/">
   </head>

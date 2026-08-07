@@ -210,7 +210,7 @@ test('Safran Data Systems scraper locks the exact first-party company page and f
   assert.equal(safranDataSystems.extractNextPageUrl(FILTERED_PAGE_1_HTML), NEXT_PAGE_URL)
 })
 
-test('Safran Data Systems default fetch falls back to curl when the first-party site returns HTTP 403', async () => {
+test('Safran Data Systems default fetch falls back to browser rendering when the first-party site returns HTTP 403', async () => {
   const safranDataSystems = await loadSafranDataSystemsModule()
   const calls = []
   const fetchText = safranDataSystems.createDefaultFetchText({
@@ -221,9 +221,9 @@ test('Safran Data Systems default fetch falls back to curl when the first-party 
         status: 403,
       }
     },
-    execFileImpl: (command, args, callback) => {
-      calls.push({ type: 'execFile', command, args })
-      callback(null, '<html>ok</html>', '')
+    fetchBrowserText: async (url) => {
+      calls.push({ type: 'browser', url })
+      return '<html>ok</html>'
     },
   })
 
@@ -231,9 +231,8 @@ test('Safran Data Systems default fetch falls back to curl when the first-party 
 
   assert.equal(html, '<html>ok</html>')
   assert.equal(calls[0].type, 'fetch')
-  assert.equal(calls[1].type, 'execFile')
-  assert.match(calls[1].command, /curl(\.exe)?$/i)
-  assert.ok(calls[1].args.includes(COMPANY_PAGE_URL))
+  assert.equal(calls[1].type, 'browser')
+  assert.equal(calls[1].url, COMPANY_PAGE_URL)
 })
 
 test('Safran Data Systems scraper extracts exact-company cards and detail metadata from first-party pages', async () => {

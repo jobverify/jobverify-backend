@@ -18,9 +18,9 @@ export const LEPTON_SOFTWARE_EXPORT_RESEARCH_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+public-keka-jobs-api+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    "Verified on Saturday, July 18, 2026 that https://leptonsoftware.com/career/ is the live first-party Lepton careers page and that it requests the public Keka jobs endpoint https://leptonsoftware.keka.com/careers/api/jobs/default/active. Live verification on the same date confirmed that endpoint returning public openings including Executive Assistant - Founder's Office and Account Executive - New Business in Gurgaon, India.",
+    "Verified on Sunday, August 2, 2026 that https://leptonsoftware.com/career/ remains the live first-party Lepton careers page, now rendering visible Keka-backed role cards and jobdetails links while the public Keka endpoint https://leptonsoftware.keka.com/careers/api/jobs/default/active remains live. Same-day verification confirmed current India openings including Account Executive - New Business and QA Engineer (QA 2).",
 }
 
 export default LEPTON_SOFTWARE_EXPORT_RESEARCH_CATALOG

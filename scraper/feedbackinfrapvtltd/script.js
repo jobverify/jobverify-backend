@@ -20,7 +20,6 @@ const HOMEPAGE_CAREERS_LINK_PATTERN = /href=["'][^"']*career\.php["']/i
 const INQUIRIES_EMAIL_PATTERN = /inquiries@feedbackinfra\.com/i
 
 const CAREERS_TITLE_PATTERN = /<title>\s*Feedback Infra\s*\|\s*Making Infrastructure Happen\s*<\/title>/i
-const CAREERS_HEADING_PATTERN = /<h1[^>]*>\s*Careers\s*<\/h1>/i
 const LIFE_AT_FEEDBACK_PATTERN = /Life at Feedback/i
 const CURRENT_OPENINGS_PATTERN = /Current Openings/i
 const TWITTER_SECTION_PATTERN = /Feedback Infra on twitter/i
@@ -39,7 +38,6 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
   return CAREERS_TITLE_PATTERN.test(page)
-    && CAREERS_HEADING_PATTERN.test(page)
     && LIFE_AT_FEEDBACK_PATTERN.test(page)
     && CURRENT_OPENINGS_PATTERN.test(page)
     && TWITTER_SECTION_PATTERN.test(page)

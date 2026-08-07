@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-02T00:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
@@ -13,63 +13,73 @@ const careersHtml = `
     <main>
       <h1>Careers</h1>
       <p>View all 0penings</p>
-      <article class="job-item">
-        <a href="https://inubesolutions.com/jobs/technical-lead-pps/">Technical Lead PPS</a>
-        <span>PPS</span>
-        <span>Full Time</span>
-        <span>Mumbai</span>
-      </article>
-      <article class="job-item">
-        <a href="https://inubesolutions.com/jobs/project-management-dot-net-insurance/">Project Manager/Associate Project Manager</a>
-        <span>PPS</span>
-        <span>Full Time</span>
-        <span>Bangalore</span>
-      </article>
+      <div class="awsm-job-listings awsm-row awsm-grid-col-3" data-listings="2">
+        <div class="awsm-job-listing-item awsm-grid-item" id="awsm-grid-item-74380">
+          <a href="https://www.inubesolutions.com/jobs/senior-business-analyst/" class="awsm-job-item">
+            <div class="awsm-grid-left-col">
+              <h2 class="awsm-job-post-title">Senior Business Analyst&nbsp;</h2>
+            </div>
+            <div class="awsm-grid-right-col">
+              <div class="awsm-job-specification-wrapper">
+                <div class="awsm-job-specification-item awsm-job-specification-job-category"><span class="awsm-job-specification-term">Insurance Practice</span></div>
+                <div class="awsm-job-specification-item awsm-job-specification-job-type"><span class="awsm-job-specification-term">Full Time</span></div>
+                <div class="awsm-job-specification-item awsm-job-specification-job-location"><span class="awsm-job-specification-term">Bangalore</span></div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="awsm-job-listing-item awsm-grid-item" id="awsm-grid-item-74370">
+          <a href="https://www.inubesolutions.com/jobs/associate-project-manager/" class="awsm-job-item">
+            <div class="awsm-grid-left-col">
+              <h2 class="awsm-job-post-title">Associate Project Manager:</h2>
+            </div>
+            <div class="awsm-grid-right-col">
+              <div class="awsm-job-more-container"><span class="awsm-job-more">More Details</span></div>
+            </div>
+          </a>
+        </div>
+      </div>
     </main>
   </body>
 </html>
 `
 
-const technicalLeadHtml = `
+const seniorBusinessAnalystHtml = `
 <!doctype html>
 <html lang="en">
   <body>
     <main>
-      <h1>Technical Lead PPS</h1>
-      <h2>Main Responsibilities:</h2>
+      <h1>Senior Business Analyst</h1>
+      <p>Location: Bangalore Roles and responsibilities:</p>
       <ul>
-        <li>Lead implementation and support activities for PPS applications</li>
-        <li>Coordinate with business and technical teams to deliver releases</li>
+        <li>Drive requirement discovery and business analysis for insurance products</li>
+        <li>Coordinate with customer and delivery teams on change requests</li>
       </ul>
-      <h2>Qualifications & Work Experience:</h2>
-      <p>BE/Btech/MCA</p>
-      <p>8-12 years of Experience</p>
-      <p>Location: Mumbai</p>
-      <p>Work from Office</p>
+      <h2>Qualifications, Work experience:</h2>
+      <p>Strong insurance domain knowledge.</p>
     </main>
   </body>
 </html>
 `
 
-const pmHtml = `
+const associateProjectManagerHtml = `
 <!doctype html>
 <html lang="en">
   <body>
     <main>
-      <h1>Project Manager/Associate Project Manager</h1>
+      <h1>Associate Project Manager:</h1>
+      <p>Location: Bangalore Main responsibilities and Opportunities:</p>
       <h2>Key Responsibilities:</h2>
       <ul>
-        <li>Manage multiple software development, maintenance and support projects</li>
-        <li>Prepare project charter, project plan and reports during project lifecycle</li>
+        <li>Manage delivery timelines across AI and insurance product workstreams</li>
+        <li>Prepare project plans and status reviews during the engagement lifecycle</li>
       </ul>
-      <h2>Skills:</h2>
+      <h2>Qualifications, work experience:</h2>
+      <p>4-5 years of experience in project coordination or management, preferably in AI/ML projects.</p>
       <ul>
         <li>Project Management</li>
-        <li>Microsoft Technologies (C#, ASP.NET) is a plus</li>
+        <li>Jira</li>
       </ul>
-      <p>Location: Bangalore</p>
-      <p>Work from Office</p>
-      <p>5-15 years experience</p>
     </main>
   </body>
 </html>
@@ -89,30 +99,41 @@ test('Inube Software Solutions helpers stay pinned to the verified jobs archive 
   assert.equal(inube.SOURCE, 'inubesoftwaresolutions')
   assert.equal(inube.COMPANY, 'Inube Software Solutions')
   assert.equal(inube.CAREERS_URL, 'https://inubesolutions.com/careers-inube/')
-  assert.equal(inube.VERIFIED_ON, '2026-07-18')
+  assert.equal(inube.VERIFIED_ON, '2026-08-02')
   assert.equal(inube.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(inube.hasOfficialCareersSignal('<html><body><h1>Jobs</h1></body></html>'), false)
   assert.deepEqual(inube.extractRoleSummaries(careersHtml), [
     {
-      title: 'Technical Lead PPS',
-      detailUrl: 'https://inubesolutions.com/jobs/technical-lead-pps/',
-      department: 'PPS',
+      title: 'Senior Business Analyst',
+      detailUrl: 'https://www.inubesolutions.com/jobs/senior-business-analyst/',
+      department: 'Insurance Practice',
       employmentType: 'Full Time',
-      location: 'Mumbai',
+      locations: ['Bangalore'],
     },
     {
-      title: 'Project Manager/Associate Project Manager',
-      detailUrl: 'https://inubesolutions.com/jobs/project-management-dot-net-insurance/',
-      department: 'PPS',
-      employmentType: 'Full Time',
-      location: 'Bangalore',
+      title: 'Associate Project Manager',
+      detailUrl: 'https://www.inubesolutions.com/jobs/associate-project-manager/',
+      department: null,
+      employmentType: null,
+      locations: [],
     },
   ])
 
-  const technicalLead = inube.extractRoleDetail(technicalLeadHtml, inube.extractRoleSummaries(careersHtml)[0])
-  assert.equal(technicalLead.location, 'Mumbai, India')
-  assert.equal(technicalLead.remoteStatus, 'On-site')
-  assert.equal(technicalLead.experienceRequired, '8-12 years')
+  const seniorBusinessAnalyst = inube.extractRoleDetail(
+    seniorBusinessAnalystHtml,
+    inube.extractRoleSummaries(careersHtml)[0],
+  )
+  assert.equal(seniorBusinessAnalyst.location, 'Bangalore, India')
+  assert.equal(seniorBusinessAnalyst.remoteStatus, null)
+  assert.equal(seniorBusinessAnalyst.experienceRequired, null)
+
+  const associateProjectManager = inube.extractRoleDetail(
+    associateProjectManagerHtml,
+    inube.extractRoleSummaries(careersHtml)[1],
+  )
+  assert.equal(associateProjectManager.title, 'Associate Project Manager')
+  assert.equal(associateProjectManager.location, 'Bangalore, India')
+  assert.equal(associateProjectManager.experienceRequired, '4-5 years')
 })
 
 test('Inube Software Solutions run validates the verified archive before hydrating detail pages', async () => {
@@ -124,21 +145,21 @@ test('Inube Software Solutions run validates the verified archive before hydrati
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === inube.CAREERS_URL) return careersHtml
-      if (url === 'https://inubesolutions.com/jobs/technical-lead-pps/') return technicalLeadHtml
-      if (url === 'https://inubesolutions.com/jobs/project-management-dot-net-insurance/') return pmHtml
+      if (url === 'https://www.inubesolutions.com/jobs/senior-business-analyst/') return seniorBusinessAnalystHtml
+      if (url === 'https://www.inubesolutions.com/jobs/associate-project-manager/') return associateProjectManagerHtml
       throw new Error(`Unexpected iNube URL: ${url}`)
     },
   })
 
   assert.deepEqual(requestedUrls, [
     inube.CAREERS_URL,
-    'https://inubesolutions.com/jobs/technical-lead-pps/',
-    'https://inubesolutions.com/jobs/project-management-dot-net-insurance/',
+    'https://www.inubesolutions.com/jobs/senior-business-analyst/',
+    'https://www.inubesolutions.com/jobs/associate-project-manager/',
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'inubesoftwaresolutions')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-  assert.equal(jobs[1].title, 'Project Manager/Associate Project Manager')
+  assert.equal(jobs[1].title, 'Associate Project Manager')
 })
 
 test('Inube Software Solutions run fails closed when the verified jobs archive drifts', async () => {

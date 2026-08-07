@@ -29,11 +29,10 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Career | xponent.ai</title>
+    <title>Career &#8211; xponent.ai - accelerating outcomes</title>
   </head>
   <body>
     <main>
-      <h1>Career</h1>
       <p>Join a team building AI-first products.</p>
       <section class="wp-job-openings">
         <h2>Current Openings</h2>

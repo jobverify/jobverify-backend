@@ -62,6 +62,8 @@ const stripTags = (value) =>
       .replace(/<[^>]+>/g, ' '),
   )
 
+const normalizeVisibleText = (value) => stripTags(value)?.toLowerCase() || ''
+
 const normalizeDate = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -149,20 +151,26 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
 
 export const extractOfficialBoardUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*Apply now and join the Groupon team!\s*<\/a>/i,
-  )
+  const page = String(html ?? '')
 
-  return toAbsoluteUrl(match?.[1], CAREERS_URL)
+  for (const match of page.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    if (normalizeVisibleText(match[2]) === 'apply now and join the groupon team!') {
+      return toAbsoluteUrl(match[1], CAREERS_URL)
+    }
+  }
+
+  return null
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const text = normalizeVisibleText(page)
 
   return /<title>\s*Why Groupon\s*<\/title>/i.test(page)
-    && /Meaningful Work\. Happy Teams\. Great Deals\./i.test(page)
-    && /Bangalore and Chennai/i.test(page)
-    && /Apply now and join the Groupon team!/i.test(page)
+    && text.includes('our mission')
+    && text.includes('our teams')
+    && text.includes('bangalore and chennai')
+    && text.includes('apply now and join the groupon team!')
     && extractOfficialBoardUrl(page) === BOARD_URL
 }
 

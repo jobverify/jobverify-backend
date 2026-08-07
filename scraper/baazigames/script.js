@@ -35,7 +35,7 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -44,11 +44,11 @@ const defaultFetchText = async (url) => {
     signal: createTimeoutSignal(15000),
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
   }
-
-  return response.text()
 }
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -76,32 +76,40 @@ export const hasPublicJobsSignal = (html) => {
     || /href=["'][^"']*\/jobs\/[^"']+/i.test(String(html ?? ''))
 }
 
+const isBlockedCareersResponse = (page = {}) =>
+  (Number(page.status) === 403 || Number(page.status) === 200)
+  && isBlockedCareersRoute(page.html)
+
 export const createBaaziGamesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+  async run({ fetchText, fetchPage = defaultFetchPage } = {}) {
+    const resolvePage = fetchText
+      ? async (url) => ({ status: 200, url, html: await fetchText(url) })
+      : fetchPage
+
+    const homepage = await resolvePage(HOMEPAGE_URL)
+    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Baazi Games verified homepage no longer matches the trusted first-party surface')
     }
 
-    if (hasPublicJobsSignal(homepageHtml)) {
+    if (hasPublicJobsSignal(homepage.html)) {
       throw new Error('Baazi Games homepage now exposes a public jobs surface')
     }
 
-    const contactHtml = await fetchText(CONTACT_URL)
-    if (!hasOfficialContactSignal(contactHtml)) {
+    const contact = await resolvePage(CONTACT_URL)
+    if (contact.status !== 200 || !hasOfficialContactSignal(contact.html)) {
       throw new Error('Baazi Games verified contact page no longer matches the trusted first-party surface')
     }
 
-    if (hasPublicJobsSignal(contactHtml)) {
+    if (hasPublicJobsSignal(contact.html)) {
       throw new Error('Baazi Games contact page now exposes a public jobs surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (hasPublicJobsSignal(careersHtml)) {
+    const careers = await resolvePage(CAREERS_URL)
+    if (hasPublicJobsSignal(careers.html)) {
       throw new Error('Baazi Games careers route now exposes a public jobs surface')
     }
 
-    if (!isBlockedCareersRoute(careersHtml)) {
+    if (!isBlockedCareersResponse(careers)) {
       throw new Error('Baazi Games careers route changed materially and needs review')
     }
 

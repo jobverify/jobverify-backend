@@ -15,9 +15,9 @@ export const MODEL_N_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+verified-open-positions-empty-state-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.modeln.com/company/careers/ was the live first-party Model N careers page and that its Open Positions section rendered the empty-state text "No results" instead of any public role cards. The same page still highlighted Great Place to Work Certified in India branding, but it did not expose a trustworthy public jobs surface on the verified date.',
+    'Verified on Monday, August 3, 2026 that https://www.modeln.com/company/careers/ was still the live first-party Model N careers page and that its Open Positions widget rendered the filters "Filter by location" and "Filter by work type" with the empty-state text "No results" instead of any public role cards.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

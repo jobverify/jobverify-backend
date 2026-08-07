@@ -50,14 +50,14 @@ test('DTDC local catalog captures the verified first-party resume-drop career pa
   )
   assert.equal(DTDC_CATALOG.parser, 'custom-script')
   assert.equal(DTDC_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DTDC_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(DTDC_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(DTDC_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dtdc\.com\/career\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dtdc\.com\/robots\.txt/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dtdc\.com\/sitemap_index\.xml/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dtdc\.com\/page-sitemap\.xml/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /careers@dtdc\.com/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /commented-out sample job cards/i)
 })
 
 test('DTDC local catalog hydrates into coverage without needing an alias entry', async () => {

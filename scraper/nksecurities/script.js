@@ -31,6 +31,10 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const normalizePageText = (html) => normalizeWhitespace(
+  String(html ?? '').replace(/<[^>]+>/g, ' '),
+)
+
 const defaultFetchPage = async (url) => {
   const html = await fetchTextWithRetry(url, {
     headers: {
@@ -127,12 +131,16 @@ const normalizeApplyUrl = (value, jobId) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const pageText = normalizePageText(page)
+  const hasVerifiedSebiMarker = /SEBI Regd\. No:\s*INZ000206920/i.test(page)
+    || pageText?.includes('SEBI REG. INZ000206920')
 
   return /<title>\s*NK Securities Research - High Frequency Algorithmic Trading\s*<\/title>/i.test(page)
-    && /NK Securities Research is a high-frequency algorithmic trading firm founded in 2011\./i.test(page)
-    && /Where Technology Meets Markets Analyze\. Execute\. Excel\./i.test(page)
+    && pageText?.includes('Where Technology Meets Markets Analyze. Execute. Excel.')
+    && pageText?.includes('A high-frequency proprietary trading firm at the intersection of technology, data science, and global financial markets.')
+    && pageText?.includes('We solve complex market problems in real time with speed, precision, and innovation at scale.')
     && /href=["']open-positions\.html["']/i.test(page)
-    && /SEBI Regd\. No:\s*INZ000206920/i.test(page)
+    && hasVerifiedSebiMarker
 }
 
 export const extractGreenhouseApiUrl = (html) => {
@@ -145,12 +153,17 @@ export const extractGreenhouseApiUrl = (html) => {
 
 export const hasOfficialOpenPositionsSignal = (html) => {
   const page = String(html ?? '')
+  const pageText = normalizePageText(page)
 
   return /<title>\s*Open Positions - NK Securities Research\s*<\/title>/i.test(page)
-    && /Search by role or location/i.test(page)
-    && /All Locations/i.test(page)
-    && /No open positions at this time\. Check back soon\./i.test(page)
-    && /absolute_url internal_job_id/i.test(page)
+    && pageText?.includes('CURRENT OPENINGS')
+    && pageText?.includes('Find your role')
+    && /placeholder=["']Search by role or location["']/i.test(page)
+    && pageText?.includes('All Locations')
+    && pageText?.includes('No open positions at this time. Check back soon.')
+    && /id=["']ghSearch["']/i.test(page)
+    && /id=["']ghLocation["']/i.test(page)
+    && /id=["']gh-jobs-board["']/i.test(page)
     && extractGreenhouseApiUrl(page) !== null
 }
 

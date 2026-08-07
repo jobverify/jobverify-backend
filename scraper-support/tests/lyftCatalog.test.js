@@ -45,19 +45,19 @@ test('Lyft local catalog captures the verified first-party careers shell and Gre
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'lyft.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.match(provider.dryRunFile, /lyft[\\/]jobs\.json$/i)
   assert.match(provider.modulePath, /lyft[\\/]script\.js$/i)
   assert.equal(provider.modulePath, lyftModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lyft\.com\/careers/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/api\.greenhouse\.io\/v1\/boards\/lyft\/jobs\?content=true/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /159 public roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /160 public roles/i)
   assert.match(provider.verifiedSurfaceSummary, /0 India-facing roles/i)
-  assert.match(provider.verifiedSurfaceSummary, /San Francisco, CA/i)
+  assert.match(provider.verifiedSurfaceSummary, /Mexico City, Mexico/i)
   assert.match(provider.verifiedSurfaceSummary, /app\.careerpuck\.com/i)
 })
 

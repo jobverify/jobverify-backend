@@ -1,0 +1,171 @@
+[
+  {
+    "jobId": "R5282",
+    "title": "Director FP&A",
+    "company": "Chegg",
+    "department": null,
+    "location": "Jasola, New Delhi",
+    "city": "Jasola",
+    "locations": [
+      "Jasola"
+    ],
+    "link": "https://osv-chegg.wd5.myworkdayjobs.com/Chegg/job/Jasola-New-Delhi/Director-FP-A_R5282",
+    "source": "chegg",
+    "postedAt": "2026-07-28T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job Description We are seeking an experienced Sr Manager/ Director, FP&amp;A to lead our India-based f inance team and provide end-to-end financial support for our global (US-based) organization. This role will manage financial planning across multiple businesses, drive strategic planning and analysis, and partner closely with US leadership to deliver actionable insights that support business growth and operational efficiency. The ideal candidate is a hands-on leader who thrives in a dynamic, high-growth, global environment and has a strong track record of building and mentoring high-performing finance teams. Key Responsibilities Financial Leadership &amp; Strategy • Own and manage financial models for both revenue and expense for assigned business units, ensuring accuracy, insight, and alignment with organizational goals. • Partner with the US and India finance and executive leadership teams to drive strategic decision-making through financial analysis and forecasting. • Develop and execute annual budgets, long-range plans, and rolling forecasts. • Deliver actionable insights on business performance, cost optimization, and revenue growth opportunities. Close &amp; External Reporting Support • Support monthly and quarterly close processes including flux analysis and executive commentary • Partner with Investor Relations and Finance leadership on earnings prep, KPI disclosures, guidance scenarios, and talking points • Prepare Board-ready materials and business review packets for senior leadership Operational Excellence • Lead and mentor a team of 3–5 financial analysts, fostering analytical rigor, accuracy, and professional growth. • Ensure timely and accurate monthly, quarterly, and annual reporting to US stakeholders. • Implement and enhance financial models, tools, and dashboards to improve visibility and decision-making. • Partner closely with accounting team to ensure proper financial controls, compliance, and reporting integrity. • Drive process automation and standardization across forecasting, reporting, and analysis functions. Business Partnership • Collaborate closely with cross-functional teams (Operations, Sales, HR, Product, etc.) to support strategic initiatives. • Translate financial data into business narratives and recommendations for leadership. • Provide financial leadership for new projects, pricing, and investment decisions. Qualifications Education &amp; Experience • Bachelor’s degree in Finance, Accounting, Economics, or related field (MBA or CA/CPA preferred). • 12+ years of progressive experience in corporate finance, FP&amp;A, or business f inance. • Minimum 5 years in a leadership role managing teams and full P&amp;L ownership. • Experience supporting or partnering with US-based or multinational organizations. • Strong understanding of GAAP, FP&amp;A tools, and financial modeling. Skills &amp; Attributes • Exceptional analytical, problem-solving, and strategic thinking skills. • Strong communication skills with the ability to present financial insights to non-financial stakeholders. • Proven leadership experience building and scaling high-performing teams. • High proficiency in Excel and familiarity with modern financial systems (e.g., Net Suite, Adaptive, Power BI). • Comfortable working in a global time zone environment and collaborating virtually with US teams. Why do we exist? Students are working harder than ever before to stabilize their future. Our recent research study called State of the Student shows that nearly 3 out of 4 students are working to support themselves through college and 1 in 3 students feel pressure to spend more than they can afford. We founded our business on provided affordable textbook rental options to address these issues. Since then, we’ve expanded our offerings to supplement many facets of higher educational learning through Chegg Study, Chegg Math, Chegg Writing, Chegg Internships, Chegg Skills, and more to support students beyond their college experience. These offerings lower financial concerns for students by modernizing their learning experience. We exist so students everywhere have a smarter, faster, more affordable way to student. Video Shorts Life at Chegg: http://youtu.be/Fwf90zga OLA Chegg Corporate Career Page: https://jobs.chegg.com/ Chegg India: http://www.cheggindia.com/ Chegg Israel: http://www.chegg.com/about/working-at-chegg/israel/ Chegg Skills: https://www.chegg.com/skills Chegg out our culture and benefits! http://www.chegg.com/about/working-at-chegg/benefits/ Chegg is an equal opportunity employer What is Chegg? An ‘always on’ digital learning platform. Chegg puts students first…Everything we build in this company is student-focused, making us the leading student-first connected learning platform. Chegg strives to improve the overall return on investment in education by helping students learn more in less time and at a lower cost. This is achieved by providing students a multitude of educational tools from affordable textbook rentals to Chegg Study which supplements their learning through 24/7 tutor access, step-by-step help with questions, and more. Chegg is a publicly-held company based in Santa Clara, California and trades on the NYSE under the symbol CHGG.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "12+ years",
+    "requisitionId": "R5282",
+    "scrapedAt": "2026-08-01T14:32:31.595Z",
+    "country": "India",
+    "companyCareerPage": "https://www.chegg.com/about/working-at-chegg/jobs/",
+    "companyDomain": "chegg.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://osv-chegg.wd5.myworkdayjobs.com/Chegg/job/Jasola-New-Delhi/Director-FP-A_R5282",
+    "sourceUrl": "https://osv-chegg.wd5.myworkdayjobs.com/Chegg/job/Jasola-New-Delhi/Director-FP-A_R5282",
+    "originalTitle": "Director FP&A",
+    "normalizedTitle": "Director FP&A",
+    "jobCategory": "Director FP&A",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-28T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T14:32:31.595Z",
+    "skillIds": [
+      "power-bi"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "power-bi",
+        "canonicalName": "Power BI",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Power BI"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "12+ years",
+      "minimumYears": 12,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12+ years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Director",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:47.290Z"
+  },
+  {
+    "jobId": null,
+    "title": "Manager - UK Accounting",
+    "company": "Chegg",
+    "department": null,
+    "location": "Jasola, New Delhi",
+    "city": "Jasola",
+    "locations": [
+      "Jasola"
+    ],
+    "link": "https://osv-chegg.wd5.myworkdayjobs.com/Chegg/job/Jasola-New-Delhi/Manager---UK-Accounting_R5343-1",
+    "source": "chegg",
+    "postedAt": "2026-07-02T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job Description Location: Delhi Reports to: Sr Manager Accounting Team: 5-6 people Function: Accounting About the Role We are seeking an experienced and detail-oriented Accounting Manager to support and oversee accounting operations, month-end close activities, revenue accounting, and financial reporting across multiple jurisdictions. The ideal candidate will have strong technical accounting expertise in US GAAP and IFRS, hands-on experience preparing UK GAAP financial statements, and a proven track record of managing accounting processes in a fast-paced environment. This role will work closely with cross-functional teams and leadership to ensure accurate financial reporting, compliance, and process improvements. Financial Reporting &amp; Accounting • Manage and oversee month-end and year-end close processes to ensure timely and accurate reporting. • Prepare and review financial statements in compliance with UK GAAP. • Ensure accounting activities comply with US GAAP and IFRS requirements. • Support statutory reporting, external audits, and regulatory compliance activities. • Maintain strong internal controls and accounting policies across processes. Revenue Accounting • Manage revenue recognition and accounting in accordance with applicable accounting standards. • Review contracts and assess accounting implications related to revenue recognition. • Partner with business teams to ensure accurate revenue reporting and reconciliations. • Support audit requests and documentation related to revenue accounting. Operational Accounting • Review journal entries, reconciliations, accruals, and supporting schedules. • Drive process improvements and automation initiatives within accounting operations. • Coordinate with AP, AR, payroll, tax, and other finance teams to ensure smooth accounting operations. • Support treasury, cash management, and balance sheet integrity activities as needed. Audit &amp; Compliance • Coordinate with external auditors during statutory and financial audits. • Ensure timely completion of audit deliverables and resolution of audit queries. • Support implementation and adherence to accounting policies and compliance frameworks. Team &amp; Stakeholder Management • Mentor and guide team members while fostering a collaborative work environment. • Partner with finance leadership and cross-functional stakeholders on accounting and reporting matters. • Support transition and stabilization activities for new accounting processes or entities. Qualifications &amp; Experience • ACCA qualification is must. • Bachelor's degree in accounting, Finance, or related field. • 6–10+ years of progressive accounting experience. • Strong knowledge of US GAAP, IFRS, UK GAAP financial statement preparation • Exposure to ERP systems like Netsuite, Blackline, Coupa. • Hands-on experience managing month-end close processes. • Experience in revenue accounting and revenue recognition. • Experience supporting statutory audits and financial reporting. • Strong analytical, organizational, and • problem-solving skills. • Excellent communication and stakeholder management abilities. What is Chegg? An ‘always on’ digital learning platform. Chegg puts students first…Everything we build in this company is student-focused, making us the leading student-first connected learning platform. Chegg strives to improve the overall return on investment in education by helping students learn more in less time and at a lower cost. This is achieved by providing students a multitude of educational tools from affordable textbook rentals to Chegg Study which supplements their learning through 24/7 tutor access, step-by-step help with questions, and more. Chegg is a publicly-held company based in Santa Clara, California and trades on the NYSE under the symbol CHGG.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "10+ years",
+    "requisitionId": "R5343",
+    "scrapedAt": "2026-08-01T14:32:32.678Z",
+    "country": "India",
+    "companyCareerPage": "https://www.chegg.com/about/working-at-chegg/jobs/",
+    "companyDomain": "chegg.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://osv-chegg.wd5.myworkdayjobs.com/Chegg/job/Jasola-New-Delhi/Manager---UK-Accounting_R5343-1",
+    "sourceUrl": "https://osv-chegg.wd5.myworkdayjobs.com/Chegg/job/Jasola-New-Delhi/Manager---UK-Accounting_R5343-1",
+    "originalTitle": "Manager - UK Accounting",
+    "normalizedTitle": "Manager - UK Accounting",
+    "jobCategory": "Manager - UK Accounting",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-02T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T14:32:32.678Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "10+ years",
+      "minimumYears": 10,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10+ years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:47.292Z"
+  }
+]

@@ -11,7 +11,9 @@ const VERIFIED_HOMEPAGE_HTML = `
     <!--<li><a href="https://recruitcareers.zappyhire.com/pramati" target="_blank">Careers</a></li>-->
     <a href="https://recruitcareers.zappyhire.com/pramati" target="_blank"><div class="card first">Careers</div></a>
     <li><a href="/careers/">Careers</a></li>
-    <p>People are our priority and we owe much of our success to having maintained this philosophy.</p>
+    <p>Pramati builds independent, innovative technology companies focused on profitable, well-defined markets.</p>
+    <p>Pramati Prism is where it all starts, our in-house accelerator which incubates products in early stage, and nurtures them before spinning them out into autonomous ventures.</p>
+    <p>Catch the buzz. Pramati is a happening place for everyone &mdash; people, customers, and media.</p>
   </body>
 </html>
 `
@@ -61,6 +63,30 @@ test('Pramati Technologies sentinel helpers stay pinned to the homepage link, mi
     pramati.pageExposesPublicJobs('<html><body><a href="/jobs/software-engineer">Software Engineer</a></body></html>'),
     true,
   )
+})
+
+test('Pramati Technologies default page fetch preserves the verified 404 careers route for sentinel inspection', async () => {
+  const pramati = await loadModule()
+  const originalFetch = globalThis.fetch
+
+  globalThis.fetch = async () => ({
+    status: 404,
+    url: pramati.CAREERS_URL,
+    text: async () => VERIFIED_CAREERS_404_HTML,
+  })
+
+  try {
+    const page = await pramati.defaultFetchPage(pramati.CAREERS_URL)
+
+    assert.deepEqual(page, {
+      status: 404,
+      url: pramati.CAREERS_URL,
+      html: VERIFIED_CAREERS_404_HTML,
+    })
+    assert.equal(pramati.isExpectedMissingCareersRoute(page), true)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('Pramati Technologies run validates the homepage handoff contract before returning []', async () => {

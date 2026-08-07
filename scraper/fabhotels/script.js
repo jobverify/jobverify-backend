@@ -23,7 +23,7 @@ export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
-const DETAIL_URL_PATTERN = /^https:\/\/www\.fabhotels\.com\/careers\/[A-Z0-9-]+$/i
+const DETAIL_URL_PATTERN = /^https:\/\/www\.fabhotels\.com\/careers\/(?!department-)[A-Z0-9-]+$/i
 
 const STATE_BY_CITY = {
   ahmadabad: 'Gujarat',
@@ -166,7 +166,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title>\s*FabHotels:\s*India's Best Budget Hotels\s*\|\s*Online Hotel Booking\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*FabHotels:\s*India(?:'|&#x27;|&#39;|&apos;)s Best Budget Hotels\s*\|\s*Online Hotel Booking\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Book top-rated budget hotels in India.')
     && normalized.includes('FabHotels across')
     && normalized.includes('Travelstack Tech Limited')

@@ -213,7 +213,7 @@ test('run stops when Baxter TalentBrew repeats the next-page URL', async () => {
 
   const repeatedNextUrl = 'https://jobs.baxter.com/search-jobs/india&p=2'
   const requests = []
-  const jobs = await baxter.createBaxterScraper({ maxPages: 10 }).run({
+  const jobs = await baxter.createBaxterScraper({ maxPages: 10, includeDetails: false }).run({
     fetchText: async (url) => {
       requests.push(url)
       if (url === baxter.buildSearchUrl() || url === repeatedNextUrl) {

@@ -5,7 +5,7 @@ const VERIFIED_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Suzlon | Join India's Wind Energy Leader</title>
+      <title>Careers at Suzlon | Join India&#x27;s Wind Energy Leader</title>
   </head>
   <body>
     <main>
@@ -60,7 +60,7 @@ test('Suzlon Energy sentinel helpers stay pinned to the verified first-party car
   assert.equal(suzlonEnergy.SOURCE, 'suzlonenergy')
   assert.equal(suzlonEnergy.COMPANY_NAME, 'Suzlon Energy')
   assert.equal(suzlonEnergy.OFFICIAL_BRAND_NAME, 'Suzlon Energy Ltd.')
-  assert.equal(suzlonEnergy.VERIFIED_ON, '2026-07-17')
+  assert.equal(suzlonEnergy.VERIFIED_ON, '2026-08-05')
   assert.equal(suzlonEnergy.CAREERS_URL, 'https://www.suzlon.com/careers/')
   assert.equal(suzlonEnergy.hasOfficialCareersSignal(VERIFIED_CAREERS_HTML), true)
   assert.equal(

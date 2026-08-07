@@ -10,7 +10,7 @@ const OFFICIAL_CAREERS_HTML = `
   <body>
     <main>
       <p>CAREERS</p>
-      <h1>We take charge of an electric future for all. If you're one of us, join our squad.</h1>
+      <h1>We take charge of an electric future for all. If you&#039;re one of us, join our squad.</h1>
       <h3>Open Positions</h3>
       <p>Hello Technovators, explore opportunities in Design, Technology, Sales, and many more interesting functions.</p>
       <a href="https://peopleatgems.kekahire.com/">View Jobs</a>
@@ -82,6 +82,15 @@ test('Greaves Electric Mobility sentinel helpers stay pinned to the verified fir
   assert.equal(
     greavesElectricMobility.isExpectedVerificationFailure({
       message: 'The underlying connection was closed: Could not establish trust relationship for the SSL/TLS secure channel.',
+    }),
+    true,
+  )
+  assert.equal(
+    greavesElectricMobility.isExpectedVerificationFailure({
+      message: 'fetch failed',
+      cause: {
+        message: 'certificate has expired',
+      },
     }),
     true,
   )

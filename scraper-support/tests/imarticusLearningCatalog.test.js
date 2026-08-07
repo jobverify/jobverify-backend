@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Imarticus Learning local catalog captures the verified first-party career-services-only sentinel contract', async () => {
+test('Imarticus Learning local catalog captures the verified redirected no-jobs sentinel contract', async () => {
   const { IMARTICUS_LEARNING_CATALOG } = await loadCatalogModule()
   const imarticusLearning = await loadScriptModule()
 
@@ -37,25 +37,25 @@ test('Imarticus Learning local catalog captures the verified first-party career-
   assert.equal(IMARTICUS_LEARNING_CATALOG.companyCareerPage, 'https://imarticus.org/careers/')
   assert.equal(
     IMARTICUS_LEARNING_CATALOG.canonicalCareerServicesPage,
-    'https://imarticus.org/building-careers-of-the-future-with-imarticus-rise/',
+    'https://imarticus.org/',
   )
   assert.equal(IMARTICUS_LEARNING_CATALOG.companyDomain, 'imarticus.org')
   assert.equal(IMARTICUS_LEARNING_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(IMARTICUS_LEARNING_CATALOG.countryFilter, 'India')
   assert.equal(
     IMARTICUS_LEARNING_CATALOG.paginationStrategy,
-    'verified-homepage-plus-career-services-page-validation',
+    'verified-homepage-plus-careers-redirect-validation',
   )
   assert.equal(
     IMARTICUS_LEARNING_CATALOG.extractionStrategy,
-    'verified-homepage+verified-career-services-page-without-public-employer-listings-return-empty',
+    'verified-homepage+redirected-careers-homepage-without-public-employer-listings-return-empty',
   )
   assert.equal(IMARTICUS_LEARNING_CATALOG.parser, 'custom-script')
   assert.equal(IMARTICUS_LEARNING_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(IMARTICUS_LEARNING_CATALOG.verifiedOn, '2026-07-16')
-  assert.match(IMARTICUS_LEARNING_CATALOG.verifiedSurfaceSummary, /careers at imarticus/i)
-  assert.match(IMARTICUS_LEARNING_CATALOG.verifiedSurfaceSummary, /imarticus rise/i)
-  assert.match(IMARTICUS_LEARNING_CATALOG.verifiedSurfaceSummary, /no trustworthy public employer job listings/i)
+  assert.equal(IMARTICUS_LEARNING_CATALOG.verifiedOn, '2026-08-02')
+  assert.match(IMARTICUS_LEARNING_CATALOG.verifiedSurfaceSummary, /resolves back to the same marketing homepage/i)
+  assert.match(IMARTICUS_LEARNING_CATALOG.verifiedSurfaceSummary, /job-ready certifications/i)
+  assert.match(IMARTICUS_LEARNING_CATALOG.verifiedSurfaceSummary, /does not expose a trustworthy public employer job board/i)
   assert.equal(IMARTICUS_LEARNING_CATALOG.modulePath, modulePath)
   assert.match(IMARTICUS_LEARNING_CATALOG.dryRunFile, /imarticuslearning[\\/]jobs\.json$/i)
 
@@ -89,7 +89,7 @@ test('Imarticus Learning exact-name backlog rows resolve directly from local pro
   )
 })
 
-test('getScraperCatalog includes Imarticus Learning as a verified career-services sentinel provider', () => {
+test('getScraperCatalog includes Imarticus Learning as a verified redirected no-jobs sentinel provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'imarticuslearning')
 
   assert.ok(provider)

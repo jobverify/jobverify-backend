@@ -92,7 +92,7 @@ test('Baazi Games local catalog captures the verified no-public-jobs first-party
     provider.extractionStrategy,
     'verified-homepage+verified-contact-page+talent-email-only+blocked-careers-route-return-empty',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /talent\.acquisition@moonshinetechnology\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /AccessDenied/i)
@@ -123,6 +123,21 @@ test('Baazi Games scraper returns [] while the first-party site remains marketin
     baazi.CONTACT_URL,
     baazi.CAREERS_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Baazi Games scraper also accepts the live 403 AccessDenied careers response', async () => {
+  const baazi = await loadScriptModule()
+
+  const jobs = await baazi.createBaaziGamesScraper().run({
+    fetchPage: async (url) => {
+      if (url === baazi.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === baazi.CONTACT_URL) return { status: 200, url, html: contactHtml }
+      if (url === baazi.CAREERS_URL) return { status: 403, url, html: '<?xml version="1.0"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>' }
+      throw new Error(`Unexpected Baazi URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

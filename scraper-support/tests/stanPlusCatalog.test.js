@@ -12,7 +12,7 @@ const loadStanPlusCatalog = async () => {
   }
 }
 
-test('StanPlus catalog metadata captures the verified RED.Health careers page and unreachable Darwinbox public routes', async () => {
+test('StanPlus catalog metadata captures the verified RED.Health careers page and blank-shell Darwinbox public routes', async () => {
   const { STAN_PLUS_CATALOG } = await loadStanPlusCatalog()
   const provider = hydrateProviderCatalogEntry(STAN_PLUS_CATALOG)
 
@@ -33,21 +33,21 @@ test('StanPlus catalog metadata captures the verified RED.Health careers page an
   assert.equal(provider.darwinboxListingApiUrl, 'https://redhealth.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-careers-page-plus-darwinbox-timeout-validation')
+  assert.equal(provider.paginationStrategy, 'verified-careers-page-plus-darwinbox-shell-and-blocked-api-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-darwinbox-handoff+timed-out-public-darwinbox-routes-return-empty',
+    'verified-first-party-careers-page+verified-darwinbox-handoff+reachable-public-shells+blocked-listing-api-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'red.health')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-05')
   assert.match(provider.modulePath, /stanplus[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /stanplus[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.red\.health\/career/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/redhealth\.darwinbox\.in\/ms\/candidatev2\/main/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /generic public Darwinbox JavaScript shells/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare 403 block/i)
+  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public StanPlus jobs surface/i)
 })
 
 test('StanPlus matches exact-name backlog coverage from the local catalog contract alone', async () => {

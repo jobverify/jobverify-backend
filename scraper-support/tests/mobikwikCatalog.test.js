@@ -7,15 +7,19 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes MobiKwik as an official careers external-handoff scraper', () => {
+test('getScraperCatalog includes MobiKwik as a Darwinbox-backed script scraper', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'mobikwik')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.companyName, 'MobiKwik')
   assert.equal(provider.companyCareerPage, 'https://www.mobikwik.com/careers')
   assert.equal(provider.companyDomain, 'mobikwik.com')
+  assert.equal(provider.darwinboxOrigin, 'https://mobikwik.darwinbox.in')
+  assert.equal(provider.darwinboxCompanyId, 'main')
+  assert.equal(provider.officialCareersHandoffUrl, 'https://mobikwik.darwinbox.in/ms/candidatev2/main/careers/home')
+  assert.equal(provider.publicAllJobsUrl, 'https://mobikwik.darwinbox.in/ms/candidatev2/main/careers/allJobs')
   assert.equal(provider.parser, 'custom-script')
   assert.match(provider.modulePath, /mobikwik[\\/]script\.js$/i)
 })

@@ -1,0 +1,78 @@
+[
+  {
+    "title": "Master Coach",
+    "company": "CEAT Limited",
+    "department": "QBM",
+    "location": "Nagpur Plant",
+    "city": "Nagpur Plant",
+    "jobId": "dcee13a5-f48a-4fe1-b14b-fc93414c6869",
+    "requisitionId": "47074",
+    "sourceUrl": "https://ceat.turbohire.co/job/publicjobs/kHy%2F90qZzaeflNxyUPdI4tJooPAb9paMx55QL12H0zDdrdQjLhp0v7dk%2F6a1OTE%2F",
+    "applyUrl": "https://ceat.turbohire.co/job/publicjobs/kHy%2F90qZzaeflNxyUPdI4tJooPAb9paMx55QL12H0zDdrdQjLhp0v7dk%2F6a1OTE%2F",
+    "employmentType": "Full-time",
+    "experienceRequired": "10-12 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Lean Manufacturing",
+      "Buniess Excellence"
+    ],
+    "postingDate": "2026-07-22T10:17:57.111Z",
+    "closingDate": "2026-10-27T18:29:00.068Z",
+    "jobDescription": "Internal Job Description Job Responsibilities Champion cost-saving initiatives through identification, development, and execution of high-impact problem-solving projects (QIPs), significantly contributing to gross margin improvement. Drive the implementation and sustenance of Advanced Maintenance (AM) methodologies, ensuring equipment reliability and minimizing downtime. Foster a data-driven culture by leading the adoption of digital",
+    "source": "ceat",
+    "link": "https://ceat.turbohire.co/job/publicjobs/kHy%2F90qZzaeflNxyUPdI4tJooPAb9paMx55QL12H0zDdrdQjLhp0v7dk%2F6a1OTE%2F",
+    "scrapedAt": "2026-08-01T14:31:49.810Z",
+    "country": "India",
+    "companyCareerPage": "https://www.ceat.com/career-landing.html",
+    "companyDomain": "ceat.com",
+    "atsPlatform": "turbohire",
+    "originalTitle": "Master Coach",
+    "normalizedTitle": "Master Coach",
+    "jobCategory": "Master Coach",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-22T10:17:57.111Z",
+    "scrapedTimestamp": "2026-08-01T14:31:49.810Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "10-12 years",
+      "minimumYears": 10,
+      "maximumYears": 12,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10-12 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      10,
+      11,
+      12
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Other",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "low",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:46.362Z"
+  }
+]

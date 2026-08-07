@@ -93,9 +93,12 @@ export const matchesVerifiedOpaqueOpenPositionsState = ({ status, url, html } = 
 
   return Number(status) === 200
     && matchesExpectedUrl(url, OFFICIAL_CAREERS_HANDOFF_URL)
+    && /open positions at suki \| healthcare ai jobs/i.test(String(html ?? ''))
     && normalized.includes('Current Openings')
-    && normalized.includes('About Us')
+    && normalized.includes('Company')
     && normalized.includes('Careers')
+    && normalized.includes('Policies')
+    && normalized.includes('Trust Portal')
     && !pageExposesPublicJobListings(html)
 }
 

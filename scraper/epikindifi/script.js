@@ -14,9 +14,8 @@ const USER_AGENT =
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /EPIKInDiFi Software & Solutions/i.test(page)
+  return /<title>\s*Home\s*-\s*Epikindifi\s*-\s*Digital Lending Platform Ecosystem\s*<\/title>/i.test(page)
     && /Digital Lending Made Simple/i.test(page)
-    && /href=["']https:\/\/epikindifi\.com\/careers\/["']/i.test(page)
     && /Apply Now/i.test(page)
 }
 

@@ -74,6 +74,39 @@ const detailPageHtml = `
 </html>
 `
 
+const genericHeadingDetailPageHtml = `
+<html>
+  <head>
+    <title>Senior Developer - R&amp;D Job Details | SAPIENS</title>
+    <meta property="og:title" content="Senior Developer - R&amp;D" />
+    <meta name="description" content="Bangalore Senior Developer - R&amp;D" />
+  </head>
+  <body>
+    <h1>Your Journey Starts Here</h1>
+    <span data-careersite-propertyid="title" class="rtltextaligneligible">Senior Developer - R&amp;D</span>
+    <span class="jobGeoLocation">Bangalore, IN</span>
+    <span data-careersite-propertyid="facility">56528</span>
+    <div class="joblayouttoken">
+      <div class="inner">
+        Explore Your Next Role at Sapiens
+        Senior Developer - R&amp;D
+        Req ID: 56528
+        Location: Bangalore, IN
+        Sapiens is on the lookout for a Senior Java developer to become a key player in our Bangalore team.
+        If you're ready to take your career to new heights, this role could be the perfect fit.
+      </div>
+    </div>
+    <script type="text/javascript">
+      j2w.Apply.init({
+        jobID                    : 1400779733,
+        sourceId                 : 'JATS-SapiensPRD',
+        locale                   : 'en_US'
+      });
+    </script>
+  </body>
+</html>
+`
+
 test('buildSearchUrl keeps Sapiens requests on the official public SuccessFactors search route', async () => {
   const {
     SEARCH_PAGE_URL,
@@ -161,8 +194,28 @@ test('extractJobDetail builds the public Sapiens apply handoff from the detail j
       applyUrl: 'https://careers.sapiens.com/talentcommunity/apply/1413083733/?locale=en_US',
       sourceUrl: 'https://careers.sapiens.com/job/Bangalore-L3-Architect/1413083733/',
       department: null,
+      publicExperienceChecked: true,
     },
   )
+})
+
+test('extractJobDetail prefers Sapiens embedded title metadata when the visible heading is generic', async () => {
+  const { extractJobDetail } = await loadSapiensModule()
+
+  const detail = extractJobDetail(genericHeadingDetailPageHtml, {
+    title: 'Senior Developer - R&D',
+    location: 'Bangalore, India',
+    city: 'Bangalore',
+    jobId: '56528',
+    requisitionId: '56528',
+    sourceUrl: 'https://careers.sapiens.com/job/Bangalore-Senior-Developer-R&D/1400779733/',
+    detailJobId: '1400779733',
+  })
+
+  assert.equal(detail.title, 'Senior Developer - R&D')
+  assert.equal(detail.applyUrl, 'https://careers.sapiens.com/talentcommunity/apply/1400779733/?locale=en_US')
+  assert.equal(detail.publicExperienceChecked, true)
+  assert.match(detail.jobDescription || '', /Sapiens is on the lookout/i)
 })
 
 test('run fetches the official Sapiens listing page first, then enriches India results via detail pages', async () => {
@@ -198,5 +251,6 @@ test('run fetches the official Sapiens listing page first, then enriches India r
     jobs[0].applyUrl,
     'https://careers.sapiens.com/talentcommunity/apply/1413083733/?locale=en_US',
   )
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].scrapedAt, '2026-07-10T00:00:00.000Z')
 })

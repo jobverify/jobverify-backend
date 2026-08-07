@@ -65,7 +65,7 @@ export const hasVerifiedCareersSurface = (pageData) => {
 
   return Boolean(title)
     && /gadgeon/i.test(title)
-    && text.includes(VERIFIED_PAGE_SIGNAL)
+    && new RegExp(VERIFIED_PAGE_SIGNAL, 'i').test(text)
 }
 
 export const extractJobsFromPageData = (pageData) => uniqueBy(

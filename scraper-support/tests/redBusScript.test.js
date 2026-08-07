@@ -8,22 +8,9 @@ const careersPageHtml = `
     <title>redBus Careers</title>
   </head>
   <body>
-    <script>
-      window.__CAREERS_DATA__ = {
-        layoutConfig: {
-          header: {
-            navBtnLbls: { jobsBtnLbl: 'Explore open roles' }
-          },
-          footer: {
-            footerLinksSections: [
-              {
-                title: 'redBus',
-                links: [{ text: 'Careers', path: '/careers/jobs' }]
-              }
-            ]
-          }
-        }
-      }
+    <div id="reactContentMount"></div>
+    <script defer>
+      let data = '%7B%22layoutConfig%22%3A%7B%22header%22%3A%7B%22navBtnLbls%22%3A%7B%22jobsBtnLbl%22%3A%22Explore%20open%20roles%22%7D%7D%2C%22footer%22%3A%7B%22footerLinksSections%22%3A%5B%7B%22title%22%3A%22redBus%22%2C%22links%22%3A%5B%7B%22text%22%3A%22Careers%22%2C%22path%22%3A%22%2Fcareers%2Fjobs%22%7D%5D%7D%5D%7D%7D%7D'
     </script>
   </body>
 </html>
@@ -37,8 +24,8 @@ const jobsPageHtml = `
   </head>
   <body>
     <script src="/careers/scripts/jobs.bundle.js?v=41"></script>
-    <script>
-      let data = '{"pageConfig":{"data":[{"id":2,"data":{"openRolesTxt":"Open roles","searchBarPlaceholder":"Search job title, skills or keyword"}}]}}'
+    <script defer>
+      let data = '%7B%22pageConfig%22%3A%7B%22data%22%3A%5B%7B%22id%22%3A2%2C%22data%22%3A%7B%22openRolesTxt%22%3A%22Open%20roles%22%2C%22searchBarPlaceholder%22%3A%22Search%20job%20title%2C%20skills%20or%20keyword%22%7D%7D%5D%7D%7D'
     </script>
   </body>
 </html>
@@ -55,13 +42,16 @@ var apply = function apply() {
 
 const darwinboxShellHtml = `
 <!doctype html>
-<html lang="en-US">
+<html lang="en">
   <head>
-    <title>MakeMyTrip</title>
-    <meta property="og:title" content="MakeMyTrip " />
+    <meta charset="utf-8" />
+    <title></title>
+    <base href="/ms/candidatev2/" />
+    <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+    <script src="/ms/formbuilder/assets/db-form/db-form.js"></script>
   </head>
   <body>
-    MakeMyTrip -
+    <app-root></app-root>
   </body>
 </html>
 `
@@ -122,7 +112,7 @@ test('RedBus scraper exports the verified first-party jobs route and Darwinbox h
   assert.equal(redbus.SOURCE, 'redbus')
   assert.equal(redbus.COMPANY, 'RedBus')
   assert.equal(redbus.OFFICIAL_BRAND_NAME, 'redBus India Pvt Ltd.')
-  assert.equal(redbus.VERIFIED_ON, '2026-07-17')
+  assert.equal(redbus.VERIFIED_ON, '2026-08-04')
   assert.equal(redbus.CAREERS_PAGE_URL, 'https://www.redbus.in/careers')
   assert.equal(redbus.JOBS_PAGE_URL, 'https://www.redbus.in/careers/jobs')
   assert.equal(redbus.DARWINBOX_ORIGIN, 'https://gommt.darwinbox.in')
@@ -164,7 +154,7 @@ test('run verifies the official RedBus surfaces and returns only exact RedBus jo
   const listingRequests = []
 
   const jobs = await redbus.createRedBusScraper().run({
-    now: () => '2026-07-17T00:00:00.000Z',
+    now: () => '2026-08-04T00:00:00.000Z',
     fetchText: async (url) => {
       textRequests.push(url)
 
@@ -206,7 +196,7 @@ test('run verifies the official RedBus surfaces and returns only exact RedBus jo
   )
   assert.deepEqual(
     jobs.map((job) => job.scrapedAt),
-    ['2026-07-17T00:00:00.000Z', '2026-07-17T00:00:00.000Z'],
+    ['2026-08-04T00:00:00.000Z', '2026-08-04T00:00:00.000Z'],
   )
 })
 

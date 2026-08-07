@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Metacube Software local catalog captures the verified fail-closed first-party careers shell', async () => {
+test('Metacube Software local catalog captures the verified professional-feed careers surface', async () => {
   const { METACUBE_SOFTWARE_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(METACUBE_SOFTWARE_CATALOG)
 
@@ -27,24 +27,28 @@ test('Metacube Software local catalog captures the verified fail-closed first-pa
   assert.equal(provider.officialBrandName, 'Metacube')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.metacube.com/')
-  assert.equal(provider.companyCareerPage, 'https://metacube.com/careers.php')
+  assert.equal(provider.careersHubUrl, 'https://metacube.com/careers.php')
+  assert.equal(provider.companyCareerPage, 'https://metacube.com/careers-professionals.php')
+  assert.equal(provider.jobsApiUrl, 'https://metacube.com/include/students.php?type=load&id=2')
   assert.equal(provider.companyDomain, 'metacube.com')
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-shell-no-public-role-cards')
+  assert.equal(provider.atsPlatform, 'first-party-csrf-protected-professionals-feed')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-shell-validation')
+  assert.equal(provider.paginationStrategy, 'session-cookie-plus-csrf-protected-first-party-professionals-feed')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-shell-without-trustworthy-public-role-cards-return-empty',
+    'verified-careers-hub+verified-professionals-page+csrf-protected-first-party-professionals-feed',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedPublicJobCount, 6)
+  assert.equal(provider.verifiedSampleJobUrl, 'https://metacube.com/open-position-form.php')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /metacubesoftware[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/metacube\.com\/careers\.php/i)
-  assert.match(provider.verifiedSurfaceSummary, /Open Positions General Application/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public role cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /careers-professionals\.php/i)
+  assert.match(provider.verifiedSurfaceSummary, /students\.php\?type=load&id=2/i)
+  assert.match(provider.verifiedSurfaceSummary, /returned 6 India openings/i)
 })
 
 test('Metacube Software exact backlog row resolves from the local provider contract', async () => {

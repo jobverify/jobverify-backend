@@ -129,6 +129,41 @@ const secondDetailPayload = {
   },
 }
 
+const placeholderListingRecord = {
+  jobTitle: 'Senior Manager Corporate Sales',
+  jobUrl: 'senior-manager-corporate-sales-gurgaon-2026042712404327',
+  jobCode: '15446',
+  referenceNumber: '14044',
+  location: 'Gurgaon',
+  locAgg: 'Gurugram, Haryana, India',
+  DepartmentName: 'Sales',
+  createDate: '27-Apr-2026',
+  mandatorySkills: ['B2B Sales', 'Business Development', 'Client Acquisition'],
+  jobLocationRecord: [
+    {
+      formattedLocation: 'Gurugram, Haryana, India',
+      country: 'India',
+      city: 'Gurugram',
+      state: 'Haryana',
+    },
+  ],
+}
+
+const placeholderDetailPayload = {
+  jobTitle: 'Senior Manager Corporate Sales',
+  jobCode: 15446,
+  jobUrl: 'senior-manager-corporate-sales-gurgaon-2026042712404327',
+  referenceNumber: '14044',
+  location: 'Gurgaon',
+  createdDate: '27-Apr-2026',
+  jobConfigurationData: {
+    Description: 'JD',
+    'Skills Required': 'B2B Sales,Business Development,Client Acquisition',
+    Location: 'Gurgaon',
+    'Job Title': 'Senior Manager Corporate Sales',
+  },
+}
+
 const loadInfoEdgeModule = async () => {
   try {
     return await import('../../scraper/infoedge/script.js')
@@ -260,6 +295,44 @@ test('InfoEdge detail extraction keeps the first-party detail route and richer Z
     postingDate: '2026-07-14',
     closingDate: null,
     jobDescription: 'About Info Edge Design intuitive products.',
+    publicExperienceChecked: true,
+  })
+})
+
+test('InfoEdge detail extraction marks job-specific public Zwayam placeholder payloads as checked when experience is absent', async () => {
+  const infoEdge = await loadInfoEdgeModule()
+
+  const detail = infoEdge.extractJobDetail(placeholderDetailPayload, {
+    title: 'Senior Manager Corporate Sales',
+    department: 'Sales',
+    location: 'Gurugram, Haryana, India',
+    city: 'Gurugram',
+    jobId: '15446',
+    requisitionId: '14044',
+    sourceUrl: 'https://careers.infoedge.com/infoedge/jobview/senior-manager-corporate-sales-gurgaon-2026042712404327',
+    applyUrl: 'https://careers.infoedge.com/infoedge/jobview/senior-manager-corporate-sales-gurgaon-2026042712404327',
+    _listingRecord: placeholderListingRecord,
+  })
+
+  assert.deepEqual(detail, {
+    title: 'Senior Manager Corporate Sales',
+    company: 'InfoEdge',
+    department: 'Sales',
+    location: 'Gurugram, Haryana, India',
+    city: 'Gurgaon',
+    jobId: '15446',
+    requisitionId: '14044',
+    sourceUrl: 'https://careers.infoedge.com/infoedge/jobview/senior-manager-corporate-sales-gurgaon-2026042712404327',
+    applyUrl: 'https://careers.infoedge.com/infoedge/jobview/senior-manager-corporate-sales-gurgaon-2026042712404327',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: ['B2B Sales', 'Business Development', 'Client Acquisition'],
+    postingDate: '2026-04-27',
+    closingDate: null,
+    jobDescription: 'JD',
+    publicExperienceChecked: true,
   })
 })
 
@@ -360,7 +433,53 @@ test('createInfoEdgeScraper follows the verified first-party Zwayam flow across 
     jobs[0].link,
     'https://careers.infoedge.com/infoedge/jobview/lead-ui-designer-noida-2026071413401714',
   )
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
   assert.equal(jobs[1].jobId, '16055')
+  assert.equal(jobs[1].publicExperienceChecked, true)
   assert.equal(jobs[1].scrapedAt, FIXED_SCRAPED_AT)
+})
+
+test('createInfoEdgeScraper overlaps public detail requests so large India batches do not time out sequentially', async () => {
+  const infoEdge = await loadInfoEdgeModule()
+  let activeDetails = 0
+  let maxActiveDetails = 0
+  const concurrentListingPayload = {
+    data: {
+      data: [
+        { _source: firstListingRecord },
+        { _source: secondListingRecord },
+      ],
+      hasMoreData: false,
+      facetedSearchConfig: {
+        paginationHowMuch: '12',
+      },
+      totalCount: 2,
+    },
+  }
+
+  const jobs = await infoEdge.createInfoEdgeScraper({ maxPages: 1, maxJobs: 5 }).run({
+    fetchJson: async (url, options = {}) => {
+      if (url === infoEdge.LISTING_API_URL) {
+        return concurrentListingPayload
+      }
+
+      if (url === infoEdge.DETAIL_API_URL) {
+        activeDetails += 1
+        maxActiveDetails = Math.max(maxActiveDetails, activeDetails)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        activeDetails -= 1
+
+        return options.json?.jobUrl === firstListingRecord.jobUrl
+          ? firstDetailPayload
+          : secondDetailPayload
+      }
+
+      throw new Error(`Unexpected URL ${url}`)
+    },
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.ok(maxActiveDetails > 1, `expected overlapping detail fetches, saw max concurrency ${maxActiveDetails}`)
 })

@@ -28,7 +28,7 @@ export const hasVerifiedAzugaCareersSignal = (html) => {
     && normalized.includes('Careers @ Azuga')
     && normalized.includes('Take a look at our open positions.')
     && normalized.includes('No items found.')
-    && /bebridgestone\.com\/en_us\/careers/i.test(page)
+    && /bebridgestone\.com/i.test(page)
 }
 
 export const hasPublicAzugaJobSignal = (html) => {

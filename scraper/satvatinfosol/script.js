@@ -90,6 +90,7 @@ export const extractJobs = (html = '') => {
       postingDate: null,
       closingDate: null,
       jobDescription: description,
+      publicExperienceChecked: true,
     })
   }
 

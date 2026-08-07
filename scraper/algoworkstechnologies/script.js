@@ -41,7 +41,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /Algoworks Careers/i.test(page)
     && /Want to join Algoworks\?/i.test(text)
     && /email your resume and cover letter/i.test(text)
-    && /mailto:careers@algoworks\.com/i.test(page)
+    && (/mailto:careers@algoworks\.com/i.test(page) || /\/cdn-cgi\/l\/email-protection/i.test(page))
 }
 
 export const hasFirstPartyJobsSignal = (html = '') => /https?:\/\/(?:www\.)?algoworks\.com\/careers\/[a-z0-9-]/i.test(

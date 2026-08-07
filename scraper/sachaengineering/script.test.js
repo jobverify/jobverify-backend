@@ -73,6 +73,126 @@ const bellJobsHtml = `
 </html>
 `
 
+const bellJobsHtmlWithCurrentBellApiPayload = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>SACHA Engineering - Bell Careers</title>
+    <link rel="canonical" href="https://bell.careers/company/sacha" />
+    <meta property="og:title" content="SACHA Engineering - Bell Careers" />
+  </head>
+  <body>
+    <script>
+      self.__next_f.push([1,"8:[[\\"$\\",\\"script\\",null,{\\"type\\":\\"application/ld+json\\",\\"dangerouslySetInnerHTML\\":{\\"__html\\":\\"$1c\\"}}],[\\"$\\",\\"$L1d\\",null,{\\"params\\":\\"$@1e\\",\\"initialData\\":{\\"count\\":3,\\"next\\":\\"https://api.bell.careers/api/company/companies/sacha/?page=2\\",\\"previous\\":null,\\"results\\":{\\"id\\":1,\\"name\\":\\"SACHA Engineering\\",\\"website\\":\\"http://sacha.group\\",\\"job_posts\\":[{\\"job_post_title\\":\\"AI Engineer & SharePoint Engineer - (Hiring Freshers)\\",\\"post_id\\":190,\\"published_date\\":\\"2026-07-30T05:01:33.267862Z\\",\\"description\\":\\"Job Summary Build AI and SharePoint solutions.\\",\\"job_type\\":\\"full_time\\",\\"currency\\":\\"INR\\",\\"experience_level\\":\\"0-0\\",\\"skills\\":\\"Python, JavaScript, Analytical Skills, Problem-Solving Skills, Communication Skills\\",\\"location\\":\\"None\\",\\"qualifications\\":\\"Computer Science Engineering\\",\\"slug\\":\\"sacha-engineering-ai-engineer-sharepoint-engineer-190\\"},{\\"job_post_title\\":\\"CAD Automation Engineer - Fresher\\",\\"post_id\\":189,\\"published_date\\":\\"2026-07-30T04:04:48.735604Z\\",\\"description\\":\\"Job Summary Build CAD automation solutions.\\",\\"job_type\\":\\"full_time\\",\\"currency\\":\\"INR\\",\\"experience_level\\":\\"0-1\\",\\"skills\\":\\"NX, CATIA, Creo, SolidWorks, AutoCAD, C#, Python, VB.NET, C++, Java, Analytical Skills, Problem-Solving Skills, Communication Skills\\",\\"location\\":\\"None\\",\\"qualifications\\":\\"B.E./B.Tech in Mechanical/Automobile/Computer Science or related fields\\",\\"slug\\":\\"sacha-engineering-cad-automation-engineer-fresher-with-0-1-189\\"}]}}}]]"])
+    </script>
+  </body>
+</html>
+`
+
+const bellCompanyApiPage1Json = JSON.stringify({
+  count: 3,
+  next: 'https://api.bell.careers/api/company/companies/sacha/?page=2',
+  previous: null,
+  results: {
+    id: 1,
+    name: 'SACHA Engineering',
+    website: 'http://sacha.group',
+    job_posts: [
+      {
+        job_post_title: 'AI Engineer & SharePoint Engineer - (Hiring Freshers)',
+        post_id: 190,
+        published_date: '2026-07-30T05:01:33.267862Z',
+        description: 'Job Summary Build AI and SharePoint solutions.',
+        job_type: 'full_time',
+        currency: 'INR',
+        experience_level: '0-0',
+        skills: 'Python, JavaScript, Analytical Skills, Problem-Solving Skills, Communication Skills',
+        location: 'None',
+        qualifications: 'Computer Science Engineering',
+        slug: 'sacha-engineering-ai-engineer-sharepoint-engineer-190',
+      },
+      {
+        job_post_title: 'CAD Automation Engineer - Fresher',
+        post_id: 189,
+        published_date: '2026-07-30T04:04:48.735604Z',
+        description: 'Job Summary Build CAD automation solutions.',
+        job_type: 'full_time',
+        currency: 'INR',
+        experience_level: '0-1',
+        skills: 'NX, CATIA, Creo, SolidWorks, AutoCAD, C#, Python, VB.NET, C++, Java, Analytical Skills, Problem-Solving Skills, Communication Skills',
+        location: 'None',
+        qualifications: 'B.E./B.Tech in Mechanical/Automobile/Computer Science or related fields',
+        slug: 'sacha-engineering-cad-automation-engineer-fresher-with-0-1-189',
+      },
+    ],
+  },
+})
+
+const bellCompanyApiPage2Json = JSON.stringify({
+  count: 3,
+  next: null,
+  previous: 'https://api.bell.careers/api/company/companies/sacha/',
+  results: {
+    id: 1,
+    name: 'SACHA Engineering',
+    website: 'http://sacha.group',
+    job_posts: [
+      {
+        job_post_title: 'Java Jakarta Expert',
+        post_id: 180,
+        published_date: '2026-06-24T10:48:44.738358Z',
+        description: 'Job Summary Join our hybrid Jakarta engineering team.',
+        job_type: 'full_time',
+        currency: 'INR',
+        experience_level: '7-15',
+        skills: 'Java, Jakarta EE, AWS',
+        location: 'None',
+        qualifications: 'Any Degree',
+        slug: 'sacha-engineering-java-jakarta-expert-with-7-15-180',
+      },
+    ],
+  },
+})
+
+const legacyBellCompanyApiPage1Json = JSON.stringify({
+  count: 2,
+  next: null,
+  previous: null,
+  results: {
+    id: 1,
+    name: 'SACHA Engineering',
+    website: 'http://sacha.group',
+    job_posts: [
+      {
+        job_post_title: 'CAD Automation Engineer_Fresher',
+        post_id: 181,
+        published_date: '2026-06-25T06:24:16.378777Z',
+        description: 'Job Summary We are seeking a highly motivated and detail-oriented CAD Automation Engineer to join our team. This role will focus on developing and implementing automation solutions for our CAD processes.',
+        job_type: 'full_time',
+        currency: 'INR',
+        experience_level: '0-1',
+        skills: 'CAD, NX, CATIA, Creo, SolidWorks, AutoCAD, C#, Python, VB.NET, C++, Java, Analytical Skills, Problem-Solving Skills, Engineering Software Development, Automation, CAD Customization, Design Workflow Automation, AI, Communication, Basic programming',
+        location: 'None',
+        qualifications: 'B.E./B.Tech in Mechanical Engineering, Automobile Engineering, or Computer Science Engineering',
+        slug: 'sacha-engineering-cad-automation-engineer-with-0-1-181',
+      },
+      {
+        job_post_title: 'Java Jakarta Expert',
+        post_id: 180,
+        published_date: '2026-06-24T10:48:44.738358Z',
+        description: 'Job Summary We are seeking a highly skilled and experienced Java Jakarta Expert to join our team. This is a hybrid role within the IT / Technology industry.',
+        job_type: 'full_time',
+        currency: 'INR',
+        experience_level: '7-15',
+        skills: 'Java, Jakarta EE, Domain-Driven Design, DDD, Cloud-Native Systems, Architecture, Java SE, JPA, CDI, EJB, JAX-RS, Microservices Architecture, Distributed Systems, AWS, Azure, GCP, Docker, Kubernetes, Event-Driven Architectures, Messaging Systems, Kafka, RabbitMQ, API Design, RESTful, CI/CD Pipelines, Git, Jenkins, Problem-Solving Skills, Leadership Skills, Reactive Frameworks, NoSQL Databases, MongoDB, Hazelcast, Security Frameworks, OAuth2, Prometheus, Grafana, DSA',
+        location: 'None',
+        qualifications: 'Any Degree',
+        slug: 'sacha-engineering-java-jakarta-expert-with-7-15-180',
+      },
+    ],
+  },
+})
+
 test('SACHA Engineering validates the official homepage, careers handoff, and Bell payload extraction', async () => {
   const sachaengineering = await loadSachaEngineeringModule()
   assert.ok(sachaengineering, 'Expected SACHA Engineering scraper module at ./script.js')
@@ -202,7 +322,7 @@ test('SACHA Engineering validates the official homepage, careers handoff, and Be
   ])
 })
 
-test('SACHA Engineering run fetches the official homepage, careers handoff page, and Bell jobs tab', async () => {
+test('SACHA Engineering run fetches the official homepage, careers handoff page, Bell jobs tab, and Bell company API', async () => {
   const sachaengineering = await loadSachaEngineeringModule()
   assert.ok(sachaengineering, 'Expected SACHA Engineering scraper module at ./script.js')
 
@@ -216,6 +336,7 @@ test('SACHA Engineering run fetches the official homepage, careers handoff page,
       if (url === sachaengineering.HOMEPAGE_URL) return homepageHtml
       if (url === sachaengineering.CAREERS_URL) return careersHtml
       if (url === sachaengineering.BELL_JOBS_URL) return bellJobsHtml
+      if (url === 'https://api.bell.careers/api/company/companies/sacha/') return legacyBellCompanyApiPage1Json
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -225,6 +346,7 @@ test('SACHA Engineering run fetches the official homepage, careers handoff page,
     'https://sacha.group/',
     'https://sacha.group/careers/',
     'https://bell.careers/company/sacha?tab=jobs',
+    'https://api.bell.careers/api/company/companies/sacha/',
   ])
   assert.equal(jobs.length, 2)
   assert.deepEqual(
@@ -264,6 +386,64 @@ test('SACHA Engineering run fetches the official homepage, careers handoff page,
         companyDomain: 'sacha.group',
         atsPlatform: 'bell-careers-via-first-party-company-handoff',
         scrapedAt: FIXED_NOW,
+      },
+    ],
+  )
+})
+
+test('SACHA Engineering run follows the current Bell paginated company API after validating the public jobs page', async () => {
+  const sachaengineering = await loadSachaEngineeringModule()
+  assert.ok(sachaengineering, 'Expected SACHA Engineering scraper module at ./script.js')
+
+  const requestedUrls = []
+  const jobs = await sachaengineering.createSachaEngineeringScraper({
+    now: () => FIXED_NOW,
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === sachaengineering.HOMEPAGE_URL) return homepageHtml
+      if (url === sachaengineering.CAREERS_URL) return careersHtml
+      if (url === sachaengineering.BELL_JOBS_URL) return bellJobsHtmlWithCurrentBellApiPayload
+      if (url === 'https://api.bell.careers/api/company/companies/sacha/') return bellCompanyApiPage1Json
+      if (url === 'https://api.bell.careers/api/company/companies/sacha/?page=2') return bellCompanyApiPage2Json
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    'https://sacha.group/',
+    'https://sacha.group/careers/',
+    'https://bell.careers/company/sacha?tab=jobs',
+    'https://api.bell.careers/api/company/companies/sacha/',
+    'https://api.bell.careers/api/company/companies/sacha/?page=2',
+  ])
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      jobId: job.jobId,
+      postingDate: job.postingDate,
+      remoteStatus: job.remoteStatus,
+    })),
+    [
+      {
+        title: 'AI Engineer & SharePoint Engineer - (Hiring Freshers)',
+        jobId: 'sachaengineering-190',
+        postingDate: '2026-07-30',
+        remoteStatus: null,
+      },
+      {
+        title: 'CAD Automation Engineer - Fresher',
+        jobId: 'sachaengineering-189',
+        postingDate: '2026-07-30',
+        remoteStatus: null,
+      },
+      {
+        title: 'Java Jakarta Expert',
+        jobId: 'sachaengineering-180',
+        postingDate: '2026-06-24',
+        remoteStatus: 'Hybrid',
       },
     ],
   )

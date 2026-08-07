@@ -45,15 +45,16 @@ test('Eltropy local catalog captures the verified first-party careers page and G
   assert.equal(ELTROPY_CATALOG.paginationStrategy, 'single-greenhouse-jobs-api-content-page')
   assert.equal(
     ELTROPY_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+greenhouse-jobs-api+greenhouse-board-detail-url+india-location-filter',
+    'verified-first-party-careers-page-or-blocked-official-surface+greenhouse-board+greenhouse-jobs-api+greenhouse-board-detail-url+india-location-filter',
   )
   assert.equal(ELTROPY_CATALOG.parser, 'custom-script')
   assert.equal(ELTROPY_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(ELTROPY_CATALOG.companyDomain, 'eltropy.com')
-  assert.equal(ELTROPY_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(ELTROPY_CATALOG.verifiedOn, '2026-08-02')
   assert.match(ELTROPY_CATALOG.dryRunFile, /eltropy[\\/]jobs\.json$/i)
   assert.equal(ELTROPY_CATALOG.modulePath, eltropyModulePath)
   assert.match(ELTROPY_CATALOG.verifiedSurfaceSummary, /https:\/\/eltropy\.com\/careers\//i)
+  assert.match(ELTROPY_CATALOG.verifiedSurfaceSummary, /Just a moment/i)
   assert.match(
     ELTROPY_CATALOG.verifiedSurfaceSummary,
     /https:\/\/job-boards\.greenhouse\.io\/eltropyinc/i,
@@ -62,8 +63,8 @@ test('Eltropy local catalog captures the verified first-party careers page and G
     ELTROPY_CATALOG.verifiedSurfaceSummary,
     /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/eltropyinc\/jobs\?content=true/i,
   )
-  assert.match(ELTROPY_CATALOG.verifiedSurfaceSummary, /AI Optimization Specialist \(India\)/i)
-  assert.match(ELTROPY_CATALOG.verifiedSurfaceSummary, /Sr\. Cyber Security Analyst/i)
+  assert.match(ELTROPY_CATALOG.verifiedSurfaceSummary, /Data & Analytics Engineer/i)
+  assert.match(ELTROPY_CATALOG.verifiedSurfaceSummary, /Engineering Manager/i)
 
   assert.equal(eltropy.PROVIDER_METADATA.source, ELTROPY_CATALOG.source)
   assert.equal(eltropy.PROVIDER_METADATA.companyName, ELTROPY_CATALOG.companyName)

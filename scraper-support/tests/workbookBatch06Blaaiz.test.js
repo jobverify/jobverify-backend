@@ -5,8 +5,9 @@ const VERIFIED_SURFACE_HTML = `
   <html>
     <body>
       <main>
+        <p>Fraudsters don't sleep, neither do we. We lock the doors before fraud walks in.</p>
         <h1>About Us</h1>
-        <h2>Bridging Hearts, Breaking Barriers.</h2>
+        <h2>Global Financial Infrastructure</h2>
         <h3>Vision</h3>
         <p>
           To become Africa's financial infrastructure layer connecting businesses,
@@ -28,7 +29,6 @@ const VERIFIED_SURFACE_HTML = `
         <p>support@blaaiz.com</p>
         <p>sales@blaaiz.com</p>
         <a href="https://app.blaaiz.com/auth/create-account">Get Started</a>
-        <p>BLAAIZ INNOVATIONS TECHNOLOGY LTD.</p>
       </main>
     </body>
   </html>
@@ -65,7 +65,7 @@ test('Blaaiz validates the verified official public surface and returns [] while
   )
   assert.match(
     blaaiz.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/www\.blaaiz\.com\/about-us was the live exact-name Blaaiz official public surface/i,
+    /Verified on Saturday, August 1, 2026 that https:\/\/www\.blaaiz\.com\/about-us was the live exact-name Blaaiz official public surface/i,
   )
   assert.match(
     blaaiz.VERIFIED_SURFACE_SUMMARY,

@@ -105,6 +105,38 @@ const aiEngineerDetailHtml = `
   </html>
 `
 
+const pyjamaHrDetailHtmlWithoutStructuredJobData = `
+  <html>
+    <head>
+      <title>Leena Ai</title>
+    </head>
+    <body>
+      <div id="__next">
+        <section>
+          <h4>Careers at Leena Ai</h4>
+          <p>Loading jobs...</p>
+        </section>
+      </div>
+      <script id="__NEXT_DATA__" type="application/json">
+        {
+          "props": {
+            "pageProps": {
+              "companyDetails": {
+                "name": "Leena Ai",
+                "slug": "leena-ai"
+              }
+            }
+          },
+          "query": {
+            "job_uuid": "senior-sales-development-representative-sdr-europe-1",
+            "company": "leena-ai"
+          }
+        }
+      </script>
+    </body>
+  </html>
+`
+
 const openRoleCards = [
   {
     title: 'Technical Program Manager',
@@ -350,4 +382,55 @@ test('Leena AI browser loader extracts visible role cards from the open roles se
     ['waitForSelector', '#open-roles-section'],
     ['close'],
   ])
+})
+
+test('run keeps Leena AI bundle-discovered jobs when PyjamaHR detail pages stop embedding structured job data', async () => {
+  const leenaAi = await loadLeenaAiModule()
+  const scraper = leenaAi.createLeenaAiScraper({
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      if (url === leenaAi.CAREERS_URL) return officialCareersHtmlWithBundle
+      if (url === careersBundleUrl) return careersBundleJs
+      if (url.includes('jobs.pyjamahr.com/leena-ai/')) {
+        return pyjamaHrDetailHtmlWithoutStructuredJobData
+      }
+
+      throw new Error(`Unexpected Leena AI fixture URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => [
+      job.title,
+      job.department,
+      job.location,
+      job.sourceUrl,
+      job.applyUrl,
+      job.experienceRequired,
+      job.publicExperienceChecked,
+    ]),
+    [
+      [
+        'Technical Program Manager',
+        'Engineering',
+        'Gurgaon, India',
+        'https://jobs.pyjamahr.com/leena-ai/technical-program-manager?source=JOB_LINK&shared_at=1780988641680',
+        'https://jobs.pyjamahr.com/leena-ai/technical-program-manager?source=JOB_LINK&shared_at=1780988641680',
+        null,
+        true,
+      ],
+      [
+        'AI Engineer',
+        'Engineering',
+        'Gurgaon, India',
+        'https://jobs.pyjamahr.com/leena-ai/ai-engineer?source=JOB_LINK&shared_at=1783485938705',
+        'https://jobs.pyjamahr.com/leena-ai/ai-engineer?source=JOB_LINK&shared_at=1783485938705',
+        null,
+        true,
+      ],
+    ],
+  )
 })

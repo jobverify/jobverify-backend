@@ -37,7 +37,7 @@ const sampleDetailHtml = `
   "@context": "https://schema.org",
   "@type": "JobPosting",
   "title": "Software Engineer",
-  "description": "<p>Design and develop engineering software systems for aerospace and mobility clients.</p>",
+  "description": "<p>Design and develop engineering software systems for aerospace and mobility clients while partnering with validation, integration, and delivery teams across the full product lifecycle.</p>",
   "datePosted": "2026-06-25",
   "employmentType": "FULL_TIME",
   "hiringOrganization": {
@@ -89,7 +89,8 @@ test('extractSearchResults maps ALTEN India LinkedIn guest results into conserva
       requiredSkills: [],
       postingDate: '2026-06-25',
       closingDate: null,
-      jobDescription: 'Design and develop engineering software systems for aerospace and mobility clients.',
+      jobDescription: 'Design and develop engineering software systems for aerospace and mobility clients while partnering with validation, integration, and delivery teams across the full product lifecycle.',
+      publicExperienceChecked: true,
     },
   )
 })
@@ -122,6 +123,7 @@ test('run fetches ALTEN India company, search, and detail pages and decorates op
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'altenindia')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run keeps ALTEN India listing data when LinkedIn detail pages are rate-limited', async () => {

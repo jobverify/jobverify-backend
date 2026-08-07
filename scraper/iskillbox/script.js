@@ -47,6 +47,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
+  .replace(/&#8211;|&ndash;|&#x2013;/gi, '-')
   .replace(/&#39;|&apos;|&rsquo;|&lsquo;|&#x27;/gi, "'")
 
 const normalizeWhitespace = (value) => decodeHtmlEntities(stripTags(value))
@@ -77,7 +78,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*iSkillbox Corporate Training\s*<\/title>/i.test(rawHtml)
+  return /<title\b[^>]*>\s*iSkillbox Corporate Training\s*<\/title>/i.test(rawHtml)
     && /Welcome to iSkillBox/i.test(normalized)
     && /Your Trusted Partner In Corporate Training/i.test(normalized)
     && /Upskill\. Reskill\. Transform\./i.test(normalized)
@@ -88,7 +89,7 @@ export const hasOfficialCareerShellSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Career\s*-\s*iSkillbox Corporate Training\s*<\/title>/i.test(rawHtml)
+  return /<title\b[^>]*>\s*Career\s*(?:-|&#8211;|&ndash;|&#x2013;|\u2013)\s*iSkillbox Corporate Training\s*<\/title>/i.test(rawHtml)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/iskillbox\.com\/career\/["']/i.test(rawHtml)
     && /\bCareer\b/i.test(normalized)
     && /ISKILLBOX LEARNING TECHNOLOGIES PRIVATE LIMITED/i.test(normalized)

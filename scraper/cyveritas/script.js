@@ -1,62 +1,127 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { resolve4, resolve6 } from 'node:dns/promises'
+import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import CYVERITAS_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
-export const CAREER_PAGE_URL = 'https://cyveritas.com/careers'
+export const PROVIDER_METADATA = CYVERITAS_CATALOG
+export const SOURCE = PROVIDER_METADATA.source
+export const COMPANY = PROVIDER_METADATA.companyName
+export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 
-const CAREER_PAGE_SIGNAL_PATTERN = /<title>\s*careers\s*<\/title>|our-story#career|cyveritas/i
-const CONTACT_SIGNAL_PATTERN = /info@cyveritas\.com|\+91\s*8891005110/i
+export const CANDIDATE_FIRST_PARTY_URLS = [
+  'https://cyveritas.com/',
+  'https://cyveritas.com/careers',
+  'https://www.cyveritas.com/',
+  'https://www.cyveritas.com/careers',
+]
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'cyveritas',
-  timeoutMs: 15000,
-})
+export const CANDIDATE_FIRST_PARTY_HOSTS = [
+  'cyveritas.com',
+  'www.cyveritas.com',
+]
 
-export const hasCareerPageSignal = (html) => CAREER_PAGE_SIGNAL_PATTERN.test(String(html ?? ''))
+const UNRESOLVED_HOST_PATTERNS = [
+  /\bENOTFOUND\b/i,
+  /\bEAI_AGAIN\b/i,
+  /\bETIMEOUT\b/i,
+  /\bDNS name does not exist\b/i,
+  /\bCould not resolve host\b/i,
+  /\bName or service not known\b/i,
+  /\bNXDOMAIN\b/i,
+]
 
-export const hasContactSignal = (html) => CONTACT_SIGNAL_PATTERN.test(String(html ?? ''))
+const normalizeResolutionError = (error) => [
+  error?.message,
+  error?.cause?.message,
+  error?.code,
+  error?.cause?.code,
+].filter(Boolean).join(' ')
 
-export const extractOpenings = () => []
+export const isExpectedUnresolvedHostError = (error) => {
+  const message = normalizeResolutionError(error)
+  return UNRESOLVED_HOST_PATTERNS.some((pattern) => pattern.test(message))
+}
 
-export const createCyveritasScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREER_PAGE_URL)
+export const hasResolvableFirstPartyHost = (addresses) =>
+  Array.isArray(addresses) && addresses.length > 0
 
-    if (!hasCareerPageSignal(html) || !hasContactSignal(html)) {
-      return []
+export const resolveHostAddresses = async (
+  host,
+  {
+    resolve4Impl = resolve4,
+    resolve6Impl = resolve6,
+  } = {},
+) => {
+  const addresses = new Set()
+  const unexpectedErrors = []
+
+  for (const resolver of [resolve4Impl, resolve6Impl]) {
+    try {
+      for (const address of await resolver(host)) {
+        addresses.add(address)
+      }
+    } catch (error) {
+      if (!isExpectedUnresolvedHostError(error)) {
+        unexpectedErrors.push(error)
+      }
+    }
+  }
+
+  if (addresses.size > 0) {
+    return [...addresses]
+  }
+
+  if (unexpectedErrors.length > 0) {
+    throw unexpectedErrors[0]
+  }
+
+  return []
+}
+
+export const resolveHosts = async (
+  hosts = CANDIDATE_FIRST_PARTY_HOSTS,
+  resolverOptions = {},
+) => {
+  const addresses = new Set()
+
+  for (const host of hosts) {
+    for (const address of await resolveHostAddresses(host, resolverOptions)) {
+      addresses.add(address)
+    }
+  }
+
+  return [...addresses]
+}
+
+export const createCyveritasScraper = () => ({
+  async run({ resolveHosts: overrideResolveHosts = resolveHosts } = {}) {
+    const addresses = await overrideResolveHosts(CANDIDATE_FIRST_PARTY_HOSTS)
+
+    if (hasResolvableFirstPartyHost(addresses)) {
+      throw new Error(
+        'Cyveritas verified unresolved first-party surface changed; the exact-name hosts now resolve and the official careers surface must be re-verified before trusting []',
+      )
     }
 
-    const jobs = extractOpenings(html)
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    return []
   },
 })
 
-export const run = async () => createCyveritasScraper().run()
+export const run = async (options = {}) => createCyveritasScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
-  console.log(`Running Cyveritas scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()
-  console.log(`\nTotal India jobs scraped: ${jobs.length}`)
 
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-    console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
   } else {
-    const result = await saveToDB(jobs, 'cyveritas')
-    console.log('DB result:', result)
-    process.exit(0)
+    await saveToDB(jobs, SOURCE)
   }
 }

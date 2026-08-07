@@ -12,15 +12,18 @@ export const PROVIDER_METADATA = MAGNIT_GLOBAL_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const LEGACY_CAREERS_URL = PROVIDER_METADATA.legacyCareerPageUrl
 export const DAYFORCE_ORIGIN = 'https://jobs.dayforcehcm.com'
 export const DAYFORCE_CLIENT_NAMESPACE = PROVIDER_METADATA.dayforceClientNamespace
 export const DAYFORCE_JOB_BOARD_CODE = PROVIDER_METADATA.dayforceJobBoardCode
 export const DAYFORCE_JOB_BOARD_ID = PROVIDER_METADATA.dayforceJobBoardId
 export const DAYFORCE_LOCALE = PROVIDER_METADATA.dayforceLocale
 export const OFFICIAL_DAYFORCE_URL = PROVIDER_METADATA.dayforceBaseUrl
+export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PAGE_SETTLE_MS = 5000
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -58,34 +61,57 @@ const isIndiaLocation = (location = {}) =>
   String(location.isoCountryCode ?? location.countryCode ?? '').toUpperCase() === 'IN'
   || /\bindia\b/i.test(String(location.formattedAddress ?? ''))
 
+const waitForPageSettle = async (page, timeoutMs = PAGE_SETTLE_MS) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return
+
+  if (typeof page?.waitForTimeout === 'function') {
+    await page.waitForTimeout(timeoutMs)
+    return
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, timeoutMs))
+}
+
 export const buildSearchApiUrl = () =>
   `${DAYFORCE_ORIGIN}/api/geo/${DAYFORCE_CLIENT_NAMESPACE}/jobposting/search`
 
-export const buildSearchRequestPayload = (paginationStart = 0) => ({
+export const buildSearchRequestPayload = (paginationStart = 0, location = 'India') => ({
   clientNamespace: DAYFORCE_CLIENT_NAMESPACE,
   jobBoardCode: DAYFORCE_JOB_BOARD_CODE,
   cultureCode: DAYFORCE_LOCALE,
   distanceUnit: 0,
   paginationStart,
+  location,
 })
 
 export const buildJobDetailUrl = (jobPostingId) =>
   `${OFFICIAL_DAYFORCE_URL}/jobs/${jobPostingId}`
 
+export const normalizeDayforceBaseUrl = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  return normalized.replace(
+    /https:\/\/jobs\.dayforcehcm\.com\/en-US\/prounlimited\/CANDIDATEPORTAL/i,
+    'https://jobs.dayforcehcm.com/prounlimited/CANDIDATEPORTAL',
+  )
+}
+
 export const extractOfficialDayforceUrl = (html = '') => {
-  const match = String(html).match(/https:\/\/jobs\.dayforcehcm\.com\/en-US\/prounlimited\/CANDIDATEPORTAL/i)
-  return normalizeWhitespace(match?.[0])
+  const match = String(html).match(
+    /https:\/\/jobs\.dayforcehcm\.com\/(?:en-US\/)?prounlimited\/CANDIDATEPORTAL/i,
+  )
+  return normalizeDayforceBaseUrl(match?.[0])
 }
 
 export const hasOfficialMagnitCareersSignals = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
+  const text = stripTags(page) || ''
 
-  return /<title[^>]*>\s*Careers \| Magnit\s*<\/title>/i.test(page)
-    && text.includes('Magnit Global is the Evolution of Work')
+  return /<title[^>]*>\s*(?:Careers(?:\s*\|\s*Magnit)?)\s*<\/title>/i.test(page)
     && text.includes('India')
-    && text.includes('Search Careers')
-    && extractOfficialDayforceUrl(page) === OFFICIAL_DAYFORCE_URL
+    && (text.includes('Learn More') || text.includes('Search Careers'))
+    && extractOfficialDayforceUrl(page) === normalizeDayforceBaseUrl(OFFICIAL_DAYFORCE_URL)
 }
 
 export const extractSearchPostings = (payload = {}) => {
@@ -142,6 +168,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 const createBrowserDayforceClient = async ({
   launchBrowserImpl = launchBrowser,
   createOptimizedPageImpl = createOptimizedPage,
+  waitForPageSettleImpl = waitForPageSettle,
+  pageSettleMs = PAGE_SETTLE_MS,
 } = {}) => {
   const browser = await launchBrowserImpl()
 
@@ -151,7 +179,7 @@ const createBrowserDayforceClient = async ({
       waitUntil: 'domcontentloaded',
       timeout: 60000,
     })
-    await page.waitForTimeout(5000)
+    await waitForPageSettleImpl(page, pageSettleMs)
 
     return {
       async searchJobPostings(payload = buildSearchRequestPayload()) {
@@ -209,6 +237,8 @@ export const createMagnitGlobalScraper = ({
   now = () => new Date().toISOString(),
   launchBrowserImpl = launchBrowser,
   createOptimizedPageImpl = createOptimizedPage,
+  waitForPageSettleImpl = waitForPageSettle,
+  pageSettleMs = PAGE_SETTLE_MS,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
@@ -226,6 +256,8 @@ export const createMagnitGlobalScraper = ({
         browserClient = await createBrowserDayforceClient({
           launchBrowserImpl,
           createOptimizedPageImpl,
+          waitForPageSettleImpl,
+          pageSettleMs,
         })
         searchJobPostings = browserClient.searchJobPostings
       }

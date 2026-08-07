@@ -7,6 +7,13 @@ const normalizeString = (value) => {
   return normalized || null
 }
 
+const stripHtmlTags = (value) => {
+  if (value == null) return null
+  return String(value).replace(/<[^>]+>/g, ' ')
+}
+
+const normalizeInlineText = (value) => normalizeString(stripHtmlTags(value))
+
 const DESCRIPTION_SECTION_LABELS = [
   'Network & Links',
   'Overall Purpose Of The Role',
@@ -392,12 +399,13 @@ export const resolveJobType = (job = {}) => {
 }
 
 const TITLE_NORMALIZATION_RULES = [
-  { pattern: /\b(sde|software developer|software engineer|backend engineer|back-end engineer|frontend engineer|front-end engineer|full stack engineer|fullstack engineer|application developer|web developer)\b/i, value: 'Software Engineer' },
+  { pattern: /\b(sde|software developer|software engineer|backend engineer|back-end engineer|frontend engineer|front-end engineer|front end engineer|full[-\s]?stack engineer|application developer|web developer)\b/i, value: 'Software Engineer' },
   { pattern: /\b(data engineer)\b/i, value: 'Data Engineer' },
   { pattern: /\b(machine learning engineer|ml engineer)\b/i, value: 'Machine Learning Engineer' },
   { pattern: /\b(devops engineer|site reliability engineer|sre)\b/i, value: 'DevOps Engineer' },
   { pattern: /\b(security engineer|cybersecurity engineer)\b/i, value: 'Security Engineer' },
-  { pattern: /\b(network engineer)\b/i, value: 'Network Engineer' },
+  { pattern: /\b(network(?: administrator| admin)?(?:\/engineer)?|network engineer)\b/i, value: 'Network Engineer' },
+  { pattern: /\b(qa engineer|quality engineer|test engineer|sdet)\b/i, value: 'Verification Engineer' },
   { pattern: /\b(firmware developer|firmware engineer)\b/i, value: 'Firmware Engineer' },
   { pattern: /\b(embedded software engineer|embedded engineer)\b/i, value: 'Embedded Engineer' },
   { pattern: /\b(rtl design engineer|rtl engineer)\b/i, value: 'RTL Engineer' },
@@ -418,47 +426,710 @@ const normalizeTitle = (title) => {
 }
 
 const ENGINEERING_DOMAIN_RULES = [
-  { pattern: /\b(machine learning|ml engineer|artificial intelligence|ai engineer)\b/i, value: 'Machine Learning' },
-  { pattern: /\b(data engineer|etl|data pipeline)\b/i, value: 'Data Engineering' },
-  { pattern: /\b(devops|site reliability|sre|kubernetes|terraform)\b/i, value: 'DevOps' },
-  { pattern: /\b(cloud|aws|azure|gcp)\b/i, value: 'Cloud' },
-  { pattern: /\b(cybersecurity|security engineer|application security)\b/i, value: 'Security' },
-  { pattern: /\b(network engineer|routing|switching|network security)\b/i, value: 'Networking' },
+  { pattern: /\b(machine learning|ml engineer|artificial intelligence|ai engineer|ai\/ml|consumer ai|ai unit|ai solutions?|ai architect|ai product|agentic ai|agentic solution|computer vision|perception(?: & intelligence)?|gen ai|generative ai|llm)\b/i, value: 'Machine Learning' },
+  { pattern: /\b(data science|data scientist|applied scientist)\b/i, value: 'Machine Learning' },
+  { pattern: /\b(d&a|data analyst|data engineer|data engineering|data architect|data analytics|data lakehouse|data migration|analytics engineer|bi architect|bi engineer|business intelligence|master data management|mdm\b|palantir|power ?bi|tableau|bods|bw\b|etl|data pipeline)\b/i, value: 'Data Engineering' },
+  { pattern: /\b(devops|devsecops|site reliability|sre|kubernetes|terraform|control m|aiops)\b/i, value: 'DevOps' },
+  { pattern: /\b(cloud|aws|azure|gcp|oci\b|infrastructure|tech ?ops|technical operations|linux administrator|database administrator|database engineer|\bdba\b|app support|support analyst|desktop support|desktop engineer|system administrator|it administrator|service desk|helpdesk engineer|it helpdesk|business systems administrator|enterprise application administrator|saas administrator|coveo administrator|storage & backup|data center operations|windows server|active directory|vpn connectivity)\b/i, value: 'Cloud' },
+  { pattern: /\b(cyber\s*security|cybersecurity|cyber threat|security engineer|security analyst|application security|appsec|data loss prevention|identity management|non-human identities|\bnhi\b|pam\b|beyondtrust|ztna|cato|iam|pki|soc|secops|siem|soar|xdr)\b/i, value: 'Security' },
+  { pattern: /\b(network(?: administrator| admin)?(?:\/engineer)?|network engineer|routing|switching|network security)\b/i, value: 'Networking' },
   { pattern: /\b(firmware)\b/i, value: 'Firmware' },
+  { pattern: /\b(linux bsp|rtos)\b/i, value: 'Embedded Systems' },
   { pattern: /\b(embedded)\b/i, value: 'Embedded Systems' },
   { pattern: /\b(rtl)\b/i, value: 'RTL' },
-  { pattern: /\b(verification)\b/i, value: 'Verification' },
+  { pattern: /\b(verification|control testing|kenan testing|qe architect|qe engineer|workday testing|atf engineer|qa(?: engineer| engineering)?|quality engineer|quality analyst|quality assurance|qc engineer|test engineer|test lead|test manager|test analyst|test automation|testing services|software testing|performance testing|ott video testing|video streaming|settop box|\bstb\b|\bdvb\b|debug engineer|debug|ai testing|crash safety testing|sdet|validation|v&v|rams)\b/i, value: 'Verification' },
   { pattern: /\b(dft)\b/i, value: 'DFT' },
   { pattern: /\b(analog)\b/i, value: 'Analog Design' },
   { pattern: /\b(\brf\b|radio frequency)\b/i, value: 'RF' },
-  { pattern: /\b(asic|vlsi|physical design|semiconductor)\b/i, value: 'Semiconductor' },
-  { pattern: /\b(software|developer|backend|frontend|full stack|platform engineering)\b/i, value: 'Software Engineering' },
-  { pattern: /\b(electrical)\b/i, value: 'Electrical' },
-  { pattern: /\b(mechanical)\b/i, value: 'Mechanical' },
+  { pattern: /\b(asic|vlsi|physical design|mixed signal|semiconductor|digital design|design enablement)\b/i, value: 'Semiconductor' },
+  { pattern: /\b(software|business solutions engineer|application architect|technical architect|solutions? architect|enterprise architect|product architect|billing architect|oms architect|implementation(?: senior)? engineer|systems development|systems integration|integration engineer|developer|backend|front[-\s]?end|full[-\s]?stack|java|python|node\.?js|react|angular|typescript|javascript|c\+\+|c#|\.net|\.net maui|xamarin(?:\.forms)?|duck creek|labview|golang|guidewire|mulesoft|aem|d365|ms dynamics|salesforce|servicenow|murex|pega|boomi|oracle\b|oracle fusion|oracle health|sap\b|sap btp|sap s4 hana|documentum|adobe campaign|outsystem|uipath|rpa\b|abap|fico|ariba|ppqm|rmcs|mdg|cpi\b|sharepoint|netsuite|litmus edge|mes\b|legaltech|biztech|mainframe|application support|platform engineering)\b/i, value: 'Software Engineering' },
+  { pattern: /\b(electrical|power electronics|power conversion|hardware design|electronics design|electronics engineer|control & instrumentation|instrumentation)\b/i, value: 'Electrical' },
+  { pattern: /\b(mechanical|stress analysis|cfd|product design engineer|ergo|trims|jigs & fixtures|harness|hvac|mep)\b/i, value: 'Mechanical' },
   { pattern: /\b(civil)\b/i, value: 'Civil' },
-  { pattern: /\b(construction)\b/i, value: 'Construction' },
-  { pattern: /\b(chemical)\b/i, value: 'Chemical' },
+  { pattern: /\b(construction|\bbim\b|bim modeller|structural engineer|rebar engineer|piping design|structural steel|formwork|site engineer|site execution|finishing|ehs engineer)\b/i, value: 'Construction' },
+  { pattern: /\b(chemical|medicinal chemistry|peptide chemistry|analytical development)\b/i, value: 'Chemical' },
   { pattern: /\b(process)\b/i, value: 'Process' },
   { pattern: /\b(manufacturing)\b/i, value: 'Manufacturing' },
-  { pattern: /\b(industrial)\b/i, value: 'Industrial' },
-  { pattern: /\b(automation)\b/i, value: 'Automation' },
+  { pattern: /\b(industrial|supply chain management|production planning|ppc engineer)\b/i, value: 'Industrial' },
+  { pattern: /\b(automation|control systems?|controls project)\b/i, value: 'Automation' },
   { pattern: /\b(robotics)\b/i, value: 'Robotics' },
-  { pattern: /\b(telecom|telecommunications)\b/i, value: 'Telecommunications' },
-  { pattern: /\b(power systems|power engineer)\b/i, value: 'Power Systems' },
+  { pattern: /\b(telecom|telecommunications|bss architect)\b/i, value: 'Telecommunications' },
+  { pattern: /\b(power systems|power engineer|bess|bop engineer|hvdc|main circuit|protection & control|protection commissioning|lighting system)\b/i, value: 'Power Systems' },
   { pattern: /\b(renewable energy|solar|wind)\b/i, value: 'Renewable Energy' },
-  { pattern: /\b(oil|gas|petroleum)\b/i, value: 'Oil & Gas' },
+  { pattern: /\b(offshore engineer|jacket|fpso|topsides|oil|gas|petroleum)\b/i, value: 'Oil & Gas' },
   { pattern: /\b(automotive)\b/i, value: 'Automotive' },
   { pattern: /\b(ev|electric vehicle|battery)\b/i, value: 'EV' },
-  { pattern: /\b(aerospace|avionics)\b/i, value: 'Aerospace' },
-  { pattern: /\b(biomedical|medical device)\b/i, value: 'Biomedical' },
+  { pattern: /\b(aerospace|avionics|composites|uav|drone|drone pilots|drone maintenance)\b/i, value: 'Aerospace' },
+  { pattern: /\b(biomedical|medical device|dmpk)\b/i, value: 'Biomedical' },
   { pattern: /\b(mining)\b/i, value: 'Mining' },
   { pattern: /\b(materials)\b/i, value: 'Materials' },
-  { pattern: /\b(research|r&d)\b/i, value: 'Research' },
+  { pattern: /\b(research|r&d|quantum engineering|seaweed technology)\b/i, value: 'Research' },
 ]
 
-const inferEngineeringDomain = (job = {}, normalizedTitle) => {
+const TECHNICAL_TITLE_HINT_PATTERN = /\b(engineer|developer|devops|sre|architect|programmer|scientist|data analyst|data analytics|data science|data engineering|d&a|consumer ai|ai unit|agentic ai|computer vision|gen ai|generative ai|llm|sap\b|oracle\b|palantir|power ?bi|linux bsp|rtos|mixed signal|guidewire|mulesoft|aem|d365|ms dynamics|react|node\.?js|documentum|adobe campaign|uipath|outsystem|rpa\b|mep|hvac|bim|power electronics|electronics|instrumentation|cyber\s*security|security analyst|qa|quality|test(?: lead| analyst| automation| engineer|ing)?|validation|network|cloud|infrastructure|platform engineer|support engineer|support analyst|field service|application engineer|administrator|sysadmin|embedded|firmware|semiconductor|pcb|electrical|mechanical|civil|automation|robotics|uav)\b/i
+
+const ROLE_DOMAIN_TO_ENGINEERING_DOMAIN = Object.freeze({
+  'Backend Engineering': 'Software Engineering',
+  'Frontend Engineering': 'Software Engineering',
+  'Full-Stack Engineering': 'Software Engineering',
+  'Mobile Development': 'Software Engineering',
+  'Software Engineering': 'Software Engineering',
+  'Quality Engineering': 'Verification',
+  'DevOps & SRE': 'DevOps',
+  'Cloud & Infrastructure': 'Cloud',
+  'Data Engineering': 'Data Engineering',
+  'Data Science & AI': 'Machine Learning',
+  'Cybersecurity': 'Security',
+})
+
+const SOURCE_ENGINEERING_DOMAIN_RULES = [
+  {
+    sources: new Set(['ansys', 'arm', 'onsemiindia', 'renesas', 'synopsys', 'texasinstruments']),
+    pattern: /\b(engineer|architect|application engineer|applications engineering|design|design enablement|product|prod&test|test)\b/i,
+    value: 'Semiconductor',
+  },
+  {
+    sources: new Set(['aeriestechnology']),
+    pattern: /\b(design engineer)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['allieddigitalservices']),
+    pattern: /\b(rms|noc)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['amadeus.workday']),
+    pattern: /\b(implementation(?: senior)? engineer)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['amrita']),
+    pattern: /\b(seaweed technology engineer)\b/i,
+    value: 'Research',
+  },
+  {
+    sources: new Set(['apple']),
+    pattern: /\b(product safety engineer|hardware)\b/i,
+    value: 'Electrical',
+  },
+  {
+    sources: new Set(['assaabloy']),
+    pattern: /\b(staff engineer)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['aptiv']),
+    pattern: /\b(engineer - scm|supply chain management)\b/i,
+    value: 'Industrial',
+  },
+  {
+    sources: new Set(['artechinfosystems']),
+    pattern: /\b(engineer it|senior engineer it)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['cmscomputers']),
+    pattern: /\b(helpdesk|desktop support|field service|customer service engineer|support engineer)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['fortinet']),
+    pattern: /\b(engineer|architect|technical support|secops|siem|soar|xdr)\b/i,
+    value: 'Security',
+  },
+  {
+    sources: new Set(['cmscomputers']),
+    pattern: /\b(annotation engineer|engineer - ai|ai\/ml|engineer - ai\/ml)\b/i,
+    value: 'Machine Learning',
+  },
+  {
+    sources: new Set(['cmscomputers']),
+    pattern: /\b(infra solution architect|it infra architect|solution architect|field services|maintenance|helpdesk|desktop|support engineer)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['cmscomputers']),
+    pattern: /\b(ppc engineer)\b/i,
+    value: 'Industrial',
+  },
+  {
+    sources: new Set(['cmscomputers']),
+    pattern: /\b(emv)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['hitachienergy']),
+    pattern: /\b(telecommunication)\b/i,
+    value: 'Telecommunications',
+  },
+  {
+    sources: new Set(['hitachienergy']),
+    pattern: /\b(control engineer|design engineer|project engineer|power conversion|hvdc|protection|main circuit|lighting system|technical application engineer)\b/i,
+    value: 'Power Systems',
+  },
+  {
+    sources: new Set(['hitachienergy']),
+    pattern: /\bbim\b/i,
+    value: 'Construction',
+  },
+  {
+    sources: new Set(['larsentoubro']),
+    pattern: /\b(ptd-power transmission & distribution - ic|ltpo-l&t energy-carbonlite solutions)\b/i,
+    value: 'Power Systems',
+  },
+  {
+    sources: new Set(['larsentoubro']),
+    pattern: /\b(bnf-buildings & factories)\b/i,
+    value: 'Construction',
+  },
+  {
+    sources: new Set(['larsentoubro']),
+    pattern: /\b(deic-l&t precision engineering & systems ic)\b/i,
+    value: 'Electrical',
+  },
+  {
+    sources: new Set(['larsentoubro']),
+    pattern: /\b(wet-water & effluent treatment ic)\b/i,
+    value: 'Process',
+  },
+  {
+    sources: new Set(['larsentoubro']),
+    pattern: /\b(heng-heavy engineering)\b/i,
+    value: 'Manufacturing',
+  },
+  {
+    sources: new Set(['larsentoubro']),
+    pattern: /\b(hvac|mep)\b/i,
+    value: 'Mechanical',
+  },
+  {
+    sources: new Set(['larsentoubro']),
+    pattern: /\b(structural steel|formwork|finishing|planning - site|site|package engineer|architect|ehs engineer|tooling|precision components)\b/i,
+    value: 'Construction',
+  },
+  {
+    sources: new Set(['atkinsrealis']),
+    pattern: /\b(principal engineer|senior design manager|lead architect|architectural team|infrastructure|buildings commissions)\b/i,
+    value: 'Construction',
+  },
+  {
+    sources: new Set(['axtria']),
+    pattern: /\b(product architect|datamax|salesiq)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['birlasoft']),
+    pattern: /\b(sr architect|architect)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['blackline']),
+    pattern: /\b(system engineer)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['brigadegroup']),
+    pattern: /\b(facility|shift engineer)\b/i,
+    value: 'Construction',
+  },
+  {
+    sources: new Set(['businessnext']),
+    pattern: /\b(techno-functional roles|senior engineer|engineer)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['coforge']),
+    pattern: /\b(duck creek|billing architect)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['criamosengineeringpvtltd']),
+    pattern: /\b(design engineer|tire|rubber|special purpose machines|material handling)\b/i,
+    value: 'Mechanical',
+  },
+  {
+    sources: new Set(['citius', 'citiustech']),
+    pattern: /\b(ph-ort-aro|aro engineer)\b/i,
+    value: 'Biomedical',
+  },
+  {
+    sources: new Set(['wipro']),
+    pattern: /\b(administrator)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['wipro']),
+    pattern: /\b(beyondtrust|pam|workday testing)\b/i,
+    value: 'Security',
+  },
+  {
+    sources: new Set(['wipro']),
+    pattern: /\b(solution architect|technical architect|control m|aiops|fde)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['wipro']),
+    pattern: /\b(quantum engineering)\b/i,
+    value: 'Research',
+  },
+  {
+    sources: new Set(['jadeglobal.workday']),
+    pattern: /\b(oci|administrator)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['jadeglobal.workday']),
+    pattern: /\b(boomi|oracle fusion|workday qe|atf engineer|technical architect|solution architect)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['agilentindia.workday']),
+    pattern: /\b(field service(?: application)? engineer|spectroscopy)\b/i,
+    value: 'Electrical',
+  },
+  {
+    sources: new Set(['agilentindia.workday']),
+    pattern: /\b(coveo|administrator)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['arcticwolfindia.workday']),
+    pattern: /\b(appsec|application security)\b/i,
+    value: 'Security',
+  },
+  {
+    sources: new Set(['arcticwolfindia.workday']),
+    pattern: /\b(business systems administrator|enterprise application administrator)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['brainiuminformationtechnologies']),
+    pattern: /\b(solutions architect)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['borgwarner']),
+    pattern: /\b(functional safety|electric motor|system architect|model based system)\b/i,
+    value: 'EV',
+  },
+  {
+    sources: new Set(['continental']),
+    pattern: /\b(data engineering)\b/i,
+    value: 'Data Engineering',
+  },
+  {
+    sources: new Set(['continental']),
+    pattern: /\b(local it engineer|field service technician|digital solutions)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['ey']),
+    pattern: /\b(xamarin(?:\.forms)?|\.net maui)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['flex.workday']),
+    pattern: /\b(debug|testing)\b/i,
+    value: 'Verification',
+  },
+  {
+    sources: new Set(['flex.workday']),
+    pattern: /\b(litmus edge|systems integration|technical design architect|engineer - it|mes\b)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['honeywell']),
+    pattern: /\b(field service technician)\b/i,
+    value: 'Electrical',
+  },
+  {
+    sources: new Set(['honeywell']),
+    pattern: /\b(advanced systems engineer)\b/i,
+    value: 'Automation',
+  },
+  {
+    sources: new Set(['ingersollrand']),
+    pattern: /\b(engineer|application engineer|lab engineer)\b/i,
+    value: 'Mechanical',
+  },
+  {
+    sources: new Set(['kathirsudhirautomation']),
+    pattern: /\b(graduate engineer trainee|get)\b/i,
+    value: 'Automation',
+  },
+  {
+    sources: new Set(['kathirsudhirautomation']),
+    pattern: /\b(scm engineer)\b/i,
+    value: 'Industrial',
+  },
+  {
+    sources: new Set(['kbr']),
+    pattern: /\b(offshore engineer)\b/i,
+    value: 'Oil & Gas',
+  },
+  {
+    sources: new Set(['finolexcables']),
+    pattern: /\b(polymer compounding)\b/i,
+    value: 'Chemical',
+  },
+  {
+    sources: new Set(['hindusthannationalglassandindustrieslimited']),
+    pattern: /\b(production|shift engineer)\b/i,
+    value: 'Manufacturing',
+  },
+  {
+    sources: new Set(['infosys']),
+    pattern: /\b(ott video testing|settop box|dvb|video streaming)\b/i,
+    value: 'Verification',
+  },
+  {
+    sources: new Set(['inmobi']),
+    pattern: /\b(staff engineer)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['lindeindia']),
+    pattern: /\b(systems engineer|hydrogen|petrochemical plants)\b/i,
+    value: 'Process',
+  },
+  {
+    sources: new Set(['mindaindustries']),
+    pattern: /\b(production plan|ppc)\b/i,
+    value: 'Manufacturing',
+  },
+  {
+    sources: new Set(['mindaindustries']),
+    pattern: /\b(oem|suzuki|maruti|tata motors|honda cars)\b/i,
+    value: 'Automotive',
+  },
+  {
+    sources: new Set(['mobitechwireless']),
+    pattern: /\b(assembly & testing|production division)\b/i,
+    value: 'Manufacturing',
+  },
+  {
+    sources: new Set(['novartis']),
+    pattern: /\b(ai\s*\(?architect\)?|llmops|mlops|rag|vector databases?|hybrid search)\b/i,
+    value: 'Machine Learning',
+  },
+  {
+    sources: new Set(['m2nxt']),
+    pattern: /\b(fixture|tooling)\b/i,
+    value: 'Mechanical',
+  },
+  {
+    sources: new Set(['newvisionsoftwareconsultancy']),
+    pattern: /\b(ibm sterling oms|oms architect)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['nuberg']),
+    pattern: /\b(piping|project engineer)\b/i,
+    value: 'Process',
+  },
+  {
+    sources: new Set(['numerosmotors']),
+    pattern: /\b(powertrain|packaging & integration)\b/i,
+    value: 'EV',
+  },
+  {
+    sources: new Set(['publicissapient', 'tredence']),
+    pattern: /\b(senior systems engineer|sr system engineer|system engineer)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['okta']),
+    pattern: /\b(engineering architect|dx\/ax\/ux)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['omron']),
+    pattern: /\b(system engineer)\b/i,
+    value: 'Automation',
+  },
+  {
+    sources: new Set(['orioninnovation']),
+    pattern: /\b(deployment engineer)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['orbitouch']),
+    pattern: /\b(site engineer|shop drawings|manpower at the site)\b/i,
+    value: 'Construction',
+  },
+  {
+    sources: new Set(['pragyarefrigerationandelectricalsprivatelimited']),
+    pattern: /\b(product engineer|refrigeration|cooling industries)\b/i,
+    value: 'Mechanical',
+  },
+  {
+    sources: new Set(['pwc']),
+    pattern: /\b(domain architect|solution architect|sap tm|enterprise architecture|digital transformation)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['rubrik']),
+    pattern: /\b(corporate it architect|information technology & services)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['sakarrobotics']),
+    pattern: /\b(perception & intelligence)\b/i,
+    value: 'Machine Learning',
+  },
+  {
+    sources: new Set(['sanmarengineering']),
+    pattern: /\b(application engineer|product engineer)\b/i,
+    value: 'Mechanical',
+  },
+  {
+    sources: new Set(['sap']),
+    pattern: /\b(non-human identities|identity management|\bnhi\b)\b/i,
+    value: 'Security',
+  },
+  {
+    sources: new Set(['sap']),
+    pattern: /\b(enterprise architect)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['seclore']),
+    pattern: /\b(product engineer|product engineering)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['sedintechnologies']),
+    pattern: /\b(control engineer)\b/i,
+    value: 'Automation',
+  },
+  {
+    sources: new Set(['skyrootaerospace']),
+    pattern: /\b(composites|methods engineer)\b/i,
+    value: 'Aerospace',
+  },
+  {
+    sources: new Set(['solitontechnologies']),
+    pattern: /\b(labview)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['tatatechnologies']),
+    pattern: /\b(cockpit|cad modelling|assemblies)\b/i,
+    value: 'Automotive',
+  },
+  {
+    sources: new Set(['tessolve']),
+    pattern: /\b(lead engineer|manager - design engineering|pre-silicon|post-silicon|silicon bring-up|embedded|digital)\b/i,
+    value: 'Semiconductor',
+  },
+  {
+    sources: new Set(['tetrapak']),
+    pattern: /\b(assistant engineer production|production)\b/i,
+    value: 'Manufacturing',
+  },
+  {
+    sources: new Set(['techversantinfotech']),
+    pattern: /\b(database engineer)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['techversantinfotech']),
+    pattern: /\b(technical lead|architect)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['techwaveconsulting']),
+    pattern: /\b(ai architect)\b/i,
+    value: 'Machine Learning',
+  },
+  {
+    sources: new Set(['techwaveconsulting']),
+    pattern: /\b(design engineer|fiber|long-haul|iqgeo|waldo|aramis|aotx)\b/i,
+    value: 'Telecommunications',
+  },
+  {
+    sources: new Set(['techwaveconsulting']),
+    pattern: /\b(sharepoint architect|system engineer)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['tranetechnologies']),
+    pattern: /\b(service engineer)\b/i,
+    value: 'Mechanical',
+  },
+  {
+    sources: new Set(['unstop']),
+    pattern: /\b(principal architect|technology)\b/i,
+    value: 'Software Engineering',
+  },
+  {
+    sources: new Set(['tudiptechnologies']),
+    pattern: /\b(spark engineer)\b/i,
+    value: 'Data Engineering',
+  },
+  {
+    sources: new Set(['tudiptechnologies']),
+    pattern: /\b(fpga design engineer)\b/i,
+    value: 'Semiconductor',
+  },
+  {
+    sources: new Set(['valenta']),
+    pattern: /\b(it administrator)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['vehanttechnologies']),
+    pattern: /\b(cctv|access control|uvss|anpr|etd)\b/i,
+    value: 'Electrical',
+  },
+  {
+    sources: new Set(['yamaha']),
+    pattern: /\b(brake design engineer|cv bd design engineer|suspension system design engineer|brake|suspension)\b/i,
+    value: 'Automotive',
+  },
+  {
+    sources: new Set(['ubgroup']),
+    pattern: /\b(shift engineer)\b/i,
+    value: 'Manufacturing',
+  },
+  {
+    sources: new Set(['yamahamotorssolutions']),
+    pattern: /\b(helpdesk engineer|service desk)\b/i,
+    value: 'Cloud',
+  },
+  {
+    sources: new Set(['zoom']),
+    pattern: /\b(technical account engineer|voice|video|uc issues|sip traces|packet captures)\b/i,
+    value: 'Telecommunications',
+  },
+  {
+    sources: new Set(['yubi']),
+    pattern: /\b(agentic ai)\b/i,
+    value: 'Machine Learning',
+  },
+  {
+    sources: new Set(['yubi']),
+    pattern: /\b(engineer|technical architect)\b/i,
+    value: 'Software Engineering',
+  },
+]
+
+const inferSourceEngineeringDomain = (job = {}, normalizedTitle = null, providerSource = null) => {
+  const sourceId = normalizeSourceId(job.source || providerSource)
+  if (!sourceId) return null
+
+  const haystack = [
+    job.title,
+    normalizedTitle,
+    job.jobCategory,
+    job.department,
+    job.minimumQualification,
+    job.preferredQualification,
+    job.jobDescription,
+    job.description,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const matchedRule = SOURCE_ENGINEERING_DOMAIN_RULES.find((rule) => (
+    rule.sources.has(sourceId) && rule.pattern.test(haystack)
+  ))
+
+  return matchedRule ? matchedRule.value : null
+}
+
+const TECHNICAL_BODY_HINT_PATTERNS = [
+  /\bcloud infrastructure\b/i,
+  /\bkubernetes\b/i,
+  /\bterraform\b/i,
+  /\bdocker\b/i,
+  /\bwindows server\b/i,
+  /\bactive directory\b/i,
+  /\bvpn connectivity\b/i,
+  /\bnode\.?js\b/i,
+  /\breact\b/i,
+  /\btypescript\b/i,
+  /\bjavascript\b/i,
+  /\bpython\b/i,
+  /\bjava\b/i,
+  /\bkotlin\b/i,
+  /\bandroid\b/i,
+  /\bc\+\+\b/i,
+  /\bc#\b/i,
+  /\bgolang\b/i,
+  /\baws\b/i,
+  /\bazure\b/i,
+  /\bgcp\b/i,
+  /\bdatabricks\b/i,
+  /\bspark\b/i,
+  /\bmongodb\b/i,
+  /\bpostgres(?:ql)?\b/i,
+  /\bmysql\b/i,
+  /\bredis\b/i,
+  /\bkafka\b/i,
+  /\bairflow\b/i,
+  /\bsnowflake\b/i,
+  /\bokta\b/i,
+  /\bjamf\b/i,
+  /\btensorflow\b/i,
+  /\bpytorch\b/i,
+  /\bmurex\b/i,
+  /\bunix\b/i,
+  /\blinux\b/i,
+  /\bpki\b/i,
+  /\bsoc\b/i,
+  /\biam\b/i,
+  /\btest automation\b/i,
+  /\bquality assurance\b/i,
+  /\bembedded\b/i,
+  /\bfirmware\b/i,
+  /\bsemiconductor\b/i,
+  /\bpcb\b/i,
+  /\buav\b/i,
+  /\biec 61850\b/i,
+  /\bopc\b/i,
+  /\bmodbus\b/i,
+  /\bdnp3\b/i,
+  /\bprofinet\b/i,
+  /\bfieldbus\b/i,
+]
+
+const hasTechnicalDomainEvidence = (job = {}, normalizedTitle = null) => {
+  const titleEvidence = [
+    job.title,
+    normalizedTitle,
+    job.jobCategory,
+    job.department,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const hasTechnicalTitleHint = TECHNICAL_TITLE_HINT_PATTERN.test(titleEvidence)
+  if (hasTechnicalTitleHint) {
+    return true
+  }
+
+  const bodyEvidence = [
+    job.minimumQualification,
+    job.preferredQualification,
+    job.description,
+    job.jobDescription,
+    // Only trust structured skill tags when the title already looks technical.
+    hasTechnicalTitleHint ? normalizeStringArray(job.requiredSkills).join(' ') : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const matchedBodyHints = TECHNICAL_BODY_HINT_PATTERNS
+    .filter((pattern) => pattern.test(bodyEvidence))
+
+  return matchedBodyHints.length >= 2
+}
+
+const inferEngineeringDomain = (job = {}, normalizedTitle, providerSource = null) => {
   const explicitDomain = normalizeString(job.engineeringDomain)
-  if (explicitDomain) return explicitDomain
+  if (explicitDomain && explicitDomain !== 'Unknown') return explicitDomain
 
   const titleBasedDomain = {
     'Software Engineer': 'Software Engineering',
@@ -481,18 +1152,36 @@ const inferEngineeringDomain = (job = {}, normalizedTitle) => {
     return titleBasedDomain[normalizedTitle]
   }
 
+  const roleDomain = normalizeString(job.primaryRoleDomain)
+  if (roleDomain && ROLE_DOMAIN_TO_ENGINEERING_DOMAIN[roleDomain]) {
+    return ROLE_DOMAIN_TO_ENGINEERING_DOMAIN[roleDomain]
+  }
+
+  if (!hasTechnicalDomainEvidence(job, normalizedTitle)) {
+    return 'Unknown'
+  }
+
   const haystack = [
     job.title,
     normalizedTitle,
+    job.jobCategory,
     job.department,
+    job.minimumQualification,
+    job.preferredQualification,
     job.description,
     job.jobDescription,
+    normalizeStringArray(job.requiredSkills).join(' '),
   ]
     .filter(Boolean)
     .join(' ')
 
+  const sourceBasedDomain = inferSourceEngineeringDomain(job, normalizedTitle, providerSource)
+  if (sourceBasedDomain) return sourceBasedDomain
+
   const matchedRule = ENGINEERING_DOMAIN_RULES.find((rule) => rule.pattern.test(haystack))
-  return matchedRule ? matchedRule.value : 'Unknown'
+  if (matchedRule) return matchedRule.value
+
+  return 'Unknown'
 }
 
 const inferRemoteStatus = (job = {}) => {
@@ -552,11 +1241,103 @@ const normalizeDate = (value) => {
 
 const GENERIC_EXPERIENCE_LABEL_PATTERN = /^(?:experienced professionals?|professional(?:s)?|entry level|junior level|mid(?:-| )level|senior(?:-| )level|associate(?: level)?)$/i
 const NUMERIC_EXPERIENCE_PATTERN = /\d+(?:\.\d+)?\s*(?:-|to|\+)?\s*\d*(?:\.\d+)?\s*(?:years?|yrs?|months?)\b/i
+const BARE_NUMERIC_EXPERIENCE_PATTERN = /^\d+(?:\.\d+)?\s*(?:-|to|\+)?\s*\d*(?:\.\d+)?$/i
 const EXPERIENCE_CONTEXT_PATTERN = /\b(?:experience|exp\.?|required|preferred|minimum|desired|hands[- ]on|relevant|overall|fresher|graduate|entry[- ]level|intern(?:ship)?|apprentice)\b/i
+const INVALID_EXPERIENCE_RANGE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i
+const PROFILE_NON_REQUIREMENT_CONTEXT_PATTERN = /\b(?:privacy policy|recruitment purposes|job application|retained for a period|time period|profitability|horizon|next\s+\d+\s+days|planning cycles?|roadmap(?: reviews?)?|quarterly roadmap reviews?|leave\s+per\s+year|contract\s*\(\s*\d+\s*years?\s*\))\b/i
+const STRONG_PROFILE_REQUIREMENT_PATTERN = /\b(?:minimum(?:\s+of)?|at[\s-]*least|required|preferred)\s*(?:[a-z]+\s*\(\s*)?\d+(?:\s*\))?(?:\+)?\s*(?:months?|years?|yrs?)\b|\b(?:[a-z]+\s*\(\s*)?\d+(?:\s*\))?(?:\+)?\s*(?:months?|years?|yrs?)\s+of\s+(?:relevant\s+|professional\s+|hands[- ]on\s+|related\s+)?experience\b/i
+
+const normalizeProfileEvidence = (experienceProfile = {}) => {
+  const evidence = normalizeString(experienceProfile.evidence)
+  if (experienceProfile.confidence !== 'high' || !evidence) return null
+
+  const rangeMatch = evidence.match(INVALID_EXPERIENCE_RANGE_PATTERN)
+  if (rangeMatch) {
+    const minimumYears = Number.parseFloat(rangeMatch[1])
+    const maximumYears = Number.parseFloat(rangeMatch[2])
+    if (Number.isFinite(minimumYears) && Number.isFinite(maximumYears) && maximumYears < minimumYears) {
+      return null
+    }
+  }
+
+  return evidence
+}
+
+const sanitizeExperienceProfile = (experienceProfile = {}) => {
+  const evidence = normalizeProfileEvidence(experienceProfile)
+  if (!evidence) return experienceProfile
+
+  const minimumYears = Number.parseFloat(experienceProfile.minimumYears)
+  const maximumYears = Number.parseFloat(experienceProfile.maximumYears)
+  if (!Number.isFinite(minimumYears) || (Number.isFinite(maximumYears) && maximumYears !== minimumYears) || minimumYears > 2) {
+    return experienceProfile
+  }
+
+  const rawText = normalizeString(experienceProfile.rawText)
+  if (!rawText) return experienceProfile
+
+  if (
+    PROFILE_NON_REQUIREMENT_CONTEXT_PATTERN.test(rawText)
+    && !STRONG_PROFILE_REQUIREMENT_PATTERN.test(rawText)
+  ) {
+    return {
+      ...experienceProfile,
+      minimumYears: null,
+      maximumYears: null,
+      isOpenEnded: false,
+      hasExplicitExperience: false,
+      confidence: 'low',
+      evidence: null,
+      experienceBucket: 'unspecified',
+    }
+  }
+
+  const roundedYears = Math.round(minimumYears)
+  const yearPattern = roundedYears === 1
+    ? /\b(?:one\s*\(\s*1\s*\)|1)\s*years?\b/i
+    : new RegExp(`\\b${roundedYears}\\s*years?\\b`, 'i')
+  const match = yearPattern.exec(rawText)
+  if (!match) return experienceProfile
+
+  const context = rawText.slice(
+    Math.max(0, match.index - 140),
+    Math.min(rawText.length, match.index + match[0].length + 180),
+  )
+  if (PROFILE_NON_REQUIREMENT_CONTEXT_PATTERN.test(context) && !STRONG_PROFILE_REQUIREMENT_PATTERN.test(context)) {
+    return {
+      ...experienceProfile,
+      minimumYears: null,
+      maximumYears: null,
+      isOpenEnded: false,
+      hasExplicitExperience: false,
+      confidence: 'low',
+      evidence: null,
+      experienceBucket: 'unspecified',
+    }
+  }
+
+  return experienceProfile
+}
+
+const sanitizeSignalsExperience = (signals = {}) => {
+  const experienceProfile = sanitizeExperienceProfile(signals.experienceProfile || {})
+  if (experienceProfile === signals.experienceProfile) return signals
+
+  return {
+    ...signals,
+    experienceProfile,
+    experienceBucket: experienceProfile.experienceBucket || 'unspecified',
+    experienceYears: [],
+    confidence: {
+      ...(signals.confidence || {}),
+      experience: experienceProfile.confidence || 'low',
+    },
+  }
+}
 
 const shouldPreferProfileEvidence = (explicitExperience, experienceProfile = {}) => {
-  const evidence = normalizeString(experienceProfile.evidence)
-  if (experienceProfile.confidence !== 'high' || !evidence) return false
+  const evidence = normalizeProfileEvidence(experienceProfile)
+  if (!evidence) return false
   if (GENERIC_EXPERIENCE_LABEL_PATTERN.test(String(explicitExperience ?? ''))) {
     return NUMERIC_EXPERIENCE_PATTERN.test(evidence)
   }
@@ -566,6 +1347,9 @@ const shouldPreferProfileEvidence = (explicitExperience, experienceProfile = {})
   })?.experienceProfile || {}
   const explicitEvidence = normalizeString(explicitProfile.evidence)
 
+  if (explicitEvidence && BARE_NUMERIC_EXPERIENCE_PATTERN.test(String(explicitExperience ?? ''))) {
+    return true
+  }
   if (!explicitEvidence) return true
   if (explicitProfile.confidence === 'high') return false
 
@@ -574,15 +1358,31 @@ const shouldPreferProfileEvidence = (explicitExperience, experienceProfile = {})
 }
 
 export const inferMissingExperienceRequired = (job = {}, experienceRequired, experienceProfile = {}) => {
+  const hasHighConfidenceNoExperienceProfile = (
+    experienceProfile.confidence === 'high'
+    && experienceProfile.minimumYears === 0
+    && experienceProfile.maximumYears === 0
+  )
   const explicitExperience = normalizeString(experienceRequired)
+  const profileEvidence = normalizeProfileEvidence(experienceProfile)
   if (explicitExperience) {
     return shouldPreferProfileEvidence(explicitExperience, experienceProfile)
-      ? normalizeString(experienceProfile.evidence)
+      ? (hasHighConfidenceNoExperienceProfile
+          ? 'No experience required'
+          : profileEvidence)
       : explicitExperience
   }
 
-  if (experienceProfile.confidence === 'high' && normalizeString(experienceProfile.evidence)) {
-    return normalizeString(experienceProfile.evidence)
+  if (job.publicExperienceChecked === true) {
+    return profileEvidence
+      ? (hasHighConfidenceNoExperienceProfile ? 'No experience required' : profileEvidence)
+      : null
+  }
+
+  if (profileEvidence) {
+    return hasHighConfidenceNoExperienceProfile
+      ? 'No experience required'
+      : profileEvidence
   }
 
   if (job.jobType === 'Internship' || job.employmentType === 'Internship') {
@@ -593,7 +1393,7 @@ export const inferMissingExperienceRequired = (job = {}, experienceRequired, exp
 }
 
 export const normalizeScrapedJob = (job = {}, provider = {}) => {
-  const originalTitle = normalizeString(job.originalTitle || job.title)
+  const originalTitle = normalizeInlineText(job.originalTitle || job.title)
   const normalizedTitle = normalizeTitle(originalTitle)
   const applyUrl = normalizeUrl(job.applyUrl || job.link || job.sourceUrl)
   const sourceUrl = normalizeUrl(job.sourceUrl || job.link || job.applyUrl)
@@ -615,8 +1415,8 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     company: normalizeString(job.company || provider.companyName),
     originalTitle,
     normalizedTitle,
-    jobCategory: normalizeString(job.jobCategory) || normalizedTitle,
-    engineeringDomain: inferEngineeringDomain(job, normalizedTitle),
+    jobCategory: normalizeInlineText(job.jobCategory) || normalizedTitle,
+    engineeringDomain: inferEngineeringDomain(job, normalizedTitle, job.source || provider.source),
     employmentType,
     experienceLevel,
     jobType: resolveJobType({ ...job, employmentType, experienceLevel }),
@@ -646,14 +1446,22 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     scrapedTimestamp,
   }
 
-  const signals = extractJobFilterSignals(normalizedJob)
+  const signals = sanitizeSignalsExperience(extractJobFilterSignals(normalizedJob))
+  const inferredExperienceRequired = inferMissingExperienceRequired(
+    normalizedJob,
+    normalizedJob.experienceRequired,
+    signals.experienceProfile,
+  )
+  const finalSignals = inferredExperienceRequired !== normalizedJob.experienceRequired
+    ? sanitizeSignalsExperience(extractJobFilterSignals({
+        ...normalizedJob,
+        experienceRequired: inferredExperienceRequired,
+      }))
+    : signals
+
   return {
     ...normalizedJob,
-    experienceRequired: inferMissingExperienceRequired(
-      normalizedJob,
-      normalizedJob.experienceRequired,
-      signals.experienceProfile,
-    ),
-    ...signals,
+    experienceRequired: inferredExperienceRequired,
+    ...finalSignals,
   }
 }

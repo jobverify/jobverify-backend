@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -30,7 +31,31 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|hr)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const extractLines = (value) => String(value ?? '')
+  .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|hr)\b[^>]*>/gi, '\n')
+  .replace(/<li\b[^>]*>/gi, '\n')
+  .replace(/<p\b[^>]*>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .split(/\n+/)
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
 const unique = (values) => [...new Set(values.filter(Boolean))]
+
+const extractDetailPayload = (detail = {}) => {
+  if (detail?.data && typeof detail.data === 'object' && !Array.isArray(detail.data)) {
+    return detail.data
+  }
+  return detail || {}
+}
 
 const toIsoDate = (unixSeconds) => {
   const numeric = Number(unixSeconds)
@@ -41,7 +66,12 @@ const toIsoDate = (unixSeconds) => {
 const formatEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase()
+  return normalized
+    .replace(/[_-]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
 }
 
 const extractCities = (position, detail) => unique(
@@ -49,8 +79,57 @@ const extractCities = (position, detail) => unique(
     .map((location) => normalizeWhitespace(location))
     .filter((location) => /india/i.test(location))
     .map((location) => normalizeWhitespace(location.split(',')[0]))
+    .filter((city) => city && !/^india$/i.test(city))
     .filter(Boolean),
 )
+
+const extractHighlights = (detail = {}) => Array.isArray(detail?.jdHighlight)
+  ? detail.jdHighlight.map((highlight) => normalizeWhitespace(highlight)).filter(Boolean)
+  : []
+
+const extractMinimumQualification = (detail = {}) => {
+  const lines = extractLines(detail?.jobDescription)
+  const sectionStart = lines.findIndex((line) => /^(minimum qualifications?|qualifications?)$/i.test(line))
+
+  if (sectionStart !== -1) {
+    const sectionLines = lines.slice(sectionStart + 1)
+    const candidate = sectionLines.find((line) => (
+      !/^(desired|preferred) qualifications?(?: \(optional\))?$/i.test(line)
+      && !/\b\d+(?:\.\d+)?\s*(?:-|to|\+)?\s*\d*(?:\.\d+)?\s*(?:years?|yrs?|months?)\b/i.test(line)
+    ))
+    if (candidate) return candidate
+  }
+
+  return extractHighlights(detail).find((line) => (
+    !/\b\d+(?:\.\d+)?\s*(?:-|to|\+)?\s*\d*(?:\.\d+)?\s*(?:years?|yrs?|months?)\b/i.test(line)
+  )) || null
+}
+
+const extractExperienceRequired = (detail = {}) => {
+  const candidates = [
+    ...extractHighlights(detail),
+    stripTags(detail?.jobDescription),
+  ].filter(Boolean)
+
+  for (const candidate of candidates) {
+    const experienceProfile = extractJobFilterSignals({
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      jobDescription: candidate,
+    })?.experienceProfile
+
+    if (experienceProfile?.confidence === 'high' && experienceProfile.evidence) {
+      return normalizeWhitespace(
+        experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+          ? 'No experience required'
+          : experienceProfile.evidence,
+      )
+    }
+  }
+
+  return null
+}
 
 export const buildSearchUrl = ({
   start = 0,
@@ -106,15 +185,17 @@ export const buildDetailUrl = (positionId, {
 const buildJobUrl = (positionId) => `https://jobs.ascendion.com/careers/job/${positionId}`
 
 const mapPositionToJob = (position, detail = {}) => {
-  const cities = extractCities(position, detail)
+  const detailPayload = extractDetailPayload(detail)
+  const cities = extractCities(position, detailPayload)
   const positionId = normalizeWhitespace(position?.id)
-  const displayJobId = normalizeWhitespace(detail?.displayJobId || position?.displayJobId)
+  const displayJobId = normalizeWhitespace(detailPayload?.displayJobId || position?.displayJobId)
   const sourceUrl = buildJobUrl(positionId)
+  const descriptionHtml = detailPayload?.jobDescription || null
 
   return {
-    title: normalizeWhitespace(detail?.name || position?.name),
+    title: normalizeWhitespace(detailPayload?.name || position?.name),
     company: 'Ascendion',
-    department: normalizeWhitespace(detail?.department || position?.department),
+    department: normalizeWhitespace(detailPayload?.department || position?.department),
     location: cities.length > 0 ? `${cities.join(', ')}, India` : 'India',
     city: cities[0] || null,
     country: 'India',
@@ -123,13 +204,13 @@ const mapPositionToJob = (position, detail = {}) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: formatEmploymentType(position?.workLocationOption),
-    experienceRequired: null,
-    minimumQualification: null,
+    experienceRequired: extractExperienceRequired(detailPayload),
+    minimumQualification: extractMinimumQualification(detailPayload),
     preferredQualification: null,
     requiredSkills: [],
     postingDate: toIsoDate(position?.postedTs),
     closingDate: null,
-    jobDescription: normalizeWhitespace(detail?.jobDescription),
+    jobDescription: descriptionHtml ? stripTags(descriptionHtml) : null,
   }
 }
 

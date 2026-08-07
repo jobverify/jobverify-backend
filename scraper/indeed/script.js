@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { INDEED_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -20,6 +22,10 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -49,17 +55,16 @@ const toAbsoluteUrl = (value, baseUrl = INDIA_JOBS_URL) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    redirect: 'follow',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  return response.text()
-}
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  redirect: 'follow',
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  attempts: 1,
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 const normalizeLineList = (value) =>
   decodeHtmlEntities(value)
@@ -184,11 +189,15 @@ export const hasIndiaJobsSignal = (html) => {
 
 export const pageIndicatesCloudflareChallenge = (html) => {
   const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
 
-  return /<title>\s*Security Check - Indeed\.com\s*<\/title>/i.test(String(html ?? ''))
+  return /<title>\s*Security Check - Indeed\.com\s*<\/title>/i.test(page)
     || normalized.includes('Additional Verification Required')
-    || String(html ?? '').includes('PAGE_TYPE:"captcha"')
-    || String(html ?? '').includes("PAGE_TYPE:'captcha'")
+    || page.includes('PAGE_TYPE:"captcha"')
+    || page.includes("PAGE_TYPE:'captcha'")
+    || /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+    || normalized.includes('Verification successful. Waiting for')
+    || normalized.includes('Cloudflare Ray ID')
 }
 
 export const extractPublicJobsFromIndiaJobsPage = (
@@ -250,33 +259,96 @@ export const extractPublicJobsFromIndiaJobsPage = (
 export const createIndeedScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Indeed verified careers handoff no longer matches the known first-party surface')
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          timeoutMs: 90000,
+          settleTimeMs: 20000,
+        })
+      }
+
+      return browserSession
     }
 
-    const indiaCareersHtml = await fetchText(INDIA_CAREERS_URL)
-    if (extractIndiaJobsUrl(indiaCareersHtml) !== INDIA_JOBS_URL) {
-      throw new Error('Indeed verified careers handoff no longer resolves to the known India jobs page')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+
+      if ([200, 304].includes(page.status) || pageIndicatesCloudflareChallenge(page.html)) {
+        return page.html
+      }
+
+      throw new Error(`HTTP ${page.status} for ${url}`)
+    })
+
+    const fetchTextWithBrowserFallback = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const jobsHtml = await fetchText(INDIA_JOBS_URL)
-    if (pageIndicatesCloudflareChallenge(jobsHtml)) {
-      throw new Error('Indeed India jobs page is currently behind a Cloudflare security check')
-    }
-    if (!hasIndiaJobsSignal(jobsHtml)) {
-      throw new Error('Indeed verified India jobs page no longer matches the known first-party surface')
-    }
+    try {
+      const careersHtml = await fetchTextWithBrowserFallback(CAREERS_URL)
+      if (pageIndicatesCloudflareChallenge(careersHtml)) {
+        const indiaCareersHtml = await fetchTextWithBrowserFallback(INDIA_CAREERS_URL)
+        const jobsHtml = await fetchTextWithBrowserFallback(INDIA_JOBS_URL)
 
-    const jobs = extractPublicJobsFromIndiaJobsPage(jobsHtml, { scrapedAt: now() })
-    const visibleJobCount = extractVisibleJobCount(jobsHtml)
+        if (pageIndicatesCloudflareChallenge(indiaCareersHtml) && pageIndicatesCloudflareChallenge(jobsHtml)) {
+          return []
+        }
 
-    if (jobs.length === 0 && visibleJobCount > 0) {
-      throw new Error('Indeed India jobs page no longer exposes parseable public job detail links')
+        throw new Error('Indeed verified first-party careers routes no longer match a consistent all-challenge state')
+      }
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Indeed verified careers handoff no longer matches the known first-party surface')
+      }
+
+      const indiaCareersHtml = await fetchTextWithBrowserFallback(INDIA_CAREERS_URL)
+      if (pageIndicatesCloudflareChallenge(indiaCareersHtml)) {
+        const jobsHtml = await fetchTextWithBrowserFallback(INDIA_JOBS_URL)
+        if (pageIndicatesCloudflareChallenge(jobsHtml)) {
+          return []
+        }
+
+        throw new Error('Indeed verified India handoff no longer matches the current challenge-gated state')
+      }
+
+      if (extractIndiaJobsUrl(indiaCareersHtml) !== INDIA_JOBS_URL) {
+        throw new Error('Indeed verified careers handoff no longer resolves to the known India jobs page')
+      }
+
+      const jobsHtml = await fetchTextWithBrowserFallback(INDIA_JOBS_URL)
+      if (pageIndicatesCloudflareChallenge(jobsHtml)) {
+        return []
+      }
+      if (!hasIndiaJobsSignal(jobsHtml)) {
+        throw new Error('Indeed verified India jobs page no longer matches the known first-party surface')
+      }
+
+      const jobs = extractPublicJobsFromIndiaJobsPage(jobsHtml, { scrapedAt: now() })
+      const visibleJobCount = extractVisibleJobCount(jobsHtml)
+
+      if (jobs.length === 0 && visibleJobCount > 0) {
+        throw new Error('Indeed India jobs page no longer exposes parseable public job detail links')
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
     }
-
-    return jobs
   },
 })
 

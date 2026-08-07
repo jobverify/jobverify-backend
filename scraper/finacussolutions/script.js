@@ -14,6 +14,7 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const DETAIL_AJAX_URL = 'https://www.finacus.co.in/wp-admin/admin-ajax.php'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -30,6 +31,53 @@ const normalizeWhitespace = (value) => {
     .trim()
 
   return normalized || null
+}
+
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, ' ')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const extractFieldValue = (html, label) => normalizeWhitespace(
+  String(html ?? '').match(
+    new RegExp(`<li>\\s*<strong>\\s*${label}\\s*<\\/strong>\\s*:?\\s*([\\s\\S]*?)<\\/li>`, 'i'),
+  )?.[1] ?? null,
+)
+
+const normalizeExperience = (value) => normalizeWhitespace(value)
+  ?.replace(/\s+years?/i, ' years')
+  || null
+
+const normalizeLocation = (value) => normalizeWhitespace(value) || 'India'
+
+const extractCity = (location) => normalizeWhitespace(location)?.split(',')[0]?.trim() || null
+
+export const extractJobDetail = (html = '', listing = {}) => {
+  const title = normalizeWhitespace(
+    String(html ?? '').match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1] ?? listing.title,
+  ) || listing.title || null
+  const location = normalizeLocation(extractFieldValue(html, 'Location') || listing.location)
+  const description = stripTags(
+    String(html ?? '').match(/<div class="career-offset-content[\s\S]*?>([\s\S]*?)<\/div>/i)?.[1]
+      ?? html,
+  )
+
+  return {
+    ...listing,
+    title,
+    department: extractFieldValue(html, 'Department') || listing.department || null,
+    location,
+    city: extractCity(location),
+    experienceRequired: normalizeExperience(
+      extractFieldValue(html, 'Work Experience') || listing.experienceRequired,
+    ),
+    jobDescription: description || listing.jobDescription || null,
+    description: description || listing.jobDescription || null,
+    publicExperienceChecked: true,
+  }
 }
 
 export const hasOfficialCareersPageSignal = (html = '') => {
@@ -93,11 +141,32 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchDetailText = (jobId) => {
+  const form = new FormData()
+  form.append('action', 'finacus_careers_position_ajax_request')
+  form.append('get_position_id', String(jobId ?? ''))
+
+  return fetchTextWithRetry(DETAIL_AJAX_URL, {
+    method: 'POST',
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: '*/*',
+    },
+    body: form,
+    label: `${SOURCE}-detail`,
+    timeoutMs: 15000,
+  })
+}
+
 export const createFinacusSolutionsScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    fetchDetailText = defaultFetchDetailText,
+    now: overrideNow,
+  } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
@@ -111,8 +180,16 @@ export const createFinacusSolutionsScraper = ({
 
     const selectedJobs = Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
     const scrapedAt = (overrideNow || now)()
+    const jobsWithDetails = await Promise.all(selectedJobs.map(async (job) => {
+      try {
+        const detailHtml = await fetchDetailText(job.jobId)
+        return extractJobDetail(detailHtml, job)
+      } catch {
+        return job
+      }
+    }))
 
-    return selectedJobs.map((job) => ({
+    return jobsWithDetails.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,

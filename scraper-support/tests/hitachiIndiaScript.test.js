@@ -8,17 +8,43 @@ const FINAL_APPLY_URL = 'https://hitachi.wd1.myworkdayjobs.com/hitachi/job/Gurga
 
 const listingHtml = `
   <main>
-    <a href="/jobs/17948031-marketing-communications-specialist-hitachi-high-tech-india-pvt-ltd">
-      Marketing Communications Specialist - Hitachi High-Tech India Pvt. Ltd.
-    </a>
-    <div>Location: Gurgaon, Haryana, India</div>
-    <div>Company: HITACHI INDIA PVT. LTD</div>
+    <div class="jobs-section__item page-section-1">
+      <div class="row">
+        <div class="large-5 columns">
+          <a href="/jobs/17948031-marketing-communications-specialist-hitachi-high-tech-india-pvt-ltd">
+            Marketing Communications Specialist - Hitachi High-Tech India Pvt. Ltd.
+          </a>
+        </div>
+        <div class="large-4 columns">
+          <span class="hide">Location: </span>
+          Gurgaon,
+          Haryana,
+          India
+        </div>
+        <div class="large-3 columns">
+          <span class="hide-for-large">Company: </span>HITACHI INDIA PVT. LTD
+        </div>
+      </div>
+    </div>
 
-    <a href="/jobs/17948888-global-role">
-      Grid Automation Engineer
-    </a>
-    <div>Location: Chennai, Tamil Nadu, India</div>
-    <div>Company: HITACHI ENERGY INDIA LTD</div>
+    <div class="jobs-section__item page-section-1">
+      <div class="row">
+        <div class="large-5 columns">
+          <a href="/jobs/17948888-global-role">
+            Grid Automation Engineer
+          </a>
+        </div>
+        <div class="large-4 columns">
+          <span class="hide">Location: </span>
+          Chennai,
+          Tamil Nadu,
+          India
+        </div>
+        <div class="large-3 columns">
+          <span class="hide-for-large">Company: </span>HITACHI ENERGY INDIA LTD
+        </div>
+      </div>
+    </div>
   </main>
 `
 
@@ -130,6 +156,20 @@ test('resolveApplyUrl follows the Hitachi India public apply redirect to Workday
       ok: true,
       url: `${FINAL_APPLY_URL}?source=jobsite&tm_job=17948031#apply`,
     }),
+  })
+
+  assert.equal(applyUrl, FINAL_APPLY_URL)
+})
+
+test('resolveApplyUrl falls back to the browser-readable final URL when the public Hitachi India apply redirect is blocked', async () => {
+  const { resolveApplyUrl } = await loadHitachiIndiaModule()
+
+  const applyUrl = await resolveApplyUrl(PUBLIC_APPLY_URL, {
+    fetchImpl: async () => ({
+      ok: false,
+      status: 403,
+    }),
+    fetchBrowserFinalUrl: async () => `${FINAL_APPLY_URL}?source=jobsite&tm_job=17948031#apply`,
   })
 
   assert.equal(applyUrl, FINAL_APPLY_URL)

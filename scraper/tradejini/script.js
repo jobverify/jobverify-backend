@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { TRADE_JINI_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -40,14 +40,18 @@ const toAbsoluteUrl = (value, baseUrl) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  const page = await fetchPageWithRetry(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    label: SOURCE,
+    timeoutMs: 20000,
+  })
+
+  return page.html
+}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -76,17 +80,16 @@ export const extractOpenPositionsUrl = (html = '') => {
   return null
 }
 
-const hasVerifiedOpenPositionsShellSignal = (html = '') => {
+export const hasVerifiedOpenPositionsShellSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
   return /<title[^>]*>\s*careers at tradejini \| explore opportunities &amp; join our team\s*<\/title>/i.test(page)
-    && normalized.includes('trader')
-    && normalized.includes('investor')
-    && normalized.includes('quick links')
-    && normalized.includes('updates')
     && normalized.includes("let's power the journey for the top 1% of business leaders")
+    && normalized.includes('search')
     && normalized.includes('trading made simple')
+    && normalized.includes('quick links')
+    && normalized.includes('crafted with care')
     && normalized.includes('attention investors & disclaimer')
 }
 

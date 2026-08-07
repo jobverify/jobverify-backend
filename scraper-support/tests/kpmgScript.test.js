@@ -37,6 +37,10 @@ test('buildJobDetailUrl keeps KPMG detail links on the public Oracle Cloud candi
     kpmgScript.buildJobDetailUrl({ siteNumber: 'CX_3001', jobId: 'INTG10043364' }),
     'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001/job/INTG10043364',
   )
+  assert.equal(
+    kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_3001', jobId: 'INTG10043364' }),
+    'https://ejgk.fa.em2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22INTG10043364%22,siteNumber=CX_3001',
+  )
 })
 
 test('extractSearchResults normalizes KPMG Oracle Cloud requisitions and keeps only India jobs', () => {
@@ -65,6 +69,87 @@ test('extractSearchResults normalizes KPMG Oracle Cloud requisitions and keeps o
     closingDate: null,
     jobDescription: 'Support market risk engagements. Deliver analytics and reporting.',
   })
+})
+
+test('extractJobDetail recovers experience requirements from the KPMG Oracle detail payload', () => {
+  const detail = kpmgScript.extractJobDetail({
+    items: [{
+      Id: 'INTG10043364',
+      Title: 'Associate Consultant -Market Risk',
+      PostedDate: '2026-06-25',
+      ExternalPostedStartDate: '2026-06-25T00:00:00+00:00',
+      ExternalDescriptionStr: '<p>Work on market risk transformations.</p><p>Years of Experience Required: 2-4 years of relevant experience.</p>',
+      ExternalResponsibilitiesStr: '<p>Deliver analytics and reporting.</p>',
+      ExternalQualificationsStr: '<p>Bachelor degree in finance or engineering.</p>',
+      PrimaryLocation: 'Mumbai, Maharashtra, India',
+      JobSchedule: 'Full time',
+      Department: 'Risk Consulting',
+    }],
+  }, {
+    title: 'Associate Consultant -Market Risk',
+    company: 'KPMG',
+    department: null,
+    location: 'Mumbai, Maharashtra, India',
+    city: 'Mumbai',
+    jobId: 'INTG10043364',
+    requisitionId: 'INTG10043364',
+    sourceUrl: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/INTG10043364',
+    applyUrl: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/INTG10043364',
+    employmentType: 'Full-time',
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-06-25',
+    closingDate: null,
+    jobDescription: 'Support market risk engagements. Deliver analytics and reporting.',
+  }, {
+    siteNumber: 'CX_1',
+  })
+
+  assert.equal(detail.experienceRequired, '2-4 years')
+  assert.equal(detail.publicExperienceChecked, true)
+  assert.match(detail.jobDescription, /years of experience required/i)
+  assert.equal(detail.department, 'Risk Consulting')
+})
+
+test('extractJobDetail marks verified KPMG detail records as checked when experience is absent', () => {
+  const detail = kpmgScript.extractJobDetail({
+    items: [{
+      Id: 'INTG10040445',
+      Title: 'Manager - Data Engineer',
+      ExternalDescriptionStr: '<p>Functional Skills</p><ul><li>Build data platforms.</li></ul>',
+      ExternalResponsibilitiesStr: '<p>Lead delivery.</p>',
+      ExternalQualificationsStr: '<p>B.E/B.Tech</p>',
+      PrimaryLocation: 'Noida, Uttar Pradesh, India',
+      JobSchedule: 'Full time',
+      Department: 'Data Engineering',
+    }],
+  }, {
+    title: 'Manager - Data Engineer',
+    company: 'KPMG',
+    department: null,
+    location: 'Noida, Uttar Pradesh, India',
+    city: 'Noida',
+    jobId: 'INTG10040445',
+    requisitionId: 'INTG10040445',
+    sourceUrl: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/INTG10040445',
+    applyUrl: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/INTG10040445',
+    employmentType: 'Full-time',
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-02-14',
+    closingDate: null,
+    jobDescription: 'Functional skills. Build data platforms.',
+  }, {
+    siteNumber: 'CX_1',
+  })
+
+  assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.publicExperienceChecked, true)
+  assert.match(detail.jobDescription, /Functional Skills/i)
 })
 
 test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', async () => {
@@ -117,6 +202,49 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
       }],
     }],
   }
+  const detailPayloadByUrl = new Map([
+    [
+      kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_1', jobId: 'INTG10043364' }),
+      {
+        items: [{
+          Id: 'INTG10043364',
+          Title: 'Associate Consultant -Market Risk',
+          ExternalDescriptionStr: '<p>Support market risk engagements.</p><p>Years of Experience Required: 2-4 years of relevant experience.</p>',
+          ExternalResponsibilitiesStr: '<p>Deliver analytics and reporting.</p>',
+          PrimaryLocation: 'Mumbai, Maharashtra, India',
+          JobSchedule: 'Full time',
+        }],
+      },
+    ],
+    [
+      kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_3', jobId: 'INTG10043365' }),
+      {
+        items: [{
+          Id: 'INTG10043365',
+          Title: 'Senior- Oracle Security',
+          ExternalDescriptionStr: '<p>Secure Oracle estates.</p><p>Minimum experience: 5 years.</p>',
+          ExternalResponsibilitiesStr: '<p>Lead reviews and remediation.</p>',
+          PrimaryLocation: 'Bangalore, Karnataka, India',
+          JobSchedule: 'Full time',
+          Department: 'Cyber Security',
+        }],
+      },
+    ],
+    [
+      kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_3001', jobId: 'INTG10043366' }),
+      {
+        items: [{
+          Id: 'INTG10043366',
+          Title: 'Manager-KDNI Oracle HCM Cloud-Gurgaon',
+          ExternalDescriptionStr: '<p>Drive HCM delivery.</p><p>Minimum experience: 8+ years.</p>',
+          ExternalResponsibilitiesStr: '<p>Manage enterprise implementations.</p>',
+          PrimaryLocation: 'Gurgaon, Haryana, India',
+          JobSchedule: 'Full time',
+          Department: 'Oracle HCM',
+        }],
+      },
+    ],
+  ])
 
   const responsesByUrl = new Map([
     [kpmgScript.buildSearchUrl({ siteNumber: 'CX_1', page: 0 }), cx1Payload],
@@ -126,7 +254,7 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
   const calls = []
   const fetchImpl = async (url) => {
     calls.push(url)
-    const payload = responsesByUrl.get(url)
+    const payload = responsesByUrl.get(url) || detailPayloadByUrl.get(url)
     assert.ok(payload, `unexpected fetch for ${url}`)
 
     return {
@@ -142,7 +270,14 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
     fetchImpl,
   }).run()
 
-  assert.deepEqual(calls, [...responsesByUrl.keys()])
+  assert.deepEqual(calls, [
+    kpmgScript.buildSearchUrl({ siteNumber: 'CX_1', page: 0 }),
+    kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_1', jobId: 'INTG10043364' }),
+    kpmgScript.buildSearchUrl({ siteNumber: 'CX_3', page: 0 }),
+    kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_3', jobId: 'INTG10043365' }),
+    kpmgScript.buildSearchUrl({ siteNumber: 'CX_3001', page: 0 }),
+    kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_3001', jobId: 'INTG10043366' }),
+  ])
   assert.equal(jobs.length, 3)
   assert.deepEqual(
     jobs.map((job) => ({
@@ -151,6 +286,7 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
       source: job.source,
       company: job.company,
       link: job.link,
+      experienceRequired: job.experienceRequired,
     })),
     [
       {
@@ -159,6 +295,7 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
         source: 'kpmg',
         company: 'KPMG',
         link: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/INTG10043364',
+        experienceRequired: '2-4 years',
       },
       {
         title: 'Senior- Oracle Security',
@@ -166,6 +303,7 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
         source: 'kpmg',
         company: 'KPMG',
         link: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3/job/INTG10043365',
+        experienceRequired: '5 years',
       },
       {
         title: 'Manager-KDNI Oracle HCM Cloud-Gurgaon',
@@ -173,6 +311,7 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
         source: 'kpmg',
         company: 'KPMG',
         link: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001/job/INTG10043366',
+        experienceRequired: '8+ years',
       },
     ],
   )

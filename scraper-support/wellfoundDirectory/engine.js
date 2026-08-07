@@ -246,6 +246,7 @@ export const createAggregateHiringSignalJob = ({ provider, sourceUrl }) => {
     department: null,
     employmentType: null,
     jobDescription: `${provider.companyName} showed ${openingText} on ${provider.directorySourceType || 'the verified hiring directory'} at ${provider.companyCareerPage}. ${locationEvidence}. Verified on ${provider.verifiedOn}.`,
+    publicExperienceChecked: true,
     remoteStatus: null,
     atsPlatform: provider.atsPlatform || 'wellfound-directory',
   }

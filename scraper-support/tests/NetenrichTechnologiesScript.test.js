@@ -27,6 +27,58 @@ const careersHtml = `
 </html>
 `
 
+const liveCareersHtml = `
+<!doctype html>
+<html>
+  <body>
+    <h1>Careers at Netenrich</h1>
+    <h2>Open Positions</h2>
+    <div class="join-team-filter-inr" data-country="India" data-position="Security">
+      <div class="loin-team-left">
+        <div class="join-team-name">
+          <h6>Cloud Security Architect</h6>
+        </div>
+        <div class="join-team-wrk-loc">
+          <div class="join-team-wrk-type"><p>On-Site</p></div>
+          <div class="join-team-location"><p>Hyderabad / Bhimavaram, India</p></div>
+        </div>
+      </div>
+      <div class="join-team-rght-btn">
+        <a href="https://netenrich.com/careers/cloud-security-architect">Apply Now</a>
+      </div>
+    </div>
+    <div class="join-team-filter-inr" data-country="India" data-position="Content">
+      <div class="loin-team-left">
+        <div class="join-team-name">
+          <h6>Technical Content Writer</h6>
+        </div>
+        <div class="join-team-wrk-loc">
+          <div class="join-team-wrk-type"><p>On-Site</p></div>
+          <div class="join-team-location"><p>India</p></div>
+        </div>
+      </div>
+      <div class="join-team-rght-btn">
+        <a href="https://netenrich.com/careers/technical-content-writer">Apply Now</a>
+      </div>
+    </div>
+    <div class="join-team-filter-inr" data-country="US" data-position="Sales">
+      <div class="loin-team-left">
+        <div class="join-team-name">
+          <h6>Account Executive</h6>
+        </div>
+        <div class="join-team-wrk-loc">
+          <div class="join-team-wrk-type"><p>On-Site</p></div>
+          <div class="join-team-location"><p>San Jose, CA</p></div>
+        </div>
+      </div>
+      <div class="join-team-rght-btn">
+        <a href="https://netenrich.com/careers/account-executive">Apply Now</a>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
 const cloudSecurityArchitectHtml = `
 <!doctype html>
 <html>
@@ -45,6 +97,29 @@ const cloudSecurityArchitectHtml = `
       <li>Azure</li>
     </ul>
     <h2>Apply Now</h2>
+    <p>fathima.khanam@netenrich.com</p>
+  </body>
+</html>
+`
+
+const liveCloudSecurityArchitectHtml = `
+<!doctype html>
+<html>
+  <body>
+    <p>We're hiring!</p>
+    <h1>Cloud Security Architect</h1>
+    <p><strong>Experience:</strong> 8-12 Years <strong>Hyderabad / Bhimavaram</strong></p>
+    <h3>About Netenrich, Inc.</h3>
+    <p>Netenrich delivers complete Resolution Intelligence to transform digital operations into smarter business outcomes.</p>
+    <h3>Job Role:</h3>
+    <p>We are looking for an experienced and hands-on Cloud Security Architect.</p>
+    <h3>Key Responsibilities:</h3>
+    <ul>
+      <li>Wiz</li>
+      <li>AWS</li>
+      <li>Azure</li>
+    </ul>
+    <a href="#form">Apply Now</a>
     <p>fathima.khanam@netenrich.com</p>
   </body>
 </html>
@@ -105,6 +180,35 @@ test('Netenrich Technologies extracts India jobs from the verified first-party c
   assert.equal(detail.city, 'Hyderabad')
   assert.equal(detail.experienceRequired, '8-12 Years')
   assert.equal(detail.applyUrl, 'mailto:fathima.khanam@netenrich.com')
+  assert.deepEqual(detail.requiredSkills, ['Wiz', 'AWS', 'Azure'])
+})
+
+test('Netenrich Technologies also parses the Monday, August 3, 2026 listing blocks and h3-based detail sections', async () => {
+  const netenrich = await loadModule()
+
+  const listings = netenrich.extractListingCards(liveCareersHtml)
+  assert.deepEqual(listings, [
+    {
+      title: 'Cloud Security Architect',
+      location: 'Hyderabad / Bhimavaram, India',
+      sourceUrl: 'https://netenrich.com/careers/cloud-security-architect',
+      workModel: 'On-Site',
+    },
+    {
+      title: 'Technical Content Writer',
+      location: 'India',
+      sourceUrl: 'https://netenrich.com/careers/technical-content-writer',
+      workModel: 'On-Site',
+    },
+  ])
+
+  const detail = netenrich.extractJobDetail(liveCloudSecurityArchitectHtml, listings[0])
+  assert.equal(detail.title, 'Cloud Security Architect')
+  assert.equal(detail.location, 'Hyderabad / Bhimavaram, India')
+  assert.equal(detail.city, 'Hyderabad')
+  assert.equal(detail.experienceRequired, '8-12 Years')
+  assert.equal(detail.applyUrl, 'mailto:fathima.khanam@netenrich.com')
+  assert.match(detail.jobDescription || '', /experienced and hands-on Cloud Security Architect/i)
   assert.deepEqual(detail.requiredSkills, ['Wiz', 'AWS', 'Azure'])
 })
 

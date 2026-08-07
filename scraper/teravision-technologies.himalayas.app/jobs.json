@@ -1,0 +1,146 @@
+[
+  {
+    "title": "Lead Fullstack Developer",
+    "company": "Teravision Technologies",
+    "location": "Worldwide / India eligible",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "Worldwide / India eligible",
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/companies/teravision-technologies/jobs/lead-fullstack-developer",
+    "applyUrl": "https://himalayas.app/companies/teravision-technologies/jobs/lead-fullstack-developer",
+    "sourceUrl": "https://himalayas.app/companies/teravision-technologies/jobs/lead-fullstack-developer",
+    "source": "teravision-technologies.himalayas.app",
+    "jobId": "https://himalayas.app/companies/teravision-technologies/jobs/lead-fullstack-developer",
+    "requisitionId": "https://himalayas.app/companies/teravision-technologies/jobs/lead-fullstack-developer",
+    "department": "Fullstack-Development",
+    "employmentType": "Contractor",
+    "experienceRequired": "20 years",
+    "postingDate": "1970-01-21T00:00:00.000Z",
+    "expiresAt": "1970-01-21",
+    "jobDescription": "Teravision Technologies is a Nearshore Software outsourcing company with offices in Colombia and USA and over 170 professionals working remotely worldwide. With over 20 years of experience in design, development, and quality assurance, Teravision Technologies offers custom solutions for a wide range of industries in the USA, Europe, and Latin America. Why Teravision Technologies ? Here at Teravision Technologies we are problem solvers, with detail and objective-oriented mindset and are first and foremost team players. We want to be the next big step in your career. We look for innovators, people hungry for challenges, and go getters to join our team. General Details: Fully remote position. Employment type: Contractor. Compensation in USD.\n\nQUALIFICATIONS:\nStrong experience in at least one enterprise backend stack (Java or .NET). Production experience with Node.js or Python. Solid React.js experience. Cloud experience in AWS or Azure. Previous hands-on experience with AI implementations. Experience leading development teams and projects is required. Excellent English communication skills (C1/C2) are a must . Bachelor’s Degree in Computer Science or equivalent work experience. What We’re Looking For Mindset You think in systems, not just features. You are comfortable making architectural trade-offs. You are curious about AI and emerging technologies. What's in it for you? Paid time off. Paid National Holidays of your country of residence. Unlimited access to professional educational resources, through our growth partner Pluralsight and English Learning. Enjoy benefits related to our AWS partnership. Remote work laptop. Career path development. Challenging projects with international clients. Originally posted on Himalayas",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T21:57:32.505Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "companyDomain": "teravision-technologies.himalayas.app",
+    "originalTitle": "Lead Fullstack Developer",
+    "normalizedTitle": "Lead Fullstack Developer",
+    "jobCategory": "Lead Fullstack Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Contractor",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "1970-01-21T00:00:00.000Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T21:57:32.505Z",
+    "skillIds": [
+      "java",
+      "node-js",
+      "python",
+      "react",
+      "aws",
+      "azure"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "node-js",
+        "canonicalName": "Node.js",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Node.js"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "react",
+        "canonicalName": "React",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "React.js"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "12-plus",
+    "experienceProfile": {
+      "rawText": "20 years",
+      "minimumYears": 20,
+      "maximumYears": 20,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "20 years",
+      "experienceBucket": "12-plus"
+    },
+    "experienceYears": [
+      15
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Full-Stack Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:57:43.055Z"
+  }
+]

@@ -122,6 +122,48 @@ test('extractJobDetail derives EY experienceRequired from official detail descri
   assert.equal(detail.experienceRequired, '3+ years')
 })
 
+test('extractJobDetail keeps the full EY nested jobdescription block instead of truncating at the first inner span', async () => {
+  const { extractJobDetail } = await loadEyModule()
+  const html = `
+    <html>
+      <body>
+        <div class="joblayouttoken rtltextaligneligible displayDTM ">
+          <div class="inner">
+            <div class="row">
+              <div class="col-xs-12 fontalign-left">
+                <span xml:lang="en-US" lang="en-US" itemprop="description" data-careersite-propertyid="description" class="rtltextaligneligible">
+                  <span class="jobdescription">
+                    <p><span style="font-family:Arial"><span style="font-size:11px">At EY, you’ll have the chance to build a career as unique as you are.</span></span></p>
+                    <p><strong><span style="font-family:arial;font-size:10pt">To qualify for the role, you must have</span></strong></p>
+                    <ul>
+                      <li><span style="font-family:arial;font-size:10pt">Experienced resource – preferably 3-6 years</span></li>
+                      <li><span style="font-family:arial;font-size:10pt">Experience in actuarial reserving and modelling software</span></li>
+                    </ul>
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/talentcommunity/apply/1417728833/?locale=en_US">Apply</a>
+        <meta itemprop="datePosted" content="Fri Jul 31 00:00:00 UTC 2026" />
+      </body>
+    </html>
+  `
+
+  const detail = extractJobDetail(html, {
+    sourceUrl: 'https://careers.ey.com/ey/job/Noida-FS-RC-Actuarial-Investments-Agenda-Senior-UP-201301/1417728833/',
+    title: 'FS-RC-Actuarial-Investments Agenda-Senior',
+    location: 'Noida, UP, IN, 201301',
+    city: 'Noida',
+    jobId: '1417728833',
+    requisitionId: '1417728833',
+  })
+
+  assert.match(detail.jobDescription, /To qualify for the role, you must have/i)
+  assert.equal(detail.experienceRequired, '3-6 years')
+})
+
 test('run keeps EY jobs on the public India search route and decorates shared runner fields', async () => {
   const {
     buildIndiaSearchUrl,
@@ -160,4 +202,41 @@ test('run keeps EY jobs on the public India search route and decorates shared ru
     jobs[0].sourceUrl,
     'https://careers.ey.com/ey/job/Kolkata-FAAS-Senior-ECRA-Gaap-Conversion-WB-700091/1400220833/',
   )
+})
+
+test('run overlaps EY detail fetches so India batches do not time out sequentially', async () => {
+  const {
+    buildIndiaSearchUrl,
+    createEyScraper,
+    extractSearchResults,
+  } = await loadEyModule()
+  const scraper = createEyScraper()
+  const listingHtml = readFixture('india-search.html')
+  const baseDetailHtml = readFixture('job-detail-1400220833.html')
+  const listings = extractSearchResults(listingHtml).slice(0, 2)
+  const detailByUrl = new Map([
+    [listings[0].sourceUrl, baseDetailHtml],
+    [listings[1].sourceUrl, baseDetailHtml.replace(/1400220833/g, listings[1].jobId)],
+  ])
+  let activeDetails = 0
+  let maxActiveDetails = 0
+
+  const jobs = await scraper.run({
+    maxPages: 1,
+    maxJobs: 2,
+    fetchText: async (url) => {
+      if (url === buildIndiaSearchUrl()) return listingHtml
+      if (detailByUrl.has(url)) {
+        activeDetails += 1
+        maxActiveDetails = Math.max(maxActiveDetails, activeDetails)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        activeDetails -= 1
+        return detailByUrl.get(url)
+      }
+      throw new Error(`Unexpected EY URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.ok(maxActiveDetails > 1, `expected overlapping detail fetches, saw max concurrency ${maxActiveDetails}`)
 })

@@ -122,6 +122,8 @@ export const extractPublicListings = (html) => {
       closingDate: null,
       jobDescription: null,
       remoteStatus: null,
+      companyCareerPage: CAREERS_URL,
+      atsPlatform: 'official-company-careers',
     }
   }).filter(Boolean)
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://hasura.io/careers/ redirects to the live first-party PromptQL careers page at https://promptql.io/careers, that the page hands job seekers to the live Gem board at https://jobs.gem.com/promptql, and that the Gem shell currently loads https://static.gem.com/scripts/jobBoards.ddgoqUdv.v2.min.js with tracking id 4a76acaa-70ac-4e16-bedb-d4426e6a9d3c. Verified that the public GraphQL endpoint at https://jobs.gem.com/api/public/graphql currently returns 5 public postings and 2 India-scoped postings, of which one is a talent-community pool post and one is the actionable India role Forward Deployed Analyst, Bangalore with application route https://jobs.gem.com/promptql/am9icG9zdDqFcCqALL3yOrMp6tFzI6t8/application.'
+  'Verified on Sunday, August 2, 2026 that https://hasura.io/careers/ redirects to the live first-party PromptQL careers page at https://promptql.io/careers, that the page hands job seekers to the live Gem board at https://jobs.gem.com/promptql, and that the Gem shell currently loads https://static.gem.com/scripts/jobBoards.BpHUFx-E.v2.min.js with tracking id 4a76acaa-70ac-4e16-bedb-d4426e6a9d3c. Verified that the public GraphQL endpoint at https://jobs.gem.com/api/public/graphql currently returns 5 public postings and 1 actionable India role after excluding the talent-community pool post: Forward Deployed Analyst, Bangalore with application route https://jobs.gem.com/promptql/am9icG9zdDqFcCqALL3yOrMp6tFzI6t8/application.'
 
 export const HASURA_CATALOG = {
   source: 'hasura',
@@ -16,7 +16,7 @@ export const HASURA_CATALOG = {
   redirectedCareersPageUrl: 'https://promptql.io/careers',
   officialGemBoardUrl: 'https://jobs.gem.com/promptql',
   graphqlApiUrl: 'https://jobs.gem.com/api/public/graphql',
-  gemBoardBundleUrl: 'https://static.gem.com/scripts/jobBoards.ddgoqUdv.v2.min.js',
+  gemBoardBundleUrl: 'https://static.gem.com/scripts/jobBoards.BpHUFx-E.v2.min.js',
   gemBoardTrackingId: '4a76acaa-70ac-4e16-bedb-d4426e6a9d3c',
   verifiedPublicPostingCount: 5,
   verifiedIndiaScopedPostingCount: 2,
@@ -32,7 +32,7 @@ export const HASURA_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'jobs.gem.com',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   modulePath: path.resolve(currentDir, 'script.js'),
 }

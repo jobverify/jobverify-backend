@@ -9,66 +9,96 @@ const {
   CAREERS_URL,
   COMPANY,
   DISPOSITION,
+  GOOGLE_CAREERS_URL,
+  HOMEPAGE_URL,
   OFFICIAL_BRAND,
   SOURCE,
   VERIFIED_SURFACE_SUMMARY,
   createPhotomathIndiaScraper,
-  detectPublicJobsSurface,
+  extractCareersHandoffUrl,
   hasVerifiedCompanySurface,
+  isVerifiedGoogleCareersHandoff,
   run,
 } = photomathIndiaModule
 
-const VERIFIED_COMPANY_SURFACE_HTML = `
+const VERIFIED_HOMEPAGE_HTML = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Photomath | Learn math, step-by-step</title>
-      <link rel="canonical" href="https://www.photomath.com/" />
-      <meta property="og:site_name" content="Photomath" />
-      <meta property="og:url" content="https://www.photomath.com/" />
+      <title>Photomath - The Ultimate Math Help App | Math Explained</title>
+      <link rel="canonical" href="https://photomath.com/" />
+      <meta property="og:url" content="https://photomath.com/" />
     </head>
     <body>
       <main>
         <h1>Photomath</h1>
-        <p>Learn math, step-by-step, with a global learning product.</p>
-        <a href="/app">Get the app</a>
+        <p>Need math help? Meet Photomath.</p>
+        <a href="/careers/">Careers</a>
       </main>
     </body>
   </html>
 `
 
-test('Photomath India stays fail-closed on the verified exact-name public company surface', async () => {
-  let requestedUrl = null
+const VERIFIED_GOOGLE_HANDOFF_HTML = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Search for your career at Google.</title>
+    </head>
+    <body>
+      <main>
+        <h1>Careers</h1>
+        <p>Jobs</p>
+        <p>Students</p>
+        <p>How we hire</p>
+        <p>Equal Opportunity Google</p>
+      </main>
+    </body>
+  </html>
+`
+
+test('Photomath India validates the Photomath homepage and the Google Careers handoff', async () => {
+  const requestedUrls = []
 
   const jobs = await run({
-    fetchHtml: async (url) => {
-      requestedUrl = url
-      return VERIFIED_COMPANY_SURFACE_HTML
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === HOMEPAGE_URL) {
+        return { status: 200, url, html: VERIFIED_HOMEPAGE_HTML }
+      }
+      if (url === CAREERS_URL) {
+        return {
+          status: 200,
+          url: GOOGLE_CAREERS_URL,
+          html: VERIFIED_GOOGLE_HANDOFF_HTML,
+        }
+      }
+      assert.fail(`Unexpected fetchPage URL: ${url}`)
     },
   })
 
-  assert.equal(requestedUrl, CAREERS_URL)
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
   assert.deepEqual(jobs, [])
   assert.equal(SOURCE, 'photomathindia')
   assert.equal(COMPANY, 'Photomath India')
   assert.equal(OFFICIAL_BRAND, 'Photomath')
-  assert.equal(CAREERS_URL, 'https://www.photomath.com/')
-  assert.equal(DISPOSITION, 'verified-exact-name-public-company-surface')
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
-  assert.match(
-    VERIFIED_SURFACE_SUMMARY,
-    /exact-name Photomath public company surface reviewed for Photomath India/i,
-  )
-  assert.match(
-    VERIFIED_SURFACE_SUMMARY,
-    /does not establish a stable enumerable public jobs contract/i,
-  )
+  assert.equal(DISPOSITION, 'verified-company-surface-with-google-careers-handoff')
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Google Careers/i)
   assert.equal(typeof createPhotomathIndiaScraper, 'function')
-  assert.equal(hasVerifiedCompanySurface(VERIFIED_COMPANY_SURFACE_HTML), true)
-  assert.equal(detectPublicJobsSurface(VERIFIED_COMPANY_SURFACE_HTML), null)
+  assert.equal(extractCareersHandoffUrl(VERIFIED_HOMEPAGE_HTML), CAREERS_URL)
+  assert.equal(hasVerifiedCompanySurface(VERIFIED_HOMEPAGE_HTML), true)
+  assert.equal(
+    isVerifiedGoogleCareersHandoff({
+      status: 200,
+      url: GOOGLE_CAREERS_URL,
+      html: VERIFIED_GOOGLE_HANDOFF_HTML,
+    }),
+    true,
+  )
 })
 
-test('Photomath India rejects when the verified exact-name public company surface disappears', async () => {
+test('Photomath India rejects when the branded homepage disappears', async () => {
   assert.equal(
     hasVerifiedCompanySurface(`
       <html>
@@ -81,59 +111,31 @@ test('Photomath India rejects when the verified exact-name public company surfac
 
   await assert.rejects(
     run({
-      fetchHtml: async () => `
-        <html>
-          <head><title>Example Learning App</title></head>
-          <body><h1>Example</h1></body>
-        </html>
-      `,
+      fetchPage: async (url) => ({
+        status: 200,
+        url,
+        html: '<html><head><title>Example Learning App</title></head><body><h1>Example</h1></body></html>',
+      }),
     }),
-    /verified public company surface/i,
+    /official homepage/i,
   )
 })
 
-test('Photomath India rejects when a same-origin public jobs surface appears', async () => {
-  const sameOriginJobsHtml = `
-    ${VERIFIED_COMPANY_SURFACE_HTML}
-    <section>
-      <h2>Current Openings</h2>
-      <a href="/careers/senior-software-engineer">Senior Software Engineer</a>
-    </section>
-  `
-
-  assert.match(
-    detectPublicJobsSurface(sameOriginJobsHtml) || '',
-    /listing copy|https:\/\/www\.photomath\.com\/careers\/senior-software-engineer/i,
-  )
-
+test('Photomath India rejects when the careers handoff no longer points to Google Careers', async () => {
   await assert.rejects(
     run({
-      fetchHtml: async () => sameOriginJobsHtml,
-    }),
-    /public jobs surface changed materially/i,
-  )
-})
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) {
+          return { status: 200, url, html: VERIFIED_HOMEPAGE_HTML }
+        }
 
-test('Photomath India rejects when trusted ATS signals or JobPosting markup appear', async () => {
-  await assert.rejects(
-    run({
-      fetchHtml: async () => `
-        ${VERIFIED_COMPANY_SURFACE_HTML}
-        <iframe src="https://jobs.ashbyhq.com/photomath"></iframe>
-      `,
+        return {
+          status: 200,
+          url: 'https://www.photomath.com/careers/',
+          html: '<html><head><title>Photomath Careers</title></head><body><h1>Careers</h1></body></html>',
+        }
+      },
     }),
-    /public jobs surface changed materially/i,
-  )
-
-  await assert.rejects(
-    run({
-      fetchHtml: async () => `
-        ${VERIFIED_COMPANY_SURFACE_HTML}
-        <script type="application/ld+json">
-          {"@context":"https://schema.org","@type":"JobPosting","title":"Software Engineer"}
-        </script>
-      `,
-    }),
-    /public jobs surface changed materially/i,
+    /Google Careers handoff/i,
   )
 })

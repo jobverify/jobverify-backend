@@ -33,12 +33,17 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialSearsCareersSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
   const text = normalizeWhitespace(html)
-  return text.includes('CURRENT OPENINGS')
+
+  return /<title[^>]*>\s*Sears India Careers\s*\|\s*Together,\s*Let(?:’|'|&#8217;)s Commit to Excellence\s*<\/title>/i.test(rawHtml)
+    && text.includes('Together, Let’s Commit to Excellence')
+    && text.includes('Current Openings')
     && text.includes('Pune')
     && text.includes('Hyderabad')
-    && text.includes('Chennai')
-  }
+    && text.includes('We are hiring for multiple roles across all Business Units')
+    && text.includes('Job Disclaimer')
+}
 
 export const pageExposesStructuredJobListings = (html = '') => {
   const page = String(html ?? '')

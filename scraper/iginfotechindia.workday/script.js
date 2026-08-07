@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { IG_INFOTECH_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -16,6 +17,7 @@ export const WORKDAY_LISTING_URL = PROVIDER_METADATA.workdayListingUrl
 export const WORKDAY_TENANT_HOST = PROVIDER_METADATA.workdayTenantHost
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const INDIA_LOCATION_COUNTRY = 'c4f78be1a8f14da0ab49ce1162348a5e'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -100,6 +102,14 @@ const deriveCity = (location) => {
   return normalized
 }
 
+export const buildScraperOptions = () => ({
+  company: COMPANY,
+  baseUrl: WORKDAY_LISTING_URL,
+  locationCountry: INDIA_LOCATION_COUNTRY,
+  source: SOURCE,
+  scraperDir: currentDir,
+})
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
@@ -119,13 +129,21 @@ export const hasOfficialBengaluruEntitySignal = (html = '') => {
 }
 
 export const hasOfficialWorkdayListingSignal = (html = '') => {
-  const text = stripTags(html) || ''
-
-  return text.includes('Head Of Workforce Management')
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+  const hasLegacyListingCards = text.includes('Head Of Workforce Management')
     && text.includes('Content Producer')
     && text.includes('Web & SEO Copywriter')
     && text.includes('Bangalore, India')
-    && String(html ?? '').includes(WORKDAY_TENANT_HOST)
+  const hasLiveWorkdayShell =
+    /rel=["']canonical["'][^>]*href=["']https:\/\/ig\.wd103\.myworkdayjobs\.com\/EXT_IG["']/i.test(page)
+    && /cx-jobs\.min\.js/i.test(page)
+    && /tenant:\s*"ig"/i.test(page)
+    && /siteId:\s*"EXT_IG"/i.test(page)
+    && /IG Group can provide that/i.test(page)
+
+  return page.includes(WORKDAY_TENANT_HOST)
+    && (hasLegacyListingCards || hasLiveWorkdayShell)
 }
 
 const extractLocationFromSegment = (segment) => {
@@ -212,9 +230,11 @@ export const extractIndiaJobsFromWorkdayHtml = (
 
 export const createIgInfotechIndiaScraper = ({
   now = () => new Date().toISOString(),
+  workdayRunner = runWorkdayScraper,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    workdayRunner: workdayRunnerOverride = workdayRunner,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
@@ -231,13 +251,14 @@ export const createIgInfotechIndiaScraper = ({
       throw new Error('The verified IG Workday listing page no longer matches the trusted first-party surface')
     }
 
-    return extractIndiaJobsFromWorkdayHtml(listingHtml, {
-      scrapedAt: now(),
-    }).map((job) => ({
+    const jobs = await workdayRunnerOverride(buildScraperOptions())
+
+    return jobs.map((job) => ({
       ...job,
       companyCareerPage: CAREERS_URL,
       companyDomain: PROVIDER_METADATA.companyDomain,
       atsPlatform: PROVIDER_METADATA.atsPlatform,
+      scrapedAt: job.scrapedAt || now(),
     }))
   },
 })

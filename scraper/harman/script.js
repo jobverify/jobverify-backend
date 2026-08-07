@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -10,6 +11,7 @@ const BASE_URL = 'https://jobsearch.harman.com'
 const SEARCH_URL = `${BASE_URL}/en_US/careers/SearchJobs`
 const FEED_URL = `${SEARCH_URL}/feed/`
 const DEFAULT_PAGE_SIZE = 20
+const DEFAULT_DETAIL_CONCURRENCY = 6
 
 const decodeHtmlEntities = (value) => {
   let decoded = String(value ?? '')
@@ -309,6 +311,7 @@ const fetchText = async (url, referer = SEARCH_URL) => {
 export const run = async ({
   maxPages = config.maxPages,
   pageSize = DEFAULT_PAGE_SIZE,
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
   fetchText: getHtml = fetchText,
 } = {}) => {
   const jobs = []
@@ -322,39 +325,51 @@ export const run = async ({
 
     if (listings.length === 0) break
 
+    const indiaListings = []
     for (const listing of listings) {
       if (seenJobIds.has(listing.jobId)) continue
       seenJobIds.add(listing.jobId)
-
-      const detailHtml = await getHtml(listing.sourceUrl, listingUrl)
-      const detail = extractJobDetail(detailHtml, listing)
-
-      if (!isIndiaLocation(detail.location)) continue
-
-      jobs.push({
-        jobId: detail.jobId || listing.jobId,
-        requisitionId: detail.requisitionId || listing.requisitionId,
-        title: detail.title || listing.title,
-        company: 'HARMAN',
-        department: detail.department || listing.department || null,
-        location: detail.location || listing.location || null,
-        city: detail.city || listing.city || null,
-        country: detail.country || null,
-        link: detail.sourceUrl || listing.sourceUrl,
-        applyUrl: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-        sourceUrl: detail.sourceUrl || listing.sourceUrl,
-        source: 'harman',
-        employmentType: detail.employmentType || null,
-        experienceRequired: detail.experienceRequired,
-        jobDescription: detail.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        requiredSkills: detail.requiredSkills,
-        postingDate: detail.postingDate || listing.postingDate || null,
-        closingDate: detail.closingDate,
-        scrapedAt: new Date().toISOString(),
-      })
+      if (isIndiaLocation(listing.location)) {
+        indiaListings.push(listing)
+      }
     }
+
+    const enrichedJobs = await mapWithConcurrency(
+      indiaListings,
+      detailConcurrency,
+      async (listing) => {
+        const detailHtml = await getHtml(listing.sourceUrl, listingUrl)
+        const detail = extractJobDetail(detailHtml, listing)
+
+        if (!isIndiaLocation(detail.location)) return null
+
+        return {
+          jobId: detail.jobId || listing.jobId,
+          requisitionId: detail.requisitionId || listing.requisitionId,
+          title: detail.title || listing.title,
+          company: 'HARMAN',
+          department: detail.department || listing.department || null,
+          location: detail.location || listing.location || null,
+          city: detail.city || listing.city || null,
+          country: detail.country || null,
+          link: detail.sourceUrl || listing.sourceUrl,
+          applyUrl: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+          sourceUrl: detail.sourceUrl || listing.sourceUrl,
+          source: 'harman',
+          employmentType: detail.employmentType || null,
+          experienceRequired: detail.experienceRequired,
+          jobDescription: detail.jobDescription,
+          minimumQualification: detail.minimumQualification,
+          preferredQualification: detail.preferredQualification,
+          requiredSkills: detail.requiredSkills,
+          postingDate: detail.postingDate || listing.postingDate || null,
+          closingDate: detail.closingDate,
+          scrapedAt: new Date().toISOString(),
+        }
+      },
+    )
+
+    jobs.push(...enrichedJobs.filter(Boolean))
   }
 
   return jobs

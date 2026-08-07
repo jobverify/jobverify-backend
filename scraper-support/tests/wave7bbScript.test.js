@@ -90,6 +90,10 @@ const nuventoIndiaCareersHtml = `
 const qualeHomepageHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Generative AI - Quale Infotech</title>
+    <link rel="canonical" href="https://qualeinfotech.com/" />
+  </head>
   <body>
     <nav>
       <a href="/">Home</a>
@@ -99,7 +103,8 @@ const qualeHomepageHtml = `
     <h1>Generative AI</h1>
     <p>Unlock Infinite Potential</p>
     <p>430-432 Tower A, Spaze I-Tech Park, Sector 49, Sohna Road, Gurugram 122018, Haryana.</p>
-    <p>info@qualeinfotech.com</p>
+    <a href="/cdn-cgi/l/email-protection#abc2c5cdc4ebdadcca..." class="__cf_email__">[email protected]</a>
+    <img alt="Experts say tech leap to create more &amp; better jobs" />
   </body>
 </html>
 `
@@ -136,10 +141,13 @@ const capitalNumbersCareersHtml = `
 <!doctype html>
 <html lang="en">
   <body>
+    <p>Beware of Fake Job or Freelancing Offers</p>
     <h1>Stable, Rewarding Remote Work Opportunities from Capital Numbers</h1>
+    <p>See Current Openings</p>
+    <p>Rated 4.2 out of 5 on Glassdoor</p>
     <h2>Build Your Career with Capital Numbers</h2>
     <p>Great opportunities begin with great people.</p>
-    <p>Please email your current resume and a cover letter to career@capitalnumbers.com.</p>
+    <p>Please email your current resume and a cover letter to jobs@capitalnumbers.com.</p>
     <p>If your profile matches our current or upcoming requirements, our recruitment team will get in touch.</p>
     <h2>Perks &amp; Benefits</h2>
   </body>
@@ -149,15 +157,184 @@ const capitalNumbersCareersHtml = `
 const inTimeTecCareersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Careers - Join Our Team - In Time Tec</title>
+  </head>
   <body>
     <h1>Join us in creating</h1>
     <p>It takes a special kind of person to stand with us on our platform of abundance.</p>
     <a href="https://ats.rippling.com/intimetec">USA Careers</a>
-    <a href="https://careers.intimetec.in/intimetec/jobslist">India Careers</a>
+    <a href="https://careers.intimetec.in/intimetec/">India Careers</a>
     <p>Careers at In Time Tec offer personal and professional development as well as traditional benefits.</p>
   </body>
 </html>
 `
+
+const inTimeTecJobsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>In Time Tec - Careers</title>
+    <meta name="description" content="In Time Tec Careers">
+    <base href="/intimetec/">
+    <link href="styles.1cee6c376ce09708.css" rel="stylesheet">
+    <script src="main.3ea212f43af15350.js"></script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>
+`
+
+const inTimeTecSearchPayloadPage1 = {
+  data: {
+    hasMoreData: true,
+    totalCount: 3,
+    facetedSearchConfig: {
+      paginationHowMuch: '2',
+    },
+    data: [
+      {
+        _source: {
+          jobTitle: 'Senior AI Engineer - Vision Language Models (VLM)',
+          DepartmentName: 'AI Labs',
+          location: 'Jaipur, Rajasthan, India;Bangalore, Karnataka, India',
+          locAgg: 'Jaipur, Rajasthan, India;Bangalore, Karnataka, India',
+          jobCode: '10526',
+          referenceNumber: '10526',
+          jobUrl: 'senior-ai-engineer-vlm',
+          experienceUIField: '4-7 years',
+          mandatorySkills: ['VLM', 'Multimodal AI'],
+          modifiedDate: 1785429767734,
+          jobLocationRecord: [
+            {
+              city: 'Jaipur',
+              state: 'Rajasthan',
+              country: 'India',
+              location: 'Jaipur, Rajasthan, India',
+            },
+            {
+              city: 'Bangalore',
+              state: 'Karnataka',
+              country: 'India',
+              location: 'Bangalore, Karnataka, India',
+            },
+          ],
+          otherStatusOne: 'Live',
+          otherStatusTwo: 'Open',
+        },
+      },
+      {
+        _source: {
+          jobTitle: 'US Network Engineer',
+          DepartmentName: 'Infrastructure',
+          location: 'Austin, Texas, United States',
+          locAgg: 'Austin, Texas, United States',
+          jobCode: '10527',
+          referenceNumber: '10527',
+          jobUrl: 'us-network-engineer',
+          experienceUIField: '5-7 years',
+          mandatorySkills: ['Routing', 'Switching'],
+          modifiedDate: 1785429767000,
+          jobLocationRecord: [
+            {
+              city: 'Austin',
+              state: 'Texas',
+              country: 'United States',
+              location: 'Austin, Texas, United States',
+            },
+          ],
+          otherStatusOne: 'Live',
+          otherStatusTwo: 'Open',
+        },
+      },
+    ],
+  },
+}
+
+const inTimeTecSearchPayloadPage2 = {
+  data: {
+    hasMoreData: false,
+    totalCount: 3,
+    facetedSearchConfig: {
+      paginationHowMuch: '2',
+    },
+    data: [
+      {
+        _source: {
+          jobTitle: 'Linux Administrator',
+          DepartmentName: 'Infrastructure',
+          location: 'Bangalore, Karnataka, India',
+          locAgg: 'Bangalore, Karnataka, India',
+          jobCode: '10528',
+          referenceNumber: '10528',
+          jobUrl: 'linux-administrator',
+          experienceUIField: '3-5 years',
+          mandatorySkills: ['Linux', 'Bash'],
+          modifiedDate: 1785200000000,
+          jobLocationRecord: [
+            {
+              city: 'Bangalore',
+              state: 'Karnataka',
+              country: 'India',
+              location: 'Bangalore, Karnataka, India',
+            },
+          ],
+          otherStatusOne: 'Live',
+          otherStatusTwo: 'Open',
+        },
+      },
+    ],
+  },
+}
+
+const inTimeTecSeniorAiDetailPayload = {
+  jobTitle: 'Senior AI Engineer - Vision Language Models (VLM)',
+  jobCode: '10526',
+  jobUrl: 'senior-ai-engineer-vlm',
+  location: 'Jaipur, Rajasthan, India;Bangalore, Karnataka, India',
+  referenceNumber: '10526',
+  departmentName: 'AI Labs',
+  department: {
+    departmentName: 'AI Labs',
+  },
+  employeeType: 'Full Time',
+  skillSet: 'VLM, Multimodal AI, PyTorch',
+  createDate: '28-Jul-2026',
+  longDescription: '<p>Design multimodal AI systems.</p><p>Optimize video understanding pipelines.</p>',
+  jobConfigurationData: {
+    Description: '<p>Design multimodal AI systems.</p><p>Optimize video understanding pipelines.</p>',
+    Department: 'AI Labs',
+    'Skills Required': 'VLM, Multimodal AI, PyTorch',
+    Location: 'Jaipur, Rajasthan, India;Bangalore, Karnataka, India',
+    'Education/Qualification': 'B.Tech / M.Tech',
+    'Years Of Exp': '4 to 7 years',
+    'Posted On': '28-Jul-2026',
+  },
+}
+
+const inTimeTecLinuxAdminDetailPayload = {
+  jobTitle: 'Linux Administrator',
+  jobCode: '10528',
+  jobUrl: 'linux-administrator',
+  location: 'Bangalore, Karnataka, India',
+  referenceNumber: '10528',
+  departmentName: 'Infrastructure',
+  department: {
+    departmentName: 'Infrastructure',
+  },
+  skillSet: 'Linux, Bash, Monitoring',
+  createDate: '27-Jul-2026',
+  longDescription: '<p>Manage Linux production systems.</p><p>Improve observability and patching workflows.</p>',
+  jobConfigurationData: {
+    Description: '<p>Manage Linux production systems.</p><p>Improve observability and patching workflows.</p>',
+    Department: 'Infrastructure',
+    'Skills Required': 'Linux, Bash, Monitoring',
+    Location: 'Bangalore, Karnataka, India',
+    'Years Of Exp': '3 to 5 years',
+    'Posted On': '27-Jul-2026',
+  },
+}
 
 const miracleCareersHtml = `
 <!doctype html>
@@ -165,34 +342,41 @@ const miracleCareersHtml = `
   <body>
     <h3>Contact Notice</h3>
     <p>If you have applied for a job please be aware that Miracle recruiters, HR or leadership will only contact you via email, phone or LinkedIn.</p>
+    <div class="oc-item">
+      <div class="tagcloud clearfix bottommargin">
+        <a class="tag-badge">Open Positions</a>
+      </div>
+      <h1 class="text-white mb-3">ServiceNow ITSM Architect</h1>
+      <h4 class="text-white"><i class="icon-calendar-alt"></i> August 3rd, 2026 &nbsp; <i class="icon-location"></i> Miracle Heights, India</h4>
+      <a href="open-positions/open-positions-sub?jobId=MSSJ3046" target="_blank" class="button button-rounded button-large nott ls0">Apply Now</a>
+    </div>
 
-    <section class="job-card">
-      <div>Open Positions</div>
-      <h1>NAVISION 2009 Consultant</h1>
-      <h4>July 16th, 2026 Miracle Heights, India</h4>
-      <a href="https://careers.miraclesoft.com/open-positions/open-positions-sub?jobId=MSSJ3036">Apply Now</a>
-    </section>
+    <div class="oc-item">
+      <div class="tagcloud clearfix bottommargin">
+        <a class="tag-badge">Open Positions</a>
+      </div>
+      <h1 class="text-white mb-3">Microsoft Dynamics 365 (D365) Technical Consultant</h1>
+      <h4 class="text-white"><i class="icon-calendar-alt"></i> August 3rd, 2026 &nbsp; <i class="icon-location"></i> Miracle Heights, India</h4>
+      <a href="open-positions/open-positions-sub?jobId=MSSJ3045" target="_blank" class="button button-rounded button-large nott ls0">Apply Now</a>
+    </div>
 
-    <section class="job-card">
-      <div>Open Positions</div>
-      <h1>Unily/SharePoint Developer</h1>
-      <h4>July 16th, 2026 Miracle Heights, India</h4>
-      <a href="https://careers.miraclesoft.com/open-positions/open-positions-sub?jobId=MSSJ3035">Apply Now</a>
-    </section>
+    <div class="oc-item">
+      <div class="tagcloud clearfix bottommargin">
+        <a class="tag-badge">Open Positions</a>
+      </div>
+      <h1 class="text-white mb-3">SAP FI/ABAP Support Consultant</h1>
+      <h4 class="text-white"><i class="icon-calendar-alt"></i> August 3rd, 2026 &nbsp; <i class="icon-location"></i> Miracle Heights, India</h4>
+      <a href="open-positions/open-positions-sub?jobId=MSSJ3044" target="_blank" class="button button-rounded button-large nott ls0">Apply Now</a>
+    </div>
 
-    <section class="job-card">
-      <div>Open Positions</div>
-      <h1>SAP Data Archiving Consultant</h1>
-      <h4>July 10th, 2026 Miracle Heights, India</h4>
-      <a href="https://careers.miraclesoft.com/open-positions/open-positions-sub?jobId=MSSJ3034">Apply Now</a>
-    </section>
-
-    <section class="job-card">
-      <div>Open Positions</div>
-      <h1>Android Developer</h1>
-      <h4>July 10th, 2026 Miracle Heights, India</h4>
-      <a href="https://careers.miraclesoft.com/open-positions/open-positions-sub?jobId=MSSJ3033">Apply Now</a>
-    </section>
+    <div class="oc-item">
+      <div class="tagcloud clearfix bottommargin">
+        <a class="tag-badge">Open Positions</a>
+      </div>
+      <h1 class="text-white mb-3">SQL/UKG Developer</h1>
+      <h4 class="text-white"><i class="icon-calendar-alt"></i> August 3rd, 2026 &nbsp; <i class="icon-location"></i> Miracle Heights, India</h4>
+      <a href="open-positions/open-positions-sub?jobId=MSSJ3043" target="_blank" class="button button-rounded button-large nott ls0">Apply Now</a>
+    </div>
   </body>
 </html>
 `
@@ -238,6 +422,12 @@ test('Quale Infotech sentinel validates the verified homepage, about, and contac
   assert.equal(quale.hasOfficialAboutSignal(qualeAboutHtml), true)
   assert.equal(quale.hasOfficialContactSignal(qualeContactHtml), true)
   assert.equal(quale.hasPublicCareersSignal(qualeHomepageHtml), false)
+  assert.equal(
+    quale.hasPublicCareersSignal(`
+      <html><body><a href="https://qualeinfotech.com/careers/">Careers</a></body></html>
+    `),
+    true,
+  )
 
   const jobs = await quale.createQualeInfotechScraper().run({
     fetchText: async (url) => {
@@ -269,36 +459,161 @@ test('Capital Numbers Infotech sentinel validates the email-resume-only careers 
   assert.deepEqual(jobs, [])
 })
 
-test('In Time Tec Visionsoft sentinel validates the first-party careers page and returns [] while the India board is blocked', async () => {
+test('In Time Tec Visionsoft extracts India jobs from the verified public zwayam board', async () => {
   const inTimeTec = await loadModule('../../scraper/intimetecvisionsoft/script.js')
+  const jsonRequests = []
 
   assert.equal(inTimeTec.hasOfficialCareersSignal(inTimeTecCareersHtml), true)
-  assert.equal(
-    inTimeTec.isBlockedBoardPage({
-      status: 403,
-      url: inTimeTec.INDIA_JOBS_URL,
-      html: '<html><body><h1>403 Forbidden</h1><p>Request forbidden by administrative rules.</p></body></html>',
+  assert.equal(inTimeTec.hasOfficialIndiaJobsSignal(inTimeTecJobsHtml), true)
+  assert.deepEqual(inTimeTec.buildSearchPayload(), {
+    filterCri: JSON.stringify({
+      paginationStartNo: 0,
+      selectedCall: 'sort',
+      sortCriteria: {
+        name: 'modifiedDate',
+        isAscending: false,
+      },
+      anyOfTheseWords: '',
     }),
-    true,
-  )
+    domain: 'careers.intimetec.in',
+    companyId: 'MTUxOTQ=',
+  })
+  assert.deepEqual(inTimeTec.extractPaginationSummary(inTimeTecSearchPayloadPage1), {
+    hasNext: true,
+    pageSize: 2,
+    nextOffset: 2,
+    totalCount: 3,
+  })
 
   const jobs = await inTimeTec.createInTimeTecVisionsoftScraper().run({
-    fetchPage: async (url) => {
-      if (url === inTimeTec.CAREERS_URL) {
-        return { status: 200, url, html: inTimeTecCareersHtml }
-      }
-      if (url === inTimeTec.INDIA_JOBS_URL) {
-        return {
-          status: 403,
-          url,
-          html: '<html><body><h1>403 Forbidden</h1><p>Request forbidden by administrative rules.</p></body></html>',
-        }
-      }
+    fetchText: async (url) => {
+      if (url === inTimeTec.CAREERS_URL) return inTimeTecCareersHtml
+      if (url === inTimeTec.INDIA_JOBS_URL) return inTimeTecJobsHtml
       throw new Error(`Unexpected In Time Tec URL: ${url}`)
+    },
+    fetchJson: async (url, options = {}) => {
+      jsonRequests.push({ url, options })
+
+      if (url === inTimeTec.SEARCH_API_URL) {
+        const payload = JSON.parse(options.form.filterCri)
+        return payload.paginationStartNo === 0
+          ? inTimeTecSearchPayloadPage1
+          : inTimeTecSearchPayloadPage2
+      }
+
+      if (url === inTimeTec.DETAIL_API_URL) {
+        if (options.json.jobUrl === 'senior-ai-engineer-vlm') return inTimeTecSeniorAiDetailPayload
+        if (options.json.jobUrl === 'linux-administrator') return inTimeTecLinuxAdminDetailPayload
+      }
+
+      throw new Error(`Unexpected In Time Tec JSON URL: ${url}`)
     },
   })
 
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(jsonRequests, [
+    {
+      url: 'https://public.zwayam.com/jobs/search',
+      options: {
+        method: 'POST',
+        form: {
+          filterCri: JSON.stringify({
+            paginationStartNo: 0,
+            selectedCall: 'sort',
+            sortCriteria: {
+              name: 'modifiedDate',
+              isAscending: false,
+            },
+            anyOfTheseWords: '',
+          }),
+          domain: 'careers.intimetec.in',
+          companyId: 'MTUxOTQ=',
+        },
+      },
+    },
+    {
+      url: 'https://public.zwayam.com/jobs-service/v1/jobs/careersite',
+      options: {
+        method: 'POST',
+        json: {
+          jobUrl: 'senior-ai-engineer-vlm',
+          externalSource: 'CareerSite',
+          campusUrl: 'empty',
+          companyId: '15194',
+        },
+      },
+    },
+    {
+      url: 'https://public.zwayam.com/jobs/search',
+      options: {
+        method: 'POST',
+        form: {
+          filterCri: JSON.stringify({
+            paginationStartNo: 2,
+            selectedCall: 'sort',
+            sortCriteria: {
+              name: 'modifiedDate',
+              isAscending: false,
+            },
+            anyOfTheseWords: '',
+          }),
+          domain: 'careers.intimetec.in',
+          companyId: 'MTUxOTQ=',
+        },
+      },
+    },
+    {
+      url: 'https://public.zwayam.com/jobs-service/v1/jobs/careersite',
+      options: {
+        method: 'POST',
+        json: {
+          jobUrl: 'linux-administrator',
+          externalSource: 'CareerSite',
+          campusUrl: 'empty',
+          companyId: '15194',
+        },
+      },
+    },
+  ])
+
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      city: job.city,
+      state: job.state,
+      country: job.country,
+      jobId: job.jobId,
+      requisitionId: job.requisitionId,
+      minimumQualification: job.minimumQualification,
+      applyUrl: job.applyUrl,
+    })),
+    [
+      {
+        title: 'Linux Administrator',
+        location: 'Bangalore, Karnataka, India',
+        city: 'Bangalore',
+        state: 'Karnataka',
+        country: 'India',
+        jobId: '10528',
+        requisitionId: '10528',
+        minimumQualification: null,
+        applyUrl: 'https://careers.intimetec.in/intimetec/jobview/linux-administrator',
+      },
+      {
+        title: 'Senior AI Engineer - Vision Language Models (VLM)',
+        location: 'Jaipur, Rajasthan, India; Bangalore, Karnataka, India',
+        city: 'Jaipur',
+        state: 'Rajasthan',
+        country: 'India',
+        jobId: '10526',
+        requisitionId: '10526',
+        minimumQualification: 'B.Tech / M.Tech',
+        applyUrl: 'https://careers.intimetec.in/intimetec/jobview/senior-ai-engineer-vlm',
+      },
+    ],
+  )
+  assert.match(jobs[0].jobDescription, /Manage Linux production systems/i)
+  assert.match(jobs[1].jobDescription, /Design multimodal AI systems/i)
 })
 
 test('Miracle Software Systems run returns normalized open positions from the first-party careers page', async () => {
@@ -318,15 +633,15 @@ test('Miracle Software Systems run returns normalized open positions from the fi
 
   assert.equal(jobs.length, 4)
   assert.deepEqual(jobs.map((job) => job.title), [
-    'Android Developer',
-    'NAVISION 2009 Consultant',
-    'SAP Data Archiving Consultant',
-    'Unily/SharePoint Developer',
+    'Microsoft Dynamics 365 (D365) Technical Consultant',
+    'SAP FI/ABAP Support Consultant',
+    'ServiceNow ITSM Architect',
+    'SQL/UKG Developer',
   ])
   assert.equal(
     jobs[0].applyUrl,
-    'https://careers.miraclesoft.com/open-positions/open-positions-sub?jobId=MSSJ3033',
+    'https://careers.miraclesoft.com/open-positions/open-positions-sub?jobId=MSSJ3045',
   )
-  assert.equal(jobs[1].postingDate, '2026-07-16')
+  assert.equal(jobs[1].postingDate, '2026-08-03')
   assert.equal(jobs[3].location, 'Miracle Heights, India')
 })

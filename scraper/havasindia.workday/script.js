@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -20,6 +21,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_INDIA_COUNTRY_FACET_ID = PROVIDER_METADATA.verifiedIndiaCountryFacetId
 
 const PAGE_SIZE = 20
+const DETAIL_FETCH_CONCURRENCY = 4
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -80,6 +82,35 @@ const defaultFetchPage = async (url) => {
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let firstError = null
+
+  const worker = async () => {
+    while (!firstError) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+
+      if (currentIndex >= items.length) return
+      try {
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  )
+
+  if (firstError) throw firstError
+  return results
+}
 
 const extractJobId = (posting = {}) => {
   const requisitionId = Array.isArray(posting?.bulletFields)
@@ -380,7 +411,40 @@ export const createHavasIndiaScraper = ({
         }
       }
 
-      return jobs
+      return mapWithConcurrency(
+        jobs,
+        DETAIL_FETCH_CONCURRENCY,
+        async (job) => {
+          try {
+            const detailPage = await fetchPage(job.link)
+            if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+              return job
+            }
+
+            const detail = await extractJobDetail({
+              provider: 'workday',
+              html: detailPage.html,
+            })
+
+            return {
+              ...job,
+              department: detail.department || job.department,
+              jobDescription: detail.jobDescription || job.jobDescription,
+              minimumQualification: detail.minimumQualification || job.minimumQualification,
+              preferredQualification: detail.preferredQualification || job.preferredQualification,
+              requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+                ? detail.requiredSkills
+                : job.requiredSkills,
+              experienceRequired: detail.experienceRequired || job.experienceRequired,
+              requisitionId: detail.requisitionId || job.requisitionId,
+              postedAt: detail.postingDate || job.postedAt,
+              postingDate: detail.postingDate || job.postingDate || null,
+            }
+          } catch {
+            return job
+          }
+        },
+      )
     } finally {
       if (browserContext) {
         await browserContext.close()

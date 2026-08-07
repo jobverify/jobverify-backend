@@ -89,7 +89,7 @@ const hasEmptyJobsShell = (html = '') => {
   const location = extractLocationConfig(rawHtml)
 
   return location.country === 'India'
-    && location.city === 'Chennai'
+    && Boolean(location.city)
     && /No jobs available\./i.test(normalized)
     && /Search all jobs:/i.test(normalized)
     && /id=["']job-search["']/i.test(rawHtml)

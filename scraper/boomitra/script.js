@@ -7,7 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'boomitra'
 export const COMPANY = 'Boomitra'
-export const VERIFIED_ON = '2026-07-26'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://boomitra.com/careers/'
 export const ROLE_URL = 'https://boomitra.com/wp-content/uploads/2025/04/Full-Stack-Developer.pdf'
 
@@ -15,7 +15,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/&#(d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&nbsp;|&#160;/gi, ' ')
   .replace(/&amp;/gi, '&')
@@ -37,9 +37,11 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   const page = String(html)
   const normalized = normalizeWhitespace(page)
 
-  return /<title[^>]*>[^<]*(?:careers[^<]*boomitra|boomitra[^<]*careers)[^<]*<\/title>/i.test(page)
+  return /<title[^>]*>[^<]*(?:careers[^<]*boomitra|boomitra[^<]*careers|boomitra)[^<]*<\/title>/i.test(page)
     && /<link[^>]+(?:rel=["']canonical["'][^>]+href=["']https:\/\/boomitra\.com\/careers\/["']|href=["']https:\/\/boomitra\.com\/careers\/["'][^>]+rel=["']canonical["'])/i.test(page)
     && /careers at boomitra/i.test(normalized)
+    && /see job openings/i.test(normalized)
+    && /explore our open roles/i.test(normalized)
     && /full stack developer/i.test(normalized)
     && /bangalore,?\s*india/i.test(normalized)
     && /careers@boomitra\.com/i.test(normalized)

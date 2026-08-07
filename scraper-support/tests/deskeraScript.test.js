@@ -42,14 +42,43 @@ const LINKEDIN_COMPANY_HTML = `
 </html>
 `
 
-const BROKEN_LINKEDIN_JOBS_HTML = `
+const GENERIC_LINKEDIN_JOBS_SEARCH_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>404 Not Found</title>
+    <title>0 Deskera jobs in United States</title>
+    <meta name="pageKey" content="d_jobs_guest_search">
+    <meta name="linkedin:pageTag" content="urlType=jserp_canonical_other;emptyResult=false">
   </head>
   <body>
-    <h1>This page doesn't exist</h1>
+    <h1>Deskera jobs</h1>
+    <p>Get notified about new Deskera jobs in United States.</p>
+    <article class="base-search-card">
+      <h3 class="base-search-card__title">Commercial Account Manager</h3>
+      <h4 class="base-search-card__subtitle">
+        <a href="https://www.linkedin.com/company/reachdesk/">Reachdesk</a>
+      </h4>
+    </article>
+  </body>
+</html>
+`
+
+const GENERIC_LINKEDIN_JOBS_SEARCH_HTML_WITHOUT_NOTIFY_COPY = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>0 Deskera jobs in United States</title>
+    <meta name="pageKey" content="d_jobs_guest_search">
+    <meta name="linkedin:pageTag" content="urlType=jserp_canonical_other;emptyResult=false">
+  </head>
+  <body>
+    <h1>Deskera jobs</h1>
+    <article class="base-search-card">
+      <h3 class="base-search-card__title">Commercial Account Manager</h3>
+      <h4 class="base-search-card__subtitle">
+        <a href="https://www.linkedin.com/company/reachdesk/">Reachdesk</a>
+      </h4>
+    </article>
   </body>
 </html>
 `
@@ -75,16 +104,24 @@ test('Deskera sentinel constants stay pinned to the verified homepage, LinkedIn 
   assert.equal(deskera.pageExposesFirstPartyJobsSignal(HOMEPAGE_HTML), false)
   assert.equal(deskera.hasVerifiedLinkedInCompanySignal(LINKEDIN_COMPANY_HTML), true)
   assert.equal(
-    deskera.isVerifiedMissingLinkedInJobsPage({
-      status: 404,
+    deskera.isVerifiedGenericLinkedInJobsSearchPage({
+      status: 200,
       url: deskera.LINKEDIN_JOBS_URL,
-      html: BROKEN_LINKEDIN_JOBS_HTML,
+      html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML,
+    }),
+    true,
+  )
+  assert.equal(
+    deskera.isVerifiedGenericLinkedInJobsSearchPage({
+      status: 200,
+      url: deskera.LINKEDIN_JOBS_URL,
+      html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML_WITHOUT_NOTIFY_COPY,
     }),
     true,
   )
 })
 
-test('Deskera sentinel returns [] only while the official homepage still hands off to the verified broken LinkedIn jobs page', async () => {
+test('Deskera sentinel returns [] only while the official homepage still hands off to the verified generic LinkedIn jobs search page', async () => {
   const deskera = await loadDeskeraModule()
   const requestedUrls = []
 
@@ -101,7 +138,7 @@ test('Deskera sentinel returns [] only while the official homepage still hands o
       }
 
       if (url === deskera.LINKEDIN_JOBS_URL) {
-        return { status: 404, url, html: BROKEN_LINKEDIN_JOBS_HTML }
+        return { status: 200, url, html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -126,7 +163,7 @@ test('Deskera sentinel fails closed when the homepage handoff, LinkedIn company 
           return { status: 200, url, html: '<html><body>Unexpected</body></html>' }
         }
 
-        return { status: 404, url, html: BROKEN_LINKEDIN_JOBS_HTML }
+        return { status: 200, url, html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML }
       },
     }),
     /official homepage changed/i,
@@ -146,7 +183,7 @@ test('Deskera sentinel fails closed when the homepage handoff, LinkedIn company 
           }
         }
 
-        return { status: 404, url, html: BROKEN_LINKEDIN_JOBS_HTML }
+        return { status: 200, url, html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML }
       },
     }),
     /careers handoff changed/i,
@@ -159,7 +196,7 @@ test('Deskera sentinel fails closed when the homepage handoff, LinkedIn company 
           return { status: 200, url, html: `${HOMEPAGE_HTML}<a href="/careers/software-engineer">Apply</a>` }
         }
 
-        return { status: 404, url, html: BROKEN_LINKEDIN_JOBS_HTML }
+        return { status: 200, url, html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML }
       },
     }),
     /first-party public jobs surface/i,
@@ -176,7 +213,7 @@ test('Deskera sentinel fails closed when the homepage handoff, LinkedIn company 
           return { status: 200, url, html: '<html><body>LinkedIn</body></html>' }
         }
 
-        return { status: 404, url, html: BROKEN_LINKEDIN_JOBS_HTML }
+        return { status: 200, url, html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML }
       },
     }),
     /LinkedIn company page changed/i,
@@ -193,7 +230,11 @@ test('Deskera sentinel fails closed when the homepage handoff, LinkedIn company 
           return { status: 200, url, html: LINKEDIN_COMPANY_HTML }
         }
 
-        return { status: 200, url, html: '<html><body>Open jobs</body></html>' }
+        return {
+          status: 200,
+          url,
+          html: GENERIC_LINKEDIN_JOBS_SEARCH_HTML.replace('Reachdesk', 'Deskera'),
+        }
       },
     }),
     /LinkedIn jobs route no longer matches/i,

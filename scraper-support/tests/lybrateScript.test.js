@@ -54,7 +54,7 @@ test('Lybrate sentinel pins the verified stale first-party jobs shell and dead e
 
   assert.equal(lybrate.SOURCE, 'lybrate')
   assert.equal(lybrate.COMPANY_NAME, 'Lybrate')
-  assert.equal(lybrate.VERIFIED_ON, '2026-07-16')
+  assert.equal(lybrate.VERIFIED_ON, '2026-08-03')
   assert.equal(lybrate.HOMEPAGE_URL, 'https://www.lybrate.com/')
   assert.equal(lybrate.JOBS_PAGE_URL, 'https://www.lybrate.com/jobs')
   assert.equal(lybrate.ABOUT_PAGE_URL, 'https://www.lybrate.com/about')
@@ -109,6 +109,29 @@ test('Lybrate sentinel returns [] only while the first-party jobs shell still po
   ])
   assert.deepEqual(requestedJsonUrls, [lybrate.JOBS_API_URL])
   assert.deepEqual(jobs, [])
+})
+
+test('Lybrate sentinel accepts the documented HTTP 404 API payload as an authoritative zero result', async () => {
+  const lybrate = await loadLybrateModule()
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response(JSON.stringify(deadEmbeddedApiResponse), {
+    status: 404,
+    headers: { 'content-type': 'application/json' },
+  })
+
+  try {
+    const jobs = await lybrate.createLybrateScraper().run({
+      fetchText: async (url) => {
+        if (url === lybrate.JOBS_PAGE_URL) return officialJobsHtml
+        if (url === lybrate.ABOUT_PAGE_URL) return officialAboutHtml
+        throw new Error(`Unexpected text URL: ${url}`)
+      },
+    })
+
+    assert.deepEqual(jobs, [])
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('Lybrate sentinel fails closed when the first-party jobs shell or embedded API changes materially', async () => {

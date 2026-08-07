@@ -36,7 +36,7 @@ const lifeAtPickrrHtml = `
       name="description"
       content="Pickrr believes that each one of us should be able to find our dream career. Join us and become a part of Pickrr's growth story. Send us your resume today!"
     />
-    <link rel="canonical" href="https://www.pickrr.com/life-at-pickrr/" />
+    <link rel="canonical" href="https://pickrr.com/life-at-pickrr/" />
   </head>
   <body>
     <main>
@@ -125,7 +125,7 @@ test('Pickrr sentinel pins the verified homepage, sitemap, life-at-pickrr page, 
   assert.equal(pickrr.SOURCE, 'pickrr')
   assert.equal(pickrr.COMPANY, 'Pickrr')
   assert.equal(pickrr.OFFICIAL_BRAND_NAME, 'Pickrr')
-  assert.equal(pickrr.VERIFIED_ON, '2026-07-17')
+  assert.equal(pickrr.VERIFIED_ON, '2026-08-04')
   assert.equal(pickrr.HOMEPAGE_URL, 'https://pickrr.com/')
   assert.equal(pickrr.CAREERS_LANDING_URL, 'https://pickrr.com/life-at-pickrr/')
   assert.equal(pickrr.SITEMAP_URL, 'https://pickrr.com/sitemap.xml')

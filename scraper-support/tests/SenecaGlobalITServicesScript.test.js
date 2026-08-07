@@ -73,7 +73,7 @@ test('Seneca Global IT Services helpers stay pinned to the verified India career
     seneca.CAREERS_URL,
     'https://www.senecaglobal.com/careers/india-careers/',
   )
-  assert.equal(seneca.VERIFIED_ON, '2026-07-17')
+  assert.equal(seneca.VERIFIED_ON, '2026-08-04')
   assert.equal(seneca.hasOfficialCareersSignal(careersPageHtml), true)
   assert.deepEqual(seneca.extractJobCards(careersPageHtml), [
     {
@@ -114,6 +114,7 @@ test('Seneca Global IT Services helpers stay pinned to the verified India career
       closingDate: null,
       jobDescription:
         'Own QA strategy, planning, execution, reporting, and process improvement across multiple products and release cycles.',
+      publicExperienceChecked: true,
       requisitionId: 'senior-qa-lead',
       source: 'senecaglobalitservices',
       link: 'https://www.senecaglobal.com/india-careers/senior-qa-lead/',
@@ -169,6 +170,7 @@ test('Seneca Global IT Services run validates the verified India careers page an
       closingDate: null,
       jobDescription:
         'Own QA strategy, planning, execution, reporting, and process improvement across multiple products and release cycles.',
+      publicExperienceChecked: true,
       requisitionId: 'senior-qa-lead',
       source: 'senecaglobalitservices',
       link: 'https://www.senecaglobal.com/india-careers/senior-qa-lead/',
@@ -196,6 +198,7 @@ test('Seneca Global IT Services run validates the verified India careers page an
       closingDate: null,
       jobDescription:
         'Manage day-to-day publishing in AEM, translations, approvals, and publishing across global geo and localization sites.',
+      publicExperienceChecked: true,
       requisitionId: 'senior-web-publisher',
       source: 'senecaglobalitservices',
       link: 'https://www.senecaglobal.com/india-careers/senior-web-publisher/',
@@ -205,6 +208,7 @@ test('Seneca Global IT Services run validates the verified India careers page an
       atsPlatform: 'official-company-careers',
     },
   ])
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('Seneca Global IT Services fails closed when the verified India careers list or detail pages drift materially', async () => {

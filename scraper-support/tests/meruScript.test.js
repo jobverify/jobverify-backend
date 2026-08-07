@@ -49,7 +49,10 @@ const officialLeverBoardHtml = `
     <a href="https://jobs.lever.co/wearemeru/accounting-manager">Accounting Manager</a>
     <a href="https://jobs.lever.co/wearemeru/executive-assistant">Executive Assistant/Office Coordinator</a>
     <a href="https://jobs.lever.co/wearemeru/analytics-engineer">Analytics Engineer, Data Insights</a>
-    <p>Jobs powered by Lever</p>
+    <a href="https://www.lever.co/job-seeker-support/" class="image-link">
+      <span>Jobs powered by </span>
+      <img alt="Lever logo" src="/img/lever-logo-full.svg" />
+    </a>
   </body>
 </html>
 `

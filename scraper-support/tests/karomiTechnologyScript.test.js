@@ -60,6 +60,7 @@ test('extractIndiaJobs keeps only India listings from the Karomi public jobs fee
       postingDate: null,
       closingDate: null,
       jobDescription: "Configure and implement the product in line with client requirements, while planning and managing project timelines and deliverables.",
+      publicExperienceChecked: true,
       remoteStatus: 'On-site',
     },
     {
@@ -82,6 +83,7 @@ test('extractIndiaJobs keeps only India listings from the Karomi public jobs fee
       postingDate: null,
       closingDate: null,
       jobDescription: 'The Sales Head – CPG (India) will drive revenue growth and customer acquisition within the Consumer-Packaged Goods segment for ManageArtworks’ SaaS solutions.',
+      publicExperienceChecked: true,
       remoteStatus: 'On-site',
     },
   ])
@@ -118,6 +120,7 @@ test('run validates the Karomi homepage and portal before fetching and decoratin
     jobs[0].link,
     'https://karomi.zohorecruit.in/jobs/Careers/68103000004873051/Team-Lead---Implementation?source=CareerSite',
   )
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
 })
 

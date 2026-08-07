@@ -124,12 +124,19 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 export const hasOfficialCareersLandingSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Contact Center Careers - Five9 Career - SaaS Jobs \| Five9\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*Contact Center Careers - Five9 Career - SaaS Jobs \| Five9\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.five9\.com\/about\/careers["']/i.test(page)
     && /Five9 Careers:\s*Reimagine Where You Work/i.test(page)
     && /Employees Are the Secret to Our Success/i.test(page)
     && /Apply today!/i.test(page)
     && /href=["']\/about\/careers\/jobs["']/i.test(page)
+  ) || (
+    /<title>\s*Contact Center Careers - Five9 Career - SaaS Jobs \| Five9\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.five9\.com\/about\/careers["']/i.test(page)
+    && /Five9 Careers/i.test(page)
+    && /href=["']\/about\/careers\/jobs["']/i.test(page)
+  )
 }
 
 export const hasOfficialJobsPageSignal = (html = '') => {

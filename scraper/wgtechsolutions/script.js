@@ -1,3 +1,8 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'wgtechsolutions'
 export const COMPANY = 'WG Tech Solutions'
 export const HOMEPAGE_URL = 'https://www.wgtechsolutions.com/'
@@ -94,8 +99,8 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('WGTech AI in Action: Transforming Industries')
     && normalized.includes('WG Tech Solutions Pvt Ltd')
     && normalized.includes('support@wgtech.ai')
-    && /href=["']\/about-us["']/i.test(page)
-    && /href=["']\/contact-us["']/i.test(page)
+    && /href=["'](?:https:\/\/www\.wgtechsolutions\.com)?\/about-us["']/i.test(page)
+    && /href=["'](?:https:\/\/www\.wgtechsolutions\.com)?\/contact-us["']/i.test(page)
 }
 
 export const hasOfficialAboutSignal = (html) => {
@@ -157,3 +162,15 @@ export const createWgTechSolutionsScraper = () => ({
 })
 
 export const run = async (options = {}) => createWgTechSolutionsScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

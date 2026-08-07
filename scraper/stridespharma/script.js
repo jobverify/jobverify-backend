@@ -96,7 +96,8 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 
   return /<title>\s*Careers\s*\|\s*Join the Strides Team\s*<\/title>/i.test(page)
     && normalized?.includes('Join Us and Grow with Strides')
-    && /<a[^>]+href=["']https:\/\/portal\.arcolab\.com\/careerportal\/["'][^>]*>\s*View current openings\s*<\/a>/i.test(page)
+    && /href=["']https:\/\/portal\.arcolab\.com\/careerportal\/["']/i.test(page)
+    && normalized?.includes('View current openings')
 }
 
 export const hasOfficialPortalSignal = (html = '') => {
@@ -106,8 +107,8 @@ export const hasOfficialPortalSignal = (html = '') => {
   return (
     /<title>\s*Career Portal\s*<\/title>/i.test(page)
     && normalized?.includes('Build your future with Us')
-    && normalized?.includes('Welcome to the Careers Centre for strides.')
-    && /Strides Pharma Science Limited\s*\(Formerly Strides Shasun Limited\)/i.test(page)
+    && /Welcome to the Careers Centre for strides\s*\./i.test(normalized || '')
+    && /Strides Pharma Science Limited\b/i.test(page)
     && /company\s*:\s*"Strides"/i.test(page)
     && (/ServiceHandler\.svc/i.test(page) || /js\/Communicator\.js/i.test(page))
   )

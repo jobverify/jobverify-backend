@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that https://www.splashlearn.com/careers is the live official SplashLearn careers page, that it presents SplashLearn overview, culture, founder, and support contact content including help@splashlearn.com, and that the accessible first-party page content still ends with StudyPad, Inc. trademark language. There is no trustworthy public jobs surface for the exact-name SplashLearn row right now because the accessible first-party careers page did not expose a trustworthy public jobs board or job-detail route on the verified date, so this provider fails closed and returns no jobs until SplashLearn publishes a stable verifiable jobs surface.'
+  'Verified on Tuesday, August 4, 2026 that https://www.splashlearn.com/careers is still the live official SplashLearn careers page, that the accessible first-party page now carries the Careers at SplashLearn title plus culture and founders sections including Arpit Jain and the StudyPad, Inc. trademark footer, and that there is still no trustworthy public jobs surface for the exact-name SplashLearn row because the accessible first-party surface does not enumerate a trustworthy public jobs board or job-detail route.'
 
 export const SPLASHLEARN_CATALOG = {
   source: 'splashlearn',
@@ -20,7 +20,7 @@ export const SPLASHLEARN_CATALOG = {
   extractionStrategy: 'verified-official-careers-page+no-public-jobs-signal+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'splashlearn/jobs.json',
   modulePath: path.join(currentDir, 'script.js'),

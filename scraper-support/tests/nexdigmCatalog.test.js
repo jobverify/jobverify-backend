@@ -19,7 +19,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Nexdigm local catalog captures the verified current-openings page, detail route, and apply handoff', async () => {
+test('Nexdigm local catalog captures the verified August 3, 2026 careers shell and broken current-openings contract', async () => {
   const {
     NEXDIGM_CATALOG,
     default: defaultCatalog,
@@ -37,26 +37,23 @@ test('Nexdigm local catalog captures the verified current-openings page, detail 
     NEXDIGM_CATALOG.officialCurrentOpeningsUrl,
     'https://www.nexdigm.com/careers/current-openings/',
   )
-  assert.equal(
-    NEXDIGM_CATALOG.officialCareerDetailsBaseUrl,
-    'https://www.nexdigm.com/careers/career-details/',
-  )
-  assert.equal(NEXDIGM_CATALOG.officialApplyHost, 'https://gene.darwinbox.in/')
+  assert.equal(NEXDIGM_CATALOG.officialCurrentOpeningsDataUrl, 'https://www.nexdigm.com/joblist.php')
+  assert.equal(NEXDIGM_CATALOG.reviewedUpstreamErrorValue, 'error code: 502')
   assert.equal(NEXDIGM_CATALOG.companyDomain, 'nexdigm.com')
   assert.equal(NEXDIGM_CATALOG.atsPlatform, 'official-company-careers')
   assert.equal(NEXDIGM_CATALOG.countryFilter, 'India')
   assert.equal(
     NEXDIGM_CATALOG.paginationStrategy,
-    'single-first-party-current-openings-page-plus-detail-pages',
+    'verified-first-party-careers-page-plus-current-openings-shell-with-upstream-error-no-public-job-inventory',
   )
   assert.equal(
     NEXDIGM_CATALOG.extractionStrategy,
-    'verified-careers-page+verified-current-openings-page+html-listings+first-party-detail-pages+darwinbox-apply-link',
+    'verified-careers-page+verified-current-openings-shell+fail-closed-no-jobs',
   )
   assert.equal(NEXDIGM_CATALOG.parser, 'custom-script')
   assert.equal(NEXDIGM_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(NEXDIGM_CATALOG.dryRunFile, 'nexdigm/jobs.json')
-  assert.equal(NEXDIGM_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(NEXDIGM_CATALOG.verifiedOn, '2026-08-03')
   assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.nexdigm\.com\/careers\//i)
   assert.match(
     NEXDIGM_CATALOG.verifiedSurfaceSummary,
@@ -64,16 +61,16 @@ test('Nexdigm local catalog captures the verified current-openings page, detail 
   )
   assert.match(
     NEXDIGM_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/www\.nexdigm\.com\/careers\/career-details\//i,
+    /https:\/\/www\.nexdigm\.com\/joblist\.php/i,
   )
-  assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /gene\.darwinbox\.in/i)
+  assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /error code:\s*502/i)
   assert.match(NEXDIGM_CATALOG.modulePath, /nexdigm[\\/]script\.js$/i)
 
   assert.equal(nexdigm.PROVIDER_METADATA.source, NEXDIGM_CATALOG.source)
   assert.equal(nexdigm.PROVIDER_METADATA.companyName, NEXDIGM_CATALOG.companyName)
   assert.equal(
-    nexdigm.PROVIDER_METADATA.officialCurrentOpeningsUrl,
-    NEXDIGM_CATALOG.officialCurrentOpeningsUrl,
+    nexdigm.PROVIDER_METADATA.officialCurrentOpeningsDataUrl,
+    NEXDIGM_CATALOG.officialCurrentOpeningsDataUrl,
   )
 })
 

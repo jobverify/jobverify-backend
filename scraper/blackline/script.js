@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import {
   fetchWorkdayJobsApiPage,
 } from '../../scraper-support/myworkday/engine.js'
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 import BLACKLINE_CATALOG from './catalog.js'
@@ -11,6 +12,8 @@ import BLACKLINE_CATALOG from './catalog.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const PAGE_SIZE = 20
 const STABLE_JOB_ID_PATTERN = /^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$/
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = BLACKLINE_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -34,6 +37,42 @@ const normalizeWhitespace = (value) => {
     .trim()
 
   return normalized || null
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+const mapWithConcurrency = async (items, limit, iteratee) => {
+  const concurrency = Math.max(1, Number.isInteger(limit) ? limit : 1)
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  )
+
+  return results
 }
 
 const normalizeIndiaCityDescriptor = (value) => {
@@ -291,7 +330,10 @@ export const createBlackLineScraper = ({
   }
 
   return {
-    async run({ fetchJobsPage = fetchWorkdayJobsApiPage } = {}) {
+    async run({
+      fetchJobsPage = fetchWorkdayJobsApiPage,
+      fetchPage = defaultFetchPage,
+    } = {}) {
     const facetPayload = await fetchJobsPage(buildJobsPageRequest({ limit: pageSize }))
     requireJobPostingsArray(facetPayload)
     const locationFacetIds = extractIndiaLocationFacetIds(facetPayload)
@@ -358,7 +400,41 @@ export const createBlackLineScraper = ({
       }
     }
 
-    return jobs.sort((left, right) => (
+    const enrichedJobs = await mapWithConcurrency(
+      jobs,
+      6,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.sourceUrl)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailPage.html,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            requisitionId: detail.requisitionId || job.requisitionId,
+            postingDate: detail.postingDate || job.postingDate,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
+
+    return enrichedJobs.sort((left, right) => (
       left.title.localeCompare(right.title) || left.jobId.localeCompare(right.jobId)
     ))
     },

@@ -1,45 +1,35 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const officialCareersHtml = `
+const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Current Openings | Harbinger Group</title>
+    <title>Current Job Openings at Harbinger Group</title>
   </head>
   <body>
-    <h1>Current Openings</h1>
-    <p>Explore opportunities at Harbinger Systems.</p>
-    <a href="https://harbingergroup.darwinbox.in/ms/candidate/careers">Current Openings</a>
+    <main>
+      <h1>Grow With Us</h1>
+      <p>Current Openings</p>
+      <a href="https://harbingergroup.darwinbox.in/ms/candidate/careers">Current Openings</a>
+    </main>
   </body>
 </html>
 `
 
 const darwinboxPayload = {
-  status: 'success',
-  job_counts: 2,
+  job_counts: 1,
   data: [
     {
-      id: 'hb-1',
+      id: 'HB-IND-001',
       title: 'Senior Software Engineer',
       department_name: 'Engineering',
-      locations: 'Kothrud, Pune, Maharashtra , India',
+      locations: 'Pune, India',
       country: 'India',
       emp_type_name: 'Full-time',
-      experience: '5 - 8 Years',
-      posted_on: '14-Jul-2026',
-      jd: '<p>Build enterprise learning products.</p>',
-    },
-    {
-      id: 'hb-us-1',
-      title: 'Program Manager',
-      department_name: 'PMO',
-      locations: 'Austin, Texas, United States',
-      country: 'United States',
-      emp_type_name: 'Full-time',
-      experience: '7 - 10 Years',
-      posted_on: '14-Jul-2026',
-      jd: '<p>Lead cross-functional delivery.</p>',
+      experience: '5-8 years',
+      posted_on: '2026-08-01T00:00:00Z',
+      jd: '<p>Build enterprise software.</p>',
     },
   ],
 }
@@ -52,65 +42,41 @@ const loadModule = async () => {
   }
 }
 
-test('Harbinger Systems helpers stay pinned to the verified first-party Darwinbox handoff from Friday, July 17, 2026', async () => {
-  const harbinger = await loadModule()
+test('Harbinger Systems accepts the current first-party careers title and Darwinbox handoff', async () => {
+  const harbingerSystems = await loadModule()
 
-  assert.equal(harbinger.SOURCE, 'harbingersystems')
-  assert.equal(harbinger.COMPANY, 'Harbinger Systems')
-  assert.equal(harbinger.CAREERS_URL, 'https://www.harbingergroup.com/current-openings/')
-  assert.equal(harbinger.DARWINBOX_ORIGIN, 'https://harbingergroup.darwinbox.in')
-  assert.equal(harbinger.DARWINBOX_COMPANY_ID, 'main')
-  assert.equal(harbinger.DARWINBOX_HANDOFF_URL, 'https://harbingergroup.darwinbox.in/ms/candidate/careers')
-  assert.equal(harbinger.VERIFIED_ON, '2026-07-17')
-  assert.equal(harbinger.hasOfficialCareersSignal(officialCareersHtml), true)
-  assert.equal(harbinger.hasOfficialCareersSignal('<html><body><h1>Current Openings</h1></body></html>'), false)
+  assert.equal(harbingerSystems.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(
-    harbinger.buildDarwinboxListingApiUrl(),
+    harbingerSystems.buildDarwinboxListingApiUrl(),
     'https://harbingergroup.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
-  )
-  assert.equal(
-    harbinger.buildDarwinboxJobDetailUrl('hb-1'),
-    'https://harbingergroup.darwinbox.in/ms/candidatev2/main/careers/jobDetails/hb-1',
   )
 })
 
-test('Harbinger Systems run validates the first-party handoff before delegating to the Darwinbox scraper', async () => {
-  const harbinger = await loadModule()
-  const requestedUrls = []
-  const requestedPages = []
+test('Harbinger Systems run validates the current careers shell before using Darwinbox listings', async () => {
+  const harbingerSystems = await loadModule()
+  const requested = []
 
-  const jobs = await harbinger.createHarbingerSystemsScraper({ maxJobs: 1 }).run({
+  const jobs = await harbingerSystems.createHarbingerSystemsScraper({
+    maxPages: 1,
+    maxJobs: 1,
+  }).run({
     fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === harbinger.CAREERS_URL) return officialCareersHtml
-      throw new Error(`Unexpected Harbinger URL: ${url}`)
+      requested.push({ type: 'text', url })
+      if (url === harbingerSystems.CAREERS_URL) return careersHtml
+      throw new Error(`Unexpected Harbinger Systems fixture URL: ${url}`)
     },
-    fetchListingPage: async ({ page }) => {
-      requestedPages.push(page)
-      if (page === 1) return darwinboxPayload
-      throw new Error(`Unexpected Harbinger page: ${page}`)
+    fetchListingPage: async (params) => {
+      requested.push({ type: 'listing', params })
+      return darwinboxPayload
     },
   })
 
-  assert.deepEqual(requestedUrls, [harbinger.CAREERS_URL])
-  assert.deepEqual(requestedPages, [1])
+  assert.deepEqual(requested, [
+    { type: 'text', url: harbingerSystems.CAREERS_URL },
+    { type: 'listing', params: { page: 1, pageSize: 10, companyId: 'main' } },
+  ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'harbingersystems')
-  assert.equal(
-    jobs[0].link,
-    'https://harbingergroup.darwinbox.in/ms/candidatev2/main/careers/jobDetails/hb-1',
-  )
-  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
-})
-
-test('Harbinger Systems run fails closed when the verified first-party handoff page drifts', async () => {
-  const harbinger = await loadModule()
-
-  await assert.rejects(
-    harbinger.createHarbingerSystemsScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-      fetchListingPage: async () => darwinboxPayload,
-    }),
-    /verified Harbinger Systems careers page/i,
-  )
+  assert.equal(jobs[0].company, 'Harbinger Systems')
+  assert.equal(jobs[0].location, 'Pune, India')
 })

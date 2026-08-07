@@ -22,6 +22,23 @@ const loadMMRFICModule = async () => {
 
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedCareersHtml = readFixture('careers.html')
+const currentCareersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Careers &#8211; MMRFIC</title>
+    </head>
+    <body>
+      <main>
+        <h1>Careers</h1>
+        <p>At MMRFIC, we don't just manufacture precision components - we build careers that thrive on purpose, innovation, and integrity.</p>
+        <p>If you're driven by curiosity, like to be a part of a collaborative team, and seek opportunities to grow and make an impact - we invite you to explore a future with us.</p>
+        <p>We're looking for passionate individuals to join us on this journey.</p>
+        <p>At the heart of MMRFIC lies a vibrant and progressive culture built on values that power our growth and define our success.</p>
+      </main>
+    </body>
+  </html>
+`
 
 test('MMRFIC recognizes the verified homepage and careers surface', async () => {
   const mmrfic = await loadMMRFICModule()
@@ -34,6 +51,13 @@ test('MMRFIC recognizes the verified homepage and careers surface', async () => 
   assert.equal(mmrfic.hasOfficialCareersSignal(verifiedCareersHtml), true)
   assert.equal(mmrfic.hasPublicJobsSignal(verifiedHomepageHtml), false)
   assert.equal(mmrfic.hasPublicJobsSignal(verifiedCareersHtml), false)
+})
+
+test('MMRFIC accepts the current first-party careers copy and title', async () => {
+  const mmrfic = await loadMMRFICModule()
+
+  assert.equal(mmrfic.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.equal(mmrfic.hasPublicJobsSignal(currentCareersHtml), false)
 })
 
 test('MMRFIC returns no jobs while the verified homepage and careers page stay unchanged', async () => {

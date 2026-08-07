@@ -18,9 +18,9 @@ export const BRIGOSHA_TECHNOLOGIES_CATALOG = {
   extractionStrategy: 'verified-first-party-join-us-page+verified-portal-handoff+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.brigosha.com/join-us/ was the live first-party Brigosha join-us page, that it handed candidates to https://login.brigosha.com/, and that there was no trustworthy public jobs surface on the verified date.',
+    'Verified on Saturday, August 1, 2026 that https://www.brigosha.com/join-us/ remained the live first-party Brigosha join-us route as a minimal title-only shell, that the verified opaque associate portal at https://login.brigosha.com/ still returned only the JavaScript-required shell, and that there was still no trustworthy public jobs surface on the verified date.',
   dryRunFile: 'brigoshatechnologies/jobs.json',
   modulePath: path.join(currentDir, 'script.js'),
 }

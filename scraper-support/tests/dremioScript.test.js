@@ -21,13 +21,26 @@ const jobPostingsHtml = `
 <html lang="en">
   <head>
     <title>Job Postings | Career Opportunities | Dremio</title>
-    <script src="https://boards.greenhouse.io/embed/job_board/js?for=dremio"></script>
   </head>
   <body>
+    <p>Dremio is now part of SAP</p>
+    <p>Working at Dremio</p>
     <h1>Job Postings</h1>
-    <a href="/careers/job-postings/?gh_jid=7578193003">Commercial Account Executive - East</a>
-    <a href="/careers/job-postings/?gh_jid=6314003003">Future Opportunities</a>
     <p>Open Roles</p>
+  </body>
+</html>
+`
+
+const cloudflareBlockHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Attention Required! | Cloudflare</title>
+  </head>
+  <body>
+    <h1>Sorry, you have been blocked</h1>
+    <p>Please enable cookies.</p>
+    <p>You are unable to access wpewaf.com</p>
   </body>
 </html>
 `
@@ -35,40 +48,13 @@ const jobPostingsHtml = `
 const greenhousePayload = {
   jobs: [
     {
-      absolute_url: 'https://www.dremio.com/careers/job-postings/?gh_jid=7578193003',
-      id: 7578193003,
-      requisition_id: '1048',
-      title: 'Commercial Account Executive - East',
-      company_name: 'Dremio',
-      updated_at: '2026-03-27T04:49:45-04:00',
-      first_published: '2026-01-12T04:23:16-05:00',
-      application_deadline: null,
-      location: {
-        name: 'New York, New York, United States',
-      },
-      departments: [
-        {
-          name: 'Sales',
-        },
-      ],
-      offices: [
-        {
-          name: 'New York, New York',
-          location: 'New York, New York, United States',
-        },
-      ],
-      content:
-        '&lt;p&gt;Build Dremio pipeline coverage across the East.&lt;/p&gt;&lt;p&gt;3-5 years of experience in pipeline-driven SaaS sales roles.&lt;/p&gt;&lt;p&gt;#LI-remote&lt;/p&gt;',
-    },
-    {
       absolute_url: 'https://www.dremio.com/careers/job-postings/?gh_jid=6314003003',
       id: 6314003003,
-      requisition_id: '902',
+      requisition_id: '952',
       title: 'Future Opportunities',
       company_name: 'Dremio',
-      updated_at: '2026-05-02T10:30:00-04:00',
-      first_published: '2025-11-10T09:00:00-05:00',
-      application_deadline: null,
+      updated_at: '2025-06-04T19:46:25-04:00',
+      first_published: '2025-01-02T16:59:26-05:00',
       location: {
         name: 'Remote',
       },
@@ -77,7 +63,6 @@ const greenhousePayload = {
           name: 'General & Administrative',
         },
       ],
-      offices: [],
       content:
         '&lt;p&gt;Join the Dremio talent network for future openings.&lt;/p&gt;&lt;p&gt;7+ years of experience building high-growth teams.&lt;/p&gt;',
     },
@@ -92,7 +77,7 @@ const loadDremioModule = async () => {
   }
 }
 
-test('Dremio scraper helpers stay pinned to the verified first-party careers pages and Greenhouse jobs API contract', async () => {
+test('Dremio scraper helpers stay pinned to the Sunday, August 2, 2026 first-party and Greenhouse contract', async () => {
   const dremio = await loadDremioModule()
 
   assert.equal(dremio.SOURCE, 'dremio')
@@ -109,103 +94,89 @@ test('Dremio scraper helpers stay pinned to the verified first-party careers pag
   )
   assert.equal(dremio.hasOfficialCareersLandingSignal(careersLandingHtml), true)
   assert.equal(dremio.hasOfficialJobPostingsSignal(jobPostingsHtml), true)
+  assert.equal(
+    dremio.hasCloudflareBlockSignal({
+      status: 403,
+      html: cloudflareBlockHtml,
+    }),
+    true,
+  )
 
   const jobs = dremio.extractJobsFromGreenhousePayload(greenhousePayload, {
-    scrapedAt: '2026-07-15T00:00:00.000Z',
+    scrapedAt: '2026-08-02T00:00:00.000Z',
   })
 
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(
-    jobs.map((job) => ({
-      title: job.title,
-      location: job.location,
-      city: job.city,
-      country: job.country,
-      sourceUrl: job.sourceUrl,
-      applyUrl: job.applyUrl,
-      link: job.link,
-      department: job.department,
-      remoteStatus: job.remoteStatus,
-      experienceRequired: job.experienceRequired,
-    })),
-    [
-      {
-        title: 'Commercial Account Executive - East',
-        location: 'New York, New York, United States',
-        city: 'New York',
-        country: 'United States',
-        sourceUrl: 'https://www.dremio.com/careers/job-postings/?gh_jid=7578193003',
-        applyUrl: 'https://www.dremio.com/careers/job-postings/?gh_jid=7578193003',
-        link: 'https://www.dremio.com/careers/job-postings/?gh_jid=7578193003',
-        department: 'Sales',
-        remoteStatus: 'Remote',
-        experienceRequired: '3-5 years',
-      },
-      {
-        title: 'Future Opportunities',
-        location: 'Remote',
-        city: null,
-        country: null,
-        sourceUrl: 'https://www.dremio.com/careers/job-postings/?gh_jid=6314003003',
-        applyUrl: 'https://www.dremio.com/careers/job-postings/?gh_jid=6314003003',
-        link: 'https://www.dremio.com/careers/job-postings/?gh_jid=6314003003',
-        department: 'General & Administrative',
-        remoteStatus: 'Remote',
-        experienceRequired: '7+ years',
-      },
-    ],
-  )
-  assert.match(jobs[0].jobDescription, /pipeline coverage across the East/i)
+  assert.deepEqual(jobs, [
+    {
+      title: 'Future Opportunities',
+      company: 'Dremio',
+      location: 'Remote',
+      city: null,
+      country: null,
+      link: 'https://www.dremio.com/careers/job-postings/?gh_jid=6314003003',
+      applyUrl: 'https://www.dremio.com/careers/job-postings/?gh_jid=6314003003',
+      sourceUrl: 'https://www.dremio.com/careers/job-postings/?gh_jid=6314003003',
+      source: 'dremio',
+      jobId: 6314003003,
+      requisitionId: '952',
+      department: 'General & Administrative',
+      employmentType: null,
+      experienceRequired: '7+ years',
+      postingDate: '2025-06-04T19:46:25-04:00',
+      jobDescription: 'Join the Dremio talent network for future openings. 7+ years of experience building high-growth teams.',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      remoteStatus: 'Remote',
+      scrapedAt: '2026-08-02T00:00:00.000Z',
+    },
+  ])
 })
 
-test('Dremio run verifies the official careers pages before fetching the Greenhouse jobs API', async () => {
+test('Dremio run accepts Cloudflare-blocked first-party pages and still extracts the live Greenhouse job feed', async () => {
   const dremio = await loadDremioModule()
   const requested = []
 
   const jobs = await dremio.createDremioScraper().run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      if (url === dremio.CAREERS_LANDING_URL) return careersLandingHtml
-      if (url === dremio.JOB_POSTINGS_URL) return jobPostingsHtml
-      throw new Error(`Unexpected Dremio fixture URL: ${url}`)
+    fetchPage: async (url) => {
+      requested.push({ type: 'page', url })
+      return {
+        status: 403,
+        url,
+        html: cloudflareBlockHtml,
+      }
     },
     fetchJson: async (url, options = {}) => {
       requested.push({ type: 'json', url, options })
       return greenhousePayload
     },
-    now: () => '2026-07-15T00:00:00.000Z',
+    now: () => '2026-08-02T00:00:00.000Z',
   })
 
   assert.deepEqual(requested, [
-    { type: 'text', url: 'https://www.dremio.com/careers/' },
-    { type: 'text', url: 'https://www.dremio.com/careers/job-postings/' },
+    { type: 'page', url: 'https://www.dremio.com/careers/' },
+    { type: 'page', url: 'https://www.dremio.com/careers/job-postings/' },
     {
       type: 'json',
       url: 'https://boards-api.greenhouse.io/v1/boards/dremio/jobs?content=true',
       options: { method: 'GET' },
     },
   ])
-
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Future Opportunities')
   assert.equal(jobs[0].source, 'dremio')
-  assert.equal(jobs[0].company, 'Dremio')
-  assert.equal(
-    jobs[0].link,
-    'https://www.dremio.com/careers/job-postings/?gh_jid=7578193003',
-  )
 })
 
-test('Dremio fails closed when the verified careers pages or Greenhouse payload drift materially', async () => {
+test('Dremio fails closed when the first-party pages are neither official nor Cloudflare-blocked, or when the Greenhouse payload drifts', async () => {
   const dremio = await loadDremioModule()
 
   await assert.rejects(
     dremio.createDremioScraper().run({
-      fetchText: async (url) => {
-        if (url === dremio.CAREERS_LANDING_URL) {
-          return careersLandingHtml.replace('Search Jobs', 'Browse Roles')
-        }
-        throw new Error(`Unexpected Dremio fixture URL: ${url}`)
-      },
+      fetchPage: async () => ({
+        status: 200,
+        url: 'https://www.dremio.com/careers/',
+        html: '<html><body><h1>Unexpected</h1></body></html>',
+      }),
       fetchJson: async () => greenhousePayload,
     }),
     /verified Dremio careers landing page/i,
@@ -213,28 +184,11 @@ test('Dremio fails closed when the verified careers pages or Greenhouse payload 
 
   await assert.rejects(
     dremio.createDremioScraper().run({
-      fetchText: async (url) => {
-        if (url === dremio.CAREERS_LANDING_URL) return careersLandingHtml
-        if (url === dremio.JOB_POSTINGS_URL) {
-          return jobPostingsHtml.replace(
-            'https://boards.greenhouse.io/embed/job_board/js?for=dremio',
-            'https://boards.greenhouse.io/embed/job_board/js?for=dremio-old',
-          )
-        }
-        throw new Error(`Unexpected Dremio fixture URL: ${url}`)
-      },
-      fetchJson: async () => greenhousePayload,
-    }),
-    /verified Dremio job postings page/i,
-  )
-
-  await assert.rejects(
-    dremio.createDremioScraper().run({
-      fetchText: async (url) => {
-        if (url === dremio.CAREERS_LANDING_URL) return careersLandingHtml
-        if (url === dremio.JOB_POSTINGS_URL) return jobPostingsHtml
-        throw new Error(`Unexpected Dremio fixture URL: ${url}`)
-      },
+      fetchPage: async (url) => ({
+        status: 403,
+        url,
+        html: cloudflareBlockHtml,
+      }),
       fetchJson: async () => ({ jobs: null }),
     }),
     /Greenhouse jobs payload/i,

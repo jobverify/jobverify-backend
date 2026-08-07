@@ -98,6 +98,7 @@ test('Labvantage Solutions run validates the verified careers page and maps the 
     postingDate: null,
     closingDate: null,
     jobDescription: 'Apply via the LabVantage Solutions India careers section.',
+    publicExperienceChecked: true,
     remoteStatus: null,
     scrapedAt: jobs[0].scrapedAt,
   })

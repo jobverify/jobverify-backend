@@ -23,8 +23,9 @@ test('Starmark Software local catalog captures the verified first-party careers 
   assert.equal(provider.companyDomain, 'starmarksv.com')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Open Positions/i)
-  assert.match(provider.verifiedSurfaceSummary, /careers@starmarksoftware\.com/i)
+  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.match(provider.verifiedSurfaceSummary, /Join Our Team/i)
+  assert.match(provider.verifiedSurfaceSummary, /careers@starmarksv\.com/i)
   assert.equal(typeof module.run, 'function')
 })
 

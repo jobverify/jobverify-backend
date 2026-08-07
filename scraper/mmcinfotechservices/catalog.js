@@ -17,9 +17,9 @@ export const MMC_INFOTECH_SERVICES_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'mmcinfotech.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.mmcinfotech.com/career.php remained the exact first-party MMC Infotech Services careers page and publicly listed inline openings including Voice Operations, Customer Support, Data Entry, and Backend Process with first-party Apply Now links.',
+    'Verified on Monday, August 3, 2026 that https://www.mmcinfotech.com/career.php remained the exact first-party MMC Infotech Services careers page and still publicly listed tabbed openings including Voice Operations, Customer Support, Data Entry, and Backend Process with first-party Apply Now links to form.php?job_posting=... pages.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

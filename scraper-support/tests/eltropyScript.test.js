@@ -19,6 +19,38 @@ const officialCareersHtml = `
 </html>
 `
 
+const blockedFirstPartyHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <style>
+      .spinner {
+        border-top: 4px solid #3498db;
+      }
+    </style>
+    <div class="spinner"></div>
+  </body>
+</html>
+`
+
+const greenhouseBoardHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs at Eltropy Inc.</title>
+  </head>
+  <body>
+    <main>
+      <h1>Current Openings</h1>
+      <a href="https://job-boards.greenhouse.io/eltropyinc/jobs/4244858009">AI Optimization Specialist (India)</a>
+    </main>
+  </body>
+</html>
+`
+
 const greenhousePayload = {
   jobs: [
     {
@@ -77,7 +109,8 @@ test('Eltropy helpers keep the verified first-party careers page and Greenhouse 
   assert.equal(eltropy.SOURCE, 'eltropy')
   assert.equal(eltropy.COMPANY, 'Eltropy')
   assert.equal(eltropy.OFFICIAL_BRAND_NAME, 'Eltropy')
-  assert.equal(eltropy.VERIFIED_ON, '2026-07-15')
+  assert.equal(eltropy.VERIFIED_ON, '2026-08-02')
+  assert.equal(eltropy.HOMEPAGE_URL, 'https://eltropy.com/')
   assert.equal(eltropy.CAREERS_URL, 'https://eltropy.com/careers/')
   assert.equal(eltropy.GREENHOUSE_BOARD_URL, 'https://job-boards.greenhouse.io/eltropyinc')
   assert.equal(
@@ -85,6 +118,8 @@ test('Eltropy helpers keep the verified first-party careers page and Greenhouse 
     'https://boards-api.greenhouse.io/v1/boards/eltropyinc/jobs?content=true',
   )
   assert.equal(eltropy.hasOfficialCareersSignal(officialCareersHtml), true)
+  assert.equal(eltropy.hasBlockedFirstPartySurfaceSignal(blockedFirstPartyHtml), true)
+  assert.equal(eltropy.hasOfficialGreenhouseBoardSignal(greenhouseBoardHtml), true)
   assert.equal(
     eltropy.extractGreenhouseBoardUrl(officialCareersHtml),
     'https://job-boards.greenhouse.io/eltropyinc',
@@ -160,9 +195,17 @@ test('run validates the verified first-party careers page before fetching the Gr
   const requested = []
 
   const jobs = await eltropy.createEltropyScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      if (url === eltropy.CAREERS_URL) return officialCareersHtml
+    fetchPage: async (url) => {
+      requested.push({ type: 'page', url })
+      if (url === eltropy.HOMEPAGE_URL) {
+        return { status: 200, url, html: officialCareersHtml }
+      }
+      if (url === eltropy.CAREERS_URL) {
+        return { status: 200, url, html: officialCareersHtml }
+      }
+      if (url === eltropy.GREENHOUSE_BOARD_URL) {
+        return { status: 200, url, html: greenhouseBoardHtml }
+      }
       throw new Error(`Unexpected Eltropy fixture URL: ${url}`)
     },
     fetchJson: async (url, options = {}) => {
@@ -173,7 +216,9 @@ test('run validates the verified first-party careers page before fetching the Gr
   })
 
   assert.deepEqual(requested, [
-    { type: 'text', url: eltropy.CAREERS_URL },
+    { type: 'page', url: eltropy.HOMEPAGE_URL },
+    { type: 'page', url: eltropy.CAREERS_URL },
+    { type: 'page', url: eltropy.GREENHOUSE_BOARD_URL },
     {
       type: 'json',
       url: 'https://boards-api.greenhouse.io/v1/boards/eltropyinc/jobs?content=true',
@@ -185,12 +230,48 @@ test('run validates the verified first-party careers page before fetching the Gr
   assert.equal(jobs[0].link, 'https://job-boards.greenhouse.io/eltropyinc/jobs/4244858009')
 })
 
-test('run fails closed when the verified Eltropy careers surface or Greenhouse detail route drift materially', async () => {
+test('run supports the blocked first-party surface while the verified Greenhouse board and jobs API remain live', async () => {
+  const eltropy = await loadEltropyModule()
+  const requested = []
+
+  const jobs = await eltropy.createEltropyScraper({ maxJobs: 1 }).run({
+    fetchPage: async (url) => {
+      requested.push(url)
+      if (url === eltropy.HOMEPAGE_URL || url === eltropy.CAREERS_URL) {
+        return { status: 403, url, html: blockedFirstPartyHtml }
+      }
+      if (url === eltropy.GREENHOUSE_BOARD_URL) {
+        return { status: 200, url, html: greenhouseBoardHtml }
+      }
+      throw new Error(`Unexpected blocked-surface Eltropy fixture URL: ${url}`)
+    },
+    fetchJson: async () => greenhousePayload,
+    now: () => '2026-08-02T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requested, [
+    eltropy.HOMEPAGE_URL,
+    eltropy.CAREERS_URL,
+    eltropy.GREENHOUSE_BOARD_URL,
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'AI Optimization Specialist (India)')
+})
+
+test('run fails closed when the verified Eltropy surface or Greenhouse detail route drift materially', async () => {
   const eltropy = await loadEltropyModule()
 
   await assert.rejects(
     eltropy.createEltropyScraper().run({
-      fetchText: async () => officialCareersHtml.replace('Career Opportunities', 'Open Careers'),
+      fetchPage: async (url) => {
+        if (url === eltropy.HOMEPAGE_URL) {
+          return { status: 200, url, html: officialCareersHtml }
+        }
+        if (url === eltropy.CAREERS_URL) {
+          return { status: 200, url, html: officialCareersHtml.replace('Career Opportunities', 'Open Careers') }
+        }
+        throw new Error(`Unexpected Eltropy drift fixture URL: ${url}`)
+      },
       fetchJson: async () => greenhousePayload,
     }),
     /verified official careers surface/i,
@@ -198,18 +279,57 @@ test('run fails closed when the verified Eltropy careers surface or Greenhouse d
 
   await assert.rejects(
     eltropy.createEltropyScraper().run({
-      fetchText: async () => officialCareersHtml.replace(
-        'https://job-boards.greenhouse.io/eltropyinc',
-        'https://job-boards.greenhouse.io/other-eltropy-board',
-      ),
+      fetchPage: async (url) => {
+        if (url === eltropy.HOMEPAGE_URL) {
+          return { status: 200, url, html: officialCareersHtml }
+        }
+        if (url === eltropy.CAREERS_URL) {
+          return {
+            status: 200,
+            url,
+            html: officialCareersHtml.replace(
+              'https://job-boards.greenhouse.io/eltropyinc',
+              'https://job-boards.greenhouse.io/other-eltropy-board',
+            ),
+          }
+        }
+        throw new Error(`Unexpected Eltropy board-drift fixture URL: ${url}`)
+      },
       fetchJson: async () => greenhousePayload,
     }),
-    /verified Greenhouse board handoff/i,
+    /verified official careers surface/i,
   )
 
   await assert.rejects(
     eltropy.createEltropyScraper().run({
-      fetchText: async () => officialCareersHtml,
+      fetchPage: async (url) => {
+        if (url === eltropy.HOMEPAGE_URL || url === eltropy.CAREERS_URL) {
+          return { status: 403, url, html: blockedFirstPartyHtml }
+        }
+        if (url === eltropy.GREENHOUSE_BOARD_URL) {
+          return { status: 200, url, html: '<html><body>No openings</body></html>' }
+        }
+        throw new Error(`Unexpected Eltropy greenhouse drift fixture URL: ${url}`)
+      },
+      fetchJson: async () => greenhousePayload,
+    }),
+    /verified public Greenhouse board/i,
+  )
+
+  await assert.rejects(
+    eltropy.createEltropyScraper().run({
+      fetchPage: async (url) => {
+        if (url === eltropy.HOMEPAGE_URL) {
+          return { status: 200, url, html: officialCareersHtml }
+        }
+        if (url === eltropy.CAREERS_URL) {
+          return { status: 200, url, html: officialCareersHtml }
+        }
+        if (url === eltropy.GREENHOUSE_BOARD_URL) {
+          return { status: 200, url, html: greenhouseBoardHtml }
+        }
+        throw new Error(`Unexpected Eltropy detail-drift fixture URL: ${url}`)
+      },
       fetchJson: async () => ({
         jobs: [
           {

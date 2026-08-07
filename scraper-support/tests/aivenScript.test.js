@@ -66,6 +66,23 @@ const supportEngineerHtml = `
   </html>
 `
 
+const listingHtmlWithoutIndiaJobs = `
+  <html>
+    <head>
+      <title>Careers & Jobs at Aiven | Join our team today!</title>
+      <meta property="og:url" content="https://aiven.io/careers/job">
+      <link rel="canonical" href="https://aiven.io/careers/job">
+    </head>
+    <body>
+      <h1>Open positions</h1>
+      <p>37 jobs</p>
+      <a href="/careers/job/6001001001">Account Executive, SMB Austin, Texas, United States</a>
+      <a href="/careers/job/6001001002">Backend Engineer, ClickHouse Helsinki, Uusimaa, Finland</a>
+      <a href="/careers/job/6001001003">Enterprise Account Executive United Kingdom</a>
+    </body>
+  </html>
+`
+
 test('Aiven constants stay pinned to the verified first-party careers listing', async () => {
   const aiven = await loadAivenModule()
 
@@ -163,4 +180,20 @@ test('run fails closed when the verified Aiven listing surface or India detail p
     }),
     /trusted public aiven india jobs/i,
   )
+})
+
+test('run returns no jobs when the verified Aiven listing currently exposes no India roles', async () => {
+  const aiven = await loadAivenModule()
+
+  const jobs = await aiven.createAivenScraper().run({
+    fetchText: async (url) => {
+      if (url === aiven.CAREERS_URL) {
+        return listingHtmlWithoutIndiaJobs
+      }
+
+      throw new Error(`Unexpected Aiven URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

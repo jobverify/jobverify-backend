@@ -64,11 +64,12 @@ test('Lakshya scraper extracts experience from the official Workable markdown vi
     lakshya.buildWorkableMarkdownUrl('7CBF88DEEF'),
     'https://apply.workable.com/lakshyadigitalglobal/jobs/view/7CBF88DEEF.md',
   )
-  assert.deepEqual(lakshya.extractWorkableJobDetail(animationLeadMarkdown), {
-    department: 'Lakshya India',
-    employmentType: 'Full-time',
-    experienceRequired: '3+ years',
-  })
+  const detail = lakshya.extractWorkableJobDetail(animationLeadMarkdown)
+  assert.equal(detail.department, 'Lakshya India')
+  assert.equal(detail.employmentType, 'Full-time')
+  assert.equal(detail.experienceRequired, '3+ years')
+  assert.ok(detail.jobDescription?.includes('Lakshya is Looking for Animation Lead'))
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('Lakshya scraper returns the public India roles from the verified careers page', async () => {
@@ -111,6 +112,12 @@ test('Lakshya scraper returns the public India roles from the verified careers p
   assert.equal(
     jobs.find((job) => job.title === '3D Animation Lead')?.experienceRequired,
     '3+ years',
+  )
+  assert.ok(
+    jobs.find((job) => job.title === '3D Animation Lead')?.jobDescription?.includes('Lakshya is Looking for Animation Lead'),
+  )
+  assert.ok(
+    jobs.find((job) => job.title === '3D Animation Lead')?.publicExperienceChecked === true,
   )
 })
 

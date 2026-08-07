@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -201,6 +202,10 @@ export const extractJobDetail = (html, listing = {}) => {
     html,
   ))
   const descriptionHtml = extractFirst(/itemprop="description"[^>]*>([\s\S]*?)<\/span>/i, html)
+  const jobDescription = stripTags(descriptionHtml)
+  const experienceProfile = extractJobFilterSignals({
+    description: jobDescription,
+  })?.experienceProfile
   const jobId = normalizeWhitespace(extractFirst(/jobID\s*:\s*'?(\d+)'?/i, html)) || listing.jobId || null
 
   return {
@@ -217,13 +222,13 @@ export const extractJobDetail = (html, listing = {}) => {
     sourceUrl: listing.sourceUrl || buildJobDetailUrl(listing.sourceUrl),
     applyUrl: buildApplyUrl(jobId),
     employmentType: positionType || null,
-    experienceRequired: null,
+    experienceRequired: experienceProfile?.confidence === 'high' ? experienceProfile.evidence || null : null,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractListItems(descriptionHtml),
     postingDate: normalizeDate(extractFirst(/itemprop="datePosted" content="([^"]+)"/i, html)) || listing.postingDate || null,
     closingDate: normalizeDate(extractFirst(/itemprop="validThrough" content="([^"]+)"/i, html)),
-    jobDescription: stripTags(descriptionHtml),
+    jobDescription,
   }
 }
 

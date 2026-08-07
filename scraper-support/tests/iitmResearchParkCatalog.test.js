@@ -26,7 +26,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('IITM Research Park local catalog captures the verified expired-public-listings sentinel without alias churn', async () => {
+test('IITM Research Park local catalog captures the verified first-party careers page without alias churn', async () => {
   const { IITM_RESEARCH_PARK_CATALOG } = await loadCatalogModule()
   const iitmResearchPark = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(IITM_RESEARCH_PARK_CATALOG)
@@ -36,34 +36,38 @@ test('IITM Research Park local catalog captures the verified expired-public-list
   assert.equal(provider.officialBrandName, 'IIT Madras Research Park')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://respark.iitm.ac.in/careers/')
-  assert.deepEqual(provider.observedExpiredJobTitles, [
+  assert.deepEqual(provider.observedJobTitles, [
     'Electrical Engineer - Maintenance & Projects (3 Positions)',
     'Project Manager - Zoho Implementation',
     'Construction Manager - Civil',
+    'Senior Manager - Legal',
     'Executive - Research Collaboration',
   ])
-  assert.deepEqual(provider.observedExpiredClosingDates, [
+  assert.deepEqual(provider.observedClosingDates, [
     '2026-07-09',
     '2026-07-15',
     '2026-07-15',
-    '2026-07-15',
+    '2026-08-15',
+    '2026-07-31',
   ])
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-expired-first-party-careers-page-snapshot')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-expired-public-listings-return-empty',
+    'first-party-careers-card-extraction+closing-date-live-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'respark.iitm.ac.in')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.dryRunFile, /iitmresearchpark[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/respark\.iitm\.ac\.in\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /five public job cards/i)
   assert.match(provider.verifiedSurfaceSummary, /July 09, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /all visible cards were already past their own Valid till dates/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Manager - Legal/i)
   assert.equal(provider.modulePath, iitmResearchParkModulePath)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'IITM Research Park'), false)
 
@@ -76,8 +80,8 @@ test('IITM Research Park local catalog captures the verified expired-public-list
     IITM_RESEARCH_PARK_CATALOG.companyName,
   )
   assert.deepEqual(
-    iitmResearchPark.PROVIDER_METADATA.observedExpiredClosingDates,
-    IITM_RESEARCH_PARK_CATALOG.observedExpiredClosingDates,
+    iitmResearchPark.PROVIDER_METADATA.observedClosingDates,
+    IITM_RESEARCH_PARK_CATALOG.observedClosingDates,
   )
 })
 
@@ -96,7 +100,7 @@ test('IITM Research Park backlog row matches directly from the local catalog wit
   )
 })
 
-test('getScraperCatalog includes IITM Research Park as a verified expired-listings sentinel provider', () => {
+test('getScraperCatalog includes IITM Research Park as a verified first-party careers provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'iitmresearchpark')
 
   assert.ok(provider)

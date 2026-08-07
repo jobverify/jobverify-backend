@@ -48,11 +48,11 @@ const buildCareersPageHtml = (jobs = firstPartyJobs) => `
 <html lang="en">
   <body>
     <main>
-      <h1>Why you'd love being here.</h1>
+      <h1>Why you&#x27;d love being here.</h1>
       <span>Search</span>
       <span>Everywhere</span>
       <span>All</span>
-      <footer>Glance AI, Inc. © 2026</footer>
+      <footer>Glance AI, Inc. &#169; 2026</footer>
     </main>
     <script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       page: '/careers/latest',

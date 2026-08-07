@@ -1,8 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 
 import { JADE_GLOBAL_CATALOG } from './catalog.js'
 
@@ -20,6 +22,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DETAIL_FETCH_CONCURRENCY = 4
 
 const GROUPED_LOCATION_PATTERN = /^\d+\s+locations?$/i
 const INDIA_PATTERN =
@@ -273,7 +276,39 @@ export const createJadeGlobalScraper = ({
       if (postings.length < pageSize) break
     }
 
-    return jobs
+    return mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailHtml = await fetchText(job.sourceUrl)
+          if (!detailHtml) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailHtml,
+          })
+
+          return {
+            ...job,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            postingDate: detail.postingDate || job.postingDate,
+            requisitionId: detail.requisitionId || job.requisitionId,
+            department: detail.department || job.department,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 

@@ -315,6 +315,7 @@ test('Neuroglia Health run validates the first-party flow, excludes the generic 
       '- 1-2 years of hands-on experience in Python or Go',
       '- Experience building and securing REST APIs',
     ].join('\n'),
+    publicExperienceChecked: true,
     source: 'neurogliahealth',
     companyCareerPage: 'https://dailyrounds.org/careers',
     companyDomain: 'neurogliahealth.com',
@@ -351,6 +352,7 @@ test('Neuroglia Health run validates the first-party flow, excludes the generic 
       'The best-fit candidate would have:',
       '- MBBS graduates preferred.',
     ].join('\n'),
+    publicExperienceChecked: true,
     source: 'neurogliahealth',
     companyCareerPage: 'https://dailyrounds.org/careers/doctor',
     companyDomain: 'neurogliahealth.com',
@@ -358,6 +360,8 @@ test('Neuroglia Health run validates the first-party flow, excludes the generic 
     link: 'https://short.mynexthire.io/1156-lqDZZhZ28t1RON0bcnJ7',
     scrapedAt: '2026-07-11T10:00:00.000Z',
   })
+
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('Neuroglia Health fails closed when the verified homepage, careers shell, or detail payload drifts', async () => {

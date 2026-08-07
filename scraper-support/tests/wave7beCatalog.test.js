@@ -58,7 +58,11 @@ test('Mobineers Info Systems local catalog captures the verified first-party car
     provider.extractionStrategy,
     'verified-first-party-careers-page+job-card-links+detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sr\. Sales Manager/i)
+  assert.match(provider.verifiedSurfaceSummary, /Ass\. Sales Manager/i)
+  assert.match(provider.verifiedSurfaceSummary, /Assistant Sales Manager/i)
   assert.match(provider.verifiedSurfaceSummary, /QA Automation Tester/i)
   assert.match(provider.verifiedSurfaceSummary, /SQL DEVELOPER/i)
   assert.match(provider.verifiedSurfaceSummary, /Sr\. Business Developer/i)

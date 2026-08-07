@@ -104,7 +104,7 @@ test('normalizeJobListing maps Schneider Electric API jobs into the shared scrap
     requisitionId: '126505',
     department: 'Customer Projects, Solutions and Services',
     employmentType: 'Full-time',
-    experienceRequired: null,
+    experienceRequired: '10+ years',
     jobDescription: 'Lead control systems delivery for customer projects.',
     minimumQualification: 'Graduate in Engineering with 10+ years of relevant experience.',
     preferredQualification: null,
@@ -113,6 +113,7 @@ test('normalizeJobListing maps Schneider Electric API jobs into the shared scrap
     closingDate: '2026-07-30T18:30:00+0000',
     applyUrl: 'https://careers-se.icims.com/jobs/126505/login',
     sourceUrl: 'https://careers.se.com/jobs/126505?lang=en-us',
+    publicExperienceChecked: true,
   })
 
   assert.equal(normalizeJobListing(payload.jobs[1]), null)
@@ -144,6 +145,8 @@ test('run fetches Schneider Electric India jobs from the official API and decora
   assert.equal(jobs[0].source, 'schneiderelectric')
   assert.equal(jobs[0].jobId, '126505')
   assert.equal(jobs[0].location, 'Chennai, Tamil Nadu, India')
+  assert.equal(jobs[0].experienceRequired, '10+ years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(
     jobs[0].applyUrl,
     'https://careers-se.icims.com/jobs/126505/login',

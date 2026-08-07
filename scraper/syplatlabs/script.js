@@ -6,10 +6,10 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'syplatlabs'
 export const COMPANY = 'SYplat Labs'
 export const HOMEPAGE_URL = 'https://www.syplat.com/'
-export const REDIRECTED_HOMEPAGE_URL = 'https://syplat-labs.com/'
+export const REDIRECTED_HOMEPAGE_URL = 'https://www.syplat.com/'
 export const CAREERS_ROUTE_URLS = [
-  'https://syplat-labs.com/careers',
-  'https://syplat-labs.com/jobs',
+  'https://www.syplat.com/careers',
+  'https://www.syplat.com/jobs',
 ]
 export const EXPECTED_BUNDLE_ROUTES = [
   '/',
@@ -127,7 +127,7 @@ export const getRunnerMetadata = () => ({
     paginationStrategy: 'none',
     extractionStrategy: 'verified-homepage-shell-plus-bundle-route-map-with-no-public-careers-signal',
     normalizationProfile: 'engineering-default',
-    companyDomain: 'syplat-labs.com',
+    companyDomain: 'syplat.com',
   },
 })
 

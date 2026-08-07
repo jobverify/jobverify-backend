@@ -6,6 +6,10 @@ const VERIFIED_CAREERS_HTML = `
     <head>
       <title>Careers at BuzzBoard: The Future of Autonomous Marketing Services</title>
       <link rel="canonical" href="https://www.buzzboard.ai/careers/">
+      <meta
+        name="description"
+        content="Join us as we push the frontiers of autonomous digital marketing, shaping groundbreaking technologies and new industry standards for high-volume providers."
+      >
     </head>
     <body>
       <main>
@@ -18,22 +22,18 @@ const VERIFIED_CAREERS_HTML = `
           <article>
             <h3>Associate Product Manager / Product Manager</h3>
             <p>Remote - Full Time</p>
-            <a href="https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc">Apply</a>
+            <a href="https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&">Apply</a>
           </article>
           <article>
             <h3>Software Engineer (Node JS Developer)</h3>
             <p>Remote - Full Time</p>
-            <a href="https://buzzboard.applytojob.com/apply/zZ5VZq3ojD/Software-Engineer-Node-JS-Developer">Apply</a>
+            <a href="https://buzzboard.applytojob.com/apply/zZ5VZq3ojD/Software-Engineer-Node-JS-Developer?&">Apply</a>
           </article>
         </section>
         <section>
           <h3>Current opportunities</h3>
           <p>Ready to innovate with us?</p>
           <p>Join our team</p>
-        </section>
-        <section>
-          <h3>Our Address</h3>
-          <p>345 California St., Suite 600</p>
         </section>
       </main>
     </body>
@@ -46,13 +46,13 @@ const VERIFIED_BOARD_HTML = `
       <title>BuzzBoard - Career Page</title>
     </head>
     <body>
-      <a href="https://www.buzzboard.com">View Our Website</a>
+      <a href="http://www.buzzboard.com">View Our Website</a>
       <p>Thanks for visiting our Career Page.</p>
       <h2>Current Openings</h2>
       <ul>
         <li>
           <h3>
-            <a href="https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc">
+            <a href="https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&">
               Associate Product Manager / Product Manager
             </a>
           </h3>
@@ -60,7 +60,21 @@ const VERIFIED_BOARD_HTML = `
           <p>Full Time</p>
         </li>
       </ul>
-      <p>Powered by JazzHR</p>
+      <p>Powered by <a href="https://info.jazzhr.com">JazzHR</a></p>
+    </body>
+  </html>
+`
+
+const GENERIC_BOARD_LISTING_HTML = `
+  <html>
+    <head>
+      <title>JazzHR &raquo; Job Listings</title>
+    </head>
+    <body>
+      <main>
+        <h2>Current Openings</h2>
+        <a href="http://buzzboard.applytojob.com/apply/">View All Jobs</a>
+      </main>
     </body>
   </html>
 `
@@ -126,25 +140,30 @@ test('BuzzBoard validates the verified first-party careers surface and extracts 
   assert.equal(buzzboard.SOURCE, 'buzzboard')
   assert.equal(buzzboard.COMPANY, 'BuzzBoard')
   assert.equal(buzzboard.OFFICIAL_BRAND, 'BuzzBoard')
-  assert.equal(buzzboard.VERIFIED_ON, '2026-07-25')
+  assert.equal(buzzboard.VERIFIED_ON, '2026-08-01')
   assert.equal(buzzboard.CAREERS_URL, 'https://www.buzzboard.ai/careers/')
   assert.equal(buzzboard.BOARD_URL, 'https://buzzboard.applytojob.com/apply')
   assert.equal(
     buzzboard.DISPOSITION,
     'verified-first-party-careers-page-plus-public-jazzhr-board',
   )
-  assert.match(buzzboard.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(buzzboard.VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/)
   assert.match(buzzboard.VERIFIED_SURFACE_SUMMARY, /buzzboard\.applytojob\.com\/apply/i)
   assert.match(
     buzzboard.VERIFIED_SURFACE_SUMMARY,
     /Associate Product Manager \/ Product Manager/i,
   )
+  assert.match(
+    buzzboard.VERIFIED_SURFACE_SUMMARY,
+    /Test Engineer \(Automation\)/i,
+  )
   assert.equal(buzzboard.hasOfficialCareersPageSignal(VERIFIED_CAREERS_HTML), true)
   assert.deepEqual(buzzboard.extractOfficialApplyUrls(VERIFIED_CAREERS_HTML), [
-    'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc',
-    'https://buzzboard.applytojob.com/apply/zZ5VZq3ojD/Software-Engineer-Node-JS-Developer',
+    'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
+    'https://buzzboard.applytojob.com/apply/zZ5VZq3ojD/Software-Engineer-Node-JS-Developer?&',
   ])
   assert.equal(buzzboard.hasVerifiedBoardSignal(VERIFIED_BOARD_HTML), true)
+  assert.deepEqual(buzzboard.extractVerifiedBoardJobIds(VERIFIED_BOARD_HTML), ['KHFbeOLhcc'])
   assert.equal(listings.length, 2)
   assert.deepEqual(
     {
@@ -162,8 +181,8 @@ test('BuzzBoard validates the verified first-party careers surface and extracts 
       country: 'India',
       jobId: 'KHFbeOLhcc',
       requisitionId: 'KHFbeOLhcc',
-      sourceUrl: 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc',
-      applyUrl: 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc',
+      sourceUrl: 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
+      applyUrl: 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
       employmentType: 'Full-time',
       experienceRequired: '4+ years',
       minimumQualification: null,
@@ -187,13 +206,13 @@ test('BuzzBoard run validates the official careers handoff and returns public op
 
       if (url === buzzboard.CAREERS_URL) return VERIFIED_CAREERS_HTML
       if (url === buzzboard.BOARD_URL) return VERIFIED_BOARD_HTML
-      if (url === 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc') {
+      if (url === 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&') {
         return VERIFIED_PRODUCT_MANAGER_DETAIL_HTML
       }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-    now: () => '2026-07-25T00:00:00.000Z',
+    now: () => '2026-08-01T00:00:00.000Z',
   })
 
   assert.deepEqual(
@@ -201,7 +220,7 @@ test('BuzzBoard run validates the official careers handoff and returns public op
     [
       buzzboard.CAREERS_URL,
       buzzboard.BOARD_URL,
-      'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc',
+      'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
     ],
   )
   assert.equal(jobs.length, 1)
@@ -211,7 +230,7 @@ test('BuzzBoard run validates the official careers handoff and returns public op
   assert.equal(jobs[0].employmentType, 'Full-time')
   assert.equal(jobs[0].experienceRequired, '4+ years')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, '2026-07-25T00:00:00.000Z')
+  assert.equal(jobs[0].scrapedAt, '2026-08-01T00:00:00.000Z')
 })
 
 test('BuzzBoard run keeps conservative listing data when JazzHR detail enrichment fails', async () => {
@@ -224,13 +243,13 @@ test('BuzzBoard run keeps conservative listing data when JazzHR detail enrichmen
 
       if (url === buzzboard.CAREERS_URL) return VERIFIED_CAREERS_HTML
       if (url === buzzboard.BOARD_URL) return VERIFIED_BOARD_HTML
-      if (url === 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc') {
+      if (url === 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&') {
         throw new Error(`HTTP 429 for ${url}`)
       }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-    now: () => '2026-07-25T00:00:00.000Z',
+    now: () => '2026-08-01T00:00:00.000Z',
   })
 
   assert.deepEqual(
@@ -238,7 +257,7 @@ test('BuzzBoard run keeps conservative listing data when JazzHR detail enrichmen
     [
       buzzboard.CAREERS_URL,
       buzzboard.BOARD_URL,
-      'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc',
+      'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
     ],
   )
   assert.equal(jobs.length, 1)
@@ -247,6 +266,49 @@ test('BuzzBoard run keeps conservative listing data when JazzHR detail enrichmen
   assert.equal(jobs[0].jobDescription, null)
   assert.equal(jobs[0].experienceRequired, null)
   assert.equal(jobs[0].source, 'buzzboard')
+})
+
+test('BuzzBoard drops stale careers-page listings when the live JazzHR board exposes different job ids', async () => {
+  const buzzboard = await loadModule()
+
+  const jobs = await buzzboard.createBuzzBoardScraper().run({
+    fetchText: async (url) => {
+      if (url === buzzboard.CAREERS_URL) return VERIFIED_CAREERS_HTML
+      if (url === buzzboard.BOARD_URL) {
+        return VERIFIED_BOARD_HTML.replace(
+          'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
+          'https://buzzboard.applytojob.com/apply/mqPSQLBius/Team-LeadSenior-Specialist-AI',
+        ).replace(
+          'Associate Product Manager / Product Manager',
+          'Team Lead/Senior Specialist - AI',
+        )
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    now: () => '2026-08-01T00:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('BuzzBoard skips careers-page listings whose detail url now resolves to the generic JazzHR listings page', async () => {
+  const buzzboard = await loadModule()
+
+  const jobs = await buzzboard.createBuzzBoardScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === buzzboard.CAREERS_URL) return VERIFIED_CAREERS_HTML
+      if (url === buzzboard.BOARD_URL) return VERIFIED_BOARD_HTML
+      if (url === 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&') {
+        return GENERIC_BOARD_LISTING_HTML
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    now: () => '2026-08-01T00:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('BuzzBoard fails closed when the official careers surface or JazzHR board drifts', async () => {
@@ -282,7 +344,9 @@ test('BuzzBoard fails closed when the official careers surface or JazzHR board d
       fetchText: async (url) => {
         if (url === buzzboard.CAREERS_URL) return VERIFIED_CAREERS_HTML
         if (url === buzzboard.BOARD_URL) {
-          return VERIFIED_BOARD_HTML.replace('Powered by JazzHR', 'Powered by Something Else')
+          return VERIFIED_BOARD_HTML
+            .replace('https://info.jazzhr.com', 'https://example.com')
+            .replace('Powered by', 'Powered by Something Else')
         }
 
         return VERIFIED_PRODUCT_MANAGER_DETAIL_HTML

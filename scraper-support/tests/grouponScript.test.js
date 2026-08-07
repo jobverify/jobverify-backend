@@ -11,9 +11,12 @@ const VERIFIED_CAREERS_HTML = `
   </head>
   <body>
     <main>
-      <h1>Meaningful Work. Happy Teams. Great Deals.</h1>
+      <nav>
+        <a href="/mission">Our Mission</a>
+        <a href="/teams">Our Teams</a>
+      </nav>
       <p>We have a presence in Bangalore and Chennai.</p>
-      <a href="https://job-boards.eu.greenhouse.io/groupon">Apply now and join the Groupon team!</a>
+      <a href="https://job-boards.eu.greenhouse.io/groupon"><span>Apply now and join the Groupon team!</span></a>
     </main>
   </body>
 </html>

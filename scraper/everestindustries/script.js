@@ -197,6 +197,7 @@ export const extractJobs = (html = '') => {
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the verified Everest Industries Darwinbox handoff from the official careers page.',
+      publicExperienceChecked: true,
     }
   }).filter(Boolean)
 
@@ -266,6 +267,7 @@ export const createEverestIndustriesScraper = ({
     const jobs = extractJobs(careersPage.html)
       .map((job) => ({
         ...job,
+        publicExperienceChecked: true,
         source: SOURCE,
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: now(),

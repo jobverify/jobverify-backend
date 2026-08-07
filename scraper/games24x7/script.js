@@ -66,8 +66,8 @@ export const hasOfficialGames24x7HomepageSignals = (html = '') => {
   const text = (normalizeWhitespace(page) || '').toLowerCase()
 
   return extractTitle(page) === 'Games24x7: Where the Science of Gaming Meets AI & Data'
-    && text.includes('entertaining 120 million+ players using the science of gaming')
-    && /https:\/\/www\.games24x7\.com\/life/i.test(page)
+    && /entertaining 120 million\s*\+\s*players using the science of gaming/i.test(text)
+    && /href=["'](?:https:\/\/www\.games24x7\.com)?\/life(?:["'#?\/]|$)/i.test(page)
 }
 
 export const hasOfficialGames24x7LifeSignals = (html = '') => {

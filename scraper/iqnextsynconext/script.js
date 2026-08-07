@@ -5,51 +5,12 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'iqnextsynconext'
 export const COMPANY = 'IQnext (Synconext)'
-export const HOMEPAGE_URL = 'https://www.synconext.com/'
-export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
-  'https://www.synconext.com/careers',
-  'https://www.synconext.com/careers/',
-  'https://www.synconext.com/career',
-  'https://www.synconext.com/career/',
-  'https://www.synconext.com/jobs',
-  'https://www.synconext.com/jobs/',
-]
+export const HOMEPAGE_URL = 'https://www.iqnext.io/'
+export const CAREERS_URL = 'https://www.iqnext.io/careers'
+export const WELLFOUND_JOBS_URL = 'https://wellfound.com/company/iqnext/jobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const HOMEPAGE_SIGNALS = [
-  '<title>home - synconext</title>',
-  'meta property="og:site_name" content="synconext - integrated workspace &amp; energy management solutions"',
-  'meta property="og:title" content="home | synconext"',
-  'we are now on our new website for iqnext',
-  'click here to go to iqnext',
-  'www.iqnext.io',
-]
-
-const NO_PUBLIC_CAREERS_SIGNALS = [
-  'no results found',
-  'the page you requested could not be found',
-  'try refining your search',
-]
-
-const PUBLIC_JOBS_SIGNAL_PATTERNS = [
-  /\bcurrent openings\b/i,
-  /\bopen positions\b/i,
-  /\bsearch jobs\b/i,
-  /\bjob openings\b/i,
-  /\bapply now\b/i,
-  /\bview jobs\b/i,
-  /jobs\.lever\.co/i,
-  /boards\.greenhouse\.io/i,
-  /job-boards\.greenhouse\.io/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs/i,
-  /workdayjobs/i,
-  /smartrecruiters/i,
-  /jobvite/i,
-  /greenhouse\.io/i,
-]
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -85,6 +46,7 @@ export const defaultFetchPage = async (url, {
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     signal: createTimeoutSignal(timeoutMs),
+    redirect: 'follow',
   })
 
   return {
@@ -98,24 +60,83 @@ export const defaultFetchPage = async (url, {
 }
 
 export const hasOfficialHomepageSignal = (html) => {
-  const normalized = String(html ?? '').toLowerCase()
-  return HOMEPAGE_SIGNALS.every((signal) => normalized.includes(signal))
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return rawHtml.includes('data-wf-domain="www.iqnext.io"')
+    && /<title>\s*IoT Based Platform for Smart Building Management - IQnext\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+(?:href=["']https:\/\/www\.iqnext\.io\/?["'][^>]+rel=["']canonical["']|rel=["']canonical["'][^>]+href=["']https:\/\/www\.iqnext\.io\/?["'])/i.test(rawHtml)
+    && normalized.includes('IQnext is a centralised platform that is redefining building operations')
+    && normalized.includes('Building operations efficiency energy maintenance made exceptionally easy')
+    && normalized.includes('Trusted by forward thinking buildings')
 }
 
-export const hasPublicJobsSignal = (html) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+export const hasOfficialCareersSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
 
-export const isVerifiedMissingCareersRoute = (page = {}) => {
-  if (Number(page?.status) !== 404) {
-    return false
+  return rawHtml.includes('data-wf-domain="www.iqnext.io"')
+    && /<title>\s*Careers \| IQnext\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+(?:href=["']https:\/\/www\.iqnext\.io\/careers\/?["'][^>]+rel=["']canonical["']|rel=["']canonical["'][^>]+href=["']https:\/\/www\.iqnext\.io\/careers\/?["'])/i.test(rawHtml)
+    && normalized.includes('Your ideas can power the future of sustainable spaces')
+    && normalized.includes('Take ownership, grow faster, and make an impact that matters')
+    && normalized.includes('See Open Positions')
+    && normalized.includes('Why Join IQnext')
+    && normalized.includes('Transforming an Industry')
+}
+
+export const extractWellfoundJobsUrl = (html) => {
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>/gi)) {
+    try {
+      const url = new URL(match[1], CAREERS_URL)
+      const hostname = url.hostname.toLowerCase()
+      const pathname = url.pathname.replace(/\/+$/, '')
+
+      if (
+        hostname === 'angel.co'
+        && pathname === '/company/iqnext/jobs'
+      ) {
+        return WELLFOUND_JOBS_URL
+      }
+
+      if (
+        hostname === 'wellfound.com'
+        && pathname === '/company/iqnext/jobs'
+      ) {
+        return WELLFOUND_JOBS_URL
+      }
+    } catch {
+      continue
+    }
   }
 
-  if (hasPublicJobsSignal(page?.html)) {
-    return false
-  }
+  return null
+}
 
-  const normalized = normalizeWhitespace(page?.html).toLowerCase()
-  return NO_PUBLIC_CAREERS_SIGNALS.every((signal) => normalized.includes(signal))
+export const isVerifiedWellfoundChallenge = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const responseUrl = String(page?.url ?? '')
+  const isVerifiedWellfoundUrl =
+    responseUrl === WELLFOUND_JOBS_URL
+    || responseUrl.startsWith('https://wellfound.com/')
+  const hasLegacyChallengeSignal =
+    normalized.includes('please enable js and disable any ad blocker')
+    && rawHtml.toLowerCase().includes('captcha-delivery.com')
+  const hasCloudflareChallengeSignal =
+    /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(rawHtml)
+    && /noindex,nofollow/i.test(rawHtml)
+    && normalized.includes('enable javascript and cookies to continue')
+    && (
+      rawHtml.toLowerCase().includes('window._cf_chl_opt')
+      || rawHtml.toLowerCase().includes('cf_chl_opt')
+    )
+    && rawHtml.toLowerCase().includes('challenge-platform')
+    && normalized.includes('ray id')
+
+  return Number(page?.status) === 403
+    && isVerifiedWellfoundUrl
+    && (hasLegacyChallengeSignal || hasCloudflareChallengeSignal)
 }
 
 export const createIqnextSynconextScraper = () => ({
@@ -126,16 +147,20 @@ export const createIqnextSynconextScraper = () => ({
       throw new Error('IQnext (Synconext) verified official homepage no longer matches the known public surface')
     }
 
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('IQnext (Synconext) homepage now appears to expose a public jobs surface')
+    const careersPage = await fetchPage(CAREERS_URL)
+
+    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+      throw new Error('IQnext (Synconext) verified careers page no longer matches the known public surface')
     }
 
-    for (const careersRouteUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
+    const wellfoundJobsUrl = extractWellfoundJobsUrl(careersPage.html)
+    if (wellfoundJobsUrl !== WELLFOUND_JOBS_URL) {
+      throw new Error('IQnext (Synconext) careers page no longer exposes the verified Wellfound jobs handoff')
+    }
 
-      if (!isVerifiedMissingCareersRoute(careersRoute)) {
-        throw new Error('IQnext (Synconext) careers routes changed materially or now expose public jobs')
-      }
+    const wellfoundBoard = await fetchPage(WELLFOUND_JOBS_URL)
+    if (!isVerifiedWellfoundChallenge(wellfoundBoard)) {
+      throw new Error('IQnext (Synconext) Wellfound jobs board no longer matches the verified challenge-gated public surface')
     }
 
     return []

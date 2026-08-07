@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -60,9 +61,30 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
-  timeoutMs: 15000,
+  timeoutMs: 10000,
 })
+
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
+const fetchVerifiedText = async (
+  url,
+  fetchText,
+  fetchBrowserText,
+) => {
+  try {
+    return await fetchText(url)
+  } catch (error) {
+    if (!isBrowserFallbackError(error)) {
+      throw error
+    }
+
+    return fetchBrowserText(url)
+  }
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeText(html)
@@ -81,14 +103,19 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeText(html)
 
-  return normalized.includes('contact us')
-    && normalized.includes('lakshmi electrical control systems limited, arasur, coimbatore - 641 407, tamilnadu, india')
+  const hasLegacyContactBlock = normalized.includes('lakshmi electrical control systems limited, arasur, coimbatore - 641 407, tamilnadu, india')
     && normalized.includes("let's talk")
-    && normalized.includes('phone: +91-422-6616500')
-    && normalized.includes('fax: +91-422-6616555')
     && normalized.includes('other than business enquiry e-mail us')
-    && normalized.includes('info@lecsindia.com')
     && normalized.includes('contact@lecsindia.com')
+
+  const hasCurrentContactBlock = normalized.includes('get in touch')
+    && normalized.includes('factory address')
+    && normalized.includes('arasur, coimbatore - 641 407 tamilnadu, india')
+
+  return normalized.includes('contact us')
+    && normalized.includes('phone: +91-422-6616500')
+    && normalized.includes('info@lecsindia.com')
+    && (hasLegacyContactBlock || hasCurrentContactBlock)
 }
 
 export const hasFirstPartyCareerLikeLink = (html) =>
@@ -99,34 +126,70 @@ export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const createLakshmiElectricalControlSystemsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems verified official homepage no longer matches the known public surface')
+  async run({
+    fetchText = defaultFetchText,
+    fetchBrowserText,
+  } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          timeoutMs: 90000,
+          settleTimeMs: 2000,
+        })
+      }
+
+      return browserSession
     }
 
-    if (hasPublicJobsSignal(homepageHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems homepage now exposes public jobs')
-    }
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
 
-    if (hasFirstPartyCareerLikeLink(homepageHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems homepage now exposes a first-party careers or jobs path')
-    }
+    try {
+      const homepageHtml = await fetchVerifiedText(
+        HOMEPAGE_URL,
+        fetchText,
+        browserTextFetcher,
+      )
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Lakshmi Electrical Control Systems verified official homepage no longer matches the known public surface')
+      }
 
-    const contactHtml = await fetchText(CONTACT_URL)
-    if (!hasOfficialContactSignal(contactHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems verified official contact surface no longer matches the known public surface')
-    }
+      if (hasPublicJobsSignal(homepageHtml)) {
+        throw new Error('Lakshmi Electrical Control Systems homepage now exposes public jobs')
+      }
 
-    if (hasPublicJobsSignal(contactHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems contact surface now exposes public jobs')
-    }
+      if (hasFirstPartyCareerLikeLink(homepageHtml)) {
+        throw new Error('Lakshmi Electrical Control Systems homepage now exposes a first-party careers or jobs path')
+      }
 
-    if (hasFirstPartyCareerLikeLink(contactHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems contact surface now exposes a first-party careers or jobs path')
-    }
+      const contactHtml = await fetchVerifiedText(
+        CONTACT_URL,
+        fetchText,
+        browserTextFetcher,
+      )
+      if (!hasOfficialContactSignal(contactHtml)) {
+        throw new Error('Lakshmi Electrical Control Systems verified official contact surface no longer matches the known public surface')
+      }
 
-    return []
+      if (hasPublicJobsSignal(contactHtml)) {
+        throw new Error('Lakshmi Electrical Control Systems contact surface now exposes public jobs')
+      }
+
+      if (hasFirstPartyCareerLikeLink(contactHtml)) {
+        throw new Error('Lakshmi Electrical Control Systems contact surface now exposes a first-party careers or jobs path')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

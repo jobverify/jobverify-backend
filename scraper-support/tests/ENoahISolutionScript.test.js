@@ -39,6 +39,13 @@ test('eNoah iSolution validates the verified zero-openings surface and returns n
   assert.equal(enoah.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(enoah.extractJobsPageUrl(careersHtml), enoah.JOBS_PAGE_URL)
   assert.equal(enoah.hasZeroOpeningsSignal(jobsHtml), true)
+  assert.equal(
+    enoah.hasTrustworthyPublicJobsSignal(`
+      ${jobsHtml}
+      <div class="job_listing">Theme wrapper only</div>
+    `),
+    false,
+  )
 
   const jobs = await enoah.createENoahISolutionScraper().run({
     fetchText: async (url) => {

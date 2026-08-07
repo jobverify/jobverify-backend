@@ -34,6 +34,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) || null
+
 const normalizeComparableUrl = (value) => {
   try {
     const url = new URL(String(value ?? ''))
@@ -80,18 +83,25 @@ export const pageExposesPublicJobListings = (html = '') => [
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const normalized = normalizeWhitespace(page).toLowerCase()
+  const title = (extractTitle(page) || '').toLowerCase()
 
-  return /<title>\s*Moonfrog Labs – Leading game design for delightful experiences!\s*<\/title>/i.test(page)
+  return title.includes('moonfrog labs')
+    && title.includes('leading game design for delightful experiences')
     && /href=["']\/careers\/["']/i.test(page)
-    && /world-class mobile games/i.test(normalized)
+    && (
+      normalized.includes('world-class mobile games')
+      || (normalized.includes('work with us') && normalized.includes('open positions'))
+    )
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const title = (extractTitle(page) || '').toLowerCase()
 
-  return /<title>\s*Careers – Moonfrog Labs\s*<\/title>/i.test(page)
+  return title.includes('careers')
+    && title.includes('moonfrog labs')
     && /No Open Positions Currently/i.test(normalized)
     && /hr@moonfroglabs\.com/i.test(page)
     && /LinkedIn/i.test(normalized)
@@ -100,18 +110,19 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const hasRecruitmentPrivacyPolicySignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const normalized = normalizeWhitespace(page).toLowerCase()
+  const title = (extractTitle(page) || '').toLowerCase()
 
-  return /<title>\s*Recruitment Privacy Policy – Moonfrog Labs\s*<\/title>/i.test(page)
-    && /Moonfrog Labs Private Limited/i.test(normalized)
-    && /\bCandidate\b/i.test(normalized)
-  }
+  return title.includes('recruitment privacy policy')
+    && title.includes('moonfrog labs')
+    && normalized.includes('moonfrog labs private limited')
+    && /\b(candidate|applicant)\b/i.test(normalized)
+}
 
 export const isVerifiedMissingCareerRoute = ({ status, html } = {}) =>
   Number(status) === 404
-  && /<title>\s*Moonfrog Labs – Leading game design for delightful experiences!\s*<\/title>/i.test(
-    String(html ?? ''),
-  )
+  && ((extractTitle(html) || '').toLowerCase().includes('moonfrog labs'))
+  && ((extractTitle(html) || '').toLowerCase().includes('leading game design for delightful experiences'))
   && !pageExposesPublicJobListings(html)
 
 export const createMoonfrogLabsScraper = () => ({

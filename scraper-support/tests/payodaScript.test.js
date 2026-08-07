@@ -17,10 +17,10 @@ const careersPageHtml = `
   </head>
   <body>
     <main>
-      <h1>Build the future of agentic AI</h1>
+      <h1>Build the future of agentic AI for the industries that move the world.</h1>
       <section>
         <h2>Open Roles</h2>
-        <p>Every option opens a pre-filled draft to careers@payoda.com.</p>
+        <p>Click any role to read the full job description. Inside, apply through Gmail or Outlook in your browser, or hand off to your default mail app. Every option opens a pre-filled draft to joinus@payoda.com.</p>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
             <h4 class="font-display font-semibold text-[1rem] sm:text-[1.05rem] text-black group-hover:text-burg transition-colors mb-1.5 leading-snug">Senior ReactJS Developer</h4>
@@ -95,7 +95,7 @@ const careersPageHtml = `
         </button>
       </section>
       <section>
-        <a href="mailto:careers@payoda.com?subject=CV%3A%20open%20application">Send us your CV</a>
+        <a href="mailto:joinus@payoda.com?subject=CV%3A%20open%20application">Send us your CV</a>
       </section>
     </main>
   </body>
@@ -109,7 +109,7 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
   assert.equal(payoda.CAREERS_URL, 'https://www.payoda.com/careers')
   assert.equal(payoda.COMPANY, 'Payoda')
   assert.equal(payoda.SOURCE, 'payoda')
-  assert.equal(payoda.APPLICATION_EMAIL, 'careers@payoda.com')
+  assert.equal(payoda.APPLICATION_EMAIL, 'joinus@payoda.com')
   assert.equal(payoda.hasOfficialCareersSignal(careersPageHtml), true)
 
   assert.deepEqual(payoda.extractRoleCards(careersPageHtml), [
@@ -121,7 +121,7 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
       experienceRequired: '5-10 yrs',
       employmentType: 'Full-time',
       sourceUrl: 'https://www.payoda.com/careers',
-      applyUrl: 'mailto:careers@payoda.com?subject=CV%3A%20open%20application',
+      applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
     },
     {
       title: 'Senior Golang Developer',
@@ -131,7 +131,7 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
       experienceRequired: '5-10 yrs',
       employmentType: 'Full-time',
       sourceUrl: 'https://www.payoda.com/careers',
-      applyUrl: 'mailto:careers@payoda.com?subject=CV%3A%20open%20application',
+      applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
     },
     {
       title: 'Backend Engineer (Scala / Play)',
@@ -141,7 +141,7 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
       experienceRequired: '3+ yrs',
       employmentType: 'Full-time',
       sourceUrl: 'https://www.payoda.com/careers',
-      applyUrl: 'mailto:careers@payoda.com?subject=CV%3A%20open%20application',
+      applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
     },
     {
       title: 'Power Platform Developer',
@@ -151,7 +151,7 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
       experienceRequired: '4-8 yrs',
       employmentType: 'Full-time',
       sourceUrl: 'https://www.payoda.com/careers',
-      applyUrl: 'mailto:careers@payoda.com?subject=CV%3A%20open%20application',
+      applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
     },
     {
       title: 'Support Engineer',
@@ -161,7 +161,7 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
       experienceRequired: '4-8 yrs',
       employmentType: 'Full-time',
       sourceUrl: 'https://www.payoda.com/careers',
-      applyUrl: 'mailto:careers@payoda.com?subject=CV%3A%20open%20application',
+      applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
     },
     {
       title: 'Digital Marketing Specialist',
@@ -171,7 +171,7 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
       experienceRequired: '7-10 yrs',
       employmentType: 'Full-time',
       sourceUrl: 'https://www.payoda.com/careers',
-      applyUrl: 'mailto:careers@payoda.com?subject=CV%3A%20open%20application',
+      applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
     },
   ])
 })
@@ -194,6 +194,6 @@ test('run decorates Payoda jobs with the shared runner fields from the official 
   assert.equal(jobs[0].company, 'Payoda')
   assert.equal(jobs[0].source, 'payoda')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].link, 'mailto:careers@payoda.com?subject=CV%3A%20open%20application')
+  assert.equal(jobs[0].link, 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

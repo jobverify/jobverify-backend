@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -64,6 +65,30 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
+const defaultFetchPortalForm = async (jobId) => {
+  const response = await fetch(buildFountainPortalApplicationFormUrl(jobId), {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+      Accept: 'application/json',
+    },
+  })
+
+  const bodyText = await response.text()
+  let payload = null
+
+  try {
+    payload = JSON.parse(bodyText)
+  } catch {
+    payload = null
+  }
+
+  return {
+    status: response.status,
+    payload,
+    bodyText,
+  }
+}
+
 export const buildFountainOpeningsApiUrl = (page = 1) => {
   const url = new URL('/internal_api/career_site/openings', FOUNTAIN_API_ORIGIN)
   url.searchParams.set('career_site[account_slug]', FOUNTAIN_ACCOUNT_SLUG)
@@ -76,6 +101,14 @@ export const buildFountainOpeningsApiUrl = (page = 1) => {
   url.searchParams.set('compensation_type', 'any')
   url.searchParams.set('location', 'current_location')
   url.searchParams.set('locale', 'en-US')
+  return url.toString()
+}
+
+export const buildFountainPortalApplicationFormUrl = (jobId) => {
+  const url = new URL(`/internal_api/portal/${FOUNTAIN_ACCOUNT_SLUG}/application_forms/new`, FOUNTAIN_API_ORIGIN)
+  url.searchParams.set('funnel_id', String(jobId))
+  url.searchParams.set('try_new_ui', 'true')
+  url.searchParams.set('brand_id', FOUNTAIN_BRAND_ID)
   return url.toString()
 }
 
@@ -177,6 +210,71 @@ const findCanonicalCity = (value) => {
 
 const getCityFromApiOpening = (opening) => findCanonicalCity(opening?.title)
 
+const normalizeHtmlText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const inferExperienceFromDescription = (description) => {
+  const normalized = normalizeWhitespace(description)
+  if (!normalized) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+const isFountainPortalNotApproved = (portalResponse = {}) => (
+  portalResponse?.status === 401
+  && /funnel not approved/i.test(String(
+    portalResponse?.payload?.message
+    || portalResponse?.bodyText
+    || '',
+  ))
+)
+
+export const extractFountainPortalJob = (job, portalResponse = {}) => {
+  if (isFountainPortalNotApproved(portalResponse)) {
+    return {
+      ...job,
+      publicExperienceChecked: true,
+    }
+  }
+
+  const funnel = portalResponse?.payload?.funnel
+  if (!funnel || portalResponse?.status !== 200) {
+    return job
+  }
+
+  const jobDescription = normalizeHtmlText(funnel.position_description_html)
+
+  return {
+    ...job,
+    title: normalizeWhitespace(funnel.title) || job.title,
+    location: normalizeWhitespace(job.location),
+    city: job.city || getCity(job.location),
+    sourceUrl: normalizeWhitespace(job.sourceUrl),
+    applyUrl: normalizeWhitespace(job.applyUrl),
+    jobDescription: jobDescription || job.jobDescription,
+    experienceRequired: inferExperienceFromDescription(jobDescription) || job.experienceRequired,
+    publicExperienceChecked: true,
+  }
+}
+
 export const extractFountainApiJobs = (payload = {}) => (Array.isArray(payload.openings) ? payload.openings : [])
   .map((opening) => {
     const title = normalizeWhitespace(opening?.title)
@@ -231,12 +329,32 @@ const fetchAllFountainApiJobs = async (fetchJson) => {
   return jobs
 }
 
+const mapWithConcurrency = async (items, mapper, concurrency = 6) => {
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length || 0) }, () => worker()),
+  )
+
+  return results
+}
+
 export const createCmsComputersScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
     const fetchJson = options.fetchJson || defaultFetchJson
+    const fetchPortalForm = options.fetchPortalForm || defaultFetchPortalForm
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
 
     if (!hasCmsCareersSignal(careersHtml)) {
@@ -245,8 +363,12 @@ export const createCmsComputersScraper = ({
 
     const jobs = await fetchAllFountainApiJobs(fetchJson)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const portalEnrichedJobs = await mapWithConcurrency(
+      selectedJobs,
+      async (job) => extractFountainPortalJob(job, await fetchPortalForm(job.jobId)),
+    )
 
-    return selectedJobs.map((job) => ({
+    return portalEnrichedJobs.map((job) => ({
       ...job,
       source: 'cmscomputers',
       link: job.applyUrl,

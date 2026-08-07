@@ -55,9 +55,9 @@ test('QuadEye local catalog captures the verified first-party careers page and p
   assert.equal(QUADEYE_CATALOG.parser, 'custom-script')
   assert.equal(QUADEYE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(QUADEYE_CATALOG.dryRunFile, 'quadeye/jobs.json')
-  assert.equal(QUADEYE_CATALOG.verifiedOn, '2026-07-17')
+  assert.equal(QUADEYE_CATALOG.verifiedOn, '2026-08-04')
   assert.equal(QUADEYE_CATALOG.modulePath, modulePath)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.quadeye\.com\/careers\//i)
   assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /https:\/\/quadeye\.zohorecruit\.in\/jobs\/Careers\//i)
   assert.match(
@@ -65,7 +65,8 @@ test('QuadEye local catalog captures the verified first-party careers page and p
     /https:\/\/quadeye\.zohorecruit\.in\/recruit\/v2\/public\/Job_Openings/i,
   )
   assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /No current Openings/i)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /\b21 public India roles\b/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Jobs at PeoplePlus/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /\b7 current public India roles\b/i)
 
   assert.equal(quadeye.PROVIDER_METADATA.source, QUADEYE_CATALOG.source)
   assert.equal(quadeye.PROVIDER_METADATA.companyName, QUADEYE_CATALOG.companyName)

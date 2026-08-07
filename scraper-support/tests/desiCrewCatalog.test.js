@@ -30,7 +30,7 @@ const loadDesiCrewModule = async () => {
   }
 }
 
-test('Desi Crew local catalog captures the verified first-party archive, REST feed, and detail-page apply surface', async () => {
+test('Desi Crew local catalog captures the August 1, 2026 first-party careers site contract', async () => {
   const { DESI_CREW_CATALOG } = await loadDesiCrewCatalog()
   const desiCrew = await loadDesiCrewModule()
 
@@ -38,47 +38,40 @@ test('Desi Crew local catalog captures the verified first-party archive, REST fe
   assert.equal(DESI_CREW_CATALOG.companyName, 'Desi Crew')
   assert.equal(DESI_CREW_CATALOG.officialBrandName, 'DesiCrew')
   assert.equal(DESI_CREW_CATALOG.adapter, 'script')
-  assert.equal(DESI_CREW_CATALOG.homepageUrl, 'https://desicrew.in/')
-  assert.equal(DESI_CREW_CATALOG.careersPageUrl, 'https://desicrew.in/about-us/careers/')
-  assert.equal(DESI_CREW_CATALOG.companyCareerPage, 'https://desicrew.in/open-job-positions/')
-  assert.equal(DESI_CREW_CATALOG.jobsArchiveUrl, 'https://desicrew.in/open-job-positions/')
-  assert.equal(
-    DESI_CREW_CATALOG.jobsApiUrl,
-    'https://desicrew.in/wp-json/wp/v2/open-job-position?per_page=100&_fields=id,date,modified,status,link,title,slug,content,type',
-  )
+  assert.equal(DESI_CREW_CATALOG.homepageUrl, 'https://www.desicrew.in/')
+  assert.equal(DESI_CREW_CATALOG.careersPageUrl, 'https://www.desicrew.in/careers/')
+  assert.equal(DESI_CREW_CATALOG.companyCareerPage, 'https://www.desicrew.in/careers/')
+  assert.equal(DESI_CREW_CATALOG.jobsArchiveUrl, 'https://www.desicrew.in/careers/')
+  assert.equal(DESI_CREW_CATALOG.jobsApiUrl, null)
   assert.equal(
     DESI_CREW_CATALOG.sampleJobUrl,
-    'https://desicrew.in/open-job-position/qa-delivery-manager/',
+    'https://www.desicrew.in/careers/qa-automation-engineer/',
   )
   assert.equal(DESI_CREW_CATALOG.companyDomain, 'desicrew.in')
-  assert.equal(DESI_CREW_CATALOG.atsPlatform, 'first-party-wordpress-open-job-position')
+  assert.equal(DESI_CREW_CATALOG.atsPlatform, 'first-party-desicrew-careers-site')
   assert.equal(DESI_CREW_CATALOG.countryFilter, 'India')
   assert.equal(
     DESI_CREW_CATALOG.paginationStrategy,
-    'first-party-open-job-archive-plus-public-rest-endpoint',
+    'single-first-party-careers-page-plus-role-detail-pages',
   )
   assert.equal(
     DESI_CREW_CATALOG.extractionStrategy,
-    'verified-homepage+verified-careers-page+verified-open-job-archive+verified-open-job-rest-api+first-party-detail-pages-with-apply-form',
+    'verified-homepage+verified-careers-page+first-party-role-index+first-party-role-detail-pages-with-jobposting-metadata',
   )
   assert.equal(DESI_CREW_CATALOG.parser, 'custom-script')
   assert.equal(DESI_CREW_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DESI_CREW_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(DESI_CREW_CATALOG.verifiedOn, '2026-08-01')
   assert.equal(DESI_CREW_CATALOG.dryRunFile, 'desicrew/jobs.json')
   assert.equal(DESI_CREW_CATALOG.modulePath, desiCrewModulePath)
-  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /https:\/\/desicrew\.in\//i)
-  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /https:\/\/desicrew\.in\/about-us\/careers\//i)
-  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /https:\/\/desicrew\.in\/open-job-positions\//i)
+  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.desicrew\.in\//i)
+  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.desicrew\.in\/careers\//i)
+  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /open-job-positions\/ endpoint redirects/i)
+  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /WordPress REST endpoint is no longer a usable public jobs source/i)
   assert.match(
     DESI_CREW_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/desicrew\.in\/wp-json\/wp\/v2\/open-job-position\?per_page=100&_fields=id,date,modified,status,link,title,slug,content,type/i,
+    /https:\/\/www\.desicrew\.in\/careers\/qa-automation-engineer\//i,
   )
-  assert.match(
-    DESI_CREW_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/desicrew\.in\/open-job-position\/qa-delivery-manager\//i,
-  )
-  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /three live public openings/i)
-  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /apply form/i)
+  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /JobPosting metadata/i)
 
   assert.equal(desiCrew.PROVIDER_METADATA.source, DESI_CREW_CATALOG.source)
   assert.equal(desiCrew.PROVIDER_METADATA.companyName, DESI_CREW_CATALOG.companyName)
@@ -116,7 +109,7 @@ test('buildScrapers and company coverage resolve Desi Crew from the shared catal
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Desi Crew')
-  assert.equal(provider.companyCareerPage, 'https://desicrew.in/open-job-positions/')
+  assert.match(provider.modulePath, /desicrew[\\/]script\.js$/i)
   assert.match(scraper.dryRunFile, /desicrew[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

@@ -11,7 +11,7 @@ const loadProviderModule = async () => {
   }
 }
 
-test('UST BlueConch Technologies provider captures the generic-UST-careers fail-closed contract', async () => {
+test('UST BlueConch Technologies provider captures the Cloudflare-blocked UST fail-closed contract', async () => {
   const { provider, default: defaultProvider } = await loadProviderModule()
 
   assert.equal(defaultProvider, provider)
@@ -25,21 +25,21 @@ test('UST BlueConch Technologies provider captures the generic-UST-careers fail-
     'https://www.ust.com/en/who-we-are/ust-newsroom/ust-blueconch-wins-excellence-award-for-best-security-practices-in-it-ites-sector',
   )
   assert.equal(provider.companyDomain, 'ust.com')
-  assert.equal(provider.atsPlatform, 'generic-parent-company-careers-page')
+  assert.equal(provider.atsPlatform, 'cloudflare-blocked-parent-company-pages')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'blueconch-reference-plus-generic-parent-careers-validation',
+    'blueconch-reference-plus-parent-careers-cloudflare-block-validation',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-ust-blueconch-reference+verified-generic-ust-careers-page-without-blueconch-filter-return-empty',
+    'verified-ust-blueconch-reference-route+verified-parent-careers-route+cloudflare-blocked-no-blueconch-public-jobs-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /generic UST careers page/i)
-  assert.match(provider.verifiedSurfaceSummary, /no BlueConch-specific public jobs surface/i)
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare block surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /no BlueConch-specific public jobs inventory/i)
   assert.match(provider.modulePath, /ustblueconchtechnologies[\\/]script\.js$/i)
 })
 

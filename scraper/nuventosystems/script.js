@@ -18,6 +18,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/[–—]/g, '-')
   .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, '-')
   .replace(/&#8217;|&#39;|&apos;/gi, "'")
   .replace(/&quot;/gi, '"')
@@ -34,7 +35,7 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(value)
 
 const stripTags = (value) => decodeHtmlEntities(value)
   .replace(/<br\s*\/?>/gi, '\n')
-  .replace(/<\/(p|div|li|ul|ol|h[1-6])>/gi, '\n')
+  .replace(/<\/(p|div|li|ul|ol|h[1-6]|summary|details)>/gi, '\n')
   .replace(/<li\b[^>]*>/gi, '\n- ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+\n/g, '\n')
@@ -44,7 +45,7 @@ const stripTags = (value) => decodeHtmlEntities(value)
   .trim()
 
 const extractLabelValue = (block, label) => {
-  const regex = new RegExp(`${label}\\s*:\\s*([^<\\n]+)`, 'i')
+  const regex = new RegExp(`(?:^|[>\\n])\\s*${label}\\s*:\\s*([^<\\n]+)`, 'i')
   const match = String(block ?? '').match(regex)
   return match ? normalizeWhitespace(match[1]) : null
 }
@@ -81,29 +82,75 @@ export const hasOfficialCareersHubSignal = (html = '') => {
 
   return normalized.includes('Careers')
     && normalized.includes('Careers in India')
-    && /https:\/\/nuvento\.com\/careers\/kochi\//i.test(rawHtml)
+    && /href=["'](?:https:\/\/nuvento\.com)?\/careers\/kochi\/["']/i.test(rawHtml)
 }
 
 export const hasOfficialIndiaCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
 
-  return normalized.includes('Nuvento - India')
+  return (
+    /Nuvento\s*-\s*India/i.test(normalized)
+    || /<title>\s*kochi\s*-\s*Nuvento\s*<\/title>/i.test(rawHtml)
+  )
+    && /property=["']og:site_name["']\s+content=["']Nuvento["']/i.test(rawHtml)
     && normalized.includes('naseeba.parvin@nuvento.com')
     && normalized.includes('anindita.ghosal@nuvento.com')
-    && normalized.includes('Team Lead -Python')
-    && normalized.includes('Sales and Marketing Intern (Paid Internship)')
+    && /(Team Lead\s*-?\s*Python|IT\/Sr\/JR Recruiter|US Finance & Accounts \/ Senior Executive)/i.test(normalized)
+    && /(Sales and Marketing Intern \(Paid Internship\)|Digital Marketing Lead)/i.test(normalized)
 }
 
-export const extractRoleSections = (html = '') => {
-  const page = String(html ?? '')
+const extractLegacyRoleSections = (html = '') => {
+  const matches = [...String(html ?? '').matchAll(
+    /<h4>([\s\S]*?)<\/h4>([\s\S]*?)(?=<h4>|<h6[^>]*>\s*Address|<\/body>)/gi,
+  )]
 
-  return [...page.matchAll(/<h4>([\s\S]*?)<\/h4>([\s\S]*?)(?=<h4>|<h6>\s*Address|<\/body>)/gi)]
+  return matches
     .map((match) => ({
       title: normalizeWhitespace(match[1]),
       body: match[2],
     }))
     .filter((section) => section.title)
 }
+
+const extractAccordionRoleSections = (html = '') => {
+  const matches = [...String(html ?? '').matchAll(
+    /<details\b[^>]*class=["'][^"']*e-n-accordion-item[^"']*["'][^>]*>[\s\S]*?<\/details>/gi,
+  )]
+
+  return matches
+    .map((match) => {
+      const title = normalizeWhitespace(
+        match[0].match(
+          /<div\b[^>]*class=["'][^"']*e-n-accordion-item-title-text[^"']*["'][^>]*>\s*([\s\S]*?)\s*<\/div>/i,
+        )?.[1],
+      )
+
+      return {
+        title,
+        body: match[0].replace(/^[\s\S]*?<\/summary>/i, ''),
+      }
+    })
+    .filter((section) => section.title)
+}
+
+const dedupeRoleSections = (sections = []) => {
+  const seen = new Set()
+
+  return sections.filter((section) => {
+    const key = `${section.title.toLowerCase()}::${normalizeWhitespace(stripTags(section.body)).toLowerCase()}`
+    if (seen.has(key)) {
+      return false
+    }
+    seen.add(key)
+    return true
+  })
+}
+
+export const extractRoleSections = (html = '') => dedupeRoleSections([
+  ...extractLegacyRoleSections(html),
+  ...extractAccordionRoleSections(html),
+])
 
 const extractExperienceFromText = (text = '') => {
   const match = String(text).match(/\b(\d+\s*[-+]\s*\d*\s*years?)\b/i)

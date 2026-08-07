@@ -35,6 +35,13 @@ const JSON_HEADERS = {
   Accept: 'application/json,text/plain,*/*',
 }
 
+const SAMSUNG_ELECTRO_MECHANICS_KR = '\uC0BC\uC131\uC804\uAE30'
+const SAMSUNG_GROUP_CAREERS_KR = '\uC0BC\uC131 \uD1B5\uD569 \uC778\uC7AC\uCC44\uC6A9'
+const HIRING_KR = '\uC778\uC7AC\uCC44\uC6A9'
+const CAREERS_INFO_KR = '\uCC44\uC6A9\uC815\uBCF4'
+const NO_CURRENT_POSTINGS_KR = '\uD604\uC7AC \uCC44\uC6A9\uC911\uC778 \uACF5\uACE0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.'
+const CHECK_SEARCH_CONDITIONS_KR = '\uAC80\uC0C9\uC5B4 \uB610\uB294 \uAC80\uC0C9 \uC870\uAC74\uC744 \uD655\uC778\uD574\uC8FC\uC2DC\uAE30 \uBC14\uB78D\uB2C8\uB2E4.'
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -78,22 +85,14 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const toAbsoluteUrl = (value, baseUrl = CAREERS_DOMAIN) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-
-  try {
-    return new URL(normalized, baseUrl).toString()
-  } catch {
-    return null
-  }
-}
-
 const buildSourceUrl = (seq) => `${CAREERS_DOMAIN}/hr/?no=${seq}`
 
 const buildApplyUrl = (seqno) => `${CAREERS_DOMAIN}/resume/create?comp=${COMPANY_CODE}&no=${seqno}`
 
 const buildDetailUrl = (seq) => `${DETAIL_URL}?seqno=${seq}&strCode=`
+
+const isAcceptedSamsungElectroMechanicsKr = (value) =>
+  normalizeWhitespace(value) === SAMSUNG_ELECTRO_MECHANICS_KR
 
 export const buildListRequestBody = ({
   currentPageNo = 1,
@@ -115,22 +114,37 @@ export const buildListRequestBody = ({
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const visibleText = stripTags(page) || ''
 
-  return /<title>\s*삼성전기\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*삼성전기\s*<\/title>/i.test(page)
+      || /SAMSUNG ELECTRO-MECHANICS/i.test(page)
+  )
     && /SAMSUNG ELECTRO-MECHANICS/i.test(page)
-    && /https:\/\/www\.samsungcareers\.com\//i.test(page)
-    && /삼성 통합 인재채용/i.test(page)
-    && /인재채용/i.test(page)
+    && (
+      /https:\/\/www\.samsungcareers\.com\//i.test(page)
+      || visibleText.includes(SAMSUNG_GROUP_CAREERS_KR)
+      || /Samsung Careers/i.test(visibleText)
+    )
+    && (
+      visibleText.includes(HIRING_KR)
+      || visibleText.includes(CAREERS_INFO_KR)
+      || /\/kr\/career[s]?\/job-description\.do/i.test(page)
+    )
 }
 
 export const hasExactCompanyPageSignal = (html) => {
   const page = String(html ?? '')
+  const visibleText = stripTags(page) || ''
 
-  return /<h2>\s*삼성전기\s*<\/h2>/i.test(page)
+  return (
+    /<h2>\s*삼성전기\s*<\/h2>/i.test(page)
+      || visibleText.includes(SAMSUNG_ELECTRO_MECHANICS_KR)
+      || /Samsung Electro-Mechanics/i.test(visibleText)
+  )
     && /data-index="C40"/i.test(page)
     && /https:\/\/www\.samsungsem\.com/i.test(page)
     && /sem\.recruit@samsung\.com/i.test(page)
-    && /name="btnRecruit"\s+data-value="22584"/i.test(page)
 }
 
 export const extractRoleCodesFromCompanyPage = (html) => [...String(html ?? '').matchAll(
@@ -142,6 +156,16 @@ export const extractRoleCodesFromCompanyPage = (html) => [...String(html ?? '').
 export const extractMaxPage = (html) => {
   const match = String(html ?? '').match(/class="divCnt"[^>]+data-max="(\d+)"/i)
   return match ? Number.parseInt(match[1], 10) : 0
+}
+
+export const hasNoCurrentPostingsSignal = (html) => {
+  const page = String(html ?? '')
+  const visibleText = stripTags(page) || ''
+
+  return /class="divCnt"[^>]+data-max="0"/i.test(page)
+    && /class="noData"/i.test(page)
+    && visibleText.includes(NO_CURRENT_POSTINGS_KR)
+    && visibleText.includes(CHECK_SEARCH_CONDITIONS_KR)
 }
 
 const parsePeriodDate = (value) => {
@@ -168,7 +192,7 @@ export const extractListingCards = (html) => {
     /<li>\s*<div>[\s\S]*?<button[^>]+class="btnShare"[^>]+data-value="([^"]+)"[\s\S]*?<button[^>]+class="btnScrap"[^>]+data-value="([^"]+)"[\s\S]*?<p class="company">\s*([\s\S]*?)<\/p>[\s\S]*?<h3 class="title">\s*([\s\S]*?)<\/h3>[\s\S]*?<p class="info">\s*<span>\s*([\s\S]*?)<\/span>[\s\S]*?<span class="period">\s*([\s\S]*?)<\/span>[\s\S]*?<div class="flagWrap">([\s\S]*?)<\/div>[\s\S]*?<\/li>/gi,
   )) {
     const companyKr = stripTags(match[3])
-    if (companyKr !== '삼성전기') {
+    if (!isAcceptedSamsungElectroMechanicsKr(companyKr)) {
       throw new Error('Samsung Electro-Mechanics public listing HTML no longer resolves to the exact company')
     }
 
@@ -221,7 +245,7 @@ const toDate = (value) => {
 
 const splitBulletLines = (value) => normalizeMultiline(value)
   ?.split('\n')
-  .map((item) => normalizeWhitespace(item.replace(/^[-•·]\s*/, '')))
+  .map((item) => normalizeWhitespace(item.replace(/^[-â€¢Â·]\s*/, '')))
   .filter(Boolean) || []
 
 const extractExperienceRequired = (...values) => {
@@ -308,7 +332,7 @@ export const extractJobsFromDetailPayload = ({
   if (
     detail.compCd !== COMPANY_CODE
     || detail.cmpNameEn !== COMPANY
-    || detail.cmpNameKr !== '삼성전기'
+    || !isAcceptedSamsungElectroMechanicsKr(detail.cmpNameKr)
     || normalizeWhitespace(detail.siteUrl) !== OFFICIAL_SITE_URL
   ) {
     throw new Error('Samsung Electro-Mechanics exact company detail identity could not be verified')
@@ -405,11 +429,6 @@ export const createSamsungElectroMechanicsScraper = ({
       throw new Error('Samsung Electro-Mechanics exact-company Samsung Careers page no longer matches the verified first-party surface')
     }
 
-    const roleCodes = extractRoleCodesFromCompanyPage(companyPageHtml)
-    if (roleCodes.length === 0) {
-      throw new Error('Samsung Electro-Mechanics exact-company Samsung Careers page no longer exposes public role links')
-    }
-
     const cardsBySeq = new Map()
     let currentPageNo = 1
     let totalPages = 1
@@ -431,7 +450,15 @@ export const createSamsungElectroMechanicsScraper = ({
         cardsBySeq.set(card.seq, card)
       }
 
+      if (cardsBySeq.size === 0 && hasNoCurrentPostingsSignal(listingHtml)) {
+        return []
+      }
+
       currentPageNo += 1
+    }
+
+    if (cardsBySeq.size === 0) {
+      throw new Error('Samsung Electro-Mechanics listings no longer expose public postings or an official empty-state response')
     }
 
     const scrapedAt = (overrideNow || now)()

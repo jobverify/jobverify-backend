@@ -6,10 +6,12 @@ const loadBoomitra = async () => import('../../scraper/boomitra/script.js')
 const careersHtml = `
 <!doctype html>
 <html><head>
-  <title>Careers at Boomitra</title>
+  <title>Boomitra</title>
   <link rel="canonical" href="https://boomitra.com/careers/" />
 </head><body>
   <h1>Careers at Boomitra</h1>
+  <p>See job openings</p>
+  <p>Explore our open roles</p>
   <h2>Full Stack Developer (Bangalore, India)</h2>
   <a href="https://boomitra.com/wp-content/uploads/2025/04/Full-Stack-Developer.pdf">Learn more and apply</a>
   <p>To apply, email careers@boomitra.com</p>

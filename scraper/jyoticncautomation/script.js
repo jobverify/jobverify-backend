@@ -48,13 +48,24 @@ const slugify = (value) => normalizeWhitespace(value)
 
 const extractField = (sectionHtml, label) => {
   const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const match = sectionHtml.match(
+  const headingValueMatch = sectionHtml.match(
     new RegExp(
-      `<h[1-6][^>]*>\\s*${escapedLabel}\\s*<\\/h[1-6]>\\s*<p[^>]*>([\\s\\S]*?)<\\/p>`,
+      `<h[1-6][^>]*>[\\s\\S]*?${escapedLabel}[\\s\\S]*?<\\/h[1-6]>\\s*<(?:div|p)[^>]*>([\\s\\S]*?)<\\/(?:div|p)>`,
       'i',
     ),
   )
-  return stripTags(match?.[1])
+  if (headingValueMatch) {
+    return stripTags(headingValueMatch[1])
+  }
+
+  const inlineValueMatch = sectionHtml.match(
+    new RegExp(
+      `<(?:div|p|li)[^>]*>\\s*${escapedLabel}\\s*:?(?:\\s|&nbsp;)+([\\s\\S]*?)<\\/(?:div|p|li)>`,
+      'i',
+    ),
+  )
+
+  return stripTags(inlineValueMatch?.[1])
 }
 
 const normalizeLocation = (value) => {

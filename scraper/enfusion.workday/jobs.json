@@ -1,0 +1,111 @@
+[
+  {
+    "jobId": "R11910",
+    "title": "Lead Client Servicing Associate",
+    "company": "Enfusion",
+    "department": "Client Servicing",
+    "location": "Mumbai, India",
+    "city": "Mumbai",
+    "state": null,
+    "country": "India",
+    "sourceUrl": "https://clearwateranalytics.wd1.myworkdayjobs.com/Clearwater_Analytics_Careers/job/Office---Mumbai/Lead-Client-Servicing-Associate_R11910",
+    "applyUrl": "https://clearwateranalytics.wd1.myworkdayjobs.com/Clearwater_Analytics_Careers/job/Office---Mumbai/Lead-Client-Servicing-Associate_R11910/apply",
+    "employmentType": "Full time",
+    "experienceRequired": "4 + years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-07-27T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "The\n\nROLE:\nThe Reporting Operations role is responsible for the creation and set up of new custom financial reporting for existing clients. They will also establish customized reports as per client specifications during the Client Onboarding stage. What You’ll Do: Onboard new clients onto the Enfusion platform and set up “customized” reports for various business monitoring needs Oversee the reporting requests from existing (Live) clients in addition to the onboarding clients Take part in client calls to discuss, understand and scope out reporting requirements during the onboarding/implementation stage Leverage the Enfusion system to build impactful reports for COO’s / CIO’s, Portfolio Managers, Traders, Operations teams, Risk officers, and Fund Accountants Advise clients on reporting best practices and partner with clients to create custom Position and P&L reports, Trade and order blotters, Post Trade Compliance and Regulatory reports, Exposure analysis, Bespoke Risk and Scenario reporting, financial statement reporting, and much more within Enfusion platform Construct custom fields/columns using Java/Java Script code to meet the varying needs of our diverse client base Work closely with solutioning and project managers to ensure we consistently meet the business needs of Enfusion’s growing and evolving client base. Partner with the Product Management team to work on complex reporting requirements and determine product enhancements with respect to columns/fields What You’ll Need: Bachelors Degree in Computer Science, Finance, Accounting, or related field preferred Knowledge of Java Script Organized, detail-oriented, and excellent analytical skills Methodical and determined approach to problem-solving Ability to handle and prioritize multiple tasks and work independently Excellent verbal and written communication skills 4 + years of front office/middle office/back-office reporting and/or custom reporting experience at a prime broker, fund administrator, investment management company, or financial technology firm Client-facing experience will be beneficial",
+    "requisitionId": "R11910",
+    "source": "enfusion",
+    "link": "https://clearwateranalytics.wd1.myworkdayjobs.com/Clearwater_Analytics_Careers/job/Office---Mumbai/Lead-Client-Servicing-Associate_R11910/apply",
+    "scrapedAt": "2026-08-01T14:41:05.152Z",
+    "companyCareerPage": "https://cwan.com/company/careers/",
+    "companyDomain": "cwan.com",
+    "atsPlatform": "workday",
+    "originalTitle": "Lead Client Servicing Associate",
+    "normalizedTitle": "Lead Client Servicing Associate",
+    "jobCategory": "Lead Client Servicing Associate",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full time",
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-27T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T14:41:05.152Z",
+    "skillIds": [
+      "java",
+      "javascript"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 + years",
+      "minimumYears": 4,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 + years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Legal & Compliance",
+    "secondaryRoleDomains": [
+      "Backend Engineering",
+      "Frontend Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:55.294Z"
+  }
+]

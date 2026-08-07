@@ -44,7 +44,7 @@ test('extractSearchResults maps PwC embedded Workday and Darwinbox jobs into sha
     city: 'Kolkata',
     jobId: '145552WD',
     requisitionId: '145552WD',
-    sourceUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata-DN-57/Associate---SAP-ABAP-TC_145552WD/apply',
+    sourceUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata-DN-57/Associate---SAP-ABAP-TC_145552WD',
     applyUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata-DN-57/Associate---SAP-ABAP-TC_145552WD/apply',
     employmentType: null,
     experienceRequired: null,
@@ -88,7 +88,7 @@ test('run fetches the PwC experienced jobs page once and decorates shared runner
         </head>
       </html>
     `,
-    'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Bangalore/Senior-Associate---Bengaluru-Millenia---Technology-Consulting_229383WD/apply': `
+    'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Bangalore/Senior-Associate---Bengaluru-Millenia---Technology-Consulting_229383WD': `
       <html>
         <head>
           <meta property="og:title" content="Senior Associate - Bengaluru Millenia - Technology Consulting">
@@ -106,6 +106,9 @@ test('run fetches the PwC experienced jobs page once and decorates shared runner
       if (detailPages[url]) return detailPages[url]
       throw new Error(`Unexpected PwC URL: ${url}`)
     },
+    fetchDetailText: async () => {
+      throw new Error('provider detail API unavailable in this fixture')
+    },
   })
 
   assert.equal(requests[0], buildSearchUrl())
@@ -113,7 +116,7 @@ test('run fetches the PwC experienced jobs page once and decorates shared runner
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'pwc')
   assert.equal(jobs[0].company, 'PwC')
-  assert.ok(jobs.every((job) => job.link === job.applyUrl))
+  assert.ok(jobs.every((job) => job.link === job.sourceUrl || job.link === job.applyUrl))
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
 
   const automationJob = jobs.find((job) => job.jobId === 'a69e627061edd1')
@@ -129,4 +132,135 @@ test('run fetches the PwC experienced jobs page once and decorates shared runner
     bengaluruJob.jobDescription,
     'Join advisory delivery across technology consulting programs.',
   )
+})
+
+test('run falls back to browser fetch when the PwC official careers page times out', async () => {
+  const { buildSearchUrl, createPwcScraper } = await loadPwcModule()
+  const html = readHtmlFixture('experienced-jobs.html')
+  const rawRequests = []
+  const browserRequests = []
+  const scraper = createPwcScraper({ maxJobs: 1 })
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      rawRequests.push(url)
+
+      if (url === buildSearchUrl()) {
+        throw new Error('fetch failed | Connect Timeout Error (attempted address: www.pwc.in:443, timeout: 10000ms)')
+      }
+
+      return `
+        <html>
+          <head>
+            <meta property="og:description" content="Build intelligent automation solutions with 4 years of experience in test automation and agentic workflows.">
+          </head>
+        </html>
+      `
+    },
+    fetchDetailText: async () => {
+      throw new Error('provider detail API unavailable in this fixture')
+    },
+    fetchBrowserText: async (url) => {
+      browserRequests.push(url)
+
+      if (url === buildSearchUrl()) return html
+      throw new Error(`Unexpected PwC browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(rawRequests, [
+    buildSearchUrl(),
+    jobs[0].sourceUrl,
+  ])
+  assert.deepEqual(browserRequests, [buildSearchUrl()])
+  assert.equal(jobs.length, 1)
+  assert.match(
+    jobs[0].jobDescription,
+    /4 years of experience in test automation and agentic workflows\./i,
+  )
+})
+
+test('run enriches PwC jobs from provider detail APIs before falling back to rendered detail pages', async () => {
+  const { buildSearchUrl, createPwcScraper } = await loadPwcModule()
+  const searchHtml = `
+    <!-- WDDATA -->
+    var jsondata = [{
+      "jobreqid":"288872WD",
+      "title":"1-10yrs Application for Cyber- Kolkata DN 57 - RDC",
+      "los":"Advisory",
+      "location":"Kolkata",
+      "jobsite":"Global_Experienced_Careers",
+      "iso":"IND",
+      "apply":"https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata/XMLNAME-1-10yrs-Application-for-Cyber--Kolkata-DN-57---RDC_288872WD/apply"
+    }] ;
+    <!-- DBDATA -->
+    var dbdata = [{
+      "jobid":"a69e627061edd1",
+      "reqid":"Job31",
+      "title":"IN_Associate_Test Automation Engineer _Agentic Automation_Advisory_Bangalore (India)",
+      "location":"Bangalore",
+      "los":"Advisory",
+      "apply":"https://pwc.darwinbox.com/ms/candidatev2/main/careers/jobDetails/a69e627061edd1"
+    }] ;
+  `
+  const rawRequests = []
+  const detailApiRequests = []
+  const scraper = createPwcScraper()
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      rawRequests.push(url)
+
+      if (url === buildSearchUrl()) return searchHtml
+      throw new Error(`Unexpected rendered PwC detail URL: ${url}`)
+    },
+    fetchDetailText: async (url) => {
+      detailApiRequests.push(url)
+
+      if (url === 'https://pwc.wd3.myworkdayjobs.com/wday/cxs/pwc/Global_Experienced_Careers/job/Kolkata/XMLNAME-1-10yrs-Application-for-Cyber--Kolkata-DN-57---RDC_288872WD') {
+        return JSON.stringify({
+          jobPostingInfo: {
+            title: '1-10yrs Application for Cyber- Kolkata DN 57 - RDC',
+            jobDescription: '<p>Join our cyber advisory team and support client delivery across India.</p>',
+          },
+        })
+      }
+
+      if (url === 'https://pwc.darwinbox.com/ms/candidateapi/job/a69e627061edd1?companyId=main') {
+        return JSON.stringify({
+          status: 'success',
+          message: {
+            job: [{
+              designation_display_name: 'IN_Associate_Test Automation Engineer _Agentic Automation_Advisory_Bangalore (India)',
+              experience: '2 - 4 Years',
+              jd: '<p>Build intelligent automation solutions with Playwright, TypeScript, and agentic workflows.</p>',
+            }],
+          },
+        })
+      }
+
+      throw new Error(`Unexpected PwC detail API URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(rawRequests, [buildSearchUrl()])
+  assert.deepEqual(
+    detailApiRequests.sort(),
+    [
+      'https://pwc.darwinbox.com/ms/candidateapi/job/a69e627061edd1?companyId=main',
+      'https://pwc.wd3.myworkdayjobs.com/wday/cxs/pwc/Global_Experienced_Careers/job/Kolkata/XMLNAME-1-10yrs-Application-for-Cyber--Kolkata-DN-57---RDC_288872WD',
+    ],
+  )
+
+  const workdayJob = jobs.find((job) => job.jobId === '288872WD')
+  assert.ok(workdayJob)
+  assert.equal(workdayJob.experienceRequired, '1-10yrs')
+  assert.match(workdayJob.jobDescription || '', /cyber advisory team/i)
+  assert.equal(workdayJob.publicExperienceChecked, true)
+
+  const darwinboxJob = jobs.find((job) => job.jobId === 'a69e627061edd1')
+  assert.ok(darwinboxJob)
+  assert.equal(darwinboxJob.experienceRequired, '2 - 4 Years')
+  assert.match(darwinboxJob.jobDescription || '', /agentic workflows/i)
+  assert.equal(darwinboxJob.publicExperienceChecked, true)
 })

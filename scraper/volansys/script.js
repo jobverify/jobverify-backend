@@ -46,11 +46,11 @@ export const hasAclDigitalRecruitmentSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page).toLowerCase()
 
-  return /<title>\s*careers\s*\|\s*acl digital\s*<\/title>/i.test(page)
-    || (
-      text.includes('acl digital careers')
-      && text.includes('search for jobs')
-    )
+  return /<title>\s*acl digital\s*<\/title>/i.test(page)
+    && text.includes('acl digital job portal')
+    && text.includes('search jobs')
+    && text.includes('job seekers/ new hire')
+    && text.includes('looking for a job?')
 }
 
 export const isBlockedVolansysResponse = (response = {}) => {
@@ -77,7 +77,7 @@ export const run = async ({ fetchPage = defaultFetchPage } = {}) => {
   return []
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

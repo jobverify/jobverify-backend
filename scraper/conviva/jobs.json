@@ -1,0 +1,98 @@
+[
+  {
+    "title": "Sr. IT Support Specialist",
+    "company": "Conviva",
+    "location": "Bengaluru, India",
+    "city": "Bangalore",
+    "country": "India",
+    "link": "https://www.conviva.ai/careers/job/7767947003?gh_jid=7767947003",
+    "applyUrl": "https://www.conviva.ai/careers/job/7767947003?gh_jid=7767947003",
+    "sourceUrl": "https://www.conviva.ai/careers/job/7767947003?gh_jid=7767947003",
+    "source": "conviva",
+    "jobId": "7767947003",
+    "requisitionId": "TBH-INIT",
+    "department": "Information Systems",
+    "employmentType": "Full-time",
+    "experienceRequired": "6+ years",
+    "jobDescription": "<div class=\"content-intro\"><p><strong>Conviva is the first and best place to understand and optimize digital customer experiences. Our Operational Data Platform harnesses full-census, comprehensive client-side telemetry—capturing every aspect of customer experience and engagement across all devices and linking them to the performance of underlying services, in real-time and at a fraction of the cost of alternative solutions. Conviva computes quality of experience across all users and all devices, in real time. We combine user actions with app and system responses to give your technology, business, and operations teams AI-powered insights into any issues impacting user experience and engagement. Trusted by industry leaders like Disney, NBC, and the NFL, Conviva revolutionizes how businesses understand customer experience and engagement, maximizing satisfaction, conversion, and revenue. </strong></p></div><p>We are looking for a Sr. IT Support Specialist to join our Bengaluru office. In this role, you will be the trusted, customer-facing face of IT for our employees, owning the day-to-day support experience and ensuring our people have the tools and access they need to do their best work. The role requires regular overlap with US Pacific Time business hours.</p> <p><strong>What Success Will Look Like:</strong></p> <ul> <li>Execute end-to-end onboarding and offboarding in partnership with the People/HR team, including account provisioning, hardware, and Saa S access grants and revocations.</li> <li>Provide hands-on support and troubleshooting for A/V systems in conference rooms and all-hands spaces (displays, cameras, microphones, room scheduling, Zoom Rooms / Google Meet hardware).</li> <li>Deliver strong customer service with a white-glove support mindset, including support for executives and leadership.</li> <li>Administer Okta at an admin level: SSO, SAML/SCIM integrations, MFA policies, group and app assignments, lifecycle management.</li> <li>Administer Google Workspace at an admin level: user and group management, OUs, Drive permissions, Gmail, Calendar, and security settings.</li> <li>Apply working knowledge of Active Directory for account, group, and access management.</li> <li>Troubleshoot endpoints across mac OS and Windows.</li> <li>Operate within an SLA-driven ticketing environment (Jira Service Management, Freshservice, Service Now, or similar), owning tickets end-to-end and keeping users informed.</li> </ul> <p><strong>Who You Are and What You've Done:</strong></p> <ul> <li>6+ years of hands-on IT support experience in a Saa S or technology company.</li> <li>Excellent written and verbal English communication, with the ability to build trust with users at all levels of the organization.</li> <li>Proven ability to work independently, own tickets end-to-end, prioritize a queue, and keep users informed throughout resolution.</li> <li>Strong customer service instincts and a white-glove support mindset.</li> <li>Availability to overlap with US Pacific Time business hours.</li> </ul> <p><strong>What Would Make You Stand Out (Bonus Points):</strong></p> <ul> <li>Okta Workflows or similar low-code automation experience, including scripting (Python, Bash, Power Shell) and API integrations.</li> <li>MDM administration: Jamf, Kandji, or Intune.</li> </ul><div class=\"content-conclusion\"><p><strong><span class=\"Text Run SCXW181842941 BCX0\" lang=\"EN-US\" data-contrast=\"auto\"><span class=\"Normal Text Run SCXW181842941 BCX0\">To learn more about how Conviva can help improve the performance </span><span class=\"Normal Text Run SCXW181842941 BCX0\">and outcomes </span><span class=\"Normal Text Run SCXW181842941 BCX0\">of your digital services, visit <a href=\"https://www.conviva.ai/\">www.conviva.ai.</a></span></span></strong></p></div>",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-07-24T11:16:01.000Z",
+    "remoteStatus": "On-site",
+    "scrapedAt": "2026-08-01T14:34:25.066Z",
+    "companyCareerPage": "https://www.conviva.ai/job-listings/",
+    "companyDomain": "conviva.ai",
+    "atsPlatform": "greenhouse",
+    "originalTitle": "Sr. IT Support Specialist",
+    "normalizedTitle": "Sr. IT Support Specialist",
+    "jobCategory": "Sr. IT Support Specialist",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "salary": null,
+    "postedAt": "2026-07-24T11:16:01.000Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T14:34:25.066Z",
+    "skillIds": [
+      "python"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "6+ years",
+      "minimumYears": 6,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6+ years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Sales & Customer Success",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure",
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:49.099Z"
+  }
+]

@@ -44,6 +44,32 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Drytis | AI builds prototypes. Humans build companies.</title>
+  </head>
+  <body>
+    <header class="nav">
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+      <a href="/features">Features</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/faq">FAQ</a>
+      <a href="https://studio.drytis.ai/login">Log In</a>
+      <a href="https://studio.drytis.ai/login">Try Drytis</a>
+    </header>
+    <main>
+      <h1>You build something real Now you need someone who can finish it .</h1>
+      <p>AI only gets you started. It doesn't get you finished.</p>
+      <p>A real human engineer steps in.</p>
+      <p>You build something that actually works.</p>
+    </main>
+  </body>
+</html>
+`
+
 const aboutHtml = `
 <!doctype html>
 <html lang="en">
@@ -67,6 +93,34 @@ const aboutHtml = `
       <p>We built Drytis for that exact moment.</p>
       <p>You cannot train that into a model. We made it accessible instead.</p>
       <p>If that offends you, you're probably at the wrong company.</p>
+    </main>
+  </body>
+</html>
+`
+
+const currentAboutHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About | Drytis</title>
+  </head>
+  <body>
+    <header class="nav">
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+      <a href="/features">Features</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/faq">FAQ</a>
+      <a href="https://studio.drytis.ai/login">Log In</a>
+      <a href="https://studio.drytis.ai/login">Try Drytis</a>
+    </header>
+    <main>
+      <h1>You didn't fail. AI was not enough .</h1>
+      <p>You got further than most people do. A working prototype. A demo that held up. Something worth finishing.</p>
+      <p>What no AI has ever done.</p>
+      <p>Your instinct built this.</p>
+      <p>This is for anyone with an idea worth finishing.</p>
+      <p>Everyone has a prototype. Almost nobody has a product.</p>
     </main>
   </body>
 </html>
@@ -110,6 +164,40 @@ const privacyHtml = `
 </html>
 `
 
+const currentPrivacyHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Privacy Policy | Drytis</title>
+    <meta
+      name="description"
+      content="How Drytis collects, uses, and protects your personal information. Our privacy policy, cookie policy, and your privacy rights."
+    />
+    <link rel="canonical" href="https://drytis.com/privacy">
+  </head>
+  <body>
+    <nav id="mainNav">
+      <a href="/">Home</a>
+      <a href="/features">Features</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/faq">FAQ</a>
+      <a href="https://studio.drytis.ai/login">Log in</a>
+      <a href="https://studio.drytis.ai/login">Try Drytis</a>
+    </nav>
+    <main>
+      <h1>Privacy Policy</h1>
+      <p>How Drytis collects, uses, and protects your personal information.</p>
+      <p>Privacy Policy</p>
+      <p>Cookie Policy</p>
+      <p>Last Updated: April 3, 2026</p>
+      <p>Drytis, Inc. ("Drytis," "we," "us," or "our") provides an AI-powered software development platform.</p>
+      <p>Job applicants and recruiting candidates who interact with Drytis in connection with employment or contractor opportunities.</p>
+    </main>
+  </body>
+</html>
+`
+
 const termsHtml = `
 <!doctype html>
 <html lang="en">
@@ -138,6 +226,41 @@ const termsHtml = `
     <main>
       <div class="last-updated">Last updated: July 2025</div>
       <p>Drytis provides an AI-powered application building platform that allows users to create software applications using natural language prompts.</p>
+      <p>Drytis charges on a pay-per-use basis.</p>
+      <p>Contact us at <a href="mailto:support@drytis.com">support@drytis.com</a>.</p>
+      <p>These Terms are governed by the laws of the State of Delaware, United States.</p>
+    </main>
+  </body>
+</html>
+`
+
+const currentTermsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Terms of Service | Drytis</title>
+    <meta
+      name="description"
+      content="Drytis terms of service, acceptable use policy, AI use policy, and data processing addendum."
+    />
+    <link rel="canonical" href="https://drytis.com/terms">
+  </head>
+  <body>
+    <nav id="mainNav">
+      <a href="/">Home</a>
+      <a href="/features">Features</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/faq">FAQ</a>
+      <a href="https://studio.drytis.ai/login">Log in</a>
+      <a href="https://studio.drytis.ai/login">Try Drytis</a>
+    </nav>
+    <main>
+      <h1>Terms of Service</h1>
+      <p>The terms, policies, and agreements that govern your use of the Drytis platform.</p>
+      <p>Acceptable Use</p>
+      <p>AI Use Policy</p>
+      <p>Data Processing</p>
       <p>Drytis charges on a pay-per-use basis.</p>
       <p>Contact us at <a href="mailto:support@drytis.com">support@drytis.com</a>.</p>
       <p>These Terms are governed by the laws of the State of Delaware, United States.</p>
@@ -264,9 +387,13 @@ test('DRYTIS sentinel recognizes the verified homepage, legal pages, engineers r
     'https://drytis.com/work-with-us',
   ])
   assert.equal(drytis.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(drytis.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(drytis.hasOfficialAboutSignal(aboutHtml), true)
+  assert.equal(drytis.hasOfficialAboutSignal(currentAboutHtml), true)
   assert.equal(drytis.hasOfficialPrivacySignal(privacyHtml), true)
+  assert.equal(drytis.hasOfficialPrivacySignal(currentPrivacyHtml), true)
   assert.equal(drytis.hasOfficialTermsSignal(termsHtml), true)
+  assert.equal(drytis.hasOfficialTermsSignal(currentTermsHtml), true)
   assert.equal(drytis.hasOfficialEngineersSignal(engineersHtml), true)
   assert.equal(drytis.pageHasExpectedEngineersLink(privacyHtml), true)
   assert.equal(drytis.pageHasExpectedEngineersLink(termsHtml), true)

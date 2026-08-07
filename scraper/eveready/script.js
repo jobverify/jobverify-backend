@@ -2,14 +2,15 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREERS_URL = 'https://www.eveready.in/talent/'
 
-const BRAND_PATTERN = /\bEveready Industries India Limited\b/i
+const BRAND_PATTERN = /\bEveready(?: Industries India Limited)?\b/i
 const TALENT_HEADING_PATTERN = />\s*Talent\s*</i
 const JOIN_PATTERN = /Join\s+Eveready/i
 const RESUME_PATTERN = /Upload\s+Your\s+Resume/i
 const FORM_PATTERN = /<form\b/i
 const FILE_INPUT_PATTERN = /type=["']file["']/i
-const DEPARTMENT_PATTERN = /name=["']department["']|>\s*Department\s*</i
-const STATE_PATTERN = /name=["']state["']|>\s*State\s*</i
+const FUNCTION_PATTERN = /name=["']department["']|>\s*(?:Department|Function Applied for)\*?\s*</i
+const STATE_PATTERN = /name=["']state["']|>\s*State(?: Applied for)?\*?\s*</i
+const APPLY_BUTTON_PATTERN = />\s*Apply\s+Now\s*</i
 
 export const hasOfficialTalentSignal = (html) => {
   const page = String(html ?? '')
@@ -23,8 +24,9 @@ export const hasApplicationFormSignal = (html) => {
   const page = String(html ?? '')
   return FORM_PATTERN.test(page)
     && FILE_INPUT_PATTERN.test(page)
-    && DEPARTMENT_PATTERN.test(page)
+    && FUNCTION_PATTERN.test(page)
     && STATE_PATTERN.test(page)
+    && APPLY_BUTTON_PATTERN.test(page)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

@@ -131,3 +131,20 @@ test('Selfscribe rejects when a trusted ATS board or JobPosting markup appears',
     /public jobs surface changed materially/i,
   )
 })
+
+test('Selfscribe accepts the live no-www canonical or og:url domain shape', () => {
+  assert.equal(
+    hasVerifiedCompanySurface(`
+      <html>
+        <head>
+          <title>SelfScribe AI | Best AI Humanizer</title>
+          <meta property="og:url" content="https://selfscribeai.com" />
+        </head>
+        <body>
+          <h1>SelfScribe AI</h1>
+        </body>
+      </html>
+    `),
+    true,
+  )
+})

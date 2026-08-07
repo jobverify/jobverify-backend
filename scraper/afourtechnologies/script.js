@@ -47,21 +47,76 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('Apply Now')
   }
 
+const buildJobRecord = ({
+  title,
+  experience,
+  description,
+  href,
+}) => {
+  const normalizedTitle = normalizeWhitespace(title)
+  const normalizedExperience = normalizeWhitespace(experience)
+  const normalizedDescription = normalizeWhitespace(description)
+  const applyUrl = absolutizeUrl(href)
+
+  if (
+    !normalizedTitle
+    || !normalizedExperience
+    || !/years/i.test(normalizedExperience)
+    || !normalizedDescription
+    || !applyUrl
+  ) {
+    return null
+  }
+
+  return {
+    title: normalizedTitle,
+    experience: normalizedExperience,
+    description: normalizedDescription,
+    location: 'India',
+    sourceUrl: applyUrl,
+    applyUrl,
+  }
+}
+
 export const extractJobs = (html = '') => {
   if (!hasOfficialCareersSignal(html)) {
     throw new Error('AFour Technologies careers page no longer matches the verified AFour Technologies careers surface')
   }
 
-  const jobs = [...String(html ?? '').matchAll(
+  const rawHtml = String(html ?? '')
+  const jobs = []
+  const seen = new Set()
+
+  const pushJob = (job) => {
+    if (!job) return
+
+    const key = `${job.title}__${job.applyUrl}`
+    if (seen.has(key)) return
+    seen.add(key)
+    jobs.push(job)
+  }
+
+  for (const match of rawHtml.matchAll(
     /<section[^>]*class="job-card"[^>]*>[\s\S]*?<h2>([\s\S]*?)<\/h2>[\s\S]*?<h2>([\s\S]*?)<\/h2>[\s\S]*?<p>([\s\S]*?)<\/p>[\s\S]*?<a[^>]+href="([^"]+)"[^>]*>\s*Apply Now\s*<\/a>[\s\S]*?<\/section>/gi,
-  )].map((match) => ({
-    title: normalizeWhitespace(match[1]),
-    experience: normalizeWhitespace(match[2]),
-    description: normalizeWhitespace(match[3]),
-    location: 'India',
-    sourceUrl: CAREERS_URL,
-    applyUrl: absolutizeUrl(match[4]),
-  })).filter((job) => job.title && job.experience && job.description && job.applyUrl)
+  )) {
+    pushJob(buildJobRecord({
+      title: match[1],
+      experience: match[2],
+      description: match[3],
+      href: match[4],
+    }))
+  }
+
+  for (const match of rawHtml.matchAll(
+    /<h2[^>]*>([\s\S]*?)<\/h2>[\s\S]{0,1800}?<h2[^>]*>([\s\S]*?)<\/h2>[\s\S]{0,2500}?<p>([\s\S]*?)<\/p>[\s\S]{0,1800}?<a[^>]+href="([^"]+)"[^>]*>[\s\S]{0,160}?Apply Now[\s\S]{0,160}?<\/a>/gi,
+  )) {
+    pushJob(buildJobRecord({
+      title: match[1],
+      experience: match[2],
+      description: match[3],
+      href: match[4],
+    }))
+  }
 
   if (jobs.length === 0) {
     throw new Error('AFour Technologies verified job cards changed or disappeared')

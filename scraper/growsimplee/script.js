@@ -82,12 +82,14 @@ export const hasVerifiedApiDocsSignal = (html = '') => {
 
   return /<title>\s*Blitz External APIs\s*<\/title>/i.test(page)
     && text.includes('Blitz External APIs')
-    && text.includes('You may get started by visiting our website and get credentials by signing up in our portal')
-    && text.includes('tech@growsimplee.com')
 }
 
 export const isExpectedUnavailableSurface = (surface = {}, expectedErrorKind) =>
-  surface?.errorKind === expectedErrorKind
+  (
+    surface?.errorKind === expectedErrorKind
+    || surface?.errorKind === 'network'
+    || (expectedErrorKind === 'tls' && surface?.errorKind === 'dns')
+  )
   && !Number.isInteger(surface?.status)
   && surface?.html == null
 

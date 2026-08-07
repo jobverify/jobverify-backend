@@ -76,6 +76,75 @@ const officialCareersHtml = `
 </html>
 `
 
+const liveAccordionCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Career</h1>
+      <h2>Current Openings</h2>
+
+      <h4>CNC Turning / Turn Mill Centers</h4>
+      <div class="li-column1">
+        <li><a href="https://jyoti.co.in/ourproduct/dx-60-dx-100/">Product block</a></li>
+      </div>
+
+      <h4>Asst. VP Department Sales &amp; Marketing</h4>
+      <div class="panel-body">
+        <div class="jobdetail-main">
+          <div class="jobdetail">
+            <h3 class="job-tit"><i class="fa fa-university"></i>Department</h3>
+            <div class="job-desc">Sales &amp; Marketing</div>
+          </div>
+          <div class="jobdetail">
+            <h3 class="job-tit"><i class="fa fa-certificate"></i>Qualification</h3>
+            <div class="job-desc">B.E./B.Tech – Mechanical</div>
+          </div>
+          <div class="jobdetail">
+            <h3 class="job-tit"><i class="fa fa-bolt"></i>Experience</h3>
+            <div class="job-desc">15+ yrs</div>
+          </div>
+          <div class="jobdetail full">
+            <h3 class="job-tit"><i class="fa fa-map-marker"></i>Job Location</h3>
+            <div class="job-desc">Delhi</div>
+          </div>
+        </div>
+        <ul class="job-action">
+          <li>Apply Now</li>
+          <li>Email Resume to : careers@jyoti.co.in</li>
+        </ul>
+      </div>
+
+      <h4>Sales Engineer Department Sales &amp; Marketing</h4>
+      <div class="panel-body">
+        <div class="jobdetail-main">
+          <div class="jobdetail">
+            <h3 class="job-tit"><i class="fa fa-university"></i>Department</h3>
+            <div class="job-desc">Sales &amp; Marketing</div>
+          </div>
+          <div class="jobdetail">
+            <h3 class="job-tit"><i class="fa fa-certificate"></i>Qualification</h3>
+            <div class="job-desc">B.E./B.Tech – Mechanical / Electrical</div>
+          </div>
+          <div class="jobdetail">
+            <h3 class="job-tit"><i class="fa fa-bolt"></i>Experience</h3>
+            <div class="job-desc">Fresher or up to 3 Years</div>
+          </div>
+          <div class="jobdetail full">
+            <h3 class="job-tit"><i class="fa fa-map-marker"></i>Job Location</h3>
+            <div class="job-desc">( Ahmedabad, Vadodara, Pune ) We will be preferred only Local candidates.</div>
+          </div>
+        </div>
+        <ul class="job-action">
+          <li>Apply Now</li>
+          <li>Email Resume to : careers@jyoti.co.in</li>
+        </ul>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 test('Jyoti CNC Automation scraper validates the official careers page and extracts public openings', async () => {
   const jyoti = await loadJyotiModule()
 
@@ -141,6 +210,36 @@ test('Jyoti CNC Automation run decorates the official openings with shared scrap
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(typeof jobs[0].scrapedAt, 'string')
   assert.notEqual(jobs[0].jobId, jobs[1].jobId)
+})
+
+test('Jyoti CNC Automation also extracts live accordion openings while ignoring non-job h4 blocks', async () => {
+  const jyoti = await loadJyotiModule()
+
+  assert.equal(jyoti.hasOfficialCareersSignal(liveAccordionCareersHtml), true)
+  assert.deepEqual(jyoti.extractOpenings(liveAccordionCareersHtml), [
+    {
+      title: 'Asst. VP',
+      department: 'Sales & Marketing',
+      location: 'Delhi, India',
+      city: 'Delhi',
+      experienceRequired: '15+ yrs',
+      minimumQualification: 'B.E./B.Tech - Mechanical',
+      sourceUrl: 'https://jyoti.co.in/career/',
+      applyUrl: 'https://jyoti.co.in/apply-now/',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Sales Engineer',
+      department: 'Sales & Marketing',
+      location: 'Ahmedabad, Vadodara, Pune, India',
+      city: 'Ahmedabad',
+      experienceRequired: 'Fresher or up to 3 Years',
+      minimumQualification: 'B.E./B.Tech - Mechanical / Electrical',
+      sourceUrl: 'https://jyoti.co.in/career/',
+      applyUrl: 'https://jyoti.co.in/apply-now/',
+      remoteStatus: 'On-site',
+    },
+  ])
 })
 
 test('Jyoti CNC Automation fails closed when the verified official public careers surface changes', async () => {

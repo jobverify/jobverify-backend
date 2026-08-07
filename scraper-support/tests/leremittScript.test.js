@@ -15,6 +15,22 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 const HOMEPAGE_HTML = readFixture('axodian-homepage.html')
 const PRODUCT_PAGE_HTML = readFixture('leremitt-page.html')
 const MISSING_ROUTE_HTML = readFixture('missing-route-404.html')
+const CURRENT_HOMEPAGE_HTML = HOMEPAGE_HTML
+  .replace(
+    '<title>Axodian | Global Trade, Simplified</title>',
+    '<title data-next-head="">Axodian | Global Trade, Simplified</title>',
+  )
+  .replace(
+    /<p>\s*We simplify international Payments,\s*automate global trade\s*Documentation &amp; Compliance\s*<\/p>/i,
+    '',
+  )
+const CURRENT_PRODUCT_PAGE_HTML = PRODUCT_PAGE_HTML.replace(
+  '<title>LeRemitt | Cross Border Payments Platform For Exporters | Axodian</title>',
+  '<title data-next-head="">LeRemitt | Cross Border Payments Platform For Exporters | Axodian</title>',
+)
+const CURRENT_MISSING_ROUTE_HTML = MISSING_ROUTE_HTML
+  .replace('<title>404-error</title>', '')
+  .replace('<h1>404-error</h1>', '<h1 class="text-gray-900 mb-4">404-error</h1>')
 
 const loadModule = async () => {
   try {
@@ -39,7 +55,9 @@ test('LeRemitt scraper recognizes the verified Axodian homepage, product page, a
     'https://www.axodian.com/work-with-us',
   ])
   assert.equal(leremitt.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(leremitt.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
   assert.equal(leremitt.hasOfficialProductPageSignal(PRODUCT_PAGE_HTML), true)
+  assert.equal(leremitt.hasOfficialProductPageSignal(CURRENT_PRODUCT_PAGE_HTML), true)
   assert.equal(leremitt.hasFirstPartyCareerLikeLink(HOMEPAGE_HTML), false)
   assert.equal(leremitt.hasFirstPartyCareerLikeLink(PRODUCT_PAGE_HTML), false)
   assert.equal(leremitt.hasPublicJobsSignal(HOMEPAGE_HTML), false)
@@ -48,6 +66,13 @@ test('LeRemitt scraper recognizes the verified Axodian homepage, product page, a
     leremitt.isVerifiedMissingCareersRoute({
       status: 404,
       html: MISSING_ROUTE_HTML,
+    }),
+    true,
+  )
+  assert.equal(
+    leremitt.isVerifiedMissingCareersRoute({
+      status: 404,
+      html: CURRENT_MISSING_ROUTE_HTML,
     }),
     true,
   )

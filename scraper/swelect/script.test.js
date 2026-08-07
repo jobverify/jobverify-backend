@@ -46,7 +46,7 @@ const careersHtml = `
           <li>Engineer- Channel Sales</li>
           <li>Qualification : DEEE / B.E (EEE/ECE)</li>
           <li>Experience : 3 to 5 years</li>
-          <li>Location : Andhra Pradesh, Chennai, Kerala</li>
+          <li>Location : Trichy, Bihar, Maharashtra</li>
           <li>Marketing, Lead creation, BOM & Quote preparation, Market analysis and customer service</li>
           <li><a href="#apply">Apply</a></li>
 
@@ -100,11 +100,11 @@ test('Swelect scraper extracts inline first-party roles from the official career
     title: 'Engineer- Channel Sales',
     company: 'Swelect',
     department: 'Sales',
-    location: 'Andhra Pradesh, Chennai, Kerala, India',
-    city: 'Chennai',
+    location: 'Trichy, Bihar, Maharashtra, India',
+    city: 'Trichy',
     country: 'India',
-    jobId: 'swelect-engineer-channel-sales-chennai-deee-b-e-eee-ece',
-    requisitionId: 'swelect-engineer-channel-sales-chennai-deee-b-e-eee-ece',
+    jobId: 'swelect-engineer-channel-sales-trichy-deee-b-e-eee-ece',
+    requisitionId: 'swelect-engineer-channel-sales-trichy-deee-b-e-eee-ece',
     sourceUrl: 'https://www.swelectes.com/career.php',
     applyUrl: 'https://www.swelectes.com/career.php',
     employmentType: null,

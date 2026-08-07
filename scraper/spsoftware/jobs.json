@@ -1,0 +1,303 @@
+[
+  {
+    "title": "Java Developer",
+    "company": "SP Software",
+    "department": null,
+    "location": "Hyderabad, India",
+    "city": "Hyderabad",
+    "state": null,
+    "country": "India",
+    "jobId": "001582",
+    "requisitionId": "001582",
+    "sourceUrl": "https://www.spsoftglobal.com/career",
+    "applyUrl": "mailto:careers@spsoftglobal.com",
+    "employmentType": "Full-time",
+    "experienceRequired": "5-8 Yrs",
+    "minimumQualification": "Bachelor or master's degree in Computer Science.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Strong Core Java 8 or above Java EE hands on skills including design patterns.",
+      "Strong experience in handling Multithreading, Data Structures, concurrency scenarios.",
+      "Hands-on experience with Spring components viz. MVC, JDBC, Batch, Security, Boot, etc.",
+      "Hands on experience in writing & optimizing (analyzing query plans) SQL queries on Database like SQL server OR Oracle.",
+      "Practical experience with Rest APIs, XML, JAXB, JSON in creating a layered system.",
+      "Hands-on experience with API development & Application Deployment.",
+      "Database languages and technologies: SQL, PostgreSQL, Oracle",
+      "Working knowledge of AWS (EC2, RDS, S3, Security Groups, lambda functions) will be preferred.",
+      "OOPS, Java APIs, Java Web Services, Java, Restful, Design Patterns, Spring Boot, Hibernate, SQL, GIT, etc."
+    ],
+    "postingDate": "2026-08-04T23:41:01.543Z",
+    "closingDate": null,
+    "jobDescription": "Strong Core Java 8 or above Java EE hands on skills including design patterns. Strong experience in handling Multithreading, Data Structures, concurrency scenarios. Hands-on experience with Spring components viz. MVC, JDBC, Batch, Security, Boot, etc. Hands on experience in writing & optimizing (analyzing query plans) SQL queries on Database like SQL server OR Oracle. Practical experience with Rest APIs, XML, JAXB, JSON in creating a layered system. Hands-on experience with API development & Application Deployment. Database languages and technologies: SQL, Postgre SQL, Oracle Working knowledge of AWS (EC2, RDS, S3, Security Groups, lambda functions) will be preferred. OOPS, Java APIs, Java Web Services, Java, Restful, Design Patterns, Spring Boot, Hibernate, SQL, GIT, etc.",
+    "remoteStatus": "On-site",
+    "source": "spsoftware",
+    "link": "mailto:careers@spsoftglobal.com",
+    "scrapedAt": "2026-08-04T23:41:01.543Z",
+    "companyCareerPage": "https://www.spsoftglobal.com/career",
+    "companyDomain": "spsoftglobal.com",
+    "atsPlatform": "first-party-angular-careers-bundle",
+    "originalTitle": "Java Developer",
+    "normalizedTitle": "Java Developer",
+    "jobCategory": "Java Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2026-08-04T23:41:01.543Z",
+    "scrapedTimestamp": "2026-08-04T23:41:01.543Z",
+    "skillIds": [
+      "java",
+      "sql",
+      "postgresql",
+      "aws",
+      "spring-boot"
+    ],
+    "requiredSkillIds": [
+      "java",
+      "sql",
+      "postgresql",
+      "aws",
+      "spring-boot"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "PostgreSQL"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Spring Boot"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5-8 Yrs Bachelor or master's degree in Computer Science.",
+      "minimumYears": 5,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5-8 Yrs",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Backend Engineering",
+    "secondaryRoleDomains": [
+      "Software Engineering",
+      "Cloud & Infrastructure"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T23:41:01.573Z"
+  },
+  {
+    "title": ".NET Developer",
+    "company": "SP Software",
+    "department": null,
+    "location": "Hyderabad, India",
+    "city": "Hyderabad",
+    "state": null,
+    "country": "India",
+    "jobId": "001585",
+    "requisitionId": "001585",
+    "sourceUrl": "https://www.spsoftglobal.com/career",
+    "applyUrl": "mailto:careers@spsoftglobal.com",
+    "employmentType": "Full-time",
+    "experienceRequired": "3-6 Yrs",
+    "minimumQualification": "Bachelor or master's degree in Computer Science.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Good knowledge of OOPS, C#, ASP.NET 4.0/4.5/4.6, SQL Server 2008-12, Ajax, Web services.",
+      "Good to have exposure to .NET Core",
+      "Knowledge of MVC 3/4, Multilingual, XML and XSLT, 3-tier architecture",
+      "Knowledge of SQL queries, stored procedures",
+      "Good understanding of Web services (SOAP/REST) and Web applications",
+      "Good Knowledge of Entity Framework, LINQ and REST APIs",
+      "Knowledge of GIT",
+      "Good working knowledge of JavaScript, JQuery, Bootstrap, HTML5 & CSS3.",
+      "Database languages and technologies: SQL, PostgreSQL, Oracle",
+      "Working knowledge of AWS will be preferred",
+      "OOPS, C#, ASP.NET MVC, .NET Framework, Web Services, WCF, WPF, Restful, Design Patterns, Oracle, PostgreSQL, GIT, etc."
+    ],
+    "postingDate": "2026-08-04T23:41:01.543Z",
+    "closingDate": null,
+    "jobDescription": "Good knowledge of OOPS, C#, ASP.NET 4.0/4.5/4.6, SQL Server 2008-12, Ajax, Web services. Good to have exposure to .NET Core Knowledge of MVC 3/4, Multilingual, XML and XSLT, 3-tier architecture Knowledge of SQL queries, stored procedures Good understanding of Web services (SOAP/REST) and Web applications Good Knowledge of Entity Framework, LINQ and REST APIs Knowledge of GIT Good working knowledge of Java Script, JQuery, Bootstrap, HTML5 & CSS3. Database languages and technologies: SQL, Postgre SQL, Oracle Working knowledge of AWS will be preferred OOPS, C#, ASP.NET MVC, .NET Framework, Web Services, WCF, WPF, Restful, Design Patterns, Oracle, Postgre SQL, GIT, etc.",
+    "remoteStatus": "On-site",
+    "source": "spsoftware",
+    "link": "mailto:careers@spsoftglobal.com",
+    "scrapedAt": "2026-08-04T23:41:01.543Z",
+    "companyCareerPage": "https://www.spsoftglobal.com/career",
+    "companyDomain": "spsoftglobal.com",
+    "atsPlatform": "first-party-angular-careers-bundle",
+    "originalTitle": ".NET Developer",
+    "normalizedTitle": ".NET Developer",
+    "jobCategory": ".NET Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2026-08-04T23:41:01.543Z",
+    "scrapedTimestamp": "2026-08-04T23:41:01.543Z",
+    "skillIds": [
+      "sql",
+      "javascript",
+      "postgresql",
+      "aws",
+      "java"
+    ],
+    "requiredSkillIds": [
+      "sql",
+      "javascript",
+      "postgresql",
+      "aws"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "JavaScript"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "PostgreSQL"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-6 Yrs Bachelor or master's degree in Computer Science.",
+      "minimumYears": 3,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-6 Yrs",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Backend Engineering",
+    "secondaryRoleDomains": [
+      "Software Engineering",
+      "Cloud & Infrastructure"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T23:41:01.583Z"
+  }
+]

@@ -68,7 +68,7 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
     && normalized.includes('Join Our Global Team')
     && normalized.includes('Find Your Next Role')
     && normalized.includes('Sales Consultant - CRM/ERP/HCM')
-    && normalized.includes('Content Writer - CRM/ERP/HCM')
+    && normalized.includes('Social Media Specialist')
     && normalized.includes('Apply for Career')
 }
 
@@ -79,10 +79,8 @@ export const extractJobListings = (html = '') => {
     const title = normalizeWhitespace(match[1])
     const block = match[2]
 
-    if (!/CRM\/ERP\/HCM/i.test(title)) continue
-
     const indiaLocations = extractIndianLocations(block)
-    if (indiaLocations.length === 0) continue
+    if (!title || indiaLocations.length === 0 || /^Apply for Career$/i.test(title)) continue
 
     const jobId = slugify(title)
     listings.push({

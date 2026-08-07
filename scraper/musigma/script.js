@@ -95,7 +95,15 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
   return /mu sigma/i.test(page)
-    && /linkedin\.com\/jobs\/search\/\?f_C=37734&geoId=102713980/i.test(page)
+    && (
+      /linkedin\.com\/jobs\/search\/\?f_C=37734&geoId=102713980/i.test(page)
+      || /linkedin\.com\/company\/mu-sigma(?:\/\?viewAsMember=true)?/i.test(page)
+    )
+    && (
+      /build what matters at mu sigma/i.test(page)
+      || /explore exciting career opportunities/i.test(page)
+      || /life at mu sigma/i.test(page)
+    )
 }
 
 export const extractSearchResults = (html) => [...String(html ?? '').matchAll(

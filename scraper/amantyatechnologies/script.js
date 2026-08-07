@@ -49,11 +49,11 @@ export const hasOfficialAmantyaCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /Careers/i.test(page)
-    && text.includes('Join Our Team')
+  return /Career/i.test(page)
     && text.includes('Apply Now')
     && text.includes('Job Type')
-  }
+    && (text.includes('Join Our Team') || text.includes('View Detail'))
+}
 
 const collectSkills = (segment) =>
   [...String(segment ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
@@ -61,21 +61,48 @@ const collectSkills = (segment) =>
     .filter(Boolean)
     .filter((value) => !/^(experience|location|job type)\b/i.test(value))
 
+const extractFieldValue = (html, labels) => {
+  for (const label of labels) {
+    const headingPattern = new RegExp(
+      `<h6[^>]*>\\s*${label}\\s*<\\/h6>\\s*<p[^>]*>([\\s\\S]*?)<\\/p>`,
+      'i',
+    )
+    const headingMatch = String(html ?? '').match(headingPattern)
+    if (headingMatch) {
+      const value = stripTags(headingMatch[1])
+      if (value) {
+        return value
+      }
+    }
+
+    const inlinePattern = new RegExp(`${label}\\s*:?\\s*([^<]+)`, 'i')
+    const inlineMatch = String(html ?? '').match(inlinePattern)
+    if (inlineMatch) {
+      const value = stripTags(inlineMatch[1])
+      if (value) {
+        return value
+      }
+    }
+  }
+
+  return ''
+}
+
 export const extractJobPanels = (html = '') => {
   const page = String(html ?? '')
-  const segments = page.split(/<h5[^>]*>/i).slice(1)
+  const segments = page.includes('<div class="card mb-3">')
+    ? page.split(/<div class="card mb-3">/i).slice(1)
+    : page.split(/<h5[^>]*>/i).slice(1)
 
   return segments.map((segment) => {
-    const title = stripTags(segment.match(/^([\s\S]*?)<\/h5>/i)?.[1])
+    const title = stripTags(segment.match(/<h5[^>]*>([\s\S]*?)<\/h5>/i)?.[1] ?? segment.match(/^([\s\S]*?)<\/h5>/i)?.[1])
     const body = segment.split(/<\/h5>/i).slice(1).join('</h5>')
-    const experienceRequired = stripTags(body.match(/Experience\s*:?\s*<\/[^>]+>\s*([^<]+)/i)?.[1])
-      || stripTags(body.match(/Experience\s*:?\s*([^<]+)/i)?.[1])
-    const location = stripTags(body.match(/Location\s*:?\s*<\/[^>]+>\s*([^<]+)/i)?.[1])
-      || stripTags(body.match(/Location\s*:?\s*([^<]+)/i)?.[1])
-    const employmentType = stripTags(body.match(/Job Type\s*:?\s*<\/[^>]+>\s*([^<]+)/i)?.[1])
-      || stripTags(body.match(/Job Type\s*:?\s*([^<]+)/i)?.[1])
-    const jobDescription = stripTags(body.match(/<p[^>]*>([\s\S]*?)<\/p>/i)?.[1])
-    const requiredSkills = collectSkills(body)
+    const detailArea = body.match(/<div[^>]*toggleDescriptionArea[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? body
+    const experienceRequired = extractFieldValue(body, ['Experience'])
+    const location = extractFieldValue(body, ['Job Location', 'Location'])
+    const employmentType = extractFieldValue(body, ['Job Type'])
+    const jobDescription = stripTags(detailArea) || null
+    const requiredSkills = collectSkills(detailArea)
 
     if (!title || !experienceRequired || !location || !employmentType) {
       return null

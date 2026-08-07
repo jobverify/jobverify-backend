@@ -131,6 +131,72 @@ test('run fetches the official SEW-EURODRIVE India careers page and decorates jo
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 
+test('run enriches SEW-EURODRIVE jobs from first-party PDF descriptions when public experience is present', async () => {
+  const seweurodrive = await loadModule()
+  const requestedListingUrls = []
+  const requestedDetailUrls = []
+
+  const jobs = await seweurodrive.createSeweurodriveIndiaScraper().run({
+    fetchText: async (url) => {
+      requestedListingUrls.push(url)
+      return careersHtml
+    },
+    fetchDocumentText: async (url) => {
+      requestedDetailUrls.push(url)
+
+      if (url.includes('12345_Executive_Assistant_Manager_Technical_Sales.pdf')) {
+        return `
+          Executive/Assistant Manager - Technical Sales
+          EXPERIENCE : Minimum 2 years and above in selling similar products.
+          RESPONSIBILITIES : Drive technical sales and customer engagement.
+        `
+      }
+
+      if (url.includes('98765_Deputy_Manager_Technical_Sales_Resident.pdf')) {
+        return `
+          Deputy Manager - Technical Sales( Resident)
+          EXPERIENCE: Min. 3 - 5 years in industrial sales.
+          RESPONSIBILITIES : Own resident sales development in the region.
+        `
+      }
+
+      throw new Error(`Unexpected SEW-EURODRIVE detail URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedListingUrls, [seweurodrive.CAREERS_URL])
+  assert.deepEqual(requestedDetailUrls, [
+    'https://media.sew-eurodrive.com/download/pdf/12345_Executive_Assistant_Manager_Technical_Sales.pdf',
+    'https://www.seweurodriveindia.com/download/pdf/98765_Deputy_Manager_Technical_Sales_Resident.pdf',
+  ])
+  assert.equal(jobs[0].experienceRequired, '2+ years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[1].experienceRequired, '3-5 years')
+  assert.equal(jobs[1].publicExperienceChecked, true)
+})
+
+test('run preserves verified-missing public evidence when the first-party PDF omits an experience requirement', async () => {
+  const seweurodrive = await loadModule()
+
+  const jobs = await seweurodrive.createSeweurodriveIndiaScraper().run({
+    fetchText: async () => careersHtml,
+    fetchDocumentText: async (url) => {
+      if (url.includes('12345_Executive_Assistant_Manager_Technical_Sales.pdf')) {
+        return `
+          Executive/Assistant Manager - Technical Sales
+          QUALIFICATIONS : Diploma in engineering with strong product knowledge.
+          RESPONSIBILITIES : Drive technical sales and customer engagement.
+        `
+      }
+
+      return ''
+    },
+  })
+
+  assert.equal(jobs[0].experienceRequired, null)
+  assert.equal(jobs[0].publicExperienceChecked, true)
+})
+
 test('extractOpenings rejects an unexpected SEW-EURODRIVE India careers page shape', async () => {
   const seweurodrive = await loadModule()
 

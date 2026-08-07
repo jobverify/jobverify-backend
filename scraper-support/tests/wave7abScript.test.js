@@ -4,6 +4,8 @@ import test from 'node:test'
 const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
 
 const htmlAttributeJson = (value) => JSON.stringify(value).replace(/"/g, '&quot;')
+const hiddenInputWithValueFirst = (id, value) =>
+  `<input type="hidden" value="${htmlAttributeJson(value)}" id="${id}">`
 
 const loadModule = async (relativePath) => {
   try {
@@ -28,15 +30,56 @@ const cognusHomepageHtml = `
 const cognusModuleMeta = [
   {
     api_name: 'Job_Openings',
+    id: '61921000000002481',
+    module_name: 'Potentials',
     fields: [
-      { id: '61921000000003081', api_name: 'Job_Opening_Name' },
-      { id: '61921000000003067', api_name: 'Job_Type' },
-      { id: '61921000000003125', api_name: 'Work_Experience' },
-      { id: '61921000000003103', api_name: 'State' },
-      { id: '61921000000003101', api_name: 'City' },
-      { id: '61921000000003105', api_name: 'Country' },
-      { id: '61921000000003091', api_name: 'Date_Opened' },
-      { id: '61921000000003143', api_name: 'Job_Description' },
+      { id: '61921000000003081' },
+      { id: '61921000000003067' },
+      { id: '61921000000003125' },
+      { id: '61921000000003103' },
+      { id: '61921000000003101' },
+      { id: '61921000000028001' },
+      { id: '61921000000003105' },
+      { id: '61921000000003107' },
+      { id: '61921000000003091' },
+      { id: '61921000000003143' },
+    ],
+    layouts: [
+      {
+        id: '61921000000002565',
+        sections: [
+          {
+            id: '1',
+            fields: [
+              { id: '61921000000003081', api_name: 'Job_Opening_Name' },
+              { id: '61921000000003067', api_name: 'Job_Type' },
+              { id: '61921000000003125', api_name: 'Work_Experience' },
+            ],
+          },
+          {
+            id: '4',
+            fields: [
+              { id: '61921000000003103', api_name: 'State' },
+              { id: '61921000000003101', api_name: 'City' },
+              { id: '61921000000028001', api_name: 'Zip_Code' },
+              { id: '61921000000003105', api_name: 'Country' },
+            ],
+          },
+          {
+            id: '5',
+            fields: [
+              { id: '61921000000003107', api_name: 'Industry' },
+              { id: '61921000000003091', api_name: 'Date_Opened' },
+            ],
+          },
+          {
+            id: '3',
+            fields: [
+              { id: '61921000000003143', api_name: 'Job_Description' },
+            ],
+          },
+        ],
+      },
     ],
   },
 ]
@@ -69,14 +112,29 @@ const cognusCareersHtml = (jobsPayload) => `
 <!doctype html>
 <html lang="en">
   <body>
-    <input type="hidden" id="pageJson" value="${htmlAttributeJson(cognusPageJson)}">
-    <input type="hidden" id="moduleMeta" value="${htmlAttributeJson(cognusModuleMeta)}">
-    <input type="hidden" id="jobs" value="${htmlAttributeJson(jobsPayload)}">
-    <input type="hidden" id="meta" value="${htmlAttributeJson(cognusMeta)}">
+    ${hiddenInputWithValueFirst('pageJson', cognusPageJson)}
+    ${hiddenInputWithValueFirst('moduleMeta', cognusModuleMeta)}
+    ${hiddenInputWithValueFirst('jobs', jobsPayload)}
+    ${hiddenInputWithValueFirst('meta', cognusMeta)}
     <div id="career-website-main"></div>
   </body>
 </html>
 `
+
+const cognusCurrentJobsPayload = [
+  {
+    Industry: 'Education',
+    Job_Type: 'Full time',
+    Job_Opening_Name: 'Senior Manager',
+    Posting_Title: 'Senior Manager',
+    Country: 'Gradding',
+    Is_Locked: false,
+    id: '61921000006556014',
+    City: 'Jaipur',
+    Publish: true,
+    Keep_on_Career_Site: false,
+  },
+]
 
 const sagCareersHtml = `
 <!doctype html>
@@ -236,44 +294,49 @@ const hiddenBrainsCareersHtml = `
 </html>
 `
 
-test('Cognus Technology helper extraction and empty-board run stay pinned to the official homepage handoff and hidden-input payload', async () => {
+test('Cognus Technology helper extraction stays pinned to the live official homepage handoff and hidden-input payload', async () => {
   const cognus = await loadModule('../../scraper/cognustechnology/script.js')
-  const jobsHtml = cognusCareersHtml([
-    {
-      id: '61921000099999999',
-      '61921000000003081': 'Data Engineer',
-      '61921000000003067': 'Full Time',
-      '61921000000003125': '3-5 years',
-      '61921000000003101': 'Bhubaneswar',
-      '61921000000003103': 'Odisha',
-      '61921000000003105': 'India',
-      '61921000000003091': '2026-07-01',
-      '61921000000003143': '<div>Build cloud data pipelines.</div>',
-    },
-  ])
+  const jobsHtml = cognusCareersHtml(cognusCurrentJobsPayload)
 
   assert.equal(cognus.CAREERS_URL, 'https://cognustechnology.zohorecruit.in/jobs/Careers')
   assert.equal(cognus.hasOfficialHomepageSignal(cognusHomepageHtml), true)
+  assert.deepEqual(cognus.extractHiddenInputJson(jobsHtml, 'jobs'), cognusCurrentJobsPayload)
   assert.equal(cognus.hasOfficialCareersSignal(jobsHtml), true)
 
   const extractedJobs = cognus.extractJobsFromOfficialBoard(jobsHtml)
   assert.equal(extractedJobs.length, 1)
-  assert.equal(extractedJobs[0].title, 'Data Engineer')
-  assert.equal(extractedJobs[0].location, 'Bhubaneswar, Odisha, India')
+  assert.equal(extractedJobs[0].title, 'Senior Manager')
+  assert.equal(extractedJobs[0].city, 'Jaipur')
+  assert.equal(extractedJobs[0].employmentType, 'Full time')
 
   const requestedUrls = []
-  const emptyJobs = await cognus.createCognusTechnologyScraper({
+  const liveJobs = await cognus.createCognusTechnologyScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
+      if (url === cognus.HOMEPAGE_URL) return cognusHomepageHtml
+      if (url === cognus.CAREERS_URL) return jobsHtml
+      throw new Error(`Unexpected Cognus URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [cognus.HOMEPAGE_URL, cognus.CAREERS_URL])
+  assert.equal(liveJobs.length, 1)
+  assert.equal(liveJobs[0].title, 'Senior Manager')
+  assert.equal(liveJobs[0].companyCareerPage, cognus.CAREERS_URL)
+  assert.equal(liveJobs[0].scrapedAt, FIXED_SCRAPED_AT)
+
+  const emptyJobs = await cognus.createCognusTechnologyScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
       if (url === cognus.HOMEPAGE_URL) return cognusHomepageHtml
       if (url === cognus.CAREERS_URL) return cognusCareersHtml([])
       throw new Error(`Unexpected Cognus URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [cognus.HOMEPAGE_URL, cognus.CAREERS_URL])
   assert.deepEqual(emptyJobs, [])
 })
 

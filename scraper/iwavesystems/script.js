@@ -71,7 +71,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*System on Modules - Single Board Computers - iWave Systems\s*<\/title>/i.test(page)
-    && /href=["']\/career\/["']/i.test(page)
+    && /href=["'](?:https?:\/\/www\.iwavesystems\.com)?\/career\/["']/i.test(page)
     && /iWave Systems/i.test(page)
 }
 

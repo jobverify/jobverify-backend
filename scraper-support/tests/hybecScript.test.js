@@ -95,8 +95,8 @@ test('Hybec fails closed when the homepage changes or starts exposing careers or
         status: 200,
         url,
         html: verifiedHomepageHtml.replace(
-          'Welcome to Hybec.',
-          'Welcome to Hybec. Current Openings Apply now.',
+          '<h1>Launching Soon</h1>',
+          '<h1>Launching Soon</h1><p>Current Openings Apply now.</p>',
         ),
       }),
     }),

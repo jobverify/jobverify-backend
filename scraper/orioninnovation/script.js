@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { filterIndiaJobs } from '../../scraper-support/utils/indiaLocationFilter.js'
+import { inferExperienceFromPublicPageHtml } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,6 +17,7 @@ export const JOB_LINK_PATTERN = /^https:\/\/www\.orioninnovation\.com\/careers\/
 
 const NAVIGATION_TIMEOUT_MS = 45000
 const PAGE_SETTLE_MS = 2500
+const GREENHOUSE_ERROR_TITLE = 'Jobs at Orion Innovation'
 
 const waitForPageSettle = async (page, timeoutMs = PAGE_SETTLE_MS) => {
   if (typeof page?.waitForTimeout === 'function') {
@@ -39,6 +41,13 @@ const normalizeWhitespace = (value) => {
 
   return normalized || null
 }
+
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;/gi, '"')
+  .replace(/&#39;|&apos;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
 
 const uniqueBy = (items, getKey) => {
   const seen = new Set()
@@ -140,6 +149,74 @@ export const extractJobsFromCards = (cards) => {
   }))
 }
 
+const fetchRenderedHtml = async (page, url) => {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
+  await page.waitForSelector('body', { timeout: NAVIGATION_TIMEOUT_MS }).catch(() => null)
+  await waitForPageSettle(page)
+  return page.content()
+}
+
+export const extractEmbeddedGreenhouseJobAppUrl = (html = '') => normalizeWhitespace(
+  decodeHtmlEntities(
+    String(html ?? '').match(
+      /<iframe\b[^>]*src=["']([^"']*job-boards\.greenhouse\.io\/embed\/job_app[^"']+)["']/i,
+    )?.[1],
+  ),
+)
+
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
+)
+
+const isGreenhouseErrorPage = (html = '') => {
+  const title = extractTitle(html)
+  return title === GREENHOUSE_ERROR_TITLE && /error=true/i.test(String(html ?? ''))
+}
+
+const enrichJobFromEmbeddedGreenhouse = async (job, page, fetchRenderedHtmlImpl = fetchRenderedHtml) => {
+  let wrapperHtml = null
+  try {
+    wrapperHtml = await fetchRenderedHtmlImpl(page, job.sourceUrl)
+  } catch {
+    return job
+  }
+
+  const embeddedGreenhouseUrl = extractEmbeddedGreenhouseJobAppUrl(wrapperHtml)
+  if (!embeddedGreenhouseUrl) {
+    return job
+  }
+
+  try {
+    const greenhouseHtml = await fetchRenderedHtmlImpl(page, embeddedGreenhouseUrl)
+    if (isGreenhouseErrorPage(greenhouseHtml)) {
+      return {
+        ...job,
+        publicExperienceChecked: true,
+      }
+    }
+
+    const greenhouseInferredJob = inferExperienceFromPublicPageHtml({
+      ...job,
+      sourceUrl: embeddedGreenhouseUrl,
+      applyUrl: embeddedGreenhouseUrl,
+      link: embeddedGreenhouseUrl,
+    }, greenhouseHtml)
+
+    return {
+      ...job,
+      description: greenhouseInferredJob.description || job.description || null,
+      jobDescription: greenhouseInferredJob.jobDescription || job.jobDescription || null,
+      experienceRequired: greenhouseInferredJob.experienceRequired || job.experienceRequired || null,
+      publicExperienceChecked: greenhouseInferredJob.publicExperienceChecked === true,
+    }
+  } catch {
+    return {
+      ...job,
+      publicExperienceChecked: true,
+    }
+  }
+}
+
 const collectPageData = async (page, url) => {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
   await page.waitForSelector('body', { timeout: NAVIGATION_TIMEOUT_MS }).catch(() => null)
@@ -205,10 +282,12 @@ const createBrowserContext = async ({
 
 export const createOrionInnovationScraper = ({
   maxJobs = null,
+  now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
     collectPageDataImpl = collectPageData,
     readRenderedJobCardsImpl = readRenderedJobCards,
+    fetchRenderedHtmlImpl = fetchRenderedHtml,
     launchBrowserImpl = launchBrowser,
     createOptimizedPageImpl = createOptimizedPage,
   } = {}) {
@@ -238,12 +317,19 @@ export const createOrionInnovationScraper = ({
 
       const jobs = extractJobsFromCards(await readRenderedJobCardsImpl(browserContext.jobsPage))
       const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+      const jobsWithDetails = []
 
-      return selectedJobs.map((job) => ({
+      for (const job of selectedJobs) {
+        jobsWithDetails.push(
+          await enrichJobFromEmbeddedGreenhouse(job, browserContext.jobsPage, fetchRenderedHtmlImpl),
+        )
+      }
+
+      return jobsWithDetails.map((job) => ({
         ...job,
         source: SOURCE,
         link: job.applyUrl || job.sourceUrl,
-        scrapedAt: new Date().toISOString(),
+        scrapedAt: now(),
       }))
     } finally {
       await browserContext.close()

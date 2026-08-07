@@ -30,7 +30,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('Pepperfry local catalog captures the verified exact-name no-public-jobs surface', async () => {
+test('Pepperfry local catalog captures the verified first-party careers page and Darwinbox apply handoff', async () => {
   const { PEPPERFRY_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const pepperfry = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(PEPPERFRY_CATALOG)
@@ -43,29 +43,29 @@ test('Pepperfry local catalog captures the verified exact-name no-public-jobs su
   assert.equal(provider.homepageUrl, 'https://www.pepperfry.com/')
   assert.equal(provider.companyCareerPage, 'https://www.pepperfry.com/pages/careers.html?type=footer')
   assert.equal(provider.companyDomain, 'pepperfry.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page+darwinbox-apply-handoff')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'browser-validated-homepage-footer-careers-link-plus-first-party-404-careers-page',
+    'single-first-party-careers-page',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage-footer-careers-link+verified-first-party-404-careers-page-return-empty',
+    'verified-homepage-footer-careers-link+verified-first-party-careers-listings+darwinbox-apply-links',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /pepperfry[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.pepperfry\.com\//i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/www\.pepperfry\.com\/pages\/careers\.html\?type=footer/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /404-Soul Not Found/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /Darwinbox/i)
+  assert.match(provider.verifiedSurfaceSummary, /Current Openings/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Pepperfry'), false)
 
   assert.equal(pepperfry.PROVIDER_METADATA.source, PEPPERFRY_CATALOG.source)
@@ -121,7 +121,7 @@ test('Pepperfry hydrated local catalog stays script-runner compatible for shared
   assert.equal(provider.companyName, 'Pepperfry')
   assert.equal(provider.companyCareerPage, 'https://www.pepperfry.com/pages/careers.html?type=footer')
   assert.equal(provider.companyDomain, 'pepperfry.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page+darwinbox-apply-handoff')
   assert.match(provider.modulePath, /pepperfry[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /pepperfry[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

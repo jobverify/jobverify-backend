@@ -93,8 +93,27 @@ export const hasJobOpeningsSignal = (html = '') => {
 export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
   .map((match) => {
     const href = match[1]
+    const anchorHtml = String(match[0] ?? '')
     const text = normalizeWhitespace(match[2])
     if (!href || !text || !text.includes('More Details')) return null
+
+    const structuredTitle = normalizeWhitespace(
+      anchorHtml.match(/<h[12]\b[^>]*class=["'][^"']*awsm-job-post-title[^"']*["'][^>]*>([\s\S]*?)<\/h[12]>/i)?.[1],
+    )
+    const structuredSpecs = [...anchorHtml.matchAll(
+      /<span\b[^>]*class=["'][^"']*awsm-job-specification-term[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi,
+    )]
+      .map((specMatch) => normalizeWhitespace(specMatch[1]))
+      .filter(Boolean)
+
+    if (structuredTitle && structuredSpecs.length >= 2) {
+      return {
+        title: structuredTitle,
+        experienceRequired: normalizeWhitespace(structuredSpecs.slice(0, -1).join(' ')),
+        location: normalizeWhitespace(structuredSpecs.at(-1)),
+        detailUrl: href,
+      }
+    }
 
     const cleaned = text.replace(/\s+More Details$/i, '')
     const parts = cleaned.match(/^(.*)\s+(\d+\+\s*(?:Years|years))\s+([A-Za-z]+)$/)

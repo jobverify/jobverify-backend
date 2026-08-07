@@ -124,12 +124,19 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const escapedBoardUrl = GREENHOUSE_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const boardUrlPattern = new RegExp(`href=["']${escapedBoardUrl}["']`, 'i')
 
-  return /<title>\s*Careers at GHX\s*<\/title>/i.test(page)
-    && /Explore our opportunities/i.test(page)
+  return (
+    /<title>\s*(?:Careers at GHX|GHX Careers\s*\|\s*GHX)\s*<\/title>/i.test(page)
+    || normalized.includes('ghx careers')
+  )
     && /View all positions/i.test(page)
-    && new RegExp(`href=["']${GREENHOUSE_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i')
-      .test(page)
+    && (
+      boardUrlPattern.test(page)
+      || new RegExp(`${escapedBoardUrl}/jobs/\\d+`, 'i').test(page)
+    )
 }
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {

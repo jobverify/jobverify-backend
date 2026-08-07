@@ -12,9 +12,11 @@ const loadTeleperformanceModule = async () => {
 const indiaLocationHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>TP in India | Global Digital Business Services</title>
+  </head>
   <body>
     <main>
-      <p>You are on India's website</p>
       <section>
         <p>TP IN INDIA</p>
         <h1>Digital CX &amp; Transformation CoE for TP</h1>
@@ -30,9 +32,12 @@ const indiaLocationHtml = `
 const indiaCareersShellHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Jobs in TP India | TP in India</title>
+  </head>
   <body>
     <main>
-      <p>You are on India's website</p>
+      <h1>Jobs in TP India</h1>
       <section>
         <p>TP IN INDIA</p>
         <h1>Work with us</h1>

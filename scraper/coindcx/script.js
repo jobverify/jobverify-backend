@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -21,23 +22,34 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: 'coindcx',
   timeoutMs: 15000,
 })
 
 export const createCoinDCXScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREER_PAGE_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    const textFetcher = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+    })
 
-    if (!hasOpportunityShellSignal(html)) {
-      throw new Error('CoinDCX careers page no longer matches the expected opportunities shell')
+    try {
+      const html = await textFetcher.fetchText(CAREER_PAGE_URL)
+
+      if (!hasOpportunityShellSignal(html)) {
+        throw new Error('CoinDCX careers page no longer matches the expected opportunities shell')
+      }
+
+      if (!hasNoPublicListingsSignal(html)) {
+        throw new Error('CoinDCX careers page now appears to expose a different hiring flow')
+      }
+
+      return []
+    } finally {
+      await textFetcher.close()
     }
-
-    if (!hasNoPublicListingsSignal(html)) {
-      throw new Error('CoinDCX careers page now appears to expose a different hiring flow')
-    }
-
-    return []
   },
 })
 

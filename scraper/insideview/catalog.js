@@ -18,9 +18,9 @@ export const INSIDEVIEW_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'insideview.com',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://www.insideview.com/ redirects to the live Demandbase homepage at https://www.demandbase.com/, while the exact-name legacy login surface at https://my.insideview.com/iv/login/forgot_password.jsp remains publicly reachable as an InsideView account page. There is no trustworthy public jobs surface on the exact-name InsideView domain, so the provider is pinned as a fail-closed sentinel that returns no jobs until a trustworthy exact-name first-party careers surface reappears.',
+    'Verified on August 2, 2026 that https://www.insideview.com/ still redirects to the live Demandbase homepage at https://www.demandbase.com/, while the exact-name legacy page at https://my.insideview.com/iv/login/forgot_password.jsp remains publicly reachable as an InsideView set-password / forgot-password account surface. There is no trustworthy public jobs surface on the exact-name InsideView domain, so the provider remains pinned as a fail-closed sentinel that returns no jobs until a trustworthy exact-name first-party careers surface reappears.',
   dryRunFile: 'insideview/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

@@ -125,6 +125,7 @@ test('extractJobDetail reads Persistent detail fields, skills, and HTML descript
   ])
   assert.equal(detail.postingDate, '2026-05-29')
   assert.equal(detail.closingDate, null)
+  assert.equal(detail.publicExperienceChecked, true)
   assert.equal(
     detail.applyUrl,
     'https://careers.persistent.com/jobview/business-analyst-india-bengaluru-2026052916163278',
@@ -152,4 +153,47 @@ test('run marks Persistent Zwayam 5xx responses as upstream soft failures', asyn
       return true
     },
   )
+})
+
+test('run calls the live public Zwayam search and detail endpoints for Persistent', async () => {
+  const calls = []
+  const searchPayload = readJsonFixture('search-results.json')
+  const detailPayload = readJsonFixture('job-detail-178137.json')
+
+  const jobs = await createPersistentScraper({
+    maxPages: 1,
+    maxJobs: 1,
+    fetchJsonImpl: async (url) => {
+      calls.push(url)
+      if (url.endsWith('/jobs/search')) return searchPayload
+      if (url.endsWith('/jobs-service/v1/jobs/careersite')) return detailPayload
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  }).run()
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(calls, [
+    'https://public.zwayam.com/jobs/search',
+    'https://public.zwayam.com/jobs-service/v1/jobs/careersite',
+  ])
+})
+
+test('run drops Persistent listings when the live detail endpoint says the job is closed', async () => {
+  const searchPayload = readJsonFixture('search-results.json')
+
+  const jobs = await createPersistentScraper({
+    maxPages: 1,
+    maxJobs: 1,
+    fetchJsonImpl: async (url) => {
+      if (url.endsWith('/jobs/search')) return searchPayload
+      if (url.endsWith('/jobs-service/v1/jobs/careersite')) {
+        throw new Error(
+          'HTTP 404 for https://public.zwayam.com/jobs-service/v1/jobs/careersite: This job is no longer accepting applications.',
+        )
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  }).run()
+
+  assert.deepEqual(jobs, [])
 })

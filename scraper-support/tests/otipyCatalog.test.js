@@ -43,16 +43,16 @@ test('Otipy local catalog captures the verified blocked first-party public-surfa
   assert.equal(provider.paginationStrategy, 'homepage-and-careers-route-blocked-surface-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage-403+verified-careers-403+verified-jobs-403-return-empty',
+    'verified-homepage-tls-mismatch+verified-careers-tls-mismatch+verified-jobs-tls-mismatch-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/otipy\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/otipy\.com\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Access is restricted/i)
-  assert.match(provider.verifiedSurfaceSummary, /403 Forbidden/i)
+  assert.match(provider.verifiedSurfaceSummary, /ERR_TLS_CERT_ALTNAME_INVALID/i)
+  assert.match(provider.verifiedSurfaceSummary, /gps\.vendors\.intusystems\.info/i)
   assert.equal(provider.modulePath, otipyModulePath)
   assert.match(provider.dryRunFile, /otipy[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Otipy'), false)

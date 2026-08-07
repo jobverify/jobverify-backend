@@ -12,6 +12,7 @@ export const SOURCE = ELTROPY_CATALOG.source
 export const COMPANY = ELTROPY_CATALOG.companyName
 export const OFFICIAL_BRAND_NAME = ELTROPY_CATALOG.officialBrandName
 export const VERIFIED_ON = ELTROPY_CATALOG.verifiedOn
+export const HOMEPAGE_URL = ELTROPY_CATALOG.officialHomepageUrl
 export const CAREERS_URL = ELTROPY_CATALOG.officialCareersLandingUrl
 export const GREENHOUSE_BOARD_URL = ELTROPY_CATALOG.greenhouseBoardUrl
 export const GREENHOUSE_JOBS_API_URL = ELTROPY_CATALOG.greenhouseJobsApiUrl
@@ -148,6 +149,9 @@ const matchesVerifiedCompanyName = (value) => {
   return /^eltropy(?:\s+inc\.?)?$/i.test(normalized)
 }
 
+const extractTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) || null
+
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
 
 export const hasOfficialCareersSignal = (html) => {
@@ -157,6 +161,14 @@ export const hasOfficialCareersSignal = (html) => {
     && /Career Opportunities/i.test(page)
     && /Let['\u2019]s Build from Here/i.test(page)
     && /Explore our open roles for working totally remotely, from the office, or somewhere in between\./i.test(page)
+}
+
+export const hasBlockedFirstPartySurfaceSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return extractTitle(page) === 'Just a moment...'
+    && /\.spinner\s*\{/i.test(page)
+    && /border-top:\s*4px solid #3498db/i.test(page)
 }
 
 export const extractGreenhouseBoardUrl = (html) => {
@@ -173,6 +185,14 @@ export const extractBambooCareersUrl = (html) => {
   )
 
   return match?.[1]?.replace(/\/$/, '') || null
+}
+
+export const hasOfficialGreenhouseBoardSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return extractTitle(page) === 'Jobs at Eltropy Inc.'
+    && /Current Openings/i.test(page)
+    && /https:\/\/job-boards\.greenhouse\.io\/eltropyinc\/jobs\/\d+/i.test(page)
 }
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {
@@ -267,6 +287,22 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
 const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   method: options.method,
   headers: {
@@ -284,17 +320,40 @@ export const createEltropyScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchPage,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const pageFetcher = fetchPage || (
+      fetchText === defaultFetchText
+        ? defaultFetchPage
+        : async (url) => ({
+            status: 200,
+            url,
+            html: await fetchText(url),
+          })
+    )
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
+    const homepage = await pageFetcher(HOMEPAGE_URL)
+    const careersPage = await pageFetcher(CAREERS_URL)
+    const hasReadableFirstPartyCareers =
+      homepage.status === 200
+      && careersPage.status === 200
+      && hasOfficialCareersSignal(careersPage.html)
+      && extractGreenhouseBoardUrl(careersPage.html) === GREENHOUSE_BOARD_URL
+    const hasBlockedFirstPartySurface =
+      homepage.status === 403
+      && careersPage.status === 403
+      && hasBlockedFirstPartySurfaceSignal(homepage.html)
+      && hasBlockedFirstPartySurfaceSignal(careersPage.html)
+
+    if (!hasReadableFirstPartyCareers && !hasBlockedFirstPartySurface) {
       throw new Error('Eltropy verified official careers surface no longer matches the first-party contract')
     }
 
-    if (extractGreenhouseBoardUrl(careersHtml) !== GREENHOUSE_BOARD_URL) {
-      throw new Error('Eltropy verified Greenhouse board handoff no longer matches the first-party careers page')
+    const greenhouseBoardPage = await pageFetcher(GREENHOUSE_BOARD_URL)
+    if (greenhouseBoardPage.status !== 200 || !hasOfficialGreenhouseBoardSignal(greenhouseBoardPage.html)) {
+      throw new Error('Eltropy verified public Greenhouse board no longer matches the trusted jobs surface')
     }
 
     const jobs = extractIndiaJobsFromGreenhousePayload(

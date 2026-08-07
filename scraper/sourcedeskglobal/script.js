@@ -10,6 +10,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const PROVIDER_METADATA = SOURCEDESKGLOBAL_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
+export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
@@ -22,6 +23,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&#8211;|&ndash;/gi, '-')
+  .replace(/&#x27;|&#39;/gi, "'")
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -48,65 +50,94 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   }
 }
 
-export const hasOfficialArchiveSignal = (html = '') => {
+const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractBetween = (text, startLabel, endLabel) => {
+  const pattern = new RegExp(
+    `${escapeRegExp(startLabel)}\\s+([\\s\\S]*?)\\s+${escapeRegExp(endLabel)}`,
+    'i',
+  )
+  return normalizeWhitespace(pattern.exec(String(text ?? ''))?.[1] ?? '')
+}
+
+export const hasOfficialCurrentOpeningsSignal = (html = '') => {
   const raw = String(html ?? '')
   const normalized = normalizeWhitespace(raw)
-  return normalized.includes('Archives: Current Opening')
-    && /sourcedeskglobal\.com\/job\//i.test(raw)
+
+  return /<title>\s*Find all Current Openings\s*-\s*Sourcedesk\s*<\/title>/i.test(raw)
+    && normalized.includes('Find all Current Openings')
+    && normalized.includes('Current Openings')
+    && normalized.includes('Apply for Jobs')
+    && /href=["']\/current-openings\/[^"']+["']/i.test(raw)
+}
+
+const isCurrentOpeningDetailUrl = (value) => {
+  try {
+    const parsed = new URL(value)
+    return parsed.pathname.startsWith('/current-openings/')
+      && parsed.pathname !== '/current-openings/'
+  } catch {
+    return false
   }
+}
 
 export const extractListingUrls = (html = '') => [...new Set(
-  [...String(html ?? '').matchAll(/<h2[^>]*>\s*<a[^>]+href=["']([^"']+)["']/gi)]
+  [...String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["']/gi)]
     .map((match) => toAbsoluteUrl(match[1]))
-    .filter(Boolean),
+    .filter(Boolean)
+    .filter((url) => isCurrentOpeningDetailUrl(url)),
 )]
 
-const extractFirst = (pattern, html = '') => pattern.exec(String(html ?? ''))?.[1] ?? null
+export const hasJobDetailSignal = (html = '') => {
+  const text = normalizeWhitespace(html)
+  const title = String(html ?? '').match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null
+
+  return Boolean(normalizeWhitespace(title))
+    && text.includes('Job Description')
+    && text.includes('Job Information')
+    && text.includes('Date Opened')
+    && text.includes('Employment Type')
+    && text.includes('Work Experience')
+    && text.includes('Country India')
+}
 
 export const extractJobDetail = (html = '', detailUrl) => {
-  const title = normalizeWhitespace(
-    extractFirst(/<h2[^>]*>([\s\S]*?)<\/h2>/i, html)
-      || extractFirst(/<h1[^>]*>([\s\S]*?)<\/h1>/i, html),
-  )
-  const paragraphs = [...String(html ?? '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-    .map((match) => normalizeWhitespace(match[1]))
-    .filter(Boolean)
-  const description = paragraphs.find((value) => /we are seeking|we are looking|if you're/i.test(value))
-    || paragraphs[0]
-    || null
-  const experienceRequired = extractFirst(/Experience:\s*([^<]+)/i, html)
-    ? normalizeWhitespace(extractFirst(/Experience:\s*([^<]+)/i, html))
-    : null
-  const salary = extractFirst(/Salary Range:\s*([^<]+)/i, html)
-    ? normalizeWhitespace(extractFirst(/Salary Range:\s*([^<]+)/i, html))
-    : null
-  const locationText = normalizeWhitespace(extractFirst(/Location:\s*([^<]+)/i, html)) || 'Kolkata'
-  const city = /kolkata/i.test(locationText) ? 'Kolkata' : locationText
-
-  if (!title) {
+  if (!hasJobDetailSignal(html)) {
     throw new Error(`Sourcedesk Global first-party detail page changed materially: ${detailUrl}`)
   }
+
+  const raw = String(html ?? '')
+  const text = normalizeWhitespace(raw)
+  const title = normalizeWhitespace(raw.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? '')
+  const jobDescription = extractBetween(text, 'Job Description', 'Job Information')
+  const postingDate = extractBetween(text, 'Date Opened', 'Job Type')
+  const jobType = extractBetween(text, 'Job Type', 'Employment Type')
+  const employmentType = extractBetween(text, 'Employment Type', 'Work Experience')
+  const experienceRequired = extractBetween(text, 'Work Experience', 'City')
+  const city = extractBetween(text, 'City', 'Country')
+  const country = extractBetween(text, 'Country', 'Department') || 'India'
+  const department = extractBetween(text, 'Department', 'Share this job')
 
   return {
     title,
     company: COMPANY,
-    department: null,
-    location: `${city}, India`,
-    city,
-    country: 'India',
+    department: department || null,
+    location: [city, country].filter(Boolean).join(', ') || null,
+    city: city || null,
+    country,
     jobId: slugify(title),
     requisitionId: slugify(title),
     sourceUrl: detailUrl,
     applyUrl: detailUrl,
-    employmentType: 'Full Time',
-    experienceRequired,
+    employmentType: employmentType || null,
+    experienceRequired: experienceRequired || null,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: null,
+    postingDate: postingDate || null,
     closingDate: null,
-    salaryRange: salary,
-    jobDescription: description,
+    jobDescription: jobDescription || null,
+    remoteStatus: /remote/i.test(jobType) ? 'Remote' : 'On-site',
   }
 }
 
@@ -114,14 +145,14 @@ export const createSourcedeskGlobalScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow = now } = {}) {
-    const archiveHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialArchiveSignal(archiveHtml)) {
-      throw new Error('Sourcedesk Global verified first-party current-opening archive changed materially')
+    const listingHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCurrentOpeningsSignal(listingHtml)) {
+      throw new Error('Sourcedesk Global verified first-party current-openings page changed materially')
     }
 
-    const listingUrls = extractListingUrls(archiveHtml)
+    const listingUrls = extractListingUrls(listingHtml)
     if (listingUrls.length === 0) {
-      throw new Error('Sourcedesk Global verified archive no longer exposes first-party job links')
+      throw new Error('Sourcedesk Global verified current-openings page no longer exposes first-party job links')
     }
 
     const scrapedAt = overrideNow()
@@ -129,6 +160,7 @@ export const createSourcedeskGlobalScraper = ({
     for (const detailUrl of listingUrls) {
       const detailHtml = await fetchText(detailUrl)
       const detail = extractJobDetail(detailHtml, detailUrl)
+      if (detail.country !== 'India') continue
       jobs.push({
         ...detail,
         source: SOURCE,

@@ -17,9 +17,9 @@ export const COGNUS_TECHNOLOGY_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'cognustechnology.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that the exact first-party Cognus Technology homepage links "Join Us" to the public Zoho Recruit board at https://cognustechnology.zohorecruit.in/jobs/Careers, and that the official careers board renders the Cognus Technology empty state "Currently we don\'t have any open jobs at Cognus Technology. Check out our page sometime later." while still exposing the trusted hidden-input jobs payload contract.',
+    'Verified on Saturday, August 1, 2026 that the exact first-party Cognus Technology homepage links "Join Us" to the public Zoho Recruit board at https://cognustechnology.zohorecruit.in/jobs/Careers, and that the official careers board still exposes the trusted hidden-input jobs payload contract while rendering the "Find the career of your dreams" shell with one live "Senior Manager" opening in Jaipur.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

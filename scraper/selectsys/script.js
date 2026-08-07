@@ -34,6 +34,8 @@ export const PROVIDER_METADATA = {
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
 
+const stripTags = (value) => String(value ?? '').replace(/<[^>]+>/g, ' ')
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -64,7 +66,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractRoles = (html = '') =>
   [...extractSection(html, ROLE_LIST_LABEL).matchAll(/<li>([\s\S]*?)<\/li>/gi)]
-    .map((match) => normalizeWhitespace(match[1]))
+    .map((match) => normalizeWhitespace(stripTags(match[1])))
     .filter(Boolean)
 
 export const buildApplyUrl = (title) =>
@@ -92,6 +94,7 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
       country: 'India',
       link: applyUrl,
       source: SOURCE,
+      publicExperienceChecked: true,
       scrapedAt: now(),
     }
   })

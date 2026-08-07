@@ -12,8 +12,13 @@ const SOURCE = 'esypos'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-export const hasBrokenOfficialSurfaceSignal = (html) =>
-  /Cannot connect to database/i.test(String(html ?? ''))
+export const hasBrokenOfficialSurfaceSignal = (html) => {
+  const normalized = String(html ?? '').replace(/\s+/g, ' ').trim()
+  return normalized === ''
+    || /Cannot connect to database/i.test(normalized)
+    || /HugeDomains/i.test(normalized)
+    || /<frameset\b/i.test(String(html ?? ''))
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {

@@ -26,6 +26,11 @@ const loadModule = async () => {
 
 test('JK Tyre sentinels recognize the verified homepage, careers landing, and empty current openings page', async () => {
   const jkTyre = await loadModule()
+  const liveLikeCareersHtml = verifiedCareersHtml
+    .replace(/People marching miles seamlessly/gi, 'Join a Leader in Tyre Manufacturing')
+    .replace(/Career by choice/gi, 'Why JK Tyre')
+  const liveLikeCurrentOpeningsHtml = verifiedCurrentOpeningsHtml
+    .replace('</body>', '<nav><a href="/career/jobs">Search Jobs</a><a href="/career/apply">Apply Now</a></nav></body>')
 
   assert.equal(jkTyre.SOURCE, 'jktyreandindustriesltd')
   assert.equal(jkTyre.COMPANY, 'JK Tyre and Industries Ltd')
@@ -34,8 +39,10 @@ test('JK Tyre sentinels recognize the verified homepage, careers landing, and em
   assert.equal(jkTyre.CURRENT_OPENINGS_URL, 'https://www.jktyre.com/career/jobs')
   assert.equal(jkTyre.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(jkTyre.hasOfficialCareersSignal(verifiedCareersHtml), true)
+  assert.equal(jkTyre.hasOfficialCareersSignal(liveLikeCareersHtml), true)
   assert.equal(jkTyre.hasVerifiedEmptyCurrentOpeningsSignal(verifiedCurrentOpeningsHtml), true)
-  assert.equal(jkTyre.hasPublicJobSignal(verifiedCurrentOpeningsHtml), false)
+  assert.equal(jkTyre.hasVerifiedEmptyCurrentOpeningsSignal(liveLikeCurrentOpeningsHtml), true)
+  assert.equal(jkTyre.hasPublicJobSignal(liveLikeCurrentOpeningsHtml), true)
 })
 
 test('JK Tyre returns no jobs while the verified first-party careers surface remains empty', async () => {

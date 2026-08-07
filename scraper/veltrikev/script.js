@@ -12,7 +12,7 @@ export const COMPANY_DOMAIN = 'veltrik.com'
 export const HOMEPAGE_URL = 'https://veltrik.com/'
 export const CAREERS_URL = 'https://veltrik.com/careers'
 export const CAMPUS_URL = 'https://veltrik.com/campus'
-export const APPLY_HANDOFF_URL = 'https://veltrik.in/'
+export const APPLY_HANDOFF_URL = 'https://veltrik.in/campus-hiring.html'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -53,29 +53,28 @@ const createDescription = (title, experienceRequired) => {
 }
 
 export const hasOfficialHomepageSignal = (html) => {
-  const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
+  const text = normalizeWhitespace(html)
 
-  return /<title>\s*Cutting Edge R&D for Electric Vehicles\s*\|\s*Veltrik\.ev\s*\|\s*VELTRIK\.EV\s*<\/title>/i.test(page)
+  return text.includes('Cutting Edge R&D for Electric Vehicles | Veltrik.ev | VELTRIK.EV')
     && text.includes('Innovative Solutions for Electric Vehicle Design and Development')
     && text.includes('Leading B2B services for automotive electric vehicle innovation.')
     && text.includes('At Veltrik.EV, we specialize in cutting-edge R&D, co-design, and vehicle testing')
-    && /href=["']\/careers["']/i.test(page)
-    && /href=["']\/campus["']/i.test(page)
-    && /info@veltrik\.com/i.test(page)
+    && text.includes('Campus Hiring Careers')
+    && text.includes('info@veltrik.com')
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
+  const text = normalizeWhitespace(html)
 
-  return /<title>\s*Join Our Team:\s*Automotive Careers in Software Development\s*\|\s*VELTRIK\.EV\s*<\/title>/i.test(page)
+  return text.includes('Join Our Team: Automotive Careers in Software Development | VELTRIK.EV')
     && text.includes('Join Our Team')
     && text.includes('Explore exciting career opportunities in automotive software development and functional safety engineering with us.')
     && text.includes("We're looking for talented individuals to innovate with us.")
     && text.includes('Bengaluru, India')
-    && /href=["']https:\/\/veltrik\.in\/["']/i.test(page)
-    && /info@veltrik\.com/i.test(page)
+    && text.includes('Which Job are you interested to Apply For?')
+    && text.includes('Submit Your Application')
+    && page.includes(APPLY_HANDOFF_URL)
 }
 
 const parseRoleOption = (value) => {
@@ -103,19 +102,26 @@ export const extractJobsFromCareersPage = (html) => {
     throw new Error('VELTRIK.EV verified careers page no longer matches the trusted first-party hiring surface')
   }
 
-  const selectorMatch = String(html ?? '').match(
-    /Which Job are you interested to Apply For\?\*[\s\S]*?<select[^>]*>([\s\S]*?)<\/select>/i,
+  const roleSectionMatch = String(html ?? '').match(
+    /Which Job are you interested to Apply For\?\*([\s\S]*?)(?:Your Message\*|Submit Your Application|<\/form>)/i,
   )
 
-  if (!selectorMatch?.[1]) {
+  if (!roleSectionMatch?.[1]) {
     throw new Error('VELTRIK.EV verified inline role selector is missing from the careers page')
   }
+
+  const roleSection = roleSectionMatch[1]
+  const roleTexts = [
+    ...[...roleSection.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)].map((match) => match[1]),
+    ...[...roleSection.matchAll(/<label\b[^>]*class=(["'])[^"']*select-input[^"']*\1[^>]*>([\s\S]*?)<\/label>/gi)]
+      .map((match) => stripTags(match[2])),
+  ]
 
   const jobs = []
   const seen = new Set()
 
-  for (const optionMatch of selectorMatch[1].matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)) {
-    const role = parseRoleOption(optionMatch[1])
+  for (const roleText of roleTexts) {
+    const role = parseRoleOption(roleText)
     if (!role) {
       continue
     }
@@ -135,7 +141,7 @@ export const extractJobsFromCareersPage = (html) => {
       city: normalizeCity('Bengaluru'),
       country: 'India',
       sourceUrl: CAREERS_URL,
-      applyUrl: APPLY_HANDOFF_URL,
+      applyUrl: CAREERS_URL,
       jobId: `${SOURCE}-${slug}`,
       requisitionId: `${SOURCE}-${slug}`,
       employmentType: null,
@@ -191,7 +197,7 @@ export const createVeltrikEvScraper = ({ now = () => new Date().toISOString() } 
 
 export const run = async (options = {}) => createVeltrikEvScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

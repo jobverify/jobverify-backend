@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,40 +15,57 @@ export const BOARD_URL = 'https://americaninternationalforestproductsllc.applyto
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const BOARD_HOST = new URL(BOARD_URL).hostname
+const BOARD_PATH = new URL(BOARD_URL).pathname.replace(/\/$/, '')
+
+const removeScriptAndStyle = (value = '') => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
-  .replace(/&nbsp;/gi, ' ')
+  .replace(/&nbsp;|&#160;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
+  .replace(/&#8211;|&ndash;/gi, '-')
+  .replace(/&#8212;|&mdash;/gi, '-')
   .replace(/\u00a0/g, ' ')
 
-const normalizeWhitespace = (value) => String(value ?? '')
+const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/\s+/g, ' ')
   .trim()
 
-const stripTags = (value) => normalizeWhitespace(
-  decodeHtmlEntities(String(value ?? '')).replace(/<[^>]+>/g, ' '),
+const normalizeText = (value) => normalizeWhitespace(
+  removeScriptAndStyle(String(value ?? ''))
+    .replace(/<[^>]+>/g, ' '),
 )
 
-const stripTagsToLines = (value) => String(value ?? '')
-  .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/section|\/ul|\/ol)\b[^>]*>/gi, '\n')
-  .replace(/<li\b[^>]*>/gi, '\n')
-  .replace(/<p\b[^>]*>/gi, '\n')
-  .replace(/<tr\b[^>]*>/gi, '\n')
-  .replace(/<td\b[^>]*>/gi, ' ')
-  .replace(/<th\b[^>]*>/gi, ' ')
+const stripTagsToLines = (value) => removeScriptAndStyle(String(value ?? ''))
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/(div|p|li|section|article|ul|ol|h[1-6]|span|a)>/gi, '\n')
   .replace(/<[^>]+>/g, ' ')
   .split('\n')
-  .map((line) => stripTags(line))
+  .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
-const toAbsoluteUrl = (value, baseUrl) => {
+const extractTitle = (html) => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || null,
+)
+
+const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const toAbsoluteBoardUrl = (value, baseUrl = BOARD_URL) => {
   try {
-    return new URL(value, baseUrl).toString()
+    const url = new URL(value, baseUrl)
+    if (!['http:', 'https:'].includes(url.protocol)) return null
+    if (url.hostname !== BOARD_HOST) return null
+    if (url.pathname !== BOARD_PATH && !url.pathname.startsWith(`${BOARD_PATH}/`)) return null
+    url.hash = ''
+    return url.toString()
   } catch {
     return null
   }
@@ -61,49 +79,100 @@ const parseLocation = (value) => {
   return { location, city }
 }
 
+const normalizeEmploymentType = (value) => {
+  const employmentType = normalizeWhitespace(value)?.toLowerCase()
+  if (!employmentType) return null
+  if (employmentType === 'full time' || employmentType === 'full-time') return 'Full-time'
+  if (employmentType === 'part time' || employmentType === 'part-time') return 'Part-time'
+  if (employmentType.includes('contract')) return 'Contract'
+  if (employmentType.includes('intern')) return 'Internship'
+  return normalizeWhitespace(value)
+}
+
+const extractJobId = (value) => {
+  try {
+    const segments = new URL(value).pathname.split('/').filter(Boolean)
+    const applyIndex = segments.indexOf('apply')
+    return applyIndex >= 0 ? segments[applyIndex + 1] || null : null
+  } catch {
+    return null
+  }
+}
+
+export const extractOfficialBoardUrls = (html) => {
+  const urls = []
+  const seen = new Set()
+
+  for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const url = toAbsoluteBoardUrl(match[1], CAREERS_URL)
+    const text = normalizeText(match[2])
+
+    if (!url || seen.has(url)) continue
+    if (!/\b(?:apply|learn more)\b/i.test(text || '')) continue
+
+    seen.add(url)
+    urls.push(url)
+  }
+
+  return urls
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  const text = stripTags(page)
+  const text = normalizeText(page)
 
-  return /<title>\s*Home\s*\|\s*American International/i.test(page)
+  return /^Home\s*\|\s*American International\b/i.test(extractTitle(page) || '')
     && /America's leading trader of lumber and building materials/i.test(text)
     && /Where materials build momentum\./i.test(text)
     && /American International Forest Products \(AIFP\)/i.test(text)
-    && /<a[^>]+href=["']\/careers["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
+    && /<a\b[^>]*href=["'](?:https?:\/\/www\.lumber\.com)?\/careers\/?["'][^>]*>[\s\S]*?Careers[\s\S]*?<\/a>/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
-  const text = stripTags(page)
+  const text = normalizeText(html)
+  const boardUrls = extractOfficialBoardUrls(html)
 
-  return /<title>\s*Careers\s*\|\s*American International/i.test(page)
-    && /Thank you for your interest in AIFP!/i.test(text)
-    && /Current Openings/i.test(text)
-    && /View Our Website/i.test(text)
-    && /Powered by/i.test(text)
-    && /americaninternationalforestproductsllc\.applytojob\.com\/apply/i.test(page)
+  return extractTitle(html) === 'Careers | American International'
+    && /EMPOWER\s+YOUR\s+FUTURE\./i.test(text)
+    && /97%\s+RETENTION RATE/i.test(text)
+    && /98%\s+EMPLOYEE SATISFACTION/i.test(text)
+    && /ENTRY-LEVEL ROOKIE SCHOOL/i.test(text)
+    && /SUMMER INTERNSHIP PROGRAM/i.test(text)
+    && boardUrls.includes(BOARD_URL)
 }
 
 export const hasVerifiedBoardSignal = (html) => {
   const page = String(html ?? '')
-  const text = stripTags(page)
+  const text = normalizeText(page)
 
-  return /<title>\s*American International Forest Products, LLC\.\s*-\s*Career Page/i.test(page)
+  return extractTitle(page) === 'American International Forest Products, LLC. - Career Page'
+    && /Thank you for your interest in AIFP!/i.test(text)
     && /Current Openings/i.test(text)
     && /View Our Website/i.test(text)
-    && /Powered by/i.test(text)
+    && (
+      /\bPowered by JazzHR\b/i.test(text)
+      || /info\.jazzhr\.com/i.test(page)
+    )
 }
 
-export const hasVerifiedJobDetailSignal = (html) => {
+export const hasVerifiedJobDetailSignal = (html, listing = {}) => {
   const page = String(html ?? '')
-  const text = stripTags(page)
+  const text = normalizeText(page)
+  const title = normalizeWhitespace(listing?.title)
+  const location = normalizeWhitespace(listing?.location)
+  const hasModernLayout =
+    /id=["']job-description["']/i.test(page)
+    && /title=["']Type["']/i.test(page)
+    && /title=["']Experience["']/i.test(page)
+  const hasLegacyLayout =
+    /Thank you for your interest in AIFP!/i.test(text)
+    && /Apply for this position/i.test(text)
 
-  return /<title>\s*Rookie Trader - Sales Trainee\s*-\s*American International Forest Products, LLC\.\s*-\s*Career Page/i.test(page)
-    && /Rookie Trader - Sales Trainee/i.test(text)
-    && /Portland, OR/i.test(text)
-    && /Full Time/i.test(text)
-    && /Entry Level/i.test(text)
-    && /Kickstart Your Career in Commodity Trading/i.test(text)
+  return /-\s*American International Forest Products, LLC\.\s*-\s*Career Page$/i.test(extractTitle(page) || '')
+    && /View All Jobs/i.test(text)
+    && (hasModernLayout || hasLegacyLayout)
+    && (!title || new RegExp(`\\b${escapeRegExp(title)}\\b`, 'i').test(text))
+    && (!location || new RegExp(escapeRegExp(location), 'i').test(text))
 }
 
 export const extractBoardJobs = (html) => {
@@ -111,28 +180,23 @@ export const extractBoardJobs = (html) => {
     throw new Error('Lumber verified applytojob board no longer matches the known public surface')
   }
 
-  const source = String(html ?? '')
-  const sectionStart = source.indexOf('<h2>Current Openings</h2>')
-  const sectionEnd = source.indexOf('Powered by')
-  if (sectionStart < 0 || sectionEnd < 0 || sectionEnd <= sectionStart) {
-    throw new Error('Lumber verified applytojob board no longer exposes the current openings section')
-  }
-
-  const sectionHtml = source.slice(sectionStart, sectionEnd)
   const jobs = []
+  const seen = new Set()
 
-  for (const match of sectionHtml.matchAll(
-    /<li>\s*<h3><a href="([^"]+)">([\s\S]*?)<\/a><\/h3>\s*<div>([\s\S]*?)<\/div>\s*<\/li>/gi,
+  for (const match of String(html ?? '').matchAll(
+    /<li\b[^>]*>\s*<h3[^>]*>\s*<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h3>([\s\S]*?)<\/li>/gi,
   )) {
-    const detailUrl = toAbsoluteUrl(match[1], BOARD_URL)
-    const title = stripTags(match[2])
-    const { location, city } = parseLocation(match[3])
-    const jobId = detailUrl ? new URL(detailUrl).pathname.split('/').filter(Boolean)[1] || null : null
+    const detailUrl = toAbsoluteBoardUrl(match[1], BOARD_URL)
+    const title = normalizeWhitespace(match[2])
+    const lines = stripTagsToLines(match[3])
+    const { location, city } = parseLocation(lines[0] || null)
+    const jobId = detailUrl ? extractJobId(detailUrl) : null
 
-    if (!detailUrl || !title || !location || !jobId) {
+    if (!detailUrl || !title || !location || !jobId || seen.has(detailUrl)) {
       continue
     }
 
+    seen.add(detailUrl)
     jobs.push({
       title,
       company: COMPANY,
@@ -158,34 +222,61 @@ export const extractBoardJobs = (html) => {
   return jobs
 }
 
-export const extractJobDetail = (html, expectedTitle = null) => {
-  if (!hasVerifiedJobDetailSignal(html)) {
-    throw new Error('Lumber verified job detail page no longer matches the known public surface')
+export const extractJobDetail = (html, listing = {}) => {
+  if (!hasVerifiedJobDetailSignal(html, listing)) {
+    throw new Error(`Lumber verified job detail page no longer matches the known public surface: ${listing?.sourceUrl || 'unknown job'}`)
   }
 
-  const page = String(html ?? '')
-  const lines = stripTagsToLines(page)
-  const title = normalizeWhitespace(expectedTitle || lines.find((line) => /Rookie Trader - Sales Trainee/i.test(line)) || null)
-  const titleIndex = title ? lines.findIndex((line) => line.toLowerCase() === title.toLowerCase()) : -1
-  const detailLines = titleIndex >= 0 ? lines.slice(titleIndex + 1) : lines
-  const location = detailLines[0] || null
-  const employmentType = detailLines[1] || null
-  const experienceRequired = detailLines[2] || null
-  const descriptionStart = lines.findIndex((line) => /Kickstart Your Career in Commodity Trading/i.test(line))
-  const descriptionEnd = lines.findIndex((line) => /Apply today and discover where your ambition can take you\./i.test(line))
-  const descriptionLines = lines.slice(
-    descriptionStart >= 0 ? descriptionStart : 0,
-    descriptionEnd >= 0 ? descriptionEnd + 1 : undefined,
+  const pageTitle = extractTitle(html)
+  const fallbackTitle = normalizeWhitespace(
+    pageTitle?.replace(/\s*-\s*American International Forest Products, LLC\.\s*-\s*Career Page\s*$/i, ''),
   )
-  const description = normalizeWhitespace(descriptionLines.join(' '))
+  const title = normalizeWhitespace(listing?.title || fallbackTitle || null)
+  const lines = stripTagsToLines(html)
+  const titleIndex = title
+    ? lines.findIndex((line) => line.toLowerCase() === title.toLowerCase())
+    : -1
+  const afterTitle = titleIndex >= 0 ? lines.slice(titleIndex + 1) : lines
+  const locationLine = normalizeWhitespace(
+    listing?.location
+      || afterTitle.find((line) => /,\s*[A-Z]{2}\b/.test(line))
+      || null,
+  )
+  const employmentTypeLine = normalizeWhitespace(
+    afterTitle.find((line) => /\b(full[\s-]*time|part[\s-]*time|contract|internship)\b/i.test(line))
+      || null,
+  )
+  const experienceRequiredLine = normalizeWhitespace(
+    afterTitle.find((line) => /\b(?:entry|mid|senior)\s+level\b/i.test(line))
+      || null,
+  )
+  const firstShareIndex = afterTitle.findIndex((line) => /^Share$/i.test(line))
+  const fallbackDescriptionStart = afterTitle.findIndex((line) =>
+    line !== locationLine
+      && line !== employmentTypeLine
+      && line !== experienceRequiredLine
+      && !/^Share$/i.test(line),
+  )
+  const descriptionStartIndex =
+    firstShareIndex >= 0
+      ? firstShareIndex + 1
+      : Math.max(fallbackDescriptionStart, 0)
+  const descriptionTail = afterTitle.slice(descriptionStartIndex)
+  const descriptionEndIndex = descriptionTail.findIndex((line) =>
+    /^Share$/i.test(line) || /^Apply$/i.test(line) || /^Apply for this position$/i.test(line),
+  )
+  const descriptionLines = descriptionTail
+    .slice(0, descriptionEndIndex >= 0 ? descriptionEndIndex : undefined)
+    .filter((line) => !/^Share$/i.test(line))
+  const jobDescription = normalizeWhitespace(descriptionLines.join(' ')) || null
 
   return {
     title,
-    location,
-    city: parseLocation(location).city,
-    employmentType,
-    experienceRequired,
-    jobDescription: description,
+    location: locationLine,
+    city: parseLocation(locationLine).city,
+    employmentType: normalizeEmploymentType(employmentTypeLine),
+    experienceRequired: experienceRequiredLine || null,
+    jobDescription,
   }
 }
 
@@ -197,6 +288,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+export const saveDryRunJobs = (jobs, filePath) => {
+  mkdirSync(path.dirname(filePath), { recursive: true })
+  writeFileSync(filePath, JSON.stringify(jobs, null, 2), 'utf-8')
+}
 
 export const createLumberScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
@@ -212,11 +308,11 @@ export const createLumberScraper = ({ now = () => new Date().toISOString() } = {
 
     const boardHtml = await fetchText(BOARD_URL)
     const boardJobs = extractBoardJobs(boardHtml)
-
     const jobs = []
+
     for (const job of boardJobs) {
       const detailHtml = await fetchText(job.sourceUrl)
-      const detail = extractJobDetail(detailHtml, job.title)
+      const detail = extractJobDetail(detailHtml, job)
 
       jobs.push({
         ...job,
@@ -238,12 +334,12 @@ export const createLumberScraper = ({ now = () => new Date().toISOString() } = {
 export const run = async (options = {}) => createLumberScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const { saveToDB } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
   if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+    saveDryRunJobs(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)
   }

@@ -4,12 +4,16 @@ import test from 'node:test'
 const careersPageHtml = `
   <html>
     <head>
-      <title>Kapture CRM Careers</title>
+      <title>Unlock Your Potential with Kapture Careers - Join Us Today!</title>
+      <link rel="canonical" href="https://www.kapture.cx/careers/" />
     </head>
     <body>
       <main>
         <h1>Kapture Careers</h1>
         <p>Build your career with Kapture CRM.</p>
+        <script>
+          window.khConfig = { identifier: "30315393-d861-4cad-851c-03e99c4fe979" }
+        </script>
       </main>
     </body>
   </html>
@@ -54,7 +58,7 @@ test('Kapture CRM exports a stable exact-name wrapper over the verified Kapture 
   assert.equal(kaptureCrm.ATS_PLATFORM, 'keka-embed-api')
   assert.equal(kaptureCrm.COUNTRY_FILTER, 'India')
   assert.equal(kaptureCrm.PAGINATION_STRATEGY, 'single-keka-active-jobs-endpoint')
-  assert.equal(kaptureCrm.VERIFIED_ON, '2026-07-15')
+  assert.equal(kaptureCrm.VERIFIED_ON, '2026-08-02')
   assert.match(kaptureCrm.VERIFIED_SURFACE_SUMMARY, /Kapture CRM/i)
   assert.equal(kaptureCrm.hasVerifiedKaptureCrmCareersPageSignal(careersPageHtml), true)
   assert.equal(kaptureCrm.hasVerifiedKaptureCrmEmbedConfigSignal(embedConfigScript), true)
@@ -127,6 +131,48 @@ test('Kapture CRM run validates the careers surface and decorates jobs from the 
   assert.equal(jobs[0].scrapedAt, '2026-07-15T20:30:00.000Z')
 })
 
+test('Kapture CRM can recover with browser-backed careers and Keka payloads when direct requests time out', async () => {
+  const kaptureCrm = await loadKaptureCrmModule()
+  const browserTextUrls = []
+  const browserJsonUrls = []
+
+  const jobs = await kaptureCrm.createKaptureCrmScraper({
+    maxJobs: 1,
+    now: () => '2026-08-02T00:00:00.000Z',
+  }).run({
+    fetchText: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: www.kapture.cx:443, timeout: 10000ms)')
+    },
+    fetchJson: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: kapturecrm.keka.com:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      if (url === kaptureCrm.CAREERS_URL) return careersPageHtml
+      if (url === kaptureCrm.EMBED_CONFIG_URL) return embedConfigScript
+      throw new Error(`Unexpected browser text URL: ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      browserJsonUrls.push(url)
+      if (url === kaptureCrm.ACTIVE_JOBS_URL) return activeJobsPayload
+      if (url === kaptureCrm.DEPARTMENTS_URL) return departmentsPayload
+      throw new Error(`Unexpected browser JSON URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [
+    kaptureCrm.CAREERS_URL,
+    kaptureCrm.EMBED_CONFIG_URL,
+  ])
+  assert.deepEqual(browserJsonUrls, [
+    kaptureCrm.ACTIVE_JOBS_URL,
+    kaptureCrm.DEPARTMENTS_URL,
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'kapturecrm')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T00:00:00.000Z')
+})
+
 test('Kapture CRM fails closed when the verified careers handoff drifts materially', async () => {
   const kaptureCrm = await loadKaptureCrmModule()
 
@@ -144,11 +190,20 @@ test('Kapture CRM fails closed when the verified careers handoff drifts material
   await assert.rejects(
     kaptureCrm.createKaptureCrmScraper().run({
       fetchText: async (url) => {
-        if (url === kaptureCrm.CAREERS_URL) return careersPageHtml
-        return 'window.khConfig = { identifier: "different" }'
+        if (url === kaptureCrm.CAREERS_URL) {
+          return careersPageHtml.replace(
+            '30315393-d861-4cad-851c-03e99c4fe979',
+            'different-identifier',
+          )
+        }
+
+        return careersPageHtml.replace(
+          '30315393-d861-4cad-851c-03e99c4fe979',
+          'different-identifier',
+        )
       },
       fetchJson: async () => activeJobsPayload,
     }),
-    /verified Kapture CRM embed config/i,
+    /verified Kapture CRM careers page/i,
   )
 })

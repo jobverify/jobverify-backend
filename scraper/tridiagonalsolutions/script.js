@@ -2,13 +2,14 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'tridiagonalsolutions'
 export const COMPANY = 'Tridiagonal Solutions Pvt Ltd'
 export const CAREERS_URL = 'https://www.tridiagonal.com/careers'
+export const CAREERS_API_BASE_URL = 'https://www.tridiagonal.com/api/careers/jobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -81,6 +82,25 @@ const deriveRemoteStatus = (location) => {
   return 'On-site'
 }
 
+const normalizeExperience = (value) => normalizeWhitespace(value)?.replace(/\byears?\b/gi, 'years') || null
+
+const buildDescriptionSection = (label, items) => {
+  const values = Array.isArray(items)
+    ? items.map((item) => stripTags(item)).filter(Boolean)
+    : [stripTags(items)].filter(Boolean)
+
+  return values.length > 0 ? `${label}: ${values.join(' ')}` : null
+}
+
+const buildJobDescription = (record = {}) => [
+  stripTags(record.overview),
+  buildDescriptionSection('Responsibilities', record.responsibilities),
+  buildDescriptionSection('Requirements', record.requirements),
+  buildDescriptionSection('Benefits', record.benefits),
+]
+  .filter(Boolean)
+  .join(' ') || null
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
@@ -145,14 +165,75 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+export const buildJobDetailApiUrl = (jobOrUrl) => {
+  const detailUrl = typeof jobOrUrl === 'string'
+    ? jobOrUrl
+    : jobOrUrl?.sourceUrl || jobOrUrl?.applyUrl || ''
+  const slug = deriveJobSlugFromUrl(detailUrl)
+
+  if (!slug) return null
+
+  try {
+    return new URL(`/api/careers/jobs/${slug}`, CAREERS_URL).toString()
+  } catch {
+    return `${CAREERS_API_BASE_URL}/${slug}`
+  }
+}
+
+export const extractJobDetail = (payload = {}) => {
+  const record = payload?.data && typeof payload.data === 'object'
+    ? payload.data
+    : payload
+
+  const location = normalizeLocation(record?.location)
+  const jobDescription = buildJobDescription(record)
+  const experienceRequired = normalizeExperience(record?.experience)
+  const minimumQualification = normalizeWhitespace(record?.education)
+
+  return {
+    department: normalizeWhitespace(record?.department),
+    location,
+    employmentType: normalizeWhitespace(record?.type),
+    postingDate: normalizeWhitespace(record?.date),
+    experienceRequired,
+    minimumQualification,
+    jobDescription,
+    publicExperienceChecked: Boolean(jobDescription || experienceRequired || minimumQualification),
+  }
+}
+
+const mergeJobDetail = (job, detail = {}) => ({
+  ...job,
+  department: detail.department || job.department || null,
+  location: detail.location || job.location || null,
+  city: detail.location ? deriveCity(detail.location) || job.city : job.city,
+  employmentType: detail.employmentType || job.employmentType || null,
+  postingDate: detail.postingDate || job.postingDate || null,
+  experienceRequired: detail.experienceRequired || job.experienceRequired || null,
+  minimumQualification: detail.minimumQualification || job.minimumQualification || null,
+  jobDescription: detail.jobDescription || job.jobDescription || null,
+  remoteStatus: deriveRemoteStatus(detail.location || job.location) || job.remoteStatus,
+  publicExperienceChecked: detail.publicExperienceChecked ?? job.publicExperienceChecked ?? false,
+})
+
 export const createTridiagonalSolutionsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
     const html = await fetchText(CAREERS_URL)
 
-    return extractOpenings(html).map((job) => {
-      const identitySlug = deriveJobSlugFromUrl(job.sourceUrl)
+    const jobs = []
 
-      return {
+    for (const job of extractOpenings(html)) {
+      const identitySlug = deriveJobSlugFromUrl(job.sourceUrl)
+      const baseJob = {
         ...job,
         company: COMPANY,
         country: 'India',
@@ -162,11 +243,27 @@ export const createTridiagonalSolutionsScraper = () => ({
         preferredQualification: null,
         requiredSkills: [],
         closingDate: null,
+        minimumQualification: null,
+        experienceRequired: null,
         jobDescription: null,
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: new Date().toISOString(),
       }
-    })
+      const detailApiUrl = buildJobDetailApiUrl(job)
+
+      if (!detailApiUrl) {
+        jobs.push(baseJob)
+        continue
+      }
+
+      try {
+        jobs.push(mergeJobDetail(baseJob, extractJobDetail(await fetchJson(detailApiUrl))))
+      } catch {
+        jobs.push(baseJob)
+      }
+    }
+
+    return jobs
   },
 })
 

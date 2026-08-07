@@ -38,8 +38,12 @@ const HOMEPAGE_SIGNALS = [
   'careers',
 ]
 
-const CAREERS_SIGNALS = [
-  'careers at mmrfic',
+const CAREERS_BRANDING_SIGNALS = [
+  'careers',
+  'mmrfic',
+]
+
+const CAREERS_CULTURE_SIGNALS = [
   'passionate individuals',
   'vibrant and progressive culture',
 ]
@@ -71,7 +75,8 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
-  return CAREERS_SIGNALS.every((signal) => normalized.includes(signal))
+  return CAREERS_BRANDING_SIGNALS.every((signal) => normalized.includes(signal))
+    && CAREERS_CULTURE_SIGNALS.every((signal) => normalized.includes(signal))
 }
 
 export const hasPublicJobsSignal = (html) =>

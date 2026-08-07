@@ -1,192 +1,42 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const loadModule = async () => {
-  try {
-    return await import('./script.js')
-  } catch {
-    assert.fail('Expected Loyal Wingman Technologies scraper module at ./script.js')
-  }
-}
+const companyHtml = '<html>Loyal Wingman Technologies Private Limited (Loyalwingtech) urn:li:organization:96646029</html>'
+const emptyJobsHtml = '<button data-tracking-control-name="public_jobs_f_C">Loyal Wingman Technologies Private Limited (Loyalwingtech)</button><a href="?f_C=96646029">Jobs</a>'
+const jobsHtml = `${emptyJobsHtml}<div class="base-card" data-entity-urn="urn:li:jobPosting:1234567890"><a class="base-card__full-link" href="https://in.linkedin.com/jobs/view/1234567890"></a><h3 class="base-search-card__title"> Electronics Design Intern </h3><h4 class="base-search-card__subtitle"><a>Loyal Wingman Technologies Private Limited (Loyalwingtech)</a></h4><span class="job-search-card__location">Hosur, Tamil Nadu, India</span><time datetime="2026-08-03"></time></div>`
 
-const comingSoonHtml = `
-<!doctype html>
-<html>
-<head>
-  <meta http-equiv="X-UA-Compatible" content="chrome=1">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="robots" content="noindex">
-  <title>Coming Soon</title>
-  <link rel="stylesheet" type="text/css" href="//assets.squarespace.com/universal/styles-compressed/parking-page-32145bd77d42b5ff-min.en-US.css">
-</head>
-<body class="loading align-content-center-vertical content">
-  <div class="squarespace-logo">
-    <a href="http://www.squarespace.com" target="_blank">
-      <img src="//assets.squarespace.com/universal/images-v6/damask/logo-light.svg" />
-    </a>
-  </div>
-  <div class="text-align-center">
-    <h1>loyalwingman.ai</h1>
-  </div>
-  <div class="footer text-align-center">
-    <p>We&apos;re under construction.<span class="line-break"> </span>Please check back for an update soon.</p>
-  </div>
-</body>
-</html>
-`
+test('Loyal Wingman Technologies validates its LinkedIn public jobs contract', async () => {
+  const scraper = await import('./script.js')
 
-const privateSiteHtml = `
-<!DOCTYPE HTML>
-<html>
-<head>
-  <title>Private Site</title>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <meta name="robots" content="noindex">
-  <script crossorigin="anonymous" src="//assets.squarespace.com/universal/scripts-compressed/system-page-8a5652fc738703ea-min.en-US.js"></script>
-  <link rel="stylesheet" type="text/css" href="//assets.squarespace.com/universal/styles-compressed/system-page-7ab307ece9d3c3cb-min.en-US.css">
-</head>
-<body class="squarespace-config squarespace-system-page">
-  <div class="minimal-logo">&nbsp;</div>
-  <main>
-    <h1>Private Site</h1>
-    <p>This site is currently private. If you’re the owner or contributor, <a href="/config">log in</a>.</p>
-  </main>
-</body>
-</html>
-`
-
-const publicJobsHtml = `
-<!doctype html>
-<html lang="en">
-<head>
-  <title>Careers | Loyal Wingman Technologies</title>
-</head>
-<body>
-  <main>
-    <h1>Current Openings</h1>
-    <a href="https://jobs.lever.co/loyalwingman/software-engineer">Apply now</a>
-  </main>
-</body>
-</html>
-`
-
-test('Loyal Wingman Technologies sentinel pins the verified placeholder first-party surface from July 13, 2026', async () => {
-  const scraper = await loadModule()
-
-  assert.equal(scraper.SOURCE, 'loyalwingmantechnologies')
-  assert.equal(scraper.COMPANY, 'Loyal Wingman Technologies')
-  assert.equal(scraper.VERIFIED_AT, '2026-07-13')
-  assert.equal(scraper.HOMEPAGE_URL, 'https://loyalwingman.ai/')
-  assert.equal(scraper.WWW_HOMEPAGE_URL, 'https://www.loyalwingman.ai/')
-  assert.equal(scraper.ROBOTS_URL, 'https://loyalwingman.ai/robots.txt')
-  assert.deepEqual(scraper.NO_PUBLIC_CAREERS_ROUTE_URLS, [
-    'https://loyalwingman.ai/careers',
-    'https://loyalwingman.ai/jobs',
-    'https://loyalwingman.ai/join-us',
-    'https://loyalwingman.ai/openings',
-    'https://loyalwingman.ai/current-openings',
-  ])
-
-  assert.equal(scraper.hasVerifiedComingSoonSignal(comingSoonHtml), true)
-  assert.equal(scraper.hasVerifiedPrivateSiteSignal(privateSiteHtml), true)
-  assert.equal(scraper.hasPublicJobsSignal(comingSoonHtml), false)
-  assert.equal(scraper.hasPublicJobsSignal(publicJobsHtml), true)
+  assert.equal(scraper.LINKEDIN_COMPANY_ID, '96646029')
+  assert.equal(scraper.pageIndicatesLoyalWingmanCompany(companyHtml), true)
+  assert.equal(scraper.pageIndicatesLoyalWingmanIndiaJobsSearch(emptyJobsHtml), true)
 })
 
-test('Loyal Wingman Technologies sentinel returns [] only while the verified placeholder surface remains unchanged', async () => {
-  const scraper = await loadModule()
-  const requestedUrls = []
-
+test('Loyal Wingman Technologies returns zero only for the verified empty company search', async () => {
+  const scraper = await import('./script.js')
   const jobs = await scraper.createLoyalWingmanTechnologiesScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === scraper.HOMEPAGE_URL || url === scraper.WWW_HOMEPAGE_URL) {
-        return comingSoonHtml
-      }
-
-      if (url === scraper.ROBOTS_URL) {
-        return privateSiteHtml
-      }
-
-      if (scraper.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {
-        return comingSoonHtml
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
+    fetchText: async (url) => url === scraper.LINKEDIN_COMPANY_PAGE_URL ? companyHtml : emptyJobsHtml,
   })
 
-  assert.deepEqual(requestedUrls, [
-    scraper.HOMEPAGE_URL,
-    scraper.WWW_HOMEPAGE_URL,
-    scraper.ROBOTS_URL,
-    ...scraper.NO_PUBLIC_CAREERS_ROUTE_URLS,
-  ])
   assert.deepEqual(jobs, [])
 })
 
-test('Loyal Wingman Technologies sentinel fails closed when the placeholder contract drifts into a jobs surface', async () => {
-  const scraper = await loadModule()
+test('Loyal Wingman Technologies captures public India job cards and fails closed on contract drift', async () => {
+  const scraper = await import('./script.js')
+  const jobs = await scraper.createLoyalWingmanTechnologiesScraper().run({
+    fetchText: async (url) => url === scraper.LINKEDIN_COMPANY_PAGE_URL ? companyHtml : jobsHtml,
+    now: () => '2026-08-03T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Electronics Design Intern')
+  assert.equal(jobs[0].country, 'India')
 
   await assert.rejects(
     scraper.createLoyalWingmanTechnologiesScraper().run({
-      fetchText: async (url) => {
-        if (url === scraper.HOMEPAGE_URL) {
-          return '<html><head><title>Loyal Wingman</title></head><body><h1>Loyal Wingman</h1></body></html>'
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
+      fetchText: async (url) => url === scraper.LINKEDIN_COMPANY_PAGE_URL ? companyHtml : '<html>unrelated</html>',
     }),
-    /homepage no longer matches the verified placeholder surface/i,
-  )
-
-  await assert.rejects(
-    scraper.createLoyalWingmanTechnologiesScraper().run({
-      fetchText: async (url) => {
-        if (url === scraper.HOMEPAGE_URL || url === scraper.WWW_HOMEPAGE_URL) {
-          return comingSoonHtml
-        }
-
-        if (url === scraper.ROBOTS_URL) {
-          return '<html><head><title>robots.txt</title></head><body>User-agent: * Allow: /</body></html>'
-        }
-
-        if (scraper.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {
-          return comingSoonHtml
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /robots\.txt no longer matches the verified placeholder surface/i,
-  )
-
-  await assert.rejects(
-    scraper.createLoyalWingmanTechnologiesScraper().run({
-      fetchText: async (url) => {
-        if (url === scraper.HOMEPAGE_URL || url === scraper.WWW_HOMEPAGE_URL) {
-          return comingSoonHtml
-        }
-
-        if (url === scraper.ROBOTS_URL) {
-          return privateSiteHtml
-        }
-
-        if (url === scraper.NO_PUBLIC_CAREERS_ROUTE_URLS[0]) {
-          return publicJobsHtml
-        }
-
-        if (scraper.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {
-          return comingSoonHtml
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified no-public-careers route changed/i,
+    /jobs search no longer matches/i,
   )
 })

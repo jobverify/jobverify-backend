@@ -31,7 +31,7 @@ test('getScraperCatalog includes Clover Infotech as a verified first-party jobs 
   assert.equal(sharedProvider.source, 'cloverinfotech')
   assert.equal(sharedProvider.companyName, 'Clover Infotech')
   assert.equal(sharedProvider.adapter, 'script')
-  assert.equal(sharedProvider.modulePath, '../../scraper/cloverinfotech/script.js')
+  assert.match(sharedProvider.modulePath, /cloverinfotech[\\/]script\.js$/i)
   assert.equal(sharedProvider.companyCareerPage, 'https://www.cloverinfotech.com/job-openings/')
   assert.equal(sharedProvider.atsPlatform, 'official-company-careers')
   assert.equal(sharedProvider.countryFilter, 'India')
@@ -45,21 +45,18 @@ test('getScraperCatalog includes Clover Infotech as a verified first-party jobs 
   assert.equal(sharedProvider.companyDomain, 'cloverinfotech.com')
   assert.match(sharedProvider.dryRunFile, /cloverinfotech[\\/]jobs\.json$/i)
 
-  assert.deepEqual(provider, {
-    ...provider,
-    source: sharedProvider.source,
-    companyName: sharedProvider.companyName,
-    adapter: sharedProvider.adapter,
-    modulePath: sharedProvider.modulePath,
-    companyCareerPage: sharedProvider.companyCareerPage,
-    atsPlatform: sharedProvider.atsPlatform,
-    countryFilter: sharedProvider.countryFilter,
-    paginationStrategy: sharedProvider.paginationStrategy,
-    extractionStrategy: sharedProvider.extractionStrategy,
-    parser: sharedProvider.parser,
-    normalizationProfile: sharedProvider.normalizationProfile,
-    companyDomain: sharedProvider.companyDomain,
-  })
+  assert.equal(provider.source, sharedProvider.source)
+  assert.equal(provider.companyName, sharedProvider.companyName)
+  assert.equal(provider.adapter, sharedProvider.adapter)
+  assert.match(provider.modulePath, /cloverinfotech[\\/]script\.js$/i)
+  assert.equal(provider.companyCareerPage, sharedProvider.companyCareerPage)
+  assert.equal(provider.atsPlatform, sharedProvider.atsPlatform)
+  assert.equal(provider.countryFilter, sharedProvider.countryFilter)
+  assert.equal(provider.paginationStrategy, sharedProvider.paginationStrategy)
+  assert.equal(provider.extractionStrategy, sharedProvider.extractionStrategy)
+  assert.equal(provider.parser, sharedProvider.parser)
+  assert.equal(provider.normalizationProfile, sharedProvider.normalizationProfile)
+  assert.equal(provider.companyDomain, sharedProvider.companyDomain)
 })
 
 test('buildScrapers and company coverage resolve Clover Infotech from the shared catalog', () => {

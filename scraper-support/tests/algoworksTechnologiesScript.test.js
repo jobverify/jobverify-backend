@@ -11,7 +11,7 @@ const careersHtml = `
     <h1>Join our global team where bold ideas drive smart design and real impact.</h1>
     <h2>Want to join Algoworks?</h2>
     <p>We're always looking for creative minds and innovators to join our team. If you don't see a current opening that fits, please email your resume and cover letter.</p>
-    <a href="mailto:careers@algoworks.com">Email the Careers team</a>
+    <a href="/cdn-cgi/l/email-protection#5b383a293e3e29281b3a373c342c3429302875383436">Email the Careers team</a>
   </body>
 </html>
 `
@@ -30,7 +30,7 @@ test('Algoworks Technologies validates the first-party careers page and returns 
   assert.equal(algoworks.SOURCE, 'algoworkstechnologies')
   assert.equal(algoworks.COMPANY, 'Algoworks Technologies')
   assert.equal(algoworks.CAREERS_URL, 'https://www.algoworks.com/careers/')
-  assert.equal(algoworks.VERIFIED_ON, '2026-07-18')
+  assert.equal(algoworks.VERIFIED_ON, '2026-08-01')
   assert.equal(algoworks.hasOfficialCareersSignal(careersHtml), true)
 
   const jobs = await algoworks.createAlgoworksTechnologiesScraper().run({

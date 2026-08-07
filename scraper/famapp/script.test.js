@@ -18,11 +18,11 @@ const homepageHtml = `
     <body>
       <main>
         <h1>FamApp by Trio (formerly FamPay)</h1>
-        <p>Bengaluru, Karnataka, India</p>
-        <a href="https://www.famapp.in/careers/">Careers</a>
+        <h2>Want to shape finance for the next gen?</h2>
+        <a href="/careers/">Careers</a>
       </main>
       <footer>
-        <a href="https://www.triotech.co.in/">Tri O Tech</a>
+        <p>Address: 3rd Floor, Obeya Verve, HSR Layout, Bengaluru, Karnataka 560102</p>
       </footer>
     </body>
   </html>
@@ -37,15 +37,18 @@ const careersHtml = `
     <body>
       <main>
         <h1>#JoinTheFam</h1>
-        <p>Build the future of money for the next generation.</p>
-        <p>Our perks include learning support, ownership, and strong team culture.</p>
-        <button type="button">View openings</button>
+        <h2>So like, what does Fam do?</h2>
+        <p>Challenge the status quo.</p>
+        <p>Warning: our perks might make your friends mad</p>
+        <p>Free therapy with mental health professionals</p>
+        <p>FamApp by Trio (formerly FamPay)</p>
+        <a href="https://www.famapp.in/jobs/">View openings</a>
       </main>
     </body>
   </html>
 `
 
-test('FamApp sentinel validates the verified homepage and careers page without a direct public openings surface', async () => {
+test('FamApp sentinel validates the verified homepage and careers page with the known first-party Fam jobs handoff', async () => {
   const famapp = await loadModule()
   assert.ok(famapp, 'FamApp scraper module should load')
 
@@ -55,10 +58,11 @@ test('FamApp sentinel validates the verified homepage and careers page without a
   assert.equal(famapp.CAREERS_URL, 'https://www.famapp.in/careers/')
   assert.equal(famapp.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(famapp.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(famapp.hasPublicJobsSignal(careersHtml), false)
+  assert.equal(famapp.hasPublicJobsSignal(careersHtml), true)
+  assert.equal(famapp.hasKnownFirstPartyJobsHandoffSignal(careersHtml), true)
 })
 
-test('FamApp run returns an empty list while the verified careers page exposes no direct public openings surface', async () => {
+test('FamApp run returns an empty list while the verified careers page only hands off to the separate FamPay jobs surface', async () => {
   const famapp = await loadModule()
   assert.ok(famapp, 'FamApp scraper module should load')
 

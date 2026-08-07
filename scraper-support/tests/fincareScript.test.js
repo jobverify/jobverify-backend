@@ -14,6 +14,7 @@ import {
   VERIFIED_ON,
   VERIFIED_SURFACE_SUMMARY,
   createFincareScraper,
+  hasCloudflareChallengePageSignal,
   hasMergedParentHomepageSignal,
   isVerifiedLegacyRedirect,
   isVerifiedMergedParentHomepage,
@@ -52,6 +53,21 @@ const forbiddenRedirectHtml = `
 </html>
 `
 
+const cloudflareChallengeHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+    <meta name="robots" content="noindex,nofollow">
+  </head>
+  <body>
+    <p>Enable JavaScript and cookies to continue before proceeding to au.bank.in.</p>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
+    <h1>Please wait while we verify your browser</h1>
+  </body>
+</html>
+`
+
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -71,7 +87,7 @@ test('Fincare helper exports stay pinned to the verified redirect-only contract'
   assert.equal(SOURCE, 'fincare')
   assert.equal(COMPANY, 'Fincare')
   assert.equal(OFFICIAL_BRAND_NAME, 'Fincare')
-  assert.equal(VERIFIED_ON, '2026-07-15')
+  assert.equal(VERIFIED_ON, '2026-08-02')
   assert.equal(HOMEPAGE_URL, 'https://fincarebank.in/')
   assert.equal(CAREERS_URL, 'https://fincarebank.in/careers')
   assert.equal(LEGACY_WWW_HOMEPAGE_URL, 'https://www.fincarebank.com/')
@@ -89,6 +105,7 @@ test('Fincare helper exports stay pinned to the verified redirect-only contract'
   assert.match(VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
 
   assert.equal(hasMergedParentHomepageSignal(auHomepageHtml), true)
+  assert.equal(hasCloudflareChallengePageSignal(cloudflareChallengeHtml), true)
   assert.equal(
     isVerifiedMergedParentHomepage({
       status: 200,
@@ -98,10 +115,18 @@ test('Fincare helper exports stay pinned to the verified redirect-only contract'
     true,
   )
   assert.equal(
+    isVerifiedMergedParentHomepage({
+      status: 403,
+      url: MERGED_PARENT_HOMEPAGE_URL,
+      html: cloudflareChallengeHtml,
+    }),
+    true,
+  )
+  assert.equal(
     isVerifiedLegacyRedirect({
       status: 403,
       url: MERGED_PARENT_HOMEPAGE_URL,
-      html: forbiddenRedirectHtml,
+      html: cloudflareChallengeHtml,
     }),
     true,
   )
@@ -134,7 +159,7 @@ test('Fincare returns [] only while the exact-name routes still hand off to AU i
         return {
           status: 403,
           url: MERGED_PARENT_HOMEPAGE_URL,
-          html: forbiddenRedirectHtml,
+          html: cloudflareChallengeHtml,
         }
       }
 

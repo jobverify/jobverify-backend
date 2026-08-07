@@ -7,9 +7,9 @@ export const CAREERS_URL = 'https://bugbase.ai/companies'
 export const DISPOSITION =
   'verified-exact-name-official-public-surface-with-no-trustworthy-jobs-contract'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://bugbase.ai/companies was the live official BugBase public company surface reviewed for this workbook source. The reviewed page promoted BugBase offerings for corporations, including vulnerability disclosure, managed bug bounty, private bug bounty, CTF hosting and hiring challenges, and enterprise pentesting, but no trustworthy exact-company careers page, no first-party handoff to a stable public ATS or company jobs board, and no trustworthy enumerable public jobs contract were verified. This company-local scraper therefore stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
+  'Verified on Saturday, August 1, 2026 that https://bugbase.ai/companies was the live official BugBase public company surface reviewed for this workbook source. The reviewed page had drifted to a thin exact-company Next.js shell with the BugBase title and static assets but still exposed no trustworthy exact-company careers page, no first-party handoff to a stable public ATS or company jobs board, and no trustworthy enumerable public jobs contract. This company-local scraper therefore stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
 
-const REQUIRED_SURFACE_PATTERNS = [
+const LEGACY_REQUIRED_SURFACE_PATTERNS = [
   /\bAre You A Corporation\?/i,
   /\bBugBase keeps businesses safe by providing an all-in-one platform to perform continuous and comprehensive security testing\./i,
   /\bVulnerability Disclosure Program\b/i,
@@ -18,6 +18,12 @@ const REQUIRED_SURFACE_PATTERNS = [
   /\bCTF Hosting & Hiring Challenges\b/i,
   /\bEnterprise Pentesting and VAPT\b/i,
   /\bqueries@bugbase\.ai\b/i,
+]
+const CURRENT_SHELL_REQUIRED_PATTERNS = [
+  /<title[^>]*>\s*BugBase\s*<\/title>/i,
+  /<_next|\/_next\/static\//i,
+  /<meta[^>]+name=["']viewport["']/i,
+  /<html[^>]+lang=["']en["']/i,
 ]
 
 const TRUSTED_PUBLIC_JOBS_HOST_PATTERNS = [
@@ -123,9 +129,11 @@ const isPublicCompanyJobsBoardUrl = (url) =>
   PUBLIC_COMPANY_JOBS_BOARD_PATTERNS.some((pattern) => pattern.test(url.toString()))
 
 export const assertVerifiedOfficialPublicSurface = (html = '') => {
+  const page = String(html)
   const text = normalizeText(html)
 
-  if (REQUIRED_SURFACE_PATTERNS.every((pattern) => pattern.test(text))) return
+  if (LEGACY_REQUIRED_SURFACE_PATTERNS.every((pattern) => pattern.test(text))) return
+  if (CURRENT_SHELL_REQUIRED_PATTERNS.every((pattern) => pattern.test(page) || pattern.test(text))) return
 
   throw new Error(
     'BugBase verified official public surface changed; review the public contract before promoting a real parser.',

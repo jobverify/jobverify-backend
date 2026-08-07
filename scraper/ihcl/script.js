@@ -120,7 +120,7 @@ export const hasOfficialSearchResultsSignal = (html) => {
   const page = String(html ?? '')
 
   return /id="tile-search-results-label"/i.test(page)
-    && /class="jobTitle-link"/i.test(page)
+    && /<a(?=[^>]*class=["'][^"']*\bjobTitle-link\b[^"']*["'])/i.test(page)
     && /jobRecordsFound:\s*parseInt\("\d+"\)/i.test(page)
     && /theindianhP2/i.test(page)
     && (
@@ -147,11 +147,11 @@ export const extractSearchResults = (html) => {
     .map((rowMatch) => {
       const rowHtml = rowMatch[0]
       const relativeLink = normalizeWhitespace(
-        extractFirst(/<a(?=[^>]*class="jobTitle-link")(?=[^>]*href="([^"]+)")[^>]*>/i, rowHtml),
+        extractFirst(/<a(?=[^>]*class=["'][^"']*\bjobTitle-link\b[^"']*["'])(?=[^>]*href="([^"]+)")[^>]*>/i, rowHtml),
       )
       const sourceUrl = toAbsoluteUrl(relativeLink)
       const title = normalizeWhitespace(
-        extractFirst(/<a[^>]*class="jobTitle-link"[^>]*>([\s\S]*?)<\/a>/i, rowHtml),
+        extractFirst(/<a(?=[^>]*class=["'][^"']*\bjobTitle-link\b[^"']*["'])[^>]*>([\s\S]*?)<\/a>/i, rowHtml),
       )
       const businessUnit = extractSectionValueByLabel(rowHtml, 'Business Unit')
       const department = extractSectionValueByLabel(rowHtml, 'Department')
@@ -232,6 +232,19 @@ export const extractJobDetail = (html, listing = {}) => {
   const jobId = normalizeWhitespace(
     extractFirst(/\/apply\/(\d+)\/\?locale=/i, applyPath),
   ) || listing.jobId || null
+  const jobDescription = stripTags(descriptionHtml)
+  const requiredSkills = extractListItems(descriptionHtml)
+  const hasPublicDetailEvidence = Boolean(
+    title
+    || jobDescription
+    || requiredSkills.length > 0
+    || applyPath
+    || businessUnit
+    || department
+    || city
+    || country
+    || requisitionId,
+  )
 
   return {
     title,
@@ -244,10 +257,11 @@ export const extractJobDetail = (html, listing = {}) => {
     requisitionId,
     employmentType: null,
     experienceRequired: null,
-    jobDescription: stripTags(descriptionHtml),
+    jobDescription,
     minimumQualification: null,
     preferredQualification: null,
-    requiredSkills: extractListItems(descriptionHtml),
+    requiredSkills,
+    publicExperienceChecked: hasPublicDetailEvidence,
     postingDate: normalizeDate(
       extractFirst(/itemprop="datePosted" content="([^"]+)"/i, html),
     ) || normalizeDate(listing.postingDate),
@@ -332,6 +346,7 @@ export const createIhclScraper = () => ({
           minimumQualification: detail.minimumQualification,
           preferredQualification: detail.preferredQualification,
           requiredSkills: detail.requiredSkills,
+          publicExperienceChecked: detail.publicExperienceChecked ?? false,
           postingDate: detail.postingDate || listing.postingDate,
           closingDate: detail.closingDate,
           scrapedAt: now(),

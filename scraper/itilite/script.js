@@ -145,6 +145,7 @@ export const extractJobsFromCareersPage = (html) => {
       postingDate: null,
       closingDate: null,
       jobDescription: `Official ITILITE India careers page lists ${title} in ${locationData.location}. Apply via LinkedIn.`,
+      publicExperienceChecked: true,
     })
   }
 

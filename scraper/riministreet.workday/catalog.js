@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://www.riministreet.com/company/careers/ is the live first-party Rimini Street careers page, that its "See open positions" handoff points to the public Workday board at https://riministreet.wd1.myworkdayjobs.com/en-US/RiminiStreet, and that direct board verification currently resolves to the official Workday outage surface titled "Workday is currently unavailable." rather than a local 404 or unrelated target. This provider therefore keeps the trusted first-party Workday handoff and delegates enumeration to the shared Workday runner so temporary upstream outages remain soft-failable.'
+  'Revalidated on Saturday, August 1, 2026 that https://www.riministreet.com/company/careers/ remains the first-party Rimini Street careers entry point when accessible, continues to hand off See open positions into Workday, and that the canonical public Workday board now resolves to https://riministreet.wd1.myworkdayjobs.com/RiminiStreet with tenant riministreet, site RiminiStreet, and live Hyderabad openings including DevOps Engineer, Data Loss Prevention Analyst, ServiceNow Developer, and Sr. QA Engineer, SAP.'
 
 export const RIMINI_STREET_CATALOG = {
   source: 'riministreet',
@@ -13,7 +13,7 @@ export const RIMINI_STREET_CATALOG = {
   adapter: 'script',
   companyCareerPage: 'https://www.riministreet.com/company/careers/',
   officialCareersPageUrl: 'https://www.riministreet.com/company/careers/',
-  officialWorkdayBoardUrl: 'https://riministreet.wd1.myworkdayjobs.com/en-US/RiminiStreet',
+  officialWorkdayBoardUrl: 'https://riministreet.wd1.myworkdayjobs.com/RiminiStreet',
   companyDomain: 'riministreet.com',
   atsPlatform: 'workday',
   countryFilter: 'India',
@@ -22,7 +22,7 @@ export const RIMINI_STREET_CATALOG = {
     'verified-first-party-careers-page+verified-workday-handoff+shared-workday-runner',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'riministreet.workday/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

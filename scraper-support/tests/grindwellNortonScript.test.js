@@ -17,6 +17,22 @@ const loadGrindwellNortonModule = async () => {
   }
 }
 
+const browserVerificationBlockHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Verifying your browser...</title>
+  </head>
+  <body>
+    <main>
+      <h1>Verifying your browser...</h1>
+      <p>We're checking your browser before allowing access.</p>
+      <p>Enable JavaScript and cookies to continue</p>
+    </main>
+  </body>
+</html>
+`
+
 test('Grindwell Norton validates the official homepage and exact Saint-Gobain Group in India LinkedIn handoff before returning no first-party listings', async () => {
   const grindwellNorton = await loadGrindwellNortonModule()
   const homepageHtml = await readFixture('homepage.html')
@@ -76,4 +92,23 @@ test('Grindwell Norton fails closed when the official homepage, LinkedIn handoff
     }),
     /first-party public jobs surface/i,
   )
+})
+
+test('Grindwell Norton returns [] when the official homepage is temporarily gated behind a browser verification wall', async () => {
+  const grindwellNorton = await loadGrindwellNortonModule()
+
+  assert.equal(grindwellNorton.hasBrowserVerificationBlockSignal(browserVerificationBlockHtml), true)
+
+  const jobs = await grindwellNorton.createGrindwellNortonScraper().run({
+    fetchPage: async (url) => {
+      assert.equal(url, grindwellNorton.HOMEPAGE_URL)
+      return {
+        status: 403,
+        url,
+        html: browserVerificationBlockHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

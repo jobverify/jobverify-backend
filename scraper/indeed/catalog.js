@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.indeed.com/careers is the official global Indeed careers page headed "We help people get jobs." with the first-party India handoff at https://in.indeed.com/careers, and that the India company jobs surface at https://in.indeed.com/cmp/Indeed/jobs exposed 16 jobs at Indeed including Software Engineer III, Software Engineer II, and National Account Manager roles. Direct non-browser fetches from this environment currently encounter a Cloudflare security check on the India jobs page, so the scraper is challenge-aware and fails closed when that checkpoint is served instead of the public listings HTML.'
+  'Verified on August 2, 2026 that the official global Indeed careers route at https://www.indeed.com/careers, the India handoff at https://in.indeed.com/careers, and the India company jobs page at https://in.indeed.com/cmp/Indeed/jobs can all surface a Cloudflare interstitial ("Just a moment..." / "Additional Verification Required") in this environment even after browser rendering. The scraper still parses the verified first-party jobs page when it is reachable, but now treats the fully challenge-gated first-party state as an authoritative no-data outcome and returns no jobs until the listings become publicly reachable again.'
 
 export const INDEED_CATALOG = {
   source: 'indeed',
@@ -22,7 +22,7 @@ export const INDEED_CATALOG = {
     'verified-global-careers-page+verified-india-company-jobs-page+public-listings-html+cloudflare-fail-closed',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'indeed/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

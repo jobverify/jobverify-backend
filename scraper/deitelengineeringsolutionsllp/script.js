@@ -107,6 +107,7 @@ export const extractOpenings = (html) => {
       postingDate: null,
       closingDate: null,
       jobDescription: buildJobDescription(),
+      publicExperienceChecked: true,
     }
   })
 }

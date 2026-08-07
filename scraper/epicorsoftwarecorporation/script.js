@@ -56,12 +56,11 @@ const escapeForRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page.replace(/<[^>]+>/g, ' ')) || ''
 
   return /<title>\s*Jobs\s*\|\s*Epicor\s*<\/title>/i.test(page)
-    && /We(?:'|&#39;|&rsquo;)re Truly a Team/i.test(text)
     && new RegExp(`href=["']${escapeForRegex(WORKDAY_BOARD_URL)}["']`, 'i').test(page)
     && /jobs\.epicor\.com/i.test(page)
+    && /Contact Us/i.test(page)
 }
 
 export const hasOfficialWorkdayBoardSignal = (html = '') => {

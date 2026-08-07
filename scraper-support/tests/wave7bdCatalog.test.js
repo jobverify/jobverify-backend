@@ -123,13 +123,13 @@ const loadModule = async (relativePath) => {
 
 for (const fixture of companyFixtures) {
   test(`${fixture.expected.companyName} local catalog matches the verified first-party contract`, async () => {
-    const catalogModule = await loadModule(`../${fixture.moduleDir}/catalog.js`)
-    const scriptModule = await loadModule(`../${fixture.moduleDir}/script.js`)
+    const catalogModule = await loadModule(`../../scraper/${fixture.moduleDir}/catalog.js`)
+    const scriptModule = await loadModule(`../../scraper/${fixture.moduleDir}/script.js`)
     const actualCatalog = catalogModule[fixture.exportName]
 
     assert.deepEqual(actualCatalog, {
       ...fixture.expected,
-      modulePath: path.resolve(currentDir, '..', fixture.moduleDir, 'script.js'),
+      modulePath: path.resolve(currentDir, '../../scraper', fixture.moduleDir, 'script.js'),
     })
     assert.equal(catalogModule.default, actualCatalog)
     assert.equal(scriptModule.PROVIDER_METADATA.source, actualCatalog.source)

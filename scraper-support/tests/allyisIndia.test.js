@@ -20,6 +20,10 @@ const careersHtml = `
 `
 
 const blockedIframeError = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' })
+const currentBlockedIframeError = Object.assign(
+  new Error('fetch failed | Connect Timeout Error (attempted address: staffing.allyisapps.com:443, timeout: 10000ms)'),
+  { code: 'UND_ERR_CONNECT_TIMEOUT' },
+)
 
 const loadModule = async () => {
   try {
@@ -58,6 +62,26 @@ test('Allyis India run stays fail-closed when the official page is intact but th
   })
 
   assert.deepEqual(requestedUrls, [allyis.CAREERS_URL, allyis.EMBEDDED_JOBS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Allyis India also treats the current connect-timeout iframe failure as a blocked embedded jobs surface', async () => {
+  const allyis = await loadModule()
+
+  const jobs = await allyis.createAllyisIndiaScraper().run({
+    fetchPage: async (url) => {
+      if (url === allyis.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
+      }
+
+      if (url === allyis.EMBEDDED_JOBS_URL) {
+        throw currentBlockedIframeError
+      }
+
+      throw new Error(`Unexpected Allyis URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

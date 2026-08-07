@@ -7,7 +7,7 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes StoneX India as an iCIMS script provider', () => {
+test('getScraperCatalog includes StoneX India as a paginated iCIMS script provider on the live search iframe surface', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'stonexindia')
 
   assert.ok(provider)
@@ -16,11 +16,13 @@ test('getScraperCatalog includes StoneX India as an iCIMS script provider', () =
   assert.equal(provider.atsPlatform, 'icims')
   assert.equal(provider.companyCareerPage, 'https://www.stonex.com/en/about/careers/jobs/')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-official-jobs-page')
-  assert.equal(provider.extractionStrategy, 'official-html-job-cards+icims-detail-page')
+  assert.equal(provider.paginationStrategy, 'icims-in-iframe-search-pages')
+  assert.equal(provider.extractionStrategy, 'icims-search-results-page+icims-detail-page')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'stonex.com')
+  assert.equal(provider.jobBoardUrl, 'https://english-stonex.icims.com/jobs/search?ss=1&in_iframe=1')
+  assert.equal(provider.verifiedOn, '2026-08-05')
   assert.match(provider.modulePath, /stonexindia[\\/]script\.js$/i)
 })
 

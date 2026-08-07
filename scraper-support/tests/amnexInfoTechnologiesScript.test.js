@@ -43,6 +43,41 @@ const professionalOpportunitiesHtml = `
 </html>
 `
 
+const professionalOpportunitiesHtmlWithCurrentCards = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Professional Opportunities - AMNEX</title>
+    <link rel="canonical" href="https://amnex.com/professional-opportunities/" />
+  </head>
+  <body>
+    <main>
+      <h1>Current Openings</h1>
+      <p>Explore the exciting opportunities that await you at Amnex.</p>
+      <button id="prev-page" disabled>Previous</button>
+      <button id="next-page">Next</button>
+      <button>Find Jobs</button>
+      <article class="job-card">
+        <h2>Legal Manager</h2>
+        <a href="https://amnex.com/jobs/legal-manager/" class="view-more">View More</a>
+      </article>
+      <article class="job-card">
+        <h2>Manager- Finance & Accounts</h2>
+        <a href="https://amnex.com/jobs/manager-finance-accounts/" class="view-more">View More</a>
+      </article>
+      <article class="job-card">
+        <h2>Vice President- Finance & Accounts</h2>
+        <a href="https://amnex.com/jobs/vice-president-finance-accounts/" class="view-more">View More</a>
+      </article>
+      <article class="job-card">
+        <h2>Cyber Security Expert</h2>
+        <a href="https://amnex.com/jobs/cyber-security-expert-ahmedabad/" class="view-more">View More</a>
+      </article>
+    </main>
+  </body>
+</html>
+`
+
 const jobsApiPayload = [
   {
     id: 5379,
@@ -212,6 +247,12 @@ test('Amnex InfoTechnologies constants and parsers stay pinned to the verified f
   assert.equal(amnexInfoTechnologies.hasOfficialCareerHubSignal(careerHubHtml), true)
   assert.equal(
     amnexInfoTechnologies.hasOfficialProfessionalOpportunitiesSignal(professionalOpportunitiesHtml),
+    true,
+  )
+  assert.equal(
+    amnexInfoTechnologies.hasOfficialProfessionalOpportunitiesSignal(
+      professionalOpportunitiesHtmlWithCurrentCards,
+    ),
     true,
   )
 

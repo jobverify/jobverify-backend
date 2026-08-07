@@ -52,6 +52,7 @@ export const extractSearchResults = (payload) => {
       if (cities.length === 0) return null
 
       const jobId = normalizeWhitespace(item.jobReqId)
+      const jobDescription = buildDescription(item, cities)
 
       return {
         title: normalizeWhitespace(item.title),
@@ -71,7 +72,8 @@ export const extractSearchResults = (payload) => {
         requiredSkills: [],
         postingDate: normalizeWhitespace(item.postStartDate),
         closingDate: normalizeWhitespace(item.applicationDueDate),
-        jobDescription: buildDescription(item, cities),
+        jobDescription,
+        publicExperienceChecked: Boolean(jobDescription),
       }
     })
     .filter(Boolean)

@@ -1,49 +1,61 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-04T00:00:00.000Z'
 
-const VERIFIED_CAREERS_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Careers at Relevantz | Join Our Digital Engineering & AI Innovation Team</title>
-  </head>
-  <body>
-    <h1>Join us to create relevant solutions for customers that improve lives</h1>
-    <h2>Careers US</h2>
-    <p>Type: Full-time | Location: Alpharetta, GA</p>
-    <h2>Careers India</h2>
-    <p>Java Full stack Developer</p>
-    <p>APPLY NOW</p>
-    <p>Job Title: Java Full stack Developer</p>
-    <p>Location: Pune/Chennai</p>
-    <p>Position Type: Permanent</p>
-    <p>Experience: 5+ Years</p>
-    <p>Skillsets Required : Core Java, Spring boot, Microservices, Any Messaging Queue, Angular</p>
-    <ul>
-      <li>Developer with Java Full Stack skills with Angular Development.</li>
-      <li>Experience using Java 8 or higher versions, Angular 8, Spring, Spring Boot, RESTful web services, JMS/Kafka.</li>
-    </ul>
-    <p>APPLY NOW</p>
-    <p>Data Architect</p>
-    <p>APPLY NOW</p>
-    <p>Job Title: Data Architect</p>
-    <p>Location: Chennai</p>
-    <p>Experience: 13+ Years</p>
-    <p>Position Type: Fulltime</p>
-    <p>Skillsets Required: Data Architecture, AWS/GCP/Azure, Data Lake, ETL, SQL, Snowflake.</p>
-    <p>Job Summary:</p>
-    <p>We are seeking an experienced Data Architect to design, develop, and optimize our enterprise data architecture.</p>
-    <p>Required Skills & Qualifications</p>
-    <ul>
-      <li>Strong knowledge of SQL, ETL processes, and cloud platforms (AWS, Azure, GCP).</li>
-      <li>Familiarity with Big Data technologies and data governance frameworks.</li>
-    </ul>
-    <p>APPLY NOW</p>
-  </body>
-</html>
-`
+const VERIFIED_CAREERS_PAYLOAD = [
+  {
+    id: 1378,
+    slug: 'careers',
+    title: {
+      rendered: 'Join us page',
+    },
+    acf: {
+      ju_hiring_heading_bold: 'Hiring!',
+      ju_hiring_subtitle: 'Find the perfect job for you',
+      ju_location_tabs: [
+        { label: 'US' },
+        { label: 'India' },
+        { label: 'Canada' },
+      ],
+      ju_job_listings: [
+        {
+          job_title: 'Solution Engineer',
+          job_type: 'Full-time',
+          job_location: 'Alpharetta, GA',
+          job_location_tab: 'US',
+          job_description: '<p>US role.</p>',
+          job_link: '',
+        },
+        {
+          job_title: 'Java Full stack Developer',
+          job_type: 'Full-time | Experience: 5+ Years',
+          job_location: 'Chennai, Tamilnadu / Pune',
+          job_location_tab: 'India',
+          job_description: `
+            <p><strong>Skillsets Required : Core Java, Spring boot, Microservices, Angular</strong></p>
+            <ul>
+              <li>Developer with Java Full Stack skills with Angular Development.</li>
+              <li>Experience using Java 8 or higher versions, Angular 8, Spring Boot, RESTful web services.</li>
+            </ul>
+          `,
+          job_link: '',
+        },
+        {
+          job_title: 'Data Architect',
+          job_type: 'Full-time',
+          job_location: 'Chennai, Tamilnadu | Experience: 13+ Years',
+          job_location_tab: 'India',
+          job_description: `
+            <p><strong>Skills Required: Data Architecture, AWS/GCP/Azure, Data Lake, ETL, SQL, Snowflake.</strong></p>
+            <p>We are seeking an experienced Data Architect to design, develop, and optimize our enterprise data architecture.</p>
+          `,
+          job_link: '',
+        },
+      ],
+    },
+  },
+]
 
 const loadModule = async () => {
   try {
@@ -53,15 +65,21 @@ const loadModule = async () => {
   }
 }
 
-test('Relevantz Technology Services extracts India openings from the verified first-party careers page', async () => {
+test('Relevantz Technology Services extracts India openings from the verified WordPress careers payload', async () => {
   const relevantz = await loadModule()
 
   assert.equal(relevantz.SOURCE, 'relevantztechnologyservices')
   assert.equal(relevantz.COMPANY, 'Relevantz Technology Services')
-  assert.equal(relevantz.CAREERS_URL, 'https://relevantz.com/careers/')
-  assert.equal(relevantz.hasOfficialCareersSignal(VERIFIED_CAREERS_HTML), true)
+  assert.equal(relevantz.CAREERS_URL, 'https://www.relevantz.com/careers/')
+  assert.equal(relevantz.WORDPRESS_ORIGIN, 'https://rzwp.relevantz.com')
+  assert.equal(relevantz.CAREERS_PAGE_SLUG, 'careers')
+  assert.equal(
+    relevantz.CAREERS_PAGE_API_URL,
+    'https://rzwp.relevantz.com/wp-json/wp/v2/pages?slug=careers&acf_format=standard&_fields=id,slug,title,acf',
+  )
+  assert.equal(relevantz.hasOfficialCareersSignal(VERIFIED_CAREERS_PAYLOAD), true)
 
-  const jobs = relevantz.extractIndiaJobs(VERIFIED_CAREERS_HTML)
+  const jobs = relevantz.extractIndiaJobs(VERIFIED_CAREERS_PAYLOAD)
   assert.equal(jobs.length, 2)
   assert.deepEqual(
     jobs.map((job) => ({
@@ -70,21 +88,26 @@ test('Relevantz Technology Services extracts India openings from the verified fi
       city: job.city,
       employmentType: job.employmentType,
       experienceRequired: job.experienceRequired,
+      applyUrl: job.applyUrl,
     })),
     [
       {
         title: 'Java Full stack Developer',
-        location: 'Pune/Chennai',
-        city: 'Pune',
-        employmentType: 'Permanent',
+        location: 'Chennai, Tamilnadu / Pune',
+        city: 'Chennai',
+        employmentType: 'Full-time',
         experienceRequired: '5+ Years',
+        applyUrl:
+          'mailto:careers-india@relevantz.com?subject=Application%3A%20Java%20Full%20stack%20Developer&body=Hi%2C%0A%0AI%20would%20like%20to%20apply%20for%20the%20position%3A%20Java%20Full%20stack%20Developer%0ALocation%3A%20Chennai%2C%20Tamilnadu%20%2F%20Pune%0A%0APlease%20find%20my%20details%20below%3A%0A%0A',
       },
       {
         title: 'Data Architect',
-        location: 'Chennai',
+        location: 'Chennai, Tamilnadu',
         city: 'Chennai',
         employmentType: 'Full-time',
         experienceRequired: '13+ Years',
+        applyUrl:
+          'mailto:careers-india@relevantz.com?subject=Application%3A%20Data%20Architect&body=Hi%2C%0A%0AI%20would%20like%20to%20apply%20for%20the%20position%3A%20Data%20Architect%0ALocation%3A%20Chennai%2C%20Tamilnadu%0A%0APlease%20find%20my%20details%20below%3A%0A%0A',
       },
     ],
   )
@@ -93,14 +116,14 @@ test('Relevantz Technology Services extracts India openings from the verified fi
   assert.match(jobs[1].jobDescription, /enterprise data architecture/i)
 })
 
-test('Relevantz Technology Services run returns India openings in the shared job shape', async () => {
+test('Relevantz Technology Services run returns India openings in the shared job shape from the WordPress API payload', async () => {
   const relevantz = await loadModule()
   const jobs = await relevantz.createRelevantzTechnologyServicesScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    fetchText: async (url) => {
-      assert.equal(url, relevantz.CAREERS_URL)
-      return VERIFIED_CAREERS_HTML
+    fetchJson: async (url) => {
+      assert.equal(url, relevantz.CAREERS_PAGE_API_URL)
+      return VERIFIED_CAREERS_PAYLOAD
     },
   })
 
@@ -108,34 +131,33 @@ test('Relevantz Technology Services run returns India openings in the shared job
   assert.equal(jobs[0].source, 'relevantztechnologyservices')
   assert.equal(jobs[0].company, 'Relevantz Technology Services')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].applyUrl, relevantz.CAREERS_URL)
+  assert.equal(jobs[0].companyCareerPage, relevantz.CAREERS_URL)
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
 })
 
-test('Relevantz Technology Services fails closed when the verified careers page drifts or the India section disappears', async () => {
+test('Relevantz Technology Services fails closed on payload drift but returns an empty list for a valid zero-India-jobs state', async () => {
   const relevantz = await loadModule()
 
   await assert.rejects(
     relevantz.createRelevantzTechnologyServicesScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
+      fetchJson: async () => [{ slug: 'unexpected', title: { rendered: 'Unexpected' }, acf: {} }],
     }),
-    /verified Relevantz Technology Services careers page/i,
+    /verified Relevantz Technology Services careers payload/i,
   )
 
-  await assert.rejects(
-    relevantz.createRelevantzTechnologyServicesScraper().run({
-      fetchText: async () => `
-        <html>
-          <head><title>Careers at Relevantz | Join Our Digital Engineering & AI Innovation Team</title></head>
-          <body>
-            <h1>Join us to create relevant solutions for customers that improve lives</h1>
-            <h2>Careers India</h2>
-            <p>Java Full stack Developer</p>
-            <p>Data Architect</p>
-          </body>
-        </html>
-      `,
-    }),
-    /india openings/i,
-  )
+  const noIndiaJobs = await relevantz.createRelevantzTechnologyServicesScraper().run({
+    fetchJson: async () => [
+      {
+        ...VERIFIED_CAREERS_PAYLOAD[0],
+        acf: {
+          ...VERIFIED_CAREERS_PAYLOAD[0].acf,
+          ju_job_listings: VERIFIED_CAREERS_PAYLOAD[0].acf.ju_job_listings.filter(
+            (job) => job.job_location_tab !== 'India',
+          ),
+        },
+      },
+    ],
+  })
+
+  assert.deepEqual(noIndiaJobs, [])
 })

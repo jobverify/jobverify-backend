@@ -67,7 +67,8 @@ export const hasVerifiedHealthKartCareersSignal = (html = '') => {
   return /buy health/i.test(title)
     && /healthkart/i.test(title)
     && text.includes('about healthkart')
-    && text.includes("healthkart.com is india's largest online health & fitness store")
+    && text.includes('brand directory')
+    && text.includes('sell on healthkart')
     && text.includes('careers')
 }
 

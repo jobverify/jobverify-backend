@@ -21,7 +21,8 @@ export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const CAREERS_SIGNAL_PATTERN = /\b(career|careers|job|jobs|opening|openings|vacancy|vacancies|join us|work with us|hiring)\b/i
+const CAREERS_SIGNAL_PATTERN =
+  /\b(careers|jobs|current openings|open positions|job openings|vacancies|join us|work with us|we(?:'|&#0*39;)?re hiring|hiring now)\b/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

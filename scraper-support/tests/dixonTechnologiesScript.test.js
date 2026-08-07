@@ -228,3 +228,46 @@ test('run maps verified Dixon Technologies Darwinbox listings into Jobify jobs a
     },
   ])
 })
+
+test('run can recover when the verified Dixon first-party pages only fail due to an expired TLS certificate', async () => {
+  const { createDixonTechnologiesScraper, HOMEPAGE_URL, OFFICIAL_CAREERS_URL } =
+    await loadDixonTechnologiesModule()
+  const scraper = createDixonTechnologiesScraper({
+    now: () => FIXED_SCRAPED_AT,
+  })
+  const directUrls = []
+  const insecureUrls = []
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      directUrls.push(url)
+      if (url === HOMEPAGE_URL || url === OFFICIAL_CAREERS_URL) {
+        const error = new Error('fetch failed | certificate has expired')
+        error.code = 'CERT_HAS_EXPIRED'
+        throw error
+      }
+
+      throw new Error(`Unexpected Dixon Technologies URL: ${url}`)
+    },
+    fetchInsecureText: async (url) => {
+      insecureUrls.push(url)
+      if (url === HOMEPAGE_URL) return homepageHtml
+      if (url === OFFICIAL_CAREERS_URL) return officialJobOpeningsHtml
+
+      throw new Error(`Unexpected insecure Dixon Technologies URL: ${url}`)
+    },
+    fetchListingPage: async () => listingPayload,
+  })
+
+  assert.deepEqual(directUrls, [
+    'https://www.dixoninfo.com/',
+    'https://www.dixoninfo.com/job-openings',
+  ])
+  assert.deepEqual(insecureUrls, [
+    'https://www.dixoninfo.com/',
+    'https://www.dixoninfo.com/job-openings',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Production Engineer')
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})

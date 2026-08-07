@@ -63,10 +63,10 @@ test('Techspian sentinel helpers stay pinned to the verified legacy careers redi
   assert.equal(techspian.SOURCE, 'techspian')
   assert.equal(techspian.COMPANY, 'Techspian')
   assert.equal(techspian.OFFICIAL_BRAND_NAME, 'Techspian')
-  assert.equal(techspian.VERIFIED_ON, '2026-07-17')
+  assert.equal(techspian.VERIFIED_ON, '2026-08-05')
   assert.equal(techspian.HOMEPAGE_URL, 'https://techspian.com/')
   assert.equal(techspian.CAREERS_URL, 'https://www.techspian.com/techspian-careers/')
-  assert.equal(techspian.REDIRECTED_CAREERS_URL, 'https://techspian.com/about#careers')
+  assert.equal(techspian.REDIRECTED_CAREERS_URL, 'https://techspian.com/about')
   assert.equal(techspian.CONTACT_URL, 'https://techspian.com/contact')
   assert.equal(techspian.CONTACT_EMAIL, 'marketing@techspian.com')
   assert.equal(techspian.hasRedirectedAboutPageSignal(REDIRECTED_ABOUT_HTML), true)
@@ -137,7 +137,7 @@ test('Techspian returns [] for the verified redirect-plus-contact surface and fa
         if (url === techspian.CAREERS_URL) {
           return {
             status: 200,
-            url: 'https://techspian.com/about',
+            url: 'https://techspian.com/team',
             html: '<html><body><h1>Unexpected</h1></body></html>',
           }
         }

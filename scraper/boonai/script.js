@@ -3,7 +3,7 @@ import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 export const SOURCE = 'boonai'
 export const COMPANY = 'BoonAI'
 export const OFFICIAL_BRAND = 'Boon.ai'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-01'
 export const HOME_URL = 'https://www.boonindia.ai/'
 export const ABOUT_URL = 'https://www.boonindia.ai/about'
 export const PRICING_URL = 'https://www.boonindia.ai/pricing'
@@ -12,7 +12,7 @@ export const CAREERS_URL = ABOUT_URL
 export const DISPOSITION =
   'verified-public-platform-and-recruiter-surfaces-without-exact-company-careers-contract'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.boonindia.ai/ and https://www.boonindia.ai/about were the live official public Boon.ai surfaces reviewed for workbook company BoonAI, that https://www.boonindia.ai/pricing and https://employer.boonindia.ai/register exposed recruiter-facing marketplace and agency registration flows, and that those reviewed surfaces established Boon.ai as an overseas jobs platform rather than a trustworthy exact-company BoonAI careers contract. This company-local scraper stays fail-closed and returns no jobs until a stable official BoonAI openings surface is verified.'
+  'Verified on Saturday, August 1, 2026 that https://www.boonindia.ai/ and https://www.boonindia.ai/about were the live official public Boon.ai surfaces reviewed for workbook company BoonAI, that https://www.boonindia.ai/pricing and https://employer.boonindia.ai/register exposed recruiter-facing marketplace and agency registration flows, and that the observed careers@boonindia.ai contact email did not itself constitute a trustworthy exact-company careers contract. These reviewed surfaces still establish Boon.ai as an overseas jobs platform rather than a trustworthy exact-company BoonAI careers contract, so this company-local scraper stays fail-closed and returns no jobs until a stable official BoonAI openings surface is verified.'
 
 const HOME_REQUIRED_PATTERNS = [
   /\byour international career starts here\b/i,
@@ -153,18 +153,8 @@ const isLinkedInCompanyJobsUrl = (url) =>
   /(?:^|\.)linkedin\.com$/i.test(url.hostname)
   && /^\/company\/boon-ai\/jobs\/?$/i.test(url.pathname)
 
-const isExactCompanyEmailHandoff = (url) => {
-  if (url.protocol !== 'mailto:') return false
-
-  const [localPart, domain] = url.pathname.split('@')
-  if (!localPart || !domain) return false
-
-  return COMPANY_EMAIL_JOB_LOCALS.test(localPart) && /^boonindia\.ai$/i.test(domain)
-}
-
 const isExactCompanyJobsUrl = (url) => {
   if (isLinkedInCompanyJobsUrl(url)) return true
-  if (isExactCompanyEmailHandoff(url)) return true
   if (TRUSTED_ATS_HOST_PATTERNS.some((pattern) => pattern.test(url.hostname))) return true
 
   const sameBrandHost = /(?:^|\.)boonindia\.ai$/i.test(url.hostname)

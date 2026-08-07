@@ -31,12 +31,12 @@ const JOB_LISTING_SITEMAP_XML = `
     <lastmod>2026-06-17T21:57:44+00:00</lastmod>
   </url>
   <url>
-    <loc>https://www.komprise.com/job/implementation-engineer-2/</loc>
-    <lastmod>2026-07-16T13:54:38+00:00</lastmod>
+    <loc>https://www.komprise.com/job/software-development-engineer-productivity/</loc>
+    <lastmod>2026-07-10T15:37:25+00:00</lastmod>
   </url>
   <url>
-    <loc>https://www.komprise.com/job/sde2-frontend-engineer/</loc>
-    <lastmod>2026-07-16T14:01:56+00:00</lastmod>
+    <loc>https://www.komprise.com/job/implementation-engineer-2/</loc>
+    <lastmod>2026-07-16T13:54:38+00:00</lastmod>
   </url>
   <url>
     <loc>https://www.komprise.com/job/technical-support-engineer/</loc>
@@ -69,47 +69,47 @@ const ACCOUNT_EXECUTIVE_DETAIL_HTML = `
 </html>
 `
 
-const IMPLEMENTATION_ENGINEER_DETAIL_HTML = `
+const PRODUCTIVITY_DETAIL_HTML = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <meta property="og:title" content="Implementation Engineer 2 &#8211; Komprise" />
-    <meta property="og:description" content="Location: Bangalore | Employment Type: Full-time Company Overview: Komprise unlocks unstructured data for AI while optimizing data placement." />
-    <link rel="canonical" href="https://www.komprise.com/?post_type=job_listing&p=57725" />
+    <meta property="og:title" content="Software Development Engineer - Productivity &#8211; Komprise" />
+    <meta property="og:description" content="Job Title: Software Development Engineer &#8211; Productivity Location: Bengaluru Company Overview: Komprise unlocks unstructured data for AI while optimizing data&amp;hellip;" />
+    <link rel="canonical" href="https://www.komprise.com/?post_type=job_listing&p=58125" />
   </head>
   <body>
-    <li class="location"><a class="google_map_link" href="https://maps.google.com/maps?q=Bengalaru">Bengalaru</a></li>
+    <li class="location"><a class="google_map_link" href="https://maps.google.com/maps?q=Bengaluru">Bengaluru</a></li>
     <div class="job_application">
       <input type="button" class="application_button button" value="Apply for job" />
       <div class="application_details">
-        <p>To apply for this job <strong>email your details to</strong> <a class="job_application_email" href="mailto:india_careers@komprise.com?subject=Application%20via%20Implementation%20Engineer%202%20listing%20on%20https%3A%2F%2Fwww.komprise.com">india_careers@komprise.com</a></p>
+        <p>To apply for this job <strong>email your details to</strong> <a class="job_application_email" href="mailto:india_careers@komprise.com?subject=Application%20via%20Software%20Development%20Engineer%20-%20Productivity%20listing%20on%20https%3A%2F%2Fwww.komprise.com">india_careers@komprise.com</a></p>
       </div>
     </div>
     <script>
-      var job_manager_stats = {"postId":"57725"};
+      var job_manager_stats = {"postId":"58125"};
     </script>
   </body>
 </html>
 `
 
-const SDE2_DETAIL_HTML = `
+const IMPLEMENTATION_ENGINEER_DETAIL_HTML = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <meta property="og:title" content="SDE2 Frontend Engineer &#8211; Komprise" />
-    <meta property="og:description" content="Location: Bangalore | Employment Type: Full-time Company Overview: Komprise powers AI-ready unstructured data management." />
-    <link rel="canonical" href="https://www.komprise.com/?post_type=job_listing&p=57726" />
+    <meta property="og:title" content="Implementation Engineer &#8211; Komprise" />
+    <meta property="og:description" content="Company Overview Komprise unlocks unstructured data for AI while optimizing data placement to cut storage costs. With Komprise Intelligent Data&amp;hellip;" />
+    <link rel="canonical" href="https://www.komprise.com/?post_type=job_listing&p=57725" />
   </head>
   <body>
-    <li class="location"><a class="google_map_link" href="https://maps.google.com/maps?q=Bengalaru">Bengalaru</a></li>
+    <li class="location"><a class="google_map_link" href="https://maps.google.com/maps?q=Bengaluru">Bengaluru</a></li>
     <div class="job_application">
       <input type="button" class="application_button button" value="Apply for job" />
       <div class="application_details">
-        <p>To apply for this job <strong>email your details to</strong> <a class="job_application_email" href="mailto:india_careers@komprise.com?subject=Application%20via%20SDE2%20Frontend%20Engineer%20listing%20on%20https%3A%2F%2Fwww.komprise.com">india_careers@komprise.com</a></p>
+        <p>To apply for this job <strong>email your details to</strong> <a class="job_application_email" href="mailto:india_careers@komprise.com?subject=Application%20via%20Implementation%20Engineer%20listing%20on%20https%3A%2F%2Fwww.komprise.com">india_careers@komprise.com</a></p>
       </div>
     </div>
     <script>
-      var job_manager_stats = {"postId":"57726"};
+      var job_manager_stats = {"postId":"57725"};
     </script>
   </body>
 </html>
@@ -159,7 +159,7 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
 
   assert.equal(komprise.SOURCE, 'komprise')
   assert.equal(komprise.COMPANY, 'Komprise')
-  assert.equal(komprise.VERIFIED_ON, '2026-07-16')
+  assert.equal(komprise.VERIFIED_ON, '2026-08-02')
   assert.equal(komprise.HOMEPAGE_URL, 'https://www.komprise.com/')
   assert.equal(komprise.CAREERS_URL, 'https://www.komprise.com/careers/')
   assert.equal(komprise.SITEMAP_INDEX_URL, 'https://www.komprise.com/sitemap_index.xml')
@@ -168,8 +168,8 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
     'https://www.komprise.com/job_listing-sitemap.xml',
   )
   assert.deepEqual(komprise.VERIFIED_JOB_DETAIL_URLS, [
+    'https://www.komprise.com/job/software-development-engineer-productivity/',
     'https://www.komprise.com/job/implementation-engineer-2/',
-    'https://www.komprise.com/job/sde2-frontend-engineer/',
     'https://www.komprise.com/job/technical-support-engineer/',
   ])
   assert.equal(komprise.hasOfficialCareersPageSignal(CAREERS_HTML), true)
@@ -182,12 +182,12 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
         lastmod: '2026-06-17T21:57:44+00:00',
       },
       {
-        url: 'https://www.komprise.com/job/implementation-engineer-2/',
-        lastmod: '2026-07-16T13:54:38+00:00',
+        url: 'https://www.komprise.com/job/software-development-engineer-productivity/',
+        lastmod: '2026-07-10T15:37:25+00:00',
       },
       {
-        url: 'https://www.komprise.com/job/sde2-frontend-engineer/',
-        lastmod: '2026-07-16T14:01:56+00:00',
+        url: 'https://www.komprise.com/job/implementation-engineer-2/',
+        lastmod: '2026-07-16T13:54:38+00:00',
       },
       {
         url: 'https://www.komprise.com/job/technical-support-engineer/',
@@ -248,8 +248,8 @@ test('Komprise run validates the verified careers shell, consumes the job sitema
       if (url === komprise.CAREERS_URL) return CAREERS_HTML
       if (url === komprise.JOB_LISTING_SITEMAP_URL) return JOB_LISTING_SITEMAP_XML
       if (url === 'https://www.komprise.com/job/account-executive/') return ACCOUNT_EXECUTIVE_DETAIL_HTML
+      if (url === 'https://www.komprise.com/job/software-development-engineer-productivity/') return PRODUCTIVITY_DETAIL_HTML
       if (url === 'https://www.komprise.com/job/implementation-engineer-2/') return IMPLEMENTATION_ENGINEER_DETAIL_HTML
-      if (url === 'https://www.komprise.com/job/sde2-frontend-engineer/') return SDE2_DETAIL_HTML
       if (url === 'https://www.komprise.com/job/technical-support-engineer/') return TECH_SUPPORT_DETAIL_HTML
 
       throw new Error(`Unexpected Komprise URL: ${url}`)
@@ -260,8 +260,8 @@ test('Komprise run validates the verified careers shell, consumes the job sitema
     komprise.CAREERS_URL,
     komprise.JOB_LISTING_SITEMAP_URL,
     'https://www.komprise.com/job/account-executive/',
+    'https://www.komprise.com/job/software-development-engineer-productivity/',
     'https://www.komprise.com/job/implementation-engineer-2/',
-    'https://www.komprise.com/job/sde2-frontend-engineer/',
     'https://www.komprise.com/job/technical-support-engineer/',
   ])
   assert.equal(jobs.length, 3)
@@ -269,16 +269,16 @@ test('Komprise run validates the verified careers shell, consumes the job sitema
     jobs.map((job) => [job.title, job.location, job.applyUrl, job.source, job.scrapedAt]),
     [
       [
-        'Implementation Engineer 2',
+        'Software Development Engineer - Productivity',
         'Bangalore, India',
-        'mailto:india_careers@komprise.com?subject=Application%20via%20Implementation%20Engineer%202%20listing%20on%20https%3A%2F%2Fwww.komprise.com',
+        'mailto:india_careers@komprise.com?subject=Application%20via%20Software%20Development%20Engineer%20-%20Productivity%20listing%20on%20https%3A%2F%2Fwww.komprise.com',
         'komprise',
         FIXED_SCRAPED_AT,
       ],
       [
-        'SDE2 Frontend Engineer',
+        'Implementation Engineer',
         'Bangalore, India',
-        'mailto:india_careers@komprise.com?subject=Application%20via%20SDE2%20Frontend%20Engineer%20listing%20on%20https%3A%2F%2Fwww.komprise.com',
+        'mailto:india_careers@komprise.com?subject=Application%20via%20Implementation%20Engineer%20listing%20on%20https%3A%2F%2Fwww.komprise.com',
         'komprise',
         FIXED_SCRAPED_AT,
       ],

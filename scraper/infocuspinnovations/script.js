@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -15,6 +16,14 @@ export const EXPECTED_IDENTIFIER = 'd8a117a8-6620-46fb-959e-742de38602e5'
 export const EXPECTED_KEKA_DOMAIN = 'https://infocusp.keka.com/careers/'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const KEKA_BROWSER_JSON_HEADERS = {
+  Accept: 'application/json, text/plain, */*',
+  'X-Requested-With': 'XMLHttpRequest',
+}
+
+export const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|forbidden html response|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -59,13 +68,40 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasVerifiedCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const normalizedLower = normalized?.toLowerCase() || ''
 
   return /<title[^>]*>\s*Openings - Infocusp\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel="canonical"[^>]+href="https:\/\/www\.infocusp\.com\/careers\/openings\/"/i.test(rawHtml)
-    && /id="current-openings"/i.test(rawHtml)
-    && /id="jobs-container"/i.test(rawHtml)
+    && (
+      /<link[^>]+rel="canonical"[^>]+href="https:\/\/www\.infocusp\.com\/careers\/openings\/"/i.test(rawHtml)
+      || /https:\/\/www\.infocusp\.com\/careers\/openings\//i.test(rawHtml)
+    )
+    && normalizedLower.includes('join us to shape tomorrow')
+    && normalizedLower.includes('explore open positions')
     && /Current Openings/i.test(normalized)
-    && /careers@infocusp\.com/i.test(rawHtml)
+    && (
+      /id="current-openings"/i.test(rawHtml)
+      || normalizedLower.includes('innovate, grow, thrive')
+    )
+}
+
+export const hasRenderedJobsLoadError = (html) => {
+  const normalized = normalizeWhitespace(html)
+  if (!normalized) return false
+
+  const normalizedLower = normalized.toLowerCase()
+  return normalizedLower.includes('current openings')
+    && normalizedLower.includes('error loading jobs')
+}
+
+export const hasRenderedNoOpeningsSignal = (html) => {
+  const normalized = normalizeWhitespace(html)
+  if (!normalized) return false
+
+  const normalizedLower = normalized.toLowerCase()
+  return normalizedLower.includes('current openings')
+    && normalizedLower.includes('interested in joining our team?')
+    && normalizedLower.includes('share your cv with us at careers@infocusp.com')
+    && normalizedLower.includes('reach out when a suitable opportunity arises')
 }
 
 export const extractCareersBundlePath = (html) =>
@@ -158,6 +194,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: 'infocuspinnovations-html',
   timeoutMs: 15000,
 })
@@ -167,6 +204,7 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
   },
+  attempts: 1,
   label: 'infocuspinnovations-json',
   timeoutMs: 15000,
 })
@@ -174,50 +212,130 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const createInfoCuspInnovationsScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('InfoCusp Innovations verified official homepage no longer matches the known public surface')
+  async run({
+    fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
+  } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          settleTimeMs: 12000,
+        })
+      }
+
+      return browserSession
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasVerifiedCareersPageSignal(careersHtml)) {
-      throw new Error('InfoCusp Innovations verified first-party careers surface no longer matches the known public shell')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+
+      if (![200, 304].includes(page.status)) {
+        throw new Error(`HTTP ${page.status} for ${url}`)
+      }
+
+      return page.html
+    })
+
+    const browserJsonFetcher = fetchBrowserJson || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchJson(url, {
+        landingUrl: EXPECTED_KEKA_DOMAIN,
+        headers: KEKA_BROWSER_JSON_HEADERS,
+      })
+    })
+
+    const fetchTextWithBrowserFallback = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const bundlePath = extractCareersBundlePath(careersHtml)
-    if (!bundlePath) {
-      throw new Error('InfoCusp Innovations careers page no longer exposes the verified public jobs bundle')
+    try {
+      const homepageHtml = await fetchTextWithBrowserFallback(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('InfoCusp Innovations verified official homepage no longer matches the known public surface')
+      }
+
+      const careersHtml = await fetchTextWithBrowserFallback(CAREERS_URL)
+      if (!hasVerifiedCareersPageSignal(careersHtml)) {
+        throw new Error('InfoCusp Innovations verified first-party careers surface no longer matches the known public shell')
+      }
+
+      const bundlePath = extractCareersBundlePath(careersHtml)
+      if (!bundlePath) {
+        throw new Error('InfoCusp Innovations careers page no longer exposes the verified public jobs bundle')
+      }
+
+      const bundleUrl = new URL(bundlePath, HOMEPAGE_URL).toString()
+      const careerConfig = extractCareerConfig(await fetchTextWithBrowserFallback(bundleUrl))
+      if (!careerConfig) {
+        throw new Error('InfoCusp Innovations careers bundle no longer exposes the verified Keka configuration')
+      }
+
+      if (
+        careerConfig.identifier !== EXPECTED_IDENTIFIER
+        || careerConfig.domain !== EXPECTED_KEKA_DOMAIN
+        || careerConfig.portalName !== 'default'
+      ) {
+        throw new Error('InfoCusp Innovations verified Keka job surface changed materially')
+      }
+
+      const activeJobsUrl = buildActiveJobsUrl(careerConfig)
+      if (!activeJobsUrl) {
+        throw new Error('Unable to build InfoCusp Innovations active jobs URL')
+      }
+
+      let activeJobs
+      try {
+        activeJobs = await fetchJson(activeJobsUrl)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        const renderedCareersHtml = hasRenderedJobsLoadError(careersHtml)
+          ? careersHtml
+          : await browserTextFetcher(CAREERS_URL).catch(() => null)
+
+        if (
+          hasVerifiedCareersPageSignal(renderedCareersHtml)
+          && (
+            hasRenderedJobsLoadError(renderedCareersHtml)
+            || hasRenderedNoOpeningsSignal(renderedCareersHtml)
+          )
+        ) {
+          return []
+        }
+
+        activeJobs = await browserJsonFetcher(activeJobsUrl)
+      }
+
+      const jobs = extractSearchResults(activeJobs, careerConfig)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
     }
-
-    const bundleUrl = new URL(bundlePath, HOMEPAGE_URL).toString()
-    const careerConfig = extractCareerConfig(await fetchText(bundleUrl))
-    if (!careerConfig) {
-      throw new Error('InfoCusp Innovations careers bundle no longer exposes the verified Keka configuration')
-    }
-
-    if (
-      careerConfig.identifier !== EXPECTED_IDENTIFIER
-      || careerConfig.domain !== EXPECTED_KEKA_DOMAIN
-      || careerConfig.portalName !== 'default'
-    ) {
-      throw new Error('InfoCusp Innovations verified Keka job surface changed materially')
-    }
-
-    const activeJobsUrl = buildActiveJobsUrl(careerConfig)
-    if (!activeJobsUrl) {
-      throw new Error('Unable to build InfoCusp Innovations active jobs URL')
-    }
-
-    const jobs = extractSearchResults(await fetchJson(activeJobsUrl), careerConfig)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
   },
 })
 

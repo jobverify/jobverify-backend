@@ -60,6 +60,7 @@ test('Kumaraguru Institutions scraper pins the verified first-party homepage and
     closingDate: null,
     jobDescription:
       'For individuals interested in full-time teaching careers. Roles involve teaching students, guiding projects, developing course content, and contributing to academic activities. Suitable for experienced educators, industry professionals looking to move into academia, and those passionate about shaping future generations. Apply through the official Kumaraguru Institutions academic recruitment form.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
   assert.equal(
@@ -90,6 +91,7 @@ test('Kumaraguru Institutions scraper pins the verified first-party homepage and
     closingDate: null,
     jobDescription:
       'For professionals who enjoy planning, coordination, and managing day-to-day operations. Roles may support academic departments, institutional offices, facilities, administration, project management, and operational excellence that help the institution function effectively. Apply through the official Kumaraguru Institutions support services recruitment form.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
   assert.equal(
@@ -131,6 +133,7 @@ test('Kumaraguru Institutions scraper returns normalized jobs from the verified 
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(
     jobs.at(-1)?.title,
     'Finance, HR & Institutional Services Opportunities',

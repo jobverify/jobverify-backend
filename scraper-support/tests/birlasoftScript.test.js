@@ -133,3 +133,31 @@ test('extractJobDetail reads Birlasoft detail metadata, requisition id, and desc
   )
   assert.match(detail.jobDescription, /Oracle EBS SCM oder management/i)
 })
+
+test('extractJobDetail derives experience from Birlasoft detail descriptions when the years live only in prose', () => {
+  const html = `
+    <html>
+      <body>
+        <span itemprop="title">Technical Specialist-App Development</span>
+        <span itemprop="addressLocality" content="Pune"></span>
+        <span itemprop="description">
+          Area(s) of responsibility
+          Job Description: 4 to 6 years of strong hands-on programming experience in React JS and java script.
+          Good Knowledge in Next.JS Preferable.
+        </span>
+        <meta itemprop="datePosted" content="2026-07-25" />
+      </body>
+    </html>
+  `
+
+  const detail = extractJobDetail(html, {
+    title: 'Technical Specialist-App Development',
+    location: 'Pune, India',
+    city: 'Pune',
+    jobId: '57371944',
+    requisitionId: '57371944',
+    sourceUrl: 'https://jobs.birlasoft.com/job/Pune-Technical-Specialist-App-Development-INDI/57371944/',
+  })
+
+  assert.equal(detail.experienceRequired, '4-6 years')
+})

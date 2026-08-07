@@ -22,26 +22,14 @@ const CURRENT_OPENINGS_HTML = `
       <main>
         <h1>Your Finest Hours Await</h1>
         <h2>Openings Available</h2>
-        <p>All Location Ghana South Africa Zambia Zimbabwe Rwanda Nigeria UK</p>
-        <p>All Department Business & Customer Operations Engineering Finance Legal, Risk and Compliance</p>
+        <p>All Location All Location Ghana South Africa Zambia Zimbabwe Rwanda Nigeria UK Select link</p>
+        <p>All Departments All Department Business & Customer Operations Engineering Finance Legal, Risk and Compliance Select link</p>
         <section>
           <h3>Business & Customer Operations</h3>
-          <a href="https://www.chippercash.com/career/growth-analyst-nigeria">Growth Analyst, Nigeria</a>
+          <p>No items found.</p>
         </section>
         <section>
           <h3>Engineering</h3>
-          <a href="https://www.chippercash.com/career/software-engineer-i---risk-compliance">
-            Software Engineer I - Risk & Compliance
-          </a>
-          <a href="https://www.chippercash.com/career/data-engineer--risk-intelligence">
-            Data Engineer, Risk Intelligence
-          </a>
-          <a href="https://www.chippercash.com/career/software-engineer-i-risk-intelligence-automations">
-            Software Engineer I - Risk Intelligence & Automations
-          </a>
-        </section>
-        <section>
-          <h3>Finance</h3>
           <p>No items found.</p>
         </section>
         <section>
@@ -56,97 +44,17 @@ const CURRENT_OPENINGS_HTML = `
 `
 
 const DETAIL_PAGES = {
-  'https://www.chippercash.com/career/growth-analyst-nigeria': `
-    <html>
-      <body>
-        <main>
-          <a href="https://www.chippercash.com/careers">Careers</a>
-          <h1>Growth Analyst, Nigeria</h1>
-          <p>Who we are</p>
-          <p>Identify Growth Opportunities and analyze customer behavior across cohorts.</p>
-          <p>Location:</p>
-          <p>This role is based in Nigeria and follows a hybrid work arrangement.</p>
-          <p>Next Steps</p>
-          <p>
-            If you feel you are a fit, please send in your application to careers@chippercash.com by 17th November 2025.
-          </p>
-        </main>
-      </body>
-    </html>
-  `,
-  'https://www.chippercash.com/career/software-engineer-i---risk-compliance': `
-    <html>
-      <body>
-        <main>
-          <a href="https://www.chippercash.com/careers">Careers</a>
-          <h1>Software Engineer I - Risk & Compliance</h1>
-          <p>Who we are</p>
-          <p>
-            This is a 3-month provisional contract-based role, with a goal of conversion to a long-term position at the end of the provisional period.
-          </p>
-          <p>Location:</p>
-          <p>This role is based in Nigeria and follows a hybrid work arrangement.</p>
-          <p>Next Steps</p>
-          <p>
-            If you feel you are a fit, please send in your application to careers@chippercash.com by 7th November 2025.
-          </p>
-        </main>
-      </body>
-    </html>
-  `,
-  'https://www.chippercash.com/career/data-engineer--risk-intelligence': `
-    <html>
-      <body>
-        <main>
-          <a href="https://www.chippercash.com/careers">Careers</a>
-          <h1>Data Engineer, Risk Intelligence</h1>
-          <p>Who we are</p>
-          <p>
-            Build, evaluate, and deploy intelligent risk models that replace manual reviews and empower Risk & Compliance teams to make faster, smarter, and more consistent decisions.
-          </p>
-          <p>Location:</p>
-          <p>This role is based in Nigeria and follows a hybrid work arrangement.</p>
-          <p>Next Steps</p>
-          <p>
-            If you feel you are a fit, please send in your application to careers@chippercash.com by 7th November 2025.
-          </p>
-        </main>
-      </body>
-    </html>
-  `,
-  'https://www.chippercash.com/career/software-engineer-i-risk-intelligence-automations': `
-    <html>
-      <body>
-        <main>
-          <a href="https://www.chippercash.com/careers">Careers</a>
-          <h1>Software Engineer I - Risk Intelligence & Automations</h1>
-          <p>Who we are</p>
-          <p>
-            The Risk Intelligence & Automations team sits at the core of Chipper Cash's mission to build a trusted, compliant, and frictionless financial ecosystem across Africa and beyond.
-          </p>
-          <p>Location:</p>
-          <p>This role is based in Nigeria and follows a hybrid work arrangement.</p>
-          <p>Next Steps</p>
-          <p>
-            If you feel you are a fit, please send in your application to careers@chippercash.com by 7th November 2025.
-          </p>
-        </main>
-      </body>
-    </html>
-  `,
   'https://www.chippercash.com/career/risk-and-compliance-officer-associate-rwanda': `
     <html>
       <body>
         <main>
           <a href="https://www.chippercash.com/careers">Careers</a>
           <h1>RISK AND COMPLIANCE OFFICER/ASSOCIATE RWANDA</h1>
-          <p>Who we are</p>
+          <p>Rwanda</p>
+          <h2>About the Role</h2>
           <p>
-            The Risk & Compliance Officer / Associate will support AML/CFT/CPF execution and regulatory reporting in Rwanda.
+            The Risk & Compliance Officer / Associate will support the implementation and day-to-day execution of Chipper's Risk and Compliance Framework in Rwanda.
           </p>
-          <p>Location:</p>
-          <p>This role is based in Rwanda and follows a hybrid work arrangement.</p>
-          <p>Next Steps</p>
           <p>
             If you feel you are a fit, please send in your application to careers@chippercash.com by 24th February 2026.
           </p>
@@ -194,7 +102,7 @@ test('Chipper Cash India extracts the verified stale same-origin openings eviden
 
   const jobs = await chipper.extractVerifiedPublicJobs({
     fetchText,
-    now: () => '2026-07-25T12:00:00.000Z',
+    now: () => '2026-08-01T12:00:00.000Z',
   })
 
   assert.deepEqual(requests, [
@@ -202,22 +110,18 @@ test('Chipper Cash India extracts the verified stale same-origin openings eviden
     chipper.CURRENT_OPENINGS_URL,
     ...chipper.VERIFIED_PUBLIC_JOBS.map((job) => job.detailUrl),
   ])
-  assert.equal(jobs.length, 5)
+  assert.equal(jobs.length, 1)
   assert.deepEqual(
     jobs.map((job) => [job.title, job.country, job.department]),
     [
-      ['Growth Analyst, Nigeria', 'Nigeria', 'Business & Customer Operations'],
-      ['Software Engineer I - Risk & Compliance', 'Nigeria', 'Engineering'],
-      ['Data Engineer, Risk Intelligence', 'Nigeria', 'Engineering'],
-      ['Software Engineer I - Risk Intelligence & Automations', 'Nigeria', 'Engineering'],
       ['RISK AND COMPLIANCE OFFICER/ASSOCIATE RWANDA', 'Rwanda', 'Legal, Risk and Compliance'],
     ],
   )
-  assert.ok(jobs.every((job) => job.remoteStatus === 'Hybrid'))
+  assert.ok(jobs.every((job) => job.remoteStatus === 'On-site'))
   assert.ok(jobs.every((job) => job.source === 'chippercashindia'))
-  assert.ok(jobs.every((job) => job.scrapedAt === '2026-07-25T12:00:00.000Z'))
+  assert.ok(jobs.every((job) => job.scrapedAt === '2026-08-01T12:00:00.000Z'))
   assert.ok(
-    jobs.every((job) => job.closingDate && job.closingDate < '2026-07-25T00:00:00.000Z'),
+    jobs.every((job) => job.closingDate && job.closingDate < '2026-08-01T00:00:00.000Z'),
   )
 })
 
@@ -227,7 +131,7 @@ test('Chipper Cash India run stays fail-closed because the verified first-party 
 
   const jobs = await chipper.run({
     fetchText,
-    now: () => '2026-07-25T12:00:00.000Z',
+    now: () => '2026-08-01T12:00:00.000Z',
   })
 
   assert.deepEqual(jobs, [])
@@ -245,15 +149,15 @@ test('Chipper Cash India run stays fail-closed because the verified first-party 
   )
   assert.match(
     chipper.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/www\.chippercash\.com\/careers was the live first-party Chipper Cash careers surface/i,
+    /Verified on Saturday, August 1, 2026 that https:\/\/www\.chippercash\.com\/careers was the live first-party Chipper Cash careers surface/i,
   )
   assert.match(
     chipper.VERIFIED_SURFACE_SUMMARY,
-    /https:\/\/www\.chippercash\.com\/career-current-openings still exposed same-origin opening links/i,
+    /still exposed only one same-origin role link/i,
   )
   assert.match(
     chipper.VERIFIED_SURFACE_SUMMARY,
-    /application deadlines that were already in the past on Saturday, July 25, 2026/i,
+    /already in the past on Saturday, August 1, 2026/i,
   )
   assert.match(
     chipper.VERIFIED_SURFACE_SUMMARY,
@@ -300,7 +204,6 @@ test('Chipper Cash India rejects when the verified same-origin openings contract
           return `
             ${CURRENT_OPENINGS_HTML}
             <section>
-              <h3>Engineering</h3>
               <a href="https://www.chippercash.com/career/founding-engineer-india">Founding Engineer, India</a>
             </section>
           `
@@ -320,23 +223,19 @@ test('Chipper Cash India rejects when a verified same-origin detail page stops m
   await assert.rejects(
     chipper.run({
       fetchText: async (url) => {
-        if (url === 'https://www.chippercash.com/career/data-engineer--risk-intelligence') {
+        if (url === 'https://www.chippercash.com/career/risk-and-compliance-officer-associate-rwanda') {
           return `
             <html>
               <body>
                 <main>
                   <a href="https://www.chippercash.com/careers">Careers</a>
-                  <h1>Data Engineer, Risk Intelligence</h1>
-                  <p>Who we are</p>
+                  <h1>RISK AND COMPLIANCE OFFICER/ASSOCIATE RWANDA</h1>
+                  <p>Rwanda</p>
+                  <h2>About the Role</h2>
                   <p>
-                    Build, evaluate, and deploy intelligent risk models that replace manual reviews and empower Risk & Compliance teams to make faster, smarter, and more consistent decisions.
+                    The Risk & Compliance Officer / Associate will support the implementation and day-to-day execution of Chipper's Risk and Compliance Framework in Rwanda.
                   </p>
-                  <p>Location:</p>
-                  <p>This role is based in Nigeria and follows a hybrid work arrangement.</p>
-                  <p>Next Steps</p>
-                  <p>
-                    If you feel you are a fit, please send in your application to careers@chippercash.com by 30th July 2026.
-                  </p>
+                  <p>If you feel you are a fit, please send in your application to careers@chippercash.com by 30th August 2026.</p>
                 </main>
               </body>
             </html>

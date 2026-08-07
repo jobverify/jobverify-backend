@@ -28,8 +28,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasParentCareersHubSignal = (html = '') => {
   const normalized = String(html).replace(/\s+/g, ' ')
 
-  return normalized.includes('<title>Careers | Xebia</title>')
-    && normalized.includes('Become a Xebian')
+  return (
+    normalized.includes('<title>Careers | Xebia</title>')
+    || normalized.includes('<title>Join Xebia: Top Digital Experts Wanted | People-First Culture</title>')
+  )
+    && (normalized.includes('Become a Xebian') || normalized.includes('Join us!'))
     && normalized.includes('Open Positions')
     && normalized.includes('North America (USA / Canada)')
 }

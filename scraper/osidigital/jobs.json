@@ -1,0 +1,1731 @@
+[
+  {
+    "title": "Senior Network admin",
+    "company": "OSI Digital",
+    "department": "MSP",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "63d51adb-4b70-40c1-90fd-0d92b3d11ab7",
+    "requisitionId": "OD-62384",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/63d51adb-4b70-40c1-90fd-0d92b3d11ab7?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/63d51adb-4b70-40c1-90fd-0d92b3d11ab7?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "6-10 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Fortinet",
+      "Palo Alto",
+      "Cisco",
+      "Meraki",
+      "SDWAN",
+      "Network Security",
+      "Routing and Switching",
+      "Wireless",
+      "OCI",
+      "Azure",
+      "AWS",
+      "Aruba",
+      "CISCO ISE",
+      "F5",
+      "WAF",
+      "Aruba Clearpass",
+      "checkpoint",
+      "arista"
+    ],
+    "postingDate": "2026-08-03T12:22:38.189Z",
+    "closingDate": "2026-09-29T18:30:00.000Z",
+    "jobDescription": "Network Administrator Job Description Job Title : Network Administrator Experience : 7+ Years Location : Hyderabad, India. OSI Digital is looking for a Network administrator with 7 + years of hands-on experience with R&S, Network Security, Wireless and the cloud , including designing, implementing, supporting, experience in On premises /Cloud infrastructure. Responsibilities •Proactively identify client’s business needs and recommend innovative strategies to achieve their technology goals. •Participate in the pre-and post-sales process, helping both the sales and development or support teams to develop customers’ requirements •Collaborate with partner account teams to identify prospective infrastructure and cloud opportunities •Articulate product benefits to solve client’s technology challenges. •Provide analysis and development of integrated infrastructure initiatives. •Incident Mgmt. Request Mgmt. Change Mgmt. Problem Mgmt. Monitoring, Continues Services Improvements, Value Adds, design, test, and implement network solutions Part of network operation team to validate network design as per customer specifications including circuit protection, transport network selection, and interworking across networks •Provide engineering/deployment support during the implementation and turn up of new network nodes and related connections. •Assist with compilation of technical documents and presentations such as SOW’s and customer proposals. •Prepare and deliver solution related presentations. •Develop customer and partner relationships to ensure OSI Digital is recognized as a trusted advisor. Required Skills •Minimum of 7 years of network experience •Minimum of 7 years of Core network services connectivity and integration experience •BS/BA or equivalent experience or subject matter expertise in the service being provided Cisco Certified Network Professional (CCNP), or higher •Experience and knowledge of WAN circuit provisioning, ACI, Cisco Nexus,F5 Load balancer ,Network Security deployment, and installation. •Must have hands on experience on any two firewalls (Fortigate,Paloalto,ASA,Checkpoint). •Extensive experience with Cisco routing platforms, such as Aggregation Services Routers (ASRs), Nexus, ACI and Integrated Service Routers (ISRs) •Demonstrated knowledge of routing protocols and technologies including BGP, OSPF, EIGRP,IPSEC,DMVPN, GRE •Demonstrated in-depth knowledge of Layer 2 technologies including STP, MST, VLANS •Demonstrated knowledge of Wireless technologies(Cisco/Aruba) •Demonstrated experience in overseeing and troubleshooting complex •Local Area Networking (LAN) issues and resolving •Wide Area Networking (WAN) problems and implementing, integrating, and supporting of cost-effective, high-performance IP and LAN/WAN solutions. •Excellent communication skills Preferred Additional Skills and\n\nQUALIFICATIONS:\n•Cisco Certified Network Professional (CCNP) •Demonstrated in-depth knowledge and work experience with SD-WAN technology. •Demonstrated experience providing technical leadership and training to lower level network engineers. •Experience in network engineering within the federal intelligence community •Ability to adhere to a disciplined troubleshooting methodology, and ensure task/mission completion, along with creating and maintaining necessary information •Highly self-motivated and directed, with attention to detail and able to effectively prioritize tasks in a high-pressure environment We are not looking for someone who is •Not worked in the Network Security infrastructure support for the previous five years. •Not flexible to the rotational shifts.",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/63d51adb-4b70-40c1-90fd-0d92b3d11ab7?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Senior Network admin",
+    "normalizedTitle": "Network Engineer",
+    "jobCategory": "Network Engineer",
+    "engineeringDomain": "Networking",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-03T12:22:38.189Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "azure",
+      "aws"
+    ],
+    "requiredSkillIds": [
+      "azure",
+      "aws"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "6-10 years",
+      "minimumYears": 7,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "7 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      7
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.676Z"
+  },
+  {
+    "title": "Test Automation Engineer",
+    "company": "OSI Digital",
+    "department": "DE-QE",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "453919d0-eddc-45c5-862b-ec415a37bf81",
+    "requisitionId": "OD-17793",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/453919d0-eddc-45c5-862b-ec415a37bf81?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/453919d0-eddc-45c5-862b-ec415a37bf81?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "3-5 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Test Automation",
+      "Java",
+      "Selenium",
+      "PlayWright",
+      "SQL",
+      "RestAssured",
+      "API Automation",
+      "Manual Testing"
+    ],
+    "postingDate": "2026-07-30T05:18:34.575Z",
+    "closingDate": "2026-08-31T18:29:00.048Z",
+    "jobDescription": "Job Title : Automation Test Engineer Location : Hyderabad Experience : 3-6 yrs. OSI Digital is looking for a highly skilled Java Automation Test Engineer with strong expertise in test automation, API testing, and automation framework development. The ideal candidate will have hands-on experience with Java, Selenium, Rest Assured, CI/CD integration, and SQL Server. Experience with Playwright and modern automation practices is highly preferred. You will work closely with cross-functional Agile teams to ensure the delivery of high-quality software through scalable and maintainable automation solutions. Reponsibilities: Design, develop, and maintain scalable, reusable, and robust automation frameworks using Java, Develop and execute automated UI test scripts using Selenium Web Driver and Playwright. Create and maintain API automation test scripts using Rest Assured.Perform manual testing for web applications and REST APIs whenever required. Design comprehensive test cases, test scenarios, and test data based on business requirements.Validate RESTful APIs, including authentication mechanisms such as OAuth, JWT, and API Keys. Perform database validation by writing complex SQL Server queries, joins, and data verification scripts.Integrate automation test suites into CI/CD pipelines using Jenkins and Azure Dev Ops. Collaborate with developers, product owners, and business analysts during sprint planning, estimation, and test execution. Participate in code reviews, Git branching strategies, pull requests, and version control best practices.Analyze test failures, identify root causes, and work closely with development teams to resolve defects. Continuously enhance automation frameworks by adopting industry best practices and emerging technologies. Contribute to Agile ceremonies, including sprint planning, daily stand-ups, retrospectives, and release activities. Prepare and share test execution reports, defect summaries, and quality metrics with stakeholders. Required Skills: Strong experience in Java (Mandatory), with a solid understanding of Object-Oriented Programming (OOP), design patterns, and test automation framework development. Hands-on experience in UI automation using Selenium (Mandatory) and Playwright (Preferred). Hands-on experience in API automation using Rest Assured (Mandatory). Strong understanding of RESTful APIs, API testing strategies, authentication mechanisms (OAuth, JWT, API Keys), and API validation techniques. Experience in manual testing of Web UI and APIs, including test design, defect analysis, and root cause investigation. Strong proficiency in SQL Server querying, including writing complex queries, joins, data validation, and test data management. Experience in designing, developing, and maintaining scalable and reusable automation frameworks using industry best practices. Hands-on experience with Git, branching strategies, pull requests, code reviews, and collaborative development practices. Experience integrating automated test suites into CI/CD pipelines using Jenkins and Azure Dev Ops (Mandatory). Familiarity with Agile/Scrum methodologies, sprint planning, estimation, test execution, and defect management. Strong analytical, troubleshooting, and problem-solving skills with the ability to identify and resolve complex automation challenges. Excellent verbal and written communication skills.",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/453919d0-eddc-45c5-862b-ec415a37bf81?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Test Automation Engineer",
+    "normalizedTitle": "Automation Engineer",
+    "jobCategory": "Automation Engineer",
+    "engineeringDomain": "Automation",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-30T05:18:34.575Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "java",
+      "sql",
+      "jenkins",
+      "azure"
+    ],
+    "requiredSkillIds": [
+      "java",
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "jenkins",
+        "canonicalName": "Jenkins",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Jenkins"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-5 years",
+      "minimumYears": 3,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Quality Engineering",
+    "secondaryRoleDomains": [
+      "Backend Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.677Z"
+  },
+  {
+    "title": "Oracle EBS Technical Developer with strong OAF Experience",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Hyderabad, Telangana, India; Chennai, Tamil Nadu, India; Bangalore, Karnataka, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "3a16a4b8-b23b-44f9-ba2d-c92e2732ee54",
+    "requisitionId": "OD-5454",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/3a16a4b8-b23b-44f9-ba2d-c92e2732ee54?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/3a16a4b8-b23b-44f9-ba2d-c92e2732ee54?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "6-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "RICE",
+      "SQL/PLSQL",
+      "Oracle Workflows",
+      "XML Publisher reports",
+      "Unix Shell Scripting",
+      "OAF",
+      "Java"
+    ],
+    "postingDate": "2026-07-17T08:18:45.025Z",
+    "closingDate": "2026-10-31T18:29:00.858Z",
+    "jobDescription": "Oracle EBS developer with strong OAF experience Job Location: Hyderabad/Chennai/Bangalore OSI Digital is looking for an Oracle EBS, OAF developer to work on Enhancement and ongoing production support projects. At OSI good performers will be rewarded with our well-designed recognition programs. OSI will provide opportunities for deserving candidates for skillset enhancement in Oracle Cloud platform or cross platform skills like BI development etc. Responsibility Work with Oracle functional business analysts to understand business requirements, translate them into technical specifications documents (MD70). Design, develop and unit test technical solutions as per functional design document. Meet service level agreements for production support response and resolution. Able to debug production issues and provide solutions on time. Able to do code review as per coding standard document. Provide technical guidance and mentor others in areas of expertise. Able to build good relationship with client. Willing work from Client location in Hyderabad Required Skills 6\n- 8 yrs. of on-hand experience in Oracle EBS technical and OAF Design & development Extensive technical and functional working experience in Oracle R12 EBS Financials , SCM and Manufacturing modules., HCM. Technical proficiency in RICE, SQL/PLSQL, Oracle Workflows, XML Publisher reports, Unix Shell Scripting,OAF, Java Should be able to understand basic functional setups on regular Oracle EBS Application Finance, SCM and Manufacturing modules. Well versed with Performance Tuning, Web ADI, Interfaces and Conversions. Debugging and Testing Workflows, Reports and Data Analysis Skills. Good to Have: Oracle Fusion Technical development experience We are not looking for someone who: Never Worked with Clients directly.",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/3a16a4b8-b23b-44f9-ba2d-c92e2732ee54?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Oracle EBS Technical Developer with strong OAF Experience",
+    "normalizedTitle": "Oracle EBS Technical Developer with strong OAF Experience",
+    "jobCategory": "Oracle EBS Technical Developer with strong OAF Experience",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-17T08:18:45.025Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql",
+      "java"
+    ],
+    "requiredSkillIds": [
+      "sql",
+      "java"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "6-8 years",
+      "minimumYears": 6,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6-8 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6,
+      7,
+      8
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.678Z"
+  },
+  {
+    "title": "Data Engineer (Databricks)",
+    "company": "OSI Digital",
+    "department": "DA",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "10de3c88-1921-4570-88c4-dca7f7772980",
+    "requisitionId": "OD-27610",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/10de3c88-1921-4570-88c4-dca7f7772980?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/10de3c88-1921-4570-88c4-dca7f7772980?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "2-4 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AzureDatabricks",
+      "SQL",
+      "Python",
+      "Pyspark",
+      "DAX"
+    ],
+    "postingDate": "2026-07-14T09:29:54.002Z",
+    "closingDate": "2026-09-30T18:29:00.707Z",
+    "jobDescription": "Job Title: Data Engineer Experience: 3–6 Years (Mid-Level) Job Location: Hyderabad, India Job Summary: OSI Digital is looking for a Data Engineer with strong expertise in Azure Databricks, Py Spark, SQL, and Power BI to build scalable data pipelines and analytics solutions. The ideal candidate will design modern Lakehouse architectures, transform raw data into actionable insights, and develop high-performance reporting solutions.\n\nRESPONSIBILITIES:\nDesign and develop end-to-end data pipelines using Azure Databricks and Py Spark Build and optimize Delta Lake tables using Medallion Architecture (Bronze, Silver, Gold) Develop scalable ETL/ELT workflows for large-scale data processing Create interactive Power BI dashboards and reports using DAX and Power Query Write and optimize SQL queries for data transformation and analytics Collaborate with business analysts to translate business requirements into technical solutions Ensure data quality, performance, and scalability across data platforms Support deployment, monitoring, and troubleshooting of data engineering solutions Required Skills: 3–6 years of experience in Data Engineering Strong expertise in Python, Py Spark, and Spark SQL Hands-on experience with Azure Databricks, Delta Lake, Unity Catalog, and Delta Live Tables Experience with Azure Databricks Workflows and Lakehouse architecture Strong SQL development and query optimization skills Expertise in Power BI, DAX, and Power Query Strong analytical, troubleshooting, and communication skills Good to Have: Experience with Azure Data Factory, Azure Synapse Analytics, or Azure Data Lake Knowledge of CI/CD and Dev Ops practices for data platforms Microsoft Azure Data Engineering Certification Experience working in Agile/Scrum environments We Are Not Looking for Someone Who: Has never worked directly with business stakeholders Lacks hands-on experience with Azure Databricks and Py Spark Has limited exposure to Power BI and SQL-based data analytics",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/10de3c88-1921-4570-88c4-dca7f7772980?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Data Engineer (Databricks)",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-14T09:29:54.002Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql",
+      "python",
+      "databricks",
+      "azure",
+      "power-bi",
+      "spark"
+    ],
+    "requiredSkillIds": [
+      "sql",
+      "python"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "power-bi",
+        "canonicalName": "Power BI",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Power BI"
+      },
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Spark"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "2-4 years",
+      "minimumYears": 3,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.679Z"
+  },
+  {
+    "title": "Finance Functional Manager (COE Lead)",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Hyderabad, Telangana, India; Chennai, Tamil Nadu, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "a4020b97-ab2d-4699-9fc6-b37efbea64c7",
+    "requisitionId": "OD-2072",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/a4020b97-ab2d-4699-9fc6-b37efbea64c7?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/a4020b97-ab2d-4699-9fc6-b37efbea64c7?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "12-15 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Finance - Fusion & EBS"
+    ],
+    "postingDate": "2026-07-14T09:26:06.984Z",
+    "closingDate": "2026-09-30T18:29:00.930Z",
+    "jobDescription": "Job Title: Functional Financials COE Lead – Oracle EBS & Oracle Fusion Financials Experience: 15+ Years Job Location: Chennai / Hyderabad Job Summary: We are seeking a seasoned Functional Financials COE Lead with deep expertise in Oracle E-Business Suite (EBS) and Oracle Fusion Financials to lead our Oracle Applications practice. This strategic leadership role is responsible for driving delivery excellence, solution governance, functional innovation, and practice development across Oracle ERP transformation programs.\n\nRESPONSIBILITIES:\nEstablish and lead the Functional Center of Excellence (COE) for Oracle EBS and Oracle Fusion Financials Define and enforce delivery standards, templates, governance frameworks, and best practices Build reusable accelerators, knowledge repositories, and solution assets for scalable delivery Provide functional governance and quality assurance across multiple Oracle ERP engagements Act as the functional SME for Oracle ERP implementations, upgrades, and cloud transformation programs Lead solution design workshops, business process mapping, and finance transformation initiatives Drive pre-sales activities including solutioning, RFP responses, estimation, demos, and client presentations Mentor and guide functional consultants across Oracle Financials modules including GL, AP, AR, FA, CM, PO, i Proc, SLA, and Projects Conduct internal trainings, capability development programs, and recruitment interviews Lead large-scale Oracle ERP transformation projects including EBS to Oracle Cloud migrations Support change management, user enablement, cutover, testing, and post-go-live activities Collaborate with cross-functional teams to deliver business-focused Oracle ERP solutions Required Skills: 15+ years of functional experience in Oracle ERP applications Strong expertise in Oracle Fusion Cloud Financials and Oracle EBS R12 Deep understanding of Finance business processes including P2P, O2C, and Record-to-Report Experience working in consulting or IT services environments with external clients Strong leadership experience managing cross-functional teams and senior stakeholders Experience with Oracle implementation methodologies such as AIM or OUM Excellent communication, presentation, stakeholder management, and advisory skills Strong experience in delivery governance, solution architecture, and ERP transformation programs Good to Have: Oracle Cloud Financials certifications Experience with multi-country rollouts and shared services models MBA, CPA, CA, or Finance-related certifications Exposure to global Oracle ERP transformation programs Why Join Us? Be a strategic leader in a growing Oracle practice Work on large-scale digital transformation programs across industries Collaborate with experienced Oracle consultants and practice leaders Opportunity for continuous learning, leadership growth, and performance rewards We Are Not Looking for Someone Who: Has never worked directly with clients Lacks leadership experience in Oracle ERP transformation programs",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/a4020b97-ab2d-4699-9fc6-b37efbea64c7?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Finance Functional Manager (COE Lead)",
+    "normalizedTitle": "Finance Functional Manager (COE Lead)",
+    "jobCategory": "Finance Functional Manager (COE Lead)",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-14T09:26:06.984Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "12-plus",
+    "experienceProfile": {
+      "rawText": "12-15 years",
+      "minimumYears": 15,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "15 years",
+      "experienceBucket": "12-plus"
+    },
+    "experienceYears": [
+      15
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.680Z"
+  },
+  {
+    "title": "EBS Technical Developer",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "8b20e5f3-9238-495c-8f3a-c822eaaad2c5",
+    "requisitionId": "OD-53634",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/8b20e5f3-9238-495c-8f3a-c822eaaad2c5?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/8b20e5f3-9238-495c-8f3a-c822eaaad2c5?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "6-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Oracle PL/SQL",
+      "Oracle Forms",
+      "Oracle Reports",
+      "Conversions",
+      "Interfaces"
+    ],
+    "postingDate": "2026-07-14T09:20:56.226Z",
+    "closingDate": "2026-09-30T18:29:00.995Z",
+    "jobDescription": "Job Title: EBS Technical Developer Experience: 6–8 Years Job Summary: We are seeking a Senior Software Engineer – Oracle EBS Technical with strong expertise in Oracle E-Business Suite development and technical customization. The ideal candidate will be responsible for designing, developing, and maintaining Oracle EBS solutions including integrations, extensions, interfaces, and customizations while ensuring scalable and high-quality deliverables.\n\nRESPONSIBILITIES:\nDesign, develop, and maintain Oracle EBS customizations, extensions, and interfaces Collaborate with functional teams to gather and analyze enhancement requirements Develop efficient and maintainable code using Oracle PL/SQL, Forms, Reports, and related technologies Implement and test technical solutions aligned with business requirements Provide technical expertise across Oracle EBS Financials, SCM, and HRMS modules Troubleshoot and resolve technical issues in collaboration with support and infrastructure teams Participate in code reviews and ensure adherence to coding standards and best practices Prepare and maintain technical documentation, configurations, and design specifications Mentor and guide junior developers while contributing to team knowledge sharing Identify opportunities for process improvement and continuous enhancement initiatives Required Skills: 6–8 years of experience in Oracle E-Business Suite technical development Strong expertise in Oracle PL/SQL, Oracle Forms, Oracle Reports, Interfaces, Conversions, and Workflows Experience working with Oracle EBS modules such as Financials, SCM, and HRMS Good understanding of Oracle Application Framework (OAF) and Oracle Fusion Middleware Strong analytical, troubleshooting, and problem-solving skills Excellent communication and collaboration abilities Ability to work independently and mentor junior team members Good to Have: Experience with Oracle Fusion Middleware Exposure to Oracle Application Framework (OAF) customization Experience working in Agile development environments\n\nEDUCATION:\nBachelor’s or Master’s degree in Computer Science, Information Technology, or related field We Are Not Looking for Someone Who: Has never worked directly with clients Lacks hands-on Oracle EBS technical development experience",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/8b20e5f3-9238-495c-8f3a-c822eaaad2c5?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "EBS Technical Developer",
+    "normalizedTitle": "EBS Technical Developer",
+    "jobCategory": "EBS Technical Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-14T09:20:56.226Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql"
+    ],
+    "requiredSkillIds": [
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "6-8 years",
+      "minimumYears": 6,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.681Z"
+  },
+  {
+    "title": "Oracle Apex developer with EBS or Fusion Experience",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Hyderabad, Telangana, India; Bangalore, Karnataka, India; Chennai, Tamil Nadu, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "199dd070-09ef-49f4-bfdc-f3fcc51d93f3",
+    "requisitionId": "OD-2611",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/199dd070-09ef-49f4-bfdc-f3fcc51d93f3?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/199dd070-09ef-49f4-bfdc-f3fcc51d93f3?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "4-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Create Apex pages",
+      "Master Detail Forms",
+      "Tabular forms",
+      "Apex Collections",
+      "Interactive reports",
+      "Charts",
+      "Web services (SOAP and Rest"
+    ],
+    "postingDate": "2026-07-14T09:18:31.488Z",
+    "closingDate": "2026-09-30T18:29:00.297Z",
+    "jobDescription": "Job Title: Senior Software Engineer – Oracle APEX Developer Experience: 4–8 Years Job Location: Hyderabad / Chennai / Bangalore Job Summary: OSI Digital is looking for an experienced Oracle APEX Developer to work on new implementations, upgrades, and ongoing support projects. The ideal candidate will design, develop, and maintain Oracle APEX applications while collaborating with functional teams to deliver scalable, high-quality solutions across Oracle platforms.\n\nRESPONSIBILITIES:\nAnalyze business requirements and translate them into technical design documents (MD70) Design, develop, and unit test Oracle APEX applications and technical solutions Develop APEX pages, forms, interactive reports, dashboards, charts, and custom components Migrate Oracle Forms applications to Oracle APEX Develop integrations using REST and SOAP Web Services Provide production support and resolve issues within defined SLAs Conduct code reviews and ensure adherence to coding standards Mentor junior developers and support technical best practices Required Skills: 4–8 years of Oracle development experience with at least 3 years of Oracle APEX development Strong expertise in Oracle APEX, SQL, and PL/SQL Experience developing Master-Detail Forms, Interactive Reports, Charts, APEX Collections, and Dashboards Experience migrating Oracle Forms applications to Oracle APEX Hands-on experience with REST and SOAP Web Services Knowledge of Oracle EBS or Oracle Cloud ERP modules for APEX extensions Experience with Java Script and front-end customization Strong analytical, troubleshooting, and communication skills Good to Have: Experience with Oracle APEX latest versions and Oracle REST Data Services (ORDS) Knowledge of Oracle Integration Cloud (OIC) Experience in Oracle Cloud or Oracle EBS implementations Exposure to Agile/Scrum development methodologies We Are Not Looking for Someone Who: Has never worked directly with clients Lacks hands-on Oracle APEX development experience Is not comfortable working on implementation, enhancement, and production support projects",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/199dd070-09ef-49f4-bfdc-f3fcc51d93f3?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Oracle Apex developer with EBS or Fusion Experience",
+    "normalizedTitle": "Oracle Apex developer with EBS or Fusion Experience",
+    "jobCategory": "Oracle Apex developer with EBS or Fusion Experience",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-14T09:18:31.488Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql",
+      "java",
+      "javascript"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4-8 years",
+      "minimumYears": 4,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.682Z"
+  },
+  {
+    "title": "Desktop Engineer",
+    "company": "OSI Digital",
+    "department": "ET",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "a7ae1373-625c-41e9-a27c-88bf950e51fe",
+    "requisitionId": "OD-6781",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/a7ae1373-625c-41e9-a27c-88bf950e51fe?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/a7ae1373-625c-41e9-a27c-88bf950e51fe?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "5-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Client Device Management",
+      "endpoint management",
+      "RDP",
+      "AD",
+      "SCCM",
+      "VDI",
+      "O365",
+      "VPN",
+      "One Drive",
+      "MFA",
+      "Bomgar",
+      "SNOW",
+      "Intune"
+    ],
+    "postingDate": "2026-07-13T04:07:29.058Z",
+    "closingDate": "2026-09-29T18:30:00.000Z",
+    "jobDescription": "Desktop Engineer Experience: 6-10 Years Job Location – Hyderabad OSI Digital is looking for an experienced Desktop support technician to join our team. The ideal candidate will have extensive and advanced desktop experience. This person will provide technical guidance and support to our business and customers, their hardware, applications, and operating systems. The ideal candidate will have a strong technical background, solid analytical skills, and proven problem-solving experience. He/she will use their interpersonal skills to communicate with customers and provide a solution to their technical problems quickly and professionally. This position will have an opportunity to grow to the next level as Lead based on your experience, skillset, and performance.\n\nRESPONSIBILITIES:\n•Being part of the team to address Incidents and Service Requests reported by business users of 24/7\n- 365 Days work environment. •Advanced desktop support experience- troubleshooting, configuration, software installation •Provide L1 and L2 technical guidance in activities associated with identification, prioritization & resolution of reported problems through Phone, RDP, Team Viewer, MS Teams, and other tools. •Create/ update end user guides, Service Desk KB’s, and SOPs. •Making recommendations to optimize IT performance and to prevent future problems. •Generate status reports/consolidated IM reports to the Service Desk Manager •Strong experience in Workstation Engineering (experience with Power Shell scripting, SCCM/MECM, Intune, remote deployment, server maintenance), AD, Networking/Security Required Skills: •6+ years of experience in Client Device Management, Endpoint Management, or Enterprise Desktop Engineering •Excellent verbal and written communication skills with email etiquette and customer service skills. •2+ years of experience in handling end user calls, Incidents/service requests, application Break/ fix. •Experience in AD, O365, VPN, One Drive •Proven track record of fast, effective troubleshooting across Windows, mac OS, i OS, Android, and Microsoft\n365. •Working experience on Ticketing tools (SNOW, JIRA) •Preferable\n- ITIL best practices around Service Desk, Incident & Request Management procedures. •Ability to notify and escalate the issues based on the Severity. •Provide technical assistance for user questions/issues on Windows 7, 8 and 10 along Microsoft Office through Office 365, M365 We are not looking for someone who is: •Never worked with international customers and technical support. •Never worked on end user computing issues, onboarding & off boarding on Active Directory. •Not flexible for 24x7 rotational shifts and not ready to work from office..",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/a7ae1373-625c-41e9-a27c-88bf950e51fe?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Desktop Engineer",
+    "normalizedTitle": "Desktop Engineer",
+    "jobCategory": "Desktop Engineer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-13T04:07:29.058Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "5-8 years",
+      "minimumYears": 6,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.684Z"
+  },
+  {
+    "title": "EBS Technical Developer",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Hyderabad, Telangana, India; Chennai, Tamil Nadu, India; Bangalore, Karnataka, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "43f8deb9-e16e-44d3-962b-b903e78caf3a",
+    "requisitionId": "OD-82585",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/43f8deb9-e16e-44d3-962b-b903e78caf3a?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/43f8deb9-e16e-44d3-962b-b903e78caf3a?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "6-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Oracle PL/SQL",
+      "Oracle Forms",
+      "Oracle Reports",
+      "Conversions",
+      "Interfaces",
+      "Workflows"
+    ],
+    "postingDate": "2026-07-06T11:12:29.400Z",
+    "closingDate": "2026-09-30T18:29:00.366Z",
+    "jobDescription": "Job Title: Senior Software Engineer – Oracle EBS Technical Experience: 6–8 Years Job Location: Hyderabad / Chennai / Bangalore Job Summary: OSI Digital is looking for a Senior Software Engineer – Oracle EBS Technical with strong expertise in Oracle E-Business Suite development. The ideal candidate will design, develop, and support Oracle EBS customizations, extensions, interfaces, and technical solutions across Financials, Supply Chain, and HRMS modules while ensuring high-quality and scalable implementations.\n\nRESPONSIBILITIES:\nDesign, develop, and maintain Oracle EBS customizations, extensions, interfaces, and technical solutions Collaborate with functional consultants and business users to analyze requirements and deliver technical solutions Develop and maintain PL/SQL packages, Forms, Reports, Workflows, Interfaces, and Conversions Perform unit testing, code reviews, and troubleshoot production issues Prepare technical design documents, coding standards, and implementation documentation Support Oracle EBS enhancements, upgrades, and production support activities Collaborate with cross-functional teams to deliver high-quality Oracle EBS solutions Mentor junior developers and promote development best practices Required Skills: 6–8 years of Oracle EBS Technical development experience Strong expertise in Oracle PL/SQL, Oracle Forms, Oracle Reports, Interfaces, Conversions, and Workflows Experience working with Oracle EBS Financials, Supply Chain (SCM), and HRMS modules Knowledge of XML Publisher, OAF, Web ADI, and Oracle Application Framework (OAF) Experience with Oracle Fusion Middleware is an added advantage Strong analytical, troubleshooting, and performance tuning skills Excellent communication, stakeholder management, and teamwork skills Good to Have: Oracle EBS Technical Certification Experience with Oracle Integration Cloud (OIC) or Oracle Fusion Applications Exposure to Agile/Scrum development methodologies Experience in enterprise Oracle EBS implementation and upgrade projects We Are Not Looking for Someone Who: Has never worked directly with clients Lacks hands-on Oracle EBS Technical development experience Is not willing to work collaboratively in a team environment",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/43f8deb9-e16e-44d3-962b-b903e78caf3a?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "EBS Technical Developer",
+    "normalizedTitle": "EBS Technical Developer",
+    "jobCategory": "EBS Technical Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-06T11:12:29.400Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql"
+    ],
+    "requiredSkillIds": [
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "6-8 years",
+      "minimumYears": 6,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Data Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.686Z"
+  },
+  {
+    "title": "Oracle EBS Finance Functional",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Hyderabad, Telangana, India; Bangalore, Karnataka, India; Chennai, Tamil Nadu, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "aa28b7e3-c90e-441e-b81b-b950843a0331",
+    "requisitionId": "OD-59918",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/aa28b7e3-c90e-441e-b81b-b950843a0331?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/aa28b7e3-c90e-441e-b81b-b950843a0331?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "6-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "EBS Finance functional"
+    ],
+    "postingDate": "2026-07-06T10:29:40.574Z",
+    "closingDate": "2026-10-31T18:29:00.869Z",
+    "jobDescription": "Job Title: Oracle EBS Finance Functional Consultant Experience: 6–8 Years Job Location: Hyderabad / Chennai / Bangalore Job Summary: OSI Digital is looking for an experienced Oracle EBS Finance Functional Consultant with expertise in Oracle EBS Financials support, rollouts, and enhancement projects. The ideal candidate will work closely with business users and technical teams to deliver functional solutions, resolve production issues within SLA, and support continuous improvements across Oracle EBS Finance modules.\n\nRESPONSIBILITIES:\nAnalyze business requirements and translate them into Oracle EBS Finance solutions Support Oracle EBS Financials enhancements, rollouts, and production support activities Configure Oracle EBS Finance modules based on business requirements Collaborate with technical teams on customizations, interfaces, and enhancement requests Resolve production support issues within SLA and support period-end activities Handle integration issues, regression testing, reconciliation, and period-close support Prepare functional specifications, test scripts, and user documentation Conduct end-user training and provide post-go-live support Communicate effectively with business users, technical teams, and stakeholders Required Skills: 6–8 years of experience in Oracle EBS Financials Strong expertise in Oracle EBS GL, AP, AR, Fixed Assets (FA), and Subledger Accounting (SLA) Experience in Oracle EBS production support, rollouts, and enhancement projects Experience handling custom objects, integrations, and regression testing Good understanding of reconciliation, period-end close, and financial processes Ability to work independently with Product Owners, business users, and development teams Strong analytical, communication, and stakeholder management skills Good to Have: Oracle EBS R12 implementation or support experience Knowledge of SQL and Oracle Financials integrations Experience working in Agile environments We Are Not Looking for Someone Who: Has never worked directly with clients Lacks hands-on Oracle EBS Financials support experience Is not willing to work from the office",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/aa28b7e3-c90e-441e-b81b-b950843a0331?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Oracle EBS Finance Functional",
+    "normalizedTitle": "Oracle EBS Finance Functional",
+    "jobCategory": "Oracle EBS Finance Functional",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-06T10:29:40.574Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "6-8 years",
+      "minimumYears": 6,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [
+      "Data Engineering",
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.687Z"
+  },
+  {
+    "title": "Service Desk Engineer",
+    "company": "OSI Digital",
+    "department": "ET",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "6c884f82-a76e-4616-9616-d502dacf3055",
+    "requisitionId": "OD-55111",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/6c884f82-a76e-4616-9616-d502dacf3055?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/6c884f82-a76e-4616-9616-d502dacf3055?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "3-5 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "ITIL",
+      "AWS\\Citrix VDI",
+      "AD",
+      "O365",
+      "VPN",
+      "OneDrive",
+      "MFA"
+    ],
+    "postingDate": "2026-06-26T04:29:45.623Z",
+    "closingDate": "2026-08-30T18:30:00.000Z",
+    "jobDescription": "Service Desk – Job Description: Location : Hyderabad, INDIA. Job Title : Service Desk Engineer Experience : 3 – 5 Years Male Candidates Preferable OSI Digital is looking for Service desk engineers having technical and operational skills in service desk management to support systems and operational excellence while focusing on business user experience. This position will have an opportunity to grow to the next level as Lead/Service Desk Manager or IT Operations manager based on your experience, skillset, and performance.\n\nRESPONSIBILITIES:\n•Being part of the team to address Incidents and Service Requests reported by business users of 24/7\n- 365 Days work environment. •Provide L1 and L2 technical guidance in activities associated with identification, prioritization & resolution of reported problems through Phone, RDP, Team Viewer, MS Teams, and other tools. •Create/ update end user guides, Service Desk KB’s, and SOPs. •Making recommendations to optimize IT performance and to prevent future problems. •Generate status reports/consolidated IM reports to the Service Desk Manager Required Skills: •Excellent verbal and written communication skills with email etiquette and customer service skills. •3+ years of experience in handling end user calls, Incidents/service requests, application Break/ fix. •Experience in AWS\\Citrix VDI, AD, O365, VPN, One Drive, MFA, User device management & authentication issues. •Working experience on latest RDP tools (TV, Log Me In, Bomgar) Ticketing tools (ITSM, SNOW, JIRA) •Preferable\n- ITIL best practices around Service Desk, Incident & Request Management procedures. •Ability to notify and escalate the issues based on the Severity. We are not looking for someone who is: •Never worked with international customers and technical support. •Never worked on end user computing issues, onboarding & offboarding on Active Directory. •Not flexible for 24x7 rotational shifts and not ready to work from office. About OSI Digital OSI Digital was founded in 1993, in California and now has offices in the US, Canada, India, Philippines, Dubai, and Australia. Our client base ranges from start-ups to Fortune 500 corporations, including Barnes & Noble College, Hyundai, Toyota, Gilead, Allergan, Yamaha, Gap, and Skechers. OSI Digital has developed strong partner alliances with leading technology providers such as Salesforce, Boomi, Tableau, Oracle, Microsoft, and Amazon Web Services.",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/6c884f82-a76e-4616-9616-d502dacf3055?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Service Desk Engineer",
+    "normalizedTitle": "Service Desk Engineer",
+    "jobCategory": "Service Desk Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-06-26T04:29:45.623Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "aws",
+      "salesforce",
+      "tableau"
+    ],
+    "requiredSkillIds": [
+      "aws"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "salesforce",
+        "canonicalName": "Salesforce",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Salesforce"
+      },
+      {
+        "skillId": "tableau",
+        "canonicalName": "Tableau",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Tableau"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-5 years",
+      "minimumYears": 3,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure",
+      "Data Engineering",
+      "Product & Program Management"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.688Z"
+  },
+  {
+    "title": "Security Engineer",
+    "company": "OSI Digital",
+    "department": "MSP",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "e572a5fc-40ec-44ec-ad7e-7339c2063386",
+    "requisitionId": "OD-73887",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/e572a5fc-40ec-44ec-ad7e-7339c2063386?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/e572a5fc-40ec-44ec-ad7e-7339c2063386?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "4-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "SIEM",
+      "SOAR",
+      "EDR",
+      "Vulnerability",
+      "Nessus",
+      "Netsparker"
+    ],
+    "postingDate": "2026-06-17T10:06:10.882Z",
+    "closingDate": "2026-08-30T18:30:00.000Z",
+    "jobDescription": "Security Engineer Job Location – Hyderabad Male Candidates Preferable Osi Digital is looking for a Security Engineer to support the business in achieving its strategic objective. The primary role of the L1 Engineer is to direct all aspects of a Managed Services client experience, individually and through the resources and vendors available. Also, help to protect an organisation by employing a range of technologies and processes to prevent, detect and manage cyber threats.This role reports to the SOC Team Lead. Upon Success in this role, the person will have an opportunity to grow into a Sr. Associate, Lead role and explore new technologies and tools.\n\nRESPONSIBILITIES:\n•Monitor for attacks, intrusions and unusual, unauthorized or illegal activity. •Ensure timely delivery of status updates and final reports to clients •Conduct Vulnerability Assessment and Penetration Testing and configuration review for network, web application, mobile application and thick -client application. •Works in ticketing system to solve day-to-day technical requests & escalated issues. •Monitor identity and access management, including monitoring for abuse of permissions by authorized system users •Separate true threats from false positives using network and log analysis and escalate possible intrusions and attacks Required Skills: •4+ years of experience in Information Security, Network Security or a combination of both. Hands-on Experience on working as level 2 SIEM Admin on multiple SIEMs. •Information security related experience, in areas such as: security operations, incident analysis, incident handling, and vulnerability management or testing, system patching, log analysis, intrusion detection, or firewall administration. •Experience in Security Orchestration, Automation, and Response (SOAR) and Security information and event management (SIEM) Platforms. •Working experience and knowledge of security related technologies such as intrusion prevention and detection systems, web proxies, SIEM, SOAR, EDR, firewalls, web application scanner, vulnerability scanners and forensics tools. •Has practical experience in auditing various OS, DB, Network and Security technologies. •Hands on experience with popular security tools – Nessus, Burpsuite, Netsparker, Metasploit, KALI Linux). We are not looking for someone who: •Is not willing to work from Office •Is not willing to be part of 24/7 shift Schedule •Never worked in the Managed Services / Support Environment",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/e572a5fc-40ec-44ec-ad7e-7339c2063386?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Security Engineer",
+    "normalizedTitle": "Security Engineer",
+    "jobCategory": "Security Engineer",
+    "engineeringDomain": "Security",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-06-17T10:06:10.882Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "cybersecurity",
+      "linux"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "cybersecurity",
+        "canonicalName": "Cybersecurity",
+        "category": "Security",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Information Security"
+      },
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Linux"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4-8 years",
+      "minimumYears": 4,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-8 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cybersecurity",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.690Z"
+  },
+  {
+    "title": "SnapLogic Developer",
+    "company": "OSI Digital",
+    "department": "EI",
+    "location": "Hyderabad, Telangana, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "77b70861-5de3-4a88-8630-50b5376e57c4",
+    "requisitionId": "OD-82629",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/77b70861-5de3-4a88-8630-50b5376e57c4?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/77b70861-5de3-4a88-8630-50b5376e57c4?utm_source=CareerPage",
+    "employmentType": "Contract",
+    "experienceRequired": "3-5 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "SnapLogic",
+      "SQL",
+      "TSQL",
+      "Json",
+      "XML",
+      "ReST",
+      "SOAP",
+      "Web services",
+      "Jira",
+      "ServiceNow",
+      "Salesforce",
+      "Workday",
+      "GitHub"
+    ],
+    "postingDate": "2026-05-08T06:01:18.541Z",
+    "closingDate": "2026-08-30T18:30:00.000Z",
+    "jobDescription": "Job Title: Snap Logic Developer Experience: 3-5 Years Job Location: Hyderabad, India Mandatory Requirements: •Minimum 3-5 years of total experience in developing pipelines and custom integrations using Snap Logic. •Proven experience in developing end-to-end integrations using Snap Logic from design through deployment. •Hands-on experience with developing end-to-end integrations using Integration Platform as a Service (i Paa S), specifically the Snap Logic development platform. •Strong understanding and hands-on experience working with SOAP web services and REST web services. •Hands-on experience writing SQL (MSSQL) queries using joins, aggregate functions, and stored procedures/functions; general relational database access with the ability to understand and work with complex queries and stored procedures. •Good written and oral communication skills. Good to Have Requirements •Experience with version control tools such as Git Hub for tracking and managing integration artifacts. •Experience working in Cloud Technologies such as Paa S, Saa S, and i Paa S environments. •Knowledge of and experience with tools such as JIRA, Service Now, MS TFS, Rally, Workday, Salesforce, or ERP APIs.",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/77b70861-5de3-4a88-8630-50b5376e57c4?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "SnapLogic Developer",
+    "normalizedTitle": "SnapLogic Developer",
+    "jobCategory": "SnapLogic Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Contract",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-05-08T06:01:18.541Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql",
+      "salesforce"
+    ],
+    "requiredSkillIds": [
+      "sql",
+      "salesforce"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "salesforce",
+        "canonicalName": "Salesforce",
+        "category": "Product, Design & Collaboration",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Salesforce"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-5 years",
+      "minimumYears": 3,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Data Engineering",
+      "Product & Program Management",
+      "Sales & Customer Success"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.690Z"
+  },
+  {
+    "title": "Sr. OIC Developer",
+    "company": "OSI Digital",
+    "department": "EI",
+    "location": "Hyderabad, Telangana, India; Bangalore, Karnataka, India; Chennai, Tamil Nadu, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "c364c2cd-036d-4fab-bac8-6d0d4ee48ae6",
+    "requisitionId": "OD-44850",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/c364c2cd-036d-4fab-bac8-6d0d4ee48ae6?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/c364c2cd-036d-4fab-bac8-6d0d4ee48ae6?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "5-7 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "SQL",
+      "PLSQL",
+      "Oracle Fusion",
+      "OIC",
+      "ReST",
+      "SOAP",
+      "XML",
+      "JSON",
+      "XSLT",
+      "Analytical skills",
+      "BIP Reports"
+    ],
+    "postingDate": "2026-05-08T05:59:22.724Z",
+    "closingDate": "2026-08-31T18:29:00.607Z",
+    "jobDescription": "Job Title: Senior OIC Developer Experience: 5–7 Years Location: Hyderabad,Bengaluru,Chennai India Job Summary OSI Digital is looking for a highly skilled Senior OIC Developer with strong expertise in Oracle Integration Cloud (OIC), SQL, PL/SQL, and BI Publisher (BIP). The ideal candidate should be capable of independently designing, developing, and supporting enterprise integration solutions with minimal supervision. Due to stringent project timelines and critical business requirements, the selected candidate is expected to work independently, engage directly with stakeholders, and deliver high-quality solutions in Oracle Fusion environments. In addition to strong technical expertise, the candidate should possess functional understanding of the relevant Oracle Fusion business processes based on their domain/stream. Key Responsibilities Design, develop, test, and deploy integrations using Oracle Integration Cloud (OIC). Develop and support BI Publisher (BIP) reports and data models. Build scalable and efficient integration solutions for complex business requirements. Develop and optimize SQL and PL/SQL components to support integration and reporting needs. Integrate Oracle Fusion applications, including HCM, ERP, SCM, Procurement, Inventory, Order Management, and Financials. Work closely with business users, functional consultants, and technical teams to understand requirements and provide effective solutions. Troubleshoot and resolve integration, reporting, and data-related issues. Follow integration best practices, security standards, and performance optimization techniques. Participate in Agile development activities and contribute to continuous improvement initiatives. Independently manage deliverables and proactively drive project activities within stringent timelines. Required Skills & Experience 5–7 years of overall IT experience with strong hands-on expertise in Oracle Integration Cloud (OIC). Strong hands-on experience in OIC, SQL, PL/SQL, and BI Publisher (BIP) . Proven experience developing integrations using REST APIs, SOAP Services, JSON, XML, XSD, XSLT, and WSDL. Good understanding of OAuth, JWT, and integration security concepts. Experience integrating Oracle Fusion applications such as HCM, ERP, SCM, Procurement, Inventory, Order Management, or Financials. Functional knowledge (approximately 30%) of the relevant Oracle Fusion business stream/module is mandatory. Strong analytical, troubleshooting, and problem-solving skills. Excellent verbal and written communication skills. Proven ability to work independently and deliver solutions with minimal guidance. Experience working directly with clients, business stakeholders, and implementation teams. Ability to understand business requirements and translate them into technical solutions. Preferred Qualifications Experience in Oracle Fusion Cloud implementation or support projects. Exposure to multiple Oracle Fusion modules. Experience working in Agile/Scrum environments. Ability to mentor junior developers and contribute to solution design discussions. We Are Not Looking For Candidates with only theoretical or limited OIC exposure. Candidates lacking hands-on experience in OIC, SQL, PL/SQL, or BI Publisher. Candidates who have never worked directly with clients or business stakeholders. Candidates requiring extensive handholding or continuous supervision. Candidates who are unable to independently drive deliverables in a fast-paced, deadline-driven environment. Key Expectation For any OIC Developer role, strong hands-on expertise in OIC, SQL, PL/SQL, and BI Publisher (BIP) is mandatory. Additionally, candidates must possess approximately 30% functional knowledge of the relevant Oracle Fusion stream/module. Given the extremely stringent project timelines, developers are expected to work independently and contribute effectively.",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/c364c2cd-036d-4fab-bac8-6d0d4ee48ae6?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Sr. OIC Developer",
+    "normalizedTitle": "Sr. OIC Developer",
+    "jobCategory": "Sr. OIC Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-05-08T05:59:22.724Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql"
+    ],
+    "requiredSkillIds": [
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5-7 years",
+      "minimumYears": 5,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Data Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.692Z"
+  },
+  {
+    "title": "Oracle VBCS Technical Lead",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Hyderabad, Telangana, India; Chennai, Tamil Nadu, India; Bangalore, Karnataka, India",
+    "city": "Hyderabad",
+    "country": "India",
+    "jobId": "4864a4c1-84f0-40fe-bfe7-eb1eaf8e747b",
+    "requisitionId": "OD-37050",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/4864a4c1-84f0-40fe-bfe7-eb1eaf8e747b?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/4864a4c1-84f0-40fe-bfe7-eb1eaf8e747b?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "12-14 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Oracle VBCS",
+      "OIC",
+      "PCS",
+      "ORDS",
+      "Oracle SQL",
+      "PL/SQL"
+    ],
+    "postingDate": "2026-05-07T11:26:25.613Z",
+    "closingDate": "2026-08-31T18:29:00.159Z",
+    "jobDescription": "Job Title: Oracle VBCS Lead (VBCS, OIC, OPA, ORDS) Experience Level: 12+ years total IT experience (with 5+ years in Oracle Cloud Paa S) Job Summary: We are seeking an experienced Oracle Fusion Paa S Lead to design, develop, and lead cloud-based integration and extension solutions using Oracle Cloud Platform services such as VBCS (Visual Builder Cloud Service) , OIC (Oracle Integration Cloud) , OPA (Oracle Process Automation) , and ORDS (Oracle REST Data Services) . The architect will play a key role in defining technical strategy, integration architecture, and best practices for Oracle Fusion Cloud (Saa S + Paa S) implementations. Key\n\nRESPONSIBILITIES:\nArchitecture & Design Design scalable, secure, and high-performance Paa S solutions to extend and integrate Oracle Fusion Saa S (ERP, HCM, SCM, CX) applications. Define integration and extension architectures leveraging OIC, VBCS, ORDS, and OPA . Develop end-to-end solution blueprints , data flow diagrams, and interface specifications. Ensure adherence to Oracle Cloud architecture best practices, performance optimization, and security compliance. Development & Implementation Lead the development of custom web and mobile apps using VBCS and JET (Java Script Extension Toolkit) . Implement integrations and automations using OIC (App Integration, Process Automation, File Transfer, B2B). Design and implement decision models and business rules using OPA for dynamic business logic. Develop and publish REST APIs using ORDS for secure data access and integration with external systems. Perform hands-on troubleshooting, code review, and optimization. Technical Leadership Provide technical leadership and mentorship to development teams across multiple Paa S technologies. Collaborate with Functional Consultants , Saa S Leads , and Enterprise Architects to ensure cohesive solution design. Lead POC (Proof of Concept) initiatives to evaluate new Oracle Cloud services. Define governance, deployment standards, and Dev Ops pipelines for Paa S development and integration. Project Delivery & Documentation Support full project lifecycle from requirement gathering to production deployment. Create and maintain architecture documents, integration maps, and technical design documents . Participate in solution review boards , technical audits, and architecture governance processes. Required Skills & Experience: 12+ years of IT experience, including 5+ years as an Oracle Cloud Paa S Lead . Strong expertise in: Oracle Integration Cloud (OIC) – adapters, orchestrations, mappings, lookups, and error handling. Visual Builder Cloud Service (VBCS) – UI design, business objects, service integrations, and JET-based components. Oracle Process Automation (OPA) – rules authoring, decision models, and integration with Fusion Saa S. Oracle REST Data Services (ORDS) – REST API development, PL/SQL exposure, and SQL-based services. Deep understanding of Fusion Saa S (ERP/HCM/SCM) data models and APIs. Proficient in REST/SOAP Web Services , JSON/XML , and OAuth2/SAML security . Experience integrating with third-party applications and on-prem systems . Strong command of SQL/PLSQL , Java Script , and web technologies . Familiar with Dev Ops tools (Git, Jenkins, OCI Dev Ops, Terraform preferred). Excellent analytical, communication, and leadership skills, Project Management skills.\n\nPREFERRED\n\nQUALIFICATIONS:\n\nOracle Certified Professional in OIC or Oracle Cloud Platform . Experience with OCI (Oracle Cloud Infrastructure) , APEX , and Autonomous Database . Prior experience in large-scale Oracle Fusion Cloud implementations (ERP, HCM, CX). Agile and Dev Ops delivery experience. Educational Background: Bachelor’s or Master’s degree in Computer Science, Information Technology, or related field . Oracle Cloud certifications preferred.",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/4864a4c1-84f0-40fe-bfe7-eb1eaf8e747b?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Oracle VBCS Technical Lead",
+    "normalizedTitle": "Oracle VBCS Technical Lead",
+    "jobCategory": "Oracle VBCS Technical Lead",
+    "engineeringDomain": "DevOps",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-05-07T11:26:25.613Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [
+      "sql",
+      "java",
+      "javascript",
+      "jenkins",
+      "terraform"
+    ],
+    "requiredSkillIds": [
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      },
+      {
+        "skillId": "jenkins",
+        "canonicalName": "Jenkins",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Jenkins"
+      },
+      {
+        "skillId": "terraform",
+        "canonicalName": "Terraform",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Terraform"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "rawText": "12-14 years",
+      "minimumYears": 12,
+      "maximumYears": 12,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12 years",
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      12
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "DevOps & SRE",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.694Z"
+  },
+  {
+    "title": "Oracle Fusion HCM Functional Consultant",
+    "company": "OSI Digital",
+    "department": "EA",
+    "location": "Chennai, Tamil Nadu, India; Hyderabad, Telangana, India; Bangalore, Karnataka, India",
+    "city": "Chennai",
+    "country": "India",
+    "jobId": "e57afa0b-5dcc-4102-8f93-660ef8d39c6a",
+    "requisitionId": "OD-3892",
+    "sourceUrl": "https://osidigital.turbohire.co/job/publicjobs/e57afa0b-5dcc-4102-8f93-660ef8d39c6a?utm_source=CareerPage",
+    "applyUrl": "https://osidigital.turbohire.co/job/publicjobs/e57afa0b-5dcc-4102-8f93-660ef8d39c6a?utm_source=CareerPage",
+    "employmentType": "Full Time",
+    "experienceRequired": "4-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Oracle Fusion HCM - Core HR",
+      "Talent Management",
+      "Absence Management",
+      "Payroll",
+      "HDL",
+      "VBS"
+    ],
+    "postingDate": "2026-02-21T14:34:26.745Z",
+    "closingDate": "2026-08-30T18:30:00.000Z",
+    "jobDescription": "Job Title: Oracle Fusion HCM Functional Consultant Experience: 4–7 Years Job Location: Hyderabad / Chennai / Bangalore OSI Digital is hiring an Oracle Fusion HCM Functional Consultant to drive HR transformation initiatives, recruitment strategy, and payroll compliance programs .This role requires strong functional expertise in Oracle Fusion HCM along with hands-on experience in HR operations and workforce planning.\n\nRESPONSIBILITIES:\nImplement and support Oracle Fusion HCM modules including Core HR, Talent Management, Payroll, Absence Management, HDL, and VBS Lead end-to-end recruitment processes aligned with business workforce requirements Develop short-term and long-term hiring strategies to support organizational growth Manage payroll processes and ensure statutory and regulatory compliance Generate recruitment and HR reports and analyze hiring metrics Support HR transformation initiatives and process improvements Represent the organization at job fairs and external hiring events Collaborate with business stakeholders to align HR programs with company objectives Required Skills: 3–10 years of experience in Oracle Fusion HCM modules including Core HR, Talent, Payroll, Absence, HDL, and VBS Strong experience in end-to-end recruitment and HR operations Hands-on exposure to HRMS systems and MS Office tools Good understanding of employment laws and payroll compliance Experience in payroll processing, audits, and internal controls Strong skills in recruitment strategy and workforce planning Experience in HR data analysis and reporting Strong stakeholder communication and coordination skills Bachelor’s degree in HR or related field, MBA preferred We Are Not Looking for Someone Who: Has never worked directly with clients",
+    "source": "osidigital",
+    "link": "https://osidigital.turbohire.co/job/publicjobs/e57afa0b-5dcc-4102-8f93-660ef8d39c6a?utm_source=CareerPage",
+    "scrapedAt": "2026-08-04T00:13:35.601Z",
+    "companyCareerPage": "https://osidigital.com/careers/",
+    "companyDomain": "osidigital.com",
+    "atsPlatform": "official-careers-page-plus-turbohire-publicjobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Oracle Fusion HCM Functional Consultant",
+    "normalizedTitle": "Oracle Fusion HCM Functional Consultant",
+    "jobCategory": "Oracle Fusion HCM Functional Consultant",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-02-21T14:34:26.745Z",
+    "scrapedTimestamp": "2026-08-04T00:13:35.601Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4-8 years",
+      "minimumYears": 4,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Legal & Compliance",
+    "secondaryRoleDomains": [
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:13:35.695Z"
+  }
+]

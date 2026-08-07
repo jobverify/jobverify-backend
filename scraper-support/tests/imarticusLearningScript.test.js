@@ -4,19 +4,13 @@ import test from 'node:test'
 const homepageHtml = `
 <!doctype html>
 <html lang="en">
-  <head>
-    <title>Job Oriented Courses for Freshers & Executives | Imarticus Learning</title>
-  </head>
   <body>
     <main>
+      <p>ISFB - India's First Finance Focused School</p>
       <h1>Real Learning that delivers your career goals</h1>
-      <p>3,500+ hiring partners</p>
+      <p>Unmatched Outcomes from job-ready, certification, and executive programs</p>
+      <p>All Programs</p>
     </main>
-    <footer>
-      <a href="/about-us/">About Us</a>
-      <a href="/careers/">Careers at Imarticus</a>
-      <p>Imarticus Learning</p>
-    </footer>
   </body>
 </html>
 `
@@ -24,20 +18,28 @@ const homepageHtml = `
 const careerServicesHtml = `
 <!doctype html>
 <html lang="en">
-  <head>
-    <title>Build your dream career with Imarticus Rise</title>
-    <link rel="canonical" href="https://imarticus.org/building-careers-of-the-future-with-imarticus-rise/" />
-  </head>
   <body>
     <main>
-      <h1>Building Careers Of The Future</h1>
-      <p>Benefit From A Global Network Of 3500+ Hiring Partners</p>
-      <p>We’re passionate about building meaningful careers that create an impact.</p>
-      <a href="/programs/">Apply Now</a>
+      <p>ISFB - India's First Finance Focused School</p>
+      <h1>Real Learning that delivers your career goals</h1>
+      <p>Unmatched Outcomes from job-ready, certification, and executive programs</p>
+      <p>All Programs</p>
     </main>
-    <footer>
-      <p>Imarticus Rise</p>
-    </footer>
+  </body>
+</html>
+`
+
+const homepageWithCareerOpportunitiesCopyHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <p>ISFB - India's First Finance Focused School</p>
+      <h1>Real Learning that delivers your career goals</h1>
+      <p>Unmatched Outcomes from job-ready, certification, and executive programs</p>
+      <p>Our learners unlock career opportunities through industry-aligned programs.</p>
+      <p>All Programs</p>
+    </main>
   </body>
 </html>
 `
@@ -68,7 +70,7 @@ const loadModule = async () => {
   }
 }
 
-test('Imarticus Learning helpers stay pinned to the verified career-services-only first-party surface', async () => {
+test('Imarticus Learning helpers stay pinned to the verified redirected no-jobs first-party surface', async () => {
   const imarticusLearning = await loadModule()
 
   assert.equal(imarticusLearning.SOURCE, 'imarticuslearning')
@@ -77,18 +79,19 @@ test('Imarticus Learning helpers stay pinned to the verified career-services-onl
   assert.equal(imarticusLearning.CAREERS_URL, 'https://imarticus.org/careers/')
   assert.equal(
     imarticusLearning.CANONICAL_CAREER_SERVICES_URL,
-    'https://imarticus.org/building-careers-of-the-future-with-imarticus-rise/',
+    'https://imarticus.org/',
   )
   assert.equal(imarticusLearning.COMPANY_DOMAIN, 'imarticus.org')
-  assert.equal(imarticusLearning.VERIFIED_ON, '2026-07-16')
-  assert.equal(imarticusLearning.extractCareerPageUrl(homepageHtml), imarticusLearning.CAREERS_URL)
+  assert.equal(imarticusLearning.VERIFIED_ON, '2026-08-02')
+  assert.equal(imarticusLearning.extractCareerPageUrl(homepageHtml), null)
   assert.equal(imarticusLearning.hasVerifiedHomepageSignals(homepageHtml), true)
   assert.equal(imarticusLearning.hasVerifiedCareerServicesSignals(careerServicesHtml), true)
   assert.equal(imarticusLearning.hasPublicEmployerJobSignals(careerServicesHtml), false)
+  assert.equal(imarticusLearning.hasPublicEmployerJobSignals(homepageWithCareerOpportunitiesCopyHtml), false)
   assert.equal(imarticusLearning.hasPublicEmployerJobSignals(publicJobsHtml), true)
 })
 
-test('Imarticus Learning returns [] while the verified first-party surface remains career-services-only', async () => {
+test('Imarticus Learning returns [] while the verified first-party surface remains a redirected no-jobs homepage', async () => {
   const imarticusLearning = await loadModule()
   const requestedUrls = []
 
@@ -108,14 +111,14 @@ test('Imarticus Learning returns [] while the verified first-party surface remai
   assert.deepEqual(jobs, [])
 })
 
-test('Imarticus Learning fails closed when the first-party handoff or careers page drifts into employer-job territory', async () => {
+test('Imarticus Learning fails closed when the homepage drifts or the careers surface turns into an employer jobs page', async () => {
   const imarticusLearning = await loadModule()
 
   await assert.rejects(
     imarticusLearning.run({
       fetchText: async (url) => {
         if (url === imarticusLearning.HOMEPAGE_URL) {
-          return homepageHtml.replace('/careers/', '/jobs/')
+          return homepageHtml.replace('All Programs', 'Unexpected')
         }
         if (url === imarticusLearning.CAREERS_URL) return careerServicesHtml
         throw new Error(`Unexpected Imarticus Learning URL: ${url}`)

@@ -162,7 +162,9 @@ export const saveToDB = async (jobs, source, options = {}) => {
     ? eligibleJobs
     : await enrichJobsWithPublicExperience(eligibleJobs, {
         fetchText: options.fetchText,
+        fetchBrowserText: options.fetchBrowserText,
         concurrency: options.experienceEnrichmentConcurrency,
+        useBrowserFallback: options.useBrowserFallback,
       })
 
   const operations = jobsForPersistence.map((job) => {
@@ -225,6 +227,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
             preferredQualification: normalizedJob.preferredQualification,
             requiredSkills: normalizedJob.requiredSkills,
             experienceRequired: normalizedJob.experienceRequired,
+            publicExperienceChecked: normalizedJob.publicExperienceChecked === true,
             salary: normalizedJob.salary,
             skillIds: normalizedJob.skillIds || [],
             requiredSkillIds: normalizedJob.requiredSkillIds || [],
@@ -365,6 +368,157 @@ export const deleteAllJobsFromDB = async () => {
   return result.deletedCount ?? 0
 }
 
+const normalizeDryRunJobs = (jobs) => filterIndiaJobs(jobs).map((job) => {
+  const normalizedJob = normalizeScrapedJob(job, {
+    source: job?.source || null,
+  })
+  const rawApplyUrl = String(job?.applyUrl || job?.link || '').trim()
+
+  if (!normalizedJob.applyUrl && /^mailto:/i.test(rawApplyUrl)) {
+    return {
+      ...normalizedJob,
+      applyUrl: rawApplyUrl,
+      link: rawApplyUrl,
+    }
+  }
+
+  return normalizedJob
+})
+
+const VOLATILE_DRY_RUN_SNAPSHOT_FIELDS = new Set([
+  'postedAt',
+  'postingDate',
+  'scrapedAt',
+  'scrapedTimestamp',
+  'extractedAt',
+])
+
+const stripVolatileDryRunSnapshotFields = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((entry) => stripVolatileDryRunSnapshotFields(entry))
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !VOLATILE_DRY_RUN_SNAPSHOT_FIELDS.has(key))
+      .map(([key, entryValue]) => [key, stripVolatileDryRunSnapshotFields(entryValue)]),
+  )
+}
+
+const writeDryRunSnapshotIfChanged = async (filePath, content, options = {}) => {
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true })
+
+  let hasExistingSnapshot = false
+
+  try {
+    const existingContent = await fs.promises.readFile(filePath, 'utf8')
+    hasExistingSnapshot = true
+    if (existingContent === content) {
+      return false
+    }
+
+    const existingSnapshot = stripVolatileDryRunSnapshotFields(JSON.parse(existingContent))
+    const nextSnapshot = stripVolatileDryRunSnapshotFields(JSON.parse(content))
+    if (JSON.stringify(existingSnapshot) === JSON.stringify(nextSnapshot)) {
+      return false
+    }
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      // No snapshot exists yet, so we need to write one.
+    } else if (error instanceof SyntaxError) {
+      // Corrupt or partial snapshots should be replaced with a fresh write.
+    } else {
+      throw error
+    }
+  }
+
+  const tempFilePath = path.join(
+    path.dirname(filePath),
+    `.${path.basename(filePath)}.${process.pid}.${Date.now()}.${crypto.randomUUID()}.tmp`,
+  )
+
+  try {
+    await fs.promises.writeFile(tempFilePath, content, 'utf-8')
+    await fs.promises.rename(tempFilePath, filePath)
+  } catch (error) {
+    await fs.promises.rm(tempFilePath, { force: true }).catch(() => {})
+
+    // Backfill runs can hit workspace quota limits where an atomic sidecar file
+    // cannot fit even though overwriting the existing snapshot in place can.
+    if (
+      error?.code === 'ENOSPC'
+      && options.allowInPlaceRewriteOnEnospc === true
+      && hasExistingSnapshot
+    ) {
+      await fs.promises.writeFile(filePath, content, 'utf-8')
+    } else {
+      throw error
+    }
+  }
+
+  return true
+}
+
+export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
+  const filteredJobs = filterIndiaJobs(jobs)
+  const hasTargetedSelection = typeof options.shouldEnrichJob === 'function'
+    || (Number.isInteger(options.maxJobsToEnrich) && options.maxJobsToEnrich > 0)
+  const maxJobsToEnrich = Number.isInteger(options.maxJobsToEnrich) && options.maxJobsToEnrich > 0
+    ? options.maxJobsToEnrich
+    : Number.POSITIVE_INFINITY
+  const shouldEnrichJob = typeof options.shouldEnrichJob === 'function'
+    ? options.shouldEnrichJob
+    : () => true
+
+  let enrichedJobs = filteredJobs
+
+  if (options.enrichPublicExperience !== false) {
+    if (!hasTargetedSelection) {
+      enrichedJobs = await enrichJobsWithPublicExperience(filteredJobs, {
+        fetchText: options.fetchText,
+        fetchBrowserText: options.fetchBrowserText,
+        concurrency: options.experienceEnrichmentConcurrency,
+        useBrowserFallback: options.useBrowserFallback,
+      })
+    } else {
+      const selectedIndices = []
+      const selectedJobs = []
+
+      for (let index = 0; index < filteredJobs.length; index += 1) {
+        if (selectedJobs.length >= maxJobsToEnrich) break
+        if (!shouldEnrichJob(filteredJobs[index], index)) continue
+
+        selectedIndices.push(index)
+        selectedJobs.push(filteredJobs[index])
+      }
+
+      if (selectedJobs.length > 0) {
+        const enrichedSelectedJobs = await enrichJobsWithPublicExperience(selectedJobs, {
+          fetchText: options.fetchText,
+          fetchBrowserText: options.fetchBrowserText,
+          concurrency: options.experienceEnrichmentConcurrency,
+          useBrowserFallback: options.useBrowserFallback,
+        })
+
+        enrichedJobs = [...filteredJobs]
+        for (let index = 0; index < selectedIndices.length; index += 1) {
+          enrichedJobs[selectedIndices[index]] = enrichedSelectedJobs[index]
+        }
+      }
+    }
+  }
+
+  const normalizedJobs = normalizeDryRunJobs(enrichedJobs)
+  await writeDryRunSnapshotIfChanged(filePath, JSON.stringify(normalizedJobs, null, 2), {
+    allowInPlaceRewriteOnEnospc: options.allowInPlaceRewriteOnEnospc === true,
+  })
+  return normalizedJobs
+}
+
 /**
  * Saves an array of scraped jobs to a local JSON file (dry-run mode).
  *
@@ -372,22 +526,7 @@ export const deleteAllJobsFromDB = async () => {
  * @param {string}   filePath  Absolute path to the output JSON file
  */
 export const saveToFile = (jobs, filePath) => {
-  const indiaJobs = filterIndiaJobs(jobs).map((job) => {
-    const normalizedJob = normalizeScrapedJob(job, {
-      source: job?.source || null,
-    })
-    const rawApplyUrl = String(job?.applyUrl || job?.link || '').trim()
-
-    if (!normalizedJob.applyUrl && /^mailto:/i.test(rawApplyUrl)) {
-      return {
-        ...normalizedJob,
-        applyUrl: rawApplyUrl,
-        link: rawApplyUrl,
-      }
-    }
-
-    return normalizedJob
-  })
+  const indiaJobs = normalizeDryRunJobs(jobs)
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
   fs.writeFileSync(filePath, JSON.stringify(indiaJobs, null, 2), 'utf-8')
 }

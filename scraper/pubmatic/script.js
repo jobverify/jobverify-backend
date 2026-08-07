@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { PUBMATIC_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -14,6 +16,7 @@ export { PROVIDER_METADATA }
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DETAIL_FETCH_CONCURRENCY = 4
 
 const INDIA_LOCATIONS = {
   'Gurugram, IN': { city: 'Gurugram', state: 'Haryana', country: 'India' },
@@ -35,6 +38,60 @@ const slugify = (value) => String(value ?? '')
   .replace(/^-+|-+$/g, '')
 
 const decodeHtml = (value) => normalizeWhitespace(value)
+
+const extractDetailSectionHtml = (html = '') => {
+  const page = String(html ?? '')
+  const startMatch = /<div[^>]*class=["'][^"']*pubm-job__description[^"']*["'][^>]*>/i.exec(page)
+  if (!startMatch) return null
+
+  const tail = page.slice(startMatch.index + startMatch[0].length)
+  const endPatterns = [
+    /<div[^>]*class=["'][^"']*pubm-job__sidebar[^"']*["'][^>]*>/i,
+    /<div[^>]*class=["'][^"']*pubm-job__apply-box[^"']*["'][^>]*>/i,
+    /<div[^>]*class=["'][^"']*pubm-job__form-wrap[^"']*["'][^>]*>/i,
+  ]
+
+  let endIndex = tail.length
+  for (const pattern of endPatterns) {
+    const match = pattern.exec(tail)
+    if (match && match.index < endIndex) {
+      endIndex = match.index
+    }
+  }
+
+  return tail.slice(0, endIndex)
+}
+
+const extractExperienceRequirement = (description = '') => {
+  const experienceProfile = extractJobFilterSignals({
+    description,
+  })?.experienceProfile
+
+  if (!experienceProfile || experienceProfile.confidence !== 'high') {
+    return null
+  }
+
+  if (experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0) {
+    return 'No experience required'
+  }
+
+  return experienceProfile.evidence || null
+}
+
+const extractJobDetail = (html = '') => {
+  const description = normalizeWhitespace(extractDetailSectionHtml(html))
+  if (!description) {
+    return {
+      jobDescription: null,
+      experienceRequired: null,
+    }
+  }
+
+  return {
+    jobDescription: description,
+    experienceRequired: extractExperienceRequirement(description),
+  }
+}
 
 export const hasOfficialJobsSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
@@ -120,7 +177,7 @@ export const createPubMaticScraper = ({
       throw new Error('PubMatic first-party jobs page changed materially')
     }
 
-    return extractLocationGroups(html)
+    const jobs = extractLocationGroups(html)
       .flatMap((group) => {
         const locationMeta = INDIA_LOCATIONS[group.location]
         if (!locationMeta) return []
@@ -142,6 +199,25 @@ export const createPubMaticScraper = ({
         }))
       })
       .sort((left, right) => left.title.localeCompare(right.title))
+
+    return mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailHtml = await fetchText(job.sourceUrl)
+          const detail = extractJobDetail(detailHtml)
+
+          return {
+            ...job,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 

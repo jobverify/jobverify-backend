@@ -60,9 +60,14 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   return /<title>\s*Careers at Frontegg\s*<\/title>/i.test(page)
     && /Careers at Frontegg/i.test(text)
     && /Current openings/i.test(text)
-    && /Senior Backend Developer/i.test(text)
-    && /Technical Support - Tier 2 Support/i.test(text)
-    && /Apply now/i.test(text)
+    && (
+      (
+        /Senior Backend Developer/i.test(text)
+        && /Technical Support - Tier 2 Support/i.test(text)
+        && /Apply now/i.test(text)
+      )
+      || /We don't have any open positions at this time\.\s*Please visit again soon\./i.test(text)
+    )
 }
 
 const extractListingCards = (html = '') => {
@@ -185,6 +190,9 @@ export const createFronteggScraper = () => ({
     const uniqueCards = [...new Map(listingCards.map((card) => [card.url, card])).values()]
 
     if (uniqueCards.length === 0) {
+      if (/We don't have any open positions at this time\.\s*Please visit again soon\./i.test(normalizeWhitespace(careersHtml))) {
+        return []
+      }
       throw new Error('Frontegg careers page no longer exposes verified current opening links')
     }
 

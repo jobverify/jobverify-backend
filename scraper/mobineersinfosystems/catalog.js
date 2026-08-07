@@ -17,9 +17,9 @@ export const MOBINEERS_INFO_SYSTEMS_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+job-card-links+detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://mobineers.com/career/ remained the live first-party Mobineers Info Systems careers page and visibly listed recent jobs including QA Automation Tester, SQL DEVELOPER, and Sr. Business Developer. A verified detail page such as https://mobineers.com/jobs/qa-automation-tester/ exposed the title, Delhi location, and apply form on the same first-party domain, so this local provider reads the first-party listing page and follows job-card links to trusted detail pages.',
+    'Verified on Monday, August 3, 2026 that https://mobineers.com/career/ remained the live first-party Mobineers Info Systems careers page and visibly listed recent jobs including Sr. Sales Manager, Ass. Sales Manager, Assistant Sales Manager, SQL DEVELOPER, QA Automation Tester, and Sr. Business Developer. Verified detail pages such as https://mobineers.com/jobs/sr-sales-manager/ and https://mobineers.com/jobs/qa-automation-tester/ exposed the title, Delhi location, and same-domain apply form section, so this local provider reads the first-party listing page and follows job-card links to trusted detail pages.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'mobineersinfosystems/jobs.json',
 }

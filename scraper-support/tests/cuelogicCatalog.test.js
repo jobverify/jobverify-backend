@@ -7,6 +7,36 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
+const loadCuelogicCatalogModule = async () => {
+  try {
+    return await import('../../scraper/cuelogic/catalog.js')
+  } catch {
+    assert.fail('Expected Cuelogic catalog module at ../../scraper/cuelogic/catalog.js')
+  }
+}
+
+test('Cuelogic local catalog pins the August 4, 2026 upstream TLS outage contract', async () => {
+  const cuelogicCatalog = await loadCuelogicCatalogModule()
+
+  assert.equal(cuelogicCatalog.CUELOGIC_CATALOG.source, 'cuelogic')
+  assert.equal(cuelogicCatalog.CUELOGIC_CATALOG.companyName, 'Cuelogic')
+  assert.equal(cuelogicCatalog.CUELOGIC_CATALOG.homepageUrl, 'https://www.ltm.com/careers')
+  assert.equal(cuelogicCatalog.CUELOGIC_CATALOG.companyCareerPage, 'https://careers.ltimindtree.com/search/')
+  assert.equal(
+    cuelogicCatalog.CUELOGIC_CATALOG.verifiedJobsMicrositeUrl,
+    'https://careers.ltimindtree.com/Microsite/content/View-Jobs/',
+  )
+  assert.equal(cuelogicCatalog.CUELOGIC_CATALOG.brokenRedirectHost, 'careers.ltimindtree.com')
+  assert.equal(
+    cuelogicCatalog.CUELOGIC_CATALOG.brokenRedirectCertificateHost,
+    'certificate-not-found.jobs2web.com',
+  )
+  assert.equal(cuelogicCatalog.CUELOGIC_CATALOG.verifiedOn, '2026-08-04')
+  assert.match(cuelogicCatalog.VERIFIED_SURFACE_SUMMARY, /Tuesday, August 4, 2026/i)
+  assert.match(cuelogicCatalog.VERIFIED_SURFACE_SUMMARY, /careers\.ltimindtree\.com/i)
+  assert.match(cuelogicCatalog.VERIFIED_SURFACE_SUMMARY, /certificate-not-found\.jobs2web\.com/i)
+})
+
 test('getScraperCatalog includes Cuelogic as a parent-board empty-search sentinel', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'cuelogic')
 
@@ -17,7 +47,7 @@ test('getScraperCatalog includes Cuelogic as a parent-board empty-search sentine
   assert.equal(provider.atsPlatform, 'successfactors-empty-search-sentinel')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-parent-search-query')
-  assert.equal(provider.extractionStrategy, 'verified-parent-successfactors-search-empty-state-return-empty')
+  assert.equal(provider.extractionStrategy, 'verified-parent-successfactors-search-empty-state-or-fail-closed-upstream-tls-outage')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'careers.ltimindtree.com')

@@ -32,6 +32,32 @@ const contactHtml = `
 </html>
 `
 
+const cloudflareTimeoutHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>marolix.com | 522: Connection timed out</title>
+  </head>
+  <body>
+    <h1>522: Connection timed out</h1>
+    <p>marolix.com</p>
+  </body>
+</html>
+`
+
+const cloudflareOriginUnreachableHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>marolix.com | 523: Origin is unreachable</title>
+  </head>
+  <body>
+    <h1>523: Origin is unreachable</h1>
+    <p>marolix.com</p>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/marolixtechnologysolutions/script.js')
@@ -46,11 +72,29 @@ test('Marolix Technology Solutions validates the verified no-public-careers home
   assert.equal(marolix.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(marolix.hasPublicCareersLink(homepageHtml), false)
   assert.equal(marolix.hasOfficialContactSignal(contactHtml), true)
+  assert.equal(marolix.hasCloudflareOriginOutageSignal(cloudflareTimeoutHtml), true)
+  assert.equal(marolix.hasCloudflareOriginOutageSignal(cloudflareOriginUnreachableHtml), true)
   assert.equal(
     marolix.isExpectedMissingCareersRoute({
       status: 404,
       url: 'https://www.marolix.com/careers',
       html: '<html><body><h1>Not Found</h1></body></html>',
+    }),
+    true,
+  )
+  assert.equal(
+    marolix.isExpectedCloudflareOriginOutageRoute({
+      status: 522,
+      url: 'https://www.marolix.com/',
+      html: cloudflareTimeoutHtml,
+    }),
+    true,
+  )
+  assert.equal(
+    marolix.isExpectedCloudflareOriginOutageRoute({
+      status: 523,
+      url: 'https://www.marolix.com/careers',
+      html: cloudflareOriginUnreachableHtml,
     }),
     true,
   )
@@ -73,6 +117,44 @@ test('Marolix Technology Solutions run returns no jobs while the verified first-
         return { status: 404, url, html: '<html><body><h1>Not Found</h1></body></html>', headers: {} }
       }
       throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    marolix.HOMEPAGE_URL,
+    marolix.CONTACT_URL,
+    marolix.CAREERS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Marolix Technology Solutions run returns no jobs while the first-party site is temporarily unavailable behind a verified Cloudflare 522 page', async () => {
+  const marolix = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await marolix.run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return { status: 522, url, html: cloudflareTimeoutHtml, headers: {} }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    marolix.HOMEPAGE_URL,
+    marolix.CONTACT_URL,
+    marolix.CAREERS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Marolix Technology Solutions run returns no jobs while verified routes surface a branded Cloudflare 523 origin outage page', async () => {
+  const marolix = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await marolix.run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return { status: 523, url, html: cloudflareOriginUnreachableHtml, headers: {} }
     },
   })
 

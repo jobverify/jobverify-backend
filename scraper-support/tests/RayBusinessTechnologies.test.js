@@ -12,7 +12,42 @@ const careersShellHtml = `
     <h1>Careers</h1>
     <a href="/about-us/careers/current-openings">Current Openings</a>
     <p>Ray Business Technologies Pvt. Ltd. is an equal opportunities employer.</p>
-    <p>Working with us is not a job. It's a journey.</p>
+    <p>Working with us is not a job. It&#39;s a journey.</p>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4>Senior AI/ML Engineer<small>Experience: 5+ Years</small></h4>
+      </div>
+      <div class="panel-collapse collapse">
+        <div class="panel-body circle-dot black-dot">
+          <p>Location: Hyderabad, India</p>
+          <p>Employment Type: Full-time</p>
+          <p>Apply Online or Mail your CVs to [email&#160;protected]</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4>Dotnet Developer<small>Experience: 4-7 Years</small></h4>
+      </div>
+      <div class="panel-collapse collapse">
+        <div class="panel-body circle-dot black-dot">
+          <p>Location: Indore (Work from Office)</p>
+          <p>Employment Type: Full-time</p>
+          <p>Apply Online or Mail your CVs to [email&#160;protected]</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4>Software Developer<small>Experience: 5 Years</small></h4>
+      </div>
+      <div class="panel-collapse collapse">
+        <div class="panel-body circle-dot black-dot">
+          <p>Work Location: Plano, TX (and various unanticipated client locations throughout the U.S.)</p>
+          <p>Employment Type: Full-time</p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
 `
@@ -42,19 +77,19 @@ test('Ray Business Technologies exports the verified fail-closed exact-name cont
     companyName: 'Ray Business Technologies',
     officialBrandName: 'Ray Business Technologies Pvt. Ltd.',
     adapter: 'script',
-    modulePath: '../../scraper/raybusinesstechnologies/script.js',
+    modulePath: '../raybusinesstechnologies/script.js',
     homepageUrl: 'https://raybiztech.com/',
     companyCareerPage: 'https://raybiztech.com/about-us/careers/current-openings',
-    atsPlatform: 'first-party-careers-shell-without-public-openings',
+    atsPlatform: 'official-company-careers',
     countryFilter: 'India',
-    paginationStrategy: 'fail-closed-no-trustworthy-public-listings',
-    extractionStrategy: 'verified-first-party-careers-shell+no-accessibly-rendered-public-openings+fail-closed-sentinel',
+    paginationStrategy: 'single-page-accordion-list',
+    extractionStrategy: 'verified-first-party-careers-page+public-accordion-openings+india-location-filter',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'raybiztech.com',
-    verifiedOn: '2026-07-18',
+    verifiedOn: '2026-08-04',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://raybiztech.com/about-us/careers/current-openings was the live first-party Ray Business Technologies careers shell, but the fetched public HTML only exposed the employer branding copy and the Current Openings shell without any accessibly rendered job cards, titles, or apply links. Because no trustworthy public openings listing was fetchable from the verified exact-name first-party surface, this provider remains fail-closed.',
+      'Verified on Tuesday, August 4, 2026 that https://raybiztech.com/about-us/careers/current-openings is the live first-party Ray Business Technologies careers page and that its public accordion markup now exposes accessible opening titles and descriptions directly in the fetched HTML. The public surface includes current India openings such as Senior AI/ML Engineer, Dotnet Developer, HR Executive, and Boomi Developer, while also listing at least one explicit US-only role. This scraper validates the exact first-party page shell, extracts the public accordion openings, and returns only conservative India-eligible jobs.',
     dryRunFile: 'raybusinesstechnologies/jobs.json',
   })
 
@@ -64,11 +99,28 @@ test('Ray Business Technologies exports the verified fail-closed exact-name cont
   assert.deepEqual(scriptModule.PROVIDER_METADATA, providerModule.provider)
 })
 
-test('Ray Business Technologies validates the verified careers shell and stays fail-closed', async () => {
+test('Ray Business Technologies validates the verified careers shell and extracts public India openings', async () => {
   const ray = await loadScriptModule()
 
   assert.equal(ray.hasOfficialCareersShellSignal(careersShellHtml), true)
-  assert.equal(ray.hasTrustworthyPublicJobsSignal(careersShellHtml), false)
+  assert.equal(ray.hasTrustworthyPublicJobsSignal(careersShellHtml), true)
+  assert.deepEqual(
+    ray.extractJobs(careersShellHtml).map((job) => [job.title, job.location, job.jobId, job.applyUrl]),
+    [
+      [
+        'Senior AI/ML Engineer',
+        'Hyderabad, India',
+        'senior-ai-ml-engineer-hyderabad-india',
+        'https://raybiztech.com/about-us/careers/apply-online',
+      ],
+      [
+        'Dotnet Developer',
+        'Indore, India',
+        'dotnet-developer-indore-india',
+        'https://raybiztech.com/about-us/careers/apply-online',
+      ],
+    ],
+  )
 
   const jobs = await ray.run({
     fetchText: async (url) => {
@@ -77,22 +129,55 @@ test('Ray Business Technologies validates the verified careers shell and stays f
     },
   })
 
-  assert.deepEqual(jobs, [])
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(
+    jobs.map((job) => [job.title, job.location, job.companyCareerPage, job.companyDomain, job.atsPlatform]),
+    [
+      [
+        'Senior AI/ML Engineer',
+        'Hyderabad, India',
+        'https://raybiztech.com/about-us/careers/current-openings',
+        'raybiztech.com',
+        'official-company-careers',
+      ],
+      [
+        'Dotnet Developer',
+        'Indore, India',
+        'https://raybiztech.com/about-us/careers/current-openings',
+        'raybiztech.com',
+        'official-company-careers',
+      ],
+    ],
+  )
 })
 
-test('Ray Business Technologies fails closed if trustworthy public job cards appear on the exact-name surface', async () => {
+test('Ray Business Technologies fails closed if the verified shell drifts or openings disappear', async () => {
   const ray = await loadScriptModule()
 
   await assert.rejects(
     ray.run({
+      fetchText: async () => '<html><body><h1>Jobs</h1></body></html>',
+    }),
+    /trusted first-party surface/i,
+  )
+
+  await assert.rejects(
+    ray.run({
       fetchText: async () => `
-        ${careersShellHtml}
-        <section class="job-card">
-          <h2>Digital Marketing Specialist</h2>
-          <a href="/apply-online/digital-marketing-specialist">Apply now</a>
-        </section>
+        <!doctype html>
+        <html>
+          <head>
+            <title>Ray Business Technologies Careers - Discover a World of Opportunities</title>
+          </head>
+          <body>
+            <h4>Search Jobs</h4>
+            <h1>Careers</h1>
+            <a href="/about-us/careers/current-openings">Current Openings</a>
+            <p>Working with us is not a job. It&#39;s a journey.</p>
+          </body>
+        </html>
       `,
     }),
-    /trustworthy public jobs surface/i,
+    /public accordion openings/i,
   )
 })

@@ -63,7 +63,7 @@ test('Dream11 local catalog captures the verified parent-brand careers handoff a
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /dream11[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dream11\.com\//i)
@@ -71,7 +71,7 @@ test('Dream11 local catalog captures the verified parent-brand careers handoff a
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dreamsports\.group\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dreamsports\.group\/lifeatdreamsports/i)
   assert.match(provider.verifiedSurfaceSummary, /Game On\. Build Big\./i)
-  assert.match(provider.verifiedSurfaceSummary, /Research Scientist, Dream11/i)
+  assert.match(provider.verifiedSurfaceSummary, /LIFE AT DREAM SPORTS/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Dream11'), false)
 

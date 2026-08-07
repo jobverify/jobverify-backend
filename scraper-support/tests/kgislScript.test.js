@@ -85,6 +85,7 @@ test('KGISL scraper returns normalized jobs from the verified first-party candid
   assert.equal(jobs[0].title, 'Sr.associate - Senior Associate')
   assert.equal(jobs[0].jobType, 'Full-time Experienced')
   assert.equal(jobs[0].sourceUrl, jobs[0].applyUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('KGISL scraper fails closed when the verified first-party surface drifts', async () => {

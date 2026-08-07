@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Thursday, July 16, 2026 that https://neysa.ai/careers/ is the official first-party Neysa careers page and that its View Job Openings link leads to the same-domain public jobs board at https://neysa.ai/careers/job-openings/. Live verification on Thursday, July 16, 2026 confirmed that the job openings page rendered 12 public jobs and that role detail pages such as https://neysa.ai/careers/job-openings/backend-engineer/ expose first-party job descriptions. The Neysa legal entity name Neysa Networks Private Limited is disclosed on the first-party privacy page at https://neysa.ai/privacy-policy/.'
+  'Verified on Monday, August 3, 2026 that https://neysa.ai/careers/ remained the official first-party Neysa careers page, now titled Career - Neysa, and that its View Job Openings link still leads to the same-domain public jobs board at https://neysa.ai/careers/job-openings/. Live verification on Monday, August 3, 2026 confirmed that the job openings page, now titled Job Openings - Neysa, still rendered 12 public jobs and that role detail pages such as https://neysa.ai/careers/job-openings/backend-engineer/ expose first-party job descriptions. The Neysa legal entity name Neysa Networks Private Limited is disclosed on the first-party privacy page at https://neysa.ai/privacy-policy/.'
 
 export const NEYSA_CATALOG = {
   source: 'neysa',
@@ -29,7 +29,7 @@ export const NEYSA_CATALOG = {
     'verified-first-party-careers-page+verified-same-domain-job-openings-page+detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

@@ -117,7 +117,7 @@ test('Moonfrog Labs sentinel helpers stay pinned to the verified homepage, no-op
   assert.equal(moonfrogLabs.SOURCE, 'moonfroglabs')
   assert.equal(moonfrogLabs.COMPANY, 'Moonfrog Labs')
   assert.equal(moonfrogLabs.OFFICIAL_BRAND_NAME, 'Moonfrog Labs Private Limited')
-  assert.equal(moonfrogLabs.VERIFIED_ON, '2026-07-16')
+  assert.equal(moonfrogLabs.VERIFIED_ON, '2026-08-03')
   assert.equal(moonfrogLabs.HOMEPAGE_URL, 'https://moonfroglabs.com/')
   assert.equal(moonfrogLabs.CAREERS_URL, 'https://moonfroglabs.com/careers/')
   assert.equal(

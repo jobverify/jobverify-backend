@@ -41,6 +41,18 @@ const activeBoardHtml = `
 
 const placeholderHomepageBody = 'OK'
 
+const comingSoonHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>www.ikya.com - Coming Soon</title>
+  </head>
+  <body>
+    <p>This domain is coming soon.</p>
+  </body>
+</html>
+`
+
 const realHomepageHtml = `
 <!doctype html>
 <html lang="en">
@@ -67,8 +79,8 @@ test('Ikya pins the verified empty SmartRecruiters board and placeholder homepag
   assert.equal(ikya.SOURCE, 'ikya')
   assert.equal(ikya.COMPANY_NAME, 'Ikya')
   assert.equal(ikya.CAREERS_URL, 'https://careers.smartrecruiters.com/Ikya1')
-  assert.equal(ikya.HOMEPAGE_URL, 'https://www.ikya.com/')
-  assert.equal(ikya.VERIFIED_ON, '2026-07-16')
+  assert.equal(ikya.HOMEPAGE_URL, 'http://www.ikya.com/')
+  assert.equal(ikya.VERIFIED_ON, '2026-08-02')
   assert.equal(ikya.hasVerifiedEmptyBoardSignal(careersBoardHtml), true)
   assert.deepEqual(
     ikya.extractPublicJobLinksFromBoard(careersBoardHtml),
@@ -79,6 +91,7 @@ test('Ikya pins the verified empty SmartRecruiters board and placeholder homepag
     ['https://careers.smartrecruiters.com/Ikya1/operations-manager'],
   )
   assert.equal(ikya.hasHomepagePlaceholderSignal(placeholderHomepageBody), true)
+  assert.equal(ikya.hasHomepagePlaceholderSignal(comingSoonHomepageHtml), true)
   assert.equal(ikya.hasHomepagePlaceholderSignal(realHomepageHtml), false)
 })
 
@@ -87,10 +100,10 @@ test('Ikya returns [] only while the SmartRecruiters board stays empty and the h
   const requestedUrls = []
 
   const jobs = await ikya.createIkyaScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === ikya.CAREERS_URL) return careersBoardHtml
-      if (url === ikya.HOMEPAGE_URL) return placeholderHomepageBody
+      if (url === ikya.CAREERS_URL) return { status: 200, url, html: careersBoardHtml }
+      if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: comingSoonHomepageHtml }
       throw new Error(`Unexpected Ikya URL: ${url}`)
     },
   })
@@ -107,9 +120,9 @@ test('Ikya fails closed when the public board starts listing jobs or the homepag
 
   await assert.rejects(
     ikya.createIkyaScraper().run({
-      fetchText: async (url) => {
-        if (url === ikya.CAREERS_URL) return activeBoardHtml
-        if (url === ikya.HOMEPAGE_URL) return placeholderHomepageBody
+      fetchPage: async (url) => {
+        if (url === ikya.CAREERS_URL) return { status: 200, url, html: activeBoardHtml }
+        if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: comingSoonHomepageHtml }
         throw new Error(`Unexpected Ikya URL: ${url}`)
       },
     }),
@@ -118,9 +131,9 @@ test('Ikya fails closed when the public board starts listing jobs or the homepag
 
   await assert.rejects(
     ikya.createIkyaScraper().run({
-      fetchText: async (url) => {
-        if (url === ikya.CAREERS_URL) return careersBoardHtml
-        if (url === ikya.HOMEPAGE_URL) return realHomepageHtml
+      fetchPage: async (url) => {
+        if (url === ikya.CAREERS_URL) return { status: 200, url, html: careersBoardHtml }
+        if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: realHomepageHtml }
         throw new Error(`Unexpected Ikya URL: ${url}`)
       },
     }),

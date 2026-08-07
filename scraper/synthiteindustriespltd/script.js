@@ -9,7 +9,6 @@ export const HOMEPAGE_URL = 'https://www.synthite.com/'
 export const CAREERS_URL = 'https://www.synthite.com/careers/'
 export const CAREER_OPPORTUNITIES_URL = 'https://www.synthite.com/careers/career-opportunities/'
 export const CAREERS_EMAIL = 'careers@synthite.com'
-export const CAREERS_PHONE = '+91 484 3051360'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -44,17 +43,6 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/\s+/g, ' ')
   .trim()
 
-const normalizePhone = (value) => {
-  const digits = String(value ?? '').replace(/[^\d+]/g, '')
-  if (!digits) return null
-
-  if (digits === '+914843051360' || digits === '914843051360' || digits === '04843051360') {
-    return CAREERS_PHONE
-  }
-
-  return null
-}
-
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -81,30 +69,27 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersLandingSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('shape your future with a global leader in natural ingredients innovation')
-    && normalized.includes('career opportunities')
-    && normalized.includes('employee experience & development')
+  return normalized.includes('build your career with a global leader in natural ingredients innovation')
+    && normalized.includes('explore current openings')
+    && normalized.includes('employee experience')
     && /href=["'](?:https:\/\/www\.synthite\.com)?\/careers\/career-opportunities\/["']/i.test(String(html ?? ''))
 }
 
 export const hasOfficialCareerOpportunitiesSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('diverse pathways to excellence in natural ingredients innovation')
+  return normalized.includes('explore career opportunities at synthite across research, manufacturing, business development, and leadership roles')
     && normalized.includes('view current openings')
-    && normalized.includes('current opportunity categories')
-    && normalized.includes('our career portal leverages darwinbox technology')
+    && normalized.includes('our opportunity spectrum includes')
     && normalized.includes('application access:')
     && normalized.includes(CAREERS_EMAIL)
 }
 
 export const extractCareerContact = (html) => {
   const emailMatch = decodeHtmlEntities(String(html ?? '')).match(/\bcareers@synthite\.com\b/i)
-  const phoneMatch = decodeHtmlEntities(String(html ?? '')).match(/(?:href=["']tel:([^"']+)["'])|(\+91[\s-]*484[\s-]*3051360)/i)
 
   return {
     email: emailMatch?.[0]?.toLowerCase() || null,
-    phone: normalizePhone(phoneMatch?.[1] || phoneMatch?.[2] || null),
   }
 }
 
@@ -129,7 +114,7 @@ export const createSynthiteIndustriesScraper = () => ({
     }
 
     const contact = extractCareerContact(careerOpportunitiesHtml)
-    if (contact.email !== CAREERS_EMAIL || contact.phone !== CAREERS_PHONE) {
+    if (contact.email !== CAREERS_EMAIL) {
       throw new Error('Synthite verified career-opportunities page no longer exposes the trusted contact handoff')
     }
 

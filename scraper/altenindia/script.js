@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -48,6 +49,20 @@ const normalizeEmploymentType = (value) => {
   if (normalized.includes('intern')) return 'Internship'
   return normalizeWhitespace(value)
 }
+
+const extractExperienceRequired = ({
+  title = null,
+  jobDescription = null,
+  minimumQualification = null,
+  preferredQualification = null,
+} = {}) => (
+  extractJobFilterSignals({
+    jobTitle: title,
+    description: jobDescription,
+    minimumQualification,
+    preferredQualification,
+  }).experienceRequirement?.displayValue || null
+)
 
 const parseLocation = (location) => {
   const normalized = normalizeWhitespace(location)
@@ -154,6 +169,12 @@ export const extractJobDetail = (html) => {
   if (!jobPosting) return {}
 
   const locationData = detailLocationFromJsonLd(jobPosting)
+  const title = normalizeWhitespace(jobPosting?.title) || null
+  const jobDescription = stripTags(normalizeWhitespace(jobPosting?.description)) || null
+  const experienceRequired = extractExperienceRequired({
+    title,
+    jobDescription,
+  })
 
   return {
     company: normalizeWhitespace(jobPosting?.hiringOrganization?.name) || null,
@@ -162,7 +183,11 @@ export const extractJobDetail = (html) => {
     country: locationData.country,
     employmentType: normalizeEmploymentType(jobPosting?.employmentType),
     postingDate: normalizeWhitespace(jobPosting?.datePosted)?.slice(0, 10) || null,
-    jobDescription: stripTags(normalizeWhitespace(jobPosting?.description)) || null,
+    experienceRequired,
+    jobDescription,
+    publicExperienceChecked: !experienceRequired && jobDescription && jobDescription.length >= 80
+      ? true
+      : null,
   }
 }
 

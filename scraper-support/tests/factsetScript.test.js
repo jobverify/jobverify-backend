@@ -128,8 +128,8 @@ test('run uses the official FactSet careers Workday API and keeps only India job
 
   assert.deepEqual(requestedBodies, [JSON.parse(buildJobsRequestBody({ offset: 0 }))])
   assert.deepEqual(requestedDetailUrls, [
-    'https://factset.wd108.myworkdayjobs.com/job/Hyderabad-IND/Associate-Product-Specialist_R32632',
-    'https://factset.wd108.myworkdayjobs.com/job/India-Hyderabad-DVS-SEZ-1--Orion-B4-FL-78911-Hyderabad---Divyasree-3/AI-Developer-Enablement-Engineer_R32477',
+    'https://factset.wd108.myworkdayjobs.com/FactSetCareers/job/Hyderabad-IND/Associate-Product-Specialist_R32632',
+    'https://factset.wd108.myworkdayjobs.com/FactSetCareers/job/India-Hyderabad-DVS-SEZ-1--Orion-B4-FL-78911-Hyderabad---Divyasree-3/AI-Developer-Enablement-Engineer_R32477',
   ])
 
   assert.equal(jobs.length, 2)
@@ -149,7 +149,7 @@ test('run uses the official FactSet careers Workday API and keeps only India job
       city: 'Hyderabad',
       jobId: 'R32632',
       requisitionId: 'R32632',
-      link: 'https://factset.wd108.myworkdayjobs.com/job/Hyderabad-IND/Associate-Product-Specialist_R32632',
+      link: 'https://factset.wd108.myworkdayjobs.com/FactSetCareers/job/Hyderabad-IND/Associate-Product-Specialist_R32632',
       department: 'Client Solutions Group',
       source: 'factset',
     },
@@ -159,7 +159,7 @@ test('run uses the official FactSet careers Workday API and keeps only India job
       city: 'Mumbai',
       jobId: 'R32477',
       requisitionId: 'R32477',
-      link: 'https://factset.wd108.myworkdayjobs.com/job/India-Hyderabad-DVS-SEZ-1--Orion-B4-FL-78911-Hyderabad---Divyasree-3/AI-Developer-Enablement-Engineer_R32477',
+      link: 'https://factset.wd108.myworkdayjobs.com/FactSetCareers/job/India-Hyderabad-DVS-SEZ-1--Orion-B4-FL-78911-Hyderabad---Divyasree-3/AI-Developer-Enablement-Engineer_R32477',
       department: 'Technology Group',
       source: 'factset',
     },

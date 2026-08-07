@@ -55,16 +55,17 @@ test('Tokopedia local catalog captures the verified GoTo reference and opaque Da
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-06')
   assert.match(provider.dryRunFile, /tokopedia[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 6, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.gotocompany\.com\/careers/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/www\.gotocompany\.com\/en\/news\/press\/goto-group-fake-job-listings/i,
   )
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/tokopedia\.darwinbox\.com\/ms\/candidate\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /JavaScript bootstrap shell/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Tokopedia'), false)
 

@@ -57,7 +57,7 @@ const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const normalizeUrl = (value) => {
   try {
-    return new URL(value).href.replace(/\/$/, '')
+    return new URL(value, HOMEPAGE_URL).href.replace(/\/$/, '')
   } catch {
     return normalizeWhitespace(value)
   }
@@ -83,6 +83,9 @@ const countryFromLocation = (value) => /india$/i.test(normalizeLocation(value) |
 const jobIdFromUrl = (url) => normalizeWhitespace(url)?.split('/').pop() || null
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
+
+const JOBS_LISTING_PATH_REGEX = /(?:https:\/\/www\.tanla\.com)?\/careers\/jobs-listing\/?(?:[?#][^"'<>\s]*)?/i
+const JOB_INFO_PATH_REGEX = /(?:https:\/\/www\.tanla\.com)?\/job-info\/[a-z0-9-]+\/?(?:[?#][^"'<>\s]*)?/i
 
 const extractSectionHtml = (html, heading) => {
   const escapedHeading = escapeRegExp(heading)
@@ -141,13 +144,30 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
+export const hasConnectTimeoutFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return code === 'UND_ERR_CONNECT_TIMEOUT'
+    || /\bconnect timeout\b/i.test(message)
+    || /\btimeout\b/i.test(message)
+}
+
 export const extractOfficialJobsListingUrl = (html = '') => {
-  const match = String(html ?? '').match(/https:\/\/www\.tanla\.com\/careers\/jobs-listing/i)
-  return match?.[0] ?? null
+  const page = String(html ?? '')
+  const anchorMatch = page.match(
+    /<a[^>]+href=["']([^"']*(?:\/careers\/jobs-listing\/?(?:[?#][^"']*)?))["'][^>]*>\s*Explore Jobs\s*<\/a>/i,
+  )
+  if (anchorMatch?.[1]) {
+    return normalizeUrl(anchorMatch[1])
+  }
+
+  const fallbackMatch = page.match(JOBS_LISTING_PATH_REGEX)
+  return fallbackMatch?.[0] ? normalizeUrl(fallbackMatch[0]) : null
 }
 
 export const pageExposesPublicJobListings = (html = '') =>
-  /https:\/\/www\.tanla\.com\/job-info\/[a-z0-9-]+/i.test(String(html ?? ''))
+  JOB_INFO_PATH_REGEX.test(String(html ?? ''))
   && />\s*Apply\s*</i.test(String(html ?? ''))
 
 export const hasOfficialCareersPageSignal = (html = '') => {
@@ -156,10 +176,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 
   return text.includes('Embark on a journey of Endless Possibilities')
     && text.includes('Invent. Disrupt. Repeat. Join our league of innovators!')
-    && new RegExp(
-      `<a[^>]+href=["']${OFFICIAL_JOBS_HANDOFF_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>\\s*Explore Jobs\\s*<`,
-      'i',
-    ).test(page)
+    && />\s*Explore Jobs\s*</i.test(page)
     && extractOfficialJobsListingUrl(html) === OFFICIAL_JOBS_HANDOFF_URL
   }
 
@@ -184,8 +201,8 @@ export const extractListingCards = (html = '') => {
     const department = normalizeWhitespace(
       cardHtml.match(/Department\s*<\/h[1-6]>\s*<p[^>]*>([\s\S]*?)<\/p>/i)?.[1],
     )
-    const sourceUrl = normalizeWhitespace(
-      cardHtml.match(/<a[^>]+href=["'](https:\/\/www\.tanla\.com\/job-info\/[a-z0-9-]+)["'][^>]*>\s*Apply\s*<\/a>/i)?.[1],
+    const sourceUrl = normalizeUrl(
+      cardHtml.match(/<a[^>]+href=["']((?:https:\/\/www\.tanla\.com)?\/job-info\/[a-z0-9-]+)["'][^>]*>\s*Apply\s*<\/a>/i)?.[1],
     )
 
     if (title && location && department && sourceUrl) {
@@ -193,7 +210,81 @@ export const extractListingCards = (html = '') => {
     }
   }
 
-  return cards
+  if (cards.length > 0) {
+    return cards
+  }
+
+  const page = String(html ?? '')
+  const applyRegex = /<a[^>]+href=["']((?:https:\/\/www\.tanla\.com)?\/job-info\/[a-z0-9-]+)["'][^>]*>\s*Apply\s*<\/a>/gi
+
+  const extractFieldFromBlock = (block, field) => {
+    const matches = [...block.matchAll(
+      new RegExp(
+        `<h[1-6][^>]*>\\s*${escapeRegExp(field)}\\s*<\\/h[1-6]>[\\s\\S]{0,240}?<p[^>]*>([\\s\\S]*?)<\\/p>`,
+        'gi',
+      ),
+    )]
+
+    return stripTags(matches.at(-1)?.[1] || '')
+  }
+
+  const extractTitleFromBlock = (block) => {
+    const locationMatches = [...block.matchAll(/<h[1-6][^>]*>\s*Location\s*<\/h[1-6]>/gi)]
+    const titleRegion = locationMatches.length > 0
+      ? block.slice(0, locationMatches.at(-1).index)
+      : block
+    const headings = [...titleRegion.matchAll(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
+
+    for (let index = headings.length - 1; index >= 0; index -= 1) {
+      const headingText = stripTags(headings[index][1])
+      if (headingText && !/^(location|department|tanla jobs)$/i.test(headingText)) {
+        return headingText
+      }
+    }
+
+    return null
+  }
+
+  const fallbackCards = []
+  for (const match of page.matchAll(applyRegex)) {
+    const block = page.slice(Math.max(0, match.index - 2200), match.index + match[0].length)
+    const title = extractTitleFromBlock(block)
+    const location = extractFieldFromBlock(block, 'Location')
+    const department = extractFieldFromBlock(block, 'Department')
+    const sourceUrl = normalizeUrl(match[1])
+
+    if (title && location && department && sourceUrl) {
+      fallbackCards.push(JSON.stringify({ title, department, location, sourceUrl }))
+    }
+  }
+
+  return unique(fallbackCards).map((card) => JSON.parse(card))
+}
+
+const extractListingLevelJob = (listing = {}) => {
+  const normalizedLocation = normalizeLocation(listing.location)
+  const detailUrl = normalizeUrl(listing.sourceUrl)
+
+  return {
+    title: normalizeWhitespace(listing.title),
+    company: COMPANY_NAME,
+    department: normalizeWhitespace(listing.department),
+    location: normalizedLocation,
+    city: cityFromLocation(normalizedLocation),
+    country: countryFromLocation(normalizedLocation),
+    jobId: jobIdFromUrl(detailUrl),
+    requisitionId: jobIdFromUrl(detailUrl),
+    sourceUrl: detailUrl,
+    applyUrl: detailUrl,
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+  }
 }
 
 const hasVerifiedDetailPageSignal = (html = '', listing = {}) => {
@@ -241,52 +332,79 @@ export const createTanlaPlatformsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run() {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Tanla Platforms verified Tanla careers page no longer matches the known first-party handoff')
-    }
-
-    const listingUrl = extractOfficialJobsListingUrl(careersHtml)
-    if (listingUrl !== OFFICIAL_JOBS_HANDOFF_URL) {
-      throw new Error('Tanla Platforms verified Tanla careers handoff no longer matches the known jobs listing URL')
-    }
-
-    const jobsListingHtml = await fetchText(OFFICIAL_JOBS_HANDOFF_URL)
-    if (!hasOfficialJobsListingSignal(jobsListingHtml)) {
-      throw new Error('Tanla Platforms verified Tanla jobs listing page no longer matches the known public board')
-    }
-
-    const listings = extractListingCards(jobsListingHtml)
-    if (listings.length === 0) {
-      throw new Error('Tanla Platforms verified Tanla jobs listing page no longer exposes parseable first-party roles')
-    }
-
-    const jobs = []
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      if (!hasVerifiedDetailPageSignal(detailHtml, listing)) {
-        throw new Error('Tanla Platforms verified Tanla detail page no longer matches the known first-party job contract')
+    try {
+      const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+      if (!hasOfficialCareersPageSignal(careersHtml)) {
+        throw new Error('Tanla Platforms verified Tanla careers page no longer matches the known first-party handoff')
       }
 
-      jobs.push({
-        ...extractJobDetail(detailHtml, listing),
-        source: SOURCE,
-        link: normalizeUrl(listing.sourceUrl),
-        scrapedAt: now(),
-      })
-
-      if (maxJobs && jobs.length >= maxJobs) {
-        return jobs
+      const listingUrl = extractOfficialJobsListingUrl(careersHtml)
+      if (listingUrl !== OFFICIAL_JOBS_HANDOFF_URL) {
+        throw new Error('Tanla Platforms verified Tanla careers handoff no longer matches the known jobs listing URL')
       }
-    }
 
-    return jobs
+      const jobsListingHtml = await fetchText(OFFICIAL_JOBS_HANDOFF_URL)
+      if (!hasOfficialJobsListingSignal(jobsListingHtml)) {
+        throw new Error('Tanla Platforms verified Tanla jobs listing page no longer matches the known public board')
+      }
+
+      const listings = extractListingCards(jobsListingHtml)
+      if (listings.length === 0) {
+        throw new Error('Tanla Platforms verified Tanla jobs listing page no longer exposes parseable first-party roles')
+      }
+
+      const jobs = []
+      for (const listing of listings) {
+        let detailHtml = null
+
+        try {
+          detailHtml = await fetchText(listing.sourceUrl)
+        } catch (error) {
+          if (!hasConnectTimeoutFailure(error)) {
+            throw error
+          }
+        }
+
+        if (detailHtml && !hasVerifiedDetailPageSignal(detailHtml, listing)) {
+          throw new Error('Tanla Platforms verified Tanla detail page no longer matches the known first-party job contract')
+        }
+
+        jobs.push({
+          ...(detailHtml ? extractJobDetail(detailHtml, listing) : extractListingLevelJob(listing)),
+          source: SOURCE,
+          link: normalizeUrl(listing.sourceUrl),
+          scrapedAt: now(),
+        })
+
+        if (maxJobs && jobs.length >= maxJobs) {
+          return jobs
+        }
+      }
+
+      return jobs
+    } catch (error) {
+      if (hasConnectTimeoutFailure(error)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 
 export const run = async (options = {}) => createTanlaPlatformsScraper(options).run()
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const isDirectExecution = (() => {
+  if (!process.argv[1]) return false
+
+  try {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

@@ -72,6 +72,55 @@ const currentCareersHtml = `
 </html>
 `
 
+const assistantManagerDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Rupeek hiring Assistant Manager - Taxation in Bengaluru, Karnataka, India | LinkedIn</title>
+    <meta
+      name="description"
+      content="Requirements and skills: Proven work experience as a Tax Accountant or Tax Analyst. 3 years of experience in direct and indirect taxation."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Assistant Manager - Taxation</h1>
+      <section>
+        <h2>About the job</h2>
+        <p>Requirements and skills:</p>
+        <p>Proven work experience as a Tax Accountant or Tax Analyst.</p>
+        <p>3 years of experience in direct and indirect taxation.</p>
+        <p>Strong Excel, reconciliation, and statutory compliance skills.</p>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
+const backOfficeDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Rupeek hiring Back Office Executive in Bengaluru, Karnataka, India | LinkedIn</title>
+    <meta
+      name="description"
+      content="Coordinate customer documentation, maintain audit records, and support branch operations."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Back Office Executive</h1>
+      <section>
+        <h2>Job Description</h2>
+        <p>Coordinate customer documentation and maintain branch audit records.</p>
+        <p>Support gold loan disbursal operations, reconcile case queues, and work with sales and credit teams.</p>
+        <p>Ensure accurate status updates, follow-up tracking, and daily operational reporting.</p>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const loadRupeekModule = async () => {
   try {
     return await import('../../scraper/rupeek/script.js')
@@ -133,59 +182,39 @@ test('Rupeek run validates the official careers page before returning the verifi
   const scraper = createRupeekScraper({
     now: () => FIXED_SCRAPED_AT,
   })
+  const requestedUrls = []
 
   const jobs = await scraper.run({
-    fetchText: async () => verifiedCareersHtml,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === 'https://rupeek.com/about/careers') return verifiedCareersHtml
+      if (url === 'https://www.linkedin.com/jobs/view/assistant-manager-taxation-at-rupeek-4440699084') {
+        return assistantManagerDetailHtml
+      }
+      if (url === 'https://www.linkedin.com/jobs/view/back-office-executive-at-rupeek-4437967359') {
+        return backOfficeDetailHtml
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
   })
 
-  assert.deepEqual(jobs, [
-    {
-      title: 'Assistant Manager - Taxation',
-      company: 'Rupeek',
-      department: null,
-      location: 'Bengaluru, Karnataka, India',
-      city: 'Bengaluru',
-      country: 'India',
-      jobId: '4440699084',
-      requisitionId: null,
-      sourceUrl: 'https://www.linkedin.com/jobs/view/assistant-manager-taxation-at-rupeek-4440699084',
-      applyUrl: 'https://www.linkedin.com/jobs/view/assistant-manager-taxation-at-rupeek-4440699084',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '13 hours ago',
-      closingDate: null,
-      jobDescription: null,
-      source: 'rupeek',
-      link: 'https://www.linkedin.com/jobs/view/assistant-manager-taxation-at-rupeek-4440699084',
-      scrapedAt: FIXED_SCRAPED_AT,
-    },
-    {
-      title: 'Back Office Executive',
-      company: 'Rupeek',
-      department: null,
-      location: 'Greater Bengaluru Area',
-      city: 'Bengaluru',
-      country: 'India',
-      jobId: '4437967359',
-      requisitionId: null,
-      sourceUrl: 'https://www.linkedin.com/jobs/view/back-office-executive-at-rupeek-4437967359',
-      applyUrl: 'https://www.linkedin.com/jobs/view/back-office-executive-at-rupeek-4437967359',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '6 days ago',
-      closingDate: null,
-      jobDescription: null,
-      source: 'rupeek',
-      link: 'https://www.linkedin.com/jobs/view/back-office-executive-at-rupeek-4437967359',
-      scrapedAt: FIXED_SCRAPED_AT,
-    },
+  assert.deepEqual(requestedUrls, [
+    'https://rupeek.com/about/careers',
+    'https://www.linkedin.com/jobs/view/assistant-manager-taxation-at-rupeek-4440699084',
+    'https://www.linkedin.com/jobs/view/back-office-executive-at-rupeek-4437967359',
   ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].experienceRequired, '3 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription || '', /Tax Accountant/i)
+  assert.equal(jobs[0].source, 'rupeek')
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[1].publicExperienceChecked, true)
+  assert.match(jobs[1].jobDescription || '', /branch audit records/i)
+  assert.equal(jobs[1].source, 'rupeek')
+  assert.equal(jobs[1].scrapedAt, FIXED_SCRAPED_AT)
 })
 
 test('Rupeek fails closed when the verified first-party careers page drifts', async () => {

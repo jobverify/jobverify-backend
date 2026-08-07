@@ -57,6 +57,12 @@ const toAbsoluteUrl = (value) => {
   }
 }
 
+const extractInlineLabels = (html = '') => [...String(html ?? '').matchAll(
+  /<(?:span|p|div|li|strong)[^>]*>([\s\S]*?)<\/(?:span|p|div|li|strong)>/gi,
+)]
+  .map((match) => normalizeWhitespace(match[1]))
+  .filter(Boolean)
+
 const isFirstPartyRoleUrl = (value) => {
   try {
     const url = new URL(String(value ?? ''))
@@ -79,10 +85,11 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 
   return /<title[^>]*>\s*Careers\s*\|\s*Railway\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Redefine the future of infrastructure')
-    && normalized.includes('Senior DevRel Engineer - Product')
-    && normalized.includes('Senior DevRel Engineer - Growth')
-    && normalized.includes('Senior Full-Stack Engineer - Product')
-    && normalized.includes('Remote')
+    && normalized.includes('See open positions')
+    && normalized.includes('Senior Infra Engineer: Baremetal Orchestration')
+    && normalized.includes('Senior Infra Engineer: Datacenters')
+    && normalized.includes('Senior Product Engineer: Scalability')
+    && normalized.includes('Anywhere')
     && /href=["']\/careers\/[^"'#?]+["']/i.test(rawHtml)
 }
 
@@ -92,11 +99,14 @@ export const extractRoleSummaries = (html = '') => {
 
   for (const match of page.matchAll(/<a[^>]+href=["']([^"'#?]*\/careers\/[^"'#?]+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const url = toAbsoluteUrl(match[1])
-    const title = normalizeWhitespace(match[2])
+    const labels = extractInlineLabels(match[2])
+    const title = labels[0] || normalizeWhitespace(match[2])
     if (!url || !title || !isFirstPartyRoleUrl(url)) continue
 
     const afterLinkHtml = page.slice(match.index ?? 0, Math.min(page.length, (match.index ?? 0) + 400))
-    const location = extractNextLocationLabel(afterLinkHtml)
+    const location = labels.length > 1
+      ? labels.at(-1)
+      : extractNextLocationLabel(afterLinkHtml)
     roles.push({ title, location, url })
   }
 

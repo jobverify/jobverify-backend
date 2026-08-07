@@ -1,0 +1,82 @@
+[
+  {
+    "title": "Accounting Assistance",
+    "company": "Ashiana Group",
+    "department": "Retails",
+    "location": "Patna, Bihar, India",
+    "city": "Patna",
+    "country": "India",
+    "jobId": "ashianagroup-accounting-assistance",
+    "requisitionId": "ashianagroup-accounting-assistance",
+    "sourceUrl": "https://www.ashianagroup.com/career.html",
+    "applyUrl": "mailto:admin@ashianagroup.com",
+    "employmentType": "Full-time",
+    "experienceRequired": "20 - 28 Years",
+    "minimumQualification": "I.Com / B.Com. with proficiency in computer work.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Candidate must have good knowledge of Tally / ERP.",
+      "Managing & Overseeing the daily operations of the accounting Dept.",
+      "Manage Month and end year process, Accounts payable/receivable, cash receipts, general ledger and expenditure variance analysis.",
+      "Coordinate and complete annual audits.",
+      "Establish and maintain fiscal files and records to document transactions.",
+      "I.Com / B.Com. with proficiency in computer work."
+    ],
+    "postingDate": "2026-08-01T14:24:42.193Z",
+    "closingDate": null,
+    "jobDescription": "Candidate must have good knowledge of Tally / ERP. Managing & Overseeing the daily operations of the accounting Dept. Manage Month and end year process, Accounts payable/receivable, cash receipts, general ledger and expenditure variance analysis. Coordinate and complete annual audits. Establish and maintain fiscal files and records to document transactions. I.Com / B.Com. with proficiency in computer work.",
+    "remoteStatus": "On-site",
+    "source": "ashianagroup",
+    "link": "mailto:admin@ashianagroup.com",
+    "scrapedAt": "2026-08-01T14:24:42.193Z",
+    "companyCareerPage": "https://www.ashianagroup.com/career.html",
+    "companyDomain": "ashianagroup.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Accounting Assistance",
+    "normalizedTitle": "Accounting Assistance",
+    "jobCategory": "Accounting Assistance",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "salary": null,
+    "postedAt": "2026-08-01T14:24:42.193Z",
+    "scrapedTimestamp": "2026-08-01T14:24:42.193Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "12-plus",
+    "experienceProfile": {
+      "rawText": "20 - 28 Years I.Com / B.Com. with proficiency in computer work.",
+      "minimumYears": 20,
+      "maximumYears": 28,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "20 - 28 Years",
+      "experienceBucket": "12-plus"
+    },
+    "experienceYears": [
+      15
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:36:13.321Z",
+    "description": "Candidate must have good knowledge of Tally / ERP. Managing & Overseeing the daily operations of the accounting Dept. Manage Month and end year process, Accounts payable/receivable, cash receipts, general ledger and expenditure variance analysis. Coordinate and complete annual audits. Establish and maintain fiscal files and records to document transactions. I.Com / B.Com. with proficiency in computer work.",
+    "publicExperienceChecked": false
+  }
+]

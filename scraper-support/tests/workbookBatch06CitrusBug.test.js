@@ -71,6 +71,8 @@ const VERIFIED_CAREERS_HTML = `
       <p>Discover our latest job openings that match your skills and ambitions.</p>
       <p>Email jobs@citrusbug.co</p>
       <p>Phone +91 8128442240</p>
+      <a href="https://citrusbug.com/career/page/2/">Older posts</a>
+      <a href="https://citrusbug.com/career/feed/">Feed</a>
       <h2 id="apply-for-job">Apply for Job</h2>
       <label>Position Applying For</label>
       <select>
@@ -81,6 +83,9 @@ const VERIFIED_CAREERS_HTML = `
       <label>Upload Resume</label>
       <label>Willing to relocate to Ahmedabad ?</label>
     </main>
+    <script>
+      var href=document.location.href;if(!href.match(/[?&]nowprocket/)){if(href.indexOf("?")==-1){if(href.indexOf("#")==-1){document.location.href=href+"?nowprocket=1"}else{document.location.href=href.replace("#","?nowprocket=1#")}}else{if(href.indexOf("#")==-1){document.location.href=href+"&nowprocket=1"}else{document.location.href=href.replace("#","&nowprocket=1#")}}}
+    </script>
   </body>
 </html>
 `
@@ -91,13 +96,13 @@ test('CitrusBug validates the verified first-party careers shell and extracts th
 
   assert.equal(citrusbug.SOURCE, 'citrusbug')
   assert.equal(citrusbug.COMPANY, 'CitrusBug')
-  assert.equal(citrusbug.VERIFIED_ON, '2026-07-25')
+  assert.equal(citrusbug.VERIFIED_ON, '2026-08-01')
   assert.equal(citrusbug.CAREERS_URL, 'https://citrusbug.com/career/')
   assert.equal(
     citrusbug.DISPOSITION,
     'verified-first-party-careers-page-plus-public-same-page-application-form',
   )
-  assert.match(citrusbug.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(citrusbug.VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/)
   assert.match(citrusbug.VERIFIED_SURFACE_SUMMARY, /https:\/\/citrusbug\.com\/career\//i)
   assert.match(citrusbug.VERIFIED_SURFACE_SUMMARY, /Digital Marketing \(Sr level\)/i)
   assert.match(citrusbug.VERIFIED_SURFACE_SUMMARY, /jobs@citrusbug\.co/i)
@@ -120,7 +125,7 @@ test('CitrusBug run returns the verified public Ahmedabad roles from the same-pa
       assert.equal(url, citrusbug.CAREERS_URL)
       return VERIFIED_CAREERS_HTML
     },
-    now: () => '2026-07-25T00:00:00.000Z',
+    now: () => '2026-08-01T00:00:00.000Z',
   })
 
   assert.equal(jobs.length, 3)
@@ -153,7 +158,7 @@ test('CitrusBug run returns the verified public Ahmedabad roles from the same-pa
     jobDescription: 'We are looking for a motivated and creative Digital Marketing to manage our social media presence and enhance online reputation management (ORM).',
     source: 'citrusbug',
     link: 'https://citrusbug.com/career/',
-    scrapedAt: '2026-07-25T00:00:00.000Z',
+    scrapedAt: '2026-08-01T00:00:00.000Z',
   })
 })
 

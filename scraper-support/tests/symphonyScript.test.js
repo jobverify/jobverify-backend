@@ -4,11 +4,13 @@ import test from 'node:test'
 const OFFICIAL_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Current Openings - Grow Your Career with Extraordinary Symphony Team</title>
+  </head>
   <body>
     <main>
       <h1>Current Openings</h1>
       <p>Grow your career with our extraordinary Symphony team. Search for roles and opportunities that better suit your career path.</p>
-      <p>Write to us with your resume at careers@symphonylimited.com and we'll get in touch.</p>
       <p>There are no current openings. Please check this space later.</p>
     </main>
   </body>
@@ -45,7 +47,7 @@ test('Symphony sentinel helpers stay pinned to the verified first-party no-openi
   assert.equal(symphony.COMPANY, 'Symphony')
   assert.equal(symphony.OFFICIAL_BRAND_NAME, 'Symphony Limited')
   assert.equal(symphony.CAREERS_PAGE_URL, 'https://symphonylimited.com/careers/current-openings/')
-  assert.equal(symphony.VERIFIED_ON, '2026-07-17')
+  assert.equal(symphony.VERIFIED_ON, '2026-08-05')
   assert.match(symphony.VERIFIED_SURFACE_SUMMARY, /no jobs/i)
   assert.equal(symphony.hasOfficialCareersSignal(OFFICIAL_CAREERS_HTML), true)
   assert.equal(symphony.pageStillHasNoCurrentOpenings(OFFICIAL_CAREERS_HTML), true)

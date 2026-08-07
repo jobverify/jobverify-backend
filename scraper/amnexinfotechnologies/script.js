@@ -196,7 +196,7 @@ export const hasOfficialProfessionalOpportunitiesSignal = (html) => {
     && normalized.includes('Find Jobs')
     && normalized.includes('Previous')
     && normalized.includes('Next')
-    && page.includes(VERIFIED_JOB_DETAIL_URL)
+    && /href=["']https:\/\/amnex\.com\/jobs\/[^"']+["']/i.test(page)
 }
 
 export const buildTaxonomyMap = (terms = []) =>

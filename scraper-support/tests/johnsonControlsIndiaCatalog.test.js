@@ -44,10 +44,10 @@ test('Johnson Controls India local catalog captures the verified first-party sea
   )
   assert.equal(
     provider.algoliaSearchUrl,
-    'https://um59dwrpa1-1.algolianet.com/1/indexes/*/queries',
+    'https://um59dwrpa1-dsn.algolia.net/1/indexes/*/queries',
   )
   assert.equal(provider.algoliaApplicationId, 'UM59DWRPA1')
-  assert.equal(provider.algoliaApiKey, '33719eb8d9f28725f375583b7e78dbab')
+  assert.equal(provider.algoliaApiKey, '28f2dc2a092d52003624307b16ed44a5')
   assert.equal(provider.algoliaIndexName, 'production_JCI_jobs')
   assert.equal(provider.atsPlatform, 'algolia')
   assert.equal(provider.countryFilter, 'India')
@@ -59,13 +59,14 @@ test('Johnson Controls India local catalog captures the verified first-party sea
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'johnsoncontrols.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.dryRunFile, /johnsoncontrolsindia[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.johnsoncontrols\.com\/job-search/i)
   assert.match(provider.verifiedSurfaceSummary, /UM59DWRPA1/i)
   assert.match(provider.verifiedSurfaceSummary, /production_JCI_jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Technical Lead II/i)
-  assert.match(provider.verifiedSurfaceSummary, /HR ServiceNow Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /28f2dc2a092d52003624307b16ed44a5/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sr\. Project Engineer/i)
   assert.equal(provider.modulePath, johnsonControlsIndiaModulePath)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Johnson Controls India'), false)
 

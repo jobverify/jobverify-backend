@@ -31,7 +31,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('FreshMenu local catalog captures the verified no-public-jobs first-party surface', async () => {
+test('FreshMenu local catalog captures the verified no-public-jobs apex-domain surface', async () => {
   const { FRESHMENU_CATALOG } = await loadCatalogModule()
   const freshMenu = await loadScraperModule()
   const provider = buildCatalogReadyProvider(FRESHMENU_CATALOG)
@@ -39,12 +39,12 @@ test('FreshMenu local catalog captures the verified no-public-jobs first-party s
   assert.equal(provider.source, 'freshmenu')
   assert.equal(provider.companyName, 'FreshMenu')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://www.freshmenu.com/')
-  assert.equal(provider.aboutPageUrl, 'https://www.freshmenu.com/about')
+  assert.equal(provider.homepageUrl, 'https://freshmenu.com/')
+  assert.equal(provider.aboutPageUrl, 'https://freshmenu.com/about')
   assert.equal(provider.checkedMissingRouteUrls.length, 2)
   assert.deepEqual(provider.checkedMissingRouteUrls, [
-    'https://www.freshmenu.com/careers',
-    'https://www.freshmenu.com/jobs',
+    'https://freshmenu.com/careers',
+    'https://freshmenu.com/jobs',
   ])
   assert.equal(provider.companyDomain, 'freshmenu.com')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
@@ -52,17 +52,16 @@ test('FreshMenu local catalog captures the verified no-public-jobs first-party s
   assert.equal(provider.paginationStrategy, 'verified-homepage-plus-about-page-plus-missing-career-routes')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage-no-careers-link+verified-about-page-no-careers-link+verified-missing-career-routes-return-empty',
+    'verified-apex-homepage-no-public-jobs+verified-generic-app-shell-routes-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.freshmenu\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.freshmenu\.com\/about/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.freshmenu\.com\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.freshmenu\.com\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /order@freshmenu\.com/i)
-  assert.match(provider.verifiedSurfaceSummary, /grievance@freshmenu\.com/i)
+  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/freshmenu\.com\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/freshmenu\.com\/about/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/freshmenu\.com\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/freshmenu\.com\/jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /generic consumer app shell/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /freshmenu[\\/]jobs\.json$/i)

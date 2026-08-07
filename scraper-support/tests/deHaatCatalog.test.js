@@ -60,7 +60,7 @@ test('DeHaat local catalog captures the verified first-party handoff to the publ
   )
   assert.equal(DEHAAT_CATALOG.parser, 'custom-script')
   assert.equal(DEHAAT_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DEHAAT_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(DEHAAT_CATALOG.verifiedOn, '2026-08-01')
   assert.equal(DEHAAT_CATALOG.dryRunFile, 'dehaat/jobs.json')
   assert.equal(DEHAAT_CATALOG.modulePath, deHaatModulePath)
   assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /https:\/\/agrevolution\.in\//i)
@@ -71,6 +71,8 @@ test('DeHaat local catalog captures the verified first-party handoff to the publ
     DEHAAT_CATALOG.verifiedSurfaceSummary,
     /https:\/\/apply\.workable\.com\/api\/v1\/widget\/accounts\/agrevolution/i,
   )
+  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
+  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /Next\.js shell/i)
   assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /0 current openings/i)
   assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /Workable/i)
 

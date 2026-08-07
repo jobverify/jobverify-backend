@@ -59,6 +59,7 @@ const currentCareersHtml = `
             <div class="open-roles_details">
               <div class="w-richtext">
                 <p>Role overview for propellant systems.</p>
+                <p>Experience details will be shared during the technical screening.</p>
               </div>
             </div>
           </div>
@@ -70,6 +71,7 @@ const currentCareersHtml = `
             <div class="open-roles_details">
               <div class="w-richtext">
                 <p>Role overview for embedded systems.</p>
+                <p>Experience: 4 - 7 Years of relevant embedded firmware experience.</p>
               </div>
             </div>
           </div>
@@ -110,13 +112,16 @@ test('Manastu Space extracts only actual open roles from the current careers lay
   const manastu = await loadManastuSpaceModule()
   const jobs = manastu.extractPublicJobs(currentCareersHtml)
 
-  assert.deepEqual(
-    jobs.map((job) => job.title),
-    [
-      'Embedded Firmware Developer',
-      'Propellant Research Chemist/ Engineer',
-    ],
-  )
+  assert.deepEqual(jobs.map((job) => job.title), [
+    'Embedded Firmware Developer',
+    'Propellant Research Chemist/ Engineer',
+  ])
+  assert.equal(jobs[0].experienceRequired, '4 years')
+  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.match(jobs[0].jobDescription || '', /4 - 7 Years of relevant embedded firmware experience/i)
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[1].publicExperienceChecked, true)
+  assert.match(jobs[1].jobDescription || '', /technical screening/i)
 })
 
 test('Manastu Space provider is registered in the scraper catalog', () => {

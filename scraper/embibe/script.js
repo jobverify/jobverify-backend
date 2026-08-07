@@ -1,9 +1,13 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createDarwinboxScraper } from '../darwinbox/script.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+
 import { EMBIBE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const config = loadConfig(currentDir)
 
 export const PROVIDER_METADATA = EMBIBE_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -18,12 +22,11 @@ export const JOIN_US_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const JOIN_US_API_URL = PROVIDER_METADATA.joinUsApiUrl
 export const SITEMAP_INDEX_URL = PROVIDER_METADATA.sitemapIndexUrl
 export const PAGE_SITEMAP_URL = PROVIDER_METADATA.pageSitemapUrl
-export const DARWINBOX_HANDOFF_URL = PROVIDER_METADATA.darwinboxHandoffUrl
-export const DARWINBOX_EMPTY_ROUTE_URLS = [
-  DARWINBOX_HANDOFF_URL,
-  `${DARWINBOX_HANDOFF_URL}/jobs`,
-  `${DARWINBOX_HANDOFF_URL}/allJobs`,
-]
+export const DARWINBOX_HANDOFF_URL =
+  PROVIDER_METADATA.officialCareersHandoffUrl || PROVIDER_METADATA.darwinboxHandoffUrl
+export const DARWINBOX_ORIGIN = PROVIDER_METADATA.darwinboxOrigin
+export const DARWINBOX_COMPANY_ID = PROVIDER_METADATA.darwinboxCompanyId
+export const PUBLIC_ALL_JOBS_URL = PROVIDER_METADATA.publicAllJobsUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -42,17 +45,19 @@ const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /\bdata-job-id\b/i,
 ]
 
-const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-  .replace(/<[^>]+>/g, ' ')
+const normalizeTextForMatching = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
   .replace(/&amp;/gi, '&')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
-  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;|’|â€™/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;|“|”/gi, '"')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const normalizeWhitespace = (value) => normalizeTextForMatching(String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' '))
 
 const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
@@ -91,6 +96,13 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
+const createConfiguredDarwinboxScraper = () => createDarwinboxScraper({
+  companyName: COMPANY,
+  source: SOURCE,
+  companyId: DARWINBOX_COMPANY_ID,
+  origin: DARWINBOX_ORIGIN,
+})
+
 export const hasPublicJobsSignal = (html = '') =>
   PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
@@ -121,12 +133,10 @@ export const hasOfficialContactPageSignal = (html = '') => {
   const normalized = normalizeWhitespace(rawHtml)
 
   return extractTitle(rawHtml) === 'Contact Us - EMBIBE - The most powerful AI-powered learning platform'
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.embibe\.com\/in-en\/contactus\/["']/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https?:\/\/www\.embibe\.com\/in-en\/contactus\/["']/i.test(rawHtml)
     && normalized.includes("We might be reaching for the stars, but we'll always be right here for you.")
     && /mailto:support@embibe\.com/i.test(rawHtml)
     && normalized.includes('18002572961 (Toll Free)')
-    && normalized.includes('Diamond District, EMBIBE (Indiavidual Learning Limited)')
-    && /href=["']https:\/\/www\.embibe\.com\/in-en\/joinus\/["']/i.test(rawHtml)
     && !hasPublicJobsSignal(rawHtml)
 }
 
@@ -137,18 +147,20 @@ export const extractDarwinboxHandoffUrls = (html = '') => {
 
 export const hasJoinUsPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const normalizedHtml = normalizeTextForMatching(rawHtml)
+  const normalizedText = normalizeWhitespace(rawHtml)
   const handoffUrls = extractDarwinboxHandoffUrls(rawHtml)
+  const hasStructuredInventorySignal =
+    /"@type"\s*:\s*"JobPosting"|candidateapi\/job\/alljobs|candidatev2\/[^"'\\s<]+\/careers\/allJobs|\/jobDetails\/|\bdata-job-id\b/i
+      .test(rawHtml)
 
   return extractTitle(rawHtml) === 'Join Us - EMBIBE - The most powerful AI-powered learning platform'
     && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex,\s*nofollow["']/i.test(rawHtml)
-    && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/www\.embibe\.com\/in-en\/joinus\/["']/i.test(rawHtml)
-    && normalized.includes('EMBIBE is the world’s first edtech company that truly delivers learning and life outcomes.')
-    && normalized.includes('If your heart beats for education and you want to be part of a revolution')
+    && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/www\.embibe\.com\/in-en\/joinus\/?["']/i.test(rawHtml)
+    && normalizedText.includes('If your heart beats for education and you want to be part of a revolution')
     && handoffUrls.length === 1
     && handoffUrls[0] === DARWINBOX_HANDOFF_URL
-    && /href=["']https:\/\/www\.embibe\.com\/in-en\/joinus\/discovery-brief\/["']/i.test(rawHtml)
-    && !hasPublicJobsSignal(rawHtml)
+    && !hasStructuredInventorySignal
 }
 
 export const hasJoinUsApiSignal = (payload = {}) => {
@@ -158,7 +170,7 @@ export const hasJoinUsApiSignal = (payload = {}) => {
   return payload?.slug === 'joinus'
     && payload?.link === JOIN_US_PAGE_URL
     && payload?.template === 'template-joinus.php'
-    && normalizeWhitespace(content).includes('If your heart beats for education and you want to be part of a revolution')
+    && normalizeTextForMatching(content).includes('If your heart beats for education and you want to be part of a revolution')
     && /noindex,\s*nofollow/i.test(yoastHead)
 }
 
@@ -184,20 +196,17 @@ export const hasExpectedPageSitemapSignal = (pageSitemapXml = '') => {
     && extractCareerLikeUrlsFromPageSitemap(rawXml).length === 0
 }
 
-export const hasEmptyDarwinboxShellSignal = (html = '') => {
-  const rawHtml = String(html ?? '')
-  const bodyMatch = rawHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  const normalizedBody = normalizeWhitespace(bodyMatch?.[1])
-
-  return extractTitle(rawHtml) === 'Indiavidual Learning Limited (Embibe)'
-    && /<meta[^>]+property=["']og:title["'][^>]+content=["']Indiavidual Learning Limited \(Embibe\)\s*["']/i.test(rawHtml)
-    && /darwinbox-data-prod-mum\/INSTANCE4_609aaf5abf6f4_222\/logo\//i.test(rawHtml)
-    && normalizedBody === 'Indiavidual Learning Limited (Embibe) -'
-    && !hasPublicJobsSignal(rawHtml)
-}
-
-export const createEmbibeScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson } = {}) {
+export const createEmbibeScraper = ({
+  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  now = () => new Date().toISOString(),
+  darwinboxScraper = createConfiguredDarwinboxScraper(),
+} = {}) => ({
+  async run({
+    maxPages = config.maxPages,
+    fetchPage = defaultFetchPage,
+    fetchJson = defaultFetchJson,
+    fetchListingPage,
+  } = {}) {
     const rootPage = await fetchPage(ROOT_URL)
 
     if (rootPage.status !== 200 || !hasRootSiteShellSignal(rootPage.html)) {
@@ -206,7 +215,7 @@ export const createEmbibeScraper = () => ({
 
     const rootCareersPage = await fetchPage(ROOT_CAREERS_URL)
 
-    if (rootCareersPage.status !== 200 || !hasRootSiteShellSignal(rootCareersPage.html)) {
+    if (![200, 404].includes(rootCareersPage.status) || !hasRootSiteShellSignal(rootCareersPage.html)) {
       throw new Error('Embibe verified root careers route no longer matches the known first-party surface')
     }
 
@@ -246,15 +255,17 @@ export const createEmbibeScraper = () => ({
       throw new Error('Embibe verified page sitemap career surface changed')
     }
 
-    for (const routeUrl of DARWINBOX_EMPTY_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+    const jobs = await darwinboxScraper.run({
+      maxPages,
+      maxJobs,
+      fetchListingPage,
+    })
+    const scrapedAt = now()
 
-      if (routePage.status !== 200 || !hasEmptyDarwinboxShellSignal(routePage.html)) {
-        throw new Error(`Embibe verified Darwinbox shell changed: ${routePage.url || routeUrl}`)
-      }
-    }
-
-    return []
+    return jobs.map((job) => ({
+      ...job,
+      scrapedAt,
+    }))
   },
 })
 

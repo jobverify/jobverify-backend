@@ -32,9 +32,11 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 const SIGNAL_PATTERNS = [
   /<title>\s*Search our Job Opportunities at Ford Motor Company\s*<\/title>/i,
   /Search our Job Opportunities at Ford Motor Company/i,
+  /search results\./i,
+  /Search Jobs/i,
+  /Job Category/i,
   /Country:\s*India/i,
   /Chennai,\s*India/i,
-  /Vehicle Technical Illustration Engineer/i,
 ]
 
 const normalizeWhitespace = (value) => String(value ?? '')

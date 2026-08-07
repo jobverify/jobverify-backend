@@ -23,8 +23,9 @@ const careersHtml = `
     <link rel="canonical" href="https://fareye.com/about/careers">
   </head>
   <body>
-    <h2>Join Us In Architecting The Future Of Last-Mile Excellence</h2>
-    <p>We’re looking for the dreamers, the thinkers, the doers that want to advance last-mile delivery technology andtheir careers.Explore our open positions.</p>
+    <div>Who is FarEye?</div>
+    <h2>We’re problem-solvers, thinkers, and intrapreneurs.</h2>
+    <p>We’re looking for the dreamers, the thinkers, the doers that want to advance last-mile delivery technology and their careers. Explore our open positions.</p>
     <a class="btn" href="https://fareye.darwinbox.in/ms/candidate/careers" target="_blank">Join us</a>
     <a class="btn -outlined" href="https://fareye.darwinbox.in/ms/candidate/careers" target="_blank">Explore open positions</a>
   </body>

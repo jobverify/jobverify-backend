@@ -10,7 +10,7 @@ const homepageHtml = `
   <body>
     <main>
       <h1>Your new home for collaboration.</h1>
-      <a href="https://careers.flock.com/">Careers</a>
+      <a href="http://careers.flock.com/">Careers</a>
       <a href="https://web.flock.com/">Sign in</a>
     </main>
   </body>
@@ -77,7 +77,7 @@ test('Flock helpers stay pinned to the verified homepage and no-public-jobs care
   assert.equal(flock.SOURCE, 'flock')
   assert.equal(flock.HOMEPAGE_URL, 'https://www.flock.com/')
   assert.equal(flock.CAREERS_URL, 'https://careers.flock.com/')
-  assert.equal(flock.VERIFIED_ON, '2026-07-15')
+  assert.equal(flock.VERIFIED_ON, '2026-08-02')
   assert.match(flock.VERIFIED_SURFACE_SUMMARY, /work@flock\.com/i)
   assert.equal(
     flock.extractHomepageCareersUrl(homepageHtml),

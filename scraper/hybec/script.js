@@ -56,10 +56,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /<title[^>]*>\s*hybec\.co\.in\s*<\/title>/i.test(rawHtml)
     && /\bHybec\b/i.test(normalized)
+    && /\bLaunching Soon\b/i.test(normalized)
     && /\bContact Us\b/i.test(normalized)
     && /Copyright\s+[©&#a-z0-9;\s]+2025\s+Hybec\s*-\s*All Rights Reserved\./i.test(normalized)
     && /GoDaddy/i.test(rawHtml)
-    && /Website Builder/i.test(normalized)
 }
 
 export const hasFirstPartyCareerLikeLink = (html) =>

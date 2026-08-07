@@ -11,9 +11,13 @@ const careersPageHtml = `
   </head>
   <body>
     <h3>Careers</h3>
+    <div>Latest Announcements</div>
+    <div>Documents</div>
     <a href="/job-openings">Job Openings</a>
     <a href="https://jobs.hpcl.co.in/Recruit_New/recruitlogin.jsp" target="_blank">Candidate Login</a>
-    <strong>Interview call letters for shortlisted candidates have been sent to their registered email addresses.</strong>
+    <strong>FRAUD ALERT!</strong>
+    <p>This is to bring to your attention that a fraudulent email is currently circulating among colleges and students.</p>
+    <h4>What's Your Interest</h4>
   </body>
 </html>
 `

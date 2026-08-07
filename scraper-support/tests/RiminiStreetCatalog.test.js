@@ -30,7 +30,7 @@ test('Rimini Street local catalog captures the verified first-party careers hand
   assert.equal(provider.officialCareersPageUrl, 'https://www.riministreet.com/company/careers/')
   assert.equal(
     provider.officialWorkdayBoardUrl,
-    'https://riministreet.wd1.myworkdayjobs.com/en-US/RiminiStreet',
+    'https://riministreet.wd1.myworkdayjobs.com/RiminiStreet',
   )
   assert.equal(provider.companyDomain, 'riministreet.com')
   assert.equal(provider.atsPlatform, 'workday')
@@ -42,12 +42,13 @@ test('Rimini Street local catalog captures the verified first-party careers hand
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /riministreet.workday[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /See open positions/i)
-  assert.match(provider.verifiedSurfaceSummary, /riministreet\.wd1\.myworkdayjobs\.com\/en-US\/RiminiStreet/i)
-  assert.match(provider.verifiedSurfaceSummary, /Workday is currently unavailable/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /riministreet\.wd1\.myworkdayjobs\.com\/RiminiStreet/i)
+  assert.match(provider.verifiedSurfaceSummary, /DevOps Engineer/i)
 })
 
 test('Rimini Street exact backlog row matches directly from local provider metadata', async () => {
@@ -74,7 +75,7 @@ test('Rimini Street hydrated local catalog stays script-runner compatible for la
   assert.equal(provider.companyName, 'Rimini Street')
   assert.equal(provider.companyDomain, 'riministreet.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /riministreet[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /riministreet\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /riministreet.workday[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
 })

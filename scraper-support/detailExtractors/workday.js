@@ -3,6 +3,34 @@ import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+const normalizeExperienceUnit = (value = '') => {
+  const normalized = String(value).toLowerCase()
+  if (/^yrs?$/.test(normalized) || /^years?$/.test(normalized)) return 'years'
+  if (/^months?$/.test(normalized)) return 'months'
+  return normalized
+}
+
+const formatExperienceValue = (value) => {
+  const numericValue = Number.parseFloat(value)
+  if (!Number.isFinite(numericValue)) return null
+  return Number.isInteger(numericValue)
+    ? String(numericValue)
+    : String(numericValue).replace(/(?:\.0+|(\.\d*?)0+)$/, '$1')
+}
+
+const formatExperienceRequirement = (value, unit, { openEnded = false } = {}) => {
+  const normalizedValue = formatExperienceValue(value)
+  if (!normalizedValue) return null
+
+  const normalizedUnit = normalizeExperienceUnit(unit)
+  const singularUnit = normalizedUnit === 'months' ? 'month' : 'year'
+  const pluralUnit = normalizedUnit === 'months' ? 'months' : 'years'
+
+  return `${normalizedValue}${openEnded ? '+' : ''} ${
+    normalizedValue === '1' && !openEnded ? singularUnit : pluralUnit
+  }`
+}
+
 const WORKDAY_JSON_LD_STOP_LABELS = [
   'Basic Qualifications',
   'Minimum Qualifications',
@@ -72,6 +100,11 @@ const extractLabeledSection = (text, labels, stopLabels = []) => {
   return null
 }
 
+const looksLikeRangeTail = (text, matchIndex) => {
+  const prefix = String(text ?? '').slice(Math.max(0, matchIndex - 24), matchIndex)
+  return /(?:\d+(?:\.\d+)?|\bone|\btwo|\bthree|\bfour|\bfive|\bsix|\bseven|\beight|\bnine|\bten|\beleven|\btwelve)\s*(?:-|–|—|~|to|and)\s*$/i.test(prefix)
+}
+
 const extractExperience = (...values) => {
   const combinedText = values
     .filter(Boolean)
@@ -80,6 +113,20 @@ const extractExperience = (...values) => {
     .join(' ')
 
   if (!combinedText) return null
+
+  const workdaySpecificPatterns = [
+    /\b(?:desired|required|preferred|minimum|relevant)\s+experience\b\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(\+|plus)?\s*(months?|years?|yrs?)\b/i,
+    /\b(\d+(?:\.\d+)?)\s*(\+|plus)?\s*(months?|years?|yrs?)\s+of\s+(?:demonstrated|relevant|required|hands[- ]on|professional|working|industry|strategic|management|leadership)?\s*experience\b/i,
+  ]
+
+  for (const pattern of workdaySpecificPatterns) {
+    const match = pattern.exec(combinedText)
+    if (!match) continue
+    if (looksLikeRangeTail(combinedText, match.index)) continue
+
+    const [, value, plusMarker, unit] = match
+    return formatExperienceRequirement(value, unit, { openEnded: Boolean(plusMarker) })
+  }
 
   const { experienceProfile } = extractJobFilterSignals({
     description: combinedText,
@@ -155,18 +202,28 @@ export const extractWorkdayJobDetail = (html = '') => {
     ],
   )
 
+  const requiredSkills = collectSkills(
+    [...minimumItems, ...preferredItems].filter((item) => !/\byears?\b/i.test(item)),
+  )
+  const experienceRequired =
+    [...minimumItems, ...preferredItems].find((item) => /\byears?\b/i.test(item))
+    || extractExperience(minimumQualification, preferredQualification, description, jsonLdDescription)
+  const hasPublicDetailEvidence = Boolean(
+    description
+    || minimumQualification
+    || preferredQualification
+    || requiredSkills.length > 0,
+  )
+
   return {
     jobDescription: description,
     minimumQualification,
     preferredQualification,
-    requiredSkills: collectSkills(
-      [...minimumItems, ...preferredItems].filter((item) => !/\byears?\b/i.test(item)),
-    ),
-    experienceRequired:
-      [...minimumItems, ...preferredItems].find((item) => /\byears?\b/i.test(item))
-      || extractExperience(minimumQualification, preferredQualification, jsonLdDescription),
+    requiredSkills,
+    experienceRequired,
     postingDate,
     department,
     requisitionId,
+    publicExperienceChecked: hasPublicDetailEvidence,
   }
 }

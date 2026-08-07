@@ -76,6 +76,7 @@ test('normalizeJobListing maps Aptiv HawkSearch documents into the shared scrape
     employmentType: null,
     experienceRequired: '2-5 years of relevant experience',
     jobDescription: '<p>Finance Analyst</p><p>Experience:<br />2-5 years of relevant experience</p>',
+    publicExperienceChecked: true,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],

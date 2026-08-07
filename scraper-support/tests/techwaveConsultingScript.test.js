@@ -91,6 +91,63 @@ const filteredIndiaPayload = {
   ],
 }
 
+const detailPageHtmlByUrl = {
+  'https://techwave.wd108.myworkdayjobs.com/TechWave_Careers/job/GDC-Financial-District/Sr-Data-Architect--Databricks-_TW-1275': `
+<!doctype html>
+<html lang="en">
+  <head>
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "JobPosting",
+        "title": "Sr. Data Architect (Databricks)",
+        "datePosted": "2026-07-17",
+        "identifier": { "value": "TW-1275" },
+        "description": "Job Description Design end-to-end Lakehouse architectures using Databricks. Preferred Experience 10-15+ years of IT experience. 5+ years of hands-on Databricks architecture and implementation experience. Qualifications Bachelor's degree in Computer Science."
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
+`,
+  'https://techwave.wd108.myworkdayjobs.com/TechWave_Careers/job/GDC-HiTech/Telecom-ATT--ES050-_': `
+<!doctype html>
+<html lang="en">
+  <head>
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "JobPosting",
+        "title": "Telecom-ATT-(ES050)",
+        "datePosted": "2026-07-16",
+        "identifier": { "value": "Telecom-ATT--ES050" },
+        "description": "Job Description Own telecom application support and release governance. Qualifications Bachelor's degree."
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
+`,
+  'https://techwave.wd108.myworkdayjobs.com/TechWave_Careers/job/GDC-Financial-District/Service-Delivery-Manager---AI-ML-and-Data_TW-1262': `
+<!doctype html>
+<html lang="en">
+  <head>
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "JobPosting",
+        "title": "Service Delivery Manager – AI/ML and Data",
+        "datePosted": "2026-07-14",
+        "identifier": { "value": "TW-1262" },
+        "description": "Job Description Lead AI, data, and analytics service delivery. Preferred Experience 10-15 years of IT experience with 5+ years in Service Delivery or Delivery Management. Qualifications Bachelor's degree in Computer Science."
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
+`,
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/techwaveconsulting/script.js')
@@ -121,7 +178,7 @@ test('Techwave Consulting helpers stay pinned to the verified shell, public Work
   ])
 })
 
-test('Techwave Consulting run validates the shell and returns India jobs from the public Workday jobs API', async () => {
+test('Techwave Consulting run validates the shell and enriches India jobs from public Workday detail pages', async () => {
   const techwave = await loadModule()
   const requestedTexts = []
   const requestedJsonBodies = []
@@ -133,6 +190,7 @@ test('Techwave Consulting run validates the shell and returns India jobs from th
       requestedTexts.push(url)
       if (url === techwave.CAREERS_URL) return careersHtml
       if (url === techwave.WORKDAY_BOARD_URL) return workdayBoardHtml
+      if (detailPageHtmlByUrl[url]) return detailPageHtmlByUrl[url]
       throw new Error(`Unexpected text URL: ${url}`)
     },
     fetchJson: async (url, body) => {
@@ -144,10 +202,14 @@ test('Techwave Consulting run validates the shell and returns India jobs from th
     },
   })
 
-  assert.deepEqual(requestedTexts, [
+  assert.deepEqual(requestedTexts.slice(0, 2), [
     techwave.CAREERS_URL,
     techwave.WORKDAY_BOARD_URL,
   ])
+  assert.deepEqual(
+    requestedTexts.slice(2).sort(),
+    Object.keys(detailPageHtmlByUrl).sort(),
+  )
   assert.deepEqual(requestedJsonBodies, [
     {
       appliedFacets: {},
@@ -171,7 +233,13 @@ test('Techwave Consulting run validates the shell and returns India jobs from th
   assert.equal(jobs[0].atsPlatform, 'workday-jobs-api')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
   assert.equal(jobs[0].jobId, 'TW-1275')
+  assert.equal(jobs[0].experienceRequired, '10-15 years')
+  assert.equal(jobs[0].postingDate, '2026-07-17')
+  assert.match(jobs[0].jobDescription || '', /Lakehouse architectures/i)
   assert.equal(jobs[1].location, '2 Locations, India')
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.match(jobs[2].jobDescription || '', /service delivery/i)
+  assert.equal(jobs[2].experienceRequired, '10-15 years')
 })
 
 test('Techwave Consulting fails closed when the shell, board, or India location facets change', async () => {

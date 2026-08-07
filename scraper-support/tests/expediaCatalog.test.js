@@ -41,11 +41,11 @@ test('Expedia local catalog captures the verified first-party careers homepage, 
   )
   assert.equal(
     EXPEDIA_CATALOG.sampleIndiaJobDetailUrl,
-    'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/',
+    'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
   )
   assert.equal(
     EXPEDIA_CATALOG.sampleIndiaApplyUrl,
-    'https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply?',
+    'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
   )
   assert.equal(EXPEDIA_CATALOG.companyDomain, 'expediagroup.com')
   assert.equal(EXPEDIA_CATALOG.atsPlatform, 'official-company-careers')
@@ -60,13 +60,13 @@ test('Expedia local catalog captures the verified first-party careers homepage, 
   )
   assert.equal(EXPEDIA_CATALOG.parser, 'custom-script')
   assert.equal(EXPEDIA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(EXPEDIA_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(EXPEDIA_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(EXPEDIA_CATALOG.dryRunFile, 'expedia/jobs.json')
   assert.equal(EXPEDIA_CATALOG.modulePath, expediaModulePath)
   assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.expediagroup\.com\/jobs\//i)
   assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /mypage=1/i)
-  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /India - Bangalore/i)
-  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /R-107194/i)
+  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /India - Haryana - Gurgaon/i)
+  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /R-108134/i)
   assert.match(
     EXPEDIA_CATALOG.verifiedSurfaceSummary,
     /https:\/\/expedia\.wd108\.myworkdayjobs\.com/i,

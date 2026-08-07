@@ -43,17 +43,28 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOpenSourceProjectHomepageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
 
-  return /The Most Widely Deployed Open Source Cloud Software in the World/i.test(normalized)
+  return /Open Source Cloud Computing Infrastructure - OpenStack/i.test(normalized)
+    && /The Most Widely Deployed Open Source Cloud Software in the World/i.test(normalized)
     && /OpenStack is developed by the community\. For the community\./i.test(normalized)
-    && /OpenStack is a top-level open infrastructure project supported by the OpenInfra Foundation/i.test(normalized)
+    && (
+      /OpenStack is a top-level open infrastructure project supported by the OpenInfra Foundation/i.test(normalized)
+      || /An OpenInfra Foundation Project/i.test(normalized)
+    )
 }
 
 export const hasCommunityJobsBoardSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
 
-  return /OpenStack Job Board/i.test(normalized)
+  return (
+    /OpenStack Job Board/i.test(normalized)
     && /OpenStack-related jobs board/i.test(normalized)
     && /Check the latest job postings/i.test(normalized)
+  ) || (
+    /GitJobs/i.test(normalized)
+    && /Discover Open Source job opportunities/i.test(normalized)
+    && /Jobs from foundation members/i.test(normalized)
+    && /\bOPENINFRA\b/i.test(normalized)
+  )
 }
 
 export const createOpenStackScraper = () => ({

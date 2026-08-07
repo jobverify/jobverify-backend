@@ -88,3 +88,47 @@ test('Twimbit fails closed when the careers page has no same-origin role detail 
 
   assert.deepEqual(jobs, [])
 })
+
+test('Twimbit falls back to browser-backed HTML when direct fetches are blocked', async () => {
+  const browserHits = []
+
+  const jobs = await createTwimbitScraper().run({
+    fetchHtml: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserHtml: async (url) => {
+      browserHits.push(url)
+      return url === CAREERS_URL ? careersHtml : detailPages.get(url)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(browserHits, [
+    CAREERS_URL,
+    'https://twimbit.com/about-careers/cloud-infrastructure-intern-india',
+    'https://twimbit.com/about-careers/senior-consultant-it-pmo',
+    'https://twimbit.com/about-careers/research-strategy-consultant-japan',
+  ])
+})
+
+test('Twimbit does not overlap browser-backed detail fetches on a shared session', async () => {
+  let activeBrowserFetches = 0
+
+  const jobs = await createTwimbitScraper().run({
+    fetchHtml: async () => {
+      throw new Error('HTTP 403 for https://twimbit.com/careers')
+    },
+    fetchBrowserHtml: async (url) => {
+      activeBrowserFetches += 1
+      assert.equal(activeBrowserFetches, 1, `Expected serialized browser fetches for ${url}`)
+
+      await new Promise((resolve) => setTimeout(resolve, 5))
+
+      activeBrowserFetches -= 1
+      return url === CAREERS_URL ? careersHtml : detailPages.get(url)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.equal(activeBrowserFetches, 0)
+})

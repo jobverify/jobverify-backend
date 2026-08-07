@@ -11,8 +11,10 @@ export const PROVIDER_METADATA = DEDALUS_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const JOB_OFFERS_URL = PROVIDER_METADATA.officialJobOffersPageUrl
 export const WORKDAY_BOARD_URL = PROVIDER_METADATA.officialWorkdayBoardUrl
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
+export const VERIFIED_INDIA_JOB_URLS = PROVIDER_METADATA.verifiedIndiaJobUrls
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
@@ -63,6 +65,9 @@ const defaultFetchJson = (url, body) => fetchJsonWithRetry(url, {
 const normalizeComparableUrl = (value) => {
   try {
     const url = new URL(String(value ?? ''))
+    if (url.origin === 'https://dedalus.wd3.myworkdayjobs.com') {
+      url.pathname = url.pathname.replace(/^\/en-US(?=\/|$)/i, '')
+    }
     url.hash = ''
     return url.toString().replace(/\/$/, '')
   } catch {
@@ -139,11 +144,25 @@ const extractAdditionalLocations = (description = '') => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
   return /<title>\s*Careers\s*-\s*Dedalus Global\s*<\/title>/i.test(page)
+    && normalized.includes('CAREERS')
+    && normalized.includes('Join Dedalus and become part of a pioneering industry leader!')
+    && normalized.includes('WHY DEDALUS')
+    && normalized.includes('CAREER PATH')
     && /Our Job Offers/i.test(page)
+}
+
+export const hasOfficialJobOffersPageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Our Job Offers\s*-\s*Dedalus Global\s*<\/title>/i.test(page)
+    && normalized.includes('Our Job Offers')
+    && normalized.includes('Join the Dedalus adventure')
     && /Go to open positions/i.test(page)
-    && /href=["']https?:\/\/[^"']+["']/i.test(page)
+    && /href=["']https?:\/\/dedalus\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?External["']/i.test(page)
 }
 
 export const extractVerifiedWorkdayBoardUrl = (html = '') => {
@@ -158,10 +177,16 @@ export const extractVerifiedWorkdayBoardUrl = (html = '') => {
 
 export const hasOfficialWorkdayBoardSignal = (html = '') => {
   const page = String(html ?? '')
+  const hasLegacyOgTitle = /property=["']og:title["'][^>]*content=["']Careers["']/i.test(page)
+  const hasLiveWorkdayShell =
+    /Dedalus Group is a leading international healthcare software solutions provider/i.test(page)
+    && /tenant:\s*"dedalus"/i.test(page)
+    && /siteId:\s*"External"/i.test(page)
 
   return /rel=["']canonical["'][^>]*href=["']https:\/\/dedalus\.wd3\.myworkdayjobs\.com\/External["']/i.test(page)
-    && /property=["']og:title["'][^>]*content=["']Careers["']/i.test(page)
+    && /property=["']og:title["'][^>]*>/i.test(page)
     && /cx-jobs\.min\.js/i.test(page)
+    && (hasLegacyOgTitle || hasLiveWorkdayShell)
 }
 
 export const buildUnfilteredJobsRequestBody = ({
@@ -180,6 +205,16 @@ export const extractIndiaCountryFacetId = (payload = {}) =>
     ?.values?.find((facet) => facet?.facetParameter === 'locationCountry')
     ?.values?.find((value) => value?.descriptor === 'India')
     ?.id || null
+
+export const hasVerifiedStaleIndiaDetailShell = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<html[^>]+lang=["']en-US["']/i.test(page)
+    && /property=["']og:title["'][^>]*>/i.test(page)
+    && !/property=["']og:title["'][^>]*content=["'][^"']+\S/i.test(page)
+    && !/"addressLocality"\s*:\s*"/i.test(page)
+    && !/"datePosted"\s*:\s*"/i.test(page)
+}
 
 export const buildIndiaJobsRequestBody = ({
   offset = 0,
@@ -256,7 +291,16 @@ export const createDedalusScraper = ({
       throw new Error('Dedalus verified official careers surface changed materially')
     }
 
-    const verifiedBoardUrl = extractVerifiedWorkdayBoardUrl(careersPage.html)
+    const jobOffersPage = await fetchPage(JOB_OFFERS_URL)
+    if (
+      jobOffersPage.status !== 200
+      || !sameUrl(jobOffersPage.url, JOB_OFFERS_URL)
+      || !hasOfficialJobOffersPageSignal(jobOffersPage.html)
+    ) {
+      throw new Error('Dedalus verified job offers handoff changed materially')
+    }
+
+    const verifiedBoardUrl = extractVerifiedWorkdayBoardUrl(jobOffersPage.html)
     if (!sameUrl(verifiedBoardUrl, WORKDAY_BOARD_URL)) {
       throw new Error('Dedalus verified Workday handoff changed materially')
     }
@@ -276,7 +320,18 @@ export const createDedalusScraper = ({
     )
     const countryFacetId = extractIndiaCountryFacetId(unfilteredPayload)
     if (!countryFacetId) {
-      throw new Error('Dedalus verified India country facet changed materially')
+      for (const staleIndiaUrl of VERIFIED_INDIA_JOB_URLS) {
+        const staleIndiaPage = await fetchPage(staleIndiaUrl)
+        if (
+          staleIndiaPage.status !== 200
+          || !hasVerifiedStaleIndiaDetailShell(staleIndiaPage.html)
+          || extractJobFromDetailHtml(staleIndiaPage.html, { detailUrl: staleIndiaUrl }, { scrapedAt: now() })
+        ) {
+          throw new Error('Dedalus verified India-empty Workday sentinel changed materially')
+        }
+      }
+
+      return []
     }
 
     const filteredPayload = await fetchJson(

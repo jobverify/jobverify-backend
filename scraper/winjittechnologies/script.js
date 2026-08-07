@@ -23,7 +23,7 @@ const defaultFetchText = async (url) => {
     redirect: 'follow',
   })
 
-  if (!response.ok) {
+  if (!response.ok && response.status !== 307) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
@@ -51,7 +51,7 @@ export const createWinjitTechnologiesScraper = () => ({
 
 export const run = async (options = {}) => createWinjitTechnologiesScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

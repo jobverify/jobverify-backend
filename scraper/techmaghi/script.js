@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -125,49 +126,56 @@ export const extractPublicJobs = (html) => {
     throw new Error('Techmaghi careers page no longer exposes the verified job cards')
   }
 
-  const jobs = Array.from(
-    jobListHtml.matchAll(
-      /<div class="job-item">[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<p>([\s\S]*?)<\/p>[\s\S]*?<button class="apply-btn"[^>]+onclick="showDetails\(\s*'([^']*)'\s*,\s*\\?`([\s\S]*?)\\?`\s*,\s*'([^']+)'\s*\)"[^>]*>\s*Apply\s*<\/button>/gi,
-    ),
-    ([, rawTitle, rawTeaser, detailTitle, rawDescription, rawApplyUrl]) => {
-      const title = stripTags(rawTitle) || normalizeWhitespace(detailTitle)
-      const teaser = stripTags(rawTeaser)
-      const structuredDescription = String(rawDescription ?? '')
-      const jobDescription = normalizeWhitespace(structuredDescription)
-      const applyUrl = toAbsoluteUrl(rawApplyUrl, CAREERS_URL)
-      const workplaceType = inferWorkplaceType(structuredDescription)
-      const location = inferLocation(structuredDescription)
-      const compensation = matchField(structuredDescription, 'Stipend') || matchField(structuredDescription, 'Compensation') || null
-      const jobSlug = slugify(title)
+  const openJobBlocks = jobListHtml
+    .split(/<div class="job-item">/i)
+    .slice(1)
+    .map((block) => `<div class="job-item">${block}`)
+    .filter((block) => !/class="job-closed"/i.test(block))
 
-      if (!title || !teaser || !jobDescription || !applyUrl || !jobSlug) {
-        throw new Error('Techmaghi careers job cards changed shape')
-      }
+  const jobs = openJobBlocks.map((block) => {
+    const title = stripTags(block.match(/<strong>([\s\S]*?)<\/strong>/i)?.[1] ?? '')
+    const teaser = stripTags(block.match(/<p>([\s\S]*?)<\/p>/i)?.[1] ?? '')
+    const onclickPayload = block.match(/onclick="showDetails\(([\s\S]*?)\)"/i)?.[1] ?? ''
+    const detailMatch = onclickPayload.match(
+      /^\s*'([^']*)'\s*,\s*\\?`([\s\S]*?)\\?`\s*,\s*'([^')"]+)'?\s*$/i,
+    )
+    const detailTitle = normalizeWhitespace(detailMatch?.[1] ?? '')
+    const structuredDescription = String(detailMatch?.[2] ?? '')
+    const jobDescription = normalizeWhitespace(structuredDescription)
+    const applyUrl = toAbsoluteUrl(detailMatch?.[3] ?? '', CAREERS_URL)
+    const workplaceType = inferWorkplaceType(structuredDescription)
+    const location = inferLocation(structuredDescription)
+    const compensation = matchField(structuredDescription, 'Stipend') || matchField(structuredDescription, 'Compensation') || null
+    const canonicalTitle = title || detailTitle
+    const jobSlug = slugify(canonicalTitle)
 
-      return {
-        title,
-        company: COMPANY,
-        department: null,
-        location,
-        city: null,
-        country: 'India',
-        jobId: `${SOURCE}-${jobSlug}`,
-        requisitionId: `${SOURCE}-${jobSlug}`,
-        sourceUrl: CAREERS_URL,
-        applyUrl,
-        employmentType: inferEmploymentType(title, structuredDescription),
-        workplaceType,
-        experienceRequired: null,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        compensation,
-        postingDate: null,
-        closingDate: null,
-        jobDescription,
-      }
-    },
-  )
+    if (!canonicalTitle || !teaser || !jobDescription || !applyUrl || !jobSlug) {
+      throw new Error('Techmaghi careers job cards changed shape')
+    }
+
+    return {
+      title: canonicalTitle,
+      company: COMPANY,
+      department: null,
+      location,
+      city: null,
+      country: 'India',
+      jobId: `${SOURCE}-${jobSlug}`,
+      requisitionId: `${SOURCE}-${jobSlug}`,
+      sourceUrl: CAREERS_URL,
+      applyUrl,
+      employmentType: inferEmploymentType(canonicalTitle, structuredDescription),
+      workplaceType,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      compensation,
+      postingDate: null,
+      closingDate: null,
+      jobDescription,
+    }
+  })
 
   if (jobs.length === 0) {
     throw new Error('Techmaghi careers page no longer exposes any open jobs in the verified card format')
@@ -185,29 +193,71 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createTechmaghiScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Techmaghi homepage no longer matches the verified first-party surface')
+  async run({ fetchText = defaultFetchText, fetchBrowserText, now: overrideNow } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          timeoutMs: 90000,
+          settleTimeMs: 2000,
+        })
+      }
+
+      return browserSession
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: (overrideNow || now)(),
-      companyCareerPage: CAREERS_URL,
-      companyDomain: 'techmaghi.com',
-      atsPlatform: 'official-company-careers',
-    }))
+    const fetchVerifiedText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const homepageHtml = await fetchVerifiedText(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Techmaghi homepage no longer matches the verified first-party surface')
+      }
+
+      const careersHtml = await fetchVerifiedText(CAREERS_URL)
+      const jobs = extractPublicJobs(careersHtml)
+
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt: (overrideNow || now)(),
+        companyCareerPage: CAREERS_URL,
+        companyDomain: 'techmaghi.com',
+        atsPlatform: 'official-company-careers',
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 

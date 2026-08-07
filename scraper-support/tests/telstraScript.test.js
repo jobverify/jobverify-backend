@@ -41,7 +41,7 @@ test('Telstra exposes the verified first-party careers handoff and Workday runne
   assert.equal(telstra.SOURCE, 'telstra')
   assert.equal(telstra.COMPANY_NAME, 'Telstra')
   assert.equal(telstra.OFFICIAL_BRAND_NAME, 'Telstra')
-  assert.equal(telstra.VERIFIED_ON, '2026-07-17')
+  assert.equal(telstra.VERIFIED_ON, '2026-08-01')
   assert.equal(telstra.CAREERS_URL, 'https://www.telstra.com.au/careers')
   assert.equal(telstra.WORKDAY_BASE_URL, 'https://telstra.wd3.myworkdayjobs.com/Telstra_Careers')
   assert.equal(telstra.INDIA_LOCATION_COUNTRY, 'c4f78be1a8f14da0ab49ce1162348a5e')

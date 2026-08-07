@@ -157,6 +157,7 @@ const buildJobRecord = ({
   employmentType = null,
   jobDescription = null,
   jobId = null,
+  publicExperienceChecked = false,
 }) => {
   const normalizedTitle = normalizeWhitespace(title)
   const normalizedLocation = normalizeWhitespace(location)
@@ -183,6 +184,7 @@ const buildJobRecord = ({
     postingDate: null,
     closingDate: null,
     jobDescription: normalizeWhitespace(jobDescription),
+    ...(publicExperienceChecked ? { publicExperienceChecked: true } : {}),
   }
 }
 
@@ -220,6 +222,7 @@ export const extractPublicListingsFromBundle = (bundleText) => [
       employmentType,
       jobDescription,
       jobId,
+      publicExperienceChecked: true,
     })
   })
   .filter(Boolean)

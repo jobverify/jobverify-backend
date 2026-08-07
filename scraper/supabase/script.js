@@ -110,7 +110,7 @@ export const hasOfficialCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return extractTitle(rawHtml) === 'Supabase Careers'
+  return ['Supabase Careers', 'Careers | Supabase'].includes(extractTitle(rawHtml))
     && normalized.includes("We're on a mission to build the best developer platform")
     && normalized.includes('Explore remote opportunities and join our team to help us achieve it.')
     && normalized.includes('Open positions')

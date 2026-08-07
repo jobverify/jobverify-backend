@@ -2,12 +2,12 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'citrusbug'
 export const COMPANY = 'CitrusBug'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://citrusbug.com/career/'
 export const DISPOSITION =
   'verified-first-party-careers-page-plus-public-same-page-application-form'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://citrusbug.com/career/ was the live exact-company CitrusBug careers surface, that it publicly listed Ahmedabad onsite openings for Digital Marketing (Sr level), Executive Assistant (EA) to CEO, and Sales Head - IT Services, and that applicants were handled through the first-party on-page Apply for Job form plus the jobs@citrusbug.co contact channel. This scraper validates that verified same-page public contract and returns the public Ahmedabad roles from the official careers page.'
+  'Verified on Saturday, August 1, 2026 that https://citrusbug.com/career/ was the live exact-company CitrusBug careers surface, that it still publicly listed Ahmedabad onsite openings for Digital Marketing (Sr level), Executive Assistant (EA) to CEO, and Sales Head - IT Services, and that applicants were handled through the first-party on-page Apply for Job form plus the jobs@citrusbug.co contact channel. This scraper validates that verified same-page public contract and returns the public Ahmedabad roles from the official careers page.'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
@@ -196,10 +196,14 @@ export const assertNoUnexpectedPublicJobsSurface = (html = '', careersUrl = CARE
   const linkedUrls = [...String(html).matchAll(
     /(?:href|src|action|data-url)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
   )]
-    .map((match) => match[1] || match[2] || match[3] || '')
+    .map((match) => decodeEntities(match[1] || match[2] || match[3] || '').trim())
+    .filter((value) => value)
+    .filter((value) => !/^(?:javascript|mailto|tel):/i.test(value))
+    .filter((value) => !/document\.location\.href|nowprocket/i.test(value))
+    .filter((value) => /^(?:https?:\/\/|\/\/|\/|#|\?)/i.test(value))
     .map((rawValue) => {
       try {
-        return new URL(decodeEntities(rawValue), careersUrl)
+        return new URL(rawValue, careersUrl)
       } catch {
         return null
       }
@@ -232,6 +236,8 @@ export const assertNoUnexpectedPublicJobsSurface = (html = '', careersUrl = CARE
 
     const pathname = url.pathname.replace(/\/+$/, '') || '/'
     if (pathname === careersPath) return false
+    if (/^\/career\/page\/\d+$/i.test(pathname)) return false
+    if (/^\/career\/feed$/i.test(pathname)) return false
 
     return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
   })

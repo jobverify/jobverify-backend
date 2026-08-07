@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 
 import { INSIGHTSOFTWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -12,8 +12,10 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const WORKDAY_TENANT_HOST = PROVIDER_METADATA.workdayTenantHost
+export const WORKDAY_BOARD_URL = PROVIDER_METADATA.officialWorkdayBoardUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const INDIA_LOCATION_COUNTRY = 'c4f78be1a8f14da0ab49ce1162348a5e'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -46,13 +48,28 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+export const buildScraperOptions = () => ({
+  company: COMPANY,
+  baseUrl: WORKDAY_BOARD_URL,
+  locationCountry: INDIA_LOCATION_COUNTRY,
+  source: SOURCE,
+  scraperDir: currentDir,
 })
 
 const makeAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
@@ -103,13 +120,40 @@ const extractJobId = (detailUrl) => {
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const text = stripTags(html) || ''
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+  const hasLegacyInlineCards =
+    text.includes('India - Bangalore')
+    && text.includes('India - Hyderabad')
+    && page.includes(WORKDAY_TENANT_HOST)
+  const hasCurrentEmptyShell =
+    text.includes('Showing 0 of 0')
+    && text.includes('No job openings available at the moment.')
 
   return text.includes('Current Job Openings')
     && text.includes('Learn more about our high-energy, high-performance global team.')
-    && text.includes('India - Bangalore')
-    && text.includes('India - Hyderabad')
-    && String(html ?? '').includes(WORKDAY_TENANT_HOST)
+    && (hasLegacyInlineCards || hasCurrentEmptyShell)
+}
+
+export const hasOfficialWorkdayBoardSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /rel=["']canonical["'][^>]*href=["']https:\/\/magnitudesoftware\.wd1\.myworkdayjobs\.com\/External["']/i.test(page)
+    && /property=["']og:title["'][^>]*content=["']Careers["']/i.test(page)
+    && /cx-jobs\.min\.js/i.test(page)
+    && /tenant:\s*"magnitudesoftware"/i.test(page)
+    && /siteId:\s*"External"/i.test(page)
+    && /insightsoftware/i.test(page)
+}
+
+const isTransientCareersAccessFailure = (value = {}) => {
+  const status = Number(value?.status ?? value?.cause?.status)
+  if ([403, 429, 500, 502, 503, 504].includes(status)) {
+    return true
+  }
+
+  const text = `${value?.message || ''} ${value?.html || ''}`
+  return /timed out|timeout|request could not be satisfied|gateway timeout/i.test(text)
 }
 
 const extractLocationFromSegment = (segment) => {
@@ -197,22 +241,51 @@ export const extractIndiaJobsFromCareersHtml = (
 
 export const createInsightsoftwareScraper = ({
   now = () => new Date().toISOString(),
+  workdayRunner = runWorkdayScraper,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
+    workdayRunner: workdayRunnerOverride = workdayRunner,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified insightsoftware careers page no longer matches the trusted first-party surface')
+    let careersPage = null
+    try {
+      careersPage = await fetchPage(CAREERS_URL)
+    } catch (error) {
+      if (!isTransientCareersAccessFailure(error)) {
+        throw error
+      }
     }
 
-    return extractIndiaJobsFromCareersHtml(careersHtml, {
-      scrapedAt: now(),
-    }).map((job) => ({
+    if (
+      careersPage
+      && !(
+        careersPage.status === 200
+        && careersPage.url === CAREERS_URL
+        && hasOfficialCareersSignal(careersPage.html)
+      )
+    ) {
+      if (!isTransientCareersAccessFailure(careersPage)) {
+        throw new Error('The verified insightsoftware careers page no longer matches the trusted first-party surface')
+      }
+    }
+
+    const workdayBoardPage = await fetchPage(WORKDAY_BOARD_URL)
+    if (
+      workdayBoardPage?.status !== 200
+      || workdayBoardPage?.url !== WORKDAY_BOARD_URL
+      || !hasOfficialWorkdayBoardSignal(workdayBoardPage.html)
+    ) {
+      throw new Error('The verified insightsoftware public Workday board no longer matches the trusted jobs surface')
+    }
+
+    const jobs = await workdayRunnerOverride(buildScraperOptions())
+
+    return jobs.map((job) => ({
       ...job,
       companyCareerPage: CAREERS_URL,
       companyDomain: PROVIDER_METADATA.companyDomain,
       atsPlatform: PROVIDER_METADATA.atsPlatform,
+      scrapedAt: job.scrapedAt || now(),
     }))
   },
 })

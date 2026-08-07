@@ -7,128 +7,110 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'loyalwingmantechnologies'
 export const COMPANY = 'Loyal Wingman Technologies'
-export const VERIFIED_AT = '2026-07-13'
-export const HOMEPAGE_URL = 'https://loyalwingman.ai/'
-export const WWW_HOMEPAGE_URL = 'https://www.loyalwingman.ai/'
-export const ROBOTS_URL = 'https://loyalwingman.ai/robots.txt'
-export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
-  'https://loyalwingman.ai/careers',
-  'https://loyalwingman.ai/jobs',
-  'https://loyalwingman.ai/join-us',
-  'https://loyalwingman.ai/openings',
-  'https://loyalwingman.ai/current-openings',
-]
+export const LINKEDIN_COMPANY_ID = '96646029'
+export const LINKEDIN_COMPANY_PAGE_URL =
+  'https://www.linkedin.com/company/loyal-wingman-technologies-private-limited/'
+export const LINKEDIN_INDIA_JOBS_URL =
+  `https://www.linkedin.com/jobs/search/?f_C=${LINKEDIN_COMPANY_ID}&geoId=102713980`
 
 const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-const PUBLIC_JOBS_SIGNAL_PATTERNS = [
-  /"@type"\s*:\s*"JobPosting"/i,
-  /\bcurrent openings\b/i,
-  /\bopen positions?\b/i,
-  /\bjob openings?\b/i,
-  /\bcareer opportunities\b/i,
-  /\bjoin our team\b/i,
-  /\bapply now\b/i,
-  /\bwe(?:'|&#8217;|&#x2019;|&rsquo;)?re hiring\b/i,
-  /\bvacanc(?:y|ies)\b/i,
-  /boards\.greenhouse\.io/i,
-  /job-boards\.greenhouse\.io/i,
-  /jobs\.lever\.co/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs/i,
-  /workdayjobs/i,
-  /smartrecruiters/i,
-  /jobvite/i,
-  /breezy\.hr/i,
-]
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-const normalizeWhitespace = (value) =>
-  String(value ?? '')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&apos;|&#39;/gi, "'")
-    .replace(/&rsquo;|&#8217;|&#x2019;/gi, "'")
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/\u00a0/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase()
+const parseLocation = (value) => {
+  const location = normalizeWhitespace(value)
+  const parts = location.split(',').map(normalizeWhitespace).filter(Boolean)
+  const country = parts.at(-1) || null
 
-const defaultFetchText = (url) =>
-  fetchTextWithRetry(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7',
-    },
-    label: SOURCE,
-    timeoutMs: 15000,
-  })
-
-export const hasPublicJobsSignal = (value) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
-
-export const hasVerifiedComingSoonSignal = (html) => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-
-  return /<title>\s*Coming Soon\s*<\/title>/i.test(rawHtml)
-    && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex["']/i.test(rawHtml)
-    && normalized.includes('loyalwingman.ai')
-    && normalized.includes("we're under construction.")
-    && normalized.includes('please check back for an update soon.')
-    && rawHtml.includes('parking-page-32145bd77d42b5ff-min.en-US.css')
-    && rawHtml.includes('assets.squarespace.com')
+  return {
+    location: location || null,
+    city: parts[0] || null,
+    country: country === 'India' ? 'India' : country,
+  }
 }
 
-export const hasVerifiedPrivateSiteSignal = (html) => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-  const hasPrivateMessage =
-    /This site is currently private\.\s*If you(?:'|’|â€™)?re the owner or contributor,\s*(?:<a href="\/config">log in<\/a>|log in)\.?/i.test(rawHtml)
-    || normalized.includes("this site is currently private. if you're the owner or contributor, log in.")
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
-  return /<title>\s*Private Site\s*<\/title>/i.test(rawHtml)
-    && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex["']/i.test(rawHtml)
-    && normalized.includes('private site')
-    && hasPrivateMessage
-    && rawHtml.includes('squarespace-system-page')
+export const pageIndicatesLoyalWingmanCompany = (html) => {
+  const page = String(html ?? '')
+
+  return page.includes(`urn:li:organization:${LINKEDIN_COMPANY_ID}`)
+    && /Loyal Wingman Technologies Private Limited/i.test(page)
 }
+
+export const pageIndicatesLoyalWingmanIndiaJobsSearch = (html) => {
+  const page = String(html ?? '')
+
+  return page.includes(`f_C=${LINKEDIN_COMPANY_ID}`)
+    && /Loyal Wingman Technologies Private Limited/i.test(page)
+    && /public_jobs_f_C/i.test(page)
+}
+
+export const extractIndiaJobListings = (html) => [...String(html ?? '').matchAll(
+  /<div class="base-card[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>(?:[\s\S]*?<time[^>]+datetime="([^"]+)")?/gi,
+)].map((match) => {
+  const [, jobId, rawUrl, rawTitle, rawCompany, rawLocation, postingDate] = match
+  const location = parseLocation(rawLocation)
+  const title = normalizeWhitespace(rawTitle)
+  const company = normalizeWhitespace(rawCompany)
+  const sourceUrl = normalizeWhitespace(rawUrl).replace(/&amp;/g, '&')
+
+  if (!jobId || !title || !sourceUrl || company !== `${COMPANY} Private Limited (Loyalwingtech)` || location.country !== 'India') {
+    return null
+  }
+
+  return {
+    title,
+    company: COMPANY,
+    department: null,
+    ...location,
+    jobId,
+    requisitionId: jobId,
+    sourceUrl,
+    applyUrl: sourceUrl,
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: normalizeWhitespace(postingDate) || null,
+    closingDate: null,
+    jobDescription: null,
+  }
+}).filter(Boolean)
 
 export const createLoyalWingmanTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (hasPublicJobsSignal(homepageHtml)) {
-      throw new Error('Loyal Wingman Technologies homepage now appears to expose public jobs')
-    }
-    if (!hasVerifiedComingSoonSignal(homepageHtml)) {
-      throw new Error('Loyal Wingman Technologies homepage no longer matches the verified placeholder surface')
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
+    if (!pageIndicatesLoyalWingmanCompany(companyHtml)) {
+      throw new Error('Loyal Wingman Technologies LinkedIn company page no longer matches the verified organization')
     }
 
-    const wwwHomepageHtml = await fetchText(WWW_HOMEPAGE_URL)
-    if (hasPublicJobsSignal(wwwHomepageHtml)) {
-      throw new Error('Loyal Wingman Technologies www homepage now appears to expose public jobs')
-    }
-    if (!hasVerifiedComingSoonSignal(wwwHomepageHtml)) {
-      throw new Error('Loyal Wingman Technologies www homepage no longer matches the verified placeholder surface')
+    const jobsHtml = await fetchText(LINKEDIN_INDIA_JOBS_URL)
+    if (!pageIndicatesLoyalWingmanIndiaJobsSearch(jobsHtml)) {
+      throw new Error('Loyal Wingman Technologies LinkedIn India jobs search no longer matches the verified public search')
     }
 
-    const robotsHtml = await fetchText(ROBOTS_URL)
-    if (!hasVerifiedPrivateSiteSignal(robotsHtml)) {
-      throw new Error('Loyal Wingman Technologies robots.txt no longer matches the verified placeholder surface')
-    }
-
-    for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const routeHtml = await fetchText(routeUrl)
-      if (hasPublicJobsSignal(routeHtml) || !hasVerifiedComingSoonSignal(routeHtml)) {
-        throw new Error(`Loyal Wingman Technologies verified no-public-careers route changed: ${routeUrl}`)
-      }
-    }
-
-    return []
+    return extractIndiaJobListings(jobsHtml).map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

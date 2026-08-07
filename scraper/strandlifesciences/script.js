@@ -15,16 +15,18 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNAL_PATTERNS = [
-  /\bstrand\b/i,
+  /\bstrand life sciences\b/i,
   /\bbangalore\b/i,
   /\bcap lab\b/i,
+  /\bprecision medicine\b/i,
 ]
 
 const CAREERS_SIGNAL_PATTERNS = [
-  /\bcareers at strand\b/i,
-  /\bview open roles\b/i,
+  /\bcareers - strand life sciences\b/i,
+  /\bjoin us\b/i,
+  /\bopen roles\b/i,
   /\bresume\b/i,
-  /\bg-recaptcha\b/i,
+  /\b(?:g-)?recaptcha\b/i,
 ]
 
 const PRIVACY_SIGNAL_PATTERNS = [

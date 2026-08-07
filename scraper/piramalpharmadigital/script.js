@@ -1,3 +1,6 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 export const SOURCE = 'piramalpharmadigital'
 export const COMPANY = 'Piramal Pharma Digital'
 export const PUBLIC_SURFACE_URL = 'https://www.piramalpharma.com/'
@@ -6,7 +9,9 @@ export const WORKDAY_BOARD_URL =
   'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS'
 export const DISPOSITION = 'verified-piramal-pharma-workday-handoff-fail-closed'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.piramalpharma.com/ and https://www.piramalpharma.com/careers were the live Piramal Pharma public surfaces reviewed for the exact workbook entity Piramal Pharma Digital, and that the careers page handed applicants to the public Workday board at https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS. Local repo evidence does not safely attribute the broader Piramal Pharma careers inventory to the exact workbook entity Piramal Pharma Digital, so this company-specific scraper remains fail-closed and returns no jobs until an exact-name public openings contract is verified.'
+  'Verified on Tuesday, August 4, 2026 that https://www.piramalpharma.com/ and https://www.piramalpharma.com/careers were the live Piramal Pharma public surfaces reviewed for the exact workbook entity Piramal Pharma Digital, and that the careers page handed applicants to the public Workday board at https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS. Local repo evidence does not safely attribute the broader Piramal Pharma careers inventory to the exact workbook entity Piramal Pharma Digital, so this company-specific scraper remains fail-closed and returns no jobs until an exact-name public openings contract is verified.'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const TRUSTED_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -140,7 +145,6 @@ export const hasVerifiedPublicSurface = (html = '') => {
 
   return /\bpiramal pharma\b/i.test(title || text)
     && /\bpiramal pharma\b/i.test(text)
-    && hasExpectedUrlMetadata(html, PUBLIC_SURFACE_URL)
     && Boolean(findVerifiedCareersHandoff(html, PUBLIC_SURFACE_URL))
 }
 
@@ -164,7 +168,6 @@ export const hasVerifiedCareersSurface = (html = '') => {
 
 export const hasVerifiedWorkdayBoardSignal = (page = {}) => {
   const html = String(page?.html || '')
-  const text = normalizeText(html)
 
   return Number(page?.status) === 200
     && String(page?.url || '') === WORKDAY_BOARD_URL
@@ -172,7 +175,8 @@ export const hasVerifiedWorkdayBoardSignal = (page = {}) => {
     && /\bcareers\b/i.test(html)
     && /\bpiramal pharma limited\b/i.test(html)
     && /\bPIRAMAL_EXTERNAL_CAREERS\b/i.test(html)
-    && /\bIndia\b/i.test(text)
+    && /\bIntroduce yourself to our recruiters\b/i.test(html)
+    && /\bIndia\b/i.test(html)
 }
 
 const assertVerifiedPublicSurface = (html = '') => {
@@ -245,7 +249,7 @@ const assertNoUnexpectedPublicJobsSurface = (
     if (url.origin !== page.origin) return false
 
     const pathname = normalizePathname(url.pathname)
-    if (pathname === pagePath && !url.search && !url.hash) return false
+    if (pathname === pagePath && !url.search) return false
 
     return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
   })
@@ -277,9 +281,6 @@ export const createPiramalPharmaDigitalScraper = () => ({
     const publicSurfacePage = await fetchPage(PUBLIC_SURFACE_URL)
 
     assertVerifiedPublicSurface(publicSurfacePage.html)
-    assertNoUnexpectedPublicJobsSurface(publicSurfacePage.html, PUBLIC_SURFACE_URL, {
-      allowUrl: CAREERS_URL,
-    })
 
     const careersPage = await fetchPage(CAREERS_URL)
 
@@ -297,3 +298,14 @@ export const createPiramalPharmaDigitalScraper = () => ({
 })
 
 export const run = async (options = {}) => createPiramalPharmaDigitalScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const jobs = await run()
+
+  if (process.argv.includes('--dry-run')) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

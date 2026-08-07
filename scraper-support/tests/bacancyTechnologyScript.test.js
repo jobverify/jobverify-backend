@@ -38,6 +38,7 @@ test('Bacancy Technology recognises the verified Cloudflare block response', asy
 
   assert.equal(bacancy.JOBS_PAGE_URL, 'https://www.bacancytechnology.com/jobs/careers-apply.php')
   assert.equal(bacancy.isVerifiedCloudflareBlock({ status: 403, body: blockedHtml }), true)
+  assert.equal(bacancy.isVerifiedCloudflareBlock({ status: 403, html: blockedHtml }), true)
   assert.equal(bacancy.isVerifiedCloudflareBlock({ status: 200, body: blockedHtml }), false)
   assert.equal(bacancy.isVerifiedCloudflareBlock({ status: 403, body: '<html></html>' }), false)
 })

@@ -130,6 +130,9 @@ const mcafeeSearchShellHtml = `
 const betsolBoardHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Careers at BETSOL</title>
+  </head>
   <body>
     <a href="https://www.betsol.com/">Home Page</a>
     <h2>Jobs at Betsol LLC</h2>
@@ -137,25 +140,25 @@ const betsolBoardHtml = `
       <header class="opening-header">
         <ul class="list--dotted title-list">
           <li><h3 class="opening-title title display--inline-block text--default spl-text-h5">Bengaluru, India</h3></li>
-          <li><span class="title">3 jobs</span></li>
+          <li><span class="title">15 jobs</span></li>
         </ul>
       </header>
       <ul class="opening-jobs grid--gutter padding--none js-group-list">
         <li class="opening-job job column wide-7of16 medium-1of2">
-          <a href="https://jobs.smartrecruiters.com/Betsol/744000137153001-telecom-voice-operations-engineer" class="link--block details js-job-ad-link">
-            <h4 class="details-title job-title link--block-target spl-text-h6">Telecom Voice Operations Engineer</h4>
+          <a href="https://jobs.smartrecruiters.com/Betsol/744000140050919-technical-team-leader-devops-devsecops" class="link--block details js-job-ad-link">
+            <h4 class="details-title job-title link--block-target spl-text-h6">Technical Team Leader - DevOps & DevSecOps</h4>
             <p class="details-desc job-desc"><span class="margin--right--s">Mid-Senior Level</span></p>
           </a>
         </li>
         <li class="opening-job job column wide-7of16 medium-1of2">
-          <a href="https://jobs.smartrecruiters.com/Betsol/744000137153002-servicenow-qa-engineer" class="link--block details js-job-ad-link">
-            <h4 class="details-title job-title link--block-target spl-text-h6">ServiceNow QA Engineer</h4>
+          <a href="https://jobs.smartrecruiters.com/Betsol/744000140050909-compliance-lead-grc" class="link--block details js-job-ad-link">
+            <h4 class="details-title job-title link--block-target spl-text-h6">Compliance Lead (GRC)</h4>
             <p class="details-desc job-desc"><span class="margin--right--s">Mid-Senior Level</span></p>
           </a>
         </li>
         <li class="opening-job job column wide-7of16 medium-1of2">
-          <a href="https://jobs.smartrecruiters.com/Betsol/744000137153003-noc-technician" class="link--block details js-job-ad-link">
-            <h4 class="details-title job-title link--block-target spl-text-h6">NOC Technician</h4>
+          <a href="https://jobs.smartrecruiters.com/Betsol/744000139935769-associate-database-administrator" class="link--block details js-job-ad-link">
+            <h4 class="details-title job-title link--block-target spl-text-h6">Associate Database Administrator</h4>
             <p class="details-desc job-desc"><span class="margin--right--s">Associate</span></p>
           </a>
         </li>
@@ -295,9 +298,9 @@ test('Betsol scraper returns India jobs from the verified exact-name SmartRecrui
   assert.deepEqual(
     betsol.extractBoardJobs(betsolBoardHtml).map((job) => job.title),
     [
-      'Telecom Voice Operations Engineer',
-      'ServiceNow QA Engineer',
-      'NOC Technician',
+      'Technical Team Leader - DevOps & DevSecOps',
+      'Compliance Lead (GRC)',
+      'Associate Database Administrator',
       'IT Support Engineer',
     ],
   )
@@ -314,8 +317,8 @@ test('Betsol scraper returns India jobs from the verified exact-name SmartRecrui
   assert.equal(jobs.length, 3)
   assert.deepEqual(
     jobs.map((job) => job.title),
-    ['NOC Technician', 'ServiceNow QA Engineer', 'Telecom Voice Operations Engineer'],
+    ['Associate Database Administrator', 'Compliance Lead (GRC)', 'Technical Team Leader - DevOps & DevSecOps'],
   )
   assert.equal(jobs[0].location, 'Bengaluru, India')
-  assert.equal(jobs[2].jobId, '744000137153001-telecom-voice-operations-engineer')
+  assert.equal(jobs[2].jobId, '744000140050919-technical-team-leader-devops-devsecops')
 })

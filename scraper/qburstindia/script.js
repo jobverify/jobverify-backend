@@ -1,178 +1,384 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { chromium } from 'playwright'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'qburstindia'
 export const COMPANY = 'Qburst India'
 export const OFFICIAL_BRAND = 'QBurst'
-export const CAREERS_URL = 'https://www.qburst.com/'
-export const DISPOSITION = 'verified-exact-name-public-company-surface'
+export const CAREERS_URL = 'https://www.qburst.com/en-in/company/career/'
+export const OPENINGS_URL = 'https://www.qburst.com/en-in/company/career/openings/'
+export const DISPOSITION = 'official-company-careers-empty-openings'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.qburst.com/ was the live exact-name QBurst public company surface reviewed for Qburst India. Local repo evidence does not establish a stable enumerable public jobs contract, so this provider stays fail-closed until QBurst publishes a trustworthy exact-name public openings surface.'
+  'Verified on Tuesday, August 4, 2026 that https://www.qburst.com/en-in/company/career/ was the live QBurst India first-party careers landing page with search controls, while https://www.qburst.com/en-in/company/career/openings/ presented an empty public openings state reading "Open Positions" and "We need people like you. Submit your resume for future opportunities." with a "Submit Resume" action and no visible /job-details/ links.'
 
-const REQUIRED_BRAND_PATTERN = /\bqburst\b/i
-const TITLE_BRAND_PATTERN = /<title[^>]*>[\s\S]*?\bqburst\b[\s\S]*?<\/title>/i
-const CANONICAL_SURFACE_PATTERN =
-  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/www\.qburst\.com\/["'][^>]*>/i
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const LISTING_COPY_PATTERNS = [
-  /\bcurrent openings\b/i,
-  /\bopen positions\b/i,
-  /\bjob openings\b/i,
-  /\bopen roles\b/i,
-  /\bavailable positions\b/i,
-  /\bsearch jobs\b/i,
-  /\bview jobs\b/i,
-  /\bjoin our team\b/i,
-  /\bwe(?:'|&#39;|&apos;|&rsquo;|&#8217;)re hiring\b/i,
-]
+const JOB_BUTTON_SELECTOR = 'button[aria-label="View and Apply"]'
+const DETAIL_URL_PATTERN = /\/job-details\//i
+const LISTING_SECTION_HEADINGS = ['Responsibilities', 'Requirements', 'Apply For']
 
-const TRUSTED_ATS_HOST_PATTERNS = [
-  /boards\.greenhouse\.io/i,
-  /jobs\.lever\.co/i,
-  /jobs\.ashbyhq\.com/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs\.com/i,
-  /smartrecruiters\.com/i,
-  /jobvite\.com/i,
-  /workable\.com/i,
-  /bamboohr\.com/i,
-  /applytojob\.com/i,
-  /recruitee\.com/i,
-  /darwinbox/i,
-  /zohorecruit\.in/i,
-  /teamtailor\.com/i,
-  /keka\.com/i,
-]
+const buildChromiumLaunchArgs = () =>
+  process.env.PUPPETEER_DISABLE_SANDBOX ? ['--no-sandbox'] : []
 
-const SAME_ORIGIN_JOB_PATH_PATTERNS = [
-  /^\/careers?(?:\/|$)/i,
-  /^\/jobs?(?:\/|$)/i,
-  /^\/positions?(?:\/|$)/i,
-  /^\/roles?(?:\/|$)/i,
-  /^\/openings?(?:\/|$)/i,
-  /^\/join-us(?:\/|$)/i,
-  /^\/work-with-us(?:\/|$)/i,
-  /^\/hiring(?:\/|$)/i,
-  /^\/apply(?:\/|$)/i,
-]
+const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
 
-const normalizeText = (value = '') =>
-  String(value)
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
-    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-    .replace(/\s+/g, ' ')
-    .trim()
+const unique = (values) => [...new Set(values.map(clean).filter(Boolean))]
 
-const normalizePathname = (value = '') => {
-  const normalized = String(value).trim().replace(/\/+$/, '')
-  return normalized || '/'
-}
+const normalizeLines = (value = '') => String(value)
+  .split(/\r?\n/)
+  .map(clean)
+  .filter(Boolean)
 
-const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
-  const urls = []
-  const matches = String(html).matchAll(
-    /(?:href|src|action|data-url|data-href|content)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
-  )
+const isIndiaLocation = (value = '') => /\bindia\b/i.test(clean(value))
 
-  for (const match of matches) {
-    const rawValue = match[1] || match[2] || match[3] || ''
+const extractText = (html = '') => String(html)
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-    try {
-      urls.push(new URL(rawValue, pageUrl))
-    } catch {
-      // Ignore malformed URLs and keep the sentinel fail-closed.
-    }
-  }
-
-  return urls
-}
-
-const hasJobPostingMarkup = (html = '') => {
-  const blocks = String(html).matchAll(
-    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
-  )
-
-  for (const block of blocks) {
-    if (/\bJobPosting\b/i.test(block[1])) return true
-  }
-
-  return false
-}
-
-export const hasVerifiedCompanySurface = (html = '') => {
+export const hasVerifiedCareersLandingSignal = (html = '') => {
   const rawHtml = String(html)
-  const text = normalizeText(rawHtml)
+  const text = extractText(rawHtml)
 
-  return REQUIRED_BRAND_PATTERN.test(text)
-    && TITLE_BRAND_PATTERN.test(rawHtml)
-    && CANONICAL_SURFACE_PATTERN.test(rawHtml)
+  return /<title[^>]*>\s*Careers\s*\|\s*QBurst\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.qburst\.com\/en-in\/company\/career\/["']/i.test(rawHtml)
+    && /Join a\s+High AI-Q/i.test(text)
+    && /Search Open Roles/i.test(text)
+    && /Recruitment Fraud Alert/i.test(text)
 }
 
-export const detectPublicJobsSurface = (html = '', careersUrl = CAREERS_URL) => {
-  if (hasJobPostingMarkup(html)) return 'JobPosting markup'
+export const hasVerifiedLegacyOpeningsBoardSignal = (html = '') => {
+  const rawHtml = String(html)
 
-  const text = normalizeText(html)
-  if (LISTING_COPY_PATTERNS.some((pattern) => pattern.test(text))) {
-    return 'listing copy'
+  return /<title[^>]*>\s*Job Openings\s*\|\s*QBurst\s*<\/title>/i.test(rawHtml)
+    && /https:\/\/www\.qburst\.com\/en-in\/company\/career\/openings\//i.test(rawHtml)
+    && /Match your experience with the current openings and apply where you think you fit best\./i.test(rawHtml)
+    && /job-list-filter-block|count_display_text/i.test(rawHtml)
+}
+
+export const hasVerifiedOpeningsEmptyStateSignal = (html = '') => {
+  const rawHtml = String(html)
+  const text = extractText(rawHtml)
+
+  return /<title[^>]*>\s*Job Openings\s*\|\s*QBurst\s*<\/title>/i.test(rawHtml)
+    && /https:\/\/www\.qburst\.com\/en-in\/company\/career\/openings\//i.test(rawHtml)
+    && /Open Positions/i.test(text)
+    && /We need people like you\. Submit your resume for future opportunities\./i.test(text)
+    && /Submit Resume/i.test(text)
+    && !/\/job-details\//i.test(rawHtml)
+}
+
+export const hasVerifiedOpeningsPageSignal = (html = '') =>
+  hasVerifiedLegacyOpeningsBoardSignal(html) || hasVerifiedOpeningsEmptyStateSignal(html)
+
+export const extractJobCardSummary = (lines = []) => {
+  const filtered = lines
+    .map(clean)
+    .filter(Boolean)
+    .filter((line) => !/^View and Apply$/i.test(line))
+
+  return {
+    jobId: filtered[0] || null,
+    title: filtered[1] || null,
+    location: filtered[2] || null,
+    experienceRequired: filtered.find((line, index) => index >= 3 && /\byrs?\b/i.test(line)) || null,
+    previewText: filtered.slice(4).join(' ') || null,
+  }
+}
+
+export const extractSectionLines = (lines = [], heading, nextHeadings = []) => {
+  const normalizedHeading = clean(heading).toLowerCase()
+  const headingIndex = lines.findIndex((line) => clean(line).toLowerCase() === normalizedHeading)
+  if (headingIndex === -1) return []
+
+  const stopHeadings = nextHeadings.map((value) => clean(value).toLowerCase())
+  const values = []
+
+  for (let index = headingIndex + 1; index < lines.length; index += 1) {
+    const line = clean(lines[index])
+    if (!line) continue
+    if (stopHeadings.some((value) => line.toLowerCase().startsWith(value))) break
+    values.push(line)
   }
 
-  const careersPage = new URL(careersUrl)
-  const careersPath = normalizePathname(careersPage.pathname)
-  const linkedUrls = extractLinkedUrls(html, careersUrl)
-
-  const atsUrl = linkedUrls.find((url) =>
-    TRUSTED_ATS_HOST_PATTERNS.some((pattern) => pattern.test(url.hostname)),
-  )
-  if (atsUrl) return atsUrl.toString()
-
-  const sameOriginJobUrl = linkedUrls.find((url) => {
-    if (url.origin !== careersPage.origin) return false
-
-    const pathname = normalizePathname(url.pathname)
-    if (pathname === careersPath) return false
-
-    return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
-  })
-
-  return sameOriginJobUrl ? sameOriginJobUrl.toString() : null
+  return values
 }
 
-const assertVerifiedCompanySurface = (html = '') => {
-  if (hasVerifiedCompanySurface(html)) return
+export const normalizeQburstLocation = (summaryLocation, detailLocations = []) => {
+  const summary = clean(summaryLocation)
+  const locations = detailLocations
+    .flatMap((value) => clean(value).split(','))
+    .map(clean)
+    .filter(Boolean)
+    .filter(isIndiaLocation)
 
-  throw new Error(
-    'QBurst India verified public company surface no longer matches the exact-name contract.',
-  )
+  if (isIndiaLocation(summary)) return summary
+  if (locations.length > 1) return 'Multiple Cities, India'
+  if (locations.length === 1) {
+    const single = locations[0].replace(/^India\s*-\s*/i, '')
+    return /\bindia\b/i.test(single) ? single : `${single}, India`
+  }
+
+  return null
 }
 
-export const createQBurstIndiaScraper = ({ careersUrl = CAREERS_URL } = {}) => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(careersUrl)
-    assertVerifiedCompanySurface(html)
+export const extractCityFromLocation = (location) => {
+  const normalized = clean(location)
+  if (!normalized || /multiple cities/i.test(normalized)) return null
 
-    const publicJobsSurface = detectPublicJobsSurface(html, careersUrl)
-    if (publicJobsSurface) {
-      throw new Error(
-        `QBurst India public jobs surface changed materially: ${publicJobsSurface}`,
-      )
-    }
+  const indiaPrefixed = normalized.match(/^India\s*-\s*([^,]+)/i)
+  if (indiaPrefixed) return clean(indiaPrefixed[1]) || null
 
-    return []
-  },
-})
+  return clean(normalized.split(',')[0]) || null
+}
 
-export const run = async (options = {}) => createQBurstIndiaScraper().run(options)
+export const buildJobFromDetail = ({
+  summary,
+  detailLines,
+  detailUrl,
+  company = COMPANY,
+  scrapedAt,
+}) => {
+  const title = clean(
+    detailLines.find((line) => clean(line) === clean(summary?.title))
+      || summary?.title,
+  )
+  const locationLines = extractSectionLines(detailLines, 'Locations', LISTING_SECTION_HEADINGS)
+  const location = normalizeQburstLocation(summary?.location, locationLines)
+
+  if (!title || !location || !isIndiaLocation(location)) return null
+
+  const responsibilities = extractSectionLines(detailLines, 'Responsibilities', ['Requirements', 'Apply For'])
+  const requirements = extractSectionLines(detailLines, 'Requirements', ['Apply For'])
+  const descriptionParts = []
+  if (responsibilities.length > 0) {
+    descriptionParts.push(`Responsibilities: ${responsibilities.join(' ')}`)
+  }
+  if (requirements.length > 0) {
+    descriptionParts.push(`Requirements: ${requirements.join(' ')}`)
+  }
+
+  return {
+    title,
+    company,
+    location,
+    city: extractCityFromLocation(location),
+    country: 'India',
+    link: detailUrl,
+    sourceUrl: detailUrl,
+    applyUrl: detailUrl,
+    jobId: clean(summary?.jobId) || clean(detailUrl.split('/').filter(Boolean).at(-1)),
+    requisitionId: clean(summary?.jobId) || clean(detailUrl.split('/').filter(Boolean).at(-1)),
+    department: null,
+    employmentType: null,
+    remoteStatus: null,
+    experienceRequired: clean(summary?.experienceRequired) || null,
+    minimumQualification: requirements.length > 0 ? requirements.join(' ') : null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: descriptionParts.join(' ') || null,
+    source: SOURCE,
+    scrapedAt,
+  }
+}
 
 const defaultFetchHtml = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+      'User-Agent': USER_AGENT,
     },
+    redirect: 'follow',
   })
 
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
   return response.text()
+}
+
+const wait = (milliseconds) => new Promise((resolve) => {
+  setTimeout(resolve, milliseconds)
+})
+
+const dismissCookieConsent = async (page) => {
+  for (const label of ['Only Necessary', 'Accept All']) {
+    const button = page.getByRole('button', { name: label }).first()
+    const visible = await button.isVisible().catch(() => false)
+    if (!visible) continue
+
+    await button.click({ timeout: 5000 }).catch(() => {})
+    await wait(500)
+    return
+  }
+}
+
+const ensureVisibleJobCards = async (page, minimumCount) => {
+  let count = await page.locator(JOB_BUTTON_SELECTOR).count()
+
+  for (let attempt = 0; attempt < 20 && count < minimumCount; attempt += 1) {
+    await page.mouse.wheel(0, 2500)
+    await wait(600)
+    count = await page.locator(JOB_BUTTON_SELECTOR).count()
+  }
+
+  if (count < minimumCount) {
+    throw new Error(
+      `[qburstindia] Expected at least ${minimumCount} visible job cards, found ${count}`,
+    )
+  }
+
+  return count
+}
+
+const loadTargetJobCount = async (page) => {
+  const text = await page.locator('body').innerText()
+  const match = text.match(/We Found\s+(\d+)\s+Job Openings/i)
+  return Number.parseInt(match?.[1] || '', 10) || null
+}
+
+export const scrapeOpeningsPage = async ({
+  openingsUrl = OPENINGS_URL,
+  maxJobs = Number.POSITIVE_INFINITY,
+  now = () => new Date().toISOString(),
+} = {}) => {
+  const browser = await chromium.launch({
+    headless: true,
+    args: buildChromiumLaunchArgs(),
+  })
+
+  try {
+    const page = await browser.newPage({
+      userAgent: USER_AGENT,
+      viewport: { width: 1440, height: 2200 },
+    })
+
+    await page.goto(openingsUrl, { waitUntil: 'domcontentloaded', timeout: 90000 })
+    await wait(2500)
+    await dismissCookieConsent(page)
+
+    const targetCount = await loadTargetJobCount(page)
+    const totalToLoad = maxJobs === Number.POSITIVE_INFINITY
+      ? (targetCount || 1)
+      : maxJobs
+    const visibleCount = await ensureVisibleJobCards(page, totalToLoad)
+    const totalJobs = Math.min(targetCount || visibleCount, visibleCount, maxJobs)
+    const jobs = []
+
+    for (let index = 0; index < totalJobs; index += 1) {
+      await page.goto(openingsUrl, { waitUntil: 'domcontentloaded', timeout: 90000 })
+      await wait(2000)
+      await dismissCookieConsent(page)
+      await ensureVisibleJobCards(page, index + 1)
+
+      const button = page.locator(JOB_BUTTON_SELECTOR).nth(index)
+      await button.scrollIntoViewIfNeeded()
+
+      const summary = extractJobCardSummary(await button.evaluate((node) => {
+        let card = null
+        let current = node.parentElement
+
+        while (current && !card) {
+          const className = typeof current.className === 'string' ? current.className : ''
+          if (/jobCard__|jobListCardsItem__/i.test(className)) {
+            card = current
+            break
+          }
+          current = current.parentElement
+        }
+
+        return (card?.innerText || '')
+          .split(/\r?\n/)
+          .map((line) => line.replace(/\s+/g, ' ').trim())
+          .filter(Boolean)
+      }))
+
+      if (!summary.jobId || !summary.title) {
+        throw new Error(`[qburstindia] Missing job card data at index ${index}`)
+      }
+
+      await Promise.all([
+        page.waitForURL(DETAIL_URL_PATTERN, { timeout: 45000 }),
+        button.evaluate((node) => node.click()),
+      ])
+      await page.waitForLoadState('domcontentloaded')
+      await wait(1000)
+
+      const detailUrl = page.url()
+      const detailLines = normalizeLines(await page.locator('body').innerText())
+      const job = buildJobFromDetail({
+        summary,
+        detailLines,
+        detailUrl,
+        scrapedAt: now(),
+      })
+
+      if (job) jobs.push(job)
+    }
+
+    return jobs
+  } finally {
+    await browser.close()
+  }
+}
+
+export const createQBurstIndiaScraper = ({
+  maxJobs = Number.POSITIVE_INFINITY,
+  now = () => new Date().toISOString(),
+} = {}) => ({
+  async run({
+    fetchHtml = defaultFetchHtml,
+    scrapeJobs = scrapeOpeningsPage,
+  } = {}) {
+    if (maxJobs !== Number.POSITIVE_INFINITY && (!Number.isInteger(maxJobs) || maxJobs <= 0)) {
+      throw new Error('[qburstindia] maxJobs must be a positive integer when provided')
+    }
+
+    const careersHtml = await fetchHtml(CAREERS_URL)
+    if (!hasVerifiedCareersLandingSignal(careersHtml)) {
+      throw new Error('QBurst India verified careers landing page no longer matches the trusted first-party surface')
+    }
+
+    const openingsHtml = await fetchHtml(OPENINGS_URL)
+    if (!hasVerifiedOpeningsPageSignal(openingsHtml)) {
+      throw new Error('QBurst India verified openings page no longer matches the trusted first-party surface')
+    }
+
+    if (hasVerifiedOpeningsEmptyStateSignal(openingsHtml)) {
+      return []
+    }
+
+    return scrapeJobs({
+      openingsUrl: OPENINGS_URL,
+      maxJobs,
+      now,
+    })
+  },
+})
+
+export const run = async (options = {}) => createQBurstIndiaScraper(options).run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
 }

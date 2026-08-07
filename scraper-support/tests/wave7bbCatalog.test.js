@@ -97,8 +97,9 @@ test('Quale Infotech local catalog captures the verified homepage-only fail-clos
     provider.extractionStrategy,
     'verified-first-party-homepage+about+contact-without-public-careers-or-jobs+fail-closed-sentinel',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.verifiedSurfaceSummary, /Generative AI/i)
+  assert.match(provider.verifiedSurfaceSummary, /\/careers, \/jobs, and \/join-us/i)
   assert.match(provider.verifiedSurfaceSummary, /no public careers or jobs page/i)
 
   assertCatalogMatchesBacklogRow({
@@ -122,16 +123,18 @@ test('Capital Numbers Infotech local catalog captures the verified email-resume-
   assert.equal(provider.officialBrandName, 'Capital Numbers')
   assert.equal(provider.homepageUrl, 'https://www.capitalnumbers.com/')
   assert.equal(provider.companyCareerPage, 'https://www.capitalnumbers.com/careers.php')
-  assert.equal(provider.contactEmail, 'career@capitalnumbers.com')
+  assert.equal(provider.contactEmail, 'jobs@capitalnumbers.com')
   assert.equal(provider.atsPlatform, 'first-party-careers-page-email-resume-only')
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
     'verified-first-party-careers-page+resume-email-handoff-without-public-openings+fail-closed-sentinel',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.match(provider.verifiedSurfaceSummary, /Build Your Career with Capital Numbers/i)
-  assert.match(provider.verifiedSurfaceSummary, /career@capitalnumbers\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /jobs@capitalnumbers\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /Beware of Fake Job or Freelancing Offers/i)
+  assert.match(provider.verifiedSurfaceSummary, /Rated 4\.2 out of 5 on Glassdoor/i)
 
   assertCatalogMatchesBacklogRow({
     provider,
@@ -141,7 +144,7 @@ test('Capital Numbers Infotech local catalog captures the verified email-resume-
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('In Time Tec Visionsoft local catalog captures the verified blocked India-board handoff', async () => {
+test('In Time Tec Visionsoft local catalog captures the verified careers page plus public zwayam APIs', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/intimetecvisionsoft/catalog.js',
     'IN_TIME_TEC_VISIONSOFT_CATALOG',
@@ -155,15 +158,20 @@ test('In Time Tec Visionsoft local catalog captures the verified blocked India-b
   assert.equal(provider.homepageUrl, 'https://www.intimetec.com/')
   assert.equal(provider.companyCareerPage, 'https://www.intimetec.com/careers')
   assert.equal(provider.indiaJobsUrl, 'https://careers.intimetec.in/intimetec/jobslist')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-plus-blocked-india-board')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-blocked-india-board')
+  assert.equal(provider.searchApiUrl, 'https://public.zwayam.com/jobs/search')
+  assert.equal(provider.detailApiUrl, 'https://public.zwayam.com/jobs-service/v1/jobs/careersite')
+  assert.equal(provider.companyApiId, 'MTUxOTQ=')
+  assert.equal(provider.detailCompanyId, '15194')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page-plus-zwayam-search-api')
+  assert.equal(provider.paginationStrategy, 'zwayam-search-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+india-careers-handoff+environment-blocked-board-return-empty',
+    'verified-first-party-careers-page+verified-zwayam-search-api+zwayam-job-details+india-location-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /India Careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /careers\.intimetec\.in/i)
+  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.match(provider.verifiedSurfaceSummary, /public zwayam jobs search api/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior AI Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Linux Administrator/i)
 
   assertCatalogMatchesBacklogRow({
     provider,
@@ -192,9 +200,10 @@ test('Miracle Software Systems local catalog captures the verified first-party o
     provider.extractionStrategy,
     'verified-first-party-careers-page+visible-open-position-cards',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /NAVISION 2009 Consultant/i)
-  assert.match(provider.verifiedSurfaceSummary, /Unily\/SharePoint Developer/i)
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /ServiceNow ITSM Architect/i)
+  assert.match(provider.verifiedSurfaceSummary, /Microsoft Dynamics 365 \(D365\) Technical Consultant/i)
+  assert.match(provider.verifiedSurfaceSummary, /SQL\/UKG Developer/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

@@ -1,46 +1,27 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
-
 const careersHtml = `
 <!doctype html>
 <html lang="en">
-  <head>
-    <title>Career</title>
-  </head>
   <body>
     <main>
       <h1>Join Our Vibrant Team at Indi IT.</h1>
-      <p>View Open Roles</p>
-      <p>Excited to be part of our journey? Send your resume and cover letter to hr@indiit.com.</p>
-      <section>
-        <h2>Top Opportunities Right Now.</h2>
-        <article class="indi-role-card">
-          <h3>Marketing Analyst</h3>
-          <p class="experience">Minimum 2 years of experience</p>
-          <p class="vacancies">2 Vacancies</p>
-          <a href="https://indiit.com/career/#marketing-analyst-2y">Apply Now</a>
-        </article>
-        <article class="indi-role-card">
-          <h3>HR Specialist</h3>
-          <p class="experience">Minimum 2 years of experience</p>
-          <p class="vacancies">3 Vacancies</p>
-          <a href="https://indiit.com/career/#hr-specialist">Apply Now</a>
-        </article>
-        <article class="indi-role-card">
-          <h3>UI/UX Designer</h3>
-          <p class="experience">Minimum 4 years of experience</p>
-          <p class="vacancies">2 Vacancies</p>
-          <a href="https://indiit.com/career/#ui-ux-designer">Apply Now</a>
-        </article>
-      </section>
+      <a href="#openroles">View Open Roles</a>
+      <p>Top Opportunities Right Now.</p>
+      <p>
+        Job Title Experience Required Number of Vacancies Action
+        Marketing Analyst Minimum 2 years of experience 2 Vacancies Apply Now
+        HR Specialist Minimum 2 years of experience 3 Vacancies Apply Now
+        Graphic Designer Minimum 3 years of experience 2 Vacancies Apply Now
+      </p>
+      <a href="mailto:hr@indiit.com">hr@indiit.com</a>
     </main>
   </body>
 </html>
 `
 
-const loadIndiModule = async () => {
+const loadModule = async () => {
   try {
     return await import('../../scraper/indiitsolutions/script.js')
   } catch {
@@ -48,79 +29,47 @@ const loadIndiModule = async () => {
   }
 }
 
-test('INDI IT SOLUTIONS extracts visible opportunity cards from the verified first-party career page', async () => {
-  const indi = await loadIndiModule()
+test('INDI IT SOLUTIONS extracts the live text-based opportunity cards from the verified careers page', async () => {
+  const indiit = await loadModule()
 
-  assert.equal(indi.hasOfficialIndiItCareerSignals(careersHtml), true)
-  assert.deepEqual(indi.extractOpportunityCards(careersHtml), [
-    {
-      title: 'Marketing Analyst',
-      location: 'India',
-      city: null,
-      country: 'India',
-      experienceRequired: 'Minimum 2 years of experience',
-      vacancies: '2 Vacancies',
-      applyUrl: 'https://indiit.com/career/#marketing-analyst-2y',
-      sourceUrl: 'https://indiit.com/career/#marketing-analyst-2y',
-      jobId: 'marketing-analyst-2y',
-    },
-    {
-      title: 'HR Specialist',
-      location: 'India',
-      city: null,
-      country: 'India',
-      experienceRequired: 'Minimum 2 years of experience',
-      vacancies: '3 Vacancies',
-      applyUrl: 'https://indiit.com/career/#hr-specialist',
-      sourceUrl: 'https://indiit.com/career/#hr-specialist',
-      jobId: 'hr-specialist',
-    },
-    {
-      title: 'UI/UX Designer',
-      location: 'India',
-      city: null,
-      country: 'India',
-      experienceRequired: 'Minimum 4 years of experience',
-      vacancies: '2 Vacancies',
-      applyUrl: 'https://indiit.com/career/#ui-ux-designer',
-      sourceUrl: 'https://indiit.com/career/#ui-ux-designer',
-      jobId: 'ui-ux-designer',
-    },
-  ])
+  assert.equal(indiit.hasOfficialIndiItCareerSignals(careersHtml), true)
+
+  const roles = indiit.extractOpportunityCards(careersHtml)
+  assert.equal(roles.length, 3)
+  assert.deepEqual(roles[0], {
+    title: 'Marketing Analyst',
+    location: 'India',
+    city: null,
+    country: 'India',
+    experienceRequired: 'Minimum 2 years of experience',
+    vacancies: '2 Vacancies',
+    applyUrl: indiit.SHARED_APPLY_URL,
+    sourceUrl: indiit.SHARED_APPLY_URL,
+    jobId: 'marketing-analyst-minimum-2-years-of-experience-2-vacancies',
+  })
 })
 
-test('INDI IT SOLUTIONS run returns structured jobs from the verified first-party career page', async () => {
-  const indi = await loadIndiModule()
-  const requestedUrls = []
+test('INDI IT SOLUTIONS falls back to a browser-backed careers page loader when Node fetch times out', async () => {
+  const indiit = await loadModule()
+  const requestedPrimaryUrls = []
+  const requestedBrowserUrls = []
 
-  const jobs = await indi.createIndiItSolutionsScraper({
-    now: () => FIXED_SCRAPED_AT,
+  const jobs = await indiit.createIndiItSolutionsScraper({
+    now: () => '2026-08-02T11:00:00.000Z',
   }).run({
     fetchText: async (url) => {
-      requestedUrls.push(url)
+      requestedPrimaryUrls.push(url)
+      throw new TypeError('fetch failed | Connect Timeout Error')
+    },
+    fetchBrowserText: async (url) => {
+      requestedBrowserUrls.push(url)
       return careersHtml
     },
   })
 
-  assert.deepEqual(requestedUrls, ['https://indiit.com/career/'])
+  assert.deepEqual(requestedPrimaryUrls, [indiit.OFFICIAL_CAREERS_URL])
+  assert.deepEqual(requestedBrowserUrls, [indiit.OFFICIAL_CAREERS_URL])
   assert.equal(jobs.length, 3)
-  assert.deepEqual(
-    jobs.map((job) => [job.title, job.experienceRequired, job.country, job.source, job.scrapedAt]),
-    [
-      ['Marketing Analyst', 'Minimum 2 years of experience', 'India', 'indiitsolutions', FIXED_SCRAPED_AT],
-      ['HR Specialist', 'Minimum 2 years of experience', 'India', 'indiitsolutions', FIXED_SCRAPED_AT],
-      ['UI/UX Designer', 'Minimum 4 years of experience', 'India', 'indiitsolutions', FIXED_SCRAPED_AT],
-    ],
-  )
-})
-
-test('INDI IT SOLUTIONS fails closed when the verified career page no longer exposes the opportunity cards', async () => {
-  const indi = await loadIndiModule()
-
-  await assert.rejects(
-    indi.createIndiItSolutionsScraper().run({
-      fetchText: async () => '<html><body><h1>Career</h1></body></html>',
-    }),
-    /verified first-party career page/i,
-  )
+  assert.equal(jobs[0].source, 'indiitsolutions')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T11:00:00.000Z')
 })

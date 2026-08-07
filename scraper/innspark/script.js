@@ -1,6 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import {
+  createBrowserNetworkFallback,
+  defaultShouldUseBrowserNetworkFallback,
+} from '../../scraper-support/shared/browserNetworkFallback.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -238,19 +242,37 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createInnsparkScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractCareerJobs(careersHtml)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+      shouldUseBrowserFallback: (error) =>
+        /missing expected cr after header value|protocol(?:\s+parse)?\s+error/i.test(String(error?.message ?? error ?? ''))
+        || defaultShouldUseBrowserNetworkFallback(error),
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 4000,
+        ignoreHTTPSErrors: true,
+      },
+    })
 
-    const applyHtml = await fetchText(APPLY_URL)
-    assertApplyFormMatchesJobs(jobs, applyHtml)
+    try {
+      const careersHtml = await browserFallback.fetchText(CAREERS_URL)
+      const jobs = extractCareerJobs(careersHtml)
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+      const applyHtml = await browserFallback.fetchText(APPLY_URL)
+      assertApplyFormMatchesJobs(jobs, applyHtml)
+
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    } finally {
+      await browserFallback.close()
+    }
   },
 })
 

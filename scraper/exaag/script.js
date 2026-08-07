@@ -8,24 +8,29 @@ const LOCATION = 'Bangalore, India'
 const CITY = 'Bangalore'
 const COUNTRY = 'India'
 
-const OFFICIAL_PAGE_PATTERNS = [
-  /<title>\s*Jobs Archive\s*-\s*EXA AG\s*<\/title>/i,
-  />\s*Join EXA AG\s*</i,
-  />\s*Open Positions\s*</i,
-  /<h[1-6][^>]*>\s*Bangalore\s*<\/h[1-6]>/i,
-  /<p[^>]*>\s*India\s*<\/p>/i,
-]
-
-const SECTION_END_PATTERNS = [
-  /<h[1-6][^>]*>\s*West Chester\s*<\/h[1-6]>/i,
-  /<p[^>]*>\s*USA\s*<\/p>/i,
-  />\s*back to top\s*</i,
-]
-
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
+const INNER_HEADING_PATTERN = '(?:(?!<\\/h[1-6]>)[\\s\\S])*?'
+const BANGALORE_HEADING_PATTERN = new RegExp(
+  `<h[1-6][^>]*>${INNER_HEADING_PATTERN}Bangalore${INNER_HEADING_PATTERN}India${INNER_HEADING_PATTERN}<\\/h[1-6]>`,
+  'i',
+)
+const REMOTE_AMERICAS_HEADING_PATTERN = new RegExp(
+  `<h[1-6][^>]*>${INNER_HEADING_PATTERN}Remote${INNER_HEADING_PATTERN}Americas${INNER_HEADING_PATTERN}<\\/h[1-6]>`,
+  'i',
+)
+const LEGACY_BANGALORE_SECTION_PATTERN =
+  /<h[1-6][^>]*>\s*Bangalore\s*<\/h[1-6]>\s*<p[^>]*>\s*India\s*<\/p>/i
+
+const SECTION_END_PATTERNS = [
+  /<h[1-6][^>]*>\s*West Chester\s*<\/h[1-6]>/i,
+  /<p[^>]*>\s*USA\s*<\/p>/i,
+  REMOTE_AMERICAS_HEADING_PATTERN,
+  />\s*Contact EXA Experts\s*</i,
+  />\s*back to top\s*</i,
+]
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -105,12 +110,14 @@ const extractIndiaSectionHtml = (html) => {
     throw new Error('EXA AG jobs archive shape changed: missing Open Positions section')
   }
 
-  const bangaloreIndex = page.slice(positionsIndex).search(/<h[1-6][^>]*>\s*Bangalore\s*<\/h[1-6]>/i)
-  if (bangaloreIndex < 0) {
+  const bangaloreMatch = page.slice(positionsIndex).match(BANGALORE_HEADING_PATTERN)
+    || page.slice(positionsIndex).match(LEGACY_BANGALORE_SECTION_PATTERN)
+
+  if (!bangaloreMatch || typeof bangaloreMatch.index !== 'number') {
     throw new Error('EXA AG jobs archive shape changed: missing Bangalore section')
   }
 
-  const startIndex = positionsIndex + bangaloreIndex
+  const startIndex = positionsIndex + bangaloreMatch.index
   const endIndex = findSectionEndIndex(page, startIndex)
   return page.slice(startIndex, endIndex)
 }
@@ -139,8 +146,19 @@ const isMetaLine = (line) => {
     || normalized === 'on-site'
 }
 
-export const hasOfficialExaAgJobsPageShape = (html) =>
-  OFFICIAL_PAGE_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+export const hasOfficialExaAgJobsPageShape = (html) => {
+  const page = String(html ?? '')
+  const text = toTextLines(page).join('\n')
+
+  return /<title>\s*Jobs Archive\s*-\s*EXA AG\s*<\/title>/i.test(page)
+    && /Join EXA AG/i.test(text)
+    && /Open Positions/i.test(text)
+    && (
+      BANGALORE_HEADING_PATTERN.test(page)
+      || LEGACY_BANGALORE_SECTION_PATTERN.test(page)
+      || /\bBangalore\b[\s\S]{0,40}\bIndia\b/i.test(text)
+    )
+}
 
 export const extractIndiaJobs = (html) => {
   if (!hasOfficialExaAgJobsPageShape(html)) {
@@ -150,17 +168,25 @@ export const extractIndiaJobs = (html) => {
   const indiaSectionHtml = extractIndiaSectionHtml(html)
   const detailUrls = extractDetailUrls(indiaSectionHtml)
   const lines = toTextLines(indiaSectionHtml)
-  const bangaloreIndex = lines.findIndex((line) => /^Bangalore$/i.test(line))
-  const indiaIndex = lines.findIndex((line, index) => index > bangaloreIndex && /^India$/i.test(line))
+  const bangaloreIndex = lines.findIndex((line) => (
+    /^Bangalore(?:\s+|,\s*)India$/i.test(line)
+    || /^Bangalore$/i.test(line)
+  ))
+  const firstJobIndex = bangaloreIndex >= 0
+    ? (() => {
+      const nextIndex = bangaloreIndex + 1
+      return /^India$/i.test(lines[nextIndex] || '') ? nextIndex + 1 : nextIndex
+    })()
+    : -1
 
-  if (bangaloreIndex < 0 || indiaIndex < 0) {
+  if (bangaloreIndex < 0 || firstJobIndex < 0) {
     throw new Error('EXA AG jobs archive shape changed: Bangalore section could not be parsed')
   }
 
   const jobs = []
   let detailIndex = 0
 
-  for (let index = indiaIndex + 1; index < lines.length; index += 1) {
+  for (let index = firstJobIndex; index < lines.length; index += 1) {
     const line = lines[index]
 
     if (/^(West Chester|USA|back to top)$/i.test(line)) break

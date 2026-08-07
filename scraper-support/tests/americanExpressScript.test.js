@@ -47,6 +47,19 @@ const samplePayload = {
   ],
 }
 
+const sampleDetailPayload = {
+  Id: '26003600',
+  Title: 'Director - Software Engineering',
+  Category: 'Technology',
+  JobSchedule: 'Full time',
+  PostedDate: '2026-07-13',
+  PostingEndDate: null,
+  PrimaryLocationCountry: 'IN',
+  PrimaryLocation: 'Bengaluru, KA, India',
+  ExternalDescriptionStr: '<p>Lead platform teams and build resilient services.</p>',
+  ExternalQualificationsStr: '<ul><li>8+ years of software engineering experience</li><li>Bachelor\'s degree in Computer Science</li></ul>',
+}
+
 const loadAmericanExpressModule = async () => {
   try {
     return await import('../../scraper/americanexpress/script.js')
@@ -74,6 +87,15 @@ test('buildJobDetailUrl uses American Express public Oracle Cloud job detail pag
   assert.equal(
     americanExpress.buildJobDetailUrl('26003600'),
     'https://careers.americanexpress.com/en/sites/CX_1/job/26003600',
+  )
+})
+
+test('buildJobDetailApiUrl uses the official American Express Oracle detail endpoint', async () => {
+  const americanExpress = await loadAmericanExpressModule()
+
+  assert.equal(
+    americanExpress.buildJobDetailApiUrl('26003600'),
+    'https://egug.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails/26003600?expand=all',
   )
 })
 
@@ -123,7 +145,33 @@ test('extractSearchResults normalizes only American Express requisitions availab
   ])
 })
 
-test('createAmericanExpressScraper caps returned jobs without calling unofficial surfaces', async () => {
+test('extractJobDetail derives experience from American Express Oracle detail qualifications', async () => {
+  const americanExpress = await loadAmericanExpressModule()
+  const listing = americanExpress.extractSearchResults(samplePayload)[0]
+  const detail = americanExpress.extractJobDetail(sampleDetailPayload, listing)
+
+  assert.deepEqual(detail, {
+    title: 'Director - Software Engineering',
+    company: 'American Express',
+    department: 'Technology',
+    location: 'Bengaluru, KA, India',
+    city: 'Bengaluru',
+    jobId: '26003600',
+    requisitionId: '26003600',
+    sourceUrl: 'https://careers.americanexpress.com/en/sites/CX_1/job/26003600',
+    applyUrl: 'https://careers.americanexpress.com/en/sites/CX_1/job/26003600',
+    employmentType: 'Full time',
+    experienceRequired: '8+ years',
+    minimumQualification: "8+ years of software engineering experience Bachelor's degree in Computer Science",
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-07-13',
+    closingDate: null,
+    jobDescription: 'Lead platform teams and build resilient services. 8+ years of software engineering experience Bachelor\'s degree in Computer Science',
+  })
+})
+
+test('createAmericanExpressScraper caps returned jobs after hydrating official detail data', async () => {
   const americanExpress = await loadAmericanExpressModule()
   const requests = []
 
@@ -132,13 +180,20 @@ test('createAmericanExpressScraper caps returned jobs without calling unofficial
     maxJobs: 1,
     fetchJson: async (url) => {
       requests.push(url)
+      if (url === americanExpress.buildJobDetailApiUrl('26003600')) {
+        return sampleDetailPayload
+      }
       return samplePayload
     },
   }).run()
 
-  assert.deepEqual(requests, [americanExpress.buildSearchUrl()])
+  assert.deepEqual(requests, [
+    americanExpress.buildSearchUrl(),
+    americanExpress.buildJobDetailApiUrl('26003600'),
+  ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'americanexpress')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].experienceRequired, '8+ years')
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })

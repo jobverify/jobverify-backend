@@ -18,6 +18,7 @@ const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 const normalizeWhitespace = (value) =>
   String(value ?? '')
     .replace(/&nbsp;/gi, ' ')
+    .replace(/&(?:amp|#0*38);/gi, '&')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()

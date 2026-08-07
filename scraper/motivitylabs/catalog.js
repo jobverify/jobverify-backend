@@ -19,9 +19,9 @@ export const MOTIVITYLABS_CATALOG = {
   extractionStrategy: 'verified-first-party-job-openings+same-domain-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://motivitylabs.com/careers/ is the live first-party Motivity Labs careers page, that it hands applicants to the first-party openings hub at https://motivitylabs.com/job-openings/, and that the openings hub publicly lists current India roles such as Sr.Test Engineer, Technical Solution Architect, Senior AI/ML & Gen AI Engineer, and Looker Developer with same-domain detail pages under https://motivitylabs.com/jobs/.',
+    'Verified on Monday, August 3, 2026 that https://motivitylabs.com/careers/ remained the live first-party Motivity Labs careers page, that it still hands applicants to the first-party openings hub at https://motivitylabs.com/job-openings/, and that the openings hub publicly lists current India roles such as Sr.Test Engineer, Technical Solution Architect Experience, Senior AI/ML & Gen AI Engineer, and Looker Developer with same-domain detail pages under https://motivitylabs.com/jobs/.',
 }
 
 export default MOTIVITYLABS_CATALOG

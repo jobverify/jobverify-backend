@@ -146,6 +146,46 @@ const productMarketingLeadHtml = `
 </html>
 `
 
+const liveLikeSplitMetaProductManagerHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Current Openings (Pune) - Product Manager</title>
+    <link rel="canonical" href="https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/">
+  </head>
+  <body>
+    <main>
+      <div class="blog-single-header-wrapper">
+        <h1 class="blog-single-title">Product Manager</h1>
+        <div class="entry-meta">
+          <span class="published"><span class="far fa-clock"></span>Jun 23, 2026</span>
+          <span class="blog-label">
+            <span class="far fa-folder-open"></span>
+            <a href="https://simplifyhealthcare.com/category/careers/current-openings/india/" rel="category tag">Pune, India</a>
+          </span>
+        </div>
+      </div>
+      <div class="wpb_wrapper">
+        <p><strong>Role:</strong></p>
+        <p>Simplify Healthcare is the leader in healthcare payer Digital Business Transformation and is looking to build a team of sharp, detail-oriented professionals.</p>
+        <p>Define the product vision and create a product roadmap aligned with business goals and market opportunities.</p>
+        <p><strong>Responsibilities:</strong></p>
+        <ul>
+          <li>Drive product strategy.</li>
+          <li>Partner with engineering and analytics teams.</li>
+        </ul>
+        <p>5-8 years of product management experience in healthcare payer operations.</p>
+        <h6>If you have any questions, please direct your inquiries to <a href="mailto:careers@simplifyhealthcare.com">careers@simplifyhealthcare.com</a></h6>
+      </div>
+      <footer>
+        <h5>About Simplify Healthcare</h5>
+        <p>The Connected AI platform for payer operations.</p>
+      </footer>
+    </main>
+  </body>
+</html>
+`
+
 const genericDetailShellHtml = `
 <!doctype html>
 <html lang="en-US">
@@ -337,6 +377,39 @@ test('Simplify Healthcare extracts India jobs from official current-opening deta
       closingDate: null,
       jobDescription: 'About Simplify Healthcare Simplify Healthcare is one of the fastest growing healthcare technology solutions providers to the payer market. Role Overview Lead cross-functional delivery for payer platform initiatives. Ideal Candidate Profile 8-12 years of experience leading enterprise software programs. Based in Pune with hybrid work culture.',
       remoteStatus: 'Hybrid',
+    },
+  )
+})
+
+test('Simplify Healthcare extracts live-like detail pages when date and location are split across entry-meta nodes', async () => {
+  const simplifyHealthcare = await loadSimplifyHealthcareModule()
+  assert.ok(simplifyHealthcare, 'Expected Simplify Healthcare scraper module at ./script.js')
+
+  assert.deepEqual(
+    simplifyHealthcare.extractJobFromDetailHtml({
+      url: 'https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/',
+      html: liveLikeSplitMetaProductManagerHtml,
+    }),
+    {
+      jobId: 'simplifyhealthcare-product-manager-3',
+      requisitionId: 'simplifyhealthcare-product-manager-3',
+      title: 'Product Manager',
+      company: 'Simplify Healthcare',
+      department: null,
+      location: 'Pune, India',
+      city: 'Pune',
+      country: 'India',
+      sourceUrl: 'https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/',
+      applyUrl: 'https://simplifyhealthcare.com/careers/current-openings/india/product-manager-3/',
+      employmentType: null,
+      experienceRequired: '5-8 years',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: '2026-06-23',
+      closingDate: null,
+      jobDescription: 'Role: Simplify Healthcare is the leader in healthcare payer Digital Business Transformation and is looking to build a team of sharp, detail-oriented professionals. Define the product vision and create a product roadmap aligned with business goals and market opportunities. Responsibilities: Drive product strategy. Partner with engineering and analytics teams. 5-8 years of product management experience in healthcare payer operations.',
+      remoteStatus: 'On-site',
     },
   )
 })

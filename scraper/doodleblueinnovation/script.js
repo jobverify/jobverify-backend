@@ -21,6 +21,10 @@ const normalizeText = (value = '') => String(value)
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html = '') => normalizeText(
+  String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '',
+)
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -31,15 +35,26 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialOpeningsSignal = (html = '') => {
-  const normalized = String(html).replace(/\s+/g, ' ')
+  const rawHtml = String(html)
+  const normalized = rawHtml.replace(/\s+/g, ' ')
+  const normalizedText = normalizeText(rawHtml)
+  const title = extractTitle(rawHtml)
 
-  return normalized.includes('Career at doodleblue | openings at chennai | doodleblue | India')
-    && normalized.includes('Join our Team')
-    && normalized.includes('Browse our open positions and pick the challenge that excites you the most')
-    && normalized.includes('Apply Now')
+  return (
+    (
+      title === 'Career at doodleblue | openings at chennai | doodleblue | India'
+      || title === 'Careers at doodleblue | Current Job Openings'
+    )
+    && normalizedText.includes('Join our Team')
+    && normalizedText.includes('Browse our open positions and pick the challenge that excites you the most')
+    && (
+      normalized.includes('/careers/openings/view/?position=')
+      || normalized.includes('/careers/apply-now/')
+    )
+  )
 }
 
-const extractApplyUrl = (html = '') => {
+const extractSharedApplyUrl = (html = '') => {
   const match = String(html).match(/<a[^>]*href=["']([^"']*\/careers\/apply-now\/[^"']*)["'][^>]*>\s*Apply Now\s*<\/a>/i)
   return match ? new URL(match[1], CAREERS_URL).toString() : null
 }
@@ -59,8 +74,39 @@ const parseMetaLine = (value = '') => {
   }
 }
 
+const extractJobsFromCurrentRoleRows = (html = '') => {
+  const jobs = []
+  const rowPattern = /<div\b(?=[^>]*class=["'][^"']*\btitle\b[^"']*\brow\b[^"']*\balign-items-center\b[^"']*["'])[^>]*>[\s\S]*?<h2>([\s\S]*?)<\/h2>[\s\S]*?<h4>([\s\S]*?)<\/h4>[\s\S]*?<a[^>]*href=["']([^"']*\/careers\/openings\/view\/\?position=[^"']*)["'][^>]*>/gi
+
+  for (const match of String(html).matchAll(rowPattern)) {
+    const title = normalizeText(match[1])
+    const meta = parseMetaLine(match[2])
+    const detailUrl = new URL(match[3], CAREERS_URL).toString()
+
+    if (!title || !meta.location || !detailUrl) {
+      continue
+    }
+
+    jobs.push({
+      title,
+      location: meta.location,
+      employmentType: meta.employmentType,
+      seniority: meta.seniority,
+      detailUrl,
+      applyUrl: detailUrl,
+    })
+  }
+
+  return jobs
+}
+
 export const parseOpenings = (html = '') => {
-  const applyUrl = extractApplyUrl(html)
+  const currentRoleJobs = extractJobsFromCurrentRoleRows(html)
+  if (currentRoleJobs.length > 0) {
+    return currentRoleJobs
+  }
+
+  const applyUrl = extractSharedApplyUrl(html)
   const jobs = []
   const articlePattern = /<article\b[^>]*class=["'][^"']*opening-card[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi
   let articleMatch

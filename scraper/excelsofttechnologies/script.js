@@ -12,12 +12,28 @@ export const CAREER_PAGE_URL = 'https://www.excelsoftcorp.com/career/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+export const hasOfficialZohoEmptyState = (html) => {
+  const body = String(html ?? '')
+  return /rec_embed_js\.load\(\{[\s\S]*?page_name:"Excelsoft-Technology"/i.test(body)
+    && /site:"https:\/\/excelsoftcorp\.zohorecruit\.com"/i.test(body)
+    && /empty_job_msg:"No current Openings"/i.test(body)
+}
+
+const hasExplicitPublicOpeningsSignal = (html) => {
+  const body = String(html ?? '')
+  const hasOpeningsHeading = /<h[1-6][^>]*>\s*(Open Positions|Current Openings|Job Openings)\s*<\/h[1-6]>/i.test(body)
+  const hasApplyLink = />\s*Apply Now\s*</i.test(body)
+    || /href=["'][^"']*(\/career\/apply\/|excelsoftcorp\.zohorecruit\.com\/jobs)/i.test(body)
+
+  return hasOpeningsHeading && hasApplyLink
+}
+
 export const isVerifiedBrandingOnlySurface = (html) => {
   const body = String(html ?? '')
   return /One Team One Dream/i.test(body)
     && /Being an Excelian is just a choice away/i.test(body)
-    && !/Open Positions|Current Openings|Job Openings|Apply Now/i.test(body)
-  }
+    && (hasOfficialZohoEmptyState(body) || !hasExplicitPublicOpeningsSignal(body))
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {

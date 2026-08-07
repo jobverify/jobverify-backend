@@ -35,10 +35,13 @@ test('R-Logic Technology Services local catalog captures the no-public-jobs firs
     provider.extractionStrategy,
     'verified-first-party-careers-culture-page+contact-handoff+no-public-job-listings',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Careers and Culture/i)
+  assert.match(provider.verifiedSurfaceSummary, /Employee Stories/i)
   assert.match(provider.verifiedSurfaceSummary, /Join Our Team/i)
   assert.match(provider.verifiedSurfaceSummary, /Get Started/i)
+  assert.match(provider.verifiedSurfaceSummary, /Careers at R-Logic/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /rlogictechnologyservices[\\/]jobs\.json$/i)
 })

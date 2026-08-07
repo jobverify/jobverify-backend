@@ -30,6 +30,21 @@ const careersHubHtml = `
 </html>
 `
 
+const currentCareersHubHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job Vacancies &amp; Careers | Sage US</title>
+  </head>
+  <body>
+    <h1>Grow your future with us</h1>
+    <h2>Search for your new role.</h2>
+    <a href="/en-us/company/careers/career-search/">See open roles</a>
+    <section>India</section>
+  </body>
+</html>
+`
+
 const careerSearchHtml = `
 <!doctype html>
 <html lang="en">
@@ -79,7 +94,7 @@ test('Sage Intacct scraper exports the verified shared Sage careers-hub sentinel
   assert.equal(sageIntacct.SOURCE, 'sageintacct')
   assert.equal(sageIntacct.COMPANY, 'Sage Intacct')
   assert.equal(sageIntacct.OFFICIAL_BRAND_NAME, 'Sage Intacct')
-  assert.equal(sageIntacct.VERIFIED_ON, '2026-07-17')
+  assert.equal(sageIntacct.VERIFIED_ON, '2026-08-04')
   assert.equal(sageIntacct.PRODUCT_PAGE_URL, 'https://www.sage.com/en-us/sage-business-cloud/intacct/')
   assert.equal(sageIntacct.CAREERS_PAGE_URL, 'https://www.sage.com/en-us/company/careers/')
   assert.equal(
@@ -99,6 +114,12 @@ test('Sage Intacct scraper exports the verified shared Sage careers-hub sentinel
   assert.equal(sageIntacct.hasVerifiedCareersHubSignal(careersHubHtml), true)
   assert.equal(sageIntacct.hasVerifiedCareerSearchSignal(careerSearchHtml), true)
   assert.equal(sageIntacct.hasVerifiedIndiaLocationsSignal(locationsHtml), true)
+})
+
+test('Sage Intacct recognizes the current live shared Sage careers hub title encoding', async () => {
+  const sageIntacct = await loadSageIntacctModule()
+
+  assert.equal(sageIntacct.hasVerifiedCareersHubSignal(currentCareersHubHtml), true)
 })
 
 test('Sage Intacct run returns [] after validating the shared Sage careers hub and India locations contract', async () => {
@@ -124,6 +145,38 @@ test('Sage Intacct run returns [] after validating the shared Sage careers hub a
     'https://www.sage.com/en-us/company/careers/career-search/',
     'https://www.sage.com/en-us/company/careers/locations/',
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Sage Intacct falls back to browser-backed fetches when the verified Sage surfaces return Cloudflare 403 pages', async () => {
+  const sageIntacct = await loadSageIntacctModule()
+  const primaryRequests = []
+  const browserRequests = []
+
+  const jobs = await sageIntacct.createSageIntacctScraper().run({
+    fetchText: async (url) => {
+      primaryRequests.push(url)
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserRequests.push(url)
+
+      if (url === sageIntacct.PRODUCT_PAGE_URL) return productPageHtml
+      if (url === sageIntacct.CAREERS_PAGE_URL) return careersHubHtml
+      if (url === sageIntacct.CAREER_SEARCH_URL) return careerSearchHtml
+      if (url === sageIntacct.LOCATIONS_URL) return locationsHtml
+
+      throw new Error(`Unexpected Sage Intacct browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(primaryRequests, [
+    'https://www.sage.com/en-us/sage-business-cloud/intacct/',
+    'https://www.sage.com/en-us/company/careers/',
+    'https://www.sage.com/en-us/company/careers/career-search/',
+    'https://www.sage.com/en-us/company/careers/locations/',
+  ])
+  assert.deepEqual(browserRequests, primaryRequests)
   assert.deepEqual(jobs, [])
 })
 

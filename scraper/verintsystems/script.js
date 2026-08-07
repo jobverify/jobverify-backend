@@ -1,6 +1,11 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { VERINT_SYSTEMS_CATALOG } from './catalog.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = VERINT_SYSTEMS_CATALOG.source
 export const COMPANY_NAME = VERINT_SYSTEMS_CATALOG.companyName
@@ -178,11 +183,12 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 
 export const hasOfficialCandidateExperienceSignal = (html = '') => {
   const page = String(html ?? '')
-  return /<title>\s*Verint Careers\s*<\/title>/i.test(page)
+  return /<title>\s*Verint\s*<\/title>/i.test(page)
     && /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX\/?["']/i.test(page)
-    && new RegExp(`apiBaseUrl:\\s*['"]https://${WORKSPACE_DOMAIN}:443['"]`, 'i').test(page)
-    && new RegExp(`siteNumber:\\s*['"]${SITE_NUMBER}['"]`, 'i').test(page)
-    && /Search Verint jobs/i.test(page)
+    && new RegExp(`data-apibaseurl=["']https://${WORKSPACE_DOMAIN}:443["']`, 'i').test(page)
+    && new RegExp(`data-sitenumber=["']${SITE_NUMBER}["']`, 'i').test(page)
+    && /<meta[^>]+property=["']og:title["'][^>]+content=["']Verint Careers["']/i.test(page)
+    && /<meta[^>]+property=["']og:description["'][^>]+content=["']JOIN OUR TEAM["']/i.test(page)
 }
 
 export const buildSearchUrl = ({
@@ -329,3 +335,15 @@ export const createVerintSystemsScraper = ({
 })
 
 export const run = async (options = {}) => createVerintSystemsScraper(options).run()
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

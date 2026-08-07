@@ -20,12 +20,12 @@ const CAREERS_FIXTURE = `
     <div class="awsm-job-listing-item awsm-grid-item" id="awsm-grid-item-39368">
       <a href="https://easyrewardz.com/jobs/customer-success-kam-bfsi-2/" class="awsm-job-item">
         <div class="awsm-grid-left-col">
-          <h2 class="awsm-job-post-title">Customer Success – KAM – BFSI</h2>
+          <h2 class="awsm-job-post-title">Customer Success â€“ KAM â€“ BFSI</h2>
         </div>
         <div class="awsm-grid-right-col">
           <div class="awsm-job-specification-wrapper">
             <div class="awsm-job-specification-item awsm-job-specification-job-category">
-              <span class="awsm-job-specification-term">Customer Success – KAM – BFSI</span>
+              <span class="awsm-job-specification-term">Customer Success â€“ KAM â€“ BFSI</span>
             </div>
             <div class="awsm-job-specification-item awsm-job-specification-job-type">
               <span class="awsm-job-specification-term">Full Time</span>
@@ -61,6 +61,51 @@ const CAREERS_FIXTURE = `
     </div>
   </div>
 `
+
+const API_FIXTURE = JSON.stringify([
+  {
+    id: 39368,
+    date: '2025-07-17T11:50:15',
+    slug: 'customer-success-kam-bfsi-2',
+    link: 'https://easyrewardz.com/jobs/customer-success-kam-bfsi-2/',
+    title: {
+      rendered: 'Customer Success â€“ KAM â€“ BFSI',
+    },
+    content: {
+      rendered: `
+        <h2>About Easyrewardz</h2>
+        <p>EasyRewardz is a leading customer experience management company.</p>
+        <h2>Experience &amp; Skills</h2>
+        <ul>
+          <li>4-5 years+ Experience</li>
+          <li>Strong knowledge of loyalty, CRM and marketing strategy in BFSI.</li>
+        </ul>
+        <h2>Qualification &amp; Working Experience</h2>
+        <p>BE/B.Tech with MBA.</p>
+        <p>4-5 years of working experience.</p>
+        <p><b>Location – Gurgaon</b></p>
+      `,
+    },
+  },
+  {
+    id: 39222,
+    date: '2025-07-17T11:27:26',
+    slug: 'smb-sales-popin',
+    link: 'https://easyrewardz.com/jobs/smb-sales-popin/',
+    title: {
+      rendered: 'SMB -Sales &#8211; Popin',
+    },
+    content: {
+      rendered: `
+        <h2>About Easyrewardz</h2>
+        <p>Join the growth team focused on SMB partnerships.</p>
+        <p><b>Location – Gurgaon</b></p>
+        <h2>Responsibilities</h2>
+        <p>Own inside sales motions and partner outreach for the Popin product line.</p>
+      `,
+    },
+  },
+])
 
 const loadCatalogModule = async () => {
   try {
@@ -129,8 +174,15 @@ test('EasyRewardz Software Services scraper extracts first-party role cards from
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
-      assert.equal(url, easyrewardz.CAREERS_URL)
-      return CAREERS_FIXTURE
+      if (url === easyrewardz.CAREERS_URL) {
+        return CAREERS_FIXTURE
+      }
+
+      if (url === easyrewardz.JOBS_API_URL) {
+        return API_FIXTURE
+      }
+
+      throw new Error(`Unexpected EasyRewardz fixture URL: ${url}`)
     },
   })
 
@@ -142,14 +194,18 @@ test('EasyRewardz Software Services scraper extracts first-party role cards from
       applyUrl: job.applyUrl,
       employmentType: job.employmentType,
       jobId: job.jobId,
+      experienceRequired: job.experienceRequired,
+      publicExperienceChecked: job.publicExperienceChecked,
     })),
     [
       {
-        title: 'Customer Success – KAM – BFSI',
+        title: 'Customer Success â€“ KAM â€“ BFSI',
         location: 'Gurgaon, India',
         applyUrl: 'https://easyrewardz.com/jobs/customer-success-kam-bfsi-2/',
         employmentType: 'Full-time',
         jobId: 'customer-success-kam-bfsi-gurgaon-customer-success-kam-bfsi-2',
+        experienceRequired: '4-5 years',
+        publicExperienceChecked: true,
       },
       {
         title: 'SMB -Sales – Popin',
@@ -157,6 +213,8 @@ test('EasyRewardz Software Services scraper extracts first-party role cards from
         applyUrl: 'https://easyrewardz.com/jobs/smb-sales-popin/',
         employmentType: 'Full-time',
         jobId: 'smb-sales-popin-gurgaon-smb-sales-popin',
+        experienceRequired: null,
+        publicExperienceChecked: true,
       },
     ],
   )

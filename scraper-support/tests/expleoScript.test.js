@@ -58,7 +58,7 @@ const searchWrapperHtml = `
         var icimsFrame = document.createElement('iframe');
         icimsFrame.id = 'icims_content_iframe';
         icimsFrame.name = 'icims_content_iframe';
-        icimsFrame.src = 'https://expleo-jobs-in-en.icims.com/jobs/search?hashed=-435712793&in_iframe=1';
+        icimsFrame.src = 'https:\\/\\/expleo-jobs-in-en.icims.com\\/jobs\\/search?hashed=-435712793&in_iframe=1';
       });
     </script>
   </body>
@@ -358,7 +358,7 @@ test('Expleo helpers stay pinned to the verified first-party careers and India i
   assert.equal(expleo.SOURCE, 'expleo')
   assert.equal(expleo.COMPANY, 'Expleo')
   assert.equal(expleo.OFFICIAL_BRAND_NAME, 'Expleo')
-  assert.equal(expleo.VERIFIED_ON, '2026-07-15')
+  assert.equal(expleo.VERIFIED_ON, '2026-08-02')
   assert.equal(expleo.OFFICIAL_CAREERS_PAGE_URL, OFFICIAL_CAREERS_PAGE_URL)
   assert.equal(expleo.INDIA_JOBS_ROOT_URL, INDIA_JOBS_ROOT_URL)
   assert.equal(expleo.SEARCH_WRAPPER_URL, SEARCH_WRAPPER_URL)
@@ -642,8 +642,8 @@ test('run fails closed when the Expleo first-party careers page, wrapper handoff
         if (url === OFFICIAL_CAREERS_PAGE_URL) return officialCareersHtml
         if (url === SEARCH_WRAPPER_URL) {
           return searchWrapperHtml.replace(
-            'https://expleo-jobs-in-en.icims.com/jobs/search?hashed=-435712793&in_iframe=1',
-            'https://expleo-jobs-in-en.icims.com/jobs/search?hashed=other&in_iframe=1',
+            'https:\\/\\/expleo-jobs-in-en.icims.com\\/jobs\\/search?hashed=-435712793&in_iframe=1',
+            'https:\\/\\/expleo-jobs-in-en.icims.com\\/jobs\\/search?hashed=other&in_iframe=1',
           )
         }
         throw new Error(`Unexpected Expleo fixture URL: ${url}`)

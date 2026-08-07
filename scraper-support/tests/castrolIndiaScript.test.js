@@ -99,6 +99,23 @@ const bpSearchPageHtml = `
 </html>
 `
 
+const bpSearchNoOpenRolesHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job Opportunities at bp | Search open roles</title>
+    <script src="https://d37szssm2oooap.cloudfront.net/assets/bp/js/algoliasearch-lite.umd.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Search and apply</h1>
+      <p>There are no open roles</p>
+      <p>No matching jobs found.</p>
+    </main>
+  </body>
+</html>
+`
+
 const bpAlgoliaPayload = {
   nbHits: 3,
   hits: [
@@ -279,6 +296,46 @@ test('Castrol India scraper follows the verified Castrol handoff and parses publ
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'castrolindia')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+})
+
+test('Castrol India returns [] when the verified BP search surface reports no open roles', async () => {
+  const castrolIndia = await loadCastrolIndiaModule()
+  const requestedUrls = []
+
+  const jobs = await castrolIndia.createCastrolIndiaScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === castrolIndia.SITEMAP_URL) {
+        return { status: 200, url, html: sitemapHtml }
+      }
+
+      if (url === castrolIndia.CAREERS_PAGE_URL) {
+        return { status: 200, url, html: careersPageHtml }
+      }
+
+      if (url === castrolIndia.GRADUATE_PROGRAMMES_URL) {
+        return { status: 200, url, html: graduateProgrammesHtml }
+      }
+
+      if (url === castrolIndia.BP_SEARCH_APPLY_URL) {
+        return { status: 200, url: 'https://careers.bp.com/listing', html: bpSearchNoOpenRolesHtml }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchAlgoliaJobs: async () => {
+      throw new Error('Algolia should not be queried when the public BP listing reports no open roles')
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    castrolIndia.SITEMAP_URL,
+    castrolIndia.CAREERS_PAGE_URL,
+    castrolIndia.GRADUATE_PROGRAMMES_URL,
+    castrolIndia.BP_SEARCH_APPLY_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
 test('Castrol India sentinel fails closed when the careers surface or BP handoff changes', async () => {

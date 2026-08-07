@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Sterling Software Private Limited local catalog captures the verified careers page and fail-closed sentinel contract', async () => {
+test('Sterling Software Private Limited local catalog captures the verified careers page and public-opening extractor contract', async () => {
   const {
     STERLING_SOFTWARE_PRIVATE_LIMITED_CATALOG,
     default: defaultCatalog,
@@ -40,25 +40,26 @@ test('Sterling Software Private Limited local catalog captures the verified care
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://sterlingsoftware.global/')
   assert.equal(provider.companyCareerPage, 'https://sterlingsoftware.global/career/')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-live-openings')
+  assert.equal(provider.atsPlatform, 'official-company-site-public-job-pages')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-first-party-careers-page-without-live-public-openings',
+    'verified-first-party-careers-table-plus-public-detail-pages',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+commented-historical-openings+returns-empty-array',
+    'verified-first-party-careers-page+public-opening-table+public-detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'sterlingsoftware.global')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/sterlingsoftware\.global\/career\//i)
-  assert.match(provider.verifiedSurfaceSummary, /Current Opening/i)
-  assert.match(provider.verifiedSurfaceSummary, /commented historical Chennai rows/i)
-  assert.match(provider.verifiedSurfaceSummary, /no live public openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Application Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Java/i)
+  assert.match(provider.verifiedSurfaceSummary, /application-engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /java-architect/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /sterlingsoftwareprivatelimited[\\/]jobs\.json$/i)
 

@@ -258,7 +258,6 @@ test('run stays on public HARMAN SearchJobs and JobDetail pages and emits only I
   assert.deepEqual(requestedUrls, [
     harman.buildSearchUrl(),
     INDIA_DETAIL_URL,
-    NETHERLANDS_DETAIL_URL,
   ])
   assert.equal(jobs.length, 1)
   assert.deepEqual({ ...jobs[0], scrapedAt: undefined }, {

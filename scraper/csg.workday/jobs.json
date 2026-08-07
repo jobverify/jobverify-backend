@@ -1,0 +1,257 @@
+[
+  {
+    "jobId": null,
+    "title": "Software Development Engineer",
+    "company": "CSG",
+    "department": null,
+    "location": "India Remote",
+    "city": "Remote",
+    "locations": [
+      "Remote"
+    ],
+    "link": "https://csgi.wd5.myworkdayjobs.com/en-US/CSGCareers/job/India-Remote/SDE-I_31917",
+    "source": "csg",
+    "postedAt": "2026-08-01T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Hi there! I’m Satya Damera, your recruiter and guide to opportunities at CSG. We’re really excited to get to know you and learn more about your background. As a Full-stack .NET Software Developer within our Merchant and Partner Support team, you will play a key role in maintaining the stability and performance of CSG’s products and applications. You’ll collaborate with cross-functional teams to help ensure that the tools and applications supporting Merchant and Partner operations are reliable, scalable, easy for internal teams to use, and aligned with business needs and industry standards. We are looking for a Software Developer who will: Design and develop new solutions using a variety of technologies such as but not limited to C#, .NET Core, .NET MVC, Java Script, j Query, Angular, CSS and HTML. Build and integrate web services and APIs using REST, .NET Web API, WCF, SOAP, and related technologies. Troubleshoot, debug, and resolve issues with guidance from senior developers when needed. Improve and maintain database performance across platforms such as MS SQL and Postgre SQL. You will support new and existing applications as they are deployed and operate in multiple production environments. Collaborate with development, QA, product, and support teams to deliver high-quality software and resolve issues efficiently. Is this opportunity right for you? We are looking for someone who has: A Bachelor’s degree in computer science, information technology or a related field. 2+ years of experience with C#, .NET Core, .NET MVC, Web API, Angular (or) React, and databases such as MS SQL (or) Postgre SQL. Strong understanding of programming fundamentals, software development concepts, and troubleshooting practices. Experience with AWS Lambda, WCF and SOAP is nice to have. Ability to read, write, speak and understand the English language in a business environment. CSGer Perks &amp; Benefits Work from home, in-office, or hybrid Employee Belonging Groups Healthcare: Dental, Medical, and Vision Paid Vacation, Volunteer, and Holiday Time Off And so much more! View more benefits: https://www.csgi.com/careers/ #LI-Remote Location(s): India Remote Accommodation: If you would like to be considered for employment opportunities with CSG and need special assistance due to a disability or accommodation for a disability throughout any aspect of the application process, please call us at +1 (402) 431-7440 or email us at accommodations@csgi.com. CSG provides accommodations for persons with disabilities in employment, including during the hiring process and any interview and/or testing processes. Our Guiding Principles: Impact: Always help and empower others, whether they’re colleagues or customers. When our employees set their minds to something, great things happen. Integrity: Do what’s right for our customers and our people while being authentic. We treat everyone with trust and respect—that’s just who we are. Inspiration: Be bold in the way you think and passionate about the work you do. Test out innovative ideas without the fear of failure. Our Story: CSG empowers companies to build unforgettable experiences, making it easier for people and businesses to connect with, use and pay for the services they value most. For over 40 years, CSG's technologies and people have helped some of the world's most recognizable brands solve their toughest business challenges and evolve to meet the demands of today's digital economy. By channeling the power of all, we make ordinary customer and employee experiences extraordinary. Our people [CSGers] are fearlessly committed and connected, high on integrity and low on ego, making us the easiest company to do business with and the best place to work. We power a culture of integrity, innovation, and impact across our locations, representing the most authentic version of ourselves to build a better future together. That's just who we are. Learn more about CSG Inclusion &amp; Impact here. Introduce yourself to our recruiters and we'll get in touch if there is a role that seems like a good match. CSG empowers companies to build unforgettable experiences, making it easier for people and businesses to connect with, use and pay for the services they value most. For over 40 years, CSG's technologies and people have helped some of the world's most recognizable brands solve their toughest business challenges and evolve to meet the demands of today's digital economy. By channeling the power of all, we make ordinary customer and employee experiences extraordinary. Our people [CSGers] are fearlessly committed and connected, high on integrity and low on ego, making us the easiest company to do business with and the best place to work. We power a culture of integrity, innovation, and impact across our locations, representing the most authentic version of ourselves to build a better future together. That's just who we are. If not us, then who? Learn more CSG is an Affirmative Action, Equal Opportunity / Veteran / Disabled / Female / Minority / Sexual Orientation / Gender Identity Employer. CSG does not discriminate on the basis of age 40 and over, color, disability, gender identity, genetic information, military or veteran status, national origin, race, religion, sex, sexual orientation or any other applicable status protected by state or local law, are not taken into account in any employment decision. CSG will not discharge or in any other manner discriminate against employees or applicants because they have inquired about, discussed, or disclosed their own pay or the pay of another employee or applicant. However, employees who have access to the compensation information of other employees or applicants as a part of their essential job functions cannot disclose the pay of other employees or applicants to individuals who do not otherwise have access to compensation information, unless the disclosure is (a) in response to a formal complaint or charge, (b) in furtherance of an investigation, proceeding, hearing, or action, including an investigation conducted by the employer, or (c) consistent with the contractor’s legal duty to furnish information. If you would like to be considered for employment opportunities with CSG and need special assistance due to a disability or accommodation for a disability throughout any aspect of the application process, please call us at +1 (402) 431-7440 or email us at accommodations@csgi.com. CSG provides accommodations for persons with disabilities in employment, including during the hiring process and any interview and/or testing processes. For the EEO it's the Law posting, click HERE .",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "2+ years",
+    "requisitionId": "31917",
+    "scrapedAt": "2026-08-02T06:48:31.472Z",
+    "country": "India",
+    "companyCareerPage": "https://www.csgi.com/careers",
+    "companyDomain": "csgi.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://csgi.wd5.myworkdayjobs.com/en-US/CSGCareers/job/India-Remote/SDE-I_31917",
+    "sourceUrl": "https://csgi.wd5.myworkdayjobs.com/en-US/CSGCareers/job/India-Remote/SDE-I_31917",
+    "originalTitle": "Software Development Engineer",
+    "normalizedTitle": "Software Development Engineer",
+    "jobCategory": "Software Development Engineer",
+    "engineeringDomain": "Cloud",
+    "employmentType": "Full-time",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "Remote",
+    "salary": null,
+    "postingDate": "2026-08-01T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-02T06:48:31.472Z",
+    "skillIds": [
+      "java",
+      "javascript",
+      "angular",
+      "sql",
+      "postgresql",
+      "aws"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      },
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Postgre SQL"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2+ years",
+      "minimumYears": 2,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2+ years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Backend Engineering",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure",
+      "Frontend Engineering"
+    ],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T06:48:32.086Z"
+  },
+  {
+    "jobId": null,
+    "title": "Senior Developer",
+    "company": "CSG",
+    "department": null,
+    "location": "India Remote",
+    "city": "Remote",
+    "locations": [
+      "Remote"
+    ],
+    "link": "https://csgi.wd5.myworkdayjobs.com/en-US/CSGCareers/job/India-Remote/Senior-Developer_32160",
+    "source": "csg",
+    "postedAt": "2026-08-01T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Are you passionate about software development for mobile network integration? Join our team to help take our telecom testing technology to new heights. The CSG Stockholm team is developing an advanced telecom testing software solution called CSG Assure used by mobile operators across the globe, including leading operators like AT&amp;T, Tata, Orange. CSG Assure is an artificial test traffic generation platform consisting of a cloud-based application, controllers and test probes located in around 200 countries globally. We are looking for a skilled developer to be part of our small, agile team to build applications that help our mobile operator customers validate and optimize mobile service performance for their roamers and local subscribers. You will develop our next-generation mobile test probe for 3G, 4G, 5G and Io T to simulate mobile users using voice, SMS and data services. Main development is done in C &amp; C++ on Linux platform. We think that you are a highly skilled, analytical, customer-focused person with a strong developer profile that enjoys taking responsibility, making sure our customers get full value of our high-tech solutions. Required Skills Completed Degree in Computer Science or related field 5+ years of professional experience in software development, preferably in telecom Strong proficiency in C++, data structures and multi-threading programming Linux system knowledge Solid understanding of the Radio Access Network (RAN) layer of mobile networks; the signaling and data exchange between devices and the network. Good knowledge of mobile network technologies (3G, 4G, IMS/Vo LTE, 5G, Io T) and network signaling (e.g. SIP, RRC, NAS) as defined in 3GPP Excellent Communication, problem-solving skills and ability to work independently in a fast-paced environment. Bonus Skills Experience in development against cellular modems; experience with either AT commands, QMI, or modem vendor SDK Experience with network monitoring tools and protocol analyzers like Wireshark, QCAT Familiarity with scripting languages, e.g. LUA, Shell, Perl Understanding of e UICC/e SIM, GSMA standards Android development experience Why should you apply? Opportunity to work and grow your skillset in cutting-edge technologies Provide solutions to world-leading communication service providers Be part of a collaborative, innovative, international team Key Words: Senior Developer, Software Engineer, Mobile Networks, C++, Linux, Modem Communication, Telecom Software Location(s): India Remote Accommodation: If you would like to be considered for employment opportunities with CSG and need special assistance due to a disability or accommodation for a disability throughout any aspect of the application process, please call us at +1 (402) 431-7440 or email us at accommodations@csgi.com. CSG provides accommodations for persons with disabilities in employment, including during the hiring process and any interview and/or testing processes. Our Guiding Principles: Impact: Always help and empower others, whether they’re colleagues or customers. When our employees set their minds to something, great things happen. Integrity: Do what’s right for our customers and our people while being authentic. We treat everyone with trust and respect—that’s just who we are. Inspiration: Be bold in the way you think and passionate about the work you do. Test out innovative ideas without the fear of failure. Our Story: CSG empowers companies to build unforgettable experiences, making it easier for people and businesses to connect with, use and pay for the services they value most. For over 40 years, CSG's technologies and people have helped some of the world's most recognizable brands solve their toughest business challenges and evolve to meet the demands of today's digital economy. By channeling the power of all, we make ordinary customer and employee experiences extraordinary. Our people [CSGers] are fearlessly committed and connected, high on integrity and low on ego, making us the easiest company to do business with and the best place to work. We power a culture of integrity, innovation, and impact across our locations, representing the most authentic version of ourselves to build a better future together. That's just who we are. Learn more about CSG Inclusion &amp; Impact here. Introduce yourself to our recruiters and we'll get in touch if there is a role that seems like a good match. CSG empowers companies to build unforgettable experiences, making it easier for people and businesses to connect with, use and pay for the services they value most. For over 40 years, CSG's technologies and people have helped some of the world's most recognizable brands solve their toughest business challenges and evolve to meet the demands of today's digital economy. By channeling the power of all, we make ordinary customer and employee experiences extraordinary. Our people [CSGers] are fearlessly committed and connected, high on integrity and low on ego, making us the easiest company to do business with and the best place to work. We power a culture of integrity, innovation, and impact across our locations, representing the most authentic version of ourselves to build a better future together. That's just who we are. If not us, then who? Learn more CSG is an Affirmative Action, Equal Opportunity / Veteran / Disabled / Female / Minority / Sexual Orientation / Gender Identity Employer. CSG does not discriminate on the basis of age 40 and over, color, disability, gender identity, genetic information, military or veteran status, national origin, race, religion, sex, sexual orientation or any other applicable status protected by state or local law, are not taken into account in any employment decision. CSG will not discharge or in any other manner discriminate against employees or applicants because they have inquired about, discussed, or disclosed their own pay or the pay of another employee or applicant. However, employees who have access to the compensation information of other employees or applicants as a part of their essential job functions cannot disclose the pay of other employees or applicants to individuals who do not otherwise have access to compensation information, unless the disclosure is (a) in response to a formal complaint or charge, (b) in furtherance of an investigation, proceeding, hearing, or action, including an investigation conducted by the employer, or (c) consistent with the contractor’s legal duty to furnish information. If you would like to be considered for employment opportunities with CSG and need special assistance due to a disability or accommodation for a disability throughout any aspect of the application process, please call us at +1 (402) 431-7440 or email us at accommodations@csgi.com. CSG provides accommodations for persons with disabilities in employment, including during the hiring process and any interview and/or testing processes. For the EEO it's the Law posting, click HERE .",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "5+ years",
+    "requisitionId": "32160",
+    "scrapedAt": "2026-08-02T06:48:32.083Z",
+    "country": "India",
+    "companyCareerPage": "https://www.csgi.com/careers",
+    "companyDomain": "csgi.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://csgi.wd5.myworkdayjobs.com/en-US/CSGCareers/job/India-Remote/Senior-Developer_32160",
+    "sourceUrl": "https://csgi.wd5.myworkdayjobs.com/en-US/CSGCareers/job/India-Remote/Senior-Developer_32160",
+    "originalTitle": "Senior Developer",
+    "normalizedTitle": "Senior Developer",
+    "jobCategory": "Senior Developer",
+    "engineeringDomain": "Cloud",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "Remote",
+    "salary": null,
+    "postingDate": "2026-08-01T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-02T06:48:32.083Z",
+    "skillIds": [
+      "linux"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Linux"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5+ years",
+      "minimumYears": 5,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5+ years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T06:48:32.090Z"
+  }
+]

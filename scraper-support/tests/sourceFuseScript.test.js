@@ -135,6 +135,43 @@ test('SourceFuse helpers stay pinned to the verified official India openings pag
   ])
 })
 
+test('SourceFuse accepts the current first-party India location formats without dropping public job cards', async () => {
+  const sourceFuse = await loadModule()
+  const currentFormatHtml = OFFICIAL_INDIA_OPENINGS_HTML
+    .replace('India Openings with <span class="sf-jobs__hero-accent">SourceFuse.</span>', 'Careers at <span class="sf-jobs__hero-accent">SourceFuse.</span>')
+    .replaceAll('<div class="sf-jobs__item">', '<div class="sf-jobs__item" data-sf-anim="fade-up">')
+    .replace('Mohali/Noida, India', 'Bangalore')
+    .replace('Location: Mohali/Noida, India', 'Location: Bangalore')
+    .replace('Remote, India', 'Mohali, India (JST time zone)')
+    .replace('Location: Remote, India', 'Location: Mohali, India (JST time zone)')
+
+  assert.equal(sourceFuse.hasOfficialIndiaOpeningsSignal(currentFormatHtml), true)
+  assert.deepEqual(sourceFuse.extractJobCards(currentFormatHtml), [
+    {
+      title: 'Senior Integration Engineer',
+      location: 'Bangalore, India',
+      city: 'Bangalore',
+      experienceRequired: '6-9 Years',
+      employmentType: 'FULL TIME',
+      positions: '1 Position',
+      jobDescription: 'Build CRM integration services for enterprise clients.',
+      jobId: 'sourcefuse-senior-integration-engineer',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Senior Business Analyst',
+      location: 'Mohali, India',
+      city: 'Mohali',
+      experienceRequired: '8-12+ Years',
+      employmentType: 'FULL TIME',
+      positions: '1 Position',
+      jobDescription: 'Lead discovery and business transformation initiatives for insurance clients.',
+      jobId: 'sourcefuse-senior-business-analyst',
+      remoteStatus: 'On-site',
+    },
+  ])
+})
+
 test('SourceFuse run validates the official India openings page and maps live inline job panels', async () => {
   const sourceFuse = await loadModule()
   const requestedUrls = []

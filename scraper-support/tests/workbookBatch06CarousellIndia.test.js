@@ -8,7 +8,7 @@ const VERIFIED_BOARD_HTML = `
     </head>
     <body>
       <header>
-        <a href="https://careers.carousell.com/">Home Page</a>
+        <a href="https://careers.carousell.com/who-we-are/">Home Page</a>
         <a href="/contact">Get in touch!</a>
       </header>
       <main>
@@ -17,18 +17,14 @@ const VERIFIED_BOARD_HTML = `
         <p>Browse by:</p>
         <p>Location</p>
         <section>
-          <h3>Bengaluru, India</h3>
-          <p>1 job</p>
-          <a href="https://jobs.smartrecruiters.com/CarousellGroup/744000138024389-ios-intern-6-months-internship-">
-            iOS intern (6 months internship)
+          <h3>Ho Chi Minh City, Vietnam</h3>
+          <p>2 jobs</p>
+          <a href="https://jobs.smartrecruiters.com/CarousellGroup/744000139194869-business-analyst-commercial-nha-tot">
+            Business Analyst - Commercial (Nha Tot)
           </a>
-          <p>Intern</p>
-        </section>
-        <section>
-          <h3>Hong Kong, Hong Kong</h3>
-          <p>1 job</p>
-          <a href="https://jobs.smartrecruiters.com/CarousellGroup/744000138099999-business-development-executive">
-            Business Development Executive
+          <p>Full-time</p>
+          <a href="https://jobs.smartrecruiters.com/CarousellGroup/744000139911019-growth-specialist-seller-success-monetisation-nha-tot">
+            Growth Specialist - Seller Success & Monetisation (Nha Tot)
           </a>
         </section>
       </main>
@@ -64,6 +60,62 @@ const LISTINGS_PAYLOAD = {
       },
       ref: 'https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings/744000138024389',
     },
+    {
+      id: '744000139194869',
+      name: 'Business Analyst - Commercial (Nha Tot)',
+      refNumber: 'REF1440O',
+      releasedDate: '2026-07-23T02:36:10.172Z',
+      location: {
+        city: 'Ho Chi Minh City',
+        region: 'Ho Chi Minh',
+        country: 'vn',
+        remote: false,
+        hybrid: false,
+        fullLocation: 'Ho Chi Minh City, Ho Chi Minh, Vietnam',
+      },
+      company: {
+        identifier: 'CarousellGroup',
+        name: 'Carousell Group',
+      },
+      department: {
+        label: 'Property',
+      },
+      typeOfEmployment: {
+        label: 'Full-time',
+      },
+      ref: 'https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings/744000139194869',
+    },
+    {
+      id: '744000139257269',
+      name: 'Frontliner (Offline Store)',
+      refNumber: 'REF1432H',
+      releasedDate: '2026-07-23T10:47:49.030Z',
+      location: {
+        city: 'Tangerang',
+        region: 'Banten',
+        country: 'id',
+        remote: false,
+        hybrid: false,
+        fullLocation: 'Tangerang, Banten, Indonesia',
+      },
+      company: {
+        identifier: 'CarousellGroup',
+        name: 'Carousell Group',
+      },
+      department: {
+        label: 'Sales Ops',
+      },
+      typeOfEmployment: {
+        label: 'Contract',
+      },
+      ref: 'https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings/744000139257269',
+    },
+  ],
+}
+
+const ZERO_INDIA_LISTINGS_PAYLOAD = {
+  totalFound: 2,
+  content: [
     {
       id: '744000139194869',
       name: 'Business Analyst - Commercial (Nha Tot)',
@@ -196,21 +248,21 @@ test('Carousell India validates the verified public SmartRecruiters board and ma
   assert.equal(carousell.SOURCE, 'carousellindia')
   assert.equal(carousell.COMPANY, 'Carousell India')
   assert.equal(carousell.OFFICIAL_BRAND, 'Carousell Group')
-  assert.equal(carousell.VERIFIED_ON, '2026-07-25')
+  assert.equal(carousell.VERIFIED_ON, '2026-08-01')
   assert.equal(carousell.CAREERS_URL, 'https://careers.smartrecruiters.com/CarousellGroup')
-  assert.equal(carousell.HOME_PAGE_URL, 'https://careers.carousell.com/')
+  assert.equal(carousell.HOME_PAGE_URL, 'https://careers.carousell.com/who-we-are/')
   assert.equal(carousell.SMARTRECRUITERS_COMPANY_IDENTIFIER, 'CarousellGroup')
   assert.equal(
     carousell.DISPOSITION,
     'verified-public-smartrecruiters-board-plus-public-jobs-api',
   )
-  assert.match(carousell.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(carousell.VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/)
   assert.match(carousell.VERIFIED_SURFACE_SUMMARY, /careers\.smartrecruiters\.com\/CarousellGroup/i)
-  assert.match(carousell.VERIFIED_SURFACE_SUMMARY, /iOS intern \(6 months internship\)/i)
+  assert.match(carousell.VERIFIED_SURFACE_SUMMARY, /no India postings in the live payload/i)
   assert.equal(carousell.hasVerifiedBoardSignal(VERIFIED_BOARD_HTML), true)
   assert.equal(
     carousell.extractHomePageUrl(VERIFIED_BOARD_HTML),
-    'https://careers.carousell.com/',
+    'https://careers.carousell.com/who-we-are/',
   )
   assert.equal(
     carousell.buildListingsApiUrl({ limit: 100, offset: 0 }),
@@ -299,6 +351,35 @@ test('Carousell India run validates the public SmartRecruiters board and returns
   assert.equal(jobs[0].scrapedAt, '2026-07-25T00:00:00.000Z')
 })
 
+test('Carousell India returns an empty list when the verified board is healthy but the public API has no India roles', async () => {
+  const carousell = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await carousell.createCarousellIndiaScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      assert.equal(url, carousell.CAREERS_URL)
+      return VERIFIED_BOARD_HTML
+    },
+    fetchJson: async (url, options = {}) => {
+      requestedUrls.push(url)
+      assert.equal(options.method, 'GET')
+      assert.equal(
+        url,
+        'https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings?limit=100&offset=0',
+      )
+      return ZERO_INDIA_LISTINGS_PAYLOAD
+    },
+    now: () => '2026-08-01T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    carousell.CAREERS_URL,
+    'https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings?limit=100&offset=0',
+  ])
+  assert.deepEqual(jobs, [])
+})
+
 test('Carousell India fails closed when the verified SmartRecruiters contract drifts', async () => {
   const carousell = await loadModule()
 
@@ -313,7 +394,7 @@ test('Carousell India fails closed when the verified SmartRecruiters contract dr
   await assert.rejects(
     carousell.createCarousellIndiaScraper().run({
       fetchText: async () =>
-        VERIFIED_BOARD_HTML.replace('https://careers.carousell.com/', 'https://example.com/'),
+        VERIFIED_BOARD_HTML.replace('https://careers.carousell.com/who-we-are/', 'https://example.com/'),
       fetchJson: async () => LISTINGS_PAYLOAD,
     }),
     /verified Home Page link changed materially/i,

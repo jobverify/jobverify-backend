@@ -17,9 +17,9 @@ export const QUALSQUAD_INFOTECH_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   modulePath: 'scraper/qualsquadinfotech/script.js',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that candidate first-party Qualsquad domains either timed out or could not be resolved, including qualsquadinfotech.com, so no trustworthy public jobs surface was available to scrape.',
+    'Verified on Tuesday, August 4, 2026 that the candidate first-party Qualsquad host https://www.qualsquad.com/ timed out from both direct requests and browser-backed verification, while legacy qualsquadinfotech.com hostnames still failed to resolve. No trustworthy public jobs surface was available to scrape.',
 }
 
 export default QUALSQUAD_INFOTECH_CATALOG

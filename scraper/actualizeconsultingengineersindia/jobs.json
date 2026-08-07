@@ -1,0 +1,91 @@
+[
+  {
+    "title": "Business Analyst",
+    "company": "Actualize Consulting Engineers India Pvt Ltd",
+    "department": null,
+    "location": "Pune, Maharashtra, India",
+    "city": "Pune",
+    "state": "Maharashtra",
+    "country": "India",
+    "jobId": "168482000001451001",
+    "requisitionId": "168482000001451001",
+    "sourceUrl": "https://actualize.zohorecruit.in/jobs/Careers/168482000001451001/Business-Analyst?source=CareerSite",
+    "applyUrl": "https://actualize.zohorecruit.in/jobs/Careers/168482000001451001/Business-Analyst?source=CareerSite",
+    "employmentType": "Full-time",
+    "experienceRequired": "5-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-01-20T18:30:00.000Z",
+    "closingDate": null,
+    "jobDescription": "About Us Actualize is a trusted global partner in engineering and digital transformation, with 20+ years of domain expertise in the manufacturing, industrial, and automotive sectors. Our India-based team delivers smart, scalable solutions using AI/ML, Io T, cloud, and intelligent automation to modernize legacy systems and enable data-led innovation. Headquartered in Bangalore, we also operate from Pune, Ohio, and Munich. We are looking for a Business Analyst to join our Digital team. We are a group of engineers passionate about reliability, automation, and scalability in a cloud-native environment. You will be key in ensuring our work remains focused on the most important and impactful needs of the business by expertly defining and coordinating requirements within our agile framework. The Role As a Business Analyst, your mission is to bridge the gap between business needs and the development team's execution, ensuring strategic alignment and high-quality delivery. Key Responsibilities Requirements Management: Coordinate with the team on requirements definition, clarification, and acceptance criteria. Work closely with Product and Solution Management, Product Owners, Software Leaders, and other stakeholders to help ensure strategy and execution alignment. Act as the Subject Matter Expert for the assigned area. Planning & Reporting: Assist in tracking the execution of features and capabilities. Prepare capacity plans and highlight execution risks to customers and stakeholders. Work and prepare periodic reports and burn-down charts to track progress. Provides transparency and radiates status to all relevant stakeholders (e.g., RTE / Lean Portfolio Management (LPM)). Quality & Expertise: Fosters the preparation of Vision and Backlogs, ensuring they are ready for Sprint/PI planning. Adhere to and foster built-in quality practices. Advise and mentor more junior team members to maximize overall productivity and effectiveness. What can you expect from us? · We provide challenging work environment · We are truly a product design and development multi-national organization thereby every person can contribute and grow · We allow every passionate employee to further develop and grow those who believe that \"there is always a better way.\" · We let people challenge the \"Status Quo\" and take further initiatives in developing new tools, framework, and applications · We like to be \"First in Mind\n- First in Choice\" in every segment and businesses that we operate What we expect from you? · You have a Computer Science Engineering qualification (B. E. or B. Tech or MTech) from a reputed university. · 5-8 years of experience is similar role. · You are passionate about Embedded systems, Controllers, Io T, IIo T and Modern web applications. · Experience in working in Agile/Scrum teams and following agile process. · Knowledge and experience with tools like Azure Dev Ops and/or Jira for requirements tracking and reporting Why Join Us: At Actualize, we foster a culture of work-life balance, continuous learning, and inclusivity. We support professional certifications and upskilling programs to keep our talent ahead in a fast-changing tech landscape. Join a global team that values innovation, growth, and diversity.",
+    "remoteStatus": "On-site",
+    "source": "actualizeconsultingengineersindia",
+    "link": "https://actualize.zohorecruit.in/jobs/Careers/168482000001451001/Business-Analyst?source=CareerSite",
+    "scrapedAt": "2026-08-01T14:20:51.212Z",
+    "companyCareerPage": "https://actualize.zohorecruit.in/jobs/Careers",
+    "companyDomain": "actualize.zohorecruit.in",
+    "atsPlatform": "zoho-recruit",
+    "originalTitle": "Business Analyst",
+    "normalizedTitle": "Business Analyst",
+    "jobCategory": "Business Analyst",
+    "engineeringDomain": "DevOps",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2026-01-20T18:30:00.000Z",
+    "scrapedTimestamp": "2026-08-01T14:20:51.212Z",
+    "skillIds": [
+      "azure"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5-8 years",
+      "minimumYears": 5,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5-8 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "DevOps & SRE"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:28.538Z"
+  }
+]

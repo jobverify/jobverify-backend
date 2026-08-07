@@ -27,16 +27,22 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 const defaultFetchPage = async (url) => ({
-  status: 200,
   url,
-  html: await fetchTextWithRetry(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    label: SOURCE,
-    timeoutMs: 15000,
-  }),
+  ...(await (async () => {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(15000),
+    })
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  })()),
 })
 
 export const hasHomepageCareersEmailOnlySignal = (html = '') => {

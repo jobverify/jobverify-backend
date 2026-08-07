@@ -88,18 +88,52 @@ const rocketCareersHtml = `
 </html>
 `
 
-const workdayOutageHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Workday is currently unavailable.</title>
-    <link rel="canonical" href="https://community.workday.com/outage-page/40754" />
-  </head>
-  <body>
-    <h1>Workday is currently unavailable.</h1>
-  </body>
-</html>
-`
+const techtreeDetailJson = {
+  'https://www.techtreeit.com/wp-json/wp/v2/awsm_job_openings/12193': {
+    id: 12193,
+    link: 'https://www.techtreeit.com/jobs/ui-developer/',
+    title: { rendered: 'UI Developer' },
+    content: {
+      rendered: `
+        <p>Experience 1 to 3 years</p>
+        <p><strong>Responsibilities</strong></p>
+        <ul>
+          <li>Develop new frontend features and components.</li>
+          <li>Collaborate with team members and stakeholders.</li>
+        </ul>
+      `,
+    },
+  },
+  'https://www.techtreeit.com/wp-json/wp/v2/awsm_job_openings/12190': {
+    id: 12190,
+    link: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
+    title: { rendered: 'Associate QA Engineer' },
+    content: {
+      rendered: `
+        <p>Experience Required: 0 to 2 years</p>
+        <p><strong>Requirements</strong></p>
+        <ul>
+          <li>Strong attention to detail and test case design.</li>
+          <li>Good communication and stakeholder management.</li>
+        </ul>
+      `,
+    },
+  },
+}
+
+const rocketWorkdayJobs = [
+  {
+    title: 'Software Engineer III',
+    company: 'Rocket Software',
+    location: 'Pune, India',
+    city: 'Pune',
+    link: 'https://rocket.wd5.myworkdayjobs.com/rocket_careers/job/Pune-India/Software-Engineer-III_R2026-6454',
+    source: 'rocketsoftware',
+    jobId: 'R2026-6454',
+    requisitionId: 'R2026-6454',
+    scrapedAt: '2026-08-04T00:00:00.000Z',
+  },
+]
 
 const hirexaCareersHtml = `
 <!doctype html>
@@ -115,6 +149,10 @@ const hirexaCareersHtml = `
     <div class="marquee-item"><h4 class="title">NetCraft</h4></div>
     <div class="marquee-item"><h4 class="title">NetCraft</h4></div>
     <div class="marquee-item"><h4 class="title">NetCraft</h4></div>
+    <h4 class="title">Apply new</h4>
+    <a href="https://hirexa.com/europe-jobs">Europe Jobs</a>
+    <a href="/usa-jobs">USA Jobs</a>
+    <a href="https://hirexa.com/india-jobs/">India Jobs</a>
     <h4>Apply new</h4>
     <p>Your name</p>
     <p>Your email</p>
@@ -231,6 +269,14 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
   const techtree = await loadModule('../../scraper/techtreeitsystems/script.js')
 
   assert.equal(techtree.hasOfficialCareersSignal(techtreeCareersHtml), true)
+  assert.equal(
+    techtree.isVerifiedCareersPage({
+      status: 500,
+      url: techtree.CAREERS_URL,
+      html: techtreeCareersHtml,
+    }),
+    true,
+  )
   assert.deepEqual(techtree.extractJobCards(techtreeCareersHtml), [
     {
       title: 'UI Developer',
@@ -240,6 +286,7 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
       city: 'Belagavi',
       sourceUrl: 'https://www.techtreeit.com/jobs/ui-developer/',
       applyUrl: 'https://www.techtreeit.com/jobs/ui-developer/',
+      postId: '12193',
     },
     {
       title: 'Associate QA Engineer',
@@ -249,65 +296,109 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
       city: 'Belagavi',
       sourceUrl: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
       applyUrl: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
+      postId: '12190',
     },
   ])
 
   const jobs = await techtree.createTechtreeItSystemsScraper({
     now: () => '2026-07-18T00:00:00.000Z',
   }).run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       assert.equal(url, techtree.CAREERS_URL)
-      return techtreeCareersHtml
+      return {
+        status: 500,
+        url,
+        html: techtreeCareersHtml,
+      }
+    },
+    fetchJson: async (url) => {
+      const payload = techtreeDetailJson[url]
+      assert.ok(payload, `Unexpected TechTree detail JSON URL: ${url}`)
+      return payload
     },
   })
 
   assert.equal(jobs.length, 2)
   assert.deepEqual(
-    jobs.map((job) => [job.title, job.location, job.employmentType, job.sourceUrl]),
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      employmentType: job.employmentType,
+      sourceUrl: job.sourceUrl,
+      experienceRequired: job.experienceRequired,
+      publicExperienceChecked: job.publicExperienceChecked,
+    })),
     [
-      [
-        'UI Developer',
-        'Belagavi / Mumbai, India',
-        'Full Time',
-        'https://www.techtreeit.com/jobs/ui-developer/',
-      ],
-      [
-        'Associate QA Engineer',
-        'Belagavi / Bengaluru, India',
-        'Full Time',
-        'https://www.techtreeit.com/jobs/associate-qa-engineer/',
-      ],
+      {
+        title: 'UI Developer',
+        location: 'Belagavi / Mumbai, India',
+        employmentType: 'Full Time',
+        sourceUrl: 'https://www.techtreeit.com/jobs/ui-developer/',
+        experienceRequired: '1-3 years',
+        publicExperienceChecked: true,
+      },
+      {
+        title: 'Associate QA Engineer',
+        location: 'Belagavi / Bengaluru, India',
+        employmentType: 'Full Time',
+        sourceUrl: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
+        experienceRequired: '0-2 years',
+        publicExperienceChecked: true,
+      },
     ],
   )
+  assert.match(jobs[0].jobDescription || '', /frontend features/i)
+  assert.match(jobs[1].jobDescription || '', /test case design|attention to detail/i)
 })
 
-test('Rocket Software stays fail-closed while the verified Workday board is on an upstream outage page', async () => {
+test('Rocket Software uses browser fallback for the verified careers page and delegates to the live Workday board', async () => {
   const rocket = await loadModule('../../scraper/rocketsoftware/script.js')
 
   assert.equal(rocket.hasOfficialCareersSignal(rocketCareersHtml), true)
-  assert.equal(rocket.hasWorkdayOutageSignal(workdayOutageHtml), true)
+  assert.equal(
+    rocket.shouldUseBrowserFallback(new Error('HTTP 403 for https://www.rocketsoftware.com/en-us/careers')),
+    true,
+  )
 
   const jobs = await rocket.createRocketSoftwareScraper().run({
-    fetchText: async (url) => {
-      if (url === rocket.CAREERS_URL) return rocketCareersHtml
-      if (url === rocket.WORKDAY_BOARD_URL) return workdayOutageHtml
-      throw new Error(`Unexpected Rocket Software URL: ${url}`)
+    fetchText: async () => {
+      throw new Error('HTTP 403 for https://www.rocketsoftware.com/en-us/careers')
+    },
+    fetchBrowserText: async (url) => {
+      assert.equal(url, rocket.CAREERS_URL)
+      return rocketCareersHtml
+    },
+    runWorkday: async (options) => {
+      assert.equal(options.company, 'Rocket Software')
+      assert.equal(options.baseUrl, rocket.WORKDAY_BOARD_URL)
+      assert.equal(options.locationCountry, 'India')
+      assert.equal(options.source, 'rocketsoftware')
+      return rocketWorkdayJobs
     },
   })
 
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(jobs, [
+    {
+      ...rocketWorkdayJobs[0],
+      company: 'Rocket Software',
+      source: 'rocketsoftware',
+      sourceUrl: 'https://rocket.wd5.myworkdayjobs.com/rocket_careers/job/Pune-India/Software-Engineer-III_R2026-6454',
+      applyUrl: 'https://rocket.wd5.myworkdayjobs.com/rocket_careers/job/Pune-India/Software-Engineer-III_R2026-6454',
+    },
+  ])
+})
+
+test('Rocket Software fails closed when the verified careers page drifts', async () => {
+  const rocket = await loadModule('../../scraper/rocketsoftware/script.js')
 
   await assert.rejects(
     rocket.createRocketSoftwareScraper().run({
-      fetchText: async (url) => {
-        if (url === rocket.CAREERS_URL) return rocketCareersHtml
-        if (url === rocket.WORKDAY_BOARD_URL) {
-          return '<html><head><title>Careers at Rocket</title></head><body><a href="/job/123">Search for Jobs</a></body></html>'
-        }
-        throw new Error(`Unexpected Rocket Software URL: ${url}`)
+      fetchText: async () => '<html><title>Unexpected</title></html>',
+      runWorkday: async () => {
+        throw new Error('runWorkday should not be called when the careers page drifts')
       },
     }),
-    /Workday outage/i,
+    /verified careers page changed materially/i,
   )
 })
 
@@ -315,6 +406,7 @@ test('HIREXA SOLUTIONS stays fail-closed while the first-party page only exposes
   const hirexa = await loadModule('../../scraper/hirexasolutions/script.js')
 
   assert.equal(hirexa.hasOfficialCareersSignal(hirexaCareersHtml), true)
+  assert.equal(hirexa.hasPublicJobsSignal(hirexaCareersHtml), false)
   assert.deepEqual(hirexa.extractPlaceholderTitles(hirexaCareersHtml), [
     'NetCraft',
     'NetCraft',

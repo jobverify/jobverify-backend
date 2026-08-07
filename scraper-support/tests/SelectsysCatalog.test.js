@@ -9,12 +9,12 @@ const careersHtml = `
     <p>Selectsys is a global team across the U.S. and India.</p>
     <h2>Roles We're Hiring For</h2>
     <ul>
-      <li>BPO Workflow Manager (Insurance Ops - Remote)</li>
-      <li>Underwriting QA Analyst</li>
-      <li>Full-Stack Developer (.NET, TypeScript, Azure)</li>
-      <li>Product Manager (Quoting + Bind Layer)</li>
-      <li>Onboarding + Integration Lead</li>
-      <li>Client Success Manager (Insurance/Tech hybrid)</li>
+      <li><i class="bi bi-arrow-right"></i> BPO Workflow Manager (Insurance Ops - Remote)</li>
+      <li><i class="bi bi-arrow-right"></i> Underwriting QA Analyst</li>
+      <li><i class="bi bi-arrow-right"></i> Full-Stack Developer (.NET, TypeScript, Azure)</li>
+      <li><i class="bi bi-arrow-right"></i> Product Manager (Quoting + Bind Layer)</li>
+      <li><i class="bi bi-arrow-right"></i> Onboarding + Integration Lead</li>
+      <li><i class="bi bi-arrow-right"></i> Client Success Manager (Insurance/Tech hybrid)</li>
     </ul>
     <h2>How to Apply</h2>
     <p>Email your resume and LinkedIn profile to hr@selectsys.com with the job title in the subject line.</p>
@@ -48,7 +48,7 @@ test('Selectsys exports local provider metadata for the verified first-party ema
     companyName: 'Selectsys',
     officialBrandName: 'Selectsys',
     adapter: 'script',
-    modulePath: '../../scraper/selectsys/script.js',
+    modulePath: '../selectsys/script.js',
     homepageUrl: 'https://www.selectsys.com/',
     companyCareerPage: 'https://www.selectsys.com/careers',
     atsPlatform: 'official-company-careers-email-apply',
@@ -93,6 +93,7 @@ test('Selectsys extracts the verified same-page role list and email apply contra
     link:
       'mailto:hr@selectsys.com?subject=Application%20for%20BPO%20Workflow%20Manager%20(Insurance%20Ops%20-%20Remote)',
     source: 'selectsys',
+    publicExperienceChecked: true,
     scrapedAt: '2026-07-18T00:00:00.000Z',
   })
 })

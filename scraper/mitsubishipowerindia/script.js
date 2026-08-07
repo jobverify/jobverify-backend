@@ -63,9 +63,15 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*1 \| Mitsubishi Power India Private Limited\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*1 \| Mitsubishi Power India Private Limited\s*<\/title>/i.test(page)
+      || /<title>\s*Mitsubishi Power India Private Limited\s*<\/title>/i.test(page)
+  )
     && text.includes('Welcome to Mitsubishi Power India')
-    && text.includes('Mitsubishi Power India Private Limited is based at Bangalore India.')
+    && (
+      text.includes('Mitsubishi Power India Private Limited is based at Bangalore India.')
+        || text.includes('Mitsubishi Power India headquartered at Bangalore')
+    )
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -82,7 +88,15 @@ export const hasOfficialCareersSignal = (html) => {
 
 export const hasOfficialCurrentOpeningsSignal = (html) => {
   const page = String(html ?? '')
-  return /<app-root\b/i.test(page) && /main\.c5020320440ba363d661\.js/i.test(page)
+  return (
+    /<app-root\b/i.test(page) && /main\.c5020320440ba363d661\.js/i.test(page)
+  ) || (
+    /<title>\s*TalentRecruit Softwares\s*<\/title>/i.test(page)
+      && page.includes('Please enable JavaScript to continue using this application.')
+      && /<base href="\/">/i.test(page)
+      && /favicon\.svg/i.test(page)
+      && /<app-root\b/i.test(page)
+  )
 }
 
 export const hasPublicJobListings = (html) =>

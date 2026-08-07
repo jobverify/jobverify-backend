@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -9,9 +9,27 @@ export const SOURCE = 'lumen'
 export const COMPANY_NAME = 'Lumen Technologies'
 export const HOMEPAGE_URL = 'https://www.lumen.com/en-us/home.html'
 export const CAREERS_URL = 'https://careers.lumen.com/careers?sort_by=hot&start=0'
+export const SEARCH_API_URL = 'https://careers.lumen.com/api/pcsx/search'
+export const SEARCH_API_DOMAIN = 'lumen.com'
+export const SEARCH_PAGE_SIZE = 50
+export const VERIFIED_ON = '2026-08-03'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const PAGE_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+}
+
+const SEARCH_HEADERS = {
+  Accept: 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'User-Agent': USER_AGENT,
+  'X-Requested-With': 'XMLHttpRequest',
+  Referer: CAREERS_URL,
+  Origin: 'https://careers.lumen.com',
+}
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -44,54 +62,16 @@ const stripHtml = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const extractJsonObject = (text, marker = '"items"') => {
-  const rawText = String(text ?? '')
-  const start = rawText.indexOf(marker)
-  if (start < 0) return null
+const extractTitle = (html) => normalizeWhitespace(
+  decodeHtmlEntities(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || null),
+)
 
-  let openIndex = start
-  while (openIndex > 0 && rawText[openIndex] !== '{') {
-    openIndex -= 1
-  }
-
-  if (rawText[openIndex] !== '{') return null
-
-  let depth = 0
-  let inString = false
-  let escaped = false
-
-  for (let index = openIndex; index < rawText.length; index += 1) {
-    const char = rawText[index]
-
-    if (escaped) {
-      escaped = false
-      continue
-    }
-
-    if (char === '\\') {
-      escaped = true
-      continue
-    }
-
-    if (char === '"') {
-      inString = !inString
-      continue
-    }
-
-    if (inString) continue
-
-    if (char === '{') depth += 1
-    if (char === '}') depth -= 1
-
-    if (depth === 0) {
-      return rawText.slice(openIndex, index + 1)
-    }
-  }
-
-  return null
+const isIndiaLocation = (value) => {
+  const normalized = normalizeText(value)
+  return /india/i.test(normalized)
+    || /,\s*in$/i.test(normalized)
+    || /,\s*ind$/i.test(normalized)
 }
-
-const isIndiaLocation = (value) => /india/i.test(normalizeText(value))
 
 const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
@@ -100,117 +80,172 @@ const extractCity = (location) => {
   return normalized.split(',')[0]?.trim() || null
 }
 
-const extractJobId = (value) => {
-  const normalized = normalizeWhitespace(value)
+const normalizeRemoteStatus = (value) => {
+  const normalized = normalizeText(value)
   if (!normalized) return null
+  if (normalized.includes('remote')) return 'Remote'
+  if (normalized.includes('onsite')) return 'On-site'
+  return null
+}
+
+const formatUnixTimestamp = (value) => {
+  const seconds = Number(value)
+  if (!Number.isFinite(seconds) || seconds <= 0) return null
 
   try {
-    const pathParts = new URL(normalized).pathname.split('/').filter(Boolean)
-    return pathParts.at(-1) || null
+    return new Date(seconds * 1000).toISOString().slice(0, 10)
   } catch {
     return null
   }
 }
 
-const normalizeEmploymentType = (value) => {
-  const normalized = normalizeText(value)
+const toAbsoluteCareerUrl = (value) => {
+  const normalized = normalizeWhitespace(value)
   if (!normalized) return null
-  if (normalized.includes('full')) return 'Full-time'
-  if (normalized.includes('part')) return 'Part-time'
-  if (normalized.includes('intern')) return 'Internship'
-  if (normalized.includes('contract')) return 'Contract'
-  return normalizeWhitespace(value)
+
+  try {
+    return new URL(normalized, CAREERS_URL).toString()
+  } catch {
+    return null
+  }
 }
 
-const buildJobCard = (item = {}) => {
-  const title = normalizeWhitespace(item.title)
-  const sourceUrl = normalizeWhitespace(item.url)
-  const applyUrl = normalizeWhitespace(item.applyNowUrl || item.url)
-  const location = normalizeWhitespace(item.location || item.primaryLocation)
-  const jobId = extractJobId(applyUrl || sourceUrl)
+export const buildSearchApiUrl = ({
+  start = 0,
+  limit = SEARCH_PAGE_SIZE,
+  location = 'India',
+} = {}) => {
+  const url = new URL(SEARCH_API_URL)
+  url.searchParams.set('domain', SEARCH_API_DOMAIN)
+  url.searchParams.set('query', '')
+  if (location) {
+    url.searchParams.set('location', location)
+  }
+  url.searchParams.set('start', String(start))
+  url.searchParams.set('limit', String(limit))
+  return url.toString()
+}
 
-  if (!title || !sourceUrl || !applyUrl || !location || !jobId) {
+const normalizeLocation = (position = {}) => {
+  const candidates = [
+    ...(Array.isArray(position.locations) ? position.locations : []),
+    ...(Array.isArray(position.standardizedLocations) ? position.standardizedLocations : []),
+  ]
+    .map((value) => normalizeWhitespace(value))
+    .filter(Boolean)
+
+  return candidates.find((value) => /india/i.test(value))
+    || candidates.find((value) => /,\s*in$/i.test(normalizeText(value)))
+    || candidates.find((value) => /,\s*ind$/i.test(normalizeText(value)))
+    || candidates[0]
+    || null
+}
+
+const buildJobCard = (position = {}) => {
+  const title = normalizeWhitespace(position.name)
+  const location = normalizeLocation(position)
+  const locationCandidates = [
+    location,
+    ...(Array.isArray(position.standardizedLocations) ? position.standardizedLocations : []),
+    ...(Array.isArray(position.locations) ? position.locations : []),
+  ].filter(Boolean)
+
+  if (!title || !location || !locationCandidates.some(isIndiaLocation)) {
     return null
   }
 
-  if (!isIndiaLocation(location) && !isIndiaLocation(item.primaryLocation)) {
+  const sourceUrl = toAbsoluteCareerUrl(position.positionUrl || `/careers/job/${position.id}`)
+  const jobId = position.id ?? null
+  const requisitionId = normalizeWhitespace(position.displayJobId || position.atsJobId || jobId)
+
+  if (!sourceUrl || jobId == null || !requisitionId) {
     return null
   }
+
+  const remoteStatus = normalizeRemoteStatus(position.workLocationOption)
 
   return {
     title,
     company: COMPANY_NAME,
-    department: normalizeWhitespace(item.jobFunction),
+    department: normalizeWhitespace(position.department),
     location,
     city: extractCity(location),
     country: 'India',
     jobId,
-    requisitionId: jobId,
+    requisitionId,
     sourceUrl,
-    applyUrl,
-    employmentType: normalizeEmploymentType(item.jobType),
-    experienceRequired: normalizeWhitespace(item.experience),
+    applyUrl: sourceUrl,
+    employmentType: null,
+    experienceRequired: null,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: normalizeWhitespace(item.publicationDate)?.slice(0, 10) || null,
+    postingDate: position.postedTs ?? null,
     closingDate: null,
     jobDescription: null,
+    ...(remoteStatus ? { remoteStatus } : {}),
   }
 }
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
+  const title = extractTitle(rawHtml) || ''
+  const text = stripHtml(rawHtml) || ''
 
-  return /<title>\s*AI-Ready Networking\s*&(?:amp;)?\s*Secure Cloud Solutions \| Lumen Technologies\s*<\/title>/i.test(rawHtml)
-    && /VIEW CAREERS/i.test(rawHtml)
-    && /careers\.lumen\.com\/careers\?sort_by=hot&start=0/i.test(rawHtml)
-    && /AI-Ready Networking\s*&(?:amp;)?\s*Secure Cloud Solutions/i.test(rawHtml)
+  return /AI-Ready Networking\s*&\s*Secure Cloud Solutions\s*\|\s*Lumen Technologies/i.test(title)
+    && /AI-Ready Networking/i.test(text)
+    && /Secure Cloud Solutions/i.test(text)
+    && /Lumen Technologies/i.test(text)
+}
+
+const extractPcsxPayload = (html) => {
+  const rawHtml = String(html ?? '')
+  const match = rawHtml.match(/<code id="pcsx-data"[^>]*>([\s\S]*?)<\/code>/i)
+  if (!match) return null
+
+  try {
+    return JSON.parse(decodeHtmlEntities(match[1]))
+  } catch {
+    return null
+  }
 }
 
 export const hasVerifiedCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = stripHtml(rawHtml)
+  const title = extractTitle(rawHtml) || ''
+  const pcsxPayload = extractPcsxPayload(rawHtml)
 
-  return /<title>\s*Careers at Lumen Technologies\s*<\/title>/i.test(rawHtml)
-    && /Challenge Accepted\./i.test(normalized || '')
-    && /Build the Future\./i.test(normalized || '')
-    && /View All Jobs/i.test(normalized || '')
-    && /"totalNumber"\s*:\s*\d+/i.test(rawHtml)
-    && /"items"\s*:\s*\[/i.test(rawHtml)
+  return /Careers at Lumen Technologies/i.test(title)
+    && (
+      /window\._EF_GROUP_ID\s*=\s*"lumen\.com"/i.test(rawHtml)
+      || pcsxPayload?.domain === 'lumen.com'
+    )
+    && /id=["']pcsx-data["']/i.test(rawHtml)
 }
 
-export const extractSearchResults = (html) => {
-  const rawHtml = String(html ?? '')
-  const payloadText = extractJsonObject(rawHtml, '"items"')
-
-  if (!payloadText) {
-    return []
-  }
-
-  let payload
-  try {
-    payload = JSON.parse(payloadText)
-  } catch {
-    return []
-  }
-
-  return Array.isArray(payload?.items)
-    ? payload.items.map(buildJobCard).filter(Boolean)
+export const extractSearchResults = (payload) => (
+  Array.isArray(payload?.data?.positions)
+    ? payload.data.positions.map(buildJobCard).filter(Boolean)
     : []
-}
+)
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
+  headers: PAGE_HEADERS,
   label: SOURCE,
   timeoutMs: 15000,
 })
 
-export const createLumenScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: SEARCH_HEADERS,
+  label: `${SOURCE}-api`,
+  timeoutMs: 15000,
+})
+
+export const createLumenScraper = ({
+  now = () => new Date().toISOString(),
+  pageSize = SEARCH_PAGE_SIZE,
+} = {}) => ({
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now: overrideNow } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Lumen verified official homepage no longer matches the known public surface')
@@ -221,11 +256,29 @@ export const createLumenScraper = () => ({
       throw new Error('Lumen verified careers page no longer matches the known first-party jobs surface')
     }
 
-    return extractSearchResults(careersHtml).map((job) => ({
+    const jobs = []
+
+    for (let start = 0; ; start += pageSize) {
+      const payload = await fetchJson(buildSearchApiUrl({ start, limit: pageSize }))
+      const pagePositions = Array.isArray(payload?.data?.positions) ? payload.data.positions : []
+      jobs.push(...extractSearchResults(payload))
+
+      const totalCount = Number(payload?.data?.count)
+      if (pagePositions.length < pageSize) {
+        break
+      }
+
+      if (Number.isFinite(totalCount) && start + pageSize >= totalCount) {
+        break
+      }
+    }
+
+    return jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
+      postingDate: formatUnixTimestamp(job.postingDate),
+      scrapedAt: (overrideNow || now)(),
     }))
   },
 })

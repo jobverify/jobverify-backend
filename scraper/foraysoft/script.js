@@ -1,5 +1,10 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'foraysoft'
 export const COMPANY = 'ForaySoft'
@@ -49,7 +54,7 @@ const REQUIRED_JOBS_PAGE_TWO_PATTERNS = [
   /\bD365, F&O Technical - Robert Bosch\b/i,
   /\bPosted on 21st Sep 2021 17:36:12 in Java With fullstack\b/i,
   /Posted on 21st Sep 2021 14:56:26 in Data And Analytics \(Big Data\)/i,
-  /\bPosted on 16th Sep 2021 10:41:44 in Cloud, Python\b/i,
+  /\bPosted on 16th Sep 2021 10:41:44 in Cloud\s*,\s*Python\b/i,
 ]
 
 const THIRD_PARTY_CLIENT_PATTERNS = [
@@ -265,3 +270,15 @@ export const createForaySoftScraper = () => ({
 })
 
 export const run = async (options = {}) => createForaySoftScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

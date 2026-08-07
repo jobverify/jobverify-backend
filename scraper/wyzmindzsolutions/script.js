@@ -22,19 +22,32 @@ const USER_AGENT =
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
+  const text = page.replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
 
   return /WyzMindz/i.test(page)
-    && /AI Powered Workflow Automation/i.test(page)
-    && /Get in touch/i.test(page)
+    && /AI\s*Powered Workflow Automation/i.test(text)
+    && /Get in touch/i.test(text)
+    && /Srinivasa Industrial Estate/i.test(text)
   }
 
 export const hasVerifiedContactSignal = (html = '') => {
   const page = String(html ?? '')
+  const text = page.replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
 
-  return /Contact/i.test(page)
-    && /Get in touch/i.test(page)
-    && /Srinivasa Industrial Estate/i.test(page)
-  }
+  return /WyzMindz/i.test(page)
+    && /Get in touch/i.test(text)
+    && /Srinivasa Industrial Estate/i.test(text)
+}
 
 export const hasPublicJobBoardSignal = (html = '') => {
   const page = String(html ?? '')
@@ -99,7 +112,7 @@ export const createWyzmindzSolutionsScraper = () => ({
 
 export const run = async (options = {}) => createWyzmindzSolutionsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

@@ -171,6 +171,7 @@ test('Navi helpers stay pinned to the verified first-party careers handoff and T
       postingDate: '2026-07-16T05:43:36.5983344Z',
       closingDate: '2026-08-31T18:29:00.32Z',
       jobDescription: 'About the Team The Credit Risk team at Navi drives risk strategy and forecasting.',
+      publicExperienceChecked: true,
     },
   ])
 })
@@ -259,6 +260,7 @@ test('Navi run validates the official careers handoff, board shell, and public T
       postingDate: '2026-07-16T05:43:36.5983344Z',
       closingDate: '2026-08-31T18:29:00.32Z',
       jobDescription: 'About the Team The Credit Risk team at Navi drives risk strategy and forecasting.',
+      publicExperienceChecked: true,
       source: 'navi',
       link: 'https://navi.turbohire.co/job/publicjobs/Cvxwte5N5snwG3hC%2FJkmZDU3RTVAq0zyKiiGLI4keyB3_3_ZUhAlZKVULxyMnx6q',
       scrapedAt: '2026-07-16T00:00:00.000Z',

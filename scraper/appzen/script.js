@@ -2,14 +2,14 @@ import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/ut
 
 export const SOURCE = 'appzen'
 export const COMPANY = 'AppZen'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://www.appzen.com/careers'
 export const LEVER_ACCOUNT = 'appzen'
 export const LEVER_BOARD_URL = `https://jobs.lever.co/${LEVER_ACCOUNT}`
 export const LEVER_API_URL = `https://api.lever.co/v0/postings/${LEVER_ACCOUNT}?mode=json`
 export const DISPOSITION = 'verified-first-party-careers-page-plus-public-lever-jobs-api'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.appzen.com/careers was the live exact-name AppZen careers surface, that it embedded the public Lever account appzen, and that the corresponding public Lever board at https://jobs.lever.co/appzen plus https://api.lever.co/v0/postings/appzen?mode=json exposed a trustworthy public jobs inventory including India roles. This scraper validates the verified first-party careers embed and public Lever board, then returns India jobs only from the public Lever API.'
+  'Verified on Saturday, August 1, 2026 that https://www.appzen.com/careers remained the live exact-name AppZen careers surface, that it still embedded the public Lever account appzen, and that the corresponding public Lever board at https://jobs.lever.co/appzen plus https://api.lever.co/v0/postings/appzen?mode=json exposed a trustworthy public jobs inventory including India roles. The public Lever board footer now renders Powered by Lever instead of the older Jobs powered by Lever copy, while preserving the same public jobs contract. This scraper validates the verified first-party careers embed and public Lever board, then returns India jobs only from the public Lever API.'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
@@ -160,14 +160,26 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 export const hasOfficialLeverBoardSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const text = normalizeText(rawHtml)
+  const hasLeverFooterBranding =
+    /\b(?:Jobs\s+)?Powered by\b/i.test(text)
+    && /alt=["']Lever logo["']|lever-logo-/i.test(rawHtml)
+  const hasVisibleBoardContent =
+    /Job openings at AppZen,\s*Inc\.?/i.test(text)
+    || (
+      /\bLocation type\b/i.test(text)
+      && /\bLocation\b/i.test(text)
+      && /\bTeam\b/i.test(text)
+      && /\bWork type\b/i.test(text)
+      && /https:\/\/jobs\.lever\.co\/appzen\/[a-z0-9-]+/i.test(rawHtml)
+    )
 
   return /<title[^>]*>\s*AppZen,\s*Inc\.\s*<\/title>/i.test(rawHtml)
     && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/jobs\.lever\.co\/appzen["']/i.test(
       rawHtml,
     )
-    && /Job openings at AppZen,\s*Inc\./i.test(text)
+    && hasVisibleBoardContent
     && /https:\/\/www\.appzen\.com\//i.test(rawHtml)
-    && /\bJobs powered by Lever\b/i.test(text)
+    && hasLeverFooterBranding
 }
 
 export const extractIndiaLeverJobs = (payload = []) => {

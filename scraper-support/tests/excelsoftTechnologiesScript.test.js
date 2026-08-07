@@ -19,6 +19,9 @@ const careersLandingHtml = `
     <h1>One Team One Dream</h1>
     <p>Being an Excelian is just a choice away!</p>
     <p>An excellent opportunity to explore your career aspirations and scale up your career graph.</p>
+    <script>
+      rec_embed_js.load({widget_id:"rec_job_listing_div",page_name:"Excelsoft-Technology",source:"CareerSite",site:"https://excelsoftcorp.zohorecruit.com",empty_job_msg:"No current Openings"});
+    </script>
   </body>
 </html>
 `
@@ -37,6 +40,7 @@ test('Excelsoft Technologies recognises the verified branding-only careers landi
   const excelsoft = await loadExcelsoftModule()
 
   assert.equal(excelsoft.CAREER_PAGE_URL, 'https://www.excelsoftcorp.com/career/')
+  assert.equal(excelsoft.hasOfficialZohoEmptyState(careersLandingHtml), true)
   assert.equal(excelsoft.isVerifiedBrandingOnlySurface(careersLandingHtml), true)
   assert.equal(excelsoft.isVerifiedBrandingOnlySurface(publicJobsHtml), false)
 })

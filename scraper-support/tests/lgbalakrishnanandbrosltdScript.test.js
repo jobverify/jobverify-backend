@@ -108,6 +108,33 @@ test('L.G.Balakrishnan & Bros Ltd run fetches the verified first-party pages and
   )
 })
 
+test('L.G.Balakrishnan & Bros Ltd skips stale job cards whose public apply pages are no longer available', async () => {
+  const lgb = await loadModule()
+
+  const jobs = await lgb.createLgbalakrishnanAndBrosLtdScraper({
+    now: () => '2026-08-01T11:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === lgb.HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === lgb.CAREERS_URL) return CAREERS_HTML
+      if (url === 'https://careers.lgbportal.co.in/job_apply/fb1d5978-695d-4f9a-bf7f-e42fbc78274c') {
+        const error = new Error(`HTTP 400 for ${url}`)
+        error.status = 400
+        throw error
+      }
+      if (url.startsWith('https://careers.lgbportal.co.in/job_apply/')) return JOB_APPLY_A1494_HTML
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 9)
+  assert.equal(
+    jobs.some((job) => job.applyUrl === 'https://careers.lgbportal.co.in/job_apply/fb1d5978-695d-4f9a-bf7f-e42fbc78274c'),
+    false,
+  )
+})
+
 test('L.G.Balakrishnan & Bros Ltd fails closed when the verified homepage or careers portal drifts', async () => {
   const lgb = await loadModule()
 

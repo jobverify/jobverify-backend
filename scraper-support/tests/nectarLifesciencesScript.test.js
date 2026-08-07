@@ -16,7 +16,7 @@ const homepageHtml = `
       <p>Incorporated in 1995, Nectar Lifesciences is a leading global manufacturer of cephalosporin antibiotics medicines, saving lives in over 45 countries.</p>
       <p>Nurturing, Enriching and Caring..</p>
     </main>
-    <footer>© 2022 Nectar Lifesciences Ltd.</footer>
+    <footer>&copy; 2022 Nectar Lifesciences Ltd.</footer>
   </body>
 </html>
 `
@@ -37,7 +37,7 @@ const careersHtml = `
       <p>Use tab to navigate through the menu items.</p>
     </main>
     <footer>
-      <p>© 2022 Nectar Lifesciences Ltd.</p>
+      <p>&copy; 2022 Nectar Lifesciences Ltd.</p>
       <a href="https://www.neclife.com/privacy-policy">Privacy Policy</a>
     </footer>
   </body>
@@ -66,7 +66,7 @@ test('Nectar Lifesciences sentinel stays pinned to the verified first-party home
   assert.equal(nectar.SOURCE, 'nectarlifesciences')
   assert.equal(nectar.COMPANY, 'Nectar Lifesciences')
   assert.equal(nectar.OFFICIAL_BRAND_NAME, 'Nectar Lifesciences Ltd.')
-  assert.equal(nectar.VERIFIED_ON, '2026-07-16')
+  assert.equal(nectar.VERIFIED_ON, '2026-08-03')
   assert.equal(nectar.HOMEPAGE_URL, 'https://www.neclife.com/')
   assert.equal(nectar.CAREERS_URL, 'https://www.neclife.com/careers')
   assert.match(nectar.VERIFIED_SURFACE_SUMMARY, /no trustworthy public job listings/i)

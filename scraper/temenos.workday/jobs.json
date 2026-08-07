@@ -1,0 +1,127 @@
+[
+  {
+    "jobId": "JR955",
+    "title": "Support Analyst",
+    "company": "Temenos",
+    "department": null,
+    "location": "Chennai Perungudi",
+    "city": "Chennai",
+    "locations": [
+      "Chennai"
+    ],
+    "link": "https://temenos.wd103.myworkdayjobs.com/en-US/Temenoscareers/job/Chennai-Perungudi/Support-Analyst_JR955",
+    "source": "temenos",
+    "postedAt": "2026-07-02T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "ABOUT TEMENOS Temenos is a global leader in banking technology. Through our market-leading core banking suite and best-in-class composable solutions, we are modernizing the banking industry. Banks of all sizes utilize our adaptable technology – on-premises, in the cloud, or as Saa S – to deliver next-generation services and AI-enhanced experiences that elevate banking for their customers. Our mission is to create a world where people can live their best financial lives. VALUES Care about transforming the Banking landscape. Commit to being part of an exciting culture and product evolving within the financial industry. Collaborate effectively and proactively with teams within or outside Temenos. Challenge yourself to be ambitious and achieve your individual as well as the company targets. ABOUT THE TEAM Product Analysis and Customer Support (PACS) Team provides end-to-end L2/L3 support for Temenos products across implementation and live production environments, ensuring high availability, SLA compliance, and customer satisfaction We are hiring a Software Engineer / Senior Software Engineer with strong expertise in Java, Spring, and enterprise application support to join the PACS FCM (Financial Crime Mitigation) team. This role focuses on production support, incident management, root cause analysis (RCA), and debugging for enterprise banking applications. The ideal candidate will have experience in client-facing roles, troubleshooting complex issues, and delivering high-quality solutions within SLA-driven environments. Seeking candidates (excluding candidates from Temenos partner company with Transact experience) with Temenos Transact expertise available to join within 30 to 45 days RESPONSIBILITIES Perform incident management, ticket analysis, and issue resolution within defined SLAs Conduct root cause analysis (RCA) and provide detailed defect documentation with code analysis and debug results. Conduct functional verification before the solution is delivered to clients, which involves proper end-to-end analysis, debugging, and testing solutions in a local/demo installation before communicating updates to customer. Troubleshoot production issues in enterprise banking applications Distinguish between defects vs configuration issues and provide appropriate solutions Act as a technical point of contact (SPOC) for client escalations and stakeholder communication Collaborate with development, project, and Dev Ops teams when necessary for faster resolution Contribute to knowledge management (FAQs, troubleshooting guides, HOW-TOs) Support production deployments, upgrades, go-live activities, and major project milestone support. Ability to handle multiple tasks, prioritize, and meet deadlines. Able to work independently and collaboratively with teams and clients. Work in 24/7 support environments including handling critical incidents (P1/P2) Build tools/automation scripts to improve support efficiency and reduce MTTR REQUIRED SKILLS BE/BTech candidates with 2–7 years of experience in application support / production support / L2-L3 support roles with proven experience handling client escalations and SLA-driven environments Programming exposure: Java (Java 8+)/ Spring, Spring Boot/Hibernate/Apache Wicket/ C, C++, Python Experience working in Banking / Financial Services domain, Financial Crime Mitigation (FCM), AML, Sanctions Screening, Temenos Transact / Core Banking Systems with understanding of compliance domains such as AML, sanctions screening, alerts processing Strong expertise in debugging, troubleshooting, and RCA with familiarity in large-scale enterprise applications RDBMS: Oracle / MS SQL / DB2 / SQL Queries Good understanding and knowledge of JSON, XML, XPath Exposure to cloud/Saa S environments and monitoring tools Knowledge of production monitoring tools (Splunk, Dynatrace) SOME OF OUR BENEFITS include: Maternity leave: Transition back with 3 days per week in the first month and 4 days per week in the second month Civil Partnership: 1 week of paid leave if you're getting married. This covers marriages and civil partnerships, including same sex/civil partnership Family care: 4 weeks of paid family care leave Recharge days: 4 days per year to use when you need to physically or mentally needed to recharge Study leaves: 2 weeks of paid leave each year for study or personal development Please make sure to read our Recruitment Privacy Policy Our values are simply described as the 4 C's\n- Care, Collaborate, Challenge and Commit! Temenos is the world’s leading platform for composable banking, serving clients in 150 countries by helping them build new banking services and state-of-the-art customer experiences. Top performing banks using Temenos software achieve cost-income ratios almost half the industry average and returns on equity 2X the industry average. Their IT spend on growth and innovation is also 2X the industry average. At Temenos, we have an open-minded and inclusive culture, where everyone has the power to create their own destiny and make a positive contribution to the world of banking and society.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "2-7 years",
+    "requisitionId": "JR955",
+    "scrapedAt": "2026-08-01T14:16:21.519Z",
+    "country": "India",
+    "companyCareerPage": "https://www.temenos.com/about-us/careers/",
+    "companyDomain": "temenos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://temenos.wd103.myworkdayjobs.com/en-US/Temenoscareers/job/Chennai-Perungudi/Support-Analyst_JR955",
+    "sourceUrl": "https://temenos.wd103.myworkdayjobs.com/en-US/Temenoscareers/job/Chennai-Perungudi/Support-Analyst_JR955",
+    "originalTitle": "Support Analyst",
+    "normalizedTitle": "Support Analyst",
+    "jobCategory": "Support Analyst",
+    "engineeringDomain": "DevOps",
+    "employmentType": "Full-time",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-02T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T14:16:21.519Z",
+    "skillIds": [
+      "java",
+      "spring-boot",
+      "python",
+      "sql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Spring Boot"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2-7 years",
+      "minimumYears": 2,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2-7 years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:37.659Z"
+  }
+]

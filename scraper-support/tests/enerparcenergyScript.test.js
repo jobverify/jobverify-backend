@@ -70,3 +70,21 @@ test('fails closed when the Enerparc Energy page exposes a public opening', asyn
     /no-public-listings surface/i,
   )
 })
+
+test('can recover with a browser-backed Enerparc careers page when direct requests are blocked with HTTP 403', async () => {
+  const enerparcenergy = await loadEnerparcEnergyModule()
+  const browserUrls = []
+
+  const jobs = await enerparcenergy.createEnerparcEnergyScraper().run({
+    fetchText: async () => {
+      throw new Error('HTTP 403 for https://enerparc.in/apply-now/')
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return careersHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [enerparcenergy.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})

@@ -20,6 +20,12 @@ const officialCareersHtml = `
   </script>
 `
 
+const currentOfficialCareersHtml = `
+  <script id="__NEXT_DATA__" type="application/json">
+    {"props":{"pageProps":{"content":{"banner":{"title":"Your next stop"}},"jobs":[{"id":12,"attributes":{"title":"Sales Manager","department":"Apartment Sales","location":"Gurugram | Chennai | Hyderabad | Kolkata | Pune | Mumbai","experience":"2 to 6 years","whatYouWillDo":"Drive closures across identified societies.","slug":"sales-manager","isClosed":false}}]}}}
+  </script>
+`
+
 test('Park+ is covered only by its exact first-party provider', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === SOURCE)
@@ -58,11 +64,23 @@ test('Park+ parses only validated jobs from its official careers payload', async
       isClosed: false,
     },
   ])
+  assert.deepEqual(extractOfficialJobs(currentOfficialCareersHtml), [
+    {
+      id: 12,
+      title: 'Sales Manager',
+      department: 'Apartment Sales',
+      location: 'Gurugram | Chennai | Hyderabad | Kolkata | Pune | Mumbai',
+      experienceRequired: '2 to 6 years',
+      description: 'Drive closures across identified societies.',
+      slug: 'sales-manager',
+      isClosed: false,
+    },
+  ])
 
   const jobs = await createParkPlusScraper({
     now: () => '2026-07-26T00:00:00.000Z',
   }).run({
-    fetchPage: async () => ({ status: 200, url: CAREERS_URL, html: officialCareersHtml }),
+    fetchPage: async () => ({ status: 200, url: CAREERS_URL, html: currentOfficialCareersHtml }),
   })
 
   assert.equal(jobs.length, 1)

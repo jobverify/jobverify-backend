@@ -47,8 +47,8 @@ const officialLeverBoardHtml = `
     <a class="posting-title" href="https://jobs.lever.co/perforce/30f38ba2-01e2-43c3-a5b9-f4d493772961">
       <h5 data-qa="posting-name">Business Development Representative, Delphix</h5>
     </a>
-    <a class="posting-title" href="https://jobs.lever.co/perforce/0f4dcc28-cb87-495e-9a9f-a10b710b7fd6">
-      <h5 data-qa="posting-name">Enterprise Account Executive, Delphix</h5>
+    <a class="posting-title" href="https://jobs.lever.co/perforce/136a8d9c-9f77-44c8-9df0-341d78ed8e78">
+      <h5 data-qa="posting-name">Senior Software Engineer - Delphix (BP)</h5>
     </a>
     <span>Jobs powered by </span>
   </body>

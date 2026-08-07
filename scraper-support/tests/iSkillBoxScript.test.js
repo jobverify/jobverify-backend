@@ -25,7 +25,7 @@ const careerShellHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Career - iSkillbox Corporate Training</title>
+    <title>Career &#8211; iSkillbox Corporate Training</title>
     <link rel="canonical" href="https://iskillbox.com/career/" />
   </head>
   <body>
@@ -62,7 +62,7 @@ test('iSkillBox scraper constants stay pinned to the verified homepage and conta
 
   assert.equal(iskillbox.SOURCE, 'iskillbox')
   assert.equal(iskillbox.COMPANY, 'iSkillBox')
-  assert.equal(iskillbox.VERIFIED_ON, '2026-07-16')
+  assert.equal(iskillbox.VERIFIED_ON, '2026-08-02')
   assert.equal(iskillbox.HOMEPAGE_URL, 'https://iskillbox.com/')
   assert.equal(iskillbox.CAREER_PAGE_URL, 'https://iskillbox.com/career/')
   assert.equal(iskillbox.hasOfficialHomepageSignal(homepageHtml), true)

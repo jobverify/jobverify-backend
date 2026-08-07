@@ -42,11 +42,18 @@ const normalizeWhitespace = (value) => {
 
 const stripTags = (value) => normalizeWhitespace(value)
 
+const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const slugify = (value) => String(value ?? '')
   .toLowerCase()
   .replace(/&/g, ' and ')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
+
+const normalizeComparableTitle = (value) => normalizeWhitespace(value)
+  ?.toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim() || null
 
 const toJobId = (title) => `stellapps-${slugify(title)}`
 
@@ -56,6 +63,15 @@ const toAbsoluteUrl = (value) => {
   } catch {
     return null
   }
+}
+
+const extractPrimaryJobBlock = (html = '') => {
+  const page = String(html ?? '')
+  const match = page.match(
+    /<div class="jobDescriptionHolder stickyHolder"[\s\S]*?>([\s\S]*?)<div class="jobDescriptionHolder jobDescriptionFormHolder"/i,
+  )
+
+  return match?.[1] ?? page
 }
 
 const normalizeEmploymentType = (value) => {
@@ -77,8 +93,12 @@ const extractHeadingTexts = (html = '', tagName) =>
     .filter(Boolean)
 
 const extractSectionListItems = (html = '', heading) => {
+  const escapedHeading = escapeRegExp(heading)
   const match = String(html ?? '').match(
-    new RegExp(`<h2[^>]*>\\s*${heading}\\s*<\\/h2>\\s*<ul>([\\s\\S]*?)<\\/ul>`, 'i'),
+    new RegExp(
+      `<h2[^>]*>\\s*${escapedHeading}\\s*<\\/h2>[\\s\\S]*?<ul>([\\s\\S]*?)<\\/ul>`,
+      'i',
+    ),
   )
   if (!match?.[1]) return []
 
@@ -89,19 +109,40 @@ const extractSectionListItems = (html = '', heading) => {
 
 const extractQualification = (html = '') => {
   const match = String(html ?? '').match(
-    /<h2[^>]*>\s*Qualification\s*<\/h2>\s*<h3[^>]*>([\s\S]*?)<\/h3>/i,
+    /<h2[^>]*>\s*Qualification\s*<\/h2>[\s\S]*?<h3[^>]*>([\s\S]*?)<\/h3>/i,
   )
 
   return match?.[1] ? stripTags(match[1]) : null
 }
 
 const extractIntroText = (html = '', title) => {
-  const escapedTitle = String(title ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const escapedTitle = escapeRegExp(title)
   const match = String(html ?? '').match(
-    new RegExp(`<h2[^>]*>\\s*${escapedTitle}\\s*<\\/h2>\\s*<p>([\\s\\S]*?)<\\/p>`, 'i'),
+    new RegExp(`<h2[^>]*>\\s*${escapedTitle}\\s*<\\/h2>\\s*<p[^>]*>([\\s\\S]*?)<\\/p>`, 'i'),
   )
 
   return match?.[1] ? stripTags(match[1]) : null
+}
+
+const extractJobSectionContext = (html = '', title = '') => {
+  const page = String(html ?? '')
+  const titleMatch = new RegExp(`<h2[^>]*>\\s*${escapeRegExp(title)}\\s*<\\/h2>`, 'i')
+  const titleIndex = page.search(titleMatch)
+
+  if (titleIndex < 0) {
+    return {
+      leadHtml: page,
+      detailHtml: page,
+    }
+  }
+
+  const leadStart = Math.max(0, titleIndex - 4000)
+  const detailEnd = Math.min(page.length, titleIndex + 16000)
+
+  return {
+    leadHtml: page.slice(leadStart, titleIndex),
+    detailHtml: page.slice(titleIndex, detailEnd),
+  }
 }
 
 const buildCompositeDescription = ({
@@ -164,9 +205,11 @@ export const extractListingCards = (html = '') => {
     }
 
     if (parsedUrl.hostname !== 'www.stellapps.com') continue
+    if (parsedUrl.hash) continue
     const segments = parsedUrl.pathname.split('/').filter(Boolean)
     if (segments.length !== 2 || segments[0] !== 'jobopenings') continue
     if (/^page$/i.test(segments[1])) continue
+    if (/^\d+$/i.test(segments[1])) continue
     if (seenUrls.has(detailUrl)) continue
 
     seenUrls.add(detailUrl)
@@ -182,30 +225,46 @@ export const extractListingCards = (html = '') => {
 export const extractJobDetail = (html = '', detailUrl) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const primaryBlock = extractPrimaryJobBlock(page)
+  const primaryNormalized = normalizeWhitespace(primaryBlock) || ''
 
   if (!normalized.includes('About Stellapps') || !normalized.includes('APPLY')) {
     return null
   }
 
-  const heading2Values = extractHeadingTexts(page, 'h2')
-  const heading3Values = extractHeadingTexts(page, 'h3')
-  const heading4Values = extractHeadingTexts(page, 'h4')
-  const title = heading2Values[0] || null
-  const experienceRequired = normalizeExperienceValue(heading3Values[0])
-  const city = normalizeWhitespace(heading3Values[1])
-  const employmentType = normalizeEmploymentType(heading4Values[0])
+  const title = stripTags(
+    primaryBlock.match(/<div class="jobDescriptionRightBoxData">\s*<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1],
+  ) || extractHeadingTexts(primaryBlock, 'h2')[0] || extractHeadingTexts(page, 'h2')[0] || null
+  const introText = stripTags(
+    primaryBlock.match(/<div class="jobDescriptionRightBoxData">[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/i)?.[1],
+  )
+  const { leadHtml, detailHtml } = extractJobSectionContext(primaryBlock === page ? page : primaryBlock, title)
+  const leftColumnMatch = primaryBlock.match(
+    /<div class="jobDescriptionLeftBox\b[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>\s*<div class="jobDescriptionRight">/i,
+  )
+  const leftColumn = leftColumnMatch?.[1] ?? leadHtml
+  const heading3Values = extractHeadingTexts(leftColumn, 'h3')
+  const heading4Values = extractHeadingTexts(leftColumn, 'h4')
+  const experienceRequired = normalizeExperienceValue(heading3Values.at(-2))
+  const city = normalizeWhitespace(heading3Values.at(-1))
+  const employmentType = normalizeEmploymentType(heading4Values.at(-1))
 
   if (!title || !experienceRequired || !city || !employmentType) {
     return null
   }
 
-  const minimumQualification = extractQualification(page)
-  const introText = extractIntroText(page, title)
-  const jobDescriptionItems = extractSectionListItems(page, 'Job Description')
-  const knowledgeItems = extractSectionListItems(page, 'Knowledge')
-  const responsibilityItems = extractSectionListItems(page, 'Roles and Responsibilities')
+  const validationBlock = (primaryNormalized ? primaryNormalized : normalized).toLowerCase()
+  if (!validationBlock.includes(title.toLowerCase()) || !normalized.toLowerCase().includes('share this opening with friends')) {
+    return null
+  }
+
+  const minimumQualification = extractQualification(detailHtml)
+  const fallbackIntroText = extractIntroText(detailHtml, title)
+  const jobDescriptionItems = extractSectionListItems(detailHtml, 'Job Description')
+  const knowledgeItems = extractSectionListItems(detailHtml, 'Knowledge')
+  const responsibilityItems = extractSectionListItems(detailHtml, 'Roles and Responsibilities')
   const jobDescription = buildCompositeDescription({
-    introText,
+    introText: introText || fallbackIntroText,
     minimumQualification,
     jobDescriptionItems,
     knowledgeItems,
@@ -252,7 +311,10 @@ export const createStellappsScraper = ({
       const detailHtml = await fetchText(card.detailUrl)
       const detail = extractJobDetail(detailHtml, card.detailUrl)
 
-      if (!detail || detail.title !== card.title) {
+      if (
+        !detail
+        || normalizeComparableTitle(detail.title) !== normalizeComparableTitle(card.title)
+      ) {
         throw new Error('Stellapps verified first-party job detail page no longer matches the trusted surface')
       }
 

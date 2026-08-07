@@ -48,6 +48,11 @@ const normalizeWhitespace = (value) => {
 
 const normalizeText = (value) => normalizeWhitespace(value)?.toLowerCase() || ''
 
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1]) || null
+}
+
 const normalizeComparableUrl = (value) => {
   try {
     const url = new URL(String(value ?? ''))
@@ -132,10 +137,12 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /<title>\s*Corporate Digital Identity \| CDI & KYC \| Encompass Corporation\s*<\/title>/i.test(page)
+  return extractTitle(page) === 'Corporate Digital Identity | CDI & KYC | Encompass Corporation'
     && text.includes('corporate digital identity')
-    && text.includes('cdi & kyc automation')
-    && /href=["']\/careers\/["']/i.test(page)
+    && (
+      text.includes('cdi & kyc automation')
+      || text.includes('process automation and cdi profiles')
+    )
 }
 
 export const extractPinpointBoardUrl = (html) => {
@@ -219,11 +226,15 @@ export const mapPinpointPosting = (posting = {}) => {
 }
 
 export const extractPinpointJobs = (postings = []) => {
-  if (!Array.isArray(postings)) {
+  const items = Array.isArray(postings)
+    ? postings
+    : (Array.isArray(postings?.data) ? postings.data : null)
+
+  if (!items) {
     throw new Error('Encompass Pinpoint postings payload no longer returns an array')
   }
 
-  return postings
+  return items
     .map((posting) => mapPinpointPosting(posting))
     .filter((job) => isIndiaLocation(job.location) || job.country === 'India')
 }

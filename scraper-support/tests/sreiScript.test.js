@@ -40,6 +40,44 @@ const employWiseShellPage = {
   `,
 }
 
+const currentCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | Srei |  Srei Infrastructure Financing Solutions</title>
+  </head>
+  <body>
+    <main>
+      <h1>Careers</h1>
+      <a href="https://www.myemploywise.com/asperm/servlet/website?customer_code=srei">Work with us</a>
+      <h2>Beyond Work</h2>
+      <p>Any Queries ?</p>
+      <p>Mail Us</p>
+    </main>
+  </body>
+</html>
+`
+
+const currentEmployWiseShellPage = {
+  status: 200,
+  url: 'https://www.myemploywise.com/asperm/servlet/website?customer_code=srei',
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title>Web View</title>
+      </head>
+      <body>
+        <h1>Open Positions</h1>
+        <div>Search by function(s)</div>
+        <div>Please wait....</div>
+        <div>Please wait....</div>
+        <div>Please wait....</div>
+      </body>
+    </html>
+  `,
+}
+
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -114,6 +152,29 @@ test('SREI returns no jobs only while the verified first-party handoff still res
     srei.CAREERS_URL,
     srei.JOB_LISTINGS_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('SREI still returns [] when the current first-party careers page and EmployWise shell drift to the live August 4, 2026 markup', async () => {
+  const srei = await loadModule()
+
+  assert.equal(srei.hasOfficialCareersSignal(currentCareersPageHtml), true)
+  assert.equal(srei.hasBlockedEmployWiseShellSignal(currentEmployWiseShellPage), true)
+
+  const jobs = await srei.createSreiScraper().run({
+    fetchPage: async (url) => {
+      if (url === srei.CAREERS_URL) {
+        return { status: 200, url, html: currentCareersPageHtml }
+      }
+
+      if (url === srei.JOB_LISTINGS_URL) {
+        return currentEmployWiseShellPage
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

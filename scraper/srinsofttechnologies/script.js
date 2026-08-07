@@ -39,6 +39,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const toAbsoluteApplyUrl = (value) => {
+  if (!value) return null
+
   try {
     const url = new URL(value, CAREERS_URL)
     if (!/^(www\.)?srinsofttech\.com$/i.test(url.hostname)) return null
@@ -58,7 +60,8 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /<title>\s*Careers at SrinSoft\s*\|\s*Join Our Innovative Team\s*<\/title>/i.test(rawHtml)
     && /mailto:tms@srinsofttech\.com/i.test(rawHtml)
     && /accordion-item/i.test(rawHtml)
-    && /Apply Now/i.test(rawHtml)
+    && /Location:/i.test(rawHtml)
+    && /Experience:/i.test(rawHtml)
 }
 
 export const extractIndiaAccordionJobs = (html = '') =>
@@ -80,7 +83,7 @@ export const extractIndiaAccordionJobs = (html = '') =>
       )
       const applyUrl = toAbsoluteApplyUrl(
         blockHtml.match(/<a[^>]*href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1],
-      )
+      ) || APPLY_FORM_URL
 
       if (!title || !location || !experience || !jobDescription || !applyUrl) return null
       if (!isIndiaFacingLocation(location)) return null

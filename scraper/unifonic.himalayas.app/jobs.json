@@ -1,0 +1,89 @@
+[
+  {
+    "title": "Current remote openings at Unifonic",
+    "company": "Unifonic",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "source": "unifonic.himalayas.app",
+    "jobId": "unifonic.himalayas.app-current-openings",
+    "requisitionId": "unifonic.himalayas.app-current-openings",
+    "department": null,
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "postingDate": "2026-08-02T21:59:19.469Z",
+    "expiresAt": null,
+    "jobDescription": "Unifonic had current Himalayas hiring evidence for Machine Learning Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T21:59:19.469Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
+    "companyDomain": "unifonic.himalayas.app",
+    "originalTitle": "Current remote openings at Unifonic",
+    "normalizedTitle": "Current remote openings at Unifonic",
+    "jobCategory": "Current remote openings at Unifonic",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "2026-08-02T21:59:19.469Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T21:59:19.469Z",
+    "skillIds": [
+      "machine-learning"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Machine Learning"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Unifonic had current Himalayas hiring evidence for Machine Learning Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:59:28.265Z",
+    "publicExperienceChecked": true
+  }
+]

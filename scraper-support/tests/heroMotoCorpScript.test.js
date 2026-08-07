@@ -13,7 +13,7 @@ const officialCareersHtml = `
 <html>
   <body>
     <h1>Hero MotoCorp Career Overview</h1>
-    <a href="https://jobs.heromotocorp.com/viewalljobs/">View all jobs</a>
+    <a href="https://jobs.heromotocorp.com/search/?createNewAlert=false&amp;q=&amp;optionsFacetsDD_department=&amp;locationsearch=">Join us</a>
   </body>
 </html>
 `
@@ -79,14 +79,61 @@ const detailHtml = `
   </head>
   <body>
     <h1 itemprop="title">Digital Sculptor</h1>
-    <span itemprop="description">
-      <span class="jobdescription">
-        <p>Create production-ready digital clay surfaces for upcoming motorcycles and scooters.</p>
-        <ul>
-          <li>Alias surface development</li>
-          <li>Class A surfacing reviews</li>
-        </ul>
-      </span>
+    <span itemprop="description" class="jobdescription">
+      <div>
+        <div>
+          <h2><b>Function</b></h2>
+        </div>
+        <div><p>Research &amp; Development - Jaipur</p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>Pay Band</b></h2>
+        </div>
+        <div><p><span>E4 to M2</span></p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>Role</b></h2>
+        </div>
+        <div><p><span>Engineer</span></p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>A purpose driven role for you</b></h2>
+        </div>
+        <div><p><span>Create production-ready digital clay surfaces for upcoming motorcycles and scooters.</span></p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>A Day in the life</b></h2>
+        </div>
+        <div><p><span>Alias surface development</span></p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>Academic Qualification &amp; Experience</b></h2>
+        </div>
+        <div><p><span>B. Tech/M. Tech in Mechanical Engineering from reputed Institute<br>3- 5 Years</span></p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>Technical Skills/Knowledge</b></h2>
+        </div>
+        <div><p><span>Alias surface development<br>Class A surfacing reviews</span></p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>Behavioural Skills</b></h2>
+        </div>
+        <div><p><span>Team player<br>Dynamic and proactive work approach</span></p></div>
+      </div>
+      <div>
+        <div>
+          <h2><b>What will it be like to work for Hero</b></h2>
+        </div>
+        <div><p><span>Hero is where you will get to work with the brightest innovators.</span></p></div>
+      </div>
     </span>
     <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/talentcommunity/apply/1364277966/?locale=en_GB">Apply now</a>
   </body>
@@ -101,12 +148,21 @@ test('extractCategoryUrls keeps Hero MotoCorp category discovery on the official
     'https://www.heromotocorp.com/en-in/company/careers/career-overview.html',
   )
   assert.equal(heroMotoCorp.BASE_URL, 'https://jobs.heromotocorp.com')
-  assert.equal(heroMotoCorp.VIEW_ALL_JOBS_URL, 'https://jobs.heromotocorp.com/viewalljobs/')
+  assert.equal(
+    heroMotoCorp.VIEW_ALL_JOBS_URL,
+    'https://jobs.heromotocorp.com/search/?createNewAlert=false&q=&optionsFacetsDD_department=&locationsearch=',
+  )
   assert.equal(
     heroMotoCorp.extractOfficialJobsBoardUrl(officialCareersHtml),
-    'https://jobs.heromotocorp.com/viewalljobs/',
+    'https://jobs.heromotocorp.com/search/?createNewAlert=false&q=&optionsFacetsDD_department=&locationsearch=',
   )
   assert.equal(heroMotoCorp.hasOfficialHeroMotoCorpCareersSignals(officialCareersHtml), true)
+  assert.equal(
+    heroMotoCorp.isOfficialJobsBoardUrl(
+      'https://jobs.heromotocorp.com/search/?createNewAlert=false&q=&optionsFacetsDD_department=&locationsearch=',
+    ),
+    true,
+  )
   assert.deepEqual(heroMotoCorp.extractCategoryUrls(viewAllJobsHtml), [
     'https://jobs.heromotocorp.com/go/RESEARCH-&-DEVELOPMENT/5388301/',
     'https://jobs.heromotocorp.com/go/HUMAN-RESOURCES/5388201/',
@@ -163,13 +219,19 @@ test('extractJobDetail maps Hero MotoCorp public detail metadata and apply hando
     requisitionId: '1364277966',
     sourceUrl: 'https://jobs.heromotocorp.com/job/Jaipur-Digital-Sculptor-RJ-302028/1364277966/',
     employmentType: 'Full-time',
-    experienceRequired: null,
-    minimumQualification: null,
+    experienceRequired: '3-5 years',
+    publicExperienceChecked: true,
+    minimumQualification: 'B. Tech/M. Tech in Mechanical Engineering from reputed Institute',
     preferredQualification: null,
-    requiredSkills: ['Alias surface development', 'Class A surfacing reviews'],
+    requiredSkills: [
+      'Alias surface development',
+      'Class A surfacing reviews',
+      'Team player',
+      'Dynamic and proactive work approach',
+    ],
     postingDate: 'Thu Jul 02 00:00:00 UTC 2026',
     closingDate: 'Thu Jul 23 18:30:00 UTC 2026',
-    jobDescription: 'Create production-ready digital clay surfaces for upcoming motorcycles and scooters. - Alias surface development - Class A surfacing reviews',
+    jobDescription: 'Function Research & Development - Jaipur Pay Band E4 to M2 Role Engineer A purpose driven role for you Create production-ready digital clay surfaces for upcoming motorcycles and scooters. A Day in the life Alias surface development Academic Qualification & Experience B. Tech/M. Tech in Mechanical Engineering from reputed Institute 3- 5 Years Technical Skills/Knowledge Alias surface development Class A surfacing reviews Behavioural Skills Team player Dynamic and proactive work approach',
     applyUrl: 'https://jobs.heromotocorp.com/talentcommunity/apply/1364277966/?locale=en_GB',
   })
 })
@@ -199,7 +261,7 @@ test('run discovers Hero MotoCorp category pages from the official landing page 
 
   assert.deepEqual(requestedUrls, [
     'https://www.heromotocorp.com/en-in/company/careers/career-overview.html',
-    'https://jobs.heromotocorp.com/viewalljobs/',
+    'https://jobs.heromotocorp.com/search/?createNewAlert=false&q=&optionsFacetsDD_department=&locationsearch=',
     'https://jobs.heromotocorp.com/go/RESEARCH-&-DEVELOPMENT/5388301/',
     'https://jobs.heromotocorp.com/job/Jaipur-Digital-Sculptor-RJ-302028/1364277966/',
     'https://jobs.heromotocorp.com/go/HUMAN-RESOURCES/5388201/',
@@ -219,11 +281,17 @@ test('run discovers Hero MotoCorp category pages from the official landing page 
       sourceUrl: 'https://jobs.heromotocorp.com/job/Jaipur-Digital-Sculptor-RJ-302028/1364277966/',
       source: 'heromotocorp',
       employmentType: 'Full-time',
-      experienceRequired: null,
-      jobDescription: 'Create production-ready digital clay surfaces for upcoming motorcycles and scooters. - Alias surface development - Class A surfacing reviews',
-      minimumQualification: null,
+      experienceRequired: '3-5 years',
+      publicExperienceChecked: true,
+      jobDescription: 'Function Research & Development - Jaipur Pay Band E4 to M2 Role Engineer A purpose driven role for you Create production-ready digital clay surfaces for upcoming motorcycles and scooters. A Day in the life Alias surface development Academic Qualification & Experience B. Tech/M. Tech in Mechanical Engineering from reputed Institute 3- 5 Years Technical Skills/Knowledge Alias surface development Class A surfacing reviews Behavioural Skills Team player Dynamic and proactive work approach',
+      minimumQualification: 'B. Tech/M. Tech in Mechanical Engineering from reputed Institute',
       preferredQualification: null,
-      requiredSkills: ['Alias surface development', 'Class A surfacing reviews'],
+      requiredSkills: [
+        'Alias surface development',
+        'Class A surfacing reviews',
+        'Team player',
+        'Dynamic and proactive work approach',
+      ],
       postingDate: 'Thu Jul 02 00:00:00 UTC 2026',
       closingDate: 'Thu Jul 23 18:30:00 UTC 2026',
       scrapedAt: '2026-07-16T18:30:00.000Z',

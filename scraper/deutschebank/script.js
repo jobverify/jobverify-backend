@@ -108,6 +108,8 @@ const stripTags = (value) => normalizeWhitespace(
 )
 
 const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const extractHtmlTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '')
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -138,20 +140,22 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
+  const title = extractHtmlTitle(page)
 
-  return /<title>\s*Home\s*[–-]\s*Deutsche Bank Careers\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/careers\.db\.com\/professionals\/search-roles\/["']/i.test(page)
+  return title === 'Home - Deutsche Bank Careers'
+    && /href=["'](?:https:\/\/careers\.db\.com)?\/professionals\/search-roles\/?["']/i.test(page)
     && text.includes('Professionals')
     && text.includes('Search Roles')
 }
 
 export const hasSearchRolesPageSignal = (html = '') => {
   const page = String(html ?? '')
+  const title = extractHtmlTitle(page)
 
-  return /<title>\s*Search Roles\s*[–-]\s*Deutsche Bank Careers\s*<\/title>/i.test(page)
+  return title === 'Search Roles - Deutsche Bank Careers'
     && /id=["']job-module["']/i.test(page)
     && /data-jobmodule=["']PROFESSIONAL["']/i.test(page)
-    && /jobplatform\.js\?\d+/i.test(page)
+    && /(?:jobplatform\.js\?\d+|careersJs\.js\?v\d+)/i.test(page)
 }
 
 export const extractVerifiedIndiaCountryId = (payload = {}) => {

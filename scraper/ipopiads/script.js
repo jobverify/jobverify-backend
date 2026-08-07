@@ -102,12 +102,15 @@ export const hasOfficialPrivacySignal = (html) => {
 }
 
 export const hasOfficialTermsSignal = (html) => {
-  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
-  return /\bTerms and Conditions\b/i.test(normalized)
-    && /refers to Ipopi Ads/i.test(normalized)
-    && /accessible from https:\/\/www\.ipopi\.in\//i.test(normalized)
-    && /info@ipopi\.in/i.test(normalized)
+  return /<title>\s*Terms and Conditions\s*-\s*Ipopi Ads\s*<\/title>/i.test(page)
+    && /\bTerms and Conditions\b/i.test(normalized)
+    && /Last updated:\s*June 13,\s*2024/i.test(normalized)
+    && /Company .* refers to Ipopi Ads/i.test(normalized)
+    && /Country refers to:\s*Kerala,\s*India/i.test(normalized)
+    && /Mysuru,\s*Karnataka\s*570017/i.test(normalized)
 }
 
 export const hasOfficialBlogSignal = (html) => {
@@ -116,7 +119,8 @@ export const hasOfficialBlogSignal = (html) => {
 
   return /<title>\s*Ipopi Ads Blog\s*<\/title>/i.test(page)
     && normalized.includes('ipopi ads blog')
-    && normalized.includes('digital marketing insights')
+    && normalized.includes('latest posts')
+    && normalized.includes('digital marketing')
 }
 
 export const hasPublicJobsSignal = (html) =>
@@ -134,8 +138,7 @@ export const sitemapHasCareerLikeUrl = (xml) => {
 
 export const isVerifiedMissingCareerRoute = (page = {}) =>
   Number(page?.status) === 404
-  && /<title>\s*404 Not Found\s*<\/title>/i.test(String(page?.html ?? ''))
-  && /\b404 Not Found\b/i.test(normalizeWhitespace(page?.html))
+  && /\b404 Not Found\b/i.test(String(page?.html ?? ''))
   && !hasPublicJobsSignal(page?.html)
 
 const hasVerifiedLegacyDomainBridge = (page = {}) =>

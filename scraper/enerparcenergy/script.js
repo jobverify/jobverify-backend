@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -35,19 +36,56 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP 403|timed out|timeout|fetch failed|could not connect|err_failed/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createEnerparcEnergyScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Enerparc Energy careers page no longer matches the verified official careers surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (!hasNoPublicListingsSignal(careersHtml)) {
-      throw new Error('Enerparc Energy careers page no longer matches the verified official no-public-listings surface')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchVerifiedText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    return []
+    try {
+      const careersHtml = await fetchVerifiedText(CAREERS_URL)
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Enerparc Energy careers page no longer matches the verified official careers surface')
+      }
+
+      if (!hasNoPublicListingsSignal(careersHtml)) {
+        throw new Error('Enerparc Energy careers page no longer matches the verified official no-public-listings surface')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

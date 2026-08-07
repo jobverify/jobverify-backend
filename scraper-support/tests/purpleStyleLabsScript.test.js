@@ -2,12 +2,13 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 const LINKEDIN_JOBS_URL = 'https://www.linkedin.com/jobs/search/?currentJobId=3746385482&f_C=10277228&geoId=92000000&origin=COMPANY_PAGE_JOBS_CLUSTER_EXPANSION&originToLandingJobPostings=3746385482%2C3740026849%2C3750818962%2C3750604957%2C3750868095%2C3735648526%2C3743277259%2C3746273670'
+const LINKEDIN_JOBS_URL_ESCAPED = 'https://www.linkedin.com/jobs/search/?currentJobId=3746385482&amp;f_C=10277228&amp;geoId=92000000&amp;origin=COMPANY_PAGE_JOBS_CLUSTER_EXPANSION&amp;originToLandingJobPostings=3746385482%2C3740026849%2C3750818962%2C3750604957%2C3750868095%2C3735648526%2C3743277259%2C3746273670'
 
 const OFFICIAL_CAREERS_HTML = `
 <!doctype html>
-<html lang="en">
+  <html lang="en">
   <head>
-    <title>Careers</title>
+    <title>Purple Style Labs</title>
   </head>
   <body>
     <main>
@@ -15,7 +16,7 @@ const OFFICIAL_CAREERS_HTML = `
       <p>Love the business of Luxury? You’d fit right in at Purple Style Labs!</p>
       <p>Join Us!</p>
       <p>If you identify as an innovative thinker and luxury products get you going, drop us an email at careers@purplestylelabs.com</p>
-      <a href="${LINKEDIN_JOBS_URL}">BROWSE OPPORTUNITIES</a>
+      <a href="${LINKEDIN_JOBS_URL_ESCAPED}">BROWSE OPPORTUNITIES</a>
       <form>
         <label>Job position that you are looking for.</label>
       </form>
@@ -46,7 +47,7 @@ test('Purple Style Labs helpers pin the official careers page and verified Linke
   assert.equal(purpleStyleLabs.CAREERS_URL, 'https://www.purplestylelabs.com/careers')
   assert.equal(purpleStyleLabs.CAREERS_EMAIL, 'careers@purplestylelabs.com')
   assert.equal(purpleStyleLabs.LINKEDIN_COMPANY_ID, '10277228')
-  assert.equal(purpleStyleLabs.VERIFIED_ON, '2026-07-17')
+  assert.equal(purpleStyleLabs.VERIFIED_ON, '2026-08-04')
   assert.equal(purpleStyleLabs.hasOfficialCareersSignal(OFFICIAL_CAREERS_HTML), true)
   assert.equal(
     purpleStyleLabs.extractLinkedInJobsUrl(OFFICIAL_CAREERS_HTML),

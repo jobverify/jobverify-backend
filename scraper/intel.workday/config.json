@@ -2,5 +2,7 @@
   "listingStrategy": "jobs-api",
   "jobsApiUrl": "https://intel.wd1.myworkdayjobs.com/wday/cxs/intel/External/jobs",
   "detailUrlBase": "https://intel.wd1.myworkdayjobs.com/External",
-  "maxPages": 20
+  "maxPages": 20,
+  "locationCountry": null,
+  "searchText": "India"
 }

@@ -145,6 +145,20 @@ test('run validates the verified careers handoff, parses the country-filtered ma
       requestedUrls.push(url)
 
       if (url === apna.CAREERS_ENTRY_URL) return careersPage
+      if (url === 'https://careers.apna.co/_/j/95D6F2526C') {
+        return {
+          status: 200,
+          url,
+          html: '<html><head><title>Product Analyst - Apna</title></head><body></body></html>',
+        }
+      }
+      if (url === 'https://careers.apna.co/_/j/BB90C6B417') {
+        return {
+          status: 200,
+          url,
+          html: '<html><head><title>Business Development Manager- Field Sales - Apna</title></head><body></body></html>',
+        }
+      }
 
       throw new Error(`Unexpected Apna page URL: ${url}`)
     },
@@ -161,6 +175,8 @@ test('run validates the verified careers handoff, parses the country-filtered ma
   assert.deepEqual(requestedUrls, [
     apna.CAREERS_ENTRY_URL,
     apna.JOBS_FEED_URL,
+    'https://careers.apna.co/_/j/95D6F2526C',
+    'https://careers.apna.co/_/j/BB90C6B417',
   ])
   assert.deepEqual(jobs, [
     {
@@ -183,6 +199,7 @@ test('run validates the verified careers handoff, parses the country-filtered ma
       postingDate: '2026-07-13',
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
       source: 'apna',
       link: 'https://careers.apna.co/_/j/95D6F2526C/apply',
       scrapedAt: FIXED_SCRAPED_AT,
@@ -207,11 +224,94 @@ test('run validates the verified careers handoff, parses the country-filtered ma
       postingDate: '2026-07-10',
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
       source: 'apna',
       link: 'https://careers.apna.co/_/j/BB90C6B417/apply',
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
+})
+
+test('run enriches Apna jobs with public detail-page experience metadata when the first-party page publishes it', async () => {
+  const apna = await loadModule()
+  const requestedUrls = []
+
+  const productAnalystDetailPage = {
+    status: 200,
+    url: 'https://careers.apna.co/_/j/95D6F2526C',
+    html: `
+      <!doctype html>
+      <html lang="en">
+        <head>
+          <title>Product Analyst - Apna</title>
+          <meta
+            name="description"
+            content="Company: Apna Role: Product Analyst Team: Product & Design Location: Bengaluru, India Experience : 2-4 Years of Experience Why Join Apna At Apna, data is central to how we build products and understand users."
+          >
+          <meta
+            property="og:description"
+            content="Company: Apna Role: Product Analyst Team: Product & Design Location: Bengaluru, India Experience : 2-4 Years of Experience Why Join Apna At Apna, data is central to how we build products and understand users."
+          >
+        </head>
+        <body></body>
+      </html>
+    `,
+  }
+
+  const businessDevelopmentDetailPage = {
+    status: 200,
+    url: 'https://careers.apna.co/_/j/BB90C6B417',
+    html: `
+      <!doctype html>
+      <html lang="en">
+        <head>
+          <title>Business Development Manager- Field Sales - Apna</title>
+          <meta
+            name="description"
+            content="Company: Apna Role: Business Development Manager- Field Sales Team: Sales & Account Management Location: Kochi, India (Hybrid) Why Join Apna Work with a high-growth field sales team building durable employer partnerships."
+          >
+          <meta
+            property="og:description"
+            content="Company: Apna Role: Business Development Manager- Field Sales Team: Sales & Account Management Location: Kochi, India (Hybrid) Why Join Apna Work with a high-growth field sales team building durable employer partnerships."
+          >
+        </head>
+        <body></body>
+      </html>
+    `,
+  }
+
+  const jobs = await apna.createApnaScraper({ maxJobs: 2 }).run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === apna.CAREERS_ENTRY_URL) return careersPage
+      if (url === 'https://careers.apna.co/_/j/95D6F2526C') return productAnalystDetailPage
+      if (url === 'https://careers.apna.co/_/j/BB90C6B417') return businessDevelopmentDetailPage
+
+      throw new Error(`Unexpected Apna page URL: ${url}`)
+    },
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === apna.JOBS_FEED_URL) return jobsMarkdown
+
+      throw new Error(`Unexpected Apna feed URL: ${url}`)
+    },
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  assert.deepEqual(requestedUrls, [
+    apna.CAREERS_ENTRY_URL,
+    apna.JOBS_FEED_URL,
+    'https://careers.apna.co/_/j/95D6F2526C',
+    'https://careers.apna.co/_/j/BB90C6B417',
+  ])
+  assert.equal(jobs[0].experienceRequired, '2-4 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription || '', /Why Join Apna/i)
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[1].publicExperienceChecked, true)
+  assert.match(jobs[1].jobDescription || '', /field sales team/i)
 })
 
 test('Apna scraper fails closed when the verified careers handoff or markdown jobs feed drifts', async () => {

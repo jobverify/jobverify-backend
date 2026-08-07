@@ -1,27 +1,54 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'saintgobain'
 export const COMPANY = 'Saint-Gobain'
-export const CAREERS_URL = 'https://joinus.saint-gobain.com/en'
+export const CAREERS_URL = 'https://in.saint-gobain-glass.com/careers'
+export const APPLY_PORTAL_URL = 'https://apply.in.saint-gobain-glass.com/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const OFFICIAL_CAREERS_PATTERNS = [
-  /<title>\s*Join us\s*\|\s*Saint-Gobain\s*<\/title>/i,
-  /\bOUR JOB OFFERS\b/i,
-  /Find here our job offers for all our businesses and our brands\./i,
+  /Explore Career Opportunities at Saint-Gobain Glass\s*\|\s*Saint-Gobain Glass/i,
+  /\bCareers at Saint-Gobain\b/i,
+  /\bWhy Saint-Gobain\?/i,
+  /Saint-Gobain is the worldwide leader in light and sustainable construction/i,
 ]
 
-const INDIA_OPENINGS_PATTERNS = [
-  /\bIndia\s*\(\d+\)/i,
-  /\bIndia\s*,/i,
-  /\/job\/IND[A-Z0-9-]*/i,
+const VERIFIED_PORTAL_HANDOFF_PATTERN = new RegExp(
+  APPLY_PORTAL_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+  'i',
+)
+
+const FIRST_PARTY_JOBS_PATTERNS = [
+  /\bcurrent openings\b/i,
+  /\bopen positions\b/i,
+  /\bjob openings\b/i,
+  /\bpublished\s*:\s*\d{2}\/\d{2}\/\d{4}\b/i,
+  /\breference\s*:\s*[A-Z0-9-]+\b/i,
+  /href=["'][^"']*\/job\//i,
+  /https?:\/\/[^"' ]*\/job\//i,
+]
+
+const LOGIN_ONLY_PORTAL_PATTERNS = [
+  /<title>\s*Login\s*<\/title>/i,
+  /\bSG Careers\b/i,
+  /\bRegistration\b/i,
+  /Forgot your password/i,
+]
+
+const PUBLIC_PORTAL_JOBS_PATTERNS = [
+  /\bcurrent openings\b/i,
+  /\bopen positions\b/i,
+  /\bjob openings\b/i,
+  /\bvacanc(?:y|ies)\b/i,
+  /\bapply now\b/i,
+  /\bsee the opening\b/i,
+  /\bjob title\b/i,
+  /href=["'][^"']*\/job\//i,
 ]
 
 export const hasOfficialCareersSignal = (html) => {
@@ -29,30 +56,88 @@ export const hasOfficialCareersSignal = (html) => {
   return OFFICIAL_CAREERS_PATTERNS.every((pattern) => pattern.test(page))
 }
 
-export const hasIndiaOpeningsSignal = (html) => {
+export const hasVerifiedPortalHandoff = (html) => {
   const page = String(html ?? '')
-  return INDIA_OPENINGS_PATTERNS.some((pattern) => pattern.test(page))
+  return VERIFIED_PORTAL_HANDOFF_PATTERN.test(page)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+export const hasFirstPartyJobsSignal = (html) =>
+  FIRST_PARTY_JOBS_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+export const hasBrowserVerificationBlockSignal = (html) => {
+  const page = String(html ?? '')
+  return (
+    /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+    || /checking your browser before allowing access/i.test(page)
+    || /cdn-cgi\/challenge-platform/i.test(page)
+    || /__cf_chl_[a-z_]+/i.test(page)
+  )
+}
+
+export const hasLoginOnlyPortalSignal = (html) =>
+  LOGIN_ONLY_PORTAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+
+export const hasPublicPortalJobsSignal = (html) =>
+  PUBLIC_PORTAL_JOBS_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
-  label: SOURCE,
-  timeoutMs: 15000,
+  redirect: 'follow',
+  signal: typeof AbortSignal?.timeout === 'function' ? AbortSignal.timeout(15000) : undefined,
 })
 
-export const createSaintGobainScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Official Saint-Gobain jobs surface changed; refusing to assume zero India openings')
+export const createSaintGobainScraper = () => ({
+  async run({ fetchPage, fetchText } = {}) {
+    const effectiveFetchPage = fetchPage
+      || (fetchText
+        ? async (url) => ({ status: 200, url, html: await fetchText(url) })
+        : defaultFetchPage)
+
+    const [careersPage, portalPage] = await Promise.all([
+      effectiveFetchPage(CAREERS_URL),
+      effectiveFetchPage(APPLY_PORTAL_URL),
+    ])
+
+    const careersHtml = careersPage?.html ?? ''
+    const portalHtml = portalPage?.html ?? ''
+
+    if (hasPublicPortalJobsSignal(portalHtml)) {
+      throw new Error('Saint-Gobain apply portal now appears to expose public guest-visible jobs')
     }
 
-    if (hasIndiaOpeningsSignal(careersHtml)) {
-      throw new Error('Saint-Gobain official jobs surface now shows India openings and needs a listings parser')
+    if (!hasLoginOnlyPortalSignal(portalHtml)) {
+      throw new Error('Saint-Gobain apply portal no longer matches the verified login-only public surface')
+    }
+
+    if (
+      Number(careersPage?.status) === 403
+      && hasBrowserVerificationBlockSignal(careersHtml)
+      && !hasFirstPartyJobsSignal(careersHtml)
+    ) {
+      return []
+    }
+
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Official Saint-Gobain India careers surface changed; refusing to assume the verified portal handoff still applies')
+    }
+
+    if (!hasVerifiedPortalHandoff(careersHtml)) {
+      throw new Error('Saint-Gobain India careers handoff changed; refusing to assume the verified portal still applies')
+    }
+
+    if (hasFirstPartyJobsSignal(careersHtml)) {
+      throw new Error('Saint-Gobain India careers page now appears to expose a first-party public jobs surface')
     }
 
     return []

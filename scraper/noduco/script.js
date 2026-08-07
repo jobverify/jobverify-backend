@@ -162,7 +162,10 @@ export const hasOfficialCareersSignal = (html) => {
   const text = stripTags(page)
 
   return (
-    /<title>\s*Join Us, Careers in Software Engineering \| Noduco \| Noduco\s*<\/title>/i.test(page)
+    (
+      /<title>\s*Join Us, Careers in Software Engineering \| Noduco \| Noduco\s*<\/title>/i.test(page)
+      || /<title>\s*Software Engineering Careers\s*&(?:amp;)?\s*Open Roles\s*\|\s*Noduco\s*\|\s*Noduco\s*<\/title>/i.test(page)
+    )
     && /VACANCIES/i.test(text)
     && /Open Roles/i.test(text)
     && extractCardSegments(page).length > 0

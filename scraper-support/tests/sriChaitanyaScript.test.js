@@ -31,6 +31,36 @@ const careersPageHtml = `
 </html>
 `
 
+const currentCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Sri Chaitanya Career Opportunities</title>
+    <link rel="canonical" href="https://srichaitanya.net/careers/" />
+  </head>
+  <body>
+    <main>
+      <h1>Make Careers at Sri Chaitanya</h1>
+      <h2>Careers</h2>
+
+      <section>
+        <a href="https://srichaitanya.net/career/sr-faculty-for-neet/">
+          Sr. Faculty for NEET - Sri Chaitanya
+        </a>
+        <a href="https://srichaitanya.net/career/sr-faculty-for-neet/">Apply Now</a>
+      </section>
+
+      <section>
+        <a href="https://srichaitanya.net/career/sr-faculty-for-iitjee/">
+          Sr. Faculty for IITJEE - Sri Chaitanya
+        </a>
+        <a href="https://srichaitanya.net/career/sr-faculty-for-iitjee/">Apply Now</a>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const neetDetailHtml = `
 <!doctype html>
 <html lang="en">
@@ -51,6 +81,38 @@ const neetDetailHtml = `
       <p>Location: Vijayawada</p>
       <p>Experience: 10 Years or More</p>
       <p>Qualification: M.Sc / Ph.D / Relevant Masters Degree</p>
+      <h2>Apply For Job</h2>
+      <form>
+        <input name="name" />
+      </form>
+    </main>
+  </body>
+</html>
+`
+
+const currentNeetDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Sri Chaitanya Career - Sr. Faculty for NEET Job</title>
+  </head>
+  <body>
+    <main>
+      <h1>Sr. Faculty for NEET &#8211; Sri Chaitanya</h1>
+      <p>Desired Profile :</p>
+      <p>The candidate must be a Graduate / Postgraduate with subject specialization and adequate experience of teaching.</p>
+      <p>Role Shall be responsible for effectively delivering the curriculum as per the syllabus for NEET-UG.</p>
+      <h2>Job Overview</h2>
+      <p>Date Posted</p>
+      <p>October 13, 2022</p>
+      <p>Location</p>
+      <p>Vijayawada</p>
+      <p>Career Level</p>
+      <p>Expert</p>
+      <p>Experience</p>
+      <p>10 Years or More</p>
+      <p>Qulification</p>
+      <p>Graduate/PG/Doctorate/PhD</p>
       <h2>Apply For Job</h2>
       <form>
         <input name="name" />
@@ -243,6 +305,64 @@ test('Sri Chaitanya run validates the official careers page, follows same-domain
       atsPlatform: 'official-company-careers',
     },
   ])
+})
+
+test('Sri Chaitanya still extracts the verified same-domain detail links when the careers page exposes direct anchors instead of article cards', async () => {
+  const sriChaitanya = await loadModule()
+
+  assert.equal(sriChaitanya.hasOfficialCareersSignal(currentCareersPageHtml), true)
+  assert.deepEqual(sriChaitanya.extractCareerCards(currentCareersPageHtml), [
+    {
+      title: 'Sr. Faculty for NEET - Sri Chaitanya',
+      listingSummary: null,
+      detailUrl: 'https://srichaitanya.net/career/sr-faculty-for-neet/',
+    },
+    {
+      title: 'Sr. Faculty for IITJEE - Sri Chaitanya',
+      listingSummary: null,
+      detailUrl: 'https://srichaitanya.net/career/sr-faculty-for-iitjee/',
+    },
+  ])
+})
+
+test('Sri Chaitanya still recognizes and normalizes the current stacked Job Overview detail layout from August 4, 2026', async () => {
+  const sriChaitanya = await loadModule()
+
+  assert.equal(sriChaitanya.hasOfficialJobDetailSignal(currentNeetDetailHtml), true)
+  assert.deepEqual(
+    sriChaitanya.extractJobFromDetailHtml(
+      currentNeetDetailHtml,
+      {
+        detailUrl: 'https://srichaitanya.net/career/sr-faculty-for-neet/',
+      },
+      { scrapedAt: FIXED_SCRAPED_AT },
+    ),
+    {
+      title: 'Sr. Faculty for NEET - Sri Chaitanya',
+      company: 'Sri Chaitanya',
+      department: null,
+      location: 'Vijayawada, India',
+      city: 'Vijayawada',
+      country: 'India',
+      jobId: 'sr-faculty-for-neet',
+      requisitionId: 'sr-faculty-for-neet',
+      sourceUrl: 'https://srichaitanya.net/career/sr-faculty-for-neet/',
+      applyUrl: 'https://srichaitanya.net/career/sr-faculty-for-neet/',
+      employmentType: null,
+      experienceRequired: '10 Years or More',
+      minimumQualification: 'Graduate/PG/Doctorate/PhD',
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: 'October 13, 2022',
+      closingDate: null,
+      jobDescription:
+        'The candidate must be a Graduate / Postgraduate with subject specialization and adequate experience of teaching. Role Shall be responsible for effectively delivering the curriculum as per the syllabus for NEET-UG.',
+      remoteStatus: 'On-site',
+      source: 'srichaitanya',
+      link: 'https://srichaitanya.net/career/sr-faculty-for-neet/',
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
+  )
 })
 
 test('Sri Chaitanya fails closed when the verified careers page or detail pages drift materially', async () => {

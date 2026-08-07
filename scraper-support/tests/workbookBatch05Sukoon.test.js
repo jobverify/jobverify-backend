@@ -15,29 +15,29 @@ const {
 
 const VERIFIED_SURFACE_HTML = `
   <html>
+    <head>
+      <title>Sukoon | Online Counselling, Life Coaching &amp; Ruqyah Sessions</title>
+    </head>
     <body>
       <main>
         <h1>Sukoon</h1>
-        <p>
-          We are hiring thoughtful operators, clinicians, and builders for the
-          next phase of Sukoon.
-        </p>
-        <p>
-          Learn more about how Sukoon is building the future of mental health.
-        </p>
+        <p>Find Guidance, Clarity &amp; Inner Peace with Sukoon.</p>
+        <p>Online Counselling</p>
+        <p>Life Coaching</p>
+        <p>Ruqyah Sessions</p>
       </main>
     </body>
   </html>
 `
 
-test('Sukoon keeps its verified exact-name company surface fail-closed', async () => {
+test('Sukoon keeps its verified exact-name services surface fail-closed', async () => {
   assert.equal(SOURCE, 'sukoon')
   assert.equal(COMPANY, 'Sukoon')
   assert.equal(CAREERS_URL, 'https://trysukoon.com/')
-  assert.equal(DISPOSITION, 'verified-exact-name-company-surface-with-hiring-signals')
+  assert.equal(DISPOSITION, 'verified-exact-name-company-surface-no-public-listings')
   assert.match(
     VERIFIED_SURFACE_CONTRACT,
-    /Saturday, July 25, 2026.*exact-name public Sukoon surface/i,
+    /Tuesday, August 4, 2026.*exact-name public Sukoon services surface/i,
   )
 
   const scraper = createSukoonScraper()
@@ -78,7 +78,7 @@ test('Sukoon rejects surfaces that lose the exact company name', async () => {
   )
 })
 
-test('Sukoon rejects surfaces that lose the verified hiring signal', async () => {
+test('Sukoon rejects surfaces that lose the verified services signal', async () => {
   const scraper = createSukoonScraper()
 
   await assert.rejects(
@@ -95,7 +95,7 @@ test('Sukoon rejects surfaces that lose the verified hiring signal', async () =>
           </html>
         `,
       }),
-    /brand-associated hiring signals/i,
+    /services-marketplace signal/i,
   )
 })
 
@@ -110,7 +110,7 @@ test('Sukoon rejects when a first-party public listings surface appears', async 
             <body>
               <main>
                 <h1>Sukoon</h1>
-                <p>We are hiring across functions.</p>
+                <p>Online Counselling</p>
                 <section>
                   <h2>Current Openings</h2>
                   <a href="/careers/founding-engineer">Founding Engineer</a>
@@ -135,7 +135,7 @@ test('Sukoon rejects when JobPosting markup appears on the verified surface', as
             <body>
               <main>
                 <h1>Sukoon</h1>
-                <p>We are hiring across functions.</p>
+                <p>Online Counselling</p>
               </main>
               <script type="application/ld+json">
                 {"@context":"https://schema.org","@type":"JobPosting","title":"Operations Lead"}

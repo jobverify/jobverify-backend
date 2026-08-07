@@ -132,6 +132,7 @@ export const buildWorkableMarkdownUrl = (jobId) =>
   `${WORKABLE_BOARD_URL}/jobs/view/${encodeURIComponent(String(jobId ?? '').trim())}.md`
 
 export const extractWorkableJobDetail = (markdown = '') => {
+  const jobDescription = stripMarkdown(markdown) || null
   const department = normalizeWhitespace(
     String(markdown ?? '').match(/\*\*Department:\*\*\s*(.+)/i)?.[1],
   )
@@ -146,6 +147,8 @@ export const extractWorkableJobDetail = (markdown = '') => {
     department,
     employmentType: employmentTypeFromHeader || employmentTypeFromRoleInfo,
     experienceRequired: extractExperienceRequired(markdown),
+    jobDescription,
+    publicExperienceChecked: Boolean(jobDescription),
   }
 }
 
@@ -154,6 +157,8 @@ const enrichJobWithWorkableDetail = (job, detail) => ({
   department: detail.department || job.department,
   employmentType: detail.employmentType || job.employmentType,
   experienceRequired: detail.experienceRequired || job.experienceRequired,
+  jobDescription: detail.jobDescription || job.jobDescription,
+  publicExperienceChecked: detail.publicExperienceChecked ?? job.publicExperienceChecked,
 })
 
 export const enrichPublicJobs = async (jobs, fetchText = defaultFetchText) => Promise.all(

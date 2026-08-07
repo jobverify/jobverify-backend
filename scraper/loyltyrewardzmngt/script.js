@@ -18,6 +18,7 @@ const ATS_OR_PUBLIC_JOBS_PATTERN = /(boards\.greenhouse\.io|jobs\.lever\.co|ashb
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
+  .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()

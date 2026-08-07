@@ -179,6 +179,8 @@ const defaultFetchPage = async (url) => {
 }
 
 const isLegacyCareersLinkedHomepage = (html = '') => /href="\/careers"/i.test(String(html ?? ''))
+const isHomepageShellWithoutPublicCareers = (html = '') =>
+  hasOfficialHomepageSignal(html) && !hasOfficialCareersSignal(html)
 
 export const createBackyardCreatorsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({
@@ -217,9 +219,21 @@ export const createBackyardCreatorsScraper = ({ now = () => new Date().toISOStri
         return []
       }
 
-      const careersHtml = careersPage.status === 200
+      let careersHtml = careersPage.status === 200
         ? careersPage.html
-        : (await browserPageFetcher(CAREERS_URL)).html
+        : null
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        careersHtml = (await browserPageFetcher(CAREERS_URL)).html
+      }
+
+      if (
+        !isLegacyCareersLinkedHomepage(homepageHtml)
+        && isHomepageShellWithoutPublicCareers(careersHtml)
+      ) {
+        return []
+      }
+
       const jobs = extractPublicJobs(careersHtml)
 
       return jobs.map((job) => normalizeScrapedJob({

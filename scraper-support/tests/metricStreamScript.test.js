@@ -301,6 +301,62 @@ test('MetricStream detail extraction preserves the canonical public detail URL a
   })
 })
 
+test('MetricStream browser pagination works without locator helpers or waitForTimeout', async () => {
+  const metricStream = await loadMetricStreamModule()
+  const waitCalls = []
+  const searchPages = [searchHtml, searchHtml.replace(/3509/g, '3544')]
+  const requisitionIds = ['3563', '3544']
+  let pageIndex = 0
+  let browserClosed = false
+
+  const fakePage = {
+    goto: async () => {},
+    waitForFunction: async (_pageFunction, options, ...args) => {
+      waitCalls.push({ options, args })
+    },
+    content: async () => searchPages[pageIndex],
+    $: async (selector) => {
+      if (selector === 'a[title="Next Page"]') {
+        if (pageIndex > 0) return null
+
+        return {
+          evaluate: async (callback) => callback({ getAttribute: () => '' }),
+          click: async () => {
+            pageIndex = 1
+          },
+          dispose: async () => {},
+        }
+      }
+
+      if (selector === 'tr.jobResultItem .jobContentEM') {
+        return {
+          evaluate: async (callback) => callback({ textContent: requisitionIds[pageIndex] }),
+          dispose: async () => {},
+        }
+      }
+
+      return null
+    },
+  }
+
+  const pages = await metricStream.getLiveSearchPages({
+    launchBrowserImpl: async () => ({
+      close: async () => {
+        browserClosed = true
+      },
+    }),
+    createOptimizedPageImpl: async () => fakePage,
+    maxPages: 5,
+  })
+
+  assert.deepEqual(pages, searchPages)
+  assert.equal(browserClosed, true)
+  assert.deepEqual(waitCalls[1], {
+    options: { timeout: 120000 },
+    args: ['tr.jobResultItem .jobContentEM', '3563'],
+  })
+})
+
 test('MetricStream run keeps the scraper on the verified first-party careers handoff, public board, and India detail pages only', async () => {
   const metricStream = await loadMetricStreamModule()
   const requestedUrls = []

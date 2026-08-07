@@ -41,15 +41,16 @@ const VERIFIED_LINKEDIN_JOBS_HTML = `
     <body>
       <main>
         <p>Concentrix Catalyst in India</p>
-        <p>Get notified about new Concentrix Catalyst jobs in India.</p>
-        <h1>1 Concentrix Catalyst Jobs in India</h1>
+        <p>
+          <span>Get notified about new Concentrix Catalyst jobs in India</span><span>.</span>
+        </p>
+        <p>Sign in to create job alert</p>
+        <h1>1,000+ Concentrix Catalyst Jobs in India</h1>
         <article>
-          <h3>SAP Datasphere/SAC Consultant</h3>
+          <h3>Microsoft Dynamic CRM</h3>
           <h4><a href="https://www.linkedin.com/company/concentrix/">Concentrix</a></h4>
-          <p>Bengaluru, Karnataka, India</p>
-          <p>Actively Hiring</p>
+          <p>Hyderabad, Telangana, India</p>
         </article>
-        <p>You've viewed all jobs for this search</p>
       </main>
     </body>
   </html>
@@ -65,8 +66,19 @@ const loadModule = async () => {
   }
 }
 
+const loadCatalog = async () => {
+  try {
+    return (await import('../../scraper/concentrixcatalystindia/catalog.js')).default
+  } catch {
+    assert.fail(
+      'Expected Concentrix Catalyst India catalog module at ../../scraper/concentrixcatalystindia/catalog.js',
+    )
+  }
+}
+
 test('Concentrix Catalyst India validates the reviewed exact-company and parent surfaces and returns [] while no exact-company jobs contract is verified', async () => {
   const concentrixCatalystIndia = await loadModule()
+  const concentrixCatalystIndiaCatalog = await loadCatalog()
   const requestedUrls = []
 
   const jobs = await concentrixCatalystIndia.run({
@@ -98,7 +110,7 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   assert.equal(concentrixCatalystIndia.SOURCE, 'concentrixcatalystindia')
   assert.equal(concentrixCatalystIndia.COMPANY, 'Concentrix Catalyst India')
   assert.equal(concentrixCatalystIndia.OFFICIAL_BRAND, 'Concentrix Catalyst')
-  assert.equal(concentrixCatalystIndia.VERIFIED_ON, '2026-07-25')
+  assert.equal(concentrixCatalystIndia.VERIFIED_ON, '2026-08-01')
   assert.equal(
     concentrixCatalystIndia.CAREERS_URL,
     'https://in.linkedin.com/company/concentrix-catalyst',
@@ -117,7 +129,7 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   )
   assert.match(
     concentrixCatalystIndia.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/in\.linkedin\.com\/company\/concentrix-catalyst was the live exact-name public company surface/i,
+    /Verified on Saturday, August 1, 2026 that https:\/\/in\.linkedin\.com\/company\/concentrix-catalyst was the live exact-name public company surface/i,
   )
   assert.match(
     concentrixCatalystIndia.VERIFIED_SURFACE_SUMMARY,
@@ -130,6 +142,22 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   assert.match(
     concentrixCatalystIndia.VERIFIED_SURFACE_SUMMARY,
     /returns no jobs until a stable exact-company public openings flow is verified/i,
+  )
+  assert.equal(concentrixCatalystIndiaCatalog.source, 'concentrixcatalystindia')
+  assert.equal(concentrixCatalystIndiaCatalog.companyName, 'Concentrix Catalyst India')
+  assert.equal(concentrixCatalystIndiaCatalog.companyCareerPage, concentrixCatalystIndia.CAREERS_URL)
+  assert.equal(concentrixCatalystIndiaCatalog.verifiedOn, '2026-08-01')
+  assert.equal(
+    concentrixCatalystIndiaCatalog.atsPlatform,
+    concentrixCatalystIndia.DISPOSITION,
+  )
+  assert.equal(
+    concentrixCatalystIndiaCatalog.extractionStrategy,
+    'verified-exact-name-linkedin-company-surface+parent-careers-handoff+no-exact-company-jobs-sentinel',
+  )
+  assert.match(
+    concentrixCatalystIndiaCatalog.verifiedSurfaceSummary,
+    /Verified on Saturday, August 1, 2026/i,
   )
 })
 
@@ -247,14 +275,13 @@ test('Concentrix Catalyst India rejects when the public jobs search starts expos
               <main>
                 <p>Concentrix Catalyst in India</p>
                 <p>Get notified about new Concentrix Catalyst jobs in India.</p>
-                <h1>1 Concentrix Catalyst Jobs in India</h1>
+                <p>Sign in to create job alert</p>
+                <h1>1,000+ Concentrix Catalyst Jobs in India</h1>
                 <article>
-                  <h3>SAP Datasphere/SAC Consultant</h3>
+                  <h3>Microsoft Dynamic CRM</h3>
                   <h4><a href="https://www.linkedin.com/company/concentrix-catalyst/">Concentrix Catalyst India</a></h4>
-                  <p>Bengaluru, Karnataka, India</p>
-                  <p>Actively Hiring</p>
+                  <p>Hyderabad, Telangana, India</p>
                 </article>
-                <p>You've viewed all jobs for this search</p>
               </main>
             </body>
           </html>

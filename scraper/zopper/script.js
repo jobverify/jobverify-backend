@@ -258,10 +258,12 @@ export const hasVerifiedLinkedInJobsPageSignal = (html = '') => {
   const text = normalizePageText(page) || ''
 
   return /\blinkedin\b/i.test(text)
-    && /\bzopper\s+jobs\b/i.test(text)
+    && /\bzopper\b/i.test(text)
     && (
       /base-card__full-link/i.test(page)
       || /\bno matching jobs found\b/i.test(text)
+      || /\b\d+\s+jobs?\s+in\s+india\b/i.test(text)
+      || /\byou'?re now using ai-powered job search\b/i.test(text)
       || /\bzopper\s*\(\d+\)/i.test(text)
     )
 }

@@ -5,6 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'neoware'
 export const COMPANY = 'Neoware'
+export const VERIFIED_ON = '2026-08-03'
 export const HOMEPAGE_URL = 'https://www.neoware.io/'
 export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://www.neoware.io/careers',
@@ -58,7 +59,8 @@ const normalizeWhitespace = (value) =>
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/&quot;/gi, '"')
     .replace(/&amp;/gi, '&')
-    .replace(/Â©/g, '©')
+    .replace(/&copy;/gi, '\u00a9')
+    .replace(/\u00c2?\u00a9/g, '\u00a9')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -95,29 +97,31 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Defining the Future of Data Archiving\s*<\/title>/i.test(page)
-    && /<meta[^>]+name=["']description["'][^>]+Defining the Future of Data Archiving/i.test(page)
-    && normalized.includes('Defining the Future of Data Archiving')
-    && normalized.includes('Creating the next generation .Zip Data Manager')
-    && normalized.includes('Our offices')
-    && normalized.includes('Copenhagen')
-    && normalized.includes('Billund')
+  return /<title>\s*NeoWare\s+\u2014\s+NeoZip\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+NeoWare builds next-generation data tools that combine archiving, blockchain authenticity and modern cryptography\. Maker of NeoZip\./i.test(page)
+    && normalized.includes('Trusted data, built for the next generation')
+    && normalized.includes('NeoWare designs open source tools and standards')
+    && normalized.includes('A foundation you can trust')
+    && normalized.includes('Verifiable by design')
+    && normalized.includes('Built on standards')
+    && normalized.includes('Open and extensible')
+    && normalized.includes('Our flagship product')
     && normalized.includes('NeoZip')
-    && normalized.includes('contact@neoware.io')
 }
 
 export const isVerifiedMissingRoute = (page = {}) => {
   const normalized = normalizeWhitespace(page?.html)
-  const raw = normalizeHtml(page?.html)
 
   return Number(page?.status) === 404
-    && /<title>\s*Defining the Future of Data Archiving\s*<\/title>/i.test(String(page?.html ?? ''))
-    && normalized.includes('404 Page not found')
+    && /<title>\s*NeoWare\s+\u2014\s+NeoZip\s*<\/title>/i.test(String(page?.html ?? ''))
+    && normalized.includes('Page not found')
     && normalized.includes("Sorry, we couldn't find the page you're looking for.")
     && normalized.includes('Go to the home page')
-    && normalized.includes('© NeoWare Inc. 2025 All rights reserved.')
-    && normalized.includes('Email: contact@neoware.io')
-    && raw.includes('bg-neutral-950')
+    && normalized.includes('Looking for an article?')
+    && normalized.includes('Browse all articles')
+    && normalized.includes('Building the next generation of trusted data infrastructure.')
+    && normalized.includes('\u00a9 2026 NeoWare. All rights reserved.')
+    && normalized.includes('Privacy Policy')
     && !hasUnexpectedCareerLikeLink(page?.html)
     && !hasPublicJobsSignal(page?.html)
 }

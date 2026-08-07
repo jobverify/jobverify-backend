@@ -5,12 +5,12 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>ionic</title>
+    <title>Ionic - Trading Solutions API</title>
   </head>
   <body>
     <nav>
       <a href="/about">About</a>
-      <a href="https://dev.api.ionic.trade/">View Documentation</a>
+      <a href="https://dev.api.ionic.trade/docs">View Documentation</a>
       <a href="/demo">Live Demo</a>
       <a href="https://t.me/ionictrade">Contact Us</a>
     </nav>
@@ -21,6 +21,29 @@ const homepageHtml = `
       high-performance API.
     </p>
   </body>
+</html>
+`
+
+const aboutHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About - Ionic</title>
+  </head>
+  <body>
+    <h1>Solana Trading API</h1>
+    <p>Real-time market data, wallet analytics, and trading infrastructure.</p>
+  </body>
+</html>
+`
+
+const blankAdjacentHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Ionic</title>
+  </head>
+  <body></body>
 </html>
 `
 
@@ -39,8 +62,8 @@ test('Ionic Trading scraper helpers stay pinned to the verified homepage-only fi
   assert.equal(ionicTrading.COMPANY, 'Ionic Trading')
   assert.equal(ionicTrading.COMPANY_DOMAIN, 'ionic.trade')
   assert.equal(ionicTrading.HOMEPAGE_URL, 'https://ionic.trade/')
-  assert.equal(ionicTrading.DOCUMENTATION_URL, 'https://dev.api.ionic.trade/')
-  assert.equal(ionicTrading.VERIFIED_AT, '2026-07-17')
+  assert.equal(ionicTrading.DOCUMENTATION_URL, 'https://dev.api.ionic.trade/docs')
+  assert.equal(ionicTrading.VERIFIED_AT, '2026-08-02')
   assert.deepEqual(ionicTrading.ADJACENT_ROUTE_URLS, [
     'https://ionic.trade/about',
     'https://ionic.trade/careers',
@@ -72,13 +95,25 @@ test('Ionic Trading run returns [] while the verified homepage stays intact and 
       if (url === ionicTrading.HOMEPAGE_URL) return homepageHtml
       throw new Error(`Unexpected homepage URL: ${url}`)
     },
-    probeUrl: async (url) => ({
-      url,
-      finalUrl: url,
-      status: null,
-      html: null,
-      errorKind: 'dns',
-    }),
+    probeUrl: async (url) => {
+      if (url === 'https://ionic.trade/about') {
+        return {
+          url,
+          finalUrl: url,
+          status: 200,
+          html: aboutHtml,
+          errorKind: null,
+        }
+      }
+
+      return {
+        url,
+        finalUrl: url,
+        status: 200,
+        html: blankAdjacentHtml,
+        errorKind: null,
+      }
+    },
   })
 
   assert.deepEqual(requestedUrls, [ionicTrading.HOMEPAGE_URL])
@@ -120,6 +155,16 @@ test('Ionic Trading fails closed when the homepage drifts, links a jobs surface,
     ionicTrading.createIonicTradingScraper().run({
       fetchText: async () => homepageHtml,
       probeUrl: async (url) => {
+        if (url === 'https://ionic.trade/about') {
+          return {
+            url,
+            finalUrl: url,
+            status: 200,
+            html: aboutHtml,
+            errorKind: null,
+          }
+        }
+
         if (url === 'https://ionic.trade/careers') {
           return {
             url,
@@ -133,9 +178,9 @@ test('Ionic Trading fails closed when the homepage drifts, links a jobs surface,
         return {
           url,
           finalUrl: url,
-          status: null,
-          html: null,
-          errorKind: 'dns',
+          status: 200,
+          html: blankAdjacentHtml,
+          errorKind: null,
         }
       },
     }),

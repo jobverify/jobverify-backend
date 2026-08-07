@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-01T00:00:00.000Z'
 
 const loadModule = async (relativePath) => {
   try {
@@ -14,42 +14,74 @@ const loadModule = async (relativePath) => {
 const avizvaCareersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Avizva Careers | Explore Exciting Opportunities</title>
+  </head>
   <body>
     <main>
       <h1>We Aim, Learn, and Grow Each Day with Passion and Purpose</h1>
-      <section class="job-card">
-        <p>Program Governance</p>
-        <p>3 - 5 Years</p>
-        <h3>Scrum Master</h3>
+      <div class="job-box">
+        <div class="job-info">
+          <ul>
+            <li>Backend Technologies</li>
+            <li>5 - 8 Years</li>
+          </ul>
+          <h3>Senior Python Engineer</h3>
+        </div>
         <h4>Locations</h4>
         <ul><li>Gurugram, India</li><li>Indore, India</li></ul>
         <a href="https://avizva.keka.com/careers/jobdetails/1001">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <p>Database Technologies</p>
-        <p>3 - 5 Years</p>
-        <h3>Development Engineer</h3>
+      </div>
+      <div class="job-box">
+        <div class="job-info">
+          <ul>
+            <li>Backend Technologies</li>
+            <li>3 - 5 Years</li>
+          </ul>
+          <h3>Python Engineer</h3>
+        </div>
         <h4>Locations</h4>
         <ul><li>Gurugram, India</li><li>Indore, India</li></ul>
         <a href="https://avizva.keka.com/careers/jobdetails/1002">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <p>DevOps Engineering</p>
-        <p>8 - 10 Years</p>
-        <h3>Lead Engineer</h3>
+      </div>
+      <div class="job-box">
+        <div class="job-info">
+          <ul>
+            <li>Program Governance</li>
+            <li>3 - 5 Years</li>
+          </ul>
+          <h3>Scrum Master</h3>
+        </div>
         <h4>Locations</h4>
         <ul><li>Gurugram, India</li><li>Indore, India</li></ul>
         <a href="https://avizva.keka.com/careers/jobdetails/1003">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <p>Design</p>
-        <p>4 - 6 Years</p>
-        <h3>System Analyst</h3>
+      </div>
+      <!--
+      <div class="job-box">
+        <div class="job-info">
+          <ul>
+            <li>Backend Technologies</li>
+            <li>8 - 10 Years</li>
+          </ul>
+          <h3>Lead Development Engineer</h3>
+        </div>
         <h4>Locations</h4>
-        <ul><li>Gurugram, India</li><li>Indore, India</li></ul>
+        <ul><li>Gurugram - India</li></ul>
         <a href="https://avizva.keka.com/careers/jobdetails/1004">Apply Now</a>
-      </section>
-      <p>Currently, there are no open roles matching your skills.</p>
+      </div>
+      <div class="job-box">
+        <div class="job-info">
+          <ul>
+            <li>Design</li>
+            <li>6 - 8 Years</li>
+          </ul>
+          <h3>Senior Product Owner</h3>
+        </div>
+        <h4>Locations</h4>
+        <ul><li>Indore - India</li><li>Gurugram - India</li></ul>
+        <a href="https://avizva.keka.com/careers/jobdetails/1005">Apply Now</a>
+      </div>
+      -->
     </main>
   </body>
 </html>
@@ -60,28 +92,47 @@ const cdwSearchHtml = `
 <html lang="en">
   <body>
     <h1>Job Search Results</h1>
-    <p>Country</p>
-    <p>India (5 jobs )</p>
-    <article>
-      <h4><a href="/jobs/17992081-senior-data-engineer-2">Senior Data Engineer-2</a></h4>
-      <p>Technology</p>
-      <p>Hyderabad, TS, India</p>
-    </article>
-    <article>
-      <h4><a href="/jobs/17992082-senior-data-engineer-1">Senior Data Engineer-1</a></h4>
-      <p>Technology</p>
-      <p>Bangalore, KA, India</p>
-    </article>
-    <article>
-      <h4><a href="/jobs/17992083-data-engineer-consultant-2">Data Engineer(Consultant)-2</a></h4>
-      <p>Technology</p>
-      <p>Bangalore, KA, India</p>
-    </article>
-    <article>
-      <h4><a href="/jobs/17000000-account-executive">Account Executive</a></h4>
-      <p>Business Development</p>
-      <p>Virtual, TX, United States</p>
-    </article>
+    <p>Search All Jobs</p>
+    <p>Recruitment Fraud Alert</p>
+    <a href="/search/jobs/in/country/india">India (4 jobs)</a>
+  </body>
+</html>
+`
+
+const cdwIndiaSearchHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>India Careers</h1>
+    <p>Country India (4 jobs ) selected</p>
+    <p>Showing 1-3 results out of total 3 open jobs</p>
+    <div class="jobs-section__item" id="R26_00002003">
+      <div class="row">
+        <div class="column">
+          <h4><a href="/jobs/17992081-senior-data-engineer-2">Senior Data Engineer-2</a></h4>
+          <div class="columns medium-7">Technology</div>
+          <div class="columns medium-5 text-right">Hyderabad, TS, India</div>
+        </div>
+      </div>
+    </div>
+    <div class="jobs-section__item" id="R26_00002004">
+      <div class="row">
+        <div class="column">
+          <h4><a href="/jobs/17992082-senior-data-engineer-1">Senior Data Engineer-1</a></h4>
+          <div class="columns medium-7">Technology</div>
+          <div class="columns medium-5 text-right">Bangalore, KA, India</div>
+        </div>
+      </div>
+    </div>
+    <div class="jobs-section__item" id="R26_00002006">
+      <div class="row">
+        <div class="column">
+          <h4><a href="/jobs/17992083-data-engineer-consultant-2">Data Engineer(Consultant)-2</a></h4>
+          <div class="columns medium-7">Technology</div>
+          <div class="columns medium-5 text-right">Bangalore, KA, India</div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
 `
@@ -219,17 +270,17 @@ test('AVIZVA run returns normalized jobs from the verified first-party careers p
     },
   })
 
-  assert.equal(jobs.length, 4)
+  assert.equal(jobs.length, 3)
   assert.deepEqual(jobs.map((job) => job.title), [
-    'Development Engineer',
-    'Lead Engineer',
+    'Python Engineer',
     'Scrum Master',
-    'System Analyst',
+    'Senior Python Engineer',
   ])
-  assert.equal(jobs[0].department, 'Database Technologies')
+  assert.equal(jobs[0].department, 'Backend Technologies')
   assert.equal(jobs[0].experienceRequired, '3 - 5 Years')
   assert.equal(jobs[0].applyUrl, 'https://avizva.keka.com/careers/jobdetails/1002')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[1].location, 'Gurugram, India; Indore, India')
 })
 
 test('CDW run returns normalized India jobs from the verified search results and detail pages', async () => {
@@ -237,6 +288,7 @@ test('CDW run returns normalized India jobs from the verified search results and
   const requestedUrls = []
 
   assert.equal(cdw.hasOfficialSearchResultsSignal(cdwSearchHtml), true)
+  assert.equal(cdw.hasOfficialIndiaResultsSignal(cdwIndiaSearchHtml), true)
 
   const jobs = await cdw.createCdwScraper({
     now: () => FIXED_SCRAPED_AT,
@@ -244,6 +296,7 @@ test('CDW run returns normalized India jobs from the verified search results and
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === cdw.SEARCH_URL) return cdwSearchHtml
+      if (url === cdw.INDIA_SEARCH_URL) return cdwIndiaSearchHtml
       if (cdwDetailByUrl[url]) return cdwDetailByUrl[url]
       throw new Error(`Unexpected CDW URL: ${url}`)
     },
@@ -251,6 +304,7 @@ test('CDW run returns normalized India jobs from the verified search results and
 
   assert.deepEqual(requestedUrls, [
     cdw.SEARCH_URL,
+    cdw.INDIA_SEARCH_URL,
     'https://www.cdwjobs.com/jobs/17992081-senior-data-engineer-2',
     'https://www.cdwjobs.com/jobs/17992082-senior-data-engineer-1',
     'https://www.cdwjobs.com/jobs/17992083-data-engineer-consultant-2',

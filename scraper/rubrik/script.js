@@ -163,6 +163,7 @@ export const run = async () => {
             preferredQualification: detail.preferredQualification,
             requiredSkills: detail.requiredSkills,
             experienceRequired: detail.experienceRequired,
+            publicExperienceChecked: detail.publicExperienceChecked ?? false,
             scrapedAt: new Date().toISOString(),
           })
         }

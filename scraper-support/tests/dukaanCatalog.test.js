@@ -10,7 +10,8 @@ test('Dukaan is registered as a fail-closed custom script provider', () => {
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Dukaan')
   assert.equal(provider.companyCareerPage, 'https://wellfound.com/company/dukaan-app/jobs')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 403/i)
   assert.match(provider.modulePath, /dukaan[\\/]script\.js$/i)
 })
 

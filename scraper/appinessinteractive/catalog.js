@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://www.appinessworld.com/careers/job-details/ is the live first-party Appiness Interactive careers page and that it publicly exposes same-page role sections including SEO Expert, Python Developer, Senior Software Engineer - Java, and QA Engineer - Automation for Bangalore applicants. The verified page showed 15 public openings on the first-party surface.'
+  'Verified on Saturday, August 1, 2026 that https://www.appinessworld.com/careers/job-details/ remained the live first-party Appiness Interactive careers page and that it publicly exposes same-page role sections for Bangalore applicants via the current Role / Experience / Location blocks followed by same-page Submit Application modals. The verified page showed 25 public openings on the first-party surface, including SEO Expert, Python Developer, MERN Stack Developer, and Project Manager | Scrum Master.'
 
 export const APPINESS_INTERACTIVE_CATALOG = {
   source: 'appinessinteractive',
@@ -20,8 +20,8 @@ export const APPINESS_INTERACTIVE_CATALOG = {
   extractionStrategy: 'same-page-role-sections',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
-  verifiedPublicOpeningCount: 15,
+  verifiedOn: '2026-08-01',
+  verifiedPublicOpeningCount: 25,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'appinessinteractive/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

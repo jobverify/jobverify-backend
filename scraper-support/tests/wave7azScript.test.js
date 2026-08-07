@@ -72,15 +72,41 @@ const sparxCareersHtml = `
 </html>
 `
 
-const perpetuuitiCareersHtml = `
+const perpetuuitiHomepageHtml = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>We empower people who perform!</h1>
-    <p>We're always looking for great people! If you fit that description, check out our open positions and apply today!</p>
-    <a href="Careers-Form.php">SEARCH JOBS</a>
-    <a href="Careers-Form.php">APPLY FOR A CAREER SWITCH</a>
-    <p>Work from Anywhere. Anytime</p>
+    <title>Autonomous Resilience Platform | Perpetuuiti</title>
+    <nav>
+      <a href="/platform">Platform</a>
+      <a href="/products">Products</a>
+      <a href="/docs">Docs</a>
+      <a href="/contact">Contact</a>
+    </nav>
+    <a href="/book-demo">Book a Resilience Assessment</a>
+    <h1>RESILIENCE REDEFINED</h1>
+    <p>Autonomous resilience for the AI era.</p>
+    <p>Built on 15 years of enterprise resilience expertise.</p>
+    <p>Perpetuuiti connects protection, recovery orchestration and continuous validation.</p>
+  </body>
+</html>
+`
+
+const perpetuuitiSitemapXml = `
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://ptechnosoft.com/</loc></url>
+  <url><loc>https://ptechnosoft.com/about/</loc></url>
+  <url><loc>https://ptechnosoft.com/contact/</loc></url>
+  <url><loc>https://ptechnosoft.com/docs/</loc></url>
+</urlset>
+`
+
+const perpetuuitiMissingRouteHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>404 Not Found</h1>
   </body>
 </html>
 `
@@ -206,26 +232,52 @@ test('SPARX IT Solutions extracts verified India openings from the first-party c
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
 })
 
-test('Perpetuuiti Technosoft Services stays fail-closed while the verified careers form handoff remains broken', async () => {
+test('Perpetuuiti Technosoft Services stays fail-closed while the verified homepage, sitemap, redirects, and missing routes remain unchanged', async () => {
   const perpetuuiti = await loadModule('../../scraper/perpetuuititechnosoftservices/script.js')
 
-  assert.equal(perpetuuiti.hasOfficialCareersSignal(perpetuuitiCareersHtml), true)
-  assert.equal(perpetuuiti.hasCareersFormLink(perpetuuitiCareersHtml), true)
+  assert.equal(perpetuuiti.hasOfficialHomepageSignal(perpetuuitiHomepageHtml), true)
   assert.equal(
-    perpetuuiti.isExpectedBrokenCareersFormResponse({
-      status: 500,
-      text: 'Internal Server Error',
+    perpetuuiti.isHomepageRedirectSurface({
+      status: 200,
+      url: perpetuuiti.HOMEPAGE_URL,
+      text: perpetuuitiHomepageHtml,
     }),
+    true,
+  )
+  assert.equal(perpetuuiti.hasExpectedSitemapSurface(perpetuuitiSitemapXml), true)
+  assert.equal(perpetuuiti.hasCareersLikeRoute(perpetuuitiSitemapXml), false)
+  assert.equal(
+    perpetuuiti.isExpectedMissingCareerRoute({
+      status: 404,
+      url: perpetuuiti.CAREERS_ROUTE_URL,
+      text: perpetuuitiMissingRouteHtml,
+    }, perpetuuiti.CAREERS_ROUTE_URL),
     true,
   )
 
   const jobs = await perpetuuiti.createPerpetuuitiTechnosoftServicesScraper().run({
     fetchPage: async (url) => {
-      if (url === perpetuuiti.CAREERS_URL) {
-        return { status: 200, text: perpetuuitiCareersHtml }
+      if (url === perpetuuiti.HOMEPAGE_URL) {
+        return { status: 200, url, text: perpetuuitiHomepageHtml }
       }
-      if (url === perpetuuiti.CAREERS_FORM_URL) {
-        return { status: 500, text: 'Internal Server Error' }
+      if (url === perpetuuiti.SITEMAP_URL) {
+        return { status: 200, url, text: perpetuuitiSitemapXml }
+      }
+      if ([perpetuuiti.LEGACY_CAREERS_URL, perpetuuiti.LEGACY_CAREERS_FORM_URL].includes(url)) {
+        return {
+          status: 200,
+          url: perpetuuiti.HOMEPAGE_URL,
+          text: perpetuuitiHomepageHtml,
+        }
+      }
+      if (
+        [
+          perpetuuiti.CAREERS_ROUTE_URL,
+          perpetuuiti.CAREER_ROUTE_URL,
+          perpetuuiti.JOBS_ROUTE_URL,
+        ].includes(url)
+      ) {
+        return { status: 404, url, text: perpetuuitiMissingRouteHtml }
       }
       throw new Error(`Unexpected Perpetuuiti URL: ${url}`)
     },
@@ -236,16 +288,36 @@ test('Perpetuuiti Technosoft Services stays fail-closed while the verified caree
   await assert.rejects(
     perpetuuiti.createPerpetuuitiTechnosoftServicesScraper().run({
       fetchPage: async (url) => {
-        if (url === perpetuuiti.CAREERS_URL) {
-          return { status: 200, text: perpetuuitiCareersHtml }
+        if (url === perpetuuiti.HOMEPAGE_URL) {
+          return { status: 200, url, text: perpetuuitiHomepageHtml }
         }
-        if (url === perpetuuiti.CAREERS_FORM_URL) {
-          return { status: 200, text: '<html><body><h1>Apply now</h1></body></html>' }
+        if (url === perpetuuiti.SITEMAP_URL) {
+          return {
+            status: 200,
+            url,
+            text: `${perpetuuitiSitemapXml}<url><loc>https://ptechnosoft.com/careers</loc></url>`,
+          }
+        }
+        if ([perpetuuiti.LEGACY_CAREERS_URL, perpetuuiti.LEGACY_CAREERS_FORM_URL].includes(url)) {
+          return {
+            status: 200,
+            url: perpetuuiti.HOMEPAGE_URL,
+            text: perpetuuitiHomepageHtml,
+          }
+        }
+        if (
+          [
+            perpetuuiti.CAREERS_ROUTE_URL,
+            perpetuuiti.CAREER_ROUTE_URL,
+            perpetuuiti.JOBS_ROUTE_URL,
+          ].includes(url)
+        ) {
+          return { status: 404, url, text: perpetuuitiMissingRouteHtml }
         }
         throw new Error(`Unexpected Perpetuuiti URL: ${url}`)
       },
     }),
-    /broken careers form handoff/i,
+    /sitemap now exposes a careers-like route/i,
   )
 })
 

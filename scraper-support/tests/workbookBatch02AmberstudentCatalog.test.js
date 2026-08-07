@@ -36,5 +36,5 @@ test('Amberstudent is wired to a verified SmartRecruiters-backed live scraper in
     'https://api.smartrecruiters.com/v1/companies/amberstudent/postings/{{jobId}}',
   )
   assert.equal(scraper.provider.modulePath, provider.modulePath)
-  assert.match(provider.modulePath, /amberstudent\.js$/)
+  assert.match(provider.modulePath, /[\\/]amberstudent[\\/]script\.js$/)
 })

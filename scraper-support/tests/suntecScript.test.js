@@ -13,15 +13,26 @@ const careersPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Career | SunTec Group</title>
+    <title>Work with us - SunTec</title>
   </head>
   <body>
-    <h1>Explore Opportunities at SunTec Group</h1>
+    <h1>Find the job you love</h1>
     <p>Join SunTec Group and build category-leading products for financial services.</p>
-    <a href="/careers/technical-trainer/">Technical Trainer</a>
-    <a href="https://www.suntecgroup.com/careers/analyst-inside-sales/">Analyst - Inside Sales</a>
-    <a href="/career/">Careers Home</a>
-    <a href="https://example.com/external-role/">External Role</a>
+    <div class="elementor-widget-container"><h2 class="elementor-heading-title">Current Openings</h2></div>
+    <div class="elementor-element">
+      <h2>Analyst - Inside Sales</h2>
+      <p>Build high quality pipeline and inspire prospects across the sales lifecycle.</p>
+      <a href="https://suntecgroup.com/careers/analyst-inside-sales/">View Openings</a>
+    </div>
+    <div class="elementor-element">
+      <h2>Technical Trainer</h2>
+      <p>Deliver technical and functional training programs for SunTec teams.</p>
+      <a href="https://www.suntecgroup.com/careers/technical-trainer/">View Openings</a>
+    </div>
+    <div class="elementor-hidden-desktop elementor-hidden-tablet elementor-hidden-mobile">
+      <h2>Computer Systems Analyst</h2>
+      <a href="/career-computer-systems-analyst/">View Openings</a>
+    </div>
     <div class="gform_wrapper">Gravity Forms</div>
   </body>
 </html>
@@ -84,20 +95,24 @@ test('extractListings keeps only same-domain SunTec detail pages from the career
 
   assert.deepEqual(suntec.extractListings(careersPageHtml), [
     {
-      title: 'Technical Trainer',
-      company: 'SunTec Group',
-      jobId: 'technical-trainer',
-      requisitionId: 'technical-trainer',
-      sourceUrl: 'https://www.suntecgroup.com/careers/technical-trainer/',
-      applyUrl: 'https://www.suntecgroup.com/careers/technical-trainer/',
-    },
-    {
       title: 'Analyst - Inside Sales',
       company: 'SunTec Group',
       jobId: 'analyst-inside-sales',
       requisitionId: 'analyst-inside-sales',
       sourceUrl: 'https://www.suntecgroup.com/careers/analyst-inside-sales/',
       applyUrl: 'https://www.suntecgroup.com/careers/analyst-inside-sales/',
+      detailUrl: 'https://www.suntecgroup.com/careers/analyst-inside-sales/',
+      inlineDescription: 'Build high quality pipeline and inspire prospects across the sales lifecycle.',
+    },
+    {
+      title: 'Technical Trainer',
+      company: 'SunTec Group',
+      jobId: 'technical-trainer',
+      requisitionId: 'technical-trainer',
+      sourceUrl: 'https://www.suntecgroup.com/careers/technical-trainer/',
+      applyUrl: 'https://www.suntecgroup.com/careers/technical-trainer/',
+      detailUrl: 'https://www.suntecgroup.com/careers/technical-trainer/',
+      inlineDescription: 'Deliver technical and functional training programs for SunTec teams.',
     },
   ])
 })
@@ -135,7 +150,7 @@ test('extractJobDetail maps SunTec detail-page metadata and keeps the detail pag
   })
 })
 
-test('run fetches the SunTec careers page, follows detail links, and decorates final jobs', async () => {
+test('run keeps live inline openings even when one SunTec detail page has drifted to 404', async () => {
   const suntec = await loadSuntecModule()
   const requestedUrls = []
 
@@ -144,7 +159,7 @@ test('run fetches the SunTec careers page, follows detail links, and decorates f
       requestedUrls.push(url)
       if (url === suntec.CAREERS_URL) return careersPageHtml
       if (url === 'https://www.suntecgroup.com/careers/technical-trainer/') return technicalTrainerDetailHtml
-      if (url === 'https://www.suntecgroup.com/careers/analyst-inside-sales/') return insideSalesDetailHtml
+      if (url === 'https://www.suntecgroup.com/careers/analyst-inside-sales/') throw new Error(`HTTP 404 for ${url}`)
       throw new Error(`Unexpected SunTec fixture URL: ${url}`)
     },
     now: () => '2026-07-10T00:00:00.000Z',
@@ -152,15 +167,39 @@ test('run fetches the SunTec careers page, follows detail links, and decorates f
 
   assert.deepEqual(requestedUrls, [
     suntec.CAREERS_URL,
-    'https://www.suntecgroup.com/careers/technical-trainer/',
     'https://www.suntecgroup.com/careers/analyst-inside-sales/',
+    'https://www.suntecgroup.com/careers/technical-trainer/',
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'suntec')
   assert.equal(jobs[0].company, 'SunTec Group')
-  assert.equal(jobs[0].link, jobs[0].sourceUrl)
-  assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
+  assert.equal(jobs[0].sourceUrl, suntec.CAREERS_URL)
+  assert.equal(jobs[0].applyUrl, suntec.CAREERS_URL)
+  assert.equal(jobs[0].link, suntec.CAREERS_URL)
+  assert.equal(jobs[0].jobDescription, 'Build high quality pipeline and inspire prospects across the sales lifecycle.')
   assert.equal(jobs[0].scrapedAt, '2026-07-10T00:00:00.000Z')
+  assert.equal(jobs[1].sourceUrl, 'https://www.suntecgroup.com/careers/technical-trainer/')
+  assert.equal(jobs[1].applyUrl, 'https://www.suntecgroup.com/careers/technical-trainer/')
+  assert.equal(jobs[1].link, 'https://www.suntecgroup.com/careers/technical-trainer/')
+})
+
+test('run still decorates SunTec jobs from detail pages when they resolve', async () => {
+  const suntec = await loadSuntecModule()
+
+  const jobs = await suntec.createSuntecScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === suntec.CAREERS_URL) return careersPageHtml
+      if (url === 'https://www.suntecgroup.com/careers/analyst-inside-sales/') return insideSalesDetailHtml
+      throw new Error(`Unexpected SunTec fixture URL: ${url}`)
+    },
+    now: () => '2026-07-10T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].sourceUrl, 'https://www.suntecgroup.com/careers/analyst-inside-sales/')
+  assert.equal(jobs[0].applyUrl, 'https://www.suntecgroup.com/careers/analyst-inside-sales/')
+  assert.equal(jobs[0].location, 'Trivandrum, India')
+  assert.equal(jobs[0].jobDescription, 'Role Overview Support pipeline generation and outbound prospecting for SunTec markets.')
 })
 
 test('run fails closed when the verified SunTec careers signal disappears', async () => {

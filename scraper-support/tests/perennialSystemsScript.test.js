@@ -5,8 +5,8 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>Grow, innovate & shape your future with us.</h1>
-    <a href="https://perennialsys.com/job-openings">Explore Career Opportunities.</a>
+    <h1>Grow, innovate &amp; shape your future with us.</h1>
+    <a href="https://perennialsys.com/job-openings/">Explore Career Opportunities.</a>
   </body>
 </html>
 `

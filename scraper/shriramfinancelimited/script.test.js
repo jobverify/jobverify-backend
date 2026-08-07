@@ -172,6 +172,36 @@ test('SHRIRAM scraper paginates the session-backed first-party current-opening A
   assert.equal(seenRequests[1].options.headers['X-Requested-With'], 'XMLHttpRequest')
 })
 
+test('SHRIRAM scraper can paginate the public current-opening API even when the careers shell sets no cookies', async () => {
+  const scraper = createShriramFinanceLimitedScraper({
+    now: () => '2026-08-01T12:00:00.000Z',
+  })
+
+  const jobs = await scraper.run({
+    fetchImpl: async (url, options = {}) => {
+      if (url === CAREERS_URL) {
+        return createMockResponse({
+          body: careersHtml,
+          setCookies: [],
+        })
+      }
+
+      if (url === buildCurrentOpeningsApiUrl(0)) {
+        return createMockResponse({ jsonBody: currentOpeningPage0 })
+      }
+
+      if (url === buildCurrentOpeningsApiUrl(1)) {
+        return createMockResponse({ jsonBody: currentOpeningPage1 })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 7)
+  assert.equal(jobs[0].scrapedAt, '2026-08-01T12:00:00.000Z')
+})
+
 test('SHRIRAM scraper fails closed when the verified careers page changes materially', async () => {
   const scraper = createShriramFinanceLimitedScraper()
 

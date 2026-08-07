@@ -69,7 +69,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Custom\s*&(?:amp;)?\s*Specialty Lubricants Manufacturer\s*\|\s*MOSIL\s*<\/title>/i.test(page)
+  return /<title>\s*Custom\s*&(?:amp;)?\s*Specialty Lubricants Manufacturer\s*\|\s*MOSIL(?:\s+Lubricants)?\s*<\/title>/i.test(page)
     && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/mosil\.com\/["']/i.test(page)
     && /"name"\s*:\s*"MOSIL Lubricants Pvt\. Ltd\."/i.test(page)
     && /href=["'](?:https:\/\/mosil\.com\/careers|https:\/\/www\.mosil\.com\/careers|\/careers)["']/i.test(page)
@@ -174,6 +174,7 @@ export const extractPublicJobs = (html) => {
         `Public MOSIL careers position option: ${label}. `
           + 'Apply via the official MOSIL careers page and upload your resume through the shared resume upload form.',
       ),
+      publicExperienceChecked: true,
     }
   })
 }

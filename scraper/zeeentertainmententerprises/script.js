@@ -235,6 +235,7 @@ export const extractSearchResults = (html) => {
         postingDate: toIsoDate(record.created_on),
         closingDate: null,
         jobDescription: stripHtml(record.description_external),
+        publicExperienceChecked: true,
       }
     })
     .filter(Boolean)

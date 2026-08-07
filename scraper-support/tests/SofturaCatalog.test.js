@@ -19,9 +19,9 @@ test('Softura local catalog captures the verified Cloudflare-blocked careers rou
   assert.equal(provider.source, 'softura')
   assert.equal(provider.companyName, 'Softura')
   assert.equal(provider.companyCareerPage, 'https://www.softura.com/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-blocked')
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
-  assert.match(provider.verifiedSurfaceSummary, /blocked/i)
+  assert.equal(provider.atsPlatform, 'first-party-detail-pages-plus-zoho-links')
+  assert.match(provider.verifiedSurfaceSummary, /Apply Now links/i)
+  assert.match(provider.verifiedSurfaceSummary, /Java Developer in Chennai/i)
 })
 
 test('Softura backlog row matches directly through the local catalog', async () => {

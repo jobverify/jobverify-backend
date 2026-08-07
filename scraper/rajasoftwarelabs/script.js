@@ -35,7 +35,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const text = stripTags(html)
-  return text.includes('Current Openings')
+  return /<h1[^>]*>\s*Current Openings\s*<\/h1>/i.test(String(html ?? ''))
     && text.includes('To apply for a specific job')
     && /careers@rajasoftwarelabs\.com/i.test(text)
 }
@@ -50,9 +50,12 @@ const buildAbsoluteUrl = (href) => {
 
 export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => {
   const jobs = []
+  const openingsListHtml = String(html ?? '').match(
+    /To apply for a specific job[\s\S]*?<ul>([\s\S]*?)<\/ul>/i,
+  )?.[1] ?? ''
   const pattern = /<li>\s*<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>\s*<\/li>/gi
 
-  for (const match of String(html ?? '').matchAll(pattern)) {
+  for (const match of openingsListHtml.matchAll(pattern)) {
     const applyUrl = buildAbsoluteUrl(match[1])
     const title = normalizeWhitespace(match[2])
     if (!applyUrl || !title) continue
@@ -69,6 +72,7 @@ export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => 
       experienceRequired: null,
       requiredSkills: [],
       jobDescription: null,
+      publicExperienceChecked: true,
       source: SOURCE,
       link: applyUrl,
       scrapedAt,

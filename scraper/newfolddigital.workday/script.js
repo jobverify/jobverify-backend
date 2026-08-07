@@ -202,10 +202,18 @@ export const extractVerifiedWorkdayBoardUrl = (html = '') => {
 
 export const hasOfficialWorkdayBoardSignal = (html = '') => {
   const page = String(html ?? '')
+  const hasLegacyOpenJobsSignal =
+    /property=["']og:title["'][^>]*content=["']Open Jobs["']/i.test(page)
+    && /(Open Jobs|Search for Jobs)/i.test(page)
+  const hasLiveWorkdayShell =
+    /Newfold Digital is a leading web technology company/i.test(page)
+    && /tenant:\s*"web"/i.test(page)
+    && /siteId:\s*"ExternalCareerSite"/i.test(page)
+    && /cx-jobs\.min\.js/i.test(page)
 
   return /rel=["']canonical["'][^>]*href=["']https:\/\/web\.wd1\.myworkdayjobs\.com\/(?:en-US\/)?ExternalCareerSite["']/i.test(page)
-    && /property=["']og:title["'][^>]*content=["']Open Jobs["']/i.test(page)
-    && /(Open Jobs|Search for Jobs)/i.test(page)
+    && /property=["']og:title["'][^>]*>/i.test(page)
+    && (hasLegacyOpenJobsSignal || hasLiveWorkdayShell)
 }
 
 export const buildUnfilteredJobsRequestBody = ({

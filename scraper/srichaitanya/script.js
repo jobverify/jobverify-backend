@@ -34,6 +34,7 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = decodeHtmlEntities(value)
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -69,22 +70,45 @@ const extractFirstHeading = (html = '') => normalizeWhitespace(
   stripTags(String(html ?? '').match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1]),
 )
 
+const normalizeLabel = (value) => normalizeWhitespace(String(value ?? '').replace(/:\s*$/, ''))?.toLowerCase() || null
+
 const extractFieldValue = (lines, label) => {
-  const lowerLabel = label.toLowerCase()
-  const line = lines.find((entry) => entry.toLowerCase().startsWith(lowerLabel))
-  if (!line) return null
-  return normalizeWhitespace(line.slice(label.length))
+  const normalizedLabel = normalizeLabel(label)
+  if (!normalizedLabel) return null
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]
+    const normalizedLine = normalizeLabel(line)
+    if (!normalizedLine) continue
+
+    if (normalizedLine === normalizedLabel) {
+      return normalizeWhitespace(lines[index + 1])
+    }
+
+    if (normalizedLine.startsWith(`${normalizedLabel}:`)) {
+      return normalizeWhitespace(line.slice(line.indexOf(':') + 1))
+    }
+  }
+
+  return null
 }
 
 const extractSection = (lines, startLabel, endLabels = []) => {
-  const startIndex = lines.findIndex((line) => line.toLowerCase().startsWith(startLabel.toLowerCase()))
+  const normalizedStartLabel = normalizeLabel(startLabel)
+  const normalizedEndLabels = endLabels.map((label) => normalizeLabel(label)).filter(Boolean)
+  const startIndex = lines.findIndex((line) => {
+    const normalizedLine = normalizeLabel(line)
+    return normalizedLine === normalizedStartLabel
+      || normalizedLine?.startsWith(`${normalizedStartLabel}:`)
+  })
   if (startIndex < 0) return null
 
   const values = []
 
   for (let index = startIndex + 1; index < lines.length; index += 1) {
     const line = lines[index]
-    if (endLabels.some((label) => line.toLowerCase().startsWith(label.toLowerCase()))) break
+    const normalizedLine = normalizeLabel(line)
+    if (normalizedEndLabels.some((label) => normalizedLine === label || normalizedLine?.startsWith(`${label}:`))) break
     values.push(line)
   }
 
@@ -136,15 +160,26 @@ export const hasOfficialJobDetailSignal = (html = '') => {
   const normalized = (stripTags(html) || '').toLowerCase()
 
   return normalized.includes('sri chaitanya')
-    && normalized.includes('date posted:')
-    && normalized.includes('location:')
-    && normalized.includes('experience:')
-    && normalized.includes('qualification:')
     && normalized.includes('apply for job')
+    && (
+      (
+        normalized.includes('date posted:')
+        && normalized.includes('location:')
+        && normalized.includes('experience:')
+        && normalized.includes('qualification:')
+      ) || (
+        normalized.includes('job overview')
+        && normalized.includes('date posted')
+        && normalized.includes('location')
+        && normalized.includes('experience')
+        && normalized.includes('qulification')
+      )
+    )
   }
 
 export const extractCareerCards = (html = '') => {
   const cards = []
+  const seenDetailUrls = new Set()
 
   for (const match of String(html ?? '').matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)) {
     const articleHtml = match[1]
@@ -161,10 +196,33 @@ export const extractCareerCards = (html = '') => {
 
     if (!title || !detailUrl) continue
     if (!detailUrl.startsWith(HOMEPAGE_URL)) continue
+    if (seenDetailUrls.has(detailUrl)) continue
+    seenDetailUrls.add(detailUrl)
 
     cards.push({
       title,
       listingSummary,
+      detailUrl,
+    })
+  }
+
+  if (cards.length > 0) {
+    return cards
+  }
+
+  for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const detailUrl = makeAbsoluteUrl(match[1], CAREERS_URL)
+    const title = normalizeWhitespace(stripTags(match[2]))
+
+    if (!detailUrl || !detailUrl.startsWith(HOMEPAGE_URL)) continue
+    if (!/\/career\/[^/]+\/?$/i.test(detailUrl)) continue
+    if (!title || /^apply now$/i.test(title)) continue
+    if (seenDetailUrls.has(detailUrl)) continue
+
+    seenDetailUrls.add(detailUrl)
+    cards.push({
+      title,
+      listingSummary: null,
       detailUrl,
     })
   }
@@ -195,6 +253,8 @@ export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {
     employmentType: extractFieldValue(lines, 'Employment Type:'),
     experienceRequired: extractFieldValue(lines, 'Experience:'),
     minimumQualification: extractFieldValue(lines, 'Qualification:'),
+    minimumQualification: extractFieldValue(lines, 'Qualification:')
+      || extractFieldValue(lines, 'Qulification'),
     preferredQualification: null,
     requiredSkills: [],
     postingDate: extractFieldValue(lines, 'Date Posted:'),
@@ -207,6 +267,10 @@ export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {
         'Location:',
         'Experience:',
         'Qualification:',
+        'Apply For Job',
+      ]),
+      extractSection(lines, 'Desired Profile :', [
+        'Job Overview',
         'Apply For Job',
       ]),
       extractSection(lines, 'Responsibilities:', [

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   APP_CONFIG_URL,
+  APP_SHELL_URL,
   APP_ROOT_URL,
   CAREER_PORTAL_PAGE_JSON_URL,
   CAREER_PORTAL_URL,
@@ -19,6 +20,8 @@ import {
   extractPortalIframeUrl,
   getRunnerMetadata,
   hasCareersPageSignal,
+  hasPortalAppShellSignal,
+  isPortalLoginBlockedResponse,
   normalizeBullhornFields,
 } from './script.js'
 
@@ -29,6 +32,43 @@ const careersHtml = readFixture('careers.html')
 const careerPortalPagePayload = JSON.parse(readFixture('career-portal-page.json'))
 const appConfig = JSON.parse(readFixture('app.json'))
 const officialSearchResults = JSON.parse(readFixture('search-results.json'))
+
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en-US">
+<head>
+  <title>Careers - V-Soft Consulting | Enterprise AI &amp; Digital Transformation</title>
+</head>
+<body>
+  <main>
+    <a href="https://www.vsoftconsulting.com/career-portal/">View Roles</a>
+  </main>
+</body>
+</html>
+`
+
+const shortcodePortalPagePayload = [{
+  id: 22,
+  slug: 'career-portal',
+  link: 'https://www.vsoftconsulting.com/career-portal/',
+  title: { rendered: 'Career' },
+  content: {
+    rendered: ' [oscp] ',
+    protected: false,
+  },
+}]
+
+const portalAppHtml = `
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Career Portal</title>
+</head>
+<body>
+  <app-root><novo-loading></novo-loading></app-root>
+</body>
+</html>
+`
 
 test('pins the verified VSoft official careers surface and first-party Bullhorn portal handoff', () => {
   assert.equal(SOURCE, 'vsoft')
@@ -44,11 +84,25 @@ test('pins the verified VSoft official careers surface and first-party Bullhorn 
     'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/app.json',
   )
   assert.equal(
+    APP_SHELL_URL,
+    'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/',
+  )
+  assert.equal(
     APP_ROOT_URL,
     'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/#/',
   )
   assert.equal(hasCareersPageSignal(careersHtml), true)
+  assert.equal(hasCareersPageSignal(currentCareersHtml), true)
   assert.equal(extractPortalIframeUrl(careerPortalPagePayload), APP_ROOT_URL)
+  assert.equal(extractPortalIframeUrl(shortcodePortalPagePayload), APP_ROOT_URL)
+  assert.equal(hasPortalAppShellSignal(portalAppHtml), true)
+  assert.equal(
+    isPortalLoginBlockedResponse({
+      status: 500,
+      text: '{"errorMessage":"Unable to login","errorCode":500}',
+    }),
+    true,
+  )
 })
 
 test('normalizes the VSoft Bullhorn field list and builds the public first-party search URL', () => {
@@ -132,15 +186,45 @@ test('extractJobs keeps only India jobs and maps them to the normalized Jobify s
 test('returns no jobs when the verified first-party public search payload contains no India openings', async () => {
   const jobs = await createVsoftScraper().run({
     fetchText: async (url) => {
-      assert.equal(url, CAREERS_PAGE_URL)
-      return careersHtml
+      if (url === CAREERS_PAGE_URL) return careersHtml
+      if (url === APP_SHELL_URL) return portalAppHtml
+      throw new Error(`Unexpected URL: ${url}`)
     },
     fetchJson: async (url) => {
       if (url === CAREER_PORTAL_PAGE_JSON_URL) return careerPortalPagePayload
       if (url === APP_CONFIG_URL) return appConfig
-      if (url === buildSearchUrl(appConfig)) return officialSearchResults
       throw new Error(`Unexpected URL: ${url}`)
     },
+    fetchApiResponse: async (url) => {
+      assert.equal(url, buildSearchUrl(appConfig))
+      return {
+        status: 200,
+        url,
+        text: JSON.stringify(officialSearchResults),
+      }
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('returns no jobs when the verified public Bullhorn app shell is live but Bullhorn itself rejects anonymous search with the current login failure', async () => {
+  const jobs = await createVsoftScraper().run({
+    fetchText: async (url) => {
+      if (url === CAREERS_PAGE_URL) return currentCareersHtml
+      if (url === APP_SHELL_URL) return portalAppHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (url === CAREER_PORTAL_PAGE_JSON_URL) return shortcodePortalPagePayload
+      if (url === APP_CONFIG_URL) return appConfig
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchApiResponse: async (url) => ({
+      status: 500,
+      url,
+      text: '{"errorMessage":"Unable to login","errorCode":500}',
+    }),
   })
 
   assert.deepEqual(jobs, [])
@@ -176,7 +260,10 @@ test('fails closed when the verified careers page or Bullhorn iframe handoff cha
 
   await assert.rejects(
     createVsoftScraper().run({
-      fetchText: async () => careersHtml,
+      fetchText: async (url) => {
+        if (url === CAREERS_PAGE_URL) return careersHtml
+        throw new Error(`Unexpected URL: ${url}`)
+      },
       fetchJson: async (url) => {
         if (url === CAREER_PORTAL_PAGE_JSON_URL) {
           return [{
@@ -192,5 +279,26 @@ test('fails closed when the verified careers page or Bullhorn iframe handoff cha
       },
     }),
     /verified VSoft Bullhorn portal handoff/i,
+  )
+
+  await assert.rejects(
+    createVsoftScraper().run({
+      fetchText: async (url) => {
+        if (url === CAREERS_PAGE_URL) return careersHtml
+        if (url === APP_SHELL_URL) return '<html><body>missing app shell</body></html>'
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+      fetchJson: async (url) => {
+        if (url === CAREER_PORTAL_PAGE_JSON_URL) return careerPortalPagePayload
+        if (url === APP_CONFIG_URL) return appConfig
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+      fetchApiResponse: async (url) => ({
+        status: 200,
+        url,
+        text: JSON.stringify(officialSearchResults),
+      }),
+    }),
+    /public first-party portal/i,
   )
 })

@@ -17,7 +17,7 @@ const OFFICIAL_CAREERS_HTML = `
       <div>Select Country</div>
       <div>Select City</div>
       <section class="jobappliesform">
-        <h3>Join our Community</h3>
+        <h3>Join our<br>Community</h3>
         <p>Upload Resume (PDF/DOC/DOCX, Max 5MB)</p>
       </section>
     </main>
@@ -64,7 +64,7 @@ const OFFICIAL_CAREERS_HTML = `
         });
       }
     </script>
-    <a target="_blank" href="https://hrpulserlgroup.darwinbox.in/ms/candidatev2/main/careers/jobDetails/\${job.job_id}?from=all">
+    <a target="_blank" href="\${job.job_url}">
       Full Job Description
     </a>
   </body>
@@ -323,6 +323,96 @@ test('Redington India run verifies the first-party careers shell and paginates t
   assert.equal(jobs[0].title, 'Area Sales Manager')
   assert.equal(jobs[1].city, 'Gurgaon')
   assert.equal(jobs[2].title, 'Territory Sales Manager')
+})
+
+test('Redington India run enriches Darwinbox detail pages when public experience is present', async () => {
+  const redingtonIndia = await loadModule()
+  const requestedDetailUrls = []
+
+  const jobs = await redingtonIndia.createRedingtonIndiaScraper({
+    now: () => FIXED_SCRAPED_AT,
+    maxPages: 1,
+  }).run({
+    fetchText: async () => OFFICIAL_CAREERS_HTML,
+    postForm: async () => JSON.stringify(FIRST_BATCH),
+    fetchPublicJobText: async (url) => {
+      requestedDetailUrls.push(url)
+
+      if (url.endsWith('/a69734cb0b01d6?from=all')) {
+        return `
+          <html>
+            <body>
+              <h1>Area Sales Manager</h1>
+              <section>
+                <h6>Required Experience</h6>
+                <div>5</div>
+              </section>
+              <section>
+                <h2>Responsibilities</h2>
+                <p>Drive territory sales and partner growth across the assigned region.</p>
+              </section>
+            </body>
+          </html>
+        `
+      }
+
+      if (url.endsWith('/a6a3e77816c63c?from=all')) {
+        return `
+          <html>
+            <body>
+              <h1>Sales Analyst</h1>
+              <section>
+                <h2>Responsibilities</h2>
+                <p>Build dashboards, analyze sell-through trends, and support sales planning.</p>
+              </section>
+            </body>
+          </html>
+        `
+      }
+
+      throw new Error(`Unexpected Redington detail URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedDetailUrls, [
+    'https://hrpulserlgroup.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69734cb0b01d6?from=all',
+    'https://hrpulserlgroup.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a3e77816c63c?from=all',
+  ])
+  assert.equal(jobs[0].experienceRequired, '5 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription || '', /territory sales/i)
+})
+
+test('Redington India run preserves verified-missing public detail evidence when Darwinbox omits experience', async () => {
+  const redingtonIndia = await loadModule()
+
+  const jobs = await redingtonIndia.createRedingtonIndiaScraper({
+    now: () => FIXED_SCRAPED_AT,
+    maxPages: 1,
+  }).run({
+    fetchText: async () => OFFICIAL_CAREERS_HTML,
+    postForm: async () => JSON.stringify(FIRST_BATCH),
+    fetchPublicJobText: async (url) => {
+      if (url.endsWith('/a69734cb0b01d6?from=all')) {
+        return `
+          <html>
+            <body>
+              <h1>Area Sales Manager</h1>
+              <section>
+                <h2>Responsibilities</h2>
+                <p>Drive territory sales and partner growth across the assigned region.</p>
+              </section>
+            </body>
+          </html>
+        `
+      }
+
+      return ''
+    },
+  })
+
+  assert.equal(jobs[0].experienceRequired, null)
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('Redington India fails closed when the verified careers page or jobs payload drifts materially', async () => {

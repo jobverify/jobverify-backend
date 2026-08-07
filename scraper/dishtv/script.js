@@ -161,9 +161,8 @@ export const hasOfficialHomepageSignal = (page) => {
     && finalUrl === normalizeUrl(HOMEPAGE_URL)
     && extractTitle(rawHtml) === 'DishTV Recharge Online & New DTH Connection'
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.dishtv\.in\/["']/i.test(rawHtml)
-    && /href=["']\/careers\.html["']/i.test(rawHtml)
     && normalized.includes('Snack on the content you love.')
-    && normalized.includes('Careers')
+    && normalized.includes('All day, every day.')
 }
 
 export const sitemapIncludesCareersPage = (xml = '') =>

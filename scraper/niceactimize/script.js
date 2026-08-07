@@ -111,10 +111,15 @@ export const hasOfficialActimizeHandoffSignal = (html = '') => {
 
 export const hasFilteredNiceCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const hasCareersHeading = /<h1\b[^>]*>\s*Careers at NiCE\s*<\/h1>/i.test(page)
+  const hasSelectedPuneFilter = /<option\b[^>]*value=["']India - Pune["'][^>]*selected(?:=["'][^"']*["'])?[^>]*>/i.test(page)
+    || /<option\b[^>]*selected(?:=["'][^"']*["'])?[^>]*value=["']India - Pune["'][^>]*>/i.test(page)
+  const hasKnownActimizeResult = /boards\.eu\.greenhouse\.io\/nice\/jobs\/\d+\?gh_jid=\d+/i.test(page)
+    && /Data Scientist,\s*Actimize/i.test(page)
 
-  return /<h1>\s*India - Pune\s*<\/h1>/i.test(page)
-    && /boards\.eu\.greenhouse\.io\/nice\/jobs\/4913142101/i.test(page)
-    && /Data Scientist, Actimize/i.test(page)
+  return hasCareersHeading
+    && hasSelectedPuneFilter
+    && hasKnownActimizeResult
 }
 
 export const isActimizeIndiaJob = (job = {}) => {

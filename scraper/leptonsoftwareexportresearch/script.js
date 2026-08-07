@@ -14,6 +14,13 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const PLACEHOLDER_JOB_TEXT_PATTERN = /^(?:n\/?a)(?:\s+(?:n\/?a))*$/i
+const EXPERIENCE_PATTERNS = [
+  /\b\d+\s*(?:\+|plus)\s*years?(?:\s+of\s+experience)?\b/i,
+  /\b\d+\s*[-–to]+\s*\d+\s*years?(?:\s+of\s+experience)?\b/i,
+  /\bminimum\s+\d+\s*years?(?:\s+of\s+experience)?\b/i,
+  /\b\d+\s*years?(?:\s+of\s+experience)?\b/i,
+]
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -31,20 +38,90 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const normalizePublicJobText = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized || PLACEHOLDER_JOB_TEXT_PATTERN.test(normalized)) return null
+  return normalized
+}
+
 export const hasOfficialLeptonCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page) || ''
+  const hasLegacyApiShell = text.includes('For job-related queries email us at')
+    && /https:\/\/leptonsoftware\.keka\.com\/careers\/api\/jobs\/default\/active/i.test(page)
+  const hasCurrentRenderedCareersShell = text.includes('Build the geo-stack behind 425 enterprises.')
+    && text.includes('Open roles')
+    && text.includes('hr@leptonmaps.com')
+    && /https:\/\/leptonsoftware\.keka\.com\/careers\/jobdetails\/\d+/i.test(page)
 
   return /<title[^>]*>\s*Careers at Lepton Software/i.test(page)
-    && text.includes('For job-related queries email us at')
-    && /https:\/\/leptonsoftware\.keka\.com\/careers\/api\/jobs\/default\/active/i.test(page)
+    && (hasLegacyApiShell || hasCurrentRenderedCareersShell)
 }
 
 const isIndiaLocation = (location = {}) =>
   String(location.countryCode ?? '').toUpperCase() === 'IN'
   || /\bindia\b/i.test(String(location.countryName ?? ''))
 
-const buildJobUrl = (jobId) => `https://leptonsoftware.keka.com/careers/jobdetails/${jobId}`
+const buildJobDetailUrl = (jobId) => `https://leptonsoftware.keka.com/careers/jobdetails/${jobId}`
+const buildApplyUrl = (jobId) => `https://leptonsoftware.keka.com/careers/applyjob/${jobId}`
+
+export const hasOfficialLeptonJobDetailSignals = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
+
+  return text.includes('LEPTON SOFTWARE')
+    && /job-details-container/i.test(page)
+    && /Apply for this job/i.test(page)
+    && /selectedJobId=/i.test(page)
+}
+
+const extractDescriptionHtmlFromJobDetailPage = (html = '') =>
+  String(html ?? '').match(
+    /<div class="job-description-container[^"]*">([\s\S]*?)<\/div>\s*<\/div>\s*<div class="col-lg-4/i,
+  )?.[1] ?? null
+
+export const extractJobDescriptionFromDetailPage = (html = '') =>
+  normalizePublicJobText(extractDescriptionHtmlFromJobDetailPage(html))
+
+export const extractExperienceFromText = (value = '') => {
+  const normalized = normalizePublicJobText(value)
+  if (!normalized) return null
+
+  for (const pattern of EXPERIENCE_PATTERNS) {
+    const match = normalized.match(pattern)
+    if (match) return normalizeWhitespace(match[0])
+  }
+
+  return null
+}
+
+const shouldEnrichFromDetailPage = (job = {}) =>
+  !normalizePublicJobText(job.experienceRequired)
+  || !normalizePublicJobText(job.jobDescription)
+
+export const enrichJobWithDetailPage = async (job, { fetchText = defaultFetchText } = {}) => {
+  const sourceUrl = normalizeWhitespace(job?.sourceUrl)
+  if (!sourceUrl) return job
+
+  try {
+    const detailHtml = await fetchText(sourceUrl)
+    if (!hasOfficialLeptonJobDetailSignals(detailHtml)) {
+      return job
+    }
+
+    const detailDescription = extractJobDescriptionFromDetailPage(detailHtml)
+    const detailExperience = extractExperienceFromText(detailDescription)
+
+    return {
+      ...job,
+      experienceRequired: normalizePublicJobText(job.experienceRequired) || detailExperience,
+      jobDescription: normalizePublicJobText(job.jobDescription) || detailDescription,
+      publicExperienceChecked: true,
+    }
+  } catch {
+    return job
+  }
+}
 
 export const extractJobs = (payload = []) =>
   (Array.isArray(payload) ? payload : [])
@@ -59,7 +136,8 @@ export const extractJobs = (payload = []) =>
       const city = normalizeWhitespace(location.city || location.name)
       const state = normalizeWhitespace(location.state)
       const country = normalizeWhitespace(location.countryName) || 'India'
-      const sourceUrl = buildJobUrl(jobId)
+      const sourceUrl = buildJobDetailUrl(jobId)
+      const applyUrl = buildApplyUrl(jobId)
 
       return {
         title,
@@ -71,9 +149,9 @@ export const extractJobs = (payload = []) =>
         jobId,
         requisitionId: normalizeWhitespace(job.jobNumber),
         sourceUrl,
-        applyUrl: sourceUrl,
+        applyUrl,
         employmentType: normalizeWhitespace(job.jobType) === '2' || job.jobType === 2 ? 'Full Time' : null,
-        experienceRequired: normalizeWhitespace(job.experience),
+        experienceRequired: normalizePublicJobText(job.experience),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: Array.isArray(job.skillNames)
@@ -81,7 +159,7 @@ export const extractJobs = (payload = []) =>
           : [],
         postingDate: normalizeWhitespace(job.publishedOn)?.slice(0, 10) || null,
         closingDate: null,
-        jobDescription: normalizeWhitespace(job.description || job.excerpt),
+        jobDescription: normalizePublicJobText(job.description || job.excerpt),
       }
     })
     .filter(Boolean)
@@ -117,8 +195,13 @@ export const createLeptonSoftwareExportResearchScraper = ({
     }
 
     const jobs = extractJobs(await fetchJson(JOBS_API_URL))
+    const enrichedJobs = await Promise.all(
+      jobs.map((job) => (shouldEnrichFromDetailPage(job)
+        ? enrichJobWithDetailPage(job, { fetchText })
+        : job)),
+    )
 
-    return jobs.map((job) => ({
+    return enrichedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,

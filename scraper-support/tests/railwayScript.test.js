@@ -10,12 +10,19 @@ const careersHtml = `
   <body>
     <main>
       <h1>Redefine the future of infrastructure</h1>
-      <a href="/careers/developer-relations">Senior DevRel Engineer - Product</a>
-      <span>Remote (anywhere)</span>
-      <a href="/careers/growth">Senior DevRel Engineer - Growth</a>
-      <span>Remote (anywhere)</span>
-      <a href="/careers/product-engineer">Senior Full-Stack Engineer - Product</a>
-      <span>Remote</span>
+      <p>See open positions</p>
+      <a href="/careers/orchestration-baremetal">
+        <p>Senior Infra Engineer: Baremetal Orchestration</p>
+        <p>Anywhere</p>
+      </a>
+      <a href="/careers/dc-engineer">
+        <p>Senior Infra Engineer: Datacenters</p>
+        <p>Anywhere</p>
+      </a>
+      <a href="/careers/scalability">
+        <p>Senior Product Engineer: Scalability</p>
+        <p>Anywhere</p>
+      </a>
     </main>
   </body>
 </html>
@@ -35,24 +42,24 @@ test('Railway pins the verified first-party careers page and same-domain role li
   assert.equal(railway.SOURCE, 'railway')
   assert.equal(railway.COMPANY, 'Railway')
   assert.equal(railway.COMPANY_DOMAIN, 'railway.com')
-  assert.equal(railway.CAREERS_URL, 'https://railway.com/careers?mdrv=railway.com')
-  assert.equal(railway.VERIFIED_AT, '2026-07-25')
+  assert.equal(railway.CAREERS_URL, 'https://railway.com/careers')
+  assert.equal(railway.VERIFIED_AT, '2026-08-04')
   assert.equal(railway.hasVerifiedCareersPageSignal(careersHtml), true)
   assert.deepEqual(railway.extractRoleSummaries(careersHtml), [
     {
-      title: 'Senior DevRel Engineer - Product',
-      location: 'Remote (anywhere)',
-      url: 'https://railway.com/careers/developer-relations',
+      title: 'Senior Infra Engineer: Baremetal Orchestration',
+      location: 'Anywhere',
+      url: 'https://railway.com/careers/orchestration-baremetal',
     },
     {
-      title: 'Senior DevRel Engineer - Growth',
-      location: 'Remote (anywhere)',
-      url: 'https://railway.com/careers/growth',
+      title: 'Senior Infra Engineer: Datacenters',
+      location: 'Anywhere',
+      url: 'https://railway.com/careers/dc-engineer',
     },
     {
-      title: 'Senior Full-Stack Engineer - Product',
-      location: 'Remote',
-      url: 'https://railway.com/careers/product-engineer',
+      title: 'Senior Product Engineer: Scalability',
+      location: 'Anywhere',
+      url: 'https://railway.com/careers/scalability',
     },
   ])
 })
@@ -84,7 +91,7 @@ test('Railway fails closed when the verified careers surface drifts or the India
 
   await assert.rejects(
     railway.createRailwayScraper().run({
-      fetchText: async () => careersHtml.replace('Remote (anywhere)', 'Bengaluru, India'),
+      fetchText: async () => careersHtml.replace('Anywhere', 'Bengaluru, India'),
     }),
     /india slice/i,
   )

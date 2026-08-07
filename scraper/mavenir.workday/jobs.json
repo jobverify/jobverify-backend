@@ -1,0 +1,379 @@
+[
+  {
+    "jobId": "R0016153",
+    "title": "Senior UI Developer",
+    "company": "Mavenir",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Senior-UI-Developer_R0016153",
+    "source": "mavenir",
+    "postedAt": "2026-07-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Mavenir is building the future of networks and pioneering advanced technology, focusing on the vision of a single, software-based automated network that runs on any cloud. As the industry's only end-to-end, cloud-native network software provider, Mavenir is transforming the way the world connects, accelerating software network transformation for 250+ Communications Service Providers in over 120 countries, which serve more than 50% of the world’s subscribers. Role Summary Senior UI Engineer to build intelligent, scalable, and intuitive user interfaces for m IO, a cloud native telecom infrastructure orchestration platform. The role requires strong frontend engineering expertise, along with hands on experience in Kubernetes based platforms and AI assisted UI experiences, such as guided workflows, copilots, and intelligent recommendations Key Responsibilities Core Focus Areas AI‑Driven UI Experiences Design and implement AI‑assisted and guided user experiences (e.g., copilots, form assistants, smart defaults, recommendations) Integrate frontend with AI/ML-backed services (LLMs, rule engines, or recommendation APIs) Build UIs that support intent-based workflows, decision assistance, and automation Handle AI-related UX concerns: explainability, confidence indicators, error handling, and fallbacks Kubernetes &amp; Cloud‑Native Platform Awareness Build UI features that visualize and manage Kubernetes / Open Shift resources Clusters, namespaces, workloads, pods, jobs, Helm releases, Argo CD apps Design dashboards for deployment status, health, logs, and lifecycle operations Work closely with backend and platform teams to represent complex infra concepts in a simple UI Understand multi-cluster, multi-tenant environments and reflect them correctly in the UI Job Requirements UI Development &amp; Architecture Design and develop responsive, reusable, enterprise-scale UI components Own frontend architecture for dashboards, workflows, and operational views Translate UX designs and product requirements into high-quality, production-ready code Optimize UI performance for large datasets, real-time updates, and AI-driven flows Platform Integration Integrate UI with REST APIs / Graph QL and event-driven backend systems Implement authentication, authorization, RBAC, and tenant-aware UI behavior Work with CI/CD pipelines and cloud-native deployment models UX, Quality &amp; Ownership Collaborate closely with UX designers to deliver clean, minimal, and intuitive user experiences Ensure accessibility, cross-browser compatibility, and responsiveness Write unit tests and component tests; maintain high UI quality standards Review code and mentor junior developers Mandatory Skills Frontend Engineering Strong experience in Angular (preferred) or React Expert in Type Script, Java Script (ES6+), HTML5, CSS3 Solid knowledge of state management (Ng Rx / Redux / similar) Strong understanding of component-based and modular UI architecture Cloud‑Native &amp; Kubernetes UI Hands-on experience building UIs for Kubernetes / Open Shift–based platforms Ability to work with infra-centric data: job status, logs, metrics, artifacts, deployments AI Integration Experience integrating UI with AI/ML or LLM-powered backends Understanding of AI UX patterns (assistants, suggestions, step-by-step guidance) Good to Have Experience with telecom platforms or large-scale enterprise systems Familiarity with micro-frontend architecture Experience with observability tools (logs, metrics, alerts) Exposure to AI governance, prompt tuning, or AI UX best practices Experience: 4\n- 6 years Accessibility Mavenir is committed to working with and providing reasonable accommodation to individuals with physical and mental disabilities. If you require any assistance, please state in your application or contact your recruiter. Mavenir is an Equal Employment Opportunity (EEO) employer and welcomes qualified applicants from around the world, regardless of their ethnicity, gender, religion, nationality, age, disability, or other legally protected status. We embrace disruptive, innovative technology architectures and business models that drive service agility, flexibility, and velocity. With solutions that propel NFV evolution to achieve web-scale economics, Mavenir offers solutions to help CSPs with cost reduction, revenue generation, and revenue protection. We have strong values and are always looking for like-minded individuals to join us in the path to change the shape of our industry. United: One Company; One team; One Unified Vision Passionate: Big thinkers with audacious ideas and solutions Honorable: Integrity, respect and commitment is in our DNA. Fearless: Courageous, bold, determined and challengers of the ‘norm’. PLEASE NOTE: Mavenir will only communicate with you about your application through an “@Mavenir.com” or “mavenir@myworkday.com” email address. Further, our site (including recruiting information) is only available at the “mavenir.com” and myworkdayjobs.com domains. Criminals may attempt to impersonate Mavenir or recruiting companies online. Please remember that Mavenir will never request that you wire funds or otherwise send money to us or any third party as part of your employment application. Please use caution and care when sending information online, and do not send us any sensitive personal information, such as Social Security numbers, through the Internet. If you have any question about your application or a communication from us, please do not hesitate to reach out to us at +1-469-916-4393 or email careers@mavenir.com.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "4 - 6 years",
+    "requisitionId": "R0016153",
+    "scrapedAt": "2026-08-01T15:02:07.530Z",
+    "country": "India",
+    "companyCareerPage": "https://www.mavenir.com/about/careers/",
+    "companyDomain": "mavenir.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Senior-UI-Developer_R0016153",
+    "sourceUrl": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Senior-UI-Developer_R0016153",
+    "originalTitle": "Senior UI Developer",
+    "normalizedTitle": "Senior UI Developer",
+    "jobCategory": "Senior UI Developer",
+    "engineeringDomain": "Machine Learning",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T15:02:07.530Z",
+    "skillIds": [
+      "kubernetes",
+      "angular",
+      "typescript",
+      "java",
+      "javascript"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Type Script"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 - 6 years",
+      "minimumYears": 4,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Frontend Engineering",
+    "secondaryRoleDomains": [
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-07T01:53:52.029Z"
+  },
+  {
+    "jobId": null,
+    "title": "Senior Member Technical Staff – I, Software",
+    "company": "Mavenir",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Senior-Member-Technical-Staff---I--Software_R0016161-1",
+    "source": "mavenir",
+    "postedAt": "2026-07-28T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Mavenir is building the future of networks and pioneering advanced technology, focusing on the vision of a single, software-based automated network that runs on any cloud. As the industry's only end-to-end, cloud-native network software provider, Mavenir is transforming the way the world connects, accelerating software network transformation for 250+ Communications Service Providers in over 120 countries, which serve more than 50% of the world’s subscribers. Role Summary Plans, designs, develops and tests software systems or applications for software enhancements and new products including cloud-based or internet-related tools. Key Responsibilities Feature development for Mavenir SBC products on control and media plane Customer support for deployed networks Work closely with Test and Operation teams for product support UT/IT development Job Requirements Core SIP &amp; IMS Development must-have Deep knowledge of SIP (RFC 3261 and extensions: PRACK, UPDATE, REFER, SUBSCRIBE/NOTIFY, PUBLISH) for implementing and debugging call control logic must-have Hands-on experience implementing IMS call flows (Vo LTE, Vo Wi Fi, RCS) at the P-CSCF / SBC layer — registration, session establishment, supplementary services must-have Strong understanding of SDP offer/answer model, codec negotiation (G.711, G.729, AMR, EVS, Opus), and DTMF relay mechanisms strong Experience with Diameter protocol development (Rx, Gx, Gy, Cx interfaces) and SCTP transport implementation C/C++ System Programming must-have Expert-level C/C++ (C++14/17) for high-performance, low-latency signaling and media processing components must-have Proficiency in multi-threaded programming, lock-free data structures, and event-driven architectures (e.g., select/epoll, Boost.Asio) must-have Experience with memory management, profiling, and debugging tools (Valgrind, GDB, Address Sanitizer, perf) strong Scripting in Python or Bash for automation, build tooling, and CI/CD pipeline integration nice Experience with Rust for safety-critical components or Go for microservice-based SBC architectures Media Plane and RTP Development must-have Solid understanding of RTP/RTCP, jitter buffers, packet loss concealment, and RTCP-based Qo S feedback mechanisms must-have Experience developing or integrating SRTP/DTLS-SRTP encryption for secure media transport in IMS environments strong Knowledge of media transcoding pipelines, codec adaptation, and SIPREC-based call recording architectures nice Familiarity with DPDK or kernel-bypass networking techniques for high-throughput media forwarding at scale Security Feature development must-have Experience developing TLS/m TLS session management, certificate lifecycle handling, and cipher suite negotiation in SIP stacks must-have Ability to design and implement SBC security policies: topology hiding, header manipulation, Do S/DDo S rate limiting and blacklisting engines strong Understanding of lawful intercept (LI) standards (ETSI TS 102 232, CALEA) and their integration into SBC architectures Cloud Native and NFV architecture strong Experience containerizing SBC components with Docker and deploying on Kubernetes, including HA and geo-redundant topologies strong Understanding of NFV/MANO frameworks (ETSI NFV) and integration with VNFM/NFVO for lifecycle management of virtualized SBCs strong Designing REST/g RPC-based northbound APIs for SBC configuration, monitoring, and integration with OSS/BSS systems Testing and Software quality must-have Ability to write unit and integration tests for SIP/media components; familiarity with Google Test, Cpp Unit, or equivalent frameworks must-have Proficiency in using Wireshark, tcpdump, and SIP trace analysis for root cause analysis during development and regression testing Accessibility Mavenir is committed to working with and providing reasonable accommodation to individuals with physical and mental disabilities. If you require any assistance, please state in your application or contact your recruiter. Mavenir is an Equal Employment Opportunity (EEO) employer and welcomes qualified applicants from around the world, regardless of their ethnicity, gender, religion, nationality, age, disability, or other legally protected status. We embrace disruptive, innovative technology architectures and business models that drive service agility, flexibility, and velocity. With solutions that propel NFV evolution to achieve web-scale economics, Mavenir offers solutions to help CSPs with cost reduction, revenue generation, and revenue protection. We have strong values and are always looking for like-minded individuals to join us in the path to change the shape of our industry. United: One Company; One team; One Unified Vision Passionate: Big thinkers with audacious ideas and solutions Honorable: Integrity, respect and commitment is in our DNA. Fearless: Courageous, bold, determined and challengers of the ‘norm’. PLEASE NOTE: Mavenir will only communicate with you about your application through an “@Mavenir.com” or “mavenir@myworkday.com” email address. Further, our site (including recruiting information) is only available at the “mavenir.com” and myworkdayjobs.com domains. Criminals may attempt to impersonate Mavenir or recruiting companies online. Please remember that Mavenir will never request that you wire funds or otherwise send money to us or any third party as part of your employment application. Please use caution and care when sending information online, and do not send us any sensitive personal information, such as Social Security numbers, through the Internet. If you have any question about your application or a communication from us, please do not hesitate to reach out to us at +1-469-916-4393 or email careers@mavenir.com.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": null,
+    "requisitionId": "R0016161",
+    "scrapedAt": "2026-08-01T15:02:11.113Z",
+    "country": "India",
+    "companyCareerPage": "https://www.mavenir.com/about/careers/",
+    "companyDomain": "mavenir.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Senior-Member-Technical-Staff---I--Software_R0016161-1",
+    "sourceUrl": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Senior-Member-Technical-Staff---I--Software_R0016161-1",
+    "originalTitle": "Senior Member Technical Staff – I, Software",
+    "normalizedTitle": "Senior Member Technical Staff – I, Software",
+    "jobCategory": "Senior Member Technical Staff – I, Software",
+    "engineeringDomain": "DevOps",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-28T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T15:02:11.113Z",
+    "skillIds": [
+      "python",
+      "docker",
+      "kubernetes"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Mavenir is building the future of networks and pioneering advanced technology, focusing on the vision of a single, software-based automated network that runs on any cloud. As the industry's only end-to-end, cloud-native network software provider, Mavenir is transforming the way the world connects, accelerating software network transformation for 250+ Communications Service Providers in over 120 countries, which serve more than 50% of the world's subscribers. Role Summary Plans, designs, develops and tests software systems or applications for software enhancements and new products including cloud-based or internet-related tools. Key Responsibilities Feature development for Mavenir SBC products on control and media plane Customer support for deployed networks Work closely with Test and Operation teams for product support UT/IT development Job Requirements Core SIP & IMS Development must-have Deep knowledge of SIP (RFC 3261 and extensions: PRACK, UPDATE, REFER, SUBSCRIBE/NOTIFY, PUBLISH) for implementing and debugging call control logic must-have Hands-on experience implementing IMS call flows (Vo LTE, Vo Wi Fi, RCS) at the P-CSCF / SBC layer - registration, session establishment, supplementary services must-have Strong understanding of SDP offer/answer model, codec negotiation (G.711, G.729, AMR, EVS, Opus), and DTMF relay mechanisms strong Experience with Diameter protocol development (Rx, Gx, Gy, Cx interfaces) and SCTP transport implementation C/C++ System Programming must-have Expert-level C/C++ (C++14/17) for high-performance, low-latency signaling and media processing components must-have Proficiency in multi-threaded programming, lock-free data structures, and event-driven architectures (e.g., select/epoll, Boost.Asio) must-have Experience with memory management, profiling, and debugging tools (Valgrind, GDB, Address Sanitizer, perf) strong Scripting in Python or Bash for automation, build tooling, and CI/CD pipeline integration nice Experience with Rust for safety-critical components or Go for microservice-based SBC architectures Media Plane and RTP Development must-have Solid understanding of RTP/RTCP, jitter buffers, packet loss concealment, and RTCP-based Qo S feedback mechanisms must-have Experience developing or integrating SRTP/DTLS-SRTP encryption for secure media transport in IMS environments strong Knowledge of media transcoding pipelines, codec adaptation, and SIPREC-based call recording architectures nice Familiarity with DPDK or kernel-bypass networking techniques for high-throughput media forwarding at scale Security Feature development must-have Experience developing TLS/m TLS session management, certificate lifecycle handling, and cipher suite negotiation in SIP stacks must-have Ability to design and implement SBC security policies: topology hiding, header manipulation, Do S/DDo S rate limiting and blacklisting engines strong Understanding of lawful intercept (LI) standards (ETSI TS 102 232, CALEA) and their integration into SBC architectures Cloud Native and NFV architecture strong Experience containerizing SBC components with Docker and deploying on Kubernetes, including HA and geo-redundant topologies strong Understanding of NFV/MANO frameworks (ETSI NFV) and integration with VNFM/NFVO for lifecycle management of virtualized SBCs strong Designing REST/g RPC-based northbound APIs for SBC configuration, monitoring, and integration with OSS/BSS systems Testing and Software quality must-have Ability to write unit and integration tests for SIP/media components; familiarity with Google Test, Cpp Unit, or equivalent frameworks must-have Proficiency in using Wireshark, tcpdump, and SIP trace analysis for root cause analysis during development and regression testing Accessibility Mavenir is committed to working with and providing reasonable accommodation to individuals with physical and mental disabilities. If you require any assistance, please state in your application or contact your recruiter. Mavenir is an Equal Employment Opportunity (EEO) employer and welcomes qualified applicants from around the world, regardless of their ethnicity, gender, religion, nationality, age, disability, or other legally protected status. We embrace disruptive, innovative technology architectures and business models that drive service agility, flexibility, and velocity. With solutions that propel NFV evolution to achieve web-scale economics, Mavenir offers solutions to help CSPs with cost reduction, revenue generation, and revenue protection. We have strong values and are always looking for like-minded individuals to join us in the path to change the shape of our industry. United: One Company; One team; One Unified Vision Passionate: Big thinkers with audacious ideas and solutions Honorable: Integrity, respect and commitment is in our DNA. Fearless: Courageous, bold, determined and challengers of the 'norm'. PLEASE NOTE: Mavenir will only communicate with you about your application through an “@Mavenir.com” or “mavenir@myworkday.com” email address. Further, our site (including recruiting information) is only available at the “mavenir.com” and myworkdayjobs.com domains. Criminals may attempt to impersonate Mavenir or recruiting companies online. Please remember that Mavenir will never request that you wire funds or otherwise send money to us or any third party as part of your employment application. Please use caution and care when sending information online, and do not send us any sensitive personal information, such as Social Security numbers, through the Internet. If you have any question about your application or a communication from us, please do not hesitate to reach out to us at +1-469-916-4393 or email careers@mavenir.com.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "medium",
+      "evidence": "strong Experience with Diameter protocol development (Rx, Gx, Gy, Cx interfaces) and SCTP transport implementation C/C++ System Programming must-have Expert-level",
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Staff",
+    "primaryRoleDomain": "DevOps & SRE",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "medium",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-07T01:53:52.034Z",
+    "publicExperienceChecked": true
+  },
+  {
+    "jobId": "R0016136",
+    "title": "Senior AI Engineer - GenAI, AI Platform & Voice AI",
+    "company": "Mavenir",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Data-Scientist_R0016136",
+    "source": "mavenir",
+    "postedAt": "2026-07-15T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Mavenir is building the future of networks and pioneering advanced technology, focusing on the vision of a single, software-based automated network that runs on any cloud. As the industry's only end-to-end, cloud-native network software provider, Mavenir is transforming the way the world connects, accelerating software network transformation for 250+ Communications Service Providers in over 120 countries, which serve more than 50% of the world’s subscribers. Role Summary We are looking for a highly capable Senior AI Engineer with 3–4 years of hands-on AI/ML experience to design, build, and productionize scalable AI systems across Generative AI, AI platforms, AI gateways, Voice AI, LLM fine-tuning, ML training, and ML pipelines. This role is for someone who can take ownership of complex AI initiatives end-to-end — from problem understanding, architecture, experimentation, model/pipeline development, deployment, observability, and continuous improvement. The ideal candidate should be comfortable working across application engineering, ML engineering, LLM systems, APIs, infrastructure, and production-grade AI platform components Key Responsibilities Gen AI Application Engineering Design and build production-ready Gen AI applications using LLMs, SLMs, RAG, agents, tool-calling, workflow orchestration, and prompt engineering AI Gateway &amp; AI Platform Engineering Contribute to the design and implementation of AI platform capabilities that enable safe, governed, and scalable use of AI models Voice AI Engineering Design and implement Voice AI systems involving speech-to-text, text-to-speech, speech translation, voice agents, and real-time conversational AI. LLM Fine-Tuning &amp; Model Training Work on fine-tuning and training workflows for LLMs, SLMs, and task-specific ML models ML Pipelines &amp; MLOps Design and maintain scalable ML pipelines for data preparation, training, evaluation, deployment, monitoring, and retraining Job Requirements Skills Required: Strong C, C++ and Python programming skills Hands-on Gen AI/LLM application development Understanding of ML training and evaluation workflows Ability to build APIs and backend services Understanding of scalable system design Experience with at least one ML/LLM framework Ability to work with data pipelines and model pipelines Fine-tuning frameworks such as PEFT, Lo RA, QLo RA, TRL, or Unslot Workflow orchestration using Airflow, Prefect, Kubeflow, Dagster, or similar tools Containerization using Docker Practical understanding of deployment, observability, and production readiness 3 to 4 years of hands-on experience in AI/ML, Gen AI, or ML engineering Strong practical exposure to building AI/ML systems, not just theoretical knowledge Accessibility Mavenir is committed to working with and providing reasonable accommodation to individuals with physical and mental disabilities. If you require any assistance, please state in your application or contact your recruiter. Mavenir is an Equal Employment Opportunity (EEO) employer and welcomes qualified applicants from around the world, regardless of their ethnicity, gender, religion, nationality, age, disability, or other legally protected status. We embrace disruptive, innovative technology architectures and business models that drive service agility, flexibility, and velocity. With solutions that propel NFV evolution to achieve web-scale economics, Mavenir offers solutions to help CSPs with cost reduction, revenue generation, and revenue protection. We have strong values and are always looking for like-minded individuals to join us in the path to change the shape of our industry. United: One Company; One team; One Unified Vision Passionate: Big thinkers with audacious ideas and solutions Honorable: Integrity, respect and commitment is in our DNA. Fearless: Courageous, bold, determined and challengers of the ‘norm’. PLEASE NOTE: Mavenir will only communicate with you about your application through an “@Mavenir.com” or “mavenir@myworkday.com” email address. Further, our site (including recruiting information) is only available at the “mavenir.com” and myworkdayjobs.com domains. Criminals may attempt to impersonate Mavenir or recruiting companies online. Please remember that Mavenir will never request that you wire funds or otherwise send money to us or any third party as part of your employment application. Please use caution and care when sending information online, and do not send us any sensitive personal information, such as Social Security numbers, through the Internet. If you have any question about your application or a communication from us, please do not hesitate to reach out to us at +1-469-916-4393 or email careers@mavenir.com.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "3-4 years",
+    "requisitionId": "R0016136",
+    "scrapedAt": "2026-08-01T15:02:11.986Z",
+    "country": "India",
+    "companyCareerPage": "https://www.mavenir.com/about/careers/",
+    "companyDomain": "mavenir.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Data-Scientist_R0016136",
+    "sourceUrl": "https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers/job/Bangalore-India/Data-Scientist_R0016136",
+    "originalTitle": "Senior AI Engineer - GenAI, AI Platform & Voice AI",
+    "normalizedTitle": "Senior AI Engineer - GenAI, AI Platform & Voice AI",
+    "jobCategory": "Senior AI Engineer - GenAI, AI Platform & Voice AI",
+    "engineeringDomain": "Machine Learning",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-07-15T00:00:00.000Z",
+    "scrapedTimestamp": "2026-08-01T15:02:11.986Z",
+    "skillIds": [
+      "generative-ai",
+      "mlops",
+      "python",
+      "airflow",
+      "docker"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "GenAI"
+      },
+      {
+        "skillId": "mlops",
+        "canonicalName": "MLOps",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "MLOps"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "airflow",
+        "canonicalName": "Airflow",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Airflow"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-4 years",
+      "minimumYears": 3,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-4 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-07T01:53:52.038Z"
+  }
+]

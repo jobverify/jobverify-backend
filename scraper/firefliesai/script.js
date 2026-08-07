@@ -58,7 +58,7 @@ query JobBoardList($boardId: String!) {
     value
     count
   }
-  jobBoardExternal(boardId: $boardId) {
+  jobBoardExternal(vanityUrlPath: $boardId) {
     id
     teamDisplayName
     descriptionHtml
@@ -189,12 +189,13 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialGemBoardSignal = (page = {}) => {
   const rawHtml = String(page.html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const currentBundlePattern = /https:\/\/static\.gem\.com\/scripts\/jobBoards\.[A-Za-z0-9_-]+\.v2\.min\.js/i
 
   return Number(page.status) === 200
     && normalizeUrl(page.url) === GEM_BOARD_URL
     && normalized.includes('fireflies careers')
     && rawHtml.includes(GEM_BOARD_TRACKING_ID)
-    && rawHtml.includes(GEM_BOARD_BUNDLE_URL)
+    && currentBundlePattern.test(rawHtml)
 }
 
 const hasValidPosting = (posting) =>

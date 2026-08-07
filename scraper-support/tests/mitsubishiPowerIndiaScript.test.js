@@ -22,6 +22,38 @@ const loadModule = async () => {
 const homepageHtml = readFixture('homepage.html')
 const careersHtml = readFixture('careers.html')
 const currentOpeningsHtml = readFixture('current-openings.html')
+const currentHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Mitsubishi Power India Private Limited</title>
+    </head>
+    <body>
+      <main>
+        <h1>Welcome to Mitsubishi Power India</h1>
+        <p>
+          Mitsubishi Power India headquartered at Bangalore is a company focusing mainly on
+          marketing and EPC of AQCS (Air Quality Control System), Gas Turbine project, and WtE
+          (Waste to Energy) projects in India.
+        </p>
+      </main>
+    </body>
+  </html>
+`
+const currentTalentRecruitHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>TalentRecruit Softwares</title>
+      <base href="/">
+      <link rel="icon" href="https://talentimages.s3.ap-south-1.amazonaws.com/favicon.svg">
+    </head>
+    <body>
+      <app-root></app-root>
+      <noscript>Please enable JavaScript to continue using this application.</noscript>
+    </body>
+  </html>
+`
 
 test('Mitsubishi Power India pins the verified first-party homepage, careers page, and jobs shell', async () => {
   const scraper = await loadModule()
@@ -37,6 +69,14 @@ test('Mitsubishi Power India pins the verified first-party homepage, careers pag
   assert.equal(scraper.hasPublicJobListings(homepageHtml), false)
   assert.equal(scraper.hasPublicJobListings(careersHtml), false)
   assert.equal(scraper.hasPublicJobListings(currentOpeningsHtml), false)
+})
+
+test('Mitsubishi Power India accepts the current homepage and TalentRecruit shell variants', async () => {
+  const scraper = await loadModule()
+
+  assert.equal(scraper.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(scraper.hasOfficialCurrentOpeningsSignal(currentTalentRecruitHtml), true)
+  assert.equal(scraper.hasPublicJobListings(currentTalentRecruitHtml), false)
 })
 
 test('Mitsubishi Power India returns no jobs while the verified public surfaces stay unchanged', async () => {

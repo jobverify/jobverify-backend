@@ -12,14 +12,17 @@ const loadPsiogDigitalModule = async () => {
 const homepageHtml = `
   <html>
     <head>
-      <title>Psiog | AI-Enhanced IT Services for Mid-Market Enterprises</title>
+      <title>Psiog | AI-Led Technology Consulting &amp; Services for Mid-Market Enterprises</title>
+      <meta name="description" content="Psiog is a pure-play IT services &amp; consulting boutique delivering AI-enhanced digital solutions to global mid-market enterprises. Strategy-led. Business-first.">
       <meta property="og:url" content="https://psiog.com/">
-      <meta property="og:site_name" content="psiog - Delivering Business Value Through AI Enhanced Digital Solutions">
+      <meta property="og:site_name" content="psiog - Delivering Business Value Through AI Led Digital Solutions">
     </head>
     <body>
       <a href="https://psiog.com/about-us/">About Us</a>
       <a href="https://psiog.com/careers/">Careers</a>
       <a href="https://psiog.com/contact-us/">Contact Us</a>
+      <h1>Delivering Business Value Through AI-Led Digital Solutions</h1>
+      <p>We are Psiog, a pure-play IT services and technology consulting boutique, partnering with mid-market enterprises to drive strategy through new-age technology interventions.</p>
       <p>Global Delivery Centre, Chennai, India | psiog.com</p>
       <a href="mailto:info@psiog.com">info@psiog.com</a>
     </body>

@@ -40,6 +40,8 @@ const normalizeWhitespace = (value) => {
     .replace(/&amp;/gi, '&')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
     .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/[’‘]/g, "'")
+    .replace(/[“”]/g, '"')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -64,9 +66,9 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
+  const title = extractTitle(page)
 
-  return extractTitle(page) === "Home - Samunnati - India's Largest Agri Enterprise"
-    && text.includes("india's agri enterprise")
+  return /^home - samunnati - india's largest agri enterprise$/i.test(title || '')
     && text.includes('work with us.')
     && text.includes('careers@samunnati.com')
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
@@ -75,8 +77,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
 export const hasOfficialAboutSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
+  const title = extractTitle(page)
 
-  return extractTitle(page) === "About Us - Samunnati - India's Largest Agri Enterprise"
+  return /^about us - samunnati - india's largest agri enterprise$/i.test(title || '')
     && text.includes('samunnati 2.0')
     && text.includes('join the movement: empowering growth with samunnati')
     && text.includes('careers@samunnati.com')

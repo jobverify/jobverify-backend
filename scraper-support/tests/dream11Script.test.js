@@ -18,6 +18,25 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta property="og:title" content="Dream11 - Play Fantasy Cricket for FREE" />
+    <link rel="canonical" href="https://www.dream11.com/" />
+  </head>
+  <body>
+    <footer>
+      <a href="https://www.dreamsports.group/">About</a>
+      <a href="https://www.dreamsports.group/careers/">Careers</a>
+      <a href="https://www.dream11.com/help-center">Helpdesk</a>
+      <div>Sporta Technologies Private Limited</div>
+      <p>India's Biggest Fantasy Sports Platform: Play for Free. Win Big.</p>
+    </footer>
+  </body>
+</html>
+`
+
 const parentCareersHtml = `
 <!doctype html>
 <html lang="en">
@@ -43,6 +62,31 @@ const parentCareersHtml = `
           <h3>Research Scientist, Dream11</h3>
           <p>Srilakshmi Madiraju</p>
         </article>
+      </section>
+      <address>Sporta Technologies Pvt Ltd, Unit 1201-1202, ONE BKC, Bandra (E), Mumbai 400051.</address>
+    </main>
+  </body>
+</html>
+`
+
+const currentParentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta property="og:title" content="DreamSports" />
+    <link rel="canonical" href="https://www.dreamsports.group/careers" />
+  </head>
+  <body>
+    <nav>
+      <a href="https://www.dream11.com/">Dream11</a>
+      <a href="/careers">LIFE AT DREAM SPORTS</a>
+    </nav>
+    <main>
+      <h1>Game On. Build Big.</h1>
+      <p>Solving real problems across sports, technology, and financial empowerment.</p>
+      <section>
+        <h2>Benefits</h2>
+        <p>Comprehensive health, accident, and life insurance that looks after you and your family.</p>
       </section>
       <address>Sporta Technologies Pvt Ltd, Unit 1201-1202, ONE BKC, Bandra (E), Mumbai 400051.</address>
     </main>
@@ -90,6 +134,19 @@ const trustworthyJobsHtml = `
 </html>
 `
 
+const hiddenBoardScriptHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <script>window.__debug = "https://jobs.lever.co/dreamsports"</script>
+    <main>
+      <h1>Game On. Build Big.</h1>
+      <p>No public jobs are listed here.</p>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/dream11/script.js')
@@ -105,7 +162,7 @@ test('Dream11 constants and helpers stay pinned to the verified parent-brand car
   assert.equal(dream11.OFFICIAL_BRAND_NAME, 'Dream11')
   assert.equal(dream11.PARENT_COMPANY_NAME, 'Dream Sports')
   assert.equal(dream11.SOURCE, 'dream11')
-  assert.equal(dream11.VERIFIED_AT, '2026-07-15')
+  assert.equal(dream11.VERIFIED_AT, '2026-08-01')
   assert.equal(dream11.HOMEPAGE_URL, 'https://www.dream11.com/')
   assert.equal(dream11.PARENT_CAREERS_URL, 'https://www.dreamsports.group/careers')
   assert.equal(
@@ -133,6 +190,7 @@ test('Dream11 constants and helpers stay pinned to the verified parent-brand car
   ])
 
   assert.equal(dream11.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(dream11.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(
     dream11.extractParentCareersUrlFromHomepage(homepageHtml),
     'https://www.dreamsports.group/careers/',
@@ -160,7 +218,10 @@ test('Dream11 constants and helpers stay pinned to the verified parent-brand car
     true,
   )
   assert.equal(dream11.hasParentCareersLandingSignal(parentCareersHtml), true)
+  assert.equal(dream11.hasParentCareersLandingSignal(currentParentCareersHtml), true)
   assert.equal(dream11.hasPublicJobSignal(parentCareersHtml), false)
+  assert.equal(dream11.hasPublicJobSignal(currentParentCareersHtml), false)
+  assert.equal(dream11.hasPublicJobSignal(hiddenBoardScriptHtml), false)
   assert.equal(
     dream11.isVerifiedMissingRoute(
       {

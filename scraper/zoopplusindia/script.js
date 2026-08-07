@@ -1,51 +1,27 @@
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 export const SOURCE = 'zoopplusindia'
 export const COMPANY = 'ZoopPlus India'
 export const OFFICIAL_BRAND = 'ZOOP'
 export const CAREERS_URL = 'https://www.zoop.one/career'
-export const DISPOSITION = 'verified-official-brand-careers-surface-fail-closed'
+export const DISPOSITION = 'verified-official-brand-careers-surface-plus-first-party-role-cards'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.zoop.one/career was the live official ZOOP careers surface reviewed for workbook company ZoopPlus India. The verified first-party page exposed brand and culture sections including "About ZOOP", "Why Join Us?" and "People at Zoop", but no trustworthy enumerable public jobs contract was verified for ZoopPlus India, so this company-local scraper stays fail-closed and returns no jobs until ZOOP promotes a stable public openings flow.'
+  'Verified on Sunday, August 2, 2026 that https://www.zoop.one/career was the live official ZOOP careers surface reviewed for workbook company ZoopPlus India, and that the rendered first-party page now exposed public role cards for Pune openings such as ML Lead, SDE2- Backend Developer, and Quality Analyst, all applying through the current shared Google Forms route. This scraper validates the current first-party careers surface and returns the rendered India role cards while that public contract remains stable.'
 
 const REQUIRED_SURFACE_PATTERNS = [
   /\bCareer\s*\|\s*Join Our Team\b/i,
+  /\bDo Work That Matters\.\s*With People Who Care\./i,
+  /\bView Openings\b/i,
   /\bAbout ZOOP\b/i,
   /\bWhy Join Us\?/i,
-  /\bPeople at Zoop\b/i,
-  /\bJoin our journey today!?/i,
 ]
 
-const TRUSTED_ATS_HOST_PATTERNS = [
-  /boards\.greenhouse\.io/i,
-  /jobs\.lever\.co/i,
-  /jobs\.ashbyhq\.com/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs\.com/i,
-  /smartrecruiters\.com/i,
-  /jobvite\.com/i,
-  /workable\.com/i,
-  /bamboohr\.com/i,
-  /applytojob\.com/i,
-  /recruitee\.com/i,
-  /zohorecruit\.in/i,
-  /teamtailor\.com/i,
-  /trakstar\.com/i,
-]
-
-const SAME_ORIGIN_JOB_PATH_PATTERNS = [
-  /^\/career(?:\/|$)/i,
-  /^\/careers?(?:\/|$)/i,
-  /^\/jobs?(?:\/|$)/i,
-  /^\/positions?(?:\/|$)/i,
-  /^\/roles?(?:\/|$)/i,
-  /^\/openings?(?:\/|$)/i,
-  /^\/apply(?:\/|$)/i,
-  /^\/join-us(?:\/|$)/i,
-]
+const GOOGLE_FORMS_HOST_PATTERN = /^https:\/\/forms\.gle\//i
 
 const decodeEntities = (value = '') =>
   String(value)
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&quot;/gi, '"')
@@ -53,49 +29,25 @@ const decodeEntities = (value = '') =>
     .replace(/&gt;/gi, '>')
     .replace(/&lt;/gi, '<')
 
-const normalizeText = (value = '') =>
+const normalizeWhitespace = (value = '') =>
   decodeEntities(String(value))
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
+    .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
-const normalizePathname = (value = '') => {
-  const normalized = String(value).trim().replace(/\/+$/, '')
-  return normalized || '/'
-}
-
-const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
-  const matches = String(html).matchAll(
-    /(?:href|src|action|data-url)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
-  )
-  const urls = []
-
-  for (const match of matches) {
-    const rawValue = match[1] || match[2] || match[3] || ''
-
-    try {
-      urls.push(new URL(decodeEntities(rawValue), pageUrl))
-    } catch {
-      // Ignore malformed URLs and keep the scraper fail-closed.
-    }
-  }
-
-  return urls
-}
-
-const hasJobPostingMarkup = (html = '') => {
-  const blocks = String(html).matchAll(
-    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+const normalizeText = (value = '') =>
+  normalizeWhitespace(
+    String(value)
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' '),
   )
 
-  for (const block of blocks) {
-    if (/\bJobPosting\b/i.test(block[1])) return true
-  }
-
-  return false
-}
+const slugify = (value = '') =>
+  normalizeWhitespace(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
 export const assertVerifiedOfficialBrandCareersSurface = (html = '') => {
   const text = normalizeText(html)
@@ -107,39 +59,36 @@ export const assertVerifiedOfficialBrandCareersSurface = (html = '') => {
   )
 }
 
-export const assertNoPublicJobsSurface = (html = '', careersUrl = CAREERS_URL) => {
-  if (hasJobPostingMarkup(html)) {
-    throw new Error(
-      'ZoopPlus India public careers surface now exposes JobPosting markup; promote a real parser.',
-    )
+export const extractRenderedRoleCards = (html = '') => {
+  const cards = []
+  const seen = new Set()
+
+  for (const match of String(html).matchAll(/<a\b[^>]*href=["'](https:\/\/forms\.gle\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const applyUrl = normalizeWhitespace(match[1])
+    const block = match[2] || ''
+    const title = normalizeWhitespace(block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+    const spans = [...block.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
+      .map((spanMatch) => normalizeWhitespace(spanMatch[1]))
+      .filter(Boolean)
+
+    if (!title || spans.length < 4 || !GOOGLE_FORMS_HOST_PATTERN.test(applyUrl || '')) continue
+
+    const [department, experienceRequired, city, employmentType] = spans
+    const jobId = slugify(`${title}-${department}-${city}-${employmentType}`)
+    if (!jobId || seen.has(jobId)) continue
+
+    seen.add(jobId)
+    cards.push({
+      title,
+      department,
+      experienceRequired,
+      city,
+      employmentType,
+      applyUrl,
+    })
   }
 
-  const careersPage = new URL(careersUrl)
-  const careersPath = normalizePathname(careersPage.pathname)
-  const linkedUrls = extractLinkedUrls(html, careersUrl)
-
-  const atsBoardUrl = linkedUrls.find((url) =>
-    TRUSTED_ATS_HOST_PATTERNS.some((pattern) => pattern.test(url.hostname)),
-  )
-  if (atsBoardUrl) {
-    throw new Error(
-      `ZoopPlus India public careers surface now exposes a public jobs surface via ${atsBoardUrl.toString()}.`,
-    )
-  }
-
-  const sameOriginJobUrl = linkedUrls.find((url) => {
-    if (url.origin !== careersPage.origin) return false
-
-    const pathname = normalizePathname(url.pathname)
-    if (pathname === careersPath) return false
-
-    return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
-  })
-  if (sameOriginJobUrl) {
-    throw new Error(
-      `ZoopPlus India public careers surface now exposes a public jobs surface via ${sameOriginJobUrl.toString()}.`,
-    )
-  }
+  return cards
 }
 
 const defaultFetchHtml = async (url) => {
@@ -154,14 +103,75 @@ const defaultFetchHtml = async (url) => {
   return response.text()
 }
 
+const defaultFetchBrowserHtml = async (url) => {
+  const session = await createBrowserFetchSession({
+    waitUntil: 'domcontentloaded',
+    settleTimeMs: 5000,
+    timeoutMs: 90000,
+    ignoreHTTPSErrors: true,
+  })
+
+  try {
+    const page = await session.fetchPage(url)
+    if (page.status < 200 || page.status >= 400) {
+      throw new Error(`HTTP ${page.status} for ${url}`)
+    }
+
+    return page.html
+  } finally {
+    await session.close()
+  }
+}
+
+const mapRoleCardToJob = (card) => ({
+  title: card.title,
+  company: COMPANY,
+  department: card.department,
+  location: `${card.city}, India`,
+  city: card.city,
+  country: 'India',
+  jobId: slugify(`${card.title}-${card.department}-${card.city}-${card.employmentType}`),
+  requisitionId: null,
+  sourceUrl: CAREERS_URL,
+  applyUrl: card.applyUrl,
+  employmentType: card.employmentType,
+  experienceRequired: card.experienceRequired,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  postingDate: null,
+  closingDate: null,
+  jobDescription: `Apply via the official ZOOP careers page for ${card.title} (${card.department}, ${card.experienceRequired}, ${card.city}).`,
+})
+
 export const createZoopPlusIndiaScraper = () => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(CAREERS_URL)
+  async run({
+    fetchHtml = defaultFetchHtml,
+    fetchBrowserHtml = defaultFetchBrowserHtml,
+    now = () => new Date().toISOString(),
+  } = {}) {
+    let html = await fetchHtml(CAREERS_URL)
+    let cards = extractRenderedRoleCards(html)
+
+    if (cards.length === 0) {
+      html = await fetchBrowserHtml(CAREERS_URL)
+      cards = extractRenderedRoleCards(html)
+    }
 
     assertVerifiedOfficialBrandCareersSurface(html)
-    assertNoPublicJobsSurface(html, CAREERS_URL)
 
-    return createFailClosedSentinelScraper().run()
+    if (cards.length === 0) {
+      throw new Error(
+        'ZoopPlus India rendered careers surface no longer exposes the verified first-party role-card contract.',
+      )
+    }
+
+    return cards.map((card) => ({
+      ...mapRoleCardToJob(card),
+      source: SOURCE,
+      link: card.applyUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

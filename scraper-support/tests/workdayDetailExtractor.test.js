@@ -60,6 +60,25 @@ test('extractWorkdayJobDetail preserves mixed month-to-year experience ranges fr
   assert.equal(detail.experienceRequired, '5 months - 2 years')
 })
 
+test('extractWorkdayJobDetail captures contextual month ranges from Workday descriptions', () => {
+  const html = `
+    <html>
+      <body>
+        <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "description": "Education and Experience 0-18 months of related experience. Bachelor’s degree or equivalent experience."
+          }
+        </script>
+      </body>
+    </html>
+  `
+
+  const detail = extractWorkdayJobDetail(html)
+
+  assert.equal(detail.experienceRequired, '0-18 months')
+})
+
 test('extractWorkdayJobDetail captures Workday posted-on text from the detail header', () => {
   const html = `
     <html>
@@ -97,5 +116,69 @@ test('extractWorkdayJobDetail falls back to Workday JSON-LD datePosted when the 
   const detail = extractWorkdayJobDetail(html)
 
   assert.equal(detail.postingDate, '2026-06-12')
-  assert.equal(detail.experienceRequired, '5 to 10 years')
+  assert.equal(detail.experienceRequired, '5-10 years')
+})
+
+test('extractWorkdayJobDetail infers experience from the visible Workday description body when qualification blocks are absent', () => {
+  const html = `
+    <html>
+      <body>
+        <section data-automation-id="jobPostingDescription">
+          <div>
+            <p>Experience and Requirements:</p>
+            <p>Minimum Qualifications BS degree in Information Technology/Computer Science or equivalent combination of education and experience.</p>
+            <p>2 years of demonstrated experience in ServiceNow development, administration, or configuration.</p>
+          </div>
+        </section>
+      </body>
+    </html>
+  `
+
+  const detail = extractWorkdayJobDetail(html)
+
+  assert.equal(detail.experienceRequired, '2 years')
+  assert.equal(detail.publicExperienceChecked, true)
+})
+
+test('extractWorkdayJobDetail marks public Workday detail pages as checked when they expose job detail but no experience years', () => {
+  const html = `
+    <html>
+      <body>
+        <section data-automation-id="jobPostingDescription">
+          <div>
+            <p>Build strong customer relationships for enterprise banking products.</p>
+            <p>Collaborate with internal stakeholders to improve customer outcomes.</p>
+          </div>
+        </section>
+        <dl>
+          <dt>Department</dt>
+          <dd>Sales Group</dd>
+        </dl>
+      </body>
+    </html>
+  `
+
+  const detail = extractWorkdayJobDetail(html)
+
+  assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.publicExperienceChecked, true)
+})
+
+test('extractWorkdayJobDetail preserves bounded year ranges from Workday qualification prose', () => {
+  const html = `
+    <html>
+      <body>
+        <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "description": "Position: Senior Engineer - Data Engineer Job Description: Build real-time cloud software systems. Qualifications: 2-5 years of experience in data engineering, ETL pipelines, and cloud analytics. Location: IN-GJ-Ahmedabad, India (eInfochips) Time Type: Full time Job Category: Engineering Services"
+          }
+        </script>
+      </body>
+    </html>
+  `
+
+  const detail = extractWorkdayJobDetail(html)
+
+  assert.equal(detail.experienceRequired, '2-5 years')
 })

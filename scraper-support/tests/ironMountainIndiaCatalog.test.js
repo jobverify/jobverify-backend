@@ -34,7 +34,7 @@ test('Iron Mountain India local catalog captures the verified first-party NLX si
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.companyName, 'Iron Mountain India')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.officialBrandName, 'Iron Mountain')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.adapter, 'script')
-  assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.modulePath, '../../scraper/ironmountainindia/script.js')
+  assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.modulePath, '../ironmountainindia/script.js')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.dryRunFile, 'ironmountainindia/jobs.json')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.homepageUrl, 'https://www.ironmountain.com/en-in')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.aboutPageUrl, 'https://www.ironmountain.com/about-us')
@@ -43,7 +43,7 @@ test('Iron Mountain India local catalog captures the verified first-party NLX si
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.jobsSitemapUrl, 'https://ironmountain.jobs/sitemaps/jobs_1.xml')
   assert.equal(
     IRON_MOUNTAIN_INDIA_CATALOG.verifiedSampleJobUrl,
-    'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
+    'https://ironmountain.jobs/navi-mumbai-ind/project-accounting-professional/3E5B9F4951D04C2B88CB21B5658F3CC1/job/',
   )
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.atsPlatform, 'nlx')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.countryFilter, 'India')
@@ -58,13 +58,13 @@ test('Iron Mountain India local catalog captures the verified first-party NLX si
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.companyDomain, 'ironmountain.com')
-  assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.verifiedOn, '2026-07-16')
-  assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.verifiedPublicPostingCount, 25)
-  assert.match(IRON_MOUNTAIN_INDIA_CATALOG.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.verifiedOn, '2026-08-03')
+  assert.equal(IRON_MOUNTAIN_INDIA_CATALOG.verifiedPublicPostingCount, 16)
+  assert.match(IRON_MOUNTAIN_INDIA_CATALOG.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(IRON_MOUNTAIN_INDIA_CATALOG.verifiedSurfaceSummary, /ironmountain\.com\/about-us/i)
   assert.match(IRON_MOUNTAIN_INDIA_CATALOG.verifiedSurfaceSummary, /ironmountain\.jobs/i)
   assert.match(IRON_MOUNTAIN_INDIA_CATALOG.verifiedSurfaceSummary, /jobs_1\.xml/i)
-  assert.match(IRON_MOUNTAIN_INDIA_CATALOG.verifiedSurfaceSummary, /25 India detail URLs/i)
+  assert.match(IRON_MOUNTAIN_INDIA_CATALOG.verifiedSurfaceSummary, /16 India detail URLs/i)
 
   assert.equal(provider.source, 'ironmountainindia')
   assert.equal(provider.companyName, 'Iron Mountain India')
@@ -72,7 +72,7 @@ test('Iron Mountain India local catalog captures the verified first-party NLX si
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://ironmountain.jobs/')
   assert.equal(provider.companyDomain, 'ironmountain.com')
-  assert.equal(provider.modulePath, '../../scraper/ironmountainindia/script.js')
+  assert.match(provider.modulePath, /ironmountainindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /ironmountainindia[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Iron Mountain India'), false)
 

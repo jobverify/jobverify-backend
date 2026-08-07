@@ -13,8 +13,8 @@ test('getScraperCatalog includes ICICI Bank Ltd as an official public careers AP
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.companyCareerPage, 'https://www.icicicareers.com/CareerApplicant/Career/Home')
-  assert.equal(provider.companyDomain, 'icicicareers.com')
+  assert.equal(provider.companyCareerPage, 'https://careers.icici.bank.in/CareerApplicant/Career/Home')
+  assert.equal(provider.companyDomain, 'careers.icici.bank.in')
   assert.match(provider.modulePath, /icicibank[\\/]script\.js$/i)
 })
 

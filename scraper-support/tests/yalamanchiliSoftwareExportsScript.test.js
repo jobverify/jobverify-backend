@@ -14,6 +14,27 @@ test('Yalamanchili Software Exports validates the verified exact-name sentinel s
 
   assert.equal(yalamanchili.isExpectedDormantSurface({ errorKind: 'timeout' }), true)
   assert.equal(yalamanchili.isExpectedDormantSurface({ status: 404, html: '<html><body>Not Found</body></html>' }), true)
+  assert.equal(
+    yalamanchili.isExpectedRedirectedHomepageSurface({
+      status: 200,
+      finalUrl: 'https://www.ysppayments.com/',
+      html: `
+        <html>
+          <head>
+            <title>YSP | Yalamanchili Solutions for Payments</title>
+            <script>window.__asset = "/jobs/runtime.js"</script>
+          </head>
+          <body>
+            <main>
+              <h1>One Platform, Infinite Solutions</h1>
+              <p>Providing enterprise class customizable and scalable end-to-end payment solutions since 1998.</p>
+            </main>
+          </body>
+        </html>
+      `,
+    }),
+    true,
+  )
   assert.equal(yalamanchili.isExpectedDormantSurface({ errorKind: 'dns' }), false)
   assert.equal(yalamanchili.isUnexpectedReachableSurface({ status: 200, html: '<html><body>Careers</body></html>' }), true)
 })
@@ -37,9 +58,13 @@ test('Yalamanchili Software Exports run verifies the exact-name root and common 
 
   assert.deepEqual(requestedUrls, [
     'https://www.yalamanchili.co.in/',
+    'https://www.ysppayments.com/',
     'https://www.yalamanchili.co.in/careers',
     'https://www.yalamanchili.co.in/jobs',
     'https://www.yalamanchili.co.in/careers.html',
+    'https://www.ysppayments.com/career',
+    'https://www.ysppayments.com/careers',
+    'https://www.ysppayments.com/jobs',
   ])
   assert.deepEqual(jobs, [])
 })

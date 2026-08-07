@@ -20,23 +20,17 @@ const careersHtml = `
     <section class="job-card">
       <p class="elementor-heading-title elementor-size-default">Full Stack Engineer (Node &amp; React) | Immediate Joiner</p>
       <p class="elementor-heading-title elementor-size-default">| Pune |</p>
-      <a class="elementor-button elementor-button-link elementor-size-md" href="#frmsub">
-        <span class="elementor-button-text">Apply Now</span>
-      </a>
+      <p class="elementor-heading-title elementor-size-default">Apply Now</p>
     </section>
     <section class="job-card">
       <p class="elementor-heading-title elementor-size-default">Full Stack Engineer (Node &amp; React) | Immediate Joiner</p>
       <p class="elementor-heading-title elementor-size-default">| Pune |</p>
-      <a class="elementor-button elementor-button-link elementor-size-md" href="#frmsub">
-        <span class="elementor-button-text">Apply Now</span>
-      </a>
+      <p class="elementor-heading-title elementor-size-default">Apply Now</p>
     </section>
     <section class="job-card">
       <p class="elementor-heading-title elementor-size-default">Full Stack Engineer (Node &amp; React) | Immediate Joiner</p>
       <p class="elementor-heading-title elementor-size-default">| Pune |</p>
-      <a class="elementor-button elementor-button-link elementor-size-md" href="#frmsub">
-        <span class="elementor-button-text">Apply Now</span>
-      </a>
+      <p class="elementor-heading-title elementor-size-default">Apply Now</p>
     </section>
     <h2>Join A Community Where You Can Thrive</h2>
     <form id="frmsub" aria-label="Career Form"></form>
@@ -87,11 +81,12 @@ test('Zimetrics Technologies local catalog captures the verified inline role-car
     'verified-first-party-careers-page+inline-role-cards+form-anchor-apply-handoff+dedupe-identical-cards',
   )
   assert.equal(ZIMETRICS_TECHNOLOGIES_CATALOG.companyDomain, 'zimetrics.com')
-  assert.equal(ZIMETRICS_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-18')
+  assert.equal(ZIMETRICS_TECHNOLOGIES_CATALOG.verifiedOn, '2026-08-01')
   assert.equal(ZIMETRICS_TECHNOLOGIES_CATALOG.modulePath, modulePath)
   assert.match(ZIMETRICS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /We are Hiring!/i)
   assert.match(ZIMETRICS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /Full Stack Engineer/i)
   assert.match(ZIMETRICS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /#frmsub/i)
+  assert.match(ZIMETRICS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /responsive/i)
   assert.deepEqual(scriptModule.PROVIDER_METADATA, ZIMETRICS_TECHNOLOGIES_CATALOG)
 
   const report = generateCompanyCoverageReport({

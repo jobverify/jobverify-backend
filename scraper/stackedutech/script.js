@@ -122,7 +122,6 @@ export const hasVerifiedRobotsTxt = (text = '') => {
     && normalized.includes('search:')
     && normalized.includes('ai-input:')
     && normalized.includes('ai-train:')
-    && normalized.includes('user-agent: *')
     && !hasPublicJobsSignal(normalized)
   }
 

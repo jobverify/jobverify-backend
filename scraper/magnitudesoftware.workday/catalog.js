@@ -13,17 +13,18 @@ export const MAGNITUDE_SOFTWARE_CATALOG = {
   redirectCompanyUrl: 'https://insightsoftware.com/magnitude/',
   parentCompanyName: 'insightsoftware',
   workdayTenantHost: 'https://magnitudesoftware.wd1.myworkdayjobs.com/',
+  officialWorkdayBoardUrl: 'https://magnitudesoftware.wd1.myworkdayjobs.com/External',
   atsPlatform: 'workday',
   countryFilter: 'India',
-  paginationStrategy: 'first-party-careers-html-job-card-scan',
+  paginationStrategy: 'verified-homepage-redirect-plus-shared-workday-runner',
   extractionStrategy:
-    'verified-magnitude-homepage-redirect+verified-first-party-careers-page+india-workday-links',
+    'verified-magnitude-homepage-redirect+verified-first-party-careers-shell+verified-workday-shell+shared-workday-runner',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'magnitude.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.magnitude.com/ resolved to https://insightsoftware.com/magnitude/, that the redirected first-party page stated Magnitude is now part of insightsoftware and linked Careers to https://insightsoftware.com/careers/, and that the first-party careers page exposed Current Job Openings with India filters and public Workday detail links on https://magnitudesoftware.wd1.myworkdayjobs.com/, including Customer Success Analyst and Director - Engineering.',
+    'Revalidated on Saturday, August 1, 2026 that https://www.magnitude.com/ still resolved to https://insightsoftware.com/magnitude/, that the redirected first-party page still stated Magnitude is now part of insightsoftware and linked Careers to https://insightsoftware.com/careers/, that the current insightsoftware careers shell still rendered Current Job Openings while showing 0 of 0 and no job openings available at the moment, and that the direct public Workday board at https://magnitudesoftware.wd1.myworkdayjobs.com/External remained live with India openings including HR Business Partner, Lead Software Engineer, and Senior Database Administrator.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'magnitudesoftware.workday/jobs.json',
 }

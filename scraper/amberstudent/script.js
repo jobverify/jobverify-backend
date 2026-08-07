@@ -7,7 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'amberstudent'
 export const COMPANY = 'Amberstudent'
-export const VERIFIED_ON = '2026-07-30'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://amberstudent.com/career'
 export const SMARTRECRUITERS_BOARD_URL = 'https://careers.smartrecruiters.com/amberstudent'
 export const SMARTRECRUITERS_LISTING_API_URL =
@@ -162,16 +162,17 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Careers at Amber - Join Our Team\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Careers at Amber - Join Our Team\s*<\/title>/i.test(page)
+    && text.includes('Your Next Big Break')
     && text.includes('Find Roles')
-    && /Amberstudent/i.test(text)
+    && /\bAmber\b/i.test(text)
 }
 
 export const hasVerifiedJobsBoardSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Careers at Amber Student\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Careers at Amber Student\s*<\/title>/i.test(page)
     && text.includes('Jobs at Amber Student')
     && text.includes('Pune,, India')
     && text.includes('1 job')

@@ -179,6 +179,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const isTrustedUnavailableFailure = (error) => {
   const message = String(error?.message ?? error ?? '').toLowerCase()
+  const isAindraTimeout = message.includes('aindra.in')
+    && (
+      message.includes('timed out')
+      || message.includes('timeout')
+      || message.includes('und_err_connect_timeout')
+      || message.includes('err_connection_timed_out')
+    )
 
   return message.includes('enotfound')
     || message.includes('getaddrinfo')
@@ -187,6 +194,7 @@ export const isTrustedUnavailableFailure = (error) => {
     || message.includes('unable_to_verify_leaf_signature')
     || message.includes('err_cert_authority_invalid')
     || (message.includes('net::err_failed') && message.includes('aindra.in'))
+    || isAindraTimeout
     || message.includes('certificate')
 }
 

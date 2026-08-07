@@ -25,6 +25,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 const CAREERS_TITLE_PATTERN = /<title>\s*Rimini Street Careers &amp; Job Opportunities \| Rimini Street\s*<\/title>/i
+const LEGACY_WORKDAY_BASE_URL = 'https://riministreet.wd1.myworkdayjobs.com/en-US/RiminiStreet'
 
 export const buildScraperOptions = () => ({
   company: COMPANY_NAME,
@@ -33,6 +34,21 @@ export const buildScraperOptions = () => ({
   source: SOURCE,
   scraperDir: SCRAPER_DIR,
 })
+
+const normalizeComparableUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    if (url.origin === 'https://riministreet.wd1.myworkdayjobs.com') {
+      url.pathname = url.pathname.replace(/^\/en-US(?=\/|$)/i, '')
+    }
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return String(value ?? '').replace(/\/$/, '')
+  }
+}
+
+const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -46,9 +62,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 const isVerifiedWorkdayHandoffUrl = (value) => {
   try {
-    const url = new URL(value)
-    return url.origin === 'https://riministreet.wd1.myworkdayjobs.com'
-      && url.pathname.replace(/\/+$/, '') === '/en-US/RiminiStreet'
+    return sameUrl(value, WORKDAY_BASE_URL) || sameUrl(value, LEGACY_WORKDAY_BASE_URL)
   } catch {
     return false
   }
@@ -57,11 +71,22 @@ const isVerifiedWorkdayHandoffUrl = (value) => {
 export const extractVerifiedWorkdayHandoffUrl = (html = '') => {
   for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
     if (isVerifiedWorkdayHandoffUrl(match[1])) {
-      return new URL(match[1]).toString()
+      return WORKDAY_BASE_URL
     }
   }
 
   return null
+}
+
+export const hasOfficialWorkdayBoardSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /rel=["']canonical["'][^>]*href=["']https:\/\/riministreet\.wd1\.myworkdayjobs\.com\/RiminiStreet["']/i.test(page)
+    && /cx-jobs\.min\.js/i.test(page)
+    && /tenant:\s*"riministreet"/i.test(page)
+    && /siteId:\s*"RiminiStreet"/i.test(page)
+    && /extraordinary enterprise software support powered by extraordinary people/i.test(page)
+    && /Rimini Street Career Job Alerts/i.test(page)
 }
 
 const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
@@ -74,24 +99,49 @@ const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   signal,
 })
 
+const isTransientFirstPartyAccessFailure = (error) => {
+  const status = Number(error?.status ?? error?.cause?.status)
+  return status === 403
+    || /HTTP 403|timed out|timeout/i.test(String(error?.message || ''))
+}
+
 export const createRiminiStreetScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
   async run({ signal } = {}) {
-    const careersHtml = await (
-      signal === undefined
-        ? fetchText(CAREERS_URL)
-        : fetchText(CAREERS_URL, { signal })
-    )
+    let careersHtml = null
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Rimini Street verified first-party careers page no longer matches the trusted surface')
+    try {
+      careersHtml = await (
+        signal === undefined
+          ? fetchText(CAREERS_URL)
+          : fetchText(CAREERS_URL, { signal })
+      )
+    } catch (error) {
+      if (!isTransientFirstPartyAccessFailure(error)) {
+        throw error
+      }
     }
 
-    const verifiedWorkdayHandoffUrl = extractVerifiedWorkdayHandoffUrl(careersHtml)
-    if (verifiedWorkdayHandoffUrl !== WORKDAY_BASE_URL) {
-      throw new Error('Rimini Street verified Workday handoff changed; refusing to guess the public jobs source')
+    if (careersHtml != null) {
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Rimini Street verified first-party careers page no longer matches the trusted surface')
+      }
+
+      const verifiedWorkdayHandoffUrl = extractVerifiedWorkdayHandoffUrl(careersHtml)
+      if (!sameUrl(verifiedWorkdayHandoffUrl, WORKDAY_BASE_URL)) {
+        throw new Error('Rimini Street verified Workday handoff changed; refusing to guess the public jobs source')
+      }
+    }
+
+    const workdayBoardHtml = await (
+      signal === undefined
+        ? fetchText(WORKDAY_BASE_URL)
+        : fetchText(WORKDAY_BASE_URL, { signal })
+    )
+    if (!hasOfficialWorkdayBoardSignal(workdayBoardHtml)) {
+      throw new Error('Rimini Street verified public Workday board changed materially')
     }
 
     return workdayRunner({

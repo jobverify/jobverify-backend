@@ -21,7 +21,7 @@ const normalizeText = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
-  .replace(/&#39;|&apos;/gi, "'")
+  .replace(/&#39;|&#8217;|&apos;|&rsquo;/gi, "'")
   .replace(/\s+/g, ' ')
   .trim() || null
 
@@ -41,6 +41,11 @@ const getVerifiedJobUrl = (value) => {
 
 const extractCity = (location) => normalizeText(location)?.split(',')[0]?.trim() || null
 
+const normalizeLocationText = (value) => normalizeText(value)
+  ?.replace(/\s+,/g, ',')
+  .replace(/,\s*/g, ', ')
+  .trim() || null
+
 const extractLocationFromContext = (html, startIndex) => {
   const afterLink = String(html ?? '').slice(startIndex)
   const blockMatch = afterLink.match(/<(div|p|span)\b[^>]*>([\s\S]*?)<\/\1>/i)
@@ -57,10 +62,29 @@ const extractLocationFromContext = (html, startIndex) => {
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeText(html) || ''
-  return normalized.includes('Join the Elite Technical Bench.')
+  const page = String(html ?? '')
+  const normalized = normalizeText(page) || ''
+
+  const hasLegacySignal = normalized.includes('Join the Elite Technical Bench.')
     && normalized.includes('Not Just a Job. A Technical Career Built to Last.')
     && normalized.includes('Great Place To Work, India')
+
+  const hasCurrentSignal = /<title>\s*Explore IT Careers\s*&(?:amp;)?\s*Technical Jobs\s*-\s*Norwin\s*<\/title>/i.test(page)
+    && normalized.includes('Join the Elite Technical Bench.')
+    && normalized.includes('Not Just a Job. A Technical Career Built to Last.')
+    && normalized.includes("At Norwin, you aren't just an employee")
+
+  return hasLegacySignal || hasCurrentSignal
+}
+
+export const hasCloudflareProtectedCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeText(page) || ''
+
+  return /<title>\s*Attention Required!\s*\|\s*Cloudflare\s*<\/title>/i.test(page)
+    && normalized.includes('Sorry, you have been blocked')
+    && normalized.includes('You are unable to access')
+    && normalized.includes('wpewaf.com')
 }
 
 export const extractTrakstarListings = (html = '') => {
@@ -69,10 +93,15 @@ export const extractTrakstarListings = (html = '') => {
 
   for (const match of page.matchAll(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const detail = getVerifiedJobUrl(match[1])
-    const title = normalizeText(match[2])
+    const anchorHtml = String(match[2] ?? '')
+    const title = normalizeText(
+      anchorHtml.match(/<h[1-6][^>]*class=["'][^"']*js-job-list-opening-name[^"']*["'][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1],
+    ) || normalizeText(anchorHtml)
     if (!detail || !title) continue
 
-    const location = extractLocationFromContext(page, match.index + match[0].length)
+    const location = normalizeLocationText(
+      anchorHtml.match(/<div[^>]*class=["'][^"']*js-job-list-opening-loc[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
+    ) || extractLocationFromContext(page, match.index + match[0].length)
     if (!location) continue
 
     listings.push({
@@ -130,7 +159,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const createNorwinTechnologiesScraper = () => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
+    const hasOfficialCareersPage = hasOfficialCareersSignal(careersHtml)
+    const hasProtectedCareersPage = hasCloudflareProtectedCareersSignal(careersHtml)
+
+    if (!hasOfficialCareersPage && !hasProtectedCareersPage) {
       throw new Error('Norwin Technologies verified careers page no longer matches the pinned first-party surface')
     }
 

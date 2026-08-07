@@ -32,7 +32,7 @@ const assertHydratedCatalogLoadsScript = async (provider) => {
   assert.equal(typeof module.run, 'function')
 }
 
-test('Relevantz Technology Services catalog captures the verified India openings surface on the exact-name careers page', async () => {
+test('Relevantz Technology Services catalog captures the live careers app shell and WordPress JSON payload contract', async () => {
   const { RELEVANTZ_TECHNOLOGY_SERVICES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(RELEVANTZ_TECHNOLOGY_SERVICES_CATALOG)
 
@@ -41,18 +41,26 @@ test('Relevantz Technology Services catalog captures the verified India openings
   assert.equal(provider.companyName, 'Relevantz Technology Services')
   assert.equal(provider.officialBrandName, 'Relevantz')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://relevantz.com/')
-  assert.equal(provider.companyCareerPage, 'https://relevantz.com/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
+  assert.equal(provider.homepageUrl, 'https://www.relevantz.com/')
+  assert.equal(provider.companyCareerPage, 'https://www.relevantz.com/careers/')
+  assert.equal(provider.wordpressOrigin, 'https://rzwp.relevantz.com')
+  assert.equal(provider.wordpressCareersPageSlug, 'careers')
+  assert.equal(
+    provider.wordpressCareersPageApiUrl,
+    'https://rzwp.relevantz.com/wp-json/wp/v2/pages?slug=careers&acf_format=standard&_fields=id,slug,title,acf',
+  )
+  assert.equal(provider.atsPlatform, 'official-company-careers+wordpress-json-api')
+  assert.equal(provider.paginationStrategy, 'single-wordpress-page-acf-payload')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+india-section-inline-openings',
+    'verified-careers-app-shell+verified-wordpress-page-acf+india-tab-job-listings',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.companyDomain, 'relevantz.com')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Careers India/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.relevantz\.com\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/rzwp\.relevantz\.com\/wp-json\/wp\/v2\/pages\?slug=careers/i)
   assert.match(provider.verifiedSurfaceSummary, /Java Full stack Developer/i)
   assert.match(provider.verifiedSurfaceSummary, /Business Analyst/i)
 

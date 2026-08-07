@@ -1,56 +1,24 @@
 export const SOURCE = 'photomathindia'
 export const COMPANY = 'Photomath India'
 export const OFFICIAL_BRAND = 'Photomath'
-export const CAREERS_URL = 'https://www.photomath.com/'
-export const DISPOSITION = 'verified-exact-name-public-company-surface'
+export const HOMEPAGE_URL = 'https://www.photomath.com/'
+export const CAREERS_URL = 'https://www.photomath.com/careers/'
+export const GOOGLE_CAREERS_URL = 'https://www.google.com/about/careers/applications/'
+export const DISPOSITION = 'verified-company-surface-with-google-careers-handoff'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.photomath.com/ was the live exact-name Photomath public company surface reviewed for Photomath India. Local repo evidence does not establish a stable enumerable public jobs contract, so this provider stays fail-closed until Photomath publishes a trustworthy exact-name public openings surface.'
+  'Verified on Saturday, August 1, 2026 that https://www.photomath.com/ was the live Photomath brand surface and that its /careers/ route redirected to the generic Google Careers applications hub rather than an exact-company public jobs inventory for Photomath India.'
 
 const REQUIRED_BRAND_PATTERN = /\bphotomath\b/i
 const TITLE_BRAND_PATTERN = /<title[^>]*>[\s\S]*?\bphotomath\b[\s\S]*?<\/title>/i
 const CANONICAL_SURFACE_PATTERN =
-  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/www\.photomath\.com\/["'][^>]*>/i
+  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/(?:www\.)?photomath\.com\/["'][^>]*>/i
 
-const LISTING_COPY_PATTERNS = [
-  /\bcurrent openings\b/i,
-  /\bopen positions\b/i,
-  /\bjob openings\b/i,
-  /\bopen roles\b/i,
-  /\bavailable positions\b/i,
-  /\bsearch jobs\b/i,
-  /\bview jobs\b/i,
-  /\bjoin our team\b/i,
-  /\bwe(?:'|’|â€™)re hiring\b/i,
-]
-
-const TRUSTED_ATS_HOST_PATTERNS = [
-  /boards\.greenhouse\.io/i,
-  /jobs\.lever\.co/i,
-  /jobs\.ashbyhq\.com/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs\.com/i,
-  /smartrecruiters\.com/i,
-  /jobvite\.com/i,
-  /workable\.com/i,
-  /bamboohr\.com/i,
-  /applytojob\.com/i,
-  /recruitee\.com/i,
-  /darwinbox/i,
-  /zohorecruit\.in/i,
-  /teamtailor\.com/i,
-  /keka\.com/i,
-]
-
-const SAME_ORIGIN_JOB_PATH_PATTERNS = [
-  /^\/careers?(?:\/|$)/i,
-  /^\/jobs?(?:\/|$)/i,
-  /^\/positions?(?:\/|$)/i,
-  /^\/roles?(?:\/|$)/i,
-  /^\/openings?(?:\/|$)/i,
-  /^\/join-us(?:\/|$)/i,
-  /^\/work-with-us(?:\/|$)/i,
-  /^\/hiring(?:\/|$)/i,
-  /^\/apply(?:\/|$)/i,
+const GOOGLE_CAREERS_TITLE_PATTERN = /<title[^>]*>\s*Search for your career at Google\.\s*<\/title>/i
+const GOOGLE_CAREERS_SIGNAL_PATTERNS = [
+  /\bHow we hire\b/i,
+  /\bEqual Opportunity Google\b/i,
+  /\bJobs\b/i,
+  /\bStudents\b/i,
 ]
 
 const normalizeText = (value = '') =>
@@ -65,40 +33,15 @@ const normalizeText = (value = '') =>
     .replace(/\s+/g, ' ')
     .trim()
 
-const normalizePathname = (value = '') => {
-  const normalized = String(value).trim().replace(/\/+$/, '')
-  return normalized || '/'
-}
+const resolvePageUrl = (page = {}, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
 
-const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
-  const urls = []
-  const matches = String(html).matchAll(
-    /(?:href|src|action|data-url|data-href|content)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
-  )
+export const extractCareersHandoffUrl = (html = '') => {
+  const rawHtml = String(html)
+  const directMatch = rawHtml.match(/href=["'](https:\/\/www\.photomath\.com\/careers\/)["']/i)?.[1]
+  if (directMatch) return directMatch
 
-  for (const match of matches) {
-    const rawValue = match[1] || match[2] || match[3] || ''
-
-    try {
-      urls.push(new URL(rawValue, pageUrl))
-    } catch {
-      // Keep the sentinel fail-closed on malformed URLs.
-    }
-  }
-
-  return urls
-}
-
-const hasJobPostingMarkup = (html = '') => {
-  const blocks = String(html).matchAll(
-    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
-  )
-
-  for (const block of blocks) {
-    if (/\bJobPosting\b/i.test(block[1])) return true
-  }
-
-  return false
+  const relativeMatch = rawHtml.match(/href=["'](\/careers\/)["']/i)?.[1]
+  return relativeMatch ? new URL(relativeMatch, HOMEPAGE_URL).toString() : null
 }
 
 export const hasVerifiedCompanySurface = (html = '') => {
@@ -108,54 +51,50 @@ export const hasVerifiedCompanySurface = (html = '') => {
   return REQUIRED_BRAND_PATTERN.test(text)
     && TITLE_BRAND_PATTERN.test(rawHtml)
     && CANONICAL_SURFACE_PATTERN.test(rawHtml)
+    && /Need math help\?\s*Meet Photomath\./i.test(text)
+    && extractCareersHandoffUrl(rawHtml) === CAREERS_URL
 }
 
-export const detectPublicJobsSurface = (html = '', careersUrl = CAREERS_URL) => {
-  if (hasJobPostingMarkup(html)) return 'JobPosting markup'
+export const isVerifiedGoogleCareersHandoff = (page = {}, requestedUrl = CAREERS_URL) => {
+  const rawHtml = String(page?.html ?? '')
+  const text = normalizeText(rawHtml)
+  const finalUrl = resolvePageUrl(page, requestedUrl)
 
-  const text = normalizeText(html)
-  if (LISTING_COPY_PATTERNS.some((pattern) => pattern.test(text))) {
-    return 'listing copy'
-  }
+  return Number(page?.status) === 200
+    && finalUrl.startsWith(GOOGLE_CAREERS_URL)
+    && GOOGLE_CAREERS_TITLE_PATTERN.test(rawHtml)
+    && GOOGLE_CAREERS_SIGNAL_PATTERNS.every((pattern) => pattern.test(text))
+}
 
-  const careersPage = new URL(careersUrl)
-  const careersPath = normalizePathname(careersPage.pathname)
-  const linkedUrls = extractLinkedUrls(html, careersUrl)
-
-  const atsUrl = linkedUrls.find((url) =>
-    TRUSTED_ATS_HOST_PATTERNS.some((pattern) => pattern.test(url.hostname)),
-  )
-  if (atsUrl) return atsUrl.toString()
-
-  const sameOriginJobUrl = linkedUrls.find((url) => {
-    if (url.origin !== careersPage.origin) return false
-
-    const pathname = normalizePathname(url.pathname)
-    if (pathname === careersPath) return false
-
-    return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+    },
+    redirect: 'follow',
   })
 
-  return sameOriginJobUrl ? sameOriginJobUrl.toString() : null
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
 }
 
-const assertVerifiedCompanySurface = (html = '') => {
-  if (hasVerifiedCompanySurface(html)) return
-
-  throw new Error(
-    'Photomath India verified public company surface no longer matches the exact-name contract.',
-  )
-}
-
-export const createPhotomathIndiaScraper = ({ careersUrl = CAREERS_URL } = {}) => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(careersUrl)
-    assertVerifiedCompanySurface(html)
-
-    const publicJobsSurface = detectPublicJobsSurface(html, careersUrl)
-    if (publicJobsSurface) {
+export const createPhotomathIndiaScraper = () => ({
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (!hasVerifiedCompanySurface(homepage.html)) {
       throw new Error(
-        `Photomath India public jobs surface changed materially: ${publicJobsSurface}`,
+        'Photomath India verified official homepage no longer matches the trusted live brand surface',
+      )
+    }
+
+    const careersRedirect = await fetchPage(CAREERS_URL)
+    if (!isVerifiedGoogleCareersHandoff(careersRedirect, CAREERS_URL)) {
+      throw new Error(
+        'Photomath India careers redirect no longer matches the verified Google Careers handoff',
       )
     }
 
@@ -164,15 +103,3 @@ export const createPhotomathIndiaScraper = ({ careersUrl = CAREERS_URL } = {}) =
 })
 
 export const run = async (options = {}) => createPhotomathIndiaScraper().run(options)
-
-const defaultFetchHtml = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
-    },
-  })
-
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}

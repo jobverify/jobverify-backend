@@ -5,41 +5,47 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers - BUDDI.AI</title>
+    <title>Careers &#8211; BUDDI.AI &#8211; Healthcare AI Automation Platform</title>
   </head>
   <body>
     <h1>Careers</h1>
     <p>You're in good company</p>
 
-    <section class="role">
-      <h3>Healthcare</h3>
-      <h2>Team Leader</h2>
-      <p>Specializations: Surgery, ED, EM, Pathology, Radiology.</p>
-      <p>Location: Chennai,India</p>
-      <p>No. of openings: 1</p>
-    </section>
+    <div class="blurbs">
+      <p class="pink-header">Healthcare</p>
+      <h2 class="white-subheader">Team Leader</h2>
+      <p class="white-description careers">
+        Specializations: Surgery, ED, EM, Pathology, Radiology.<br>
+        Location: Chennai,India<br>
+        No. of openings: 1
+      </p>
+    </div>
 
-    <section class="role">
-      <h3>Healthcare</h3>
-      <h2>Manager</h2>
-      <p>Specializations: Radiology, Pathology, ED, EM, HCC</p>
-      <p>Location: Chennai,India</p>
-      <p>No. of openings: 1</p>
-    </section>
+    <div class="blurbs">
+      <p class="pink-header">Healthcare</p>
+      <h2 class="white-subheader">Manager</h2>
+      <p class="white-description careers">
+        Specializations: Radiology, Pathology, ED, EM, HCC<br>
+        Location: Chennai,India<br>
+        No. of openings: 1
+      </p>
+    </div>
 
-    <section class="role">
-      <h3>Healthcare</h3>
-      <h2>Medical Coders</h2>
-      <p>Specializations: Pathology, Radiology, Surgery, IVR, EM UAE, HCC</p>
-      <p>Location: Chennai,India</p>
-    </section>
+    <div class="blurbs">
+      <p class="pink-header">Healthcare</p>
+      <h2 class="white-subheader">Medical Coders</h2>
+      <p class="white-description careers">
+        Specializations: Pathology, Radiology, Surgery, IVR, EM UAE, HCC<br>
+        Location: Chennai,India
+      </p>
+    </div>
 
-    <section class="role">
-      <h3>Engineering</h3>
-      <h2>Principle Software Application Architect</h2>
-      <p>San Francisco, California, United States of America</p>
-      <a href="/roles/principle-software-application-architect">Learn more</a>
-    </section>
+    <div class="blurbs">
+      <p class="pink-header">Engineering</p>
+      <h2 class="white-subheader">Principle Software<br/>Application Architect</h2>
+      <p class="white-description careers">San Francisco, California, United States of America</p>
+      <a class="btn btn-light">Learn more</a>
+    </div>
 
     <p>Hello Automation, Goodbye Complexity.</p>
   </body>
@@ -128,7 +134,7 @@ test('BUDDI.AI helpers stay pinned to the verified first-party static careers pa
 test('BUDDI.AI run validates the verified careers page and emits only India roles', async () => {
   const buddi = await loadModule()
   const jobs = await buddi.createBuddiAiScraper({
-    now: () => '2026-07-18T00:00:00.000Z',
+    now: () => '2026-08-01T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
       assert.equal(url, buddi.CAREERS_URL)
@@ -138,7 +144,7 @@ test('BUDDI.AI run validates the verified careers page and emits only India role
 
   assert.equal(jobs.length, 3)
   assert.equal(jobs[0].source, 'buddiai')
-  assert.match(jobs[0].scrapedAt, /^2026-07-18T00:00:00\.000Z$/)
+  assert.match(jobs[0].scrapedAt, /^2026-08-01T00:00:00\.000Z$/)
   assert.equal(jobs.some((job) => /San Francisco/i.test(job.location)), false)
 })
 

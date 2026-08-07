@@ -158,6 +158,21 @@ const buildDescriptionSection = (heading, lines) => {
   ]
 }
 
+const extractListItemsFromFragment = (html = '') => [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+  .map((match) => stripTagsToText(match[1]))
+  .filter(Boolean)
+
+const extractTabbedSectionLinesFromHtml = (html = '', sectionId) => {
+  const match = String(html ?? '').match(
+    new RegExp(
+      `<div\\s+id=["']${sectionId}["'][^>]*class=["'][^"']*tab_content[^"']*["'][^>]*>([\\s\\S]*?)<div\\s+class=["'][^"']*readmorebtn[^"']*["']`,
+      'i',
+    ),
+  )
+
+  return uniqueStrings(extractListItemsFromFragment(match?.[1]))
+}
+
 const extractSectionLines = (lines, heading, stopHeadings = []) => {
   const startIndex = lines.findIndex((line) => sameUrl(line, heading) || line.toLowerCase() === heading.toLowerCase())
   if (startIndex === -1) return []
@@ -176,6 +191,18 @@ const extractSectionLines = (lines, heading, stopHeadings = []) => {
   }
 
   return uniqueStrings(collected)
+}
+
+const extractResponsibilityLines = (html = '', lines = toTextLines(html)) => {
+  const tabLines = extractTabbedSectionLinesFromHtml(html, 'respo')
+  if (tabLines.length > 0) return tabLines
+  return extractSectionLines(lines, 'Job Responsibilities', ['Job Qualifications'])
+}
+
+const extractQualificationLines = (html = '', lines = toTextLines(html)) => {
+  const tabLines = extractTabbedSectionLinesFromHtml(html, 'qualification')
+  if (tabLines.length > 0) return tabLines
+  return extractSectionLines(lines, 'Job Qualifications')
 }
 
 export const hasOfficialCareersPageSignal = (html = '') => {
@@ -314,8 +341,8 @@ const extractDetailTitle = (html, listing = {}) =>
 export const hasOfficialJobDetailSignal = (html = '', listing = {}) => {
   const lines = toTextLines(html)
   const title = extractDetailTitle(html, listing)
-  const responsibilityLines = extractSectionLines(lines, 'Job Responsibilities', ['Job Qualifications'])
-  const qualificationLines = extractSectionLines(lines, 'Job Qualifications')
+  const responsibilityLines = extractResponsibilityLines(html, lines)
+  const qualificationLines = extractQualificationLines(html, lines)
 
   return Boolean(title)
     && lines.includes(title)
@@ -338,8 +365,8 @@ export const extractJobDetail = (html = '', listing = {}) => {
   const { location, city, state, country } = parseLocation(
     listing.location || findFirstMatch([/(Pune(?:,\s*Maharashtra(?:,\s*India)?)?)/i], lines.join('\n')),
   )
-  const responsibilityLines = extractSectionLines(lines, 'Job Responsibilities', ['Job Qualifications'])
-  const qualificationLines = extractSectionLines(lines, 'Job Qualifications')
+  const responsibilityLines = extractResponsibilityLines(html, lines)
+  const qualificationLines = extractQualificationLines(html, lines)
   const jobDescription = [
     ...buildDescriptionSection('Job Responsibilities', responsibilityLines),
     '',

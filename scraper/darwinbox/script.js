@@ -96,6 +96,8 @@ export const createDarwinboxScraper = ({
         .map((record) => {
           const jobId = normalizeWhitespace(record.id)
           const location = normalizeWhitespace(record.locations)
+          const jobDescription = normalizeWhitespace(record.jd)
+          const experienceRequired = normalizeWhitespace(record.experience)
 
           if (!jobId || !location) return null
 
@@ -110,13 +112,14 @@ export const createDarwinboxScraper = ({
             sourceUrl: buildJobDetailUrl(jobId),
             applyUrl: buildJobDetailUrl(jobId),
             employmentType: normalizeWhitespace(record.emp_type_name),
-            experienceRequired: normalizeWhitespace(record.experience),
+            experienceRequired,
             minimumQualification: null,
             preferredQualification: null,
             requiredSkills: [],
             postingDate: normalizeWhitespace(record.posted_on),
             closingDate: null,
-            jobDescription: normalizeWhitespace(record.jd),
+            jobDescription,
+            publicExperienceChecked: Boolean(jobDescription && !experienceRequired),
           }
         })
         .filter(Boolean)
@@ -128,7 +131,16 @@ export const createDarwinboxScraper = ({
     const browser = await launchBrowser()
     const page = await createOptimizedPage(browser)
 
-    await page.goto(buildCareersPageUrl(), { waitUntil: 'domcontentloaded' })
+    try {
+      await page.goto(buildCareersPageUrl(), {
+        waitUntil: 'domcontentloaded',
+        timeout: Math.max(Number(config.jobListingTimeoutMs) || 0, 60000),
+      })
+    } catch (error) {
+      if (!/Navigation timeout/i.test(String(error?.message || error))) {
+        throw error
+      }
+    }
     await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
     await delay(config.pageLoadDelayMs)
 

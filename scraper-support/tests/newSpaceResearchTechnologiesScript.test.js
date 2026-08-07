@@ -27,6 +27,24 @@ const talentManagementInternDetailHtml = readFileSync(
   path.join(fixturesDir, 'talent-management-intern-project-engineer.html'),
   'utf8',
 )
+const liveBoardHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Careers</h1>
+      <div>#56 Jobs</div>
+      <h2>Open Positions</h2>
+      <li data-portal-role="Manufacturing - SP">
+        <a href="https://newspace-talent.freshteam.com/jobs/QhcwQK0cckYH/manufacturing-sp">
+          <div class="job-title">Manufacturing - SP</div>
+          <div class="job-desc">Who we are: We are a start-up based out of Bengaluru &amp; Delhi NCR.</div>
+        </a>
+      </li>
+    </main>
+  </body>
+</html>
+`
 
 test('New Space Research Technologies constants stay pinned to the verified homepage and Freshteam board', async () => {
   const newspace = await loadModule()
@@ -45,6 +63,7 @@ test('New Space Research Technologies constants stay pinned to the verified home
     newspace.buildDetailUrl('zidPYD4pTSsg', 'associate-project-manager'),
     'https://newspace-talent.freshteam.com/jobs/zidPYD4pTSsg/associate-project-manager',
   )
+  assert.equal(newspace.hasOfficialJobsBoardSignal(liveBoardHtml), true)
 })
 
 test('extractListingJobs parses the verified Freshteam board and preserves department, summary, and work type', async () => {
@@ -174,6 +193,39 @@ test('run validates the homepage and Freshteam board before fetching detail page
   assert.equal(jobs[1].jobId, 'NDNnMWS4t4iQ')
   assert.equal(jobs[1].employmentType, 'Internship')
   assert.equal(jobs[1].jobDescription, 'Talent management intern / project engineer.')
+})
+
+test('run tolerates an unreachable homepage when the company-specific Freshteam board and detail pages remain live', async () => {
+  const newspace = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await newspace.createNewSpaceResearchTechnologiesScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === newspace.HOMEPAGE_URL) {
+        throw new Error(
+          'fetch failed | Connect Timeout Error (attempted addresses: 89.117.188.198:443, timeout: 10000ms)',
+        )
+      }
+      if (url === newspace.LISTING_URL) return listingHtml
+      if (url === 'https://newspace-talent.freshteam.com/jobs/zidPYD4pTSsg/associate-project-manager') {
+        return associateProjectManagerDetailHtml
+      }
+
+      throw new Error(`Unexpected New Space Research Technologies fixture URL: ${url}`)
+    },
+    now: () => '2026-08-03T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    newspace.HOMEPAGE_URL,
+    newspace.LISTING_URL,
+    'https://newspace-talent.freshteam.com/jobs/zidPYD4pTSsg/associate-project-manager',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'newspaceresearchtechnologies')
+  assert.equal(jobs[0].scrapedAt, '2026-08-03T00:00:00.000Z')
 })
 
 test('the scraper fails closed when the verified homepage or jobs board signatures drift', async () => {

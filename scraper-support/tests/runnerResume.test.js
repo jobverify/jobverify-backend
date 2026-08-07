@@ -17,6 +17,32 @@ const sampleScrapers = [
   { name: 'zeta' },
 ]
 
+const historicalAliasScrapers = [
+  {
+    name: 'applied-intuition.wellfoundDirectory',
+    provider: {
+      adapter: 'wellfoundDirectory',
+      companyName: 'Applied Intuition',
+    },
+  },
+  {
+    name: 'asana.himalayas.app',
+    provider: {
+      adapter: 'himalayasDirectory',
+      companyName: 'Asana',
+      himalayasCompanySlug: 'asana',
+    },
+  },
+  {
+    name: 'workiva.himalayas.app',
+    provider: {
+      adapter: 'himalayasDirectory',
+      companyName: 'Workiva',
+      himalayasCompanySlug: 'workiva',
+    },
+  },
+]
+
 test('selectScrapersForRun returns the full catalog when no resume source is set', () => {
   const result = selectScrapersForRun(sampleScrapers, {})
 
@@ -48,6 +74,29 @@ test('selectScrapersForRun runs an explicit SCRAPER_ONLY list', () => {
 
   assert.deepEqual(result.scrapers.map((scraper) => scraper.name), ['zeta', 'danfoss'])
   assert.match(result.resumeMessage, /Running selected sources \(2\/4 scrapers selected\): zeta, danfoss\./)
+})
+
+test('selectScrapersForRun resolves historical source aliases for SCRAPER_ONLY', () => {
+  const result = selectScrapersForRun(
+    historicalAliasScrapers,
+    { onlySources: 'wfappliedintuition, hmasana, hmworkiva' },
+  )
+
+  assert.deepEqual(result.scrapers.map((scraper) => scraper.name), [
+    'applied-intuition.wellfoundDirectory',
+    'asana.himalayas.app',
+    'workiva.himalayas.app',
+  ])
+})
+
+test('selectScrapersForRun resolves historical source aliases for resume pointers', () => {
+  const result = selectScrapersForRun(historicalAliasScrapers, { startAt: 'hmasana' })
+
+  assert.deepEqual(result.scrapers.map((scraper) => scraper.name), [
+    'asana.himalayas.app',
+    'workiva.himalayas.app',
+  ])
+  assert.match(result.resumeMessage, /Resuming at asana\.himalayas\.app \(2\/3 scrapers selected\)/)
 })
 
 test('selectScrapersForRun rejects ambiguous or missing resume sources', () => {

@@ -50,10 +50,41 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const decodePercentEncodedText = (value) => {
+  if (value == null) return null
+
+  const normalized = String(value).trim()
+  if (!normalized) return null
+
+  const sanitized = normalized
+    .replace(/\+/g, '%20')
+    .replace(/%(?![0-9a-f]{2})/gi, '%25')
+
+  try {
+    return decodeURIComponent(sanitized)
+  } catch {
+    return sanitized.replace(
+      /%([0-9a-f]{2})/gi,
+      (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)),
+    )
+  }
+}
+
 const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1])
 }
+
+export const extractInlinePageData = (html = '') => {
+  const match = String(html ?? '').match(/\b(?:let|var)\s+data\s*=\s*(["'])([\s\S]*?)\1/i)
+  return match ? decodePercentEncodedText(match[2]) : null
+}
+
+const buildVerifiedSurfaceText = (html = '') =>
+  normalizeWhitespace([String(html ?? ''), extractInlinePageData(html)].filter(Boolean).join(' ')) || ''
+
+const buildVerifiedSurfaceSource = (html = '') =>
+  [String(html ?? ''), extractInlinePageData(html)].filter(Boolean).join('\n')
 
 export const buildDarwinboxAllJobsUrl = () => darwinboxScraper.buildCareersPageUrl()
 export const buildDarwinboxJobDetailUrl = (jobId) => darwinboxScraper.buildJobDetailUrl(jobId)
@@ -68,16 +99,17 @@ export const extractJobsBundleUrl = (html = '') => {
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
+  const text = buildVerifiedSurfaceText(page)
+  const source = buildVerifiedSurfaceSource(page)
 
   return extractTitle(page) === 'redBus Careers'
     && text.includes('Explore open roles')
-    && /["']\/careers\/jobs["']/i.test(page)
+    && /["']\/careers\/jobs["']/i.test(source)
 }
 
 export const hasJobsPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
+  const text = buildVerifiedSurfaceText(page)
 
   return extractTitle(page) === 'redBus Careers'
     && extractJobsBundleUrl(page) !== null
@@ -95,11 +127,11 @@ export const hasDarwinboxApplyHandoffSignal = (bundle = '') => {
 
 export const hasDarwinboxShellSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
 
-  return extractTitle(page) === 'MakeMyTrip'
-    && /property=["']og:title["'][^>]+content=["']MakeMyTrip\s*["']/i.test(page)
-    && text.includes('MakeMyTrip -')
+  return /<base[^>]+href=["']\/ms\/candidatev2\/["'][^>]*>/i.test(page)
+    && /db-components\.esm\.js/i.test(page)
+    && /\/ms\/formbuilder\/assets\/db-form\/db-form\.js/i.test(page)
+    && /<app-root\b/i.test(page)
 }
 
 export const isRedBusRecord = (record = {}) => {

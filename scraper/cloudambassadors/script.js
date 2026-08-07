@@ -1,5 +1,11 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+export const SOURCE = 'cloudambassadors'
 export const CAREERS_URL = 'https://cloudambassadors.com/careers'
 export const APPLICATION_URL = 'https://cloudambassadors.com/careers/apply'
 
@@ -27,6 +33,15 @@ const extractOpenRolesSection = (html) => {
 
   const sectionEnd = text.indexOf('</section>', openRolesIndex)
   return text.slice(openRolesIndex, sectionEnd < 0 ? undefined : sectionEnd)
+}
+
+export const hasSharedApplicationSignal = (html) => {
+  const text = normalizeWhitespace(html) || ''
+
+  return /<title>\s*Cloud Ambassadors[^<]*Maximizing Cloud Impact\s*<\/title>/i.test(String(html ?? ''))
+    && /Role &amp; Experience/i.test(String(html ?? ''))
+    && /\bLocation\b/i.test(text)
+    && /\bEmail\b/i.test(text)
 }
 
 export const extractCareerListings = (html) => {
@@ -60,6 +75,7 @@ export const extractCareerListings = (html) => {
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
       remoteStatus: null,
     }
   })
@@ -76,9 +92,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createCloudAmbassadorsScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchText(CAREERS_URL)
+    const applicationHtml = await fetchText(APPLICATION_URL)
 
-    return extractCareerListings(html).map((job) => ({
+    if (!hasSharedApplicationSignal(applicationHtml)) {
+      throw new Error('Cloud Ambassadors shared apply page no longer matches the verified public application surface')
+    }
+
+    return extractCareerListings(careersHtml).map((job) => ({
       ...job,
       source: 'cloudambassadors',
       link: job.applyUrl,
@@ -88,3 +109,30 @@ export const createCloudAmbassadorsScraper = () => ({
 })
 
 export const run = async () => createCloudAmbassadorsScraper().run()
+
+export const runStandalone = async ({
+  argv = process.argv,
+  fetchText,
+  saveToFile,
+  saveToDB,
+} = {}) => {
+  const jobs = await createCloudAmbassadorsScraper().run({
+    fetchText: fetchText ?? defaultFetchText,
+  })
+
+  if (argv.includes('--dry-run')) {
+    const writeJobsToFile = saveToFile
+      ?? (await import('../../scraper-support/utils/saveToDB.js')).saveToFile
+    writeJobsToFile(jobs, path.join(currentDir, 'jobs.json'))
+    return jobs
+  }
+
+  const persistJobsToDb = saveToDB
+    ?? (await import('../../scraper-support/utils/saveToDB.js')).saveToDB
+  await persistJobsToDb(jobs, SOURCE)
+  return jobs
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await runStandalone()
+}

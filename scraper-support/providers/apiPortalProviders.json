@@ -4,15 +4,14 @@
     "companyName": "Atlassian",
     "companyCareerPage": "https://www.atlassian.com/company/careers/all-jobs",
     "countryFilter": "India",
-    "atsPlatform": "lever",
+    "atsPlatform": "icims",
     "paginationStrategy": "single-page",
     "extractionStrategy": "api",
     "parser": "api-portal",
     "normalizationProfile": "engineering-default",
-    "template": "lever",
+    "template": "atlassian",
     "templateOptions": {
-      "boardToken": "atlassian",
-      "locationPattern": "india|bengaluru|bangalore|pune"
+      "locationPattern": "india|bengaluru|bangalore|pune|hyderabad|mumbai|gurgaon|gurugram|chennai|delhi|noida|remote - india"
     }
   },
   {

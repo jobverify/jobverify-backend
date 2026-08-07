@@ -301,7 +301,7 @@ const defaultFetchText = async (url) => {
 export const createBaxterScraper = ({
   maxPages = Number.POSITIVE_INFINITY,
   maxJobs = null,
-  includeDetails = false,
+  includeDetails = true,
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText

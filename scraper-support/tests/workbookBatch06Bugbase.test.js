@@ -2,47 +2,15 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 const VERIFIED_SURFACE_HTML = `
-  <html>
+  <html lang="en">
+    <head>
+      <title>BugBase</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <link rel="stylesheet" href="/_next/static/css/app.css" />
+    </head>
     <body>
-      <main>
-        <h1>Are You A Corporation?</h1>
-        <p>
-          BugBase keeps businesses safe by providing an all-in-one platform to perform
-          continuous and comprehensive security testing.
-        </p>
-        <a href="/contact-sales">Join Us</a>
-        <a href="/demo">Request Demo</a>
-        <h2>Vulnerability Disclosure Program</h2>
-        <p>
-          Provide bounty hunters across the world a legal channel to report their security
-          findings to you a.k.a ISO 29147 Compliance
-        </p>
-        <h2>Managed Bug Bounty Program</h2>
-        <p>
-          An active crowdsourced security initiative. We streamline the process by
-          filtering bug reports, managing payouts and more so that you can focus on
-          resolving bugs.
-        </p>
-        <h2>Private Bug Bounty Program</h2>
-        <p>
-          Engage with verified, skilled and elite bounty hunters in our Apollo Community
-          for fast-paced pentests and see results in real-time.
-        </p>
-        <h2>CTF Hosting &amp; Hiring Challenges</h2>
-        <p>
-          Recruitment of top security engineers is made easy by hosting a competition or
-          CTF on the BugBase platform.
-        </p>
-        <h2>Enterprise Pentesting and VAPT</h2>
-        <p>
-          Enterprise VAPT done right following OWASP, NIST, NIC, SANS and CERT-In
-          guidelines covering all compliance requirements.
-        </p>
-        <p>San Francisco, CA, USA</p>
-        <p>77 High Street, Singapore</p>
-        <p>New Delhi, India</p>
-        <p>queries@bugbase.ai</p>
-      </main>
+      <div id="__next"></div>
+      <script src="/_next/static/chunks/main-app.js"></script>
     </body>
   </html>
 `
@@ -78,7 +46,7 @@ test('BugBase validates the verified official public surface and returns [] whil
   )
   assert.match(
     bugbase.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/bugbase\.ai\/companies was the live official BugBase public company surface/i,
+    /Verified on Saturday, August 1, 2026 that https:\/\/bugbase\.ai\/companies was the live official BugBase public company surface/i,
   )
   assert.match(
     bugbase.VERIFIED_SURFACE_SUMMARY,
@@ -87,6 +55,10 @@ test('BugBase validates the verified official public surface and returns [] whil
   assert.match(
     bugbase.VERIFIED_SURFACE_SUMMARY,
     /no trustworthy enumerable public jobs contract/i,
+  )
+  assert.match(
+    bugbase.VERIFIED_SURFACE_SUMMARY,
+    /thin exact-company Next\.js shell/i,
   )
 })
 

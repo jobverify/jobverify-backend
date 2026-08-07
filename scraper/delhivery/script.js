@@ -131,11 +131,16 @@ const buildLinkMap = (surface = {}) => new Map(
     .filter(([text, href]) => text && href),
 )
 
-const captureRenderedSurface = async ({ url, waitForTextPattern }) => {
-  const browser = await launchBrowser()
+const captureRenderedSurface = async ({
+  url,
+  waitForTextPattern,
+  launchBrowserImpl = launchBrowser,
+  createPage = (browser) => createOptimizedPage(browser),
+}) => {
+  const browser = await launchBrowserImpl()
 
   try {
-    const page = await createOptimizedPage(browser)
+    const page = await createPage(browser)
     await page.goto(url, {
       waitUntil: 'domcontentloaded',
       timeout: 120000,
@@ -172,6 +177,15 @@ const captureRenderedSurface = async ({ url, waitForTextPattern }) => {
     await browser.close()
   }
 }
+
+export const captureOfficialCareersSurface = ({
+  launchBrowserImpl = launchBrowser,
+} = {}) => captureRenderedSurface({
+  url: OFFICIAL_CAREERS_URL,
+  waitForTextPattern: /Jobs at Delhivery/i,
+  launchBrowserImpl,
+  createPage: (browser) => browser.newPage(),
+})
 
 const createBrowserListingContext = async ({ pageSize = DEFAULT_PAGE_SIZE } = {}) => {
   const browser = await launchBrowser()
@@ -284,21 +298,26 @@ export const hasOfficialDelhiveryCareersSignals = (surface = {}) => {
 
   return title === "Build Your Career with Delhivery – Join India's Leading Logistics Innovator"
     && text.includes('Build a career at Delhivery')
-    && text.includes('Jobs at Delhivery')
     && linkMap.get('Jobs at Delhivery') === OFFICIAL_CAREERS_HANDOFF_URL
     && linkMap.get('Corporate Jobs') === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
 export const hasPublicDarwinboxHomeSignal = (surface = {}) => {
+  const url = normalizeLink(surface.url)
   const title = normalizeText(surface.title)
   const text = normalizeText(surface.text) || ''
   const links = Array.isArray(surface.links) ? surface.links : []
 
-  return title === OFFICIAL_BRAND_NAME
-    && text.includes('Thank you for choosing us for your next chapter!')
+  const hasRichShellSignals = text.includes('Thank you for choosing us for your next chapter!')
     && /We Have\s+\d+\s+Open Jobs/i.test(text)
     && text.includes('Powered by: darwinbox')
     && links.some((link) => normalizeLink(link?.href) === PUBLIC_ALL_JOBS_URL)
+
+  const hasMinimalShellSignals = url === PUBLIC_PORTAL_HOME_URL
+    && text === `${OFFICIAL_BRAND_NAME} -`
+
+  return title === OFFICIAL_BRAND_NAME
+    && (hasRichShellSignals || hasMinimalShellSignals)
 }
 
 export const createDelhiveryScraper = ({
@@ -308,10 +327,7 @@ export const createDelhiveryScraper = ({
   async run({
     maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-    getOfficialCareersSurface = () => captureRenderedSurface({
-      url: OFFICIAL_CAREERS_URL,
-      waitForTextPattern: /Jobs at Delhivery/i,
-    }),
+    getOfficialCareersSurface = () => captureOfficialCareersSurface(),
     getBrowserListingContext = () => createBrowserListingContext({ pageSize }),
   } = {}) {
     const officialSurface = await getOfficialCareersSurface()

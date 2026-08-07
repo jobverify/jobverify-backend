@@ -44,6 +44,19 @@ const isPublicJobsUrl = (url) => {
   return CAREER_PATH_PATTERN.test(url.pathname) || ATS_HOST_PATTERN.test(url.hostname)
 }
 
+const normalizeComparablePath = (pathname) => {
+  const normalizedPath = String(pathname || '/').replace(/\/+$/g, '')
+  return normalizedPath || '/'
+}
+
+const isSamePageUrl = (candidateUrl, pageUrl) => {
+  const absolutePageUrl = toAbsoluteUrl(pageUrl)
+  if (!candidateUrl || !absolutePageUrl) return false
+  return candidateUrl.origin === absolutePageUrl.origin
+    && normalizeComparablePath(candidateUrl.pathname) === normalizeComparablePath(absolutePageUrl.pathname)
+    && candidateUrl.search === absolutePageUrl.search
+}
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -74,7 +87,7 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('rupanjali')
 }
 
-export const hasPublicJobsSignal = (html) => {
+export const hasPublicJobsSignal = (html, pageUrl = HOMEPAGE_URL) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
@@ -88,6 +101,10 @@ export const hasPublicJobsSignal = (html) => {
 
   for (const match of rawHtml.matchAll(/href=["']([^"']+)["']/gi)) {
     const absoluteUrl = toAbsoluteUrl(match[1])
+    if (isSamePageUrl(absoluteUrl, pageUrl)) {
+      continue
+    }
+
     if (isPublicJobsUrl(absoluteUrl)) {
       return true
     }
@@ -96,13 +113,13 @@ export const hasPublicJobsSignal = (html) => {
   return false
 }
 
-export const hasSoft404NonListingSignal = (html) => {
+export const hasSoft404NonListingSignal = (html, pageUrl) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
   return /<title[^>]*>\s*Page not found\s*<\/title>/i.test(rawHtml)
     && normalized.includes('page not found')
-    && !hasPublicJobsSignal(rawHtml)
+    && !hasPublicJobsSignal(rawHtml, pageUrl)
 }
 
 export const createRsAcademyScraper = () => ({
@@ -113,14 +130,14 @@ export const createRsAcademyScraper = () => ({
       throw new Error('RS Academy verified official homepage no longer matches the known public surface')
     }
 
-    if (hasPublicJobsSignal(homepage.html)) {
+    if (hasPublicJobsSignal(homepage.html, homepage.url || HOMEPAGE_URL)) {
       throw new Error('RS Academy homepage now exposes a public careers or jobs signal')
     }
 
     for (const routeUrl of NON_LISTING_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
 
-      if (routePage.status !== 200 || !hasSoft404NonListingSignal(routePage.html)) {
+      if (routePage.status !== 200 || !hasSoft404NonListingSignal(routePage.html, routePage.url || routeUrl)) {
         throw new Error(`RS Academy verified non-listing route changed: ${routePage.url || routeUrl}`)
       }
     }

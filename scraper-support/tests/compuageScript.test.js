@@ -114,7 +114,7 @@ test('Compuage scraper validates the official careers page and extracts inline o
 
   assert.equal(compuage.SOURCE, 'compuage')
   assert.equal(compuage.COMPANY, 'Compuage Infocom Ltd')
-  assert.equal(compuage.CAREERS_URL, 'https://www.compuageindia.com/careers')
+  assert.equal(compuage.CAREERS_URL, 'http://www.compuageindia.com/careers')
   assert.equal(compuage.APPLICATION_EMAIL, 'careers@compuageindia.com')
   assert.equal(compuage.hasOfficialCareersSignal(officialCareersHtml), true)
 
@@ -130,8 +130,8 @@ test('Compuage scraper validates the official careers page and extracts inline o
     country: 'India',
     jobId: 'assistant-manager-hr',
     requisitionId: 'assistant-manager-hr',
-    sourceUrl: 'https://www.compuageindia.com/careers',
-    applyUrl: 'https://www.compuageindia.com/careers',
+    sourceUrl: 'http://www.compuageindia.com/careers',
+    applyUrl: 'http://www.compuageindia.com/careers',
     employmentType: null,
     experienceRequired: '5-8 Years',
     minimumQualification: 'Human Resources',
@@ -184,8 +184,8 @@ test('Compuage run fetches the careers page and decorates the shared scraper met
     country: 'India',
     jobId: 'compuage-assitant-product-manager-networking',
     requisitionId: 'compuage-assitant-product-manager-networking',
-    sourceUrl: 'https://www.compuageindia.com/careers',
-    applyUrl: 'https://www.compuageindia.com/careers',
+    sourceUrl: 'http://www.compuageindia.com/careers',
+    applyUrl: 'http://www.compuageindia.com/careers',
     employmentType: null,
     experienceRequired: '8 - 10 Years',
     minimumQualification: 'Graduate / MBA Graduate',
@@ -198,7 +198,7 @@ test('Compuage run fetches the careers page and decorates the shared scraper met
     jobDescription: "Job Profile: Responsible to achieve pre-agreed sales target. Keeping track of channel sales on daily / weekly basis. Desired Candidate's Profile: Must possess good communication skills Knowledge of channel / distribution sales. Apply via the Compuage careers page or careers@compuageindia.com.",
     remoteStatus: 'On-site',
     source: 'compuage',
-    link: 'https://www.compuageindia.com/careers',
+    link: 'http://www.compuageindia.com/careers',
     scrapedAt: jobs[2].scrapedAt,
   })
   assert.match(jobs[2].scrapedAt, /\d{4}-\d{2}-\d{2}T/)

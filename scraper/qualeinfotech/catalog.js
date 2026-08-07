@@ -20,9 +20,9 @@ export const QUALE_INFOTECH_CATALOG = {
     'verified-first-party-homepage+about+contact-without-public-careers-or-jobs+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://qualeinfotech.com/ remained the live exact-name Quale Infotech homepage with Generative AI marketing copy and India office contact details, while https://qualeinfotech.com/about-us/ and https://qualeinfotech.com/contact-us/ exposed only company profile and contact-form content. No public careers or jobs page was exposed on the verified first-party surfaces, so this provider stays fail-closed.',
+    'Verified on Tuesday, August 4, 2026 that https://qualeinfotech.com/ remained the live exact-name Quale Infotech homepage with Generative AI marketing copy and India office contact details, while https://qualeinfotech.com/about-us/ and https://qualeinfotech.com/contact-us/ exposed only company profile and contact-form content. The common public careers routes /careers, /jobs, and /join-us returned first-party 404 pages, so no public careers or jobs page was exposed on the verified first-party surfaces.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'qualeinfotech/jobs.json',
 }

@@ -191,9 +191,11 @@ test('extractIndiaJobs flattens Techolution category roles and carries category 
     postingDate: '2026-04-02',
     closingDate: null,
     jobDescription: 'Translate complex business requirements into client-ready technical proposals.',
+    publicExperienceChecked: true,
   })
   assert.equal(jobs[1].department, 'Project Management')
   assert.equal(jobs[1].title, 'Operations Project Manager')
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
 test('extractJobDetail merges the Techolution detail payload into the shared job shape', async () => {
@@ -218,6 +220,7 @@ test('extractJobDetail merges the Techolution detail payload into the shared job
   assert.match(detail.jobDescription, /client-ready technical proposals/i)
   assert.match(detail.jobDescription, /Create detailed work breakdown structures/i)
   assert.match(detail.jobDescription, /Google Cloud Platform and Gemini experience/i)
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('run fetches the Techolution listing and detail APIs, then decorates India jobs', async () => {
@@ -249,8 +252,10 @@ test('run fetches the Techolution listing and detail APIs, then decorates India 
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'techolution')
   assert.equal(jobs[0].company, 'Techolution')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-09T00:00:00.000Z')
   assert.equal(jobs[1].department, 'Project Management')
   assert.equal(jobs[1].location, 'Hyderabad, India')
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })

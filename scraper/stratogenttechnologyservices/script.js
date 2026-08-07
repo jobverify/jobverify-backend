@@ -44,21 +44,21 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers\s*-\s*Stratogent\s*<\/title>/i.test(page)
-    && text.includes('JOIN US!')
+  return /<title>\s*PTP India Careers:\s*Grow Fast in Biotech &(?:amp;|&)\s*Life Sciences IT\s*<\/title>/i.test(page)
+    && text.includes('Opportunities at PTP / Stratogent: Build trusted life sciences cloud from India')
     && text.includes('always hiring')
-    && text.includes('careers@stratogent.com')
-    && text.includes('careers-india@stratogent.com')
+    && (/mailto:careers-india@stratogent\.com/i.test(page) || text.includes('careers-india@stratogent.com'))
 }
 
 export const hasPublicJobsSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /jobposting/i.test(page)
-    || /class=["'][^"']*(job-card|opening-card|position-card)[^"']*["']/i.test(page)
-    || /href=["'][^"']+\/careers\/[^"']+["']/i.test(page)
+  return /class=["'][^"']*(job-card|opening-card|position-card)[^"']*["']/i.test(page)
+    || /\bcurrent openings?\b/i.test(page)
+    || /\bjob openings?\b/i.test(page)
+    || /\bopen positions?\b/i.test(page)
+    || /\bapply now\b/i.test(page)
     || /href=["'][^"']+\/jobs\/[^"']+["']/i.test(page)
-    || /<form\b/i.test(page)
 }
 
 export const createStratogentTechnologyServicesScraper = () => ({

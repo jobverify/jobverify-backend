@@ -21,12 +21,12 @@ const USER_AGENT =
 const HOMEPAGE_SIGNAL_PATTERNS = [
   /\bthe ramco cements limited\b/i,
   /\bfake job disclaimer\b/i,
-  /linkedin\.com\/company\/theramcocementsltd/i,
+  /linkedin\.com\/company\/(?:the-ramco-cements-limited|theramcocementsltd)/i,
 ]
 
 const LIFE_AT_RAMCO_SIGNAL_PATTERNS = [
   /\blife at ramco\b/i,
-  /\bpeople\b/i,
+  /\bfake job disclaimer\b/i,
   /\bramco\b/i,
 ]
 
@@ -40,6 +40,18 @@ const normalizeText = (value) => String(value ?? '')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const extractNextPageKey = (html) => {
+  const nextDataMatch = String(html ?? '').match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/is)
+  if (!nextDataMatch) return null
+
+  try {
+    const nextData = JSON.parse(nextDataMatch[1])
+    return typeof nextData?.page === 'string' ? nextData.page : null
+  } catch {
+    return null
+  }
+}
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -58,10 +70,12 @@ const defaultFetchPage = async (url) => {
 }
 
 export const hasOfficialHomepageSignal = (html) =>
-  HOMEPAGE_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+  extractNextPageKey(html) === '/'
+  && HOMEPAGE_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
 
 export const hasLifeAtRamcoSignal = (html) =>
-  LIFE_AT_RAMCO_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+  extractNextPageKey(html) === '/about/life-at-ramco'
+  && LIFE_AT_RAMCO_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
 
 export const hasMissingRouteSignal = ({ status, html }) => {
   const normalized = normalizeText(html).toLowerCase()

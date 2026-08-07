@@ -7,7 +7,7 @@ const culturePageHtml = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <title>Culture & Engagement | Hinge Health</title>
+    <title data-gatsby-head="true">Culture & Engagement | Hinge Health</title>
   </head>
   <body>
     <h1>People-first. Culture-forward. Always learning.</h1>
@@ -331,7 +331,7 @@ test('Hinge Health India fails closed when the verified culture page or Ashby pa
         culturePageHtml.replace('https://jobs.ashbyhq.com/hinge-health', 'https://jobs.ashbyhq.com/other'),
       fetchJson: async () => ashbyPayload,
     }),
-    /verified ashby public board handoff/i,
+    /verified hinge health india official culture page/i,
   )
 
   await assert.rejects(

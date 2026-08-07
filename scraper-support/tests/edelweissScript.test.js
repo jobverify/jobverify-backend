@@ -1,7 +1,24 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const browserVerifiedCareersHtml = `
+const homepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Top Finance Company in Mumbai, India | Best in Investment &amp; Advisory Services - Edelweiss Finance</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/edelweisscareers">Careers</a>
+    </nav>
+    <main>
+      <h1>Top Finance Company in Mumbai, India</h1>
+    </main>
+  </body>
+</html>
+`
+
+const informationalCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
@@ -25,13 +42,37 @@ const browserVerifiedCareersHtml = `
 </html>
 `
 
-const blockedDirectFetchHtml = (url) => `
+const robotsNotFoundHtml = `
+<!doctype html>
 <html>
-  <head><title>Access Denied</title></head>
+  <head><title>404 Not Found</title></head>
+  <body><h1>404 Not Found</h1></body>
+</html>
+`
+
+const sitemapIndexXml = `
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://www.edelweissfin.com/post-sitemap.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.edelweissfin.com/page-sitemap.xml</loc>
+  </sitemap>
+</sitemapindex>
+`
+
+const joinUsLandingHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Join us for a Session for EdelweissPartners App Demo Session Part II on 21st Nov, 2020 at 4.30pm - EdelweissFin</title>
+  </head>
   <body>
-    <h1>Access Denied</h1>
-    You don't have permission to access "${url}" on this server.
-    <p>https://errors.edgesuite.net/18.e5eec817.1784074417.38217eb</p>
+    <main>
+      <h1>Join us for a Session</h1>
+      <p>Edelweiss event update.</p>
+    </main>
   </body>
 </html>
 `
@@ -62,21 +103,24 @@ const loadModule = async () => {
   }
 }
 
-test('Edelweiss pins the verified browser careers page and the Akamai-blocked direct-fetch routes from July 15, 2026', async () => {
+test('Edelweiss pins the verified readable homepage, informational careers page, and no-public-job route contract from August 2, 2026', async () => {
   const edelweiss = await loadModule()
 
   assert.equal(edelweiss.SOURCE, 'edelweiss')
   assert.equal(edelweiss.COMPANY, 'Edelweiss')
   assert.equal(edelweiss.OFFICIAL_BRAND_NAME, 'Edelweiss')
-  assert.equal(edelweiss.VERIFIED_AT, '2026-07-15')
+  assert.equal(edelweiss.VERIFIED_AT, '2026-08-02')
   assert.equal(edelweiss.ROOT_URL, 'https://www.edelweissfin.com/')
   assert.equal(edelweiss.CAREERS_URL, 'https://www.edelweissfin.com/edelweisscareers')
+  assert.equal(edelweiss.ROBOTS_URL, 'https://www.edelweissfin.com/robots.txt')
+  assert.equal(edelweiss.SITEMAP_URL, 'https://www.edelweissfin.com/sitemap.xml')
+  assert.equal(edelweiss.SITEMAP_INDEX_URL, 'https://www.edelweissfin.com/sitemap_index.xml')
   assert.equal(edelweiss.APPLICATION_EMAIL, 'GroupTalent.Acquisition@edelweissfin.com')
   assert.equal(
     edelweiss.APPLICATION_URL,
     'mailto:GroupTalent.Acquisition@edelweissfin.com',
   )
-  assert.deepEqual(edelweiss.BLOCKED_ROUTE_URLS, [
+  assert.deepEqual(edelweiss.VERIFIED_ROUTE_URLS, [
     'https://www.edelweissfin.com/',
     'https://www.edelweissfin.com/edelweisscareers',
     'https://www.edelweissfin.com/robots.txt',
@@ -87,24 +131,38 @@ test('Edelweiss pins the verified browser careers page and the Akamai-blocked di
     'https://www.edelweissfin.com/join-us',
     'https://www.edelweissfin.com/work-with-us',
   ])
-  assert.equal(edelweiss.hasVerifiedInformationalCareersSignal(browserVerifiedCareersHtml), true)
-  assert.equal(edelweiss.hasPublicJobListingSignal(browserVerifiedCareersHtml), false)
-  assert.equal(edelweiss.hasVerifiedInformationalCareersSignal(publicJobsHtml), false)
-  assert.equal(edelweiss.hasPublicJobListingSignal(publicJobsHtml), true)
+  assert.equal(edelweiss.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(edelweiss.hasVerifiedInformationalCareersSignal(informationalCareersHtml), true)
+  assert.equal(edelweiss.hasPublicJobListingSignal(informationalCareersHtml), false)
+  assert.equal(edelweiss.hasMissingRobotsSignal({ status: 404, html: robotsNotFoundHtml }), true)
   assert.equal(
-    edelweiss.isVerifiedBlockedDirectFetchSurface(
-      {
-        status: 403,
-        url: edelweiss.ROOT_URL,
-        html: blockedDirectFetchHtml(edelweiss.ROOT_URL),
-      },
-      edelweiss.ROOT_URL,
-    ),
+    edelweiss.hasVerifiedSitemapSignal({
+      status: 200,
+      url: edelweiss.SITEMAP_INDEX_URL,
+      html: sitemapIndexXml,
+    }),
     true,
   )
+  assert.equal(
+    edelweiss.isKnownLegacyNoPublicJobRoute({
+      status: 200,
+      url: edelweiss.ROOT_URL,
+      html: homepageHtml,
+    }),
+    true,
+  )
+  assert.equal(
+    edelweiss.isKnownLegacyNoPublicJobRoute({
+      status: 200,
+      url: 'https://www.edelweissfin.com/join-us-for-a-session-for-edelweisspartners-app-demo-session-part-ii-on-21st-nov-2020-at-4-30pm/',
+      html: joinUsLandingHtml,
+    }),
+    true,
+  )
+  assert.equal(edelweiss.hasPublicJobListingSignal(publicJobsHtml), true)
 })
 
-test('Edelweiss returns no jobs only while the verified direct-fetch routes remain Akamai-blocked', async () => {
+test('Edelweiss returns no jobs only while the verified readable no-public-jobs surface remains stable', async () => {
   const edelweiss = await loadModule()
   const requestedUrls = []
 
@@ -112,44 +170,106 @@ test('Edelweiss returns no jobs only while the verified direct-fetch routes rema
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
-      if (edelweiss.BLOCKED_ROUTE_URLS.includes(url)) {
-        return { status: 403, url, html: blockedDirectFetchHtml(url) }
+      if (url === edelweiss.ROOT_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === edelweiss.CAREERS_URL) {
+        return { status: 200, url, html: informationalCareersHtml }
+      }
+
+      if (url === edelweiss.ROBOTS_URL) {
+        return { status: 404, url, html: robotsNotFoundHtml }
+      }
+
+      if (url === edelweiss.SITEMAP_URL) {
+        return { status: 200, url: edelweiss.SITEMAP_INDEX_URL, html: sitemapIndexXml }
+      }
+
+      if (url === 'https://www.edelweissfin.com/join-us') {
+        return {
+          status: 200,
+          url: 'https://www.edelweissfin.com/join-us-for-a-session-for-edelweisspartners-app-demo-session-part-ii-on-21st-nov-2020-at-4-30pm/',
+          html: joinUsLandingHtml,
+        }
+      }
+
+      if (edelweiss.VERIFIED_ROUTE_URLS.slice(4).includes(url)) {
+        return { status: 200, url: edelweiss.ROOT_URL, html: homepageHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, edelweiss.BLOCKED_ROUTE_URLS)
+  assert.deepEqual(requestedUrls, edelweiss.VERIFIED_ROUTE_URLS)
   assert.deepEqual(jobs, [])
 })
 
-test('Edelweiss fails closed when a blocked direct-fetch route changes or starts exposing public jobs', async () => {
+test('Edelweiss fails closed when the homepage, careers page, sitemap, or legacy no-public-job routes drift', async () => {
   const edelweiss = await loadModule()
 
   await assert.rejects(
     edelweiss.createEdelweissScraper().run({
       fetchPage: async (url) => {
-        if (url === edelweiss.BLOCKED_ROUTE_URLS[0]) {
+        if (url === edelweiss.ROOT_URL) {
           return { status: 200, url, html: '<html><body>Unexpected homepage</body></html>' }
         }
 
-        return { status: 403, url, html: blockedDirectFetchHtml(url) }
+        throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified blocked direct-fetch surface changed/i,
+    /verified homepage/i,
   )
 
   await assert.rejects(
     edelweiss.createEdelweissScraper().run({
       fetchPage: async (url) => {
-        if (url === edelweiss.BLOCKED_ROUTE_URLS[0]) {
+        if (url === edelweiss.ROOT_URL) {
+          return { status: 200, url, html: homepageHtml }
+        }
+
+        if (url === edelweiss.CAREERS_URL) {
           return { status: 200, url, html: publicJobsHtml }
         }
 
-        return { status: 403, url, html: blockedDirectFetchHtml(url) }
+        throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /blocked direct-fetch route now appears to expose public jobs/i,
+    /informational careers page|public jobs/i,
+  )
+
+  await assert.rejects(
+    edelweiss.createEdelweissScraper().run({
+      fetchPage: async (url) => {
+        if (url === edelweiss.ROOT_URL) return { status: 200, url, html: homepageHtml }
+        if (url === edelweiss.CAREERS_URL) return { status: 200, url, html: informationalCareersHtml }
+        if (url === edelweiss.ROBOTS_URL) return { status: 404, url, html: robotsNotFoundHtml }
+        if (url === edelweiss.SITEMAP_URL) return { status: 200, url, html: '<xml></xml>' }
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    }),
+    /verified sitemap route/i,
+  )
+
+  await assert.rejects(
+    edelweiss.createEdelweissScraper().run({
+      fetchPage: async (url) => {
+        if (url === edelweiss.ROOT_URL) return { status: 200, url, html: homepageHtml }
+        if (url === edelweiss.CAREERS_URL) return { status: 200, url, html: informationalCareersHtml }
+        if (url === edelweiss.ROBOTS_URL) return { status: 404, url, html: robotsNotFoundHtml }
+        if (url === edelweiss.SITEMAP_URL) {
+          return { status: 200, url: edelweiss.SITEMAP_INDEX_URL, html: sitemapIndexXml }
+        }
+        if (url === edelweiss.VERIFIED_ROUTE_URLS[4]) {
+          return { status: 200, url, html: publicJobsHtml }
+        }
+        if (edelweiss.VERIFIED_ROUTE_URLS.slice(5).includes(url)) {
+          return { status: 200, url: edelweiss.ROOT_URL, html: homepageHtml }
+        }
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    }),
+    /legacy career-like route changed materially/i,
   )
 })

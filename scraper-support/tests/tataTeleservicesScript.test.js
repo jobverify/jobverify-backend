@@ -4,11 +4,14 @@ import test from 'node:test'
 const OFFICIAL_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Tata Tele Business Services - Careers</title>
+  </head>
   <body>
     <main>
       <h1>Your journey to Do Big starts here!</h1>
       <p>Work on technology that matters.</p>
-      <a href="https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?mode=job-location">View All Openings</a>
+      <a href="https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?mode=job-location">View All Openings</a>
       <footer>
         <p>TATA is a registered trademark of Tata Sons Private Limited</p>
         <p>© 2026 Tata Teleservices Limited</p>
@@ -41,11 +44,11 @@ const OFFICIAL_CANDIDATE_EXPERIENCE_HTML = `
 const LISTING_PAYLOAD = {
   items: [{
     Limit: 3,
-    TotalJobsCount: 13,
-    SiteNumber: 'CX_1',
+    TotalJobsCount: 11,
+    SiteNumber: 'CX_1001',
     organizationsFacet: [
-      { Id: 300000002776886, Name: 'Tata Teleservices Ltd', TotalCount: 7 },
-      { Id: 300000002776867, Name: 'Tata Teleservices (Maharashtra) Limited', TotalCount: 6 },
+      { Id: 300000002776886, Name: 'Tata Teleservices Ltd', TotalCount: 6 },
+      { Id: 300000002776867, Name: 'Tata Teleservices (Maharashtra) Limited', TotalCount: 5 },
     ],
     workplaceTypesFacet: [
       { Id: 'ORA_ON_SITE', Name: 'On-site', TotalCount: 13 },
@@ -146,19 +149,19 @@ test('Tata Teleservices keeps the verified TTBS careers handoff and Oracle candi
   assert.equal(tata.SOURCE, 'tatateleservices')
   assert.equal(tata.COMPANY_NAME, 'Tata Teleservices')
   assert.equal(tata.OFFICIAL_BRAND_NAME, 'Tata Teleservices Limited')
-  assert.equal(tata.VERIFIED_AT, '2026-07-17')
+  assert.equal(tata.VERIFIED_AT, '2026-08-01')
   assert.equal(tata.HOMEPAGE_URL, 'https://www.tatatelebusiness.com/')
   assert.equal(tata.OFFICIAL_CAREERS_URL, 'https://www.tatatelebusiness.com/careers/')
   assert.equal(
     tata.OFFICIAL_JOBS_HANDOFF_URL,
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?mode=job-location',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?mode=job-location',
   )
   assert.equal(
     tata.CANDIDATE_EXPERIENCE_URL,
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?mode=job-location',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?mode=job-location',
   )
   assert.equal(tata.WORKSPACE_DOMAIN, 'fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com')
-  assert.equal(tata.SITE_NUMBER, 'CX_1')
+  assert.equal(tata.SITE_NUMBER, 'CX_1001')
   assert.equal(tata.hasOfficialCareersPageSignal(OFFICIAL_CAREERS_HTML), true)
   assert.equal(
     tata.hasOfficialCandidateExperienceSignal(OFFICIAL_CANDIDATE_EXPERIENCE_HTML),
@@ -167,24 +170,24 @@ test('Tata Teleservices keeps the verified TTBS careers handoff and Oracle candi
   assert.equal(tata.hasVerifiedTataListingSignal(LISTING_PAYLOAD), true)
 })
 
-test('Tata Teleservices keeps Oracle finder, detail, and public job URLs pinned to the verified CX_1 surface', async () => {
+test('Tata Teleservices keeps Oracle finder, detail, and public job URLs pinned to the verified CX_1001 surface', async () => {
   const tata = await loadScriptModule()
 
   assert.equal(
     tata.buildSearchUrl(),
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1,limit=24,offset=0,location=India',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1001,limit=24,offset=0,location=India',
   )
   assert.equal(
     tata.buildSearchUrl({ page: 2, limit: 10 }),
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1,limit=10,offset=20,location=India',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1001,limit=10,offset=20,location=India',
   )
   assert.equal(
     tata.buildJobDetailUrl('2258'),
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/2258',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/2258',
   )
   assert.equal(
     tata.buildJobDetailApiUrl('2258'),
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%222258%22,siteNumber=CX_1',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%222258%22,siteNumber=CX_1001',
   )
 })
 
@@ -202,8 +205,8 @@ test('extractSearchResults and extractJobDetail normalize Tata Teleservices Orac
     country: 'India',
     jobId: '2258',
     requisitionId: '2258',
-    sourceUrl: 'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/2258',
-    applyUrl: 'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/2258',
+    sourceUrl: 'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/2258',
+    applyUrl: 'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/2258',
     employmentType: null,
     experienceRequired: null,
     minimumQualification: null,
@@ -213,7 +216,7 @@ test('extractSearchResults and extractJobDetail normalize Tata Teleservices Orac
     closingDate: null,
     jobDescription: null,
     remoteStatus: null,
-    siteNumber: 'CX_1',
+    siteNumber: 'CX_1001',
   })
 
   const detail = tata.extractJobDetail(DETAIL_PAYLOAD, listings[0])
@@ -242,7 +245,7 @@ test('run verifies the TTBS careers page, Oracle shell, and Tata listing contrac
   const jobs = await tata.createTataTeleservicesScraper({
     maxPages: 1,
     maxJobs: 1,
-    now: () => '2026-07-17T00:00:00.000Z',
+    now: () => '2026-08-01T00:00:00.000Z',
     fetchText: async (url) => {
       requestedTextUrls.push(url)
       if (url === tata.OFFICIAL_CAREERS_URL) return OFFICIAL_CAREERS_HTML
@@ -270,9 +273,9 @@ test('run verifies the TTBS careers page, Oracle shell, and Tata listing contrac
   assert.equal(jobs[0].company, 'Tata Teleservices')
   assert.equal(
     jobs[0].link,
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/2258',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/2258',
   )
-  assert.equal(jobs[0].scrapedAt, '2026-07-17T00:00:00.000Z')
+  assert.equal(jobs[0].scrapedAt, '2026-08-01T00:00:00.000Z')
 })
 
 test('run fails closed when the TTBS handoff, Oracle shell, or Tata listing contract drifts materially', async () => {

@@ -297,6 +297,7 @@ export const createYokogawaIndiaScraper = ({
           preferredQualification: detailPayload.preferredQualification,
           requiredSkills: detailPayload.requiredSkills,
           experienceRequired: detailPayload.experienceRequired,
+          publicExperienceChecked: detailPayload.publicExperienceChecked,
           requisitionId: detailPayload.requisitionId || jobId,
           scrapedAt: new Date().toISOString(),
         })

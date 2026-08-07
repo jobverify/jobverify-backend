@@ -1,0 +1,276 @@
+[
+  {
+    "title": "Technical Product Specialist",
+    "company": "Clarisights",
+    "department": "Customer Success",
+    "location": "Bengaluru Office",
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "country": "India",
+    "jobId": "d15846a2-2f19-4608-83d5-31dcc04e1723",
+    "requisitionId": "d15846a2-2f19-4608-83d5-31dcc04e1723",
+    "sourceUrl": "https://jobs.ashbyhq.com/clarisights/d15846a2-2f19-4608-83d5-31dcc04e1723",
+    "applyUrl": "https://jobs.ashbyhq.com/clarisights/d15846a2-2f19-4608-83d5-31dcc04e1723/application",
+    "employmentType": "Full Time",
+    "experienceRequired": "3 - 5 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2024-12-18T12:15:35.890Z",
+    "closingDate": null,
+    "jobDescription": "Product Specialist at Clarisights: Tactical Wizard at the Heart of Our Business Are you a data-driven insight generator ready to dive deep into marketing analytics and support multi-million dollar portfolios? Clarisights seeks exceptional Product Specialists who can transform complex data into actionable insights for some of the world's most innovative, influential companies: Uber, Delivery Hero, Hello Fresh, Universal Music Group, and many more. Role Overview As an Product Specialist at Clarisights, you're the tactical wizard at the heart of our business. You'll support Customer Success Managers, working hands-on with our powerful platform to deliver exceptional value to our customers. Your role is crucial in translating customer needs into technical specifications and turning data into insights that drive business decisions. What sets this role apart is your ability to work with a diverse tech stack, your hands-on experience in building reports and dashboards, and your knack for using data analysis tools. You'll be the go-to person for tactical execution, supporting high-agency relationships with both external and internal stakeholders, and continually finding ways to improve our customers' decision-making through data-driven insights. Key Responsibilities Assist in pilot projects, helping to define success criteria and clearly define customer / business requirements translate customer needs into product features Build and optimize dashboards that showcase Clarisights' value proposition Contribute to growth strategies with data-driven insights Help manage and grow relationships with large international customers Identify and execute on expansion opportunities within customer organizations Continuously optimize customer processes and drive product adoption Work hands-on with the Clarisights platform and various data analysis tools Build and maintain reports and dashboards using customer and Clarisights tech stacks Translate customer requests into technical specifications for the engineering team Assist in feature prioritization and delivery Provide tactical support for go-to-market strategies and product marketing initiatives Serve as a key liaison between customers, PMs, and the engineering team Ideal Candidate We're looking for individuals who excel in three core areas: Data Analysis and Insight Generation: You have a knack for turning raw data into meaningful insights. You're comfortable working with large datasets and have experience using tools like Python or R for data analysis. Technical Proficiency: You have hands-on experience with BI tools, data storage solutions, and analytics platforms. You're adept at building reports and dashboards and can quickly learn new tools and technologies. Customer Understanding: You have the ability to understand customer needs and translate them into technical requirements. You're curious about how businesses operate and how data can drive their success. Experience\n- 3\n- 5 years What Makes an Exceptional Product Specialist at Clarisights? Problem-solving skills with a tactical, execution-focused mindset Technical curiosity and the ability to quickly learn new tools and systems Deep appreciation for data: its sources, storage, usage, and business-transforming potential Excellent communication skills, able to explain complex technical concepts to non-technical stakeholders. Technical Landscape At Clarisights, Product specialists work extensively with a diverse technical ecosystem. Familiarity with these tech stacks is crucial for success in this\n\nROLE:\nCustomer Stack: BI Tools: Looker, Clicksense, Tableau Hybrid Solutions: Datorama, Mode Analytics, Metabase, Domo Storage & Compute: GCP, Bigquery, Snowflake, Redshift, Azure Cloud Essentials: Excel, Google Sheets, SQL Clarisights Stack: Metabase (Metadata layer) Kibana (ELK Stack) Graphana (Metrics) Competitor Stack: Funnel, Supermetrics, Datorama, Adverity, Fivetran Hands-on experience with Excel, Google Sheets, SQL, and at least one BI tool is expected. Knowledge of Python or R for data analysis is a significant plus. Your ability to work with these tools and quickly learn new ones will be key to your success as an PS at Clarisights. The Problem Lifecycle As an PS you'll be deeply involved in various stages of the problem lifecycle, including: Analyzing customer data and reporting challenges Building and optimizing dashboards and reports Assisting in data integration and quality assurance Supporting pilot execution and feedback collection Helping transition pilots to full implementation Continuously improving product usage through data-driven insights Supporting upsell opportunities with detailed analytics Your Journey at Clarisights When you join Clarisights as an Product Specialist , your path to success is clearly defined: Months 0-3: Immerse yourself in our product, customers, and processes. You'll learn to execute assignments with support from Customer Success Managers and other team members. Months 3-6: Begin to independently manage tasks and internal stakeholders. You'll take ownership of small projects and portions of larger projects. Month 6 onwards: Start to independently handle customers with support from CSMs. You'll gradually take on more strategic responsibilities. This structured progression ensures you're well-equipped to grow from a tactical wizard into a strategic thinker, setting you up for success. Application Process Our hiring process takes 2-3 weeks and includes: Culture and Fit Interview: Over a 30-minute call we will outline the opportunity, review your work experience, and look for signs and evidence of culture fit. Round 1 Interview: You will a member of the Customer Success Team. Technical interview focused on data analysis skills Assignment : Over a short call you will be given an assignment that will involve working with data and making a presentation. You will connect with a peer to understand the expectations from the assignment. We expect applicants to revert with their submissions in a week. Assignment presentation : 60-90 min presentation and discussion about the assignment Meet the founders : Meet at least one of Clarisight's founders. Offer and Closing: Finally you will meet a member of the talent team to close on your compensation details and date of joining. Welcome to Clarisights! We welcome applicants with 2-8 years of relevant experience. If you're excited about turning data into business insights and ready to be at the heart of a fast-growing Saa S business, we want to hear from you! Clarisights is an equal-opportunity employer that welcomes applicants from all backgrounds.",
+    "source": "clarisights",
+    "link": "https://jobs.ashbyhq.com/clarisights/d15846a2-2f19-4608-83d5-31dcc04e1723/application",
+    "scrapedAt": "2026-08-01T14:33:17.331Z",
+    "companyCareerPage": "https://careers.clarisights.com",
+    "companyDomain": "careers.clarisights.com",
+    "atsPlatform": "ashby",
+    "originalTitle": "Technical Product Specialist",
+    "normalizedTitle": "Technical Product Specialist",
+    "jobCategory": "Technical Product Specialist",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full Time",
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2024-12-18T12:15:35.890Z",
+    "scrapedTimestamp": "2026-08-01T14:33:17.331Z",
+    "skillIds": [
+      "python",
+      "tableau",
+      "gcp",
+      "snowflake",
+      "azure",
+      "sql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "tableau",
+        "canonicalName": "Tableau",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Tableau"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 - 5 years",
+      "minimumYears": 3,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 - 5 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [
+      "Cloud & Infrastructure"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:48.121Z"
+  },
+  {
+    "title": "Technical Account Manager - Marketing Analytics SaaS",
+    "company": "Clarisights",
+    "department": "Customer Success",
+    "location": "Bengaluru Office",
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "country": "India",
+    "jobId": "57495dca-bfe6-4f7a-97a5-eba009de22af",
+    "requisitionId": "57495dca-bfe6-4f7a-97a5-eba009de22af",
+    "sourceUrl": "https://jobs.ashbyhq.com/clarisights/57495dca-bfe6-4f7a-97a5-eba009de22af",
+    "applyUrl": "https://jobs.ashbyhq.com/clarisights/57495dca-bfe6-4f7a-97a5-eba009de22af/application",
+    "employmentType": "Full Time",
+    "experienceRequired": "3-6 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-05-25T13:52:49.379Z",
+    "closingDate": null,
+    "jobDescription": "Work directly with the growth and analytics teams at Uber, Delivery Hero, Hello Fresh, Universal Music Group, and other category-defining global brands. You'll be their go-to technical partner on a platform they use every day to inform how they spend hundreds of millions in marketing budget. About Clarisights Clarisights is a full-stack marketing analytics platform for humans and AI agents. We ingest data from every ad platform, analytics tool, and internal data source a marketer uses, model and harmonise it, and turn it into the dashboards and reports their teams run their business on. LLMs can parse data, build reports, and make changes inside Clarisights as naturally as a human can — accessible directly from Claude, Chat GPT, or Gemini via MCP. We're a team across Bengaluru, Berlin, and San Francisco, working with some of the most data-mature marketing teams in the world. Our customers treat us as an extension of their own analytics team\n- that’s the bar this role is built around. What you'll do You'll work hands-on with a small portfolio of large international customers. Your day-to-day: Run working sessions with your customers' analytics and marketing leads — understand their reporting needs and translate them into dashboards, calculated metrics, and data models inside Clarisights Investigate data questions that span SQL, our ingestion pipelines, and the customer's own sources (\"why is this number different from what Meta Ads Manager shows?\") Own the technical side of pilots and new customer onboarding — defining success criteria, building the initial reporting setup, and getting accounts to production-grade within the first few weeks Build and optimise reports and dashboards that hundreds of marketers inside our customer accounts use daily Translate customer requests into clear technical specs for our Product and Engineering teams, and help prioritise what gets built Spot expansion opportunities within customer organisations and feed them back to sales This isn't a ticket-queue support role. You own outcomes for your accounts and have direct relationships with senior stakeholders on the customer side. What you'll bring If you trained as an engineer but realised you'd rather solve problems alongside people than alone with an IDE, this role is for you. A degree in engineering 3–6 years in a technical, customer-facing role — Technical Account Management, Solutions Consulting, Implementation Consulting, Analytics Consulting, or similar Strong SQL and experience working with large, messy datasets Excellent written and verbal English — you'll be in daily contact with marketing and analytics teams across Europe and the US A first-principles problem-solver: when customers bring vague problems, your instinct is to ask sharp clarifying questions and guide the customer on the best approach Ability to explain technical concepts cleanly to non-technical stakeholders Nice to have Hands-on experience building reports or dashboards in at least one BI tool (Looker, Tableau, Metabase, Power BI, Mode, or similar) Background in performance marketing, growth, or marketing analytics — familiarity with platforms like Meta Ads, Google Ads, Tik Tok Ads, or MMPs (Apps Flyer, Adjust, Branch) Python or R for data analysis Exposure to data warehousing (Big Query, Snowflake, Redshift) or ETL concepts What we offer Benefits like health insurance, meals at work, learning and conference budget…. Hybrid working from our Bengaluru office Direct exposure to some of the most sophisticated marketing teams in the world. The technical and commercial learning curve here is steep and durable — people who do this role for two years can go almost anywhere in Saa S or analytics next. Hiring process Our process takes 2–3 weeks end to end: Recruiter conversation (15 min) — we walk you through the opportunity and learn about your background Culture Fit Interview\n- ( 30 mins )\n- we will outline the opportunity, review your work experience, and look for signs and evidence of culture fit. Customer Success team interview — ( 45-60 mins ) technical conversation focused on data analysis and problem-solving Take-home assignment — a realistic data + presentation exercise; you'll get a short briefing call with a peer, and we expect submissions back within a week Assignment presentation (60–90 min) — present and discuss your work with the team Founder conversation — meet at least one of our founders Offer — close on comp and start date with our talent team Clarisights is an equal-opportunity employer. We welcome applicants from all backgrounds and are committed to building a team that reflects the diversity of the customers we serve.",
+    "source": "clarisights",
+    "link": "https://jobs.ashbyhq.com/clarisights/57495dca-bfe6-4f7a-97a5-eba009de22af/application",
+    "scrapedAt": "2026-08-01T14:33:17.331Z",
+    "companyCareerPage": "https://careers.clarisights.com",
+    "companyDomain": "careers.clarisights.com",
+    "atsPlatform": "ashby",
+    "originalTitle": "Technical Account Manager - Marketing Analytics SaaS",
+    "normalizedTitle": "Technical Account Manager - Marketing Analytics SaaS",
+    "jobCategory": "Technical Account Manager - Marketing Analytics SaaS",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full Time",
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-05-25T13:52:49.379Z",
+    "scrapedTimestamp": "2026-08-01T14:33:17.331Z",
+    "skillIds": [
+      "sql",
+      "tableau",
+      "power-bi",
+      "python",
+      "snowflake"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "tableau",
+        "canonicalName": "Tableau",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Tableau"
+      },
+      {
+        "skillId": "power-bi",
+        "canonicalName": "Power BI",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Power BI"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-6 years",
+      "minimumYears": 3,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-6 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:48.123Z"
+  }
+]

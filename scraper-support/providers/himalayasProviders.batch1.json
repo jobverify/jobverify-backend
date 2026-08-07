@@ -1,10 +1,10 @@
 [
   {
-    "source": "hmacvauctions",
+    "source": "acv-auctions.himalayas.app",
     "companyName": "ACV Auctions",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "acv-auctions.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -23,14 +23,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for ACV Auctions: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmacvauctions/jobs.json"
+    "dryRunFile": "acv-auctions.himalayas.app/jobs.json"
   },
   {
-    "source": "hmaffinitiv",
+    "source": "affinitiv.himalayas.app",
     "companyName": "Affinitiv",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "affinitiv.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -49,14 +49,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/frontend-engineer) for Affinitiv: Frontend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmaffinitiv/jobs.json"
+    "dryRunFile": "affinitiv.himalayas.app/jobs.json"
   },
   {
-    "source": "hmahead",
+    "source": "ahead.himalayas.app",
     "companyName": "AHEAD",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ahead.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -75,14 +75,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for AHEAD: Cloud Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmahead/jobs.json"
+    "dryRunFile": "ahead.himalayas.app/jobs.json"
   },
   {
-    "source": "hmaidaptive",
+    "source": "aidaptive.himalayas.app",
     "companyName": "Aidaptive",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "aidaptive.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -101,14 +101,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/machine-learning-engineer) for Aidaptive: Machine Learning Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmaidaptive/jobs.json"
+    "dryRunFile": "aidaptive.himalayas.app/jobs.json"
   },
   {
-    "source": "hmalmabase",
+    "source": "almabase.himalayas.app",
     "companyName": "Almabase",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "almabase.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -127,14 +127,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Almabase: Senior Software Engineer; location evidence: India remote.",
-    "dryRunFile": "hmalmabase/jobs.json"
+    "dryRunFile": "almabase.himalayas.app/jobs.json"
   },
   {
-    "source": "hmalpaca",
+    "source": "alpaca.himalayas.app",
     "companyName": "Alpaca",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=18",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "alpaca.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -153,14 +153,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=18) for Alpaca: Director of Engineering - Founding Engineer India; location evidence: India.",
-    "dryRunFile": "hmalpaca/jobs.json"
+    "dryRunFile": "alpaca.himalayas.app/jobs.json"
   },
   {
-    "source": "hmalphasense",
+    "source": "alphasense.himalayas.app",
     "companyName": "AlphaSense",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software?sort=recent",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "alphasense.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -179,14 +179,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software?sort=recent) for AlphaSense: Staff Software Engineer; location evidence: India.",
-    "dryRunFile": "hmalphasense/jobs.json"
+    "dryRunFile": "alphasense.himalayas.app/jobs.json"
   },
   {
-    "source": "hmaltisource",
+    "source": "altisource.himalayas.app",
     "companyName": "Altisource",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "altisource.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -205,14 +205,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for Altisource: Java Full Stack Developer / Software Engineer; location evidence: India.",
-    "dryRunFile": "hmaltisource/jobs.json"
+    "dryRunFile": "altisource.himalayas.app/jobs.json"
   },
   {
-    "source": "hmanteriad",
+    "source": "anteriad.himalayas.app",
     "companyName": "Anteriad",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "anteriad.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -231,14 +231,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-engineer) for Anteriad: Data Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmanteriad/jobs.json"
+    "dryRunFile": "anteriad.himalayas.app/jobs.json"
   },
   {
-    "source": "hmarcoeducacao",
+    "source": "arco-educacao.himalayas.app",
     "companyName": "Arco Educacao",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "arco-educacao.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -257,14 +257,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Arco Educacao: Engineering Manager; location evidence: India eligible remote.",
-    "dryRunFile": "hmarcoeducacao/jobs.json"
+    "dryRunFile": "arco-educacao.himalayas.app/jobs.json"
   },
   {
-    "source": "hmardentmc",
+    "source": "ardent-mc.himalayas.app",
     "companyName": "Ardent MC",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ardent-mc.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -283,14 +283,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-development) for Ardent MC: Software Developer; location evidence: India eligible remote.",
-    "dryRunFile": "hmardentmc/jobs.json"
+    "dryRunFile": "ardent-mc.himalayas.app/jobs.json"
   },
   {
-    "source": "hmastreya",
+    "source": "astreya.himalayas.app",
     "companyName": "Astreya",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/machine-learning-engineer?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "astreya.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -309,14 +309,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/machine-learning-engineer?page=2) for Astreya: Machine Learning / Cloud Engineer; location evidence: India.",
-    "dryRunFile": "hmastreya/jobs.json"
+    "dryRunFile": "astreya.himalayas.app/jobs.json"
   },
   {
-    "source": "hmatlastechnica",
+    "source": "atlas-technica.himalayas.app",
     "companyName": "Atlas Technica",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "atlas-technica.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -335,14 +335,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for Atlas Technica: Cloud Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmatlastechnica/jobs.json"
+    "dryRunFile": "atlas-technica.himalayas.app/jobs.json"
   },
   {
-    "source": "hmautomattic",
+    "source": "automattic.himalayas.app",
     "companyName": "Automattic",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "automattic.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -361,14 +361,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer) for Automattic: Experienced Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmautomattic/jobs.json"
+    "dryRunFile": "automattic.himalayas.app/jobs.json"
   },
   {
-    "source": "hmbjak",
+    "source": "bjak.himalayas.app",
     "companyName": "Bjak",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "bjak.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -387,14 +387,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Bjak: Backend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmbjak/jobs.json"
+    "dryRunFile": "bjak.himalayas.app/jobs.json"
   },
   {
-    "source": "hmbrightedge",
+    "source": "brightedge.himalayas.app",
     "companyName": "BrightEdge",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "brightedge.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -413,14 +413,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for BrightEdge: Engineering Manager; location evidence: India remote.",
-    "dryRunFile": "hmbrightedge/jobs.json"
+    "dryRunFile": "brightedge.himalayas.app/jobs.json"
   },
   {
-    "source": "hmbuildbear",
+    "source": "buildbear.himalayas.app",
     "companyName": "BuildBear",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "buildbear.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -439,14 +439,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/frontend-engineer) for BuildBear: Frontend / QA Engineer; location evidence: India.",
-    "dryRunFile": "hmbuildbear/jobs.json"
+    "dryRunFile": "buildbear.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcambiumlearninggroup",
+    "source": "cambium-learning-group.himalayas.app",
     "companyName": "Cambium Learning Group",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "cambium-learning-group.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -465,14 +465,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer) for Cambium Learning Group: Senior Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmcambiumlearninggroup/jobs.json"
+    "dryRunFile": "cambium-learning-group.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcanonical",
+    "source": "canonical.himalayas.app",
     "companyName": "Canonical",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "canonical.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -491,14 +491,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Canonical: Software Engineering Manager / Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmcanonical/jobs.json"
+    "dryRunFile": "canonical.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcayuse",
+    "source": "cayuse.himalayas.app",
     "companyName": "Cayuse",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "cayuse.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -517,14 +517,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer?page=2) for Cayuse: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmcayuse/jobs.json"
+    "dryRunFile": "cayuse.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcivisanalytics",
+    "source": "civis-analytics.himalayas.app",
     "companyName": "Civis Analytics",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-scientist",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "civis-analytics.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -543,14 +543,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-scientist) for Civis Analytics: Data Scientist; location evidence: India eligible remote.",
-    "dryRunFile": "hmcivisanalytics/jobs.json"
+    "dryRunFile": "civis-analytics.himalayas.app/jobs.json"
   },
   {
-    "source": "hmclario",
+    "source": "clario.himalayas.app",
     "companyName": "Clario",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "clario.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -569,14 +569,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Clario: Software Development Engineer; location evidence: India remote.",
-    "dryRunFile": "hmclario/jobs.json"
+    "dryRunFile": "clario.himalayas.app/jobs.json"
   },
   {
-    "source": "hmclickhouse",
+    "source": "clickhouse.himalayas.app",
     "companyName": "ClickHouse",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "clickhouse.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -595,14 +595,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for ClickHouse: Cloud / Database Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmclickhouse/jobs.json"
+    "dryRunFile": "clickhouse.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcloudcops",
+    "source": "cloudcops.himalayas.app",
     "companyName": "CloudCops",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "cloudcops.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -621,14 +621,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for CloudCops: Backend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmcloudcops/jobs.json"
+    "dryRunFile": "cloudcops.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcocoon",
+    "source": "cocoon.himalayas.app",
     "companyName": "Cocoon",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "cocoon.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -647,14 +647,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer) for Cocoon: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmcocoon/jobs.json"
+    "dryRunFile": "cocoon.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcommandlink",
+    "source": "commandlink.himalayas.app",
     "companyName": "CommandLink",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "commandlink.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -673,14 +673,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software) for CommandLink: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmcommandlink/jobs.json"
+    "dryRunFile": "commandlink.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcomscore",
+    "source": "comscore.himalayas.app",
     "companyName": "comScore",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-scientist",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "comscore.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -699,14 +699,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-scientist) for comScore: Data Scientist; location evidence: India eligible remote.",
-    "dryRunFile": "hmcomscore/jobs.json"
+    "dryRunFile": "comscore.himalayas.app/jobs.json"
   },
   {
-    "source": "hmconversenowai",
+    "source": "conversenow-ai.himalayas.app",
     "companyName": "ConverseNow.ai",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "conversenow-ai.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -725,14 +725,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for ConverseNow.ai: Backend / AI Engineer; location evidence: India.",
-    "dryRunFile": "hmconversenowai/jobs.json"
+    "dryRunFile": "conversenow-ai.himalayas.app/jobs.json"
   },
   {
-    "source": "hmcorrelationone",
+    "source": "correlation-one.himalayas.app",
     "companyName": "Correlation One",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "correlation-one.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -751,14 +751,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Correlation One: Agentic Software Development SME; location evidence: India eligible remote.",
-    "dryRunFile": "hmcorrelationone/jobs.json"
+    "dryRunFile": "correlation-one.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdemandmatrix",
+    "source": "demandmatrix.himalayas.app",
     "companyName": "DemandMatrix",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-scientist",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "demandmatrix.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -777,14 +777,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-scientist) for DemandMatrix: Data Scientist; location evidence: India.",
-    "dryRunFile": "hmdemandmatrix/jobs.json"
+    "dryRunFile": "demandmatrix.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdevtechnologygroup",
+    "source": "dev-technology-group.himalayas.app",
     "companyName": "Dev Technology Group",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "dev-technology-group.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -803,14 +803,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-development) for Dev Technology Group: Software Developer; location evidence: India eligible remote.",
-    "dryRunFile": "hmdevtechnologygroup/jobs.json"
+    "dryRunFile": "dev-technology-group.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdistribusion",
+    "source": "distribusion.himalayas.app",
     "companyName": "Distribusion",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "distribusion.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -829,14 +829,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/frontend-engineer) for Distribusion: Frontend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmdistribusion/jobs.json"
+    "dryRunFile": "distribusion.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdmi",
+    "source": "dmi.himalayas.app",
     "companyName": "DMI",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "dmi.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -855,14 +855,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for DMI: Cloud / Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmdmi/jobs.json"
+    "dryRunFile": "dmi.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdosespot",
+    "source": "dosespot.himalayas.app",
     "companyName": "DoseSpot",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "dosespot.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -881,14 +881,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software) for DoseSpot: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmdosespot/jobs.json"
+    "dryRunFile": "dosespot.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdrivetrain",
+    "source": "drivetrain.himalayas.app",
     "companyName": "Drivetrain",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "drivetrain.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -907,14 +907,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Drivetrain: Backend Engineer / Data Engineer; location evidence: India.",
-    "dryRunFile": "hmdrivetrain/jobs.json"
+    "dryRunFile": "drivetrain.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdualentry",
+    "source": "dualentry.himalayas.app",
     "companyName": "DualEntry",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "dualentry.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -933,14 +933,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for DualEntry: Backend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmdualentry/jobs.json"
+    "dryRunFile": "dualentry.himalayas.app/jobs.json"
   },
   {
-    "source": "hmdvtrading",
+    "source": "dv-trading.himalayas.app",
     "companyName": "DV Trading",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "dv-trading.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -959,14 +959,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for DV Trading: Cloud Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmdvtrading/jobs.json"
+    "dryRunFile": "dv-trading.himalayas.app/jobs.json"
   },
   {
-    "source": "hmensemblehealthpartners",
+    "source": "ensemble-health-partners.himalayas.app",
     "companyName": "Ensemble Health Partners",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ensemble-health-partners.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -985,14 +985,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer) for Ensemble Health Partners: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmensemblehealthpartners/jobs.json"
+    "dryRunFile": "ensemble-health-partners.himalayas.app/jobs.json"
   },
   {
-    "source": "hmequussoftware",
+    "source": "equus-software.himalayas.app",
     "companyName": "Equus Software",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "equus-software.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1011,14 +1011,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for Equus Software: Cloud / Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmequussoftware/jobs.json"
+    "dryRunFile": "equus-software.himalayas.app/jobs.json"
   },
   {
-    "source": "hmeqvilent",
+    "source": "eqvilent.himalayas.app",
     "companyName": "Eqvilent",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "eqvilent.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1037,14 +1037,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/machine-learning-engineer) for Eqvilent: Machine Learning Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmeqvilent/jobs.json"
+    "dryRunFile": "eqvilent.himalayas.app/jobs.json"
   },
   {
-    "source": "hmevercommerce",
+    "source": "evercommerce.himalayas.app",
     "companyName": "EverCommerce",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "evercommerce.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1063,14 +1063,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for EverCommerce: Cloud / Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmevercommerce/jobs.json"
+    "dryRunFile": "evercommerce.himalayas.app/jobs.json"
   },
   {
-    "source": "hmfirstadvantage",
+    "source": "first-advantage.himalayas.app",
     "companyName": "First Advantage",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "first-advantage.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1089,14 +1089,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for First Advantage: Senior Software Engineer; location evidence: India.",
-    "dryRunFile": "hmfirstadvantage/jobs.json"
+    "dryRunFile": "first-advantage.himalayas.app/jobs.json"
   },
   {
-    "source": "hmforcepoint",
+    "source": "forcepoint.himalayas.app",
     "companyName": "Forcepoint",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "forcepoint.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1115,14 +1115,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-engineer) for Forcepoint: Data / Software Engineer; location evidence: India.",
-    "dryRunFile": "hmforcepoint/jobs.json"
+    "dryRunFile": "forcepoint.himalayas.app/jobs.json"
   },
   {
-    "source": "hmfusemachines",
+    "source": "fusemachines.himalayas.app",
     "companyName": "Fusemachines",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "fusemachines.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1141,14 +1141,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-engineer) for Fusemachines: Data / Machine Learning Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmfusemachines/jobs.json"
+    "dryRunFile": "fusemachines.himalayas.app/jobs.json"
   },
   {
-    "source": "hmgatherai",
+    "source": "gather-ai.himalayas.app",
     "companyName": "Gather AI",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "gather-ai.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1167,14 +1167,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-engineer) for Gather AI: Data Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmgatherai/jobs.json"
+    "dryRunFile": "gather-ai.himalayas.app/jobs.json"
   },
   {
-    "source": "hmglobalizationpartners",
+    "source": "globalization-partners.himalayas.app",
     "companyName": "Globalization Partners",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "globalization-partners.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1193,14 +1193,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Globalization Partners: Backend Engineer; location evidence: India.",
-    "dryRunFile": "hmglobalizationpartners/jobs.json"
+    "dryRunFile": "globalization-partners.himalayas.app/jobs.json"
   },
   {
-    "source": "hmgr8tech",
+    "source": "gr8-tech.himalayas.app",
     "companyName": "GR8 Tech",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development?page=5",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "gr8-tech.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1219,14 +1219,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-development?page=5) for GR8 Tech: Senior .NET Developer; location evidence: India eligible remote.",
-    "dryRunFile": "hmgr8tech/jobs.json"
+    "dryRunFile": "gr8-tech.himalayas.app/jobs.json"
   },
   {
-    "source": "hmgroundtruthindia",
+    "source": "groundtruth-india.himalayas.app",
     "companyName": "Groundtruth India",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "groundtruth-india.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1245,14 +1245,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Groundtruth India: Engineering Manager; location evidence: India.",
-    "dryRunFile": "hmgroundtruthindia/jobs.json"
+    "dryRunFile": "groundtruth-india.himalayas.app/jobs.json"
   },
   {
-    "source": "hmharris",
+    "source": "harris.himalayas.app",
     "companyName": "Harris",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "harris.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1271,14 +1271,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Harris: Software Engineer; location evidence: India remote.",
-    "dryRunFile": "hmharris/jobs.json"
+    "dryRunFile": "harris.himalayas.app/jobs.json"
   },
   {
-    "source": "hmharveyai",
+    "source": "harvey-ai.himalayas.app",
     "companyName": "Harvey AI",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "harvey-ai.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1297,14 +1297,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Harvey AI: Backend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmharveyai/jobs.json"
+    "dryRunFile": "harvey-ai.himalayas.app/jobs.json"
   },
   {
-    "source": "hmhewlettpackardenterprise",
+    "source": "hewlett-packard-enterprise.himalayas.app",
     "companyName": "Hewlett Packard Enterprise",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "hewlett-packard-enterprise.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1323,14 +1323,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for Hewlett Packard Enterprise: Software Engineer; location evidence: India.",
-    "dryRunFile": "hmhewlettpackardenterprise/jobs.json"
+    "dryRunFile": "hewlett-packard-enterprise.himalayas.app/jobs.json"
   },
   {
-    "source": "hmhigh5games",
+    "source": "high-5-games.himalayas.app",
     "companyName": "High 5 Games",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/machine-learning-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "high-5-games.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1349,14 +1349,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/machine-learning-engineer) for High 5 Games: Machine Learning / Data Scientist; location evidence: India eligible remote.",
-    "dryRunFile": "hmhigh5games/jobs.json"
+    "dryRunFile": "high-5-games.himalayas.app/jobs.json"
   },
   {
-    "source": "hmhighlevel",
+    "source": "highlevel.himalayas.app",
     "companyName": "HighLevel",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "highlevel.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1375,14 +1375,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for HighLevel: Director, Engineering / Software Development Engineer; location evidence: India remote.",
-    "dryRunFile": "hmhighlevel/jobs.json"
+    "dryRunFile": "highlevel.himalayas.app/jobs.json"
   },
   {
-    "source": "hmhivepro",
+    "source": "hive-pro.himalayas.app",
     "companyName": "Hive Pro",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "hive-pro.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1401,14 +1401,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer) for Hive Pro: Backend Software Engineer; location evidence: India.",
-    "dryRunFile": "hmhivepro/jobs.json"
+    "dryRunFile": "hive-pro.himalayas.app/jobs.json"
   },
   {
-    "source": "hmhostaway",
+    "source": "hostaway.himalayas.app",
     "companyName": "Hostaway",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "hostaway.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1427,14 +1427,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Hostaway: Backend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmhostaway/jobs.json"
+    "dryRunFile": "hostaway.himalayas.app/jobs.json"
   },
   {
-    "source": "hmhypersonix",
+    "source": "hypersonix.himalayas.app",
     "companyName": "Hypersonix",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-scientist",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "hypersonix.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1453,14 +1453,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-scientist) for Hypersonix: Data Scientist / Software Engineer; location evidence: India.",
-    "dryRunFile": "hmhypersonix/jobs.json"
+    "dryRunFile": "hypersonix.himalayas.app/jobs.json"
   },
   {
-    "source": "hmidegogroup",
+    "source": "idego-group.himalayas.app",
     "companyName": "Idego Group",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "idego-group.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1479,14 +1479,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for Idego Group: Cloud Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmidegogroup/jobs.json"
+    "dryRunFile": "idego-group.himalayas.app/jobs.json"
   },
   {
-    "source": "hminflection",
+    "source": "inflection.himalayas.app",
     "companyName": "Inflection",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "inflection.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1505,14 +1505,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for Inflection: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hminflection/jobs.json"
+    "dryRunFile": "inflection.himalayas.app/jobs.json"
   },
   {
-    "source": "hminfracloudtechnologies",
+    "source": "infracloud-technologies.himalayas.app",
     "companyName": "InfraCloud Technologies",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "infracloud-technologies.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1531,14 +1531,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/frontend-engineer) for InfraCloud Technologies: Frontend / Cloud Engineer; location evidence: India.",
-    "dryRunFile": "hminfracloudtechnologies/jobs.json"
+    "dryRunFile": "infracloud-technologies.himalayas.app/jobs.json"
   },
   {
-    "source": "hminterfaceai",
+    "source": "interface-ai.himalayas.app",
     "companyName": "Interface AI",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "interface-ai.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1557,14 +1557,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering) for Interface AI: Backend / AI Software Engineer; location evidence: India.",
-    "dryRunFile": "hminterfaceai/jobs.json"
+    "dryRunFile": "interface-ai.himalayas.app/jobs.json"
   },
   {
-    "source": "hminterrahealth",
+    "source": "interrahealth.himalayas.app",
     "companyName": "Interrahealth",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "interrahealth.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1583,14 +1583,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-development) for Interrahealth: Software Developer; location evidence: India eligible remote.",
-    "dryRunFile": "hminterrahealth/jobs.json"
+    "dryRunFile": "interrahealth.himalayas.app/jobs.json"
   },
   {
-    "source": "hmiracommerce",
+    "source": "ira-commerce.himalayas.app",
     "companyName": "Ira Commerce",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ira-commerce.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1609,14 +1609,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-engineer) for Ira Commerce: Data Engineer; location evidence: India.",
-    "dryRunFile": "hmiracommerce/jobs.json"
+    "dryRunFile": "ira-commerce.himalayas.app/jobs.json"
   },
   {
-    "source": "hmivanti",
+    "source": "ivanti.himalayas.app",
     "companyName": "Ivanti",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "ivanti.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1635,14 +1635,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for Ivanti: Senior Software Engineer - Java; location evidence: India.",
-    "dryRunFile": "hmivanti/jobs.json"
+    "dryRunFile": "ivanti.himalayas.app/jobs.json"
   },
   {
-    "source": "hmjitterbit",
+    "source": "jitterbit.himalayas.app",
     "companyName": "Jitterbit",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "jitterbit.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1661,14 +1661,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer?page=2) for Jitterbit: Senior Software Engineer C++; location evidence: India remote.",
-    "dryRunFile": "hmjitterbit/jobs.json"
+    "dryRunFile": "jitterbit.himalayas.app/jobs.json"
   },
   {
-    "source": "hmjobgether",
+    "source": "jobgether.himalayas.app",
     "companyName": "Jobgether",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "jobgether.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1687,14 +1687,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for Jobgether: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmjobgether/jobs.json"
+    "dryRunFile": "jobgether.himalayas.app/jobs.json"
   },
   {
-    "source": "hmjumpcloud",
+    "source": "jumpcloud.himalayas.app",
     "companyName": "JumpCloud",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "jumpcloud.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1713,14 +1713,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=2) for JumpCloud: Software Engineering Manager; location evidence: India.",
-    "dryRunFile": "hmjumpcloud/jobs.json"
+    "dryRunFile": "jumpcloud.himalayas.app/jobs.json"
   },
   {
-    "source": "hmkalepa",
+    "source": "kalepa.himalayas.app",
     "companyName": "Kalepa",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "kalepa.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1739,14 +1739,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Kalepa: Backend / Product Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmkalepa/jobs.json"
+    "dryRunFile": "kalepa.himalayas.app/jobs.json"
   },
   {
-    "source": "hmkarat",
+    "source": "karat.himalayas.app",
     "companyName": "Karat",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development?page=5",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "karat.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1765,14 +1765,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-development?page=5) for Karat: Software Engineer; location evidence: India.",
-    "dryRunFile": "hmkarat/jobs.json"
+    "dryRunFile": "karat.himalayas.app/jobs.json"
   },
   {
-    "source": "hmknowbe4",
+    "source": "knowbe4.himalayas.app",
     "companyName": "KnowBe4",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=18",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "knowbe4.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1791,14 +1791,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineering?page=18) for KnowBe4: Software engineering opening; location evidence: India eligible.",
-    "dryRunFile": "hmknowbe4/jobs.json"
+    "dryRunFile": "knowbe4.himalayas.app/jobs.json"
   },
   {
-    "source": "hmkoboldmetalstechnology",
+    "source": "kobold-metals-technology.himalayas.app",
     "companyName": "KoBold Metals Technology",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "kobold-metals-technology.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1817,14 +1817,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/frontend-engineer) for KoBold Metals Technology: Frontend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmkoboldmetalstechnology/jobs.json"
+    "dryRunFile": "kobold-metals-technology.himalayas.app/jobs.json"
   },
   {
-    "source": "hmkong",
+    "source": "kong.himalayas.app",
     "companyName": "Kong",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "kong.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1843,14 +1843,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Kong: Backend / Platform Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmkong/jobs.json"
+    "dryRunFile": "kong.himalayas.app/jobs.json"
   },
   {
-    "source": "hmlaunchpadtechnologies",
+    "source": "launchpad-technologies.himalayas.app",
     "companyName": "Launchpad Technologies",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "launchpad-technologies.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1869,14 +1869,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for Launchpad Technologies: Cloud Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmlaunchpadtechnologies/jobs.json"
+    "dryRunFile": "launchpad-technologies.himalayas.app/jobs.json"
   },
   {
-    "source": "hmleaflink",
+    "source": "leaflink.himalayas.app",
     "companyName": "LeafLink",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "leaflink.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1895,14 +1895,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/frontend-engineer) for LeafLink: Frontend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmleaflink/jobs.json"
+    "dryRunFile": "leaflink.himalayas.app/jobs.json"
   },
   {
-    "source": "hmlifullconnect",
+    "source": "lifull-connect.himalayas.app",
     "companyName": "LIFULL Connect",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/cloud-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "lifull-connect.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1921,14 +1921,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/cloud-engineer) for LIFULL Connect: Cloud Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmlifullconnect/jobs.json"
+    "dryRunFile": "lifull-connect.himalayas.app/jobs.json"
   },
   {
-    "source": "hmlingaro",
+    "source": "lingaro.himalayas.app",
     "companyName": "Lingaro",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-scientist",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "lingaro.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1947,14 +1947,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-scientist) for Lingaro: Data Scientist / Data Engineer; location evidence: India.",
-    "dryRunFile": "hmlingaro/jobs.json"
+    "dryRunFile": "lingaro.himalayas.app/jobs.json"
   },
   {
-    "source": "hmmactores",
+    "source": "mactores.himalayas.app",
     "companyName": "Mactores",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/devops-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "mactores.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1973,14 +1973,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/devops-engineer) for Mactores: DevOps / Cloud Engineer; location evidence: India.",
-    "dryRunFile": "hmmactores/jobs.json"
+    "dryRunFile": "mactores.himalayas.app/jobs.json"
   },
   {
-    "source": "hmmariadb",
+    "source": "mariadb.himalayas.app",
     "companyName": "MariaDB",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "mariadb.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -1999,14 +1999,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-engineer) for MariaDB: Senior Software Engineer; location evidence: India.",
-    "dryRunFile": "hmmariadb/jobs.json"
+    "dryRunFile": "mariadb.himalayas.app/jobs.json"
   },
   {
-    "source": "hmmarrinadecisions",
+    "source": "marrina-decisions.himalayas.app",
     "companyName": "Marrina Decisions",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "marrina-decisions.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -2025,14 +2025,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/backend-engineer) for Marrina Decisions: Backend Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmmarrinadecisions/jobs.json"
+    "dryRunFile": "marrina-decisions.himalayas.app/jobs.json"
   },
   {
-    "source": "hmmedallion",
+    "source": "medallion.himalayas.app",
     "companyName": "Medallion",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "medallion.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -2051,14 +2051,14 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/software-development) for Medallion: Software Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmmedallion/jobs.json"
+    "dryRunFile": "medallion.himalayas.app/jobs.json"
   },
   {
-    "source": "hmmediaradar",
+    "source": "mediaradar.himalayas.app",
     "companyName": "MediaRadar",
     "adapter": "himalayasDirectory",
     "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
-    "companyDomain": "himalayas.app",
+    "companyDomain": "mediaradar.himalayas.app",
     "atsPlatform": "himalayas-remote-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "himalayas-search-api-company-query-pages",
@@ -2077,6 +2077,6 @@
     "notes": "Current listing observed on Himalayas; open the application link and verify before applying.",
     "directorySourceType": "Himalayas India remote jobs directory",
     "verifiedSurfaceSummary": "Verified on 2026-07-23 via Himalayas India remote jobs evidence (https://himalayas.app/jobs/countries/india/data-engineer) for MediaRadar: Data Engineer; location evidence: India eligible remote.",
-    "dryRunFile": "hmmediaradar/jobs.json"
+    "dryRunFile": "mediaradar.himalayas.app/jobs.json"
   }
 ]

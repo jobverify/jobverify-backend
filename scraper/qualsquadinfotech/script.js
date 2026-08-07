@@ -32,6 +32,8 @@ export const isTrustedUnavailableFailure = (error) => {
   return message.includes('enotfound')
     || message.includes('could not be resolved')
     || message.includes('timed out')
+    || message.includes('timeout')
+    || message.includes('timed_out')
 }
 
 export const hasPublicJobsSurfaceSignal = (html) =>

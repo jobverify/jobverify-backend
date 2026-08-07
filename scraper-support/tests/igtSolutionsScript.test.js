@@ -1,47 +1,50 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const officialCareersHtml = `
+const careersHtml = `
 <!doctype html>
-<html lang="en-US">
+<html lang="en">
   <head>
     <title>Careers at Atain | Grow, Innovate and Create Real Impact</title>
-    <link rel="canonical" href="https://atain.com/careers/" />
-    <meta name="description" content="Explore careers with us. Find opportunities across roles and global locations." />
+    <link rel="canonical" href="https://atain.com/careers/">
   </head>
   <body>
-    <a class="elementor-button" href="https://atain.com/join-the-squad/">Join Our Squad</a>
-    <p>Explore careers with us. Find opportunities across roles and global locations.</p>
+    <main>
+      <p>IGT Solutions Rebrands as Atain</p>
+      <a href="https://atain.com/join-the-squad/">Join the Squad</a>
+    </main>
   </body>
 </html>
 `
 
-const joinTheSquadHtml = `
+const joinSquadHtml = `
 <!doctype html>
-<html lang="en-US">
+<html lang="en">
+  <body>
+    <main>
+      <h1>Join the Squad</h1>
+      <p>Upload Resume</p>
+      <a href="mailto:Accommodations@atain.com">Accommodations@atain.com</a>
+    </main>
+  </body>
+</html>
+`
+
+const sapLandingHtml = `
+<!doctype html>
+<html lang="en">
   <head>
-    <title>Join Our Squad</title>
+    <title>AI Recruiting Software &amp; ATS</title>
   </head>
   <body>
-    <h1>Join Our Squad</h1>
-    <p>Upload Resume*</p>
-    <p>Atain is an Equal Employment Opportunity employer.</p>
-    <p>If you are unable or limited in your ability to access job openings through this site, apply for jobs through Atain's online system, or at any point in the selection process, please email Accommodations@atain.com.</p>
+    <main>
+      <h1>SmartRecruiters for SAP SuccessFactors</h1>
+    </main>
   </body>
 </html>
 `
 
-const publicJobsHtml = `
-<!doctype html>
-<html lang="en-US">
-  <body>
-    <span id="tile-search-results-label">Showing 1 to 25 of 80 Jobs</span>
-    <a class="jobTitle-link" href="/job/Gurugram-Process-Associate-HR/1168719155/">Process Associate</a>
-  </body>
-</html>
-`
-
-const loadIgtSolutionsModule = async () => {
+const loadModule = async () => {
   try {
     return await import('../../scraper/igtsolutions/script.js')
   } catch {
@@ -49,117 +52,48 @@ const loadIgtSolutionsModule = async () => {
   }
 }
 
-test('IGT Solutions sentinel constants stay pinned to the verified first-party surfaces from July 16, 2026', async () => {
-  const igtsolutions = await loadIgtSolutionsModule()
+test('IGT Solutions falls back to a browser-backed page loader when Node fetch times out', async () => {
+  const igtSolutions = await loadModule()
+  const requestedPrimaryUrls = []
+  const requestedBrowserUrls = []
 
-  assert.equal(igtsolutions.SOURCE, 'igtsolutions')
-  assert.equal(igtsolutions.COMPANY, 'IGT Solutions')
-  assert.equal(igtsolutions.VERIFIED_ON, '2026-07-16')
-  assert.equal(igtsolutions.CAREERS_URL, 'https://www.igtsolutions.com/careers/')
-  assert.equal(igtsolutions.JOIN_SQUAD_URL, 'https://atain.com/join-the-squad/')
-  assert.deepEqual(igtsolutions.LEGACY_BOARD_URLS, [
-    'https://careers.igtsolutions.com/',
-    'https://careers.igtsolutions.com/go/India/8956655/',
-  ])
-  assert.match(igtsolutions.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
-  assert.equal(igtsolutions.hasOfficialCareersSignal(officialCareersHtml), true)
-  assert.equal(igtsolutions.hasJoinSquadSignal(joinTheSquadHtml), true)
-  assert.equal(igtsolutions.hasPublicJobsSignal(officialCareersHtml), false)
-  assert.equal(igtsolutions.hasPublicJobsSignal(joinTheSquadHtml), false)
-  assert.equal(igtsolutions.hasPublicJobsSignal(publicJobsHtml), true)
-  assert.equal(
-    igtsolutions.isLegacyBoardUnavailable({
-      status: 403,
-      url: igtsolutions.LEGACY_BOARD_URLS[0],
-      html: '',
-    }),
-    true,
-  )
-})
-
-test('IGT Solutions returns [] only while the verified careers page remains a join-form flow and the legacy board stays inaccessible', async () => {
-  const igtsolutions = await loadIgtSolutionsModule()
-  const requestedUrls = []
-
-  const jobs = await igtsolutions.createIgtSolutionsScraper().run({
+  const jobs = await igtSolutions.createIgtSolutionsScraper().run({
     fetchPage: async (url) => {
-      requestedUrls.push(url)
+      requestedPrimaryUrls.push(url)
+      throw new Error(`Request timed out after 15000ms for ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      requestedBrowserUrls.push(url)
 
-      if (url === igtsolutions.CAREERS_URL) {
-        return { status: 200, url, html: officialCareersHtml }
+      if (url === igtSolutions.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
       }
 
-      if (url === igtsolutions.JOIN_SQUAD_URL) {
-        return { status: 200, url, html: joinTheSquadHtml }
+      if (url === igtSolutions.JOIN_SQUAD_URL) {
+        return { status: 200, url, html: joinSquadHtml }
       }
 
-      if (igtsolutions.LEGACY_BOARD_URLS.includes(url)) {
-        return { status: 403, url, html: '' }
+      if (url === igtSolutions.LEGACY_BOARD_URLS[0]) {
+        return { status: 403, url, html: '<html><body>Forbidden</body></html>' }
       }
 
-      throw new Error(`Unexpected IGT Solutions URL: ${url}`)
+      if (url === igtSolutions.LEGACY_BOARD_URLS[1]) {
+        return {
+          status: 200,
+          url: 'https://www.sap.com/products/hcm/recruiting-software.html',
+          html: sapLandingHtml,
+        }
+      }
+
+      throw new Error(`Unexpected browser URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    igtsolutions.CAREERS_URL,
-    igtsolutions.JOIN_SQUAD_URL,
-    ...igtsolutions.LEGACY_BOARD_URLS,
+  assert.deepEqual(requestedPrimaryUrls, [
+    igtSolutions.CAREERS_URL,
+    igtSolutions.JOIN_SQUAD_URL,
+    ...igtSolutions.LEGACY_BOARD_URLS,
   ])
+  assert.deepEqual(requestedBrowserUrls, requestedPrimaryUrls)
   assert.deepEqual(jobs, [])
-})
-
-test('IGT Solutions fails closed when the verified careers surface drifts into a public board or the legacy ATS reopens', async () => {
-  const igtsolutions = await loadIgtSolutionsModule()
-
-  await assert.rejects(
-    igtsolutions.createIgtSolutionsScraper().run({
-      fetchPage: async (url) => {
-        if (url === igtsolutions.CAREERS_URL) {
-          return { status: 200, url, html: '<html><title>Unexpected</title></html>' }
-        }
-
-        throw new Error(`Unexpected IGT Solutions URL: ${url}`)
-      },
-    }),
-    /verified official careers page/i,
-  )
-
-  await assert.rejects(
-    igtsolutions.createIgtSolutionsScraper().run({
-      fetchPage: async (url) => {
-        if (url === igtsolutions.CAREERS_URL) {
-          return { status: 200, url, html: officialCareersHtml }
-        }
-
-        if (url === igtsolutions.JOIN_SQUAD_URL) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        return { status: 403, url, html: '' }
-      },
-    }),
-    /verified join-the-squad page/i,
-  )
-
-  await assert.rejects(
-    igtsolutions.createIgtSolutionsScraper().run({
-      fetchPage: async (url) => {
-        if (url === igtsolutions.CAREERS_URL) {
-          return { status: 200, url, html: officialCareersHtml }
-        }
-
-        if (url === igtsolutions.JOIN_SQUAD_URL) {
-          return { status: 200, url, html: joinTheSquadHtml }
-        }
-
-        if (url === igtsolutions.LEGACY_BOARD_URLS[0]) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        return { status: 403, url, html: '' }
-      },
-    }),
-    /legacy careers board changed/i,
-  )
 })

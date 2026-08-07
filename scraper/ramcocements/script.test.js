@@ -13,13 +13,14 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>The Ramco Cements Limited</title>
+    <title>Page | The Ramco Cements Limited</title>
   </head>
   <body>
     <main>
+      <script id="__NEXT_DATA__" type="application/json">{"page":"/"}</script>
       <h1>The Ramco Cements Limited</h1>
       <a href="/about/life-at-ramco">Life at Ramco</a>
-      <a href="https://in.linkedin.com/company/theramcocementsltd">LinkedIn</a>
+      <a href="https://in.linkedin.com/company/the-ramco-cements-limited">LinkedIn</a>
       <p>Fake Job Disclaimer</p>
     </main>
   </body>
@@ -34,8 +35,9 @@ const lifePageHtml = `
   </head>
   <body>
     <main>
+      <script id="__NEXT_DATA__" type="application/json">{"page":"/about/life-at-ramco"}</script>
       <h1>Life at Ramco</h1>
-      <p>People and culture</p>
+      <p>Fake Job Disclaimer</p>
       <p>Ramco Cements</p>
     </main>
   </body>
@@ -75,6 +77,22 @@ test('The Ramco Cements Limited validates the verified homepage, life page, and 
   assert.equal(ramcoCements.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(ramcoCements.hasLifeAtRamcoSignal(lifePageHtml), true)
   assert.equal(ramcoCements.hasMissingRouteSignal({ status: 404, html: notFoundHtml }), true)
+})
+
+test('The Ramco Cements Limited accepts the live August 4, 2026 homepage and life-page markers but rejects the wrong route shell', async () => {
+  const ramcoCements = await loadModule()
+  assert.ok(ramcoCements, 'The Ramco Cements Limited scraper module should load')
+
+  const wrongRouteHtml = homepageHtml.replace('"page":"/"', '"page":"/404"')
+  const legacySlugHtml = homepageHtml.replace(
+    'https://in.linkedin.com/company/the-ramco-cements-limited',
+    'https://in.linkedin.com/company/theramcocementsltd',
+  )
+  const staleLifePageHtml = lifePageHtml.replace('Fake Job Disclaimer', 'People and culture')
+
+  assert.equal(ramcoCements.hasOfficialHomepageSignal(legacySlugHtml), true)
+  assert.equal(ramcoCements.hasOfficialHomepageSignal(wrongRouteHtml), false)
+  assert.equal(ramcoCements.hasLifeAtRamcoSignal(staleLifePageHtml), false)
 })
 
 test('The Ramco Cements Limited returns no jobs only when the verified homepage, life page, and missing routes remain unchanged', async () => {

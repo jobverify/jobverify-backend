@@ -325,7 +325,7 @@ test('Nxtgen Datacenter Cloud Technologies scraper pins the visible first-party 
   assert.equal(nxtgen.SOURCE, 'nxtgendatacentercloudtechnologies')
   assert.equal(nxtgen.COMPANY, 'Nxtgen Datacenter Cloud Technologies')
   assert.equal(nxtgen.CAREERS_URL, 'https://nxtgen.co.in/careers')
-  assert.equal(nxtgen.VERIFIED_ON, '2026-07-18')
+  assert.equal(nxtgen.VERIFIED_ON, '2026-08-04')
   assert.equal(nxtgen.hasOfficialCareersSignal(nxtgenCareersHtml), true)
   assert.equal(nxtgen.hasOfficialCareersSignal('<html><body>No jobs</body></html>'), false)
   assert.deepEqual(nxtgen.extractJobs(nxtgenCareersHtml), [
@@ -399,7 +399,15 @@ test('Technosoft Corporation scraper fails closed on the verified legacy redirec
   assert.equal(technosoft.VERIFIED_ON, '2026-07-18')
   assert.equal(technosoft.hasLegacyHomepageSignal(technosoftHomepageHtml), true)
   assert.equal(technosoft.hasLegacyHomepageSignal('<html><body>Unexpected</body></html>'), false)
+  assert.equal(
+    technosoft.isVerifiedBlockedHomepage({
+      status: 403,
+      html: '<html><head><title>403 Forbidden</title></head><body><center><h1>403 Forbidden</h1></center><hr><center>nginx</center></body></html>',
+    }),
+    true,
+  )
   assert.equal(technosoft.isVerifiedMissingCareerRoute({ status: 404, html: '' }), true)
+  assert.equal(technosoft.isVerifiedMissingCareerRoute({ status: 403, html: '403 Forbidden' }), true)
   assert.equal(technosoft.isVerifiedMissingCareerRoute({ status: 200, html: '' }), false)
 
   const jobs = await technosoft.createTechnosoftCorporationScraper().run({
@@ -423,6 +431,19 @@ test('Technosoft Corporation scraper fails closed on the verified legacy redirec
     }),
     /verified technosoft corporation exact-name surface changed/i,
   )
+
+  const transportFallbackJobs = await technosoft.createTechnosoftCorporationScraper().run({
+    fetchPage: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'ENOTFOUND',
+        message: 'getaddrinfo ENOTFOUND www.technosoftcorp.com',
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(transportFallbackJobs, [])
 })
 
 test('Infrabeat Technologies scraper stays pinned to the first-party WordPress careers archive', async () => {

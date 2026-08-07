@@ -26,6 +26,28 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const resolveUrl = (value, baseUrl = CAREERS_URL) => {
+  try {
+    return new URL(value, baseUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+const isMindbowserHROneHandoffUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.hostname === 'hr-1.in'
+      || (
+        url.hostname === TRUSTED_HRONE_HOST
+        && url.pathname === TRUSTED_HRONE_PORTAL_PATH
+        && url.searchParams.get('dc') === TRUSTED_HRONE_DC
+      )
+  } catch {
+    return false
+  }
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -47,15 +69,18 @@ const extractExperienceFromTitle = (title) => {
 }
 
 export const extractVacanciesBoardUrl = (html) => {
-  const match = String(html ?? '').match(/<a[^>]+href="([^"]+)"[^>]*>\s*Apply Now\s*<\/a>/i)
+  const anchors = [...String(html ?? '').matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)]
+    .map(([, href, label]) => ({
+      href: resolveUrl(href),
+      label: normalizeWhitespace(String(label ?? '').replace(/<[^>]+>/g, ' ')),
+    }))
+    .filter((anchor) => anchor.href)
 
-  if (!match) return null
+  const preferredAnchor = anchors.find((anchor) =>
+    /current openings|apply now/i.test(anchor.label) && isMindbowserHROneHandoffUrl(anchor.href),
+  ) || anchors.find((anchor) => isMindbowserHROneHandoffUrl(anchor.href))
 
-  try {
-    return new URL(match[1], CAREERS_URL).toString()
-  } catch {
-    return null
-  }
+  return preferredAnchor?.href ?? null
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -157,6 +182,8 @@ const captureApplyUrls = async (page) => {
   return applyUrls
 }
 
+const getBoardNavigationTimeoutMs = () => Math.max(config.jobListingTimeoutMs || 30000, 90000)
+
 export const readRenderedHrOneCards = async (page) => {
   await page.waitForFunction(
     (selector) => document.querySelectorAll(selector).length > 0,
@@ -241,7 +268,10 @@ export const createMindbowserScraper = ({
     try {
       browser = await browserFactory()
       const page = await pageFactory(browser)
-      await page.goto(vacanciesUrl, { waitUntil: 'domcontentloaded' })
+      await page.goto(vacanciesUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: getBoardNavigationTimeoutMs(),
+      })
       await page.waitForSelector(HRONE_CARD_SELECTOR, {
         timeout: config.jobListingTimeoutMs || 30000,
       })

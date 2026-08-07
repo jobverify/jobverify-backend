@@ -119,14 +119,25 @@ export const hasImprintSignal = (page) => {
   const finalUrl = normalizeUrl(getFinalUrl(page, IMPRINT_PAGE_URL))
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const hasVerifiedAddress = (
+    normalized.includes('51379 Leverkusen')
+    || (
+      normalized.includes('Rigaer Straße 8')
+      && normalized.includes('10247 Berlin, Germany')
+    )
+  )
+  const hasVerifiedWorkableHandoff = (
+    rawHtml.includes(WORKABLE_BOARD_URL)
+    || /https:\/\/travisci\.workable\.com\/?/i.test(rawHtml)
+  )
 
   return status === 200
     && finalUrl === normalizeUrl(IMPRINT_PAGE_URL)
     && /<title[^>]*>\s*Imprint\s*-\s*Travis CI\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Travis CI GmbH')
-    && normalized.includes('51379 Leverkusen')
+    && hasVerifiedAddress
     && normalized.includes('Work with Travis CI')
-    && rawHtml.includes(WORKABLE_BOARD_URL)
+    && hasVerifiedWorkableHandoff
 }
 
 export const hasVerifiedMissingJobRoute = (page, expectedUrl) => {
@@ -393,7 +404,7 @@ export const createTravisCiScraper = ({
 
 export const run = async (options = {}) => createTravisCiScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

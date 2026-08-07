@@ -39,6 +39,8 @@ const normalizeWhitespace = (value) => {
     .replace(/&amp;/gi, '&')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
     .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/[’‘]/g, "'")
+    .replace(/[“”]/g, '"')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -49,6 +51,13 @@ const normalizeWhitespace = (value) => {
 
 const extractTitle = (html) => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1])
+}
+
+export const extractMetaDescription = (html = '') => {
+  const match = String(html ?? '').match(
+    /<meta[^>]+name=["']description["'][^>]+content=["']([\s\S]*?)["'][^>]*>/i,
+  )
   return normalizeWhitespace(match?.[1])
 }
 
@@ -65,9 +74,13 @@ export const extractLegacyTalentRecruitUrl = (html = '') => {
 export const hasOfficialNivaBupaCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
+  const metaDescription = (extractMetaDescription(page) || '').toLowerCase()
 
   return extractTitle(page) === 'Niva Bupa Careers'
-    && text.includes('careers with niva bupa')
+    && (
+      text.includes('careers with niva bupa')
+      || metaDescription === 'careers with niva bupa'
+    )
     && text.includes('message from our ceo')
     && text.includes('employee recognition')
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL

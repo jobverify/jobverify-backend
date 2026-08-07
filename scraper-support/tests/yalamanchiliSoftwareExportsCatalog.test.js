@@ -4,7 +4,7 @@ import test from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { buildScrapers, getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/yalamanchilisoftwareexports/script.js')
@@ -25,14 +25,14 @@ test('Yalamanchili Software Exports local catalog captures the exact-name sentin
   assert.equal(provider.source, 'yalamanchilisoftwareexports')
   assert.equal(provider.companyName, 'Yalamanchili Software Exports')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.yalamanchili.co.in/')
-  assert.equal(provider.companyDomain, 'yalamanchili.co.in')
+  assert.equal(provider.companyCareerPage, 'https://www.ysppayments.com/')
+  assert.equal(provider.companyDomain, 'ysppayments.com')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
-  assert.equal(provider.paginationStrategy, 'exact-name-domain-root-plus-common-careers-route-timeout-validation')
-  assert.equal(provider.extractionStrategy, 'verified-exact-name-first-party-domain-without-trustworthy-public-jobs-return-empty')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.paginationStrategy, 'legacy-domain-redirect-plus-current-brand-homepage-plus-common-careers-route-404-validation')
+  assert.equal(provider.extractionStrategy, 'verified-current-brand-homepage-without-public-jobs+common-careers-route-404-validation-return-empty')
+  assert.equal(provider.verifiedOn, '2026-08-06')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /yalamanchili\.co\.in/i)
+  assert.match(provider.verifiedSurfaceSummary, /ysppayments\.com/i)
 })
 
 test('Yalamanchili Software Exports exact backlog row matches from the local catalog entry', async () => {
@@ -53,4 +53,23 @@ test('Yalamanchili Software Exports hydrated local catalog stays script-runner c
 
   assert.match(provider.modulePath, /yalamanchilisoftwareexports[\\/]script\.js$/i)
   assert.equal(typeof module.run, 'function')
+})
+
+test('Yalamanchili Software Exports shared provider catalog stays aligned with the verified local catalog', async () => {
+  const { YALAMANCHILI_SOFTWARE_EXPORTS_CATALOG } = await loadCatalogModule()
+  const catalogProvider = getScraperCatalog().find((item) => item.source === 'yalamanchilisoftwareexports')
+  const scraper = buildScrapers().find((item) => item.name === 'yalamanchilisoftwareexports')
+
+  assert.ok(catalogProvider, 'Expected Yalamanchili Software Exports in customProviders.json')
+  assert.equal(catalogProvider.companyCareerPage, YALAMANCHILI_SOFTWARE_EXPORTS_CATALOG.companyCareerPage)
+  assert.equal(catalogProvider.companyDomain, YALAMANCHILI_SOFTWARE_EXPORTS_CATALOG.companyDomain)
+  assert.equal(catalogProvider.paginationStrategy, YALAMANCHILI_SOFTWARE_EXPORTS_CATALOG.paginationStrategy)
+  assert.equal(catalogProvider.extractionStrategy, YALAMANCHILI_SOFTWARE_EXPORTS_CATALOG.extractionStrategy)
+  assert.equal(catalogProvider.verifiedOn, YALAMANCHILI_SOFTWARE_EXPORTS_CATALOG.verifiedOn)
+  assert.match(catalogProvider.verifiedSurfaceSummary, /ysppayments\.com/i)
+
+  assert.ok(scraper, 'Expected buildScrapers() to return the Yalamanchili Software Exports scraper')
+  assert.equal(scraper.provider.companyCareerPage, 'https://www.ysppayments.com/')
+  assert.equal(scraper.provider.companyDomain, 'ysppayments.com')
+  assert.match(scraper.dryRunFile, /yalamanchilisoftwareexports[\\/]jobs\.json$/i)
 })

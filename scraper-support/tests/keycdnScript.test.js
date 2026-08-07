@@ -5,11 +5,11 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at KeyCDN | We're hiring! | KeyCDN</title>
+    <title>Careers - KeyCDN</title>
   </head>
   <body>
     <main>
-      <h1>We are looking for smart and enthusiastic people who work hard and have fun while doing so.</h1>
+      <h1>We are looking for smart and enthusiastic people to help us build a world-class CDN.</h1>
       <p>Remote first company</p>
       <p>Made in Switzerland</p>
       <p>Open source and cool colleagues around the world.</p>

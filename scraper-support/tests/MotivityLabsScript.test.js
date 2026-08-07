@@ -20,8 +20,30 @@ const listingsPageHtml = `
 <html lang="en">
   <body>
     <h1>Current Openings</h1>
-    <a href="https://motivitylabs.com/jobs/sr-test-engineer/">Sr.Test Engineer 5+ Years Hyderabad More Details</a>
-    <a href="https://motivitylabs.com/jobs/senior-ai-ml-gen-ai-engineer/">Senior AI/ML &amp; Gen AI Engineer 8+ years Hyderabad More Details</a>
+    <a href="https://motivitylabs.com/jobs/sr-test-engineer/" class="awsm-job-item">
+      <h2 class="awsm-job-post-title">Sr.Test Engineer</h2>
+      <div class="awsm-job-specification-wrapper">
+        <div class="awsm-job-specification-item awsm-job-specification-job-category">
+          <span class="awsm-job-specification-term">5+ Years</span>
+        </div>
+        <div class="awsm-job-specification-item awsm-job-specification-job-location">
+          <span class="awsm-job-specification-term">Hyderabad</span>
+        </div>
+      </div>
+      <div class="awsm-job-more-container"><span class="awsm-job-more">More Details</span></div>
+    </a>
+    <a href="https://motivitylabs.com/jobs/senior-ai-ml-gen-ai-engineer/" class="awsm-job-item">
+      <h2 class="awsm-job-post-title">Senior AI/ML &amp; Gen AI Engineer</h2>
+      <div class="awsm-job-specification-wrapper">
+        <div class="awsm-job-specification-item awsm-job-specification-job-category">
+          <span class="awsm-job-specification-term">8+ years</span>
+        </div>
+        <div class="awsm-job-specification-item awsm-job-specification-job-location">
+          <span class="awsm-job-specification-term">Hyderabad</span>
+        </div>
+      </div>
+      <div class="awsm-job-more-container"><span class="awsm-job-more">More Details</span></div>
+    </a>
   </body>
 </html>
 `
@@ -87,7 +109,7 @@ test('MotivityLabs helpers stay pinned to the verified openings list and same-do
   assert.equal(motivity.OFFICIAL_BRAND_NAME, 'Motivity Labs')
   assert.equal(motivity.CAREERS_URL, 'https://motivitylabs.com/careers/')
   assert.equal(motivity.JOB_OPENINGS_URL, 'https://motivitylabs.com/job-openings/')
-  assert.equal(motivity.VERIFIED_ON, '2026-07-17')
+  assert.equal(motivity.VERIFIED_ON, '2026-08-03')
   assert.equal(motivity.hasOfficialCareersSignal(careersPageHtml), true)
   assert.equal(motivity.hasJobOpeningsSignal(listingsPageHtml), true)
   assert.deepEqual(motivity.extractJobCards(listingsPageHtml), [

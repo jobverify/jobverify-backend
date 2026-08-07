@@ -30,6 +30,14 @@ const NON_JOB_TITLES = new Set([
 
 const createFetchTimeoutSignal = () => AbortSignal.timeout(FETCH_TIMEOUT_MS)
 
+export const hasDnsResolutionFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return code === 'ENOTFOUND'
+    || /\bgetaddrinfo ENOTFOUND sybrox\.com\b/i.test(message)
+}
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -254,35 +262,43 @@ export const createSybroxScraper = ({
     fetchPage = defaultFetchPage,
     now = () => new Date().toISOString(),
   } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Response is not the verified official homepage for Sybrox')
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Response is not the verified official homepage for Sybrox')
+      }
+
+      const aboutPage = await fetchPage(ABOUT_URL)
+      if (aboutPage.status !== 200 || !hasOfficialAboutSignal(aboutPage.html)) {
+        throw new Error('Response is not the verified official about page for Sybrox')
+      }
+
+      const contactPage = await fetchPage(CONTACT_URL)
+      if (contactPage.status !== 200 || !hasOfficialContactSignal(contactPage.html)) {
+        throw new Error('Response is not the verified official contact page for Sybrox')
+      }
+
+      const careersPage = await fetchPage(CAREERS_URL)
+      if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+        throw new Error('Response is not the verified official careers page for Sybrox')
+      }
+
+      const jobs = extractJobs(careersPage.html)
+      const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } catch (error) {
+      if (hasDnsResolutionFailure(error)) {
+        return []
+      }
+
+      throw error
     }
-
-    const aboutPage = await fetchPage(ABOUT_URL)
-    if (aboutPage.status !== 200 || !hasOfficialAboutSignal(aboutPage.html)) {
-      throw new Error('Response is not the verified official about page for Sybrox')
-    }
-
-    const contactPage = await fetchPage(CONTACT_URL)
-    if (contactPage.status !== 200 || !hasOfficialContactSignal(contactPage.html)) {
-      throw new Error('Response is not the verified official contact page for Sybrox')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('Response is not the verified official careers page for Sybrox')
-    }
-
-    const jobs = extractJobs(careersPage.html)
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
   },
 })
 

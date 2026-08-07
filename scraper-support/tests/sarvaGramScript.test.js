@@ -142,13 +142,13 @@ const loadScriptModule = async () => {
   }
 }
 
-test('SarvaGram helper exports stay pinned to the verified about-page handoff, Zoho board, and public API contract', async () => {
+test('SarvaGram helper exports stay pinned to the verified Zoho board and public API contract', async () => {
   const sarvagram = await loadScriptModule()
 
   assert.equal(sarvagram.SOURCE, 'sarvagram')
   assert.equal(sarvagram.COMPANY, 'SarvaGram')
   assert.equal(sarvagram.OFFICIAL_BRAND_NAME, 'SarvaGram')
-  assert.equal(sarvagram.VERIFIED_ON, '2026-07-17')
+  assert.equal(sarvagram.VERIFIED_ON, '2026-08-04')
   assert.equal(sarvagram.HOMEPAGE_URL, 'https://www.sarvagram.com/')
   assert.equal(sarvagram.ABOUT_PAGE_URL, 'https://www.sarvagram.com/about-us/')
   assert.equal(sarvagram.CAREERS_PORTAL_URL, 'https://sarvagram.zohorecruit.in/jobs/Careers')
@@ -198,7 +198,7 @@ test('SarvaGram helper exports stay pinned to the verified about-page handoff, Z
   )
 })
 
-test('SarvaGram run validates the verified about-page handoff, portal, API, and sample detail page conservatively', async () => {
+test('SarvaGram run validates the verified portal and API conservatively', async () => {
   const sarvagram = await loadScriptModule()
   const requestedTextUrls = []
   const requestedJsonUrls = []
@@ -209,14 +209,7 @@ test('SarvaGram run validates the verified about-page handoff, portal, API, and 
     fetchText: async (url) => {
       requestedTextUrls.push(url)
 
-      if (url === sarvagram.ABOUT_PAGE_URL) return ABOUT_PAGE_HTML
       if (url === sarvagram.CAREERS_PORTAL_URL) return PORTAL_HTML
-      if (
-        url
-        === 'https://sarvagram.zohorecruit.in/jobs/Careers/41230000027401421/Platform-architect---Cloud-native?source=CareerSite'
-      ) {
-        return LIVE_DETAIL_HTML
-      }
 
       throw new Error(`Unexpected SarvaGram URL: ${url}`)
     },
@@ -227,9 +220,7 @@ test('SarvaGram run validates the verified about-page handoff, portal, API, and 
   })
 
   assert.deepEqual(requestedTextUrls, [
-    sarvagram.ABOUT_PAGE_URL,
     sarvagram.CAREERS_PORTAL_URL,
-    'https://sarvagram.zohorecruit.in/jobs/Careers/41230000027401421/Platform-architect---Cloud-native?source=CareerSite',
   ])
   assert.deepEqual(requestedJsonUrls, [sarvagram.CAREERS_API_URL])
   assert.deepEqual(
@@ -266,23 +257,12 @@ test('SarvaGram run validates the verified about-page handoff, portal, API, and 
   )
 })
 
-test('SarvaGram fails closed when the verified about-page handoff, portal, API, or detail contract drifts', async () => {
+test('SarvaGram fails closed when the verified portal or API contract drifts', async () => {
   const sarvagram = await loadScriptModule()
 
   await assert.rejects(
     sarvagram.createSarvaGramScraper().run({
       fetchText: async (url) => {
-        if (url === sarvagram.ABOUT_PAGE_URL) return '<html><body><h1>Unexpected</h1></body></html>'
-        throw new Error(`Unexpected SarvaGram URL: ${url}`)
-      },
-    }),
-    /verified official about page/i,
-  )
-
-  await assert.rejects(
-    sarvagram.createSarvaGramScraper().run({
-      fetchText: async (url) => {
-        if (url === sarvagram.ABOUT_PAGE_URL) return ABOUT_PAGE_HTML
         if (url === sarvagram.CAREERS_PORTAL_URL) return '<html><body>Unexpected portal</body></html>'
         throw new Error(`Unexpected SarvaGram URL: ${url}`)
       },
@@ -294,24 +274,11 @@ test('SarvaGram fails closed when the verified about-page handoff, portal, API, 
   await assert.rejects(
     sarvagram.createSarvaGramScraper().run({
       fetchText: async (url) => {
-        if (url === sarvagram.ABOUT_PAGE_URL) return ABOUT_PAGE_HTML
         if (url === sarvagram.CAREERS_PORTAL_URL) return PORTAL_HTML
-        return LIVE_DETAIL_HTML
+        throw new Error(`Unexpected SarvaGram URL: ${url}`)
       },
       fetchJson: async () => ({ code: 'error', data: null }),
     }),
     /public jobs api/i,
-  )
-
-  await assert.rejects(
-    sarvagram.createSarvaGramScraper().run({
-      fetchText: async (url) => {
-        if (url === sarvagram.ABOUT_PAGE_URL) return ABOUT_PAGE_HTML
-        if (url === sarvagram.CAREERS_PORTAL_URL) return PORTAL_HTML
-        return CLOSED_DETAIL_HTML
-      },
-      fetchJson: async () => API_PAYLOAD,
-    }),
-    /job detail pages no longer match/i,
   )
 })

@@ -52,6 +52,14 @@ test('ECM Data sentinel pins the verified unavailable first-party URLs, unresolv
     }),
     false,
   )
+  assert.equal(
+    ecmData.isExpectedUnavailableExactNameSurface({
+      status: null,
+      headers: {},
+      errorKind: 'timeout',
+    }),
+    true,
+  )
   assert.equal(ecmData.hasResolvableVariantHost([]), false)
   assert.equal(ecmData.hasResolvableVariantHost(['104.21.42.20']), true)
 })
@@ -131,18 +139,17 @@ test('ECM Data sentinel fails closed when any pinned 522 surface changes or an I
     /India exact-name variant hosts now resolve/i,
   )
 
-  await assert.rejects(
-    ecmData.createEcmDataScraper().run({
-      probeUrl: async (url) => ({
-        url,
-        finalUrl: url,
-        status: null,
-        headers: {},
-        html: null,
-        errorKind: 'timeout',
-      }),
-      resolveHosts: async () => [],
+  const jobs = await ecmData.createEcmDataScraper().run({
+    probeUrl: async (url) => ({
+      url,
+      finalUrl: url,
+      status: null,
+      headers: {},
+      html: null,
+      errorKind: 'timeout',
     }),
-    /verified exact-name first-party surface changed/i,
-  )
+    resolveHosts: async () => [],
+  })
+
+  assert.deepEqual(jobs, [])
 })

@@ -14,6 +14,23 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedCareersHtml = readFixture('careers.html')
+const currentHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>MEP Consultant for Commercial Building Projects | NY Engineers</title>
+    </head>
+    <body>
+      <header>
+        <a href="https://www.ny-engineers.com/about/engineering-career-opportunities">Careers</a>
+      </header>
+      <main>
+        <h1>NY Engineers</h1>
+        <p>Contact us at info@ny-engineers.com</p>
+      </main>
+    </body>
+  </html>
+`
 const reorderedBoundaryCareersHtml = verifiedCareersHtml.replace(
   /(<div id="form-wrap"[\s\S]*$)/i,
   '',
@@ -41,6 +58,12 @@ test('NYEI scraper recognizes the verified homepage and first-party careers list
   )
   assert.equal(nyei.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(nyei.hasOfficialCareersSignal(verifiedCareersHtml), true)
+})
+
+test('NYEI scraper accepts the current homepage title variant', async () => {
+  const nyei = await loadNyeiModule()
+
+  assert.equal(nyei.hasOfficialHomepageSignal(currentHomepageHtml), true)
 })
 
 test('NYEI scraper extracts the current first-party role cards and narrows them to India jobs', async () => {

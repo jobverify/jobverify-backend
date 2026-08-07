@@ -1,13 +1,22 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { CUELOGIC_CATALOG as PROVIDER_METADATA } from './catalog.js'
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const SOURCE = 'cuelogic'
-export const COMPANY = 'Cuelogic'
-export const CAREERS_URL = 'https://careers.ltimindtree.com/search/'
+export { PROVIDER_METADATA }
+export const SOURCE = PROVIDER_METADATA.source
+export const COMPANY = PROVIDER_METADATA.companyName
+export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
+export const VERIFIED_JOBS_MICROSITE_URL = PROVIDER_METADATA.verifiedJobsMicrositeUrl
+export const BROKEN_REDIRECT_HOST = PROVIDER_METADATA.brokenRedirectHost
+export const BROKEN_REDIRECT_CERTIFICATE_HOST = PROVIDER_METADATA.brokenRedirectCertificateHost
+export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const SEARCH_TERM = 'Cuelogic'
 
 const USER_AGENT =
@@ -35,6 +44,58 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const collectErrorMessages = (error) => {
+  const messages = []
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+
+    const message = typeof current?.message === 'string'
+      ? current.message.trim()
+      : String(current ?? '').trim()
+    if (message) {
+      messages.push(message)
+    }
+
+    current = current?.cause
+  }
+
+  return [...new Set(messages.filter(Boolean))]
+}
+
+const resolveErrorCode = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+
+    if (typeof current?.code === 'string' && current.code.trim()) {
+      return current.code.trim()
+    }
+
+    current = current?.cause
+  }
+
+  return undefined
+}
+
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
 export const buildSearchUrl = () => {
   const url = new URL(CAREERS_URL)
   url.searchParams.set('createNewAlert', 'false')
@@ -48,6 +109,23 @@ export const buildSearchUrl = () => {
 export const pageExposesOpenJobs = (html) => /class=["']data-row["']/i.test(String(html ?? ''))
   || /class=["']jobTitle-link["']/i.test(String(html ?? ''))
 
+export const isTrustedSearchRoute = (value) => {
+  try {
+    const expected = new URL(buildSearchUrl())
+    const actual = new URL(String(value ?? ''))
+
+    return actual.origin === expected.origin
+      && actual.pathname === expected.pathname
+      && actual.searchParams.get('createNewAlert') === 'false'
+      && actual.searchParams.get('q') === SEARCH_TERM
+      && (actual.searchParams.get('optionsFacetsDD_country') ?? '') === ''
+      && (actual.searchParams.get('optionsFacetsDD_location') ?? '') === ''
+      && (actual.searchParams.get('locationsearch') ?? '') === ''
+  } catch {
+    return false
+  }
+}
+
 export const hasVerifiedEmptySearchSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
@@ -60,20 +138,84 @@ export const hasVerifiedEmptySearchSignal = (html) => {
     && /There are currently no open positions matching\s*"\s*Cuelogic\s*"\./i.test(text)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
+export const isKnownBrokenCareersRedirectTlsFailure = (error) => {
+  const code = resolveErrorCode(error)
+  const message = collectErrorMessages(error).join(' | ')
+  const hasAltNameMismatch = /Hostname\/IP does not match certificate's altnames/i.test(message)
+  const matchesKnownHost = new RegExp(BROKEN_REDIRECT_HOST.replace(/\./g, '\\.'), 'i').test(message)
+  const matchesKnownCertificate = new RegExp(BROKEN_REDIRECT_CERTIFICATE_HOST.replace(/\./g, '\\.'), 'i').test(message)
+
+  return (code === 'ERR_TLS_CERT_ALTNAME_INVALID' || hasAltNameMismatch)
+    && matchesKnownHost
+    && matchesKnownCertificate
+}
+
+const buildKnownUpstreamOutageError = (error) => {
+  const outageError = new Error(
+    `Cuelogic verified LTIMindtree careers routes now redirect to the broken ${BROKEN_REDIRECT_HOST} TLS surface`,
+    { cause: error },
+  )
+  outageError.softFailure = true
+  outageError.upstreamOutage = true
+  outageError.failureKind = 'network_or_timeout'
+  outageError.abortRetries = true
+  return outageError
+}
+
+const defaultFetchPage = (url, { signal } = {}) => withRetry(async () => {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: composeAbortSignals(signal, createTimeoutSignal(15000)),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  } catch (error) {
+    if (isKnownBrokenCareersRedirectTlsFailure(error)) {
+      error.abortRetries = true
+    }
+
+    throw error
+  }
+}, {
+  attempts: 3,
+  baseDelayMs: 2000,
   label: SOURCE,
-  timeoutMs: 15000,
+  signal,
 })
 
 export const createCuelogicScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const searchHtml = await fetchText(buildSearchUrl())
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    const searchUrl = buildSearchUrl()
+    let searchPage
 
-    if (!hasVerifiedEmptySearchSignal(searchHtml) || pageExposesOpenJobs(searchHtml)) {
+    try {
+      searchPage = await fetchPage(searchUrl, { signal })
+    } catch (error) {
+      if (isKnownBrokenCareersRedirectTlsFailure(error)) {
+        return []
+      }
+
+      throw error
+    }
+
+    if (!isTrustedSearchRoute(searchPage.url || searchUrl)) {
+      throw new Error('Cuelogic verified LTIMindtree search route redirected away from the trusted careers surface')
+    }
+
+    if (!hasVerifiedEmptySearchSignal(searchPage.html) || pageExposesOpenJobs(searchPage.html)) {
       throw new Error('Cuelogic verified LTIMindtree empty-search surface changed or now exposes public jobs')
     }
 

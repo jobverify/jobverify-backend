@@ -137,6 +137,7 @@ const mapJob = (job, scrapedAt) => {
     link: sourceUrl,
     employmentType: normalizeWhitespace(job?.job_type),
     experienceRequired: null,
+    publicExperienceChecked: true,
     ...(normalizeWhitespace(job?.experience_level)
       ? { experienceLevel: normalizeWhitespace(job?.experience_level) }
       : {}),

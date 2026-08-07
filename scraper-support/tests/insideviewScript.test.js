@@ -5,15 +5,16 @@ const redirectedDemandbaseHomepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Demandbase | Smarter GTM Starts Here</title>
+    <title>ABM Platform for B2B Sales &amp; Marketing Success | Demandbase</title>
   </head>
   <body>
     <nav>
-      <a href="/about-us/">About Us</a>
+      <a href="/pricing/">Pricing</a>
+      <a href="/company/">Company</a>
       <a href="/company/careers/">Careers</a>
     </nav>
-    <h1>Smarter GTM Starts Here</h1>
-    <p>Demandbase helps B2B revenue teams align around data and account intelligence.</p>
+    <h1>Turn your go-to-market into a pipeline engine</h1>
+    <p>The pipeline engine for AI GTM that aligns teams to turn goals into revenue.</p>
   </body>
 </html>
 `
@@ -22,7 +23,7 @@ const legacyLoginHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>InsideView | Forgot Password</title>
+    <title>InsideView: Set Password</title>
   </head>
   <body>
     <header>
@@ -31,8 +32,8 @@ const legacyLoginHtml = `
       <a href="https://support.demandbase.com/hc/en-us">Support</a>
     </header>
     <main>
-      <h1>Forgot your password?</h1>
-      <label for="email">Business Email</label>
+      <h1>Forgot your Password?</h1>
+      <p>Submit your Email ID below to set a new password.</p>
       <button type="submit">Submit</button>
     </main>
   </body>
@@ -62,7 +63,7 @@ test('InsideView scraper constants stay pinned to the verified Demandbase redire
 
   assert.equal(insideview.SOURCE, 'insideview')
   assert.equal(insideview.COMPANY, 'InsideView')
-  assert.equal(insideview.VERIFIED_ON, '2026-07-16')
+  assert.equal(insideview.VERIFIED_ON, '2026-08-02')
   assert.equal(insideview.ROOT_URL, 'https://www.insideview.com/')
   assert.equal(insideview.REDIRECTED_HOMEPAGE_URL, 'https://www.demandbase.com/')
   assert.equal(insideview.LEGACY_LOGIN_URL, 'https://my.insideview.com/iv/login/forgot_password.jsp')

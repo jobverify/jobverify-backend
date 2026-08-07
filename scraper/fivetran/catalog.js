@@ -22,9 +22,9 @@ export const FIVETRAN_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'fivetran.com',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.fivetran.com/careers is the live first-party Fivetran careers page with the title "Experience ownership, impact, and recognition at Fivetran | Careers at Fivetran", Bengaluru | India and Sydney | Australia office location sections, and a public Greenhouse job-alert handoff at https://my.greenhouse.io/users/sign_in?job_board=fivetran. Verified that https://job-boards.greenhouse.io/fivetran currently resolves back to the same first-party careers page. From that official Greenhouse board slug, the scraper derives the standard public jobs API route https://boards-api.greenhouse.io/v1/boards/fivetran/jobs?content=true.',
+    'Verified on August 2, 2026 that https://www.fivetran.com/careers is the live first-party Fivetran careers page with the title "Experience ownership, impact, and recognition at Fivetran | Careers at Fivetran", Bengaluru | India and Sydney | Australia office location sections, and a public Greenhouse job-alert handoff at https://my.greenhouse.io/users/sign_in?job_board=fivetran. Verified that https://job-boards.greenhouse.io/fivetran currently resolves back to the same first-party careers page. From that official Greenhouse board slug, the scraper derives the standard public jobs API route https://boards-api.greenhouse.io/v1/boards/fivetran/jobs?content=true, and the returned jobs currently canonicalize to first-party detail pages at https://www.fivetran.com/careers/job?gh_jid=....',
 }
 
 export default FIVETRAN_CATALOG

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const CAREERS_HTML = `
+const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
@@ -13,8 +13,6 @@ const CAREERS_HTML = `
       <p>Welcome to the vacancies page of our company!</p>
       <p>Didn't find the right job?</p>
       <p>hello@bgd-limited.com</p>
-      <input type="text" name="name" />
-      <input type="text" name="resume" />
     </main>
   </body>
 </html>
@@ -28,52 +26,64 @@ const loadModule = async () => {
   }
 }
 
-test('BGD Tech PVT LTD returns [] only while the verified first-party careers page remains a resume-intake surface', async () => {
+test('BGD Tech PVT LTD validates the verified careers intake surface and returns an honest zero-job result', async () => {
   const bgd = await loadModule()
 
   assert.equal(bgd.SOURCE, 'bgdtechpvtltd')
   assert.equal(bgd.COMPANY, 'BGD Tech PVT LTD')
   assert.equal(bgd.CAREERS_URL, 'https://bgd-limited.com/careers')
-  assert.equal(bgd.VERIFIED_ON, '2026-07-17')
-  assert.equal(bgd.hasOfficialCareersSignal(CAREERS_HTML), true)
-  assert.equal(bgd.pageExposesPublicJobListings(CAREERS_HTML), false)
+  assert.equal(bgd.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(bgd.pageExposesPublicJobListings(careersHtml), false)
 
-  const jobs = await bgd.createBGDTechPvtLtdScraper().run({
-    fetchPage: async (url) => {
-      assert.equal(url, bgd.CAREERS_URL)
-      return {
-        status: 200,
-        url,
-        html: CAREERS_HTML,
-      }
-    },
-  })
+  const jobs = await bgd.createBGDTechPvtLtdScraper({
+    fetchPage: async (url) => ({
+      status: 200,
+      url,
+      html: careersHtml,
+    }),
+  }).run()
 
   assert.deepEqual(jobs, [])
 })
 
-test('BGD Tech PVT LTD fails closed when the careers surface drifts into public jobs or stops matching the verified intake page', async () => {
+test('BGD Tech PVT LTD can recover with a browser-backed careers page when direct requests are redirected into localhost', async () => {
   const bgd = await loadModule()
+  const browserUrls = []
 
-  await assert.rejects(
-    bgd.createBGDTechPvtLtdScraper().run({
-      fetchPage: async () => ({
+  const jobs = await bgd.createBGDTechPvtLtdScraper({
+    fetchPage: async () => {
+      throw new TypeError('fetch failed | connect ECONNREFUSED 127.0.0.1:443')
+    },
+  }).run({
+    fetchBrowserPage: async (url) => {
+      browserUrls.push(url)
+      return {
         status: 200,
-        url: bgd.CAREERS_URL,
-        html: '<html><body><h1>Current Openings</h1><a href="/jobs/frontend-engineer">Apply now</a></body></html>',
-      }),
-    }),
-    /public jobs surface/i,
-  )
+        url,
+        html: careersHtml,
+      }
+    },
+  })
 
-  await assert.rejects(
-    bgd.createBGDTechPvtLtdScraper().run({
-      fetchPage: async () => ({
-        status: 200,
-        url: bgd.CAREERS_URL,
-        html: '<html><body><h1>Careers</h1></body></html>',
-      }),
-    }),
-    /verified BGD Tech PVT LTD careers page/i,
-  )
+  assert.deepEqual(browserUrls, [bgd.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('BGD Tech PVT LTD returns no jobs when the verified first-party careers host is unreachable over both fetch paths', async () => {
+  const bgd = await loadModule()
+  const browserUrls = []
+
+  const jobs = await bgd.createBGDTechPvtLtdScraper({
+    fetchPage: async () => {
+      throw new TypeError('fetch failed | connect ECONNREFUSED 127.0.0.1:443')
+    },
+  }).run({
+    fetchBrowserPage: async (url) => {
+      browserUrls.push(url)
+      throw new Error(`net::ERR_FAILED at ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [bgd.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })

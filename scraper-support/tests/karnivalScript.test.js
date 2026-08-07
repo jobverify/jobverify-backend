@@ -33,11 +33,13 @@ const homepageHtml = `
 const sitemapXml = `
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.karnival.com/</loc></url>
+  <url><loc>https://www.karnival.com</loc></url>
   <url><loc>https://www.karnival.com/contact</loc></url>
   <url><loc>https://www.karnival.com/blogs</loc></url>
-  <url><loc>https://www.karnival.com/privacy-policy</loc></url>
   <url><loc>https://www.karnival.com/terms-and-conditions</loc></url>
+  <url><loc>https://www.karnival.com/privacy-policy</loc></url>
+  <url><loc>https://www.karnival.com/dpa</loc></url>
+  <url><loc>https://www.karnival.com/blog/why-is-customer-feedback-important-for-brands</loc></url>
 </urlset>
 `
 
@@ -84,7 +86,7 @@ test('Karnival pins the verified official homepage, sitemap without careers rout
 
   assert.equal(karnival.SOURCE, 'karnival')
   assert.equal(karnival.COMPANY, 'Karnival')
-  assert.equal(karnival.VERIFIED_ON, '2026-07-16')
+  assert.equal(karnival.VERIFIED_ON, '2026-08-02')
   assert.equal(karnival.HOMEPAGE_URL, 'https://www.karnival.com/')
   assert.equal(karnival.SITEMAP_URL, 'https://www.karnival.com/sitemap.xml')
   assert.deepEqual(karnival.MISSING_JOBS_ROUTE_URLS, [
@@ -96,11 +98,13 @@ test('Karnival pins the verified official homepage, sitemap without careers rout
   assert.equal(karnival.hasRenderablePublicJobsSignal(homepageHtml), false)
   assert.equal(karnival.hasRenderablePublicJobsSignal(liveJobsHtml), true)
   assert.deepEqual(karnival.extractSitemapUrls(sitemapXml), [
-    'https://www.karnival.com/',
+    'https://www.karnival.com',
     'https://www.karnival.com/contact',
     'https://www.karnival.com/blogs',
-    'https://www.karnival.com/privacy-policy',
     'https://www.karnival.com/terms-and-conditions',
+    'https://www.karnival.com/privacy-policy',
+    'https://www.karnival.com/dpa',
+    'https://www.karnival.com/blog/why-is-customer-feedback-important-for-brands',
   ])
   assert.equal(karnival.hasVerifiedSitemapSignal(sitemapXml), true)
   assert.equal(karnival.hasVerifiedSitemapSignal(jobsLinkedSitemapXml), false)

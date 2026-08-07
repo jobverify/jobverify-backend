@@ -57,6 +57,8 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const hasLegacyExperienceCopy = /Let's connect every conversation, from your teams to your customers/i.test(normalized)
+  const hasCurrentExperienceCopy = /Interaction Fabric/i.test(normalized) && /\bKaleyra\.ai\b/i.test(normalized)
 
   return /<title[^>]*>\s*Tata Communications Kaleyra Transforming Total Experience\s*<\/title>/i.test(rawHtml)
     && new RegExp(
@@ -64,20 +66,27 @@ export const hasOfficialHomepageSignal = (html) => {
       'i',
     ).test(rawHtml)
     && new RegExp(
-      `href=["']${CAREERS_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`,
+      `href=["']https?:\\/\\/jobs\\.tatacommunications\\.com(?:\\/[^"']*)?["']`,
       'i',
     ).test(rawHtml)
     && /Kaleyra\.io Login/i.test(normalized)
-    && /Let's connect every conversation, from your teams to your customers/i.test(normalized)
+    && (hasLegacyExperienceCopy || hasCurrentExperienceCopy)
 }
 
 export const hasVerifiedSharedCareersPortalSignal = (html) => {
   const rawHtml = String(html ?? '')
-
-  return /<title[^>]*>\s*Career Portal\s*<\/title>/i.test(rawHtml)
+  const hasLegacyPortalShell = /<title[^>]*>\s*Career Portal\s*<\/title>/i.test(rawHtml)
     && /jobs\.tatacommunications\.com/i.test(rawHtml)
     && /id=["']root["']/i.test(rawHtml)
     && /career-portal/i.test(rawHtml)
+  const hasCurrentFlutterPortalShell = /<title[^>]*>\s*Career Portal\s*<\/title>/i.test(rawHtml)
+    && /<base\s+href=["']\/["']\s*\/?>/i.test(rawHtml)
+    && /flutter_bootstrap\.js/i.test(rawHtml)
+    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Career Portal["']/i.test(rawHtml)
+    && /<meta[^>]+property=["']og:title["'][^>]+content=["']Career Opportunities["']/i.test(rawHtml)
+    && /Explore exciting career opportunities/i.test(rawHtml)
+
+  return hasLegacyPortalShell || hasCurrentFlutterPortalShell
 }
 
 export const hasKaleyraSpecificJobsSignal = (html) => {
@@ -105,6 +114,10 @@ export const createKaleyraScraper = () => ({
 
     if (careersPage.status !== 200 || !hasVerifiedSharedCareersPortalSignal(careersPage.html)) {
       throw new Error('Kaleyra shared Tata careers portal no longer matches the verified public shell')
+    }
+
+    if (normalizeComparableUrl(careersPage.url) !== normalizeComparableUrl(CAREERS_URL)) {
+      throw new Error('Kaleyra shared Tata careers portal no longer resolves to the verified public shell')
     }
 
     if (hasKaleyraSpecificJobsSignal(careersPage.html)) {

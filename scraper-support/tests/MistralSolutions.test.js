@@ -44,9 +44,9 @@ const careersHtml = `
           </td>
           <td>
             <a
-              href="#"
-              class="apply-btn career-popup-btn"
-              data-form="https://form.jotform.com/261900894262460?positionApplyingFor=Test%20Engineer%20-%20Senior%20Engineer%20">
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdXCkBGxh_l8CuzwNaudaOr3Xg_wQATHZsCQGRGb8TdVi5OGA/viewform?usp=pp_url&#038;entry.1656541746=Test%20Engineer%20-%20Senior%20Engineer%20"
+              class="apply-btn"
+              target="_blank">
               Apply
             </a>
           </td>
@@ -65,9 +65,9 @@ const careersHtml = `
           </td>
           <td>
             <a
-              href="#"
-              class="apply-btn career-popup-btn"
-              data-form="https://form.jotform.com/261788550500054?positionApplyingFor=Pre-Sales%20Lead%20-%20Module%20Lead/%20Project%20Lead">
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdXCkBGxh_l8CuzwNaudaOr3Xg_wQATHZsCQGRGb8TdVi5OGA/viewform?usp=pp_url&#038;entry.1656541746=Pre-Sales%20Lead%20-%20Module%20Lead/%20Project%20Lead"
+              class="apply-btn"
+              target="_blank">
               Apply
             </a>
           </td>
@@ -113,14 +113,17 @@ test('Mistral Solutions local catalog captures the verified first-party careers 
   assert.equal(MISTRAL_SOLUTIONS_CATALOG.paginationStrategy, 'single-careers-table-page')
   assert.equal(
     MISTRAL_SOLUTIONS_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+html-job-table+docx-detail-links+jotform-apply-links',
+    'verified-first-party-careers-page+html-job-table+docx-detail-links+google-forms-apply-links',
   )
   assert.equal(MISTRAL_SOLUTIONS_CATALOG.companyDomain, 'mistralsolutions.com')
-  assert.equal(MISTRAL_SOLUTIONS_CATALOG.verifiedOn, '2026-07-18')
+  assert.equal(MISTRAL_SOLUTIONS_CATALOG.verifiedOn, '2026-08-03')
   assert.equal(MISTRAL_SOLUTIONS_CATALOG.modulePath, modulePath)
+  assert.match(MISTRAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(MISTRAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /JID-024/i)
+  assert.match(MISTRAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /JID-023/i)
   assert.match(MISTRAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /JID-021/i)
   assert.match(MISTRAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /JID-001/i)
-  assert.match(MISTRAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /Jotform/i)
+  assert.match(MISTRAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /Google Forms/i)
   assert.deepEqual(scriptModule.PROVIDER_METADATA, MISTRAL_SOLUTIONS_CATALOG)
 
   const report = generateCompanyCoverageReport({
@@ -133,7 +136,7 @@ test('Mistral Solutions local catalog captures the verified first-party careers 
   assert.equal(report.unmatchedCount, 0)
 })
 
-test('Mistral Solutions extracts first-party careers table rows with docx detail links and jotform apply links', async () => {
+test('Mistral Solutions extracts first-party careers table rows with docx detail links and Google Forms apply links', async () => {
   const mistral = await loadScriptModule()
 
   assert.equal(mistral.hasOfficialCareersPageSignal(careersHtml), true)
@@ -147,14 +150,14 @@ test('Mistral Solutions extracts first-party careers table rows with docx detail
         'Test Engineer - Senior Engineer',
         'Bangalore, India',
         'https://mistralsolutions.com/wp-content/uploads/2026/07/18.Test-Engineer-Senior-Engineer.docx',
-        'https://form.jotform.com/261900894262460?positionApplyingFor=Test%20Engineer%20-%20Senior%20Engineer%20',
+        'https://docs.google.com/forms/d/e/1FAIpQLSdXCkBGxh_l8CuzwNaudaOr3Xg_wQATHZsCQGRGb8TdVi5OGA/viewform?usp=pp_url&entry.1656541746=Test%20Engineer%20-%20Senior%20Engineer%20',
       ],
       [
         'JID-001',
         'Pre-Sales Lead - Module Lead/ Project Lead',
         'Bangalore, India',
         'https://mistralsolutions.com/wp-content/uploads/2026/07/Pre-Sales-Lead-Module-Lead_-Project-Lead.docx',
-        'https://form.jotform.com/261788550500054?positionApplyingFor=Pre-Sales%20Lead%20-%20Module%20Lead/%20Project%20Lead',
+        'https://docs.google.com/forms/d/e/1FAIpQLSdXCkBGxh_l8CuzwNaudaOr3Xg_wQATHZsCQGRGb8TdVi5OGA/viewform?usp=pp_url&entry.1656541746=Pre-Sales%20Lead%20-%20Module%20Lead/%20Project%20Lead',
       ],
     ],
   )

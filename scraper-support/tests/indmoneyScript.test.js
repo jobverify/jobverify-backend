@@ -44,6 +44,21 @@ const aboutPageWithFirstPartyJobsHtml = `
 </html>
 `
 
+const cloudflareChallengeHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <h1>www.indmoney.com</h1>
+    <p>Performing security verification</p>
+    <p>Enable JavaScript and cookies to continue</p>
+    <p>Performance and Security by Cloudflare</p>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/indmoney/script.js')
@@ -57,10 +72,11 @@ test('INDmoney scraper exports the verified official about-page LinkedIn handoff
 
   assert.equal(indmoney.COMPANY, 'INDmoney')
   assert.equal(indmoney.OFFICIAL_BRAND_NAME, 'INDmoney')
-  assert.equal(indmoney.VERIFIED_ON, '2026-07-16')
+  assert.equal(indmoney.VERIFIED_ON, '2026-08-02')
   assert.equal(indmoney.HOMEPAGE_URL, 'https://www.indmoney.com/')
   assert.equal(indmoney.ABOUT_PAGE_URL, 'https://www.indmoney.com/about')
   assert.equal(indmoney.LINKEDIN_JOBS_URL, 'https://www.linkedin.com/company/indmoney/jobs/')
+  assert.equal(indmoney.hasCloudflareChallengePageSignal(cloudflareChallengeHtml), true)
   assert.equal(indmoney.hasOfficialAboutPageSignal(aboutPageHtml), true)
   assert.equal(
     indmoney.extractLinkedInJobsUrl(aboutPageHtml),
@@ -87,6 +103,27 @@ test('INDmoney returns [] only while the verified first-party about page stays a
   })
 
   assert.deepEqual(requestedUrls, [indmoney.ABOUT_PAGE_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('INDmoney falls back to a browser fetch when the official about page serves a Cloudflare challenge', async () => {
+  const indmoney = await loadModule()
+  const requestedPages = []
+  const requestedBrowserPages = []
+
+  const jobs = await indmoney.createIndmoneyScraper().run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return { status: 403, url, html: cloudflareChallengeHtml }
+    },
+    fetchBrowserPage: async (url) => {
+      requestedBrowserPages.push(url)
+      return { status: 200, url, html: aboutPageHtml }
+    },
+  })
+
+  assert.deepEqual(requestedPages, [indmoney.ABOUT_PAGE_URL])
+  assert.deepEqual(requestedBrowserPages, [indmoney.ABOUT_PAGE_URL])
   assert.deepEqual(jobs, [])
 })
 

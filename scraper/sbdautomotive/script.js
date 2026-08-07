@@ -1,3 +1,6 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 export const SOURCE = 'sbdautomotive'
 export const COMPANY = 'SBD Automotive'
 export const HOMEPAGE_URL = 'https://www.sbdautomotive.com/'
@@ -5,6 +8,8 @@ export const INDIA_URL = 'https://www.sbdautomotive.com/india'
 export const CAREERS_URL = 'https://www.sbdautomotive.com/careers-vacancies'
 export const WORKING_AT_SBD_URL = 'https://www.sbdautomotive.com/working-at-sbd'
 export const BAMBOOHR_CV_URL = 'https://sbdautomotive.bamboohr.com/careers/91'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -37,6 +42,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
+  .replace(/\s+,/g, ',')
   .replace(/\s+/g, ' ')
   .trim()
 
@@ -150,3 +156,26 @@ export const createSbdAutomotiveScraper = () => ({
 })
 
 export const run = async (options = {}) => createSbdAutomotiveScraper().run(options)
+
+export const runStandalone = async ({
+  argv = process.argv,
+  runScraper = run,
+  saveToFileImpl,
+  saveToDbImpl,
+} = {}) => {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = argv.includes('--dry-run')
+  const jobs = await runScraper()
+
+  if (isDryRun) {
+    ;(saveToFileImpl || saveToFile)(jobs, path.join(currentDir, 'jobs.json'))
+    return jobs
+  }
+
+  await (saveToDbImpl || saveToDB)(jobs, SOURCE)
+  return jobs
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await runStandalone()
+}

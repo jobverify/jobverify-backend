@@ -1361,7 +1361,7 @@ const runWorkdayJobsApiScraper = async ({
             buildWorkdayAppliedFacets(baseUrl, null, countryFacetParameter),
           )
           effectiveSearchText = config.searchText || 'India'
-          console.warn(`  [${source}] Workday jobs API rejected the generic country facet; retrying with India search text.`)
+          console.log(`  [${source}] Workday jobs API rejected the generic country facet; retrying with India search text.`)
 
           try {
             payload = await fetchWorkdayJobsApiPage({
@@ -1392,7 +1392,7 @@ const runWorkdayJobsApiScraper = async ({
             buildWorkdayAppliedFacets(baseUrl, null, countryFacetParameter),
           )
           effectiveSearchText = config.searchText || 'India'
-          console.warn(`  [${source}] Workday jobs API rejected the remaining location facets; retrying with India search text only.`)
+          console.log(`  [${source}] Workday jobs API rejected the remaining location facets; retrying with India search text only.`)
 
           try {
             payload = await fetchWorkdayJobsApiPage({
@@ -1500,6 +1500,7 @@ const runWorkdayJobsApiScraper = async ({
             preferredQualification: detailPayload.preferredQualification,
             requiredSkills: detailPayload.requiredSkills,
             experienceRequired: detailPayload.experienceRequired,
+            publicExperienceChecked: detailPayload.publicExperienceChecked,
             requisitionId: detailPayload.requisitionId,
             scrapedAt: new Date().toISOString(),
           }
@@ -1781,6 +1782,7 @@ export const runWorkdayScraper = async (options) => {
             preferredQualification: detailPayload.preferredQualification,
             requiredSkills: detailPayload.requiredSkills,
             experienceRequired: detailPayload.experienceRequired,
+            publicExperienceChecked: detailPayload.publicExperienceChecked,
             requisitionId: detailPayload.requisitionId,
             scrapedAt: new Date().toISOString(),
           }

@@ -29,7 +29,7 @@ test('Karur Vysya Bank local catalog captures the verified first-party Zwayam ca
   assert.equal(provider.companyName, 'Karur Vysya Bank')
   assert.equal(provider.officialBrandName, 'Karur Vysya Bank')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/karurvysyabank/script.js')
+  assert.match(provider.modulePath, /karurvysyabank[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /karurvysyabank[\\/]jobs\.json$/i)
   assert.equal(provider.homepageUrl, 'https://www.kvb.bank.in/')
   assert.equal(provider.careersLandingUrl, 'https://careers.karurvysya.bank.in/karurvysyabank/')
@@ -50,7 +50,7 @@ test('Karur Vysya Bank local catalog captures the verified first-party Zwayam ca
   assert.equal(provider.zwayamDetailCompanyId, '15551')
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://careers.karurvysya.bank.in/karurvysyabank/jobview/bus-dev-executive-bc-chennai-tamil-nadu-india-2025071615352836',
+    'https://careers.karurvysya.bank.in/karurvysyabank/jobview/product-mgr-prod-partnership-all-branches-2025062618181035',
   )
   assert.equal(provider.atsPlatform, 'zwayam')
   assert.equal(provider.countryFilter, 'India')
@@ -61,12 +61,17 @@ test('Karur Vysya Bank local catalog captures the verified first-party Zwayam ca
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedPublicPostingCount, 49)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /49 live jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.kvb\.bank\.in\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.karurvysya\.bank\.in/i)
   assert.match(provider.verifiedSurfaceSummary, /careers\.karurvysya\.bank\.in\/karurvysyabank\/jobslist/i)
   assert.match(provider.verifiedSurfaceSummary, /public\.zwayam\.com\/data-service\/v2\/company\/15551\/careersite-configurations/i)
   assert.match(provider.verifiedSurfaceSummary, /public\.zwayam\.com\/manageESQueries\/searchJob/i)
-  assert.match(provider.verifiedSurfaceSummary, /bus-dev-executive-bc-chennai-tamil-nadu-india-2025071615352836/i)
+  assert.match(provider.verifiedSurfaceSummary, /reponseObject\.company/i)
+  assert.match(provider.verifiedSurfaceSummary, /product-mgr-prod-partnership-all-branches-2025062618181035/i)
 
   assert.equal(karurVysyaBank.PROVIDER_METADATA.source, provider.source)
   assert.equal(karurVysyaBank.PROVIDER_METADATA.companyName, provider.companyName)

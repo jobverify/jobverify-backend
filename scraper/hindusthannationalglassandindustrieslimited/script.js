@@ -133,6 +133,7 @@ export const extractVacancyRows = (html) => {
           + `Job code: ${requisitionId}. `
           + 'The current first-party vacancies page lists this role inline and does not expose a public detail or application-form URL in the markup.',
         ),
+        publicExperienceChecked: true,
       })
     }
   }

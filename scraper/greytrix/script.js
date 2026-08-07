@@ -29,11 +29,13 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = String(html).replace(/\s+/g, ' ')
 
   return normalized.includes('Careers - Greytrix')
-    && normalized.includes('Launch your PROFESSIONAL JOURNEY with us!')
+    && normalized.includes('Launch your')
+    && normalized.includes('PROFESSIONAL JOURNEY with us!')
     && normalized.includes('Join Us')
     && normalized.includes('Job Openings')
-    && normalized.includes('Greytrix official emails only come from @greytrix.com')
-    && normalized.includes('Contact Us')
+    && normalized.includes('Greytrix official emails only come from')
+    && normalized.includes('@greytrix.com')
+    && /Contact us/i.test(normalized)
 }
 
 export const hasPublicJobSignals = (html = '') =>

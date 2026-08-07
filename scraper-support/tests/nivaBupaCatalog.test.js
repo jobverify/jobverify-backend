@@ -94,4 +94,37 @@ test('Niva Bupa official careers page stays pinned to the verified Darwinbox han
     nivabupa.extractLegacyTalentRecruitUrl(careersHtml),
     'https://nivabupa.talentrecruit.com/career-page',
   )
+  assert.equal(
+    nivabupa.extractMetaDescription(careersHtml),
+    'Careers with Niva Bupa',
+  )
+})
+
+test('Niva Bupa accepts the current first-party careers shell when careers copy is only present in metadata', async () => {
+  const nivabupa = await loadScriptModule()
+
+  const currentCareersHtml = `
+    <html>
+      <head>
+        <title>Niva Bupa Careers</title>
+        <meta name="description" content="Careers with Niva Bupa" />
+      </head>
+      <body>
+        <section>
+          <h3>Message From Our CEO</h3>
+          <h3>Employee Recognition</h3>
+          <p>Diversity</p>
+        </section>
+        <script>
+          var redirecturl = "https://disha.darwinbox.in/ms/candidate/careers";
+        </script>
+        <!-- <a href="https://nivabupa.talentrecruit.com/career-page">Search Jobs</a> -->
+      </body>
+    </html>
+  `
+
+  assert.equal(
+    nivabupa.hasOfficialNivaBupaCareersSignals(currentCareersHtml),
+    true,
+  )
 })

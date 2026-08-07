@@ -73,10 +73,13 @@ export const hasOfficialContactSignal = (page = {}) => {
 
   return page?.status === 200
     && page?.url === CONTACT_URL
-    && normalized.includes('Happy to Help')
     && normalized.includes('Guru99')
     && normalized.includes('Titanium City Center')
     && normalized.includes('Ahmedabad, Gujarat, India')
+    && (
+      normalized.includes('Happy to Help')
+      || (normalized.includes('Advertising') && normalized.includes('Editorial'))
+    )
 }
 
 export const hasOfficialTermsSignal = (page = {}) => {

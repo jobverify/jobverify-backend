@@ -22,11 +22,10 @@ const careersHtml = `
   <body>
     <section id="open-positions">
       <p>Open positions</p>
-      <h2>Roles open right now.</h2>
       <p>Live from our hiring portal. Apply opens the role on sechire.net, resume, scheduling, references handled there.</p>
     </section>
     <script>
-      self.__next_f.push([1,"8b:[\\"$\\",\\"div\\",null,{\\"className\\":\\"mt-12\\",\\"children\\":[\\"$\\",\\"$L8c\\",null,{\\"positions\\":[{\\"slug\\":\\"senior-red-team-operator-pune\\",\\"title\\":\\"Senior Red Team Operator\\",\\"department\\":\\"Security Consultant\\",\\"location\\":\\"Pune, India\\",\\"workMode\\":\\"onsite\\",\\"employmentType\\":\\"full-time\\",\\"summary\\":\\"SecureLayer7 is looking for a battle-tested Senior Red Team Operator to plan and execute sophisticated engagements.\\",\\"applyUrl\\":\\"https://sechire.net/jobs/senior-red-team-operator-pune\\"},{\\"slug\\":\\"enterprise-cybersecurity-sales\\",\\"title\\":\\"Enterprise Cybersecurity Sales\\",\\"department\\":\\"General\\",\\"location\\":\\"Mumbai\\",\\"workMode\\":\\"hybrid\\",\\"employmentType\\":\\"full-time\\",\\"summary\\":\\"SecureLayer7 is expanding its BFSI cybersecurity vertical in 2026.\\",\\"applyUrl\\":\\"https://sechire.net/jobs/enterprise-cybersecurity-sales\\"},{\\"slug\\":\\"senior-sap-security-consultant\\",\\"title\\":\\"Senior SAP Security Consultant\\",\\"department\\":\\"Testing\\",\\"location\\":\\"Confidential\\",\\"workMode\\":\\"onsite\\",\\"employmentType\\":\\"full-time\\",\\"summary\\":\\"Position: Senior SAP Security Consultant Experience: 8+ Years Location: Confidential Employment Type: Full-Time.\\",\\"applyUrl\\":\\"https://sechire.net/jobs/senior-sap-security-consultant\\"}],\\"emptyStateMessage\\":\\"No openings today.\\"}]}]")
+      self.__next_f.push([1,"8b:[\\"$\\",\\"div\\",null,{\\"className\\":\\"mt-12\\",\\"children\\":[\\"$\\",\\"$L8c\\",null,{\\"positions\\":[{\\"slug\\":\\"senior-red-team-operator-pune\\",\\"title\\":\\"Senior Red Team Operator\\",\\"department\\":\\"Security Consultant\\",\\"location\\":\\"Pune, India\\",\\"workMode\\":\\"onsite\\",\\"employmentType\\":\\"full-time\\",\\"summary\\":\\"SecureLayer7 is looking for a battle-tested Senior Red Team Operator to plan and execute sophisticated engagements.\\",\\"applyUrl\\":\\"https://sechire.net/jobs/senior-red-team-operator-pune\\"},{\\"slug\\":\\"enterprise-cybersecurity-sales\\",\\"title\\":\\"Senior Cybersecurity Sales Specialist - BFSI\\",\\"department\\":\\"General\\",\\"location\\":\\"Mumbai\\",\\"workMode\\":\\"hybrid\\",\\"employmentType\\":\\"full-time\\",\\"summary\\":\\"SecureLayer7 is expanding its BFSI cybersecurity vertical in 2026.\\",\\"applyUrl\\":\\"https://sechire.net/jobs/enterprise-cybersecurity-sales\\"},{\\"slug\\":\\"senior-sap-security-consultant\\",\\"title\\":\\"Senior SAP Security Consultant\\",\\"department\\":\\"Testing\\",\\"location\\":\\"Confidential\\",\\"workMode\\":\\"onsite\\",\\"employmentType\\":\\"full-time\\",\\"summary\\":\\"Position: Senior SAP Security Consultant Experience: 8+ Years Location: Confidential Employment Type: Full-Time.\\",\\"applyUrl\\":\\"https://sechire.net/jobs/senior-sap-security-consultant\\"}],\\"emptyStateMessage\\":\\"No openings today.\\"}]}]")
     </script>
     <script type="application/ld+json">
       {
@@ -42,8 +41,8 @@ const careersHtml = `
               "name": "SecureLayer7",
               "value": "senior-red-team-operator-pune"
             },
-            "datePosted": "2026-07-09",
-            "validThrough": "2026-09-07",
+            "datePosted": "2026-08-04",
+            "validThrough": "2026-10-03",
             "employmentType": "FULL_TIME",
             "url": "https://sechire.net/jobs/senior-red-team-operator-pune",
             "jobLocation": {
@@ -59,22 +58,22 @@ const careersHtml = `
           {
             "@context": "https://schema.org",
             "@type": "JobPosting",
-            "title": "Enterprise Cybersecurity Sales",
+            "title": "Senior Cybersecurity Sales Specialist - BFSI",
             "description": "SecureLayer7 is expanding its BFSI cybersecurity vertical in 2026.",
             "identifier": {
               "@type": "PropertyValue",
               "name": "SecureLayer7",
               "value": "enterprise-cybersecurity-sales"
             },
-            "datePosted": "2026-07-09",
-            "validThrough": "2026-09-07",
+            "datePosted": "2026-08-04",
+            "validThrough": "2026-10-03",
             "employmentType": "FULL_TIME",
             "url": "https://sechire.net/jobs/enterprise-cybersecurity-sales",
             "jobLocation": {
               "@type": "Place",
               "address": {
                 "@type": "PostalAddress",
-                "addressLocality": "Mumbai",
+                "addressLocality": "Pune",
                 "addressRegion": "MH",
                 "addressCountry": "IN"
               }
@@ -90,8 +89,8 @@ const careersHtml = `
               "name": "SecureLayer7",
               "value": "senior-sap-security-consultant"
             },
-            "datePosted": "2026-07-09",
-            "validThrough": "2026-09-07",
+            "datePosted": "2026-08-04",
+            "validThrough": "2026-10-03",
             "employmentType": "FULL_TIME",
             "url": "https://sechire.net/jobs/senior-sap-security-consultant",
             "jobLocation": {
@@ -115,6 +114,7 @@ test('SecureLayer7 Technologies validates the official careers surface and extra
   const securelayer7 = await loadSecureLayer7Module()
 
   assert.equal(securelayer7.CAREERS_URL, 'https://securelayer7.net/careers')
+  assert.equal(careersHtml.includes('Roles open right now.'), false)
   assert.equal(securelayer7.hasOfficialCareersSurface(careersHtml), true)
 
   const jobs = securelayer7.extractOpenPositions(careersHtml)
@@ -137,8 +137,8 @@ test('SecureLayer7 Technologies validates the official careers surface and extra
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-07-09',
-    closingDate: '2026-09-07',
+    postingDate: '2026-08-04',
+    closingDate: '2026-10-03',
     jobDescription: 'SecureLayer7 is looking for a battle-tested Senior Red Team Operator to plan and execute sophisticated engagements.',
     remoteStatus: 'On-site',
   })
@@ -146,9 +146,12 @@ test('SecureLayer7 Technologies validates the official careers surface and extra
     jobs.map((job) => job.title),
     [
       'Senior Red Team Operator',
-      'Enterprise Cybersecurity Sales',
+      'Senior Cybersecurity Sales Specialist - BFSI',
     ],
   )
+  assert.equal(jobs[1].location, 'Mumbai, India')
+  assert.equal(jobs[1].city, 'Mumbai')
+  assert.equal(jobs[1].state, 'MH')
 })
 
 test('run fetches the SecureLayer7 careers page, excludes non-India roles, and decorates runner metadata', async () => {

@@ -79,9 +79,16 @@ export const hasOfficialCareersSignal = (html) => {
 
   return normalized.includes('careers at jk tyre')
     && normalized.includes('jk tyre & industries ltd')
-    && normalized.includes('people marching miles seamlessly')
+    && (
+      normalized.includes('people marching miles seamlessly')
+      || normalized.includes('join a leader in tyre manufacturing')
+    )
     && normalized.includes('current openings')
-    && normalized.includes('career by choice')
+    && (
+      normalized.includes('career by choice')
+      || normalized.includes('a career with jk tyre')
+      || normalized.includes('why jk tyre')
+    )
 }
 
 export const hasVerifiedEmptyCurrentOpeningsSignal = (html) => {
@@ -116,6 +123,10 @@ export const createJkTyreAndIndustriesLtdScraper = () => ({
 
     const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
 
+    if (hasVerifiedEmptyCurrentOpeningsSignal(currentOpeningsHtml)) {
+      return []
+    }
+
     if (hasPublicJobSignal(currentOpeningsHtml)) {
       throw new Error('JK Tyre and Industries Ltd current openings page now appears to expose public job listings')
     }
@@ -123,8 +134,6 @@ export const createJkTyreAndIndustriesLtdScraper = () => ({
     if (!hasVerifiedEmptyCurrentOpeningsSignal(currentOpeningsHtml)) {
       throw new Error('JK Tyre and Industries Ltd verified current openings page no longer matches the known empty-state surface')
     }
-
-    return []
   },
 })
 

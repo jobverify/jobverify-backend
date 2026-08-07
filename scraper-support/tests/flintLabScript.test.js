@@ -5,7 +5,7 @@ const officialHomepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>FlintLab Sirius — Device Infrastructure PaaS</title>
+    <title>FlintLab Sirius - Device Infrastructure PaaS</title>
   </head>
   <body>
     <a href="#main-content">Skip to main content</a>
@@ -20,10 +20,11 @@ const officialHomepageHtml = `
       </nav>
     </header>
     <main id="main-content">
+      <a href="/request-demo">Request a Demo</a>
       <h1>Begin Your Journey Towards Precision Testing</h1>
+      <p>Login to continue</p>
       <p>FlintLab powers efficient, collaborative testing across devices.</p>
-      <p>Ask Flint Nexus Pioneers</p>
-      <a href="mailto:engage@flintlab.io">engage@flintlab.io</a>
+      <p>What's New</p>
       <a href="https://www.linkedin.com/company/flintlab-inc">LinkedIn</a>
     </main>
   </body>

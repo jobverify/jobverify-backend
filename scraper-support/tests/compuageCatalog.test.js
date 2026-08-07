@@ -14,7 +14,7 @@ test('getScraperCatalog includes Compuage as a verified first-party careers sour
   assert.equal(provider.companyName, 'Compuage Infocom Ltd')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.companyCareerPage, 'https://www.compuageindia.com/careers')
+  assert.equal(provider.companyCareerPage, 'http://www.compuageindia.com/careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(provider.extractionStrategy, 'verified-first-party-careers-page+inline-opening-cards+shared-apply-form')

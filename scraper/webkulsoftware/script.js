@@ -144,15 +144,16 @@ export const extractJobCards = (html) => [...String(html ?? '').matchAll(
   })
   .filter(Boolean)
 
-const hasOfficialJobDetailSignal = (html, expectedTitle) => {
+export const hasOfficialJobDetailSignal = (html, expectedTitle) => {
   const page = String(html ?? '')
   const normalizedTitle = normalizeTitle(expectedTitle)
   const detailTitle = normalizeTitle(stripTags(/<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(page)?.[1]))
+  const hasRecognizedApplyCta = /Apply By Github/i.test(page) || /Apply Now/i.test(page)
 
   return normalizedTitle
     && detailTitle === normalizedTitle
     && /Webkul Software/i.test(page)
-    && /Apply By Github/i.test(page)
+    && hasRecognizedApplyCta
     && (/class=["'][^"']*job-location[^"']*["'][^>]*data-val=/i.test(page) || /Job Location/i.test(page))
 }
 

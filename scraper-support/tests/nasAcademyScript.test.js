@@ -25,9 +25,21 @@ const linktreeHtml = `
 <html>
   <body>
     <h1>@nascompany</h1>
-    <a href="https://www.linkedin.com/company/nasdaily/jobs/">Nas Daily Jobs</a>
-    <a href="https://www.linkedin.com/company/nascompany/jobs/">Nas.com Jobs</a>
-    <a href="https://www.linkedin.com/company/nassummit/jobs/">Nas Summit Jobs</a>
+    <a href="https://www.linkedin.com/jobs/search/?f_C=30951529">
+      <div class="transition-opacity duration-200">
+        <div data-link-label="true">Nas Daily Jobs</div>
+      </div>
+    </a>
+    <a href="https://www.linkedin.com/jobs/search/?f_C=69153653">
+      <div class="transition-opacity duration-200">
+        <div data-link-label="true">Nas.com Jobs</div>
+      </div>
+    </a>
+    <a href="https://www.linkedin.com/jobs/search/?f_C=78799508">
+      <div class="transition-opacity duration-200">
+        <div data-link-label="true">Nas Summit Jobs</div>
+      </div>
+    </a>
   </body>
 </html>
 `
@@ -56,7 +68,7 @@ test('Nas Academy sentinel helpers stay pinned to the verified official page and
 
   assert.equal(nasAcademy.SOURCE, 'nasacademy')
   assert.equal(nasAcademy.COMPANY, 'Nas Academy')
-  assert.equal(nasAcademy.VERIFIED_ON, '2026-07-16')
+  assert.equal(nasAcademy.VERIFIED_ON, '2026-08-03')
   assert.equal(nasAcademy.OFFICIAL_CAREERS_URL, 'https://www.nas.co/work-with-us')
   assert.equal(nasAcademy.LINKTREE_URL, 'https://linktr.ee/nascompany')
   assert.equal(
@@ -70,15 +82,15 @@ test('Nas Academy sentinel helpers stay pinned to the verified official page and
   assert.deepEqual(nasAcademy.extractLinktreeJobLinks(linktreeHtml), [
     {
       label: 'Nas Daily Jobs',
-      url: 'https://www.linkedin.com/company/nasdaily/jobs/',
+      url: 'https://www.linkedin.com/jobs/search/?f_C=30951529',
     },
     {
       label: 'Nas.com Jobs',
-      url: 'https://www.linkedin.com/company/nascompany/jobs/',
+      url: 'https://www.linkedin.com/jobs/search/?f_C=69153653',
     },
     {
       label: 'Nas Summit Jobs',
-      url: 'https://www.linkedin.com/company/nassummit/jobs/',
+      url: 'https://www.linkedin.com/jobs/search/?f_C=78799508',
     },
   ])
 })

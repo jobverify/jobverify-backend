@@ -128,7 +128,7 @@ export const pageIndicatesZonesIndiaCompany = (html) => {
 
   return normalized.includes('zones india | linkedin')
     && /urn:li:organization:14454055/i.test(String(html ?? ''))
-    && /href=["']https:\/\/in\.zones\.com\/["']/i.test(String(html ?? ''))
+    && /in\.zones\.com/i.test(String(html ?? ''))
 }
 
 export const extractSearchResults = (html) => [...String(html ?? '').matchAll(

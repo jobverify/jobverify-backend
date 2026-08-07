@@ -48,20 +48,20 @@ test('IG Infotech India local catalog captures the verified IG Group careers pag
   assert.equal(provider.parentCompanyName, 'IG Group')
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-careers-link-to-workday-listing')
+  assert.equal(provider.paginationStrategy, 'verified-ig-careers-handoff-plus-bengaluru-entity-page-and-shared-workday-runner')
   assert.equal(
     provider.extractionStrategy,
-    'verified-ig-careers-page+verified-bengaluru-entity-page+india-workday-links',
+    'verified-ig-careers-page+verified-bengaluru-entity-page+verified-workday-shell+shared-workday-runner',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'iggroup.com')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.iggroup\.com\/about-us\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.iggroup\.com\/contact-page/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/ig\.wd103\.myworkdayjobs\.com\/EXT_IG/i)
-  assert.match(provider.verifiedSurfaceSummary, /Head Of Workforce Management/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead Cyber Defence Analyst/i)
   assert.match(provider.verifiedSurfaceSummary, /Content Producer/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /iginfotechindia.workday[\\/]jobs\.json$/i)

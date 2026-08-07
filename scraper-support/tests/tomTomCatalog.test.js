@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('TomTom local catalog captures the verified first-party careers surface and Lever handoff', async () => {
+test('TomTom local catalog captures the verified first-party careers surface and Lever board', async () => {
   const { TOMTOM_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const tomTom = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(TOMTOM_CATALOG)
@@ -38,14 +38,6 @@ test('TomTom local catalog captures the verified first-party careers surface and
   assert.equal(provider.companyCareerPage, 'https://www.tomtom.com/careers/')
   assert.equal(provider.officialCareersPageUrl, 'https://www.tomtom.com/careers/')
   assert.equal(provider.officialPuneOfficeUrl, 'https://www.tomtom.com/careers/offices/pune/')
-  assert.equal(
-    provider.verifiedJobDetailUrl,
-    'https://www.tomtom.com/careers/jobdetails/69e7559e-d422-41fe-bd4c-1ae77ffafcc9/software-engineering-manager-i-navigation/',
-  )
-  assert.equal(
-    provider.verifiedApplyUrl,
-    'https://jobs.eu.lever.co/tomtom/69e7559e-d422-41fe-bd4c-1ae77ffafcc9/apply',
-  )
   assert.equal(provider.officialLeverBoardUrl, 'https://jobs.eu.lever.co/tomtom')
   assert.equal(provider.leverApiUrl, 'https://api.eu.lever.co/v0/postings/tomtom?mode=json')
   assert.equal(provider.companyDomain, 'tomtom.com')
@@ -53,24 +45,25 @@ test('TomTom local catalog captures the verified first-party careers surface and
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-first-party-careers-office-and-detail-surfaces-plus-eu-lever-api',
+    'verified-first-party-careers-and-office-pages-plus-eu-lever-api',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-pune-office-page+verified-job-detail-apply-handoff+verified-eu-lever-board+india-location-filter',
+    'verified-first-party-careers-page+verified-pune-office-page+verified-pune-jobs-overview+verified-eu-lever-board+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-06')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /tomtom[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 6, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.tomtom\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.tomtom\.com\/careers\/offices\/pune\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.tomtom\.com\/careers\/jobdetails\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.eu\.lever\.co\/tomtom/i)
-  assert.match(provider.verifiedSurfaceSummary, /Engineer III \(SAP SD\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/api\.eu\.lever\.co\/v0\/postings\/tomtom\?mode=json/i)
+  assert.match(provider.verifiedSurfaceSummary, /26 jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /Pune, India/i)
+  assert.match(provider.verifiedSurfaceSummary, /stale first-party TomTom job-detail route/i)
 
   assert.equal(tomTom.PROVIDER_METADATA.source, provider.source)
   assert.equal(tomTom.PROVIDER_METADATA.companyName, provider.companyName)

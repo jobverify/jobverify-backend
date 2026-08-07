@@ -79,8 +79,14 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   const title = extractTitle(html)
   const normalized = normalizeWhitespace(html)
 
-  return title === "Careers at KeyCDN | We're hiring! | KeyCDN"
-    && normalized.includes('We are looking for smart and enthusiastic people who work hard and have fun while doing so.')
+  return [
+    "Careers at KeyCDN | We're hiring! | KeyCDN",
+    'Careers - KeyCDN',
+  ].includes(title)
+    && (
+      normalized.includes('We are looking for smart and enthusiastic people who work hard and have fun while doing so.')
+      || normalized.includes('We are looking for smart and enthusiastic people to help us build a world-class CDN.')
+    )
     && normalized.includes('Remote first company')
     && normalized.includes('Made in Switzerland')
 }

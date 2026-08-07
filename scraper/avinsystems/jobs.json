@@ -1,0 +1,334 @@
+[
+  {
+    "title": "Senior Software Engineer",
+    "company": "AVIN Systems",
+    "department": "Automotive",
+    "location": "Pune / Bangalore, India",
+    "city": "Pune",
+    "country": "India",
+    "jobId": "chief-engineer",
+    "requisitionId": "chief-engineer",
+    "sourceUrl": "https://www.avinsystems.com/job/chief-engineer/",
+    "applyUrl": "https://www.avinsystems.com/job/chief-engineer/",
+    "employmentType": "Full-time",
+    "experienceRequired": "3-5 Years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Knowledge of sensor technologies (LIDAR",
+      "RADAR",
+      "camera) Apply &times",
+      "Apply for this role Full Name * Phone Number Email Address * Applying For Upload File Drop your file here or click here to upload You can upload only 1 file (5mb max). Message Submit Leading provider of automotive embedded software solutions specializing in AUTOSAR",
+      "functional safety",
+      "cybersecurity",
+      "and next-generation vehicle technologies. Products AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors Services Platform & Middleware Automotive Application Development Environment & Mobility AI and IoT Services Standards Compliance Platform & Middleware Automotive Application Development Environment & Mobility AI and IoT Services Standards Compliance About Us Company Careers Blog Case Studies Events Life at AVIN Company Careers Blog Case Studies Events Life at AVIN Subscribe to our email newsletter AVIN Systems Private Limited Please correct the marked field(s) below. 1",
+      "true",
+      "6",
+      "Contact Email",
+      "2 Thank you for Signing Up X-twitter Facebook-f Youtube Linkedin-in © 2026 avinsystems.com. All rights reserved. Terms & Conditions Privacy Notice"
+    ],
+    "postingDate": "2026-08-01T14:26:28.335Z",
+    "closingDate": null,
+    "jobDescription": "ADAS framework experience (ACC, LKA, LC, active safety, parking, self-driving). Python knowledge to review software changes and impacts. Understanding of braking and steering systems. Basic knowledge of perception, planning, and control. Understanding of automotive standards (ISO 26262, ASPICE). Key\n\nRESPONSIBILITIES:\nAutomate event allocation, reviews, data gathering, and Kratos queries. Quick learner with prior ADAS experience. Analyzing on-road failures and identifying ADAS software root causes. Skills Required: Knowledge of sensor technologies (LIDAR, RADAR, camera) Apply &times, Apply for this role Full Name * Phone Number Email Address * Applying For Upload File Drop your file here or click here to upload You can upload only 1 file (5mb max). Message Submit Leading provider of automotive embedded software solutions specializing in AUTOSAR, functional safety, cybersecurity, and next-generation vehicle technologies. Products AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors Services Platform & Middleware Automotive Application Development Environment & Mobility AI and Io T Services Standards Compliance Platform & Middleware Automotive Application Development Environment & Mobility AI and Io T Services Standards Compliance About Us Company Careers Blog Case Studies Events Life at AVIN Company Careers Blog Case Studies Events Life at AVIN Subscribe to our email newsletter AVIN Systems Private Limited Please correct the marked field(s) below. 1, true, 6, Contact Email, 2 Thank you for Signing Up X-twitter Facebook-f Youtube Linkedin-in © 2026 avinsystems.com. All rights reserved. Terms & Conditions Privacy Notice",
+    "source": "avinsystems",
+    "link": "https://www.avinsystems.com/job/chief-engineer/",
+    "scrapedAt": "2026-08-01T14:26:28.335Z",
+    "companyCareerPage": "https://www.avinsystems.com/careers/",
+    "companyDomain": "avinsystems.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Senior Software Engineer",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T14:26:28.335Z",
+    "scrapedTimestamp": "2026-08-01T14:26:28.335Z",
+    "skillIds": [
+      "cybersecurity",
+      "python"
+    ],
+    "requiredSkillIds": [
+      "cybersecurity"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "cybersecurity",
+        "canonicalName": "Cybersecurity",
+        "category": "Security",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "cybersecurity"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-5 Years",
+      "minimumYears": 3,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-5 Years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:36.087Z"
+  },
+  {
+    "title": "Senior Software Engineer",
+    "company": "AVIN Systems",
+    "department": "Automotive",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "associate-director",
+    "requisitionId": "associate-director",
+    "sourceUrl": "https://www.avinsystems.com/job/associate-director/",
+    "applyUrl": "https://www.avinsystems.com/job/associate-director/",
+    "employmentType": "Full-time",
+    "experienceRequired": "1-7 Years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Experience in C",
+      "C++",
+      "Python",
+      "MAAB guidelines Apply &times",
+      "Apply for this role Full Name * Phone Number Email Address * Applying For Upload File Drop your file here or click here to upload You can upload only 1 file (5mb max). Website Submit Leading provider of automotive embedded software solutions specializing in AUTOSAR",
+      "functional safety",
+      "cybersecurity",
+      "and next-generation vehicle technologies. Products AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors Services Platform & Middleware Automotive Application Development Environment & Mobility AI and IoT Services Standards Compliance Platform & Middleware Automotive Application Development Environment & Mobility AI and IoT Services Standards Compliance About Us Company Careers Blog Case Studies Events Life at AVIN Company Careers Blog Case Studies Events Life at AVIN Subscribe to our email newsletter AVIN Systems Private Limited Please correct the marked field(s) below. 1",
+      "true",
+      "6",
+      "Contact Email",
+      "2 Thank you for Signing Up X-twitter Facebook-f Youtube Linkedin-in © 2026 avinsystems.com. All rights reserved. Terms & Conditions Privacy Notice"
+    ],
+    "postingDate": "2026-08-01T14:26:29.336Z",
+    "closingDate": null,
+    "jobDescription": "Model Based Design and Development using MATLAB/ Simulink/ Stateflow. Control algorithm development for ADAS features. Algorithm optimization and performance improvement. MIL / SIL / HIL testing with ISO26. Functional Testing (Unit, Smoke, Integration, Accptance). Key\n\nRESPONSIBILITIES:\nTest case development, execution and automation. End to end ownership for development and testing of assigned features. Debugging, log analysis and issue resolution. Skills Required: Experience in C, C++, Python, MAAB guidelines Apply &times, Apply for this role Full Name * Phone Number Email Address * Applying For Upload File Drop your file here or click here to upload You can upload only 1 file (5mb max). Website Submit Leading provider of automotive embedded software solutions specializing in AUTOSAR, functional safety, cybersecurity, and next-generation vehicle technologies. Products AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors Services Platform & Middleware Automotive Application Development Environment & Mobility AI and Io T Services Standards Compliance Platform & Middleware Automotive Application Development Environment & Mobility AI and Io T Services Standards Compliance About Us Company Careers Blog Case Studies Events Life at AVIN Company Careers Blog Case Studies Events Life at AVIN Subscribe to our email newsletter AVIN Systems Private Limited Please correct the marked field(s) below. 1, true, 6, Contact Email, 2 Thank you for Signing Up X-twitter Facebook-f Youtube Linkedin-in © 2026 avinsystems.com. All rights reserved. Terms & Conditions Privacy Notice",
+    "source": "avinsystems",
+    "link": "https://www.avinsystems.com/job/associate-director/",
+    "scrapedAt": "2026-08-01T14:26:29.336Z",
+    "companyCareerPage": "https://www.avinsystems.com/careers/",
+    "companyDomain": "avinsystems.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Senior Software Engineer",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T14:26:29.336Z",
+    "scrapedTimestamp": "2026-08-01T14:26:29.336Z",
+    "skillIds": [
+      "python",
+      "cybersecurity"
+    ],
+    "requiredSkillIds": [
+      "python",
+      "cybersecurity"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "cybersecurity",
+        "canonicalName": "Cybersecurity",
+        "category": "Security",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "cybersecurity"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "1-7 Years",
+      "minimumYears": 1,
+      "maximumYears": 7,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "1-7 Years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:36.089Z"
+  },
+  {
+    "title": "Architect",
+    "company": "AVIN Systems",
+    "department": "Automotive",
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "technical-project-manager",
+    "requisitionId": "technical-project-manager",
+    "sourceUrl": "https://www.avinsystems.com/job/technical-project-manager/",
+    "applyUrl": "https://www.avinsystems.com/job/technical-project-manager/",
+    "employmentType": "Full-time",
+    "experienceRequired": "8-12 Years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Automotive System level architecture design",
+      "Integration for ADAS/embedded functions",
+      "knowledge on Sensor fusion. Model based development of Control algorithms and integration",
+      "optimization techniques using MATLAB/Simulink. Design of simulation/ testing frameworks (MIL/SIL/HIL). Modelling/Testing",
+      "Test Automation and Performance. Apply &times",
+      "Apply for this role Full Name * Phone Number Email Address * Applying For Upload File Drop your file here or click here to upload You can upload only 1 file (5mb max). Phone Submit Leading provider of automotive embedded software solutions specializing in AUTOSAR",
+      "functional safety",
+      "cybersecurity",
+      "and next-generation vehicle technologies. Products AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors Services Platform & Middleware Automotive Application Development Environment & Mobility AI and IoT Services Standards Compliance Platform & Middleware Automotive Application Development Environment & Mobility AI and IoT Services Standards Compliance About Us Company Careers Blog Case Studies Events Life at AVIN Company Careers Blog Case Studies Events Life at AVIN Subscribe to our email newsletter AVIN Systems Private Limited Please correct the marked field(s) below. 1",
+      "true",
+      "6",
+      "Contact Email",
+      "2 Thank you for Signing Up X-twitter Facebook-f Youtube Linkedin-in © 2026 avinsystems.com. All rights reserved. Terms & Conditions Privacy Notice"
+    ],
+    "postingDate": "2026-08-01T14:26:30.829Z",
+    "closingDate": null,
+    "jobDescription": "Ensure Development and Validation alignment with process adherence and functional safety. Ability to drive complex features from end to end with minimal dependency. Thorough Technical reviews and guidance to the team. Key\n\nRESPONSIBILITIES:\nKnowledge on best practices for Coding, technical leadership qualities. Skills Required: Automotive System level architecture design, Integration for ADAS/embedded functions, knowledge on Sensor fusion. Model based development of Control algorithms and integration, optimization techniques using MATLAB/Simulink. Design of simulation/ testing frameworks (MIL/SIL/HIL). Modelling/Testing, Test Automation and Performance. Apply &times, Apply for this role Full Name * Phone Number Email Address * Applying For Upload File Drop your file here or click here to upload You can upload only 1 file (5mb max). Phone Submit Leading provider of automotive embedded software solutions specializing in AUTOSAR, functional safety, cybersecurity, and next-generation vehicle technologies. Products AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors AGNOSAR® Classic Platform AGNOSAR® Bootloader AGNOSAR® Editors Services Platform & Middleware Automotive Application Development Environment & Mobility AI and Io T Services Standards Compliance Platform & Middleware Automotive Application Development Environment & Mobility AI and Io T Services Standards Compliance About Us Company Careers Blog Case Studies Events Life at AVIN Company Careers Blog Case Studies Events Life at AVIN Subscribe to our email newsletter AVIN Systems Private Limited Please correct the marked field(s) below. 1, true, 6, Contact Email, 2 Thank you for Signing Up X-twitter Facebook-f Youtube Linkedin-in © 2026 avinsystems.com. All rights reserved. Terms & Conditions Privacy Notice",
+    "source": "avinsystems",
+    "link": "https://www.avinsystems.com/job/technical-project-manager/",
+    "scrapedAt": "2026-08-01T14:26:30.829Z",
+    "companyCareerPage": "https://www.avinsystems.com/careers/",
+    "companyDomain": "avinsystems.com",
+    "atsPlatform": "official-company-careers",
+    "originalTitle": "Architect",
+    "normalizedTitle": "Architect",
+    "jobCategory": "Architect",
+    "engineeringDomain": "Security",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T14:26:30.829Z",
+    "scrapedTimestamp": "2026-08-01T14:26:30.829Z",
+    "skillIds": [
+      "cybersecurity"
+    ],
+    "requiredSkillIds": [
+      "cybersecurity"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "cybersecurity",
+        "canonicalName": "Cybersecurity",
+        "category": "Security",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "cybersecurity"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "8-12 Years",
+      "minimumYears": 8,
+      "maximumYears": 12,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "8-12 Years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cybersecurity",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:30:36.090Z"
+  }
+]

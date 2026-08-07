@@ -19,7 +19,7 @@ const portalHtml = `
       <h2>Current Openings</h2>
       <input type="hidden" id="pageJson" value="{}">
       <input type="hidden" id="moduleMeta" value="[]">
-      <input type="hidden" id="jobs" value="[]">
+      <div id="jobs" data-payload="[]"></div>
     </body>
   </html>
 `
@@ -101,8 +101,49 @@ test('extractIndiaJobs keeps only India listings from the Indium Software public
     postingDate: '05/08/2024',
     closingDate: null,
     jobDescription: 'Title: Microservices Developer',
+    publicExperienceChecked: false,
     remoteStatus: 'On-site',
   })
+})
+
+test('extractIndiaJobs infers experience from substantive Indium Software public descriptions and marks verified-missing rich descriptions as checked', async () => {
+  const indiumSoftware = await loadIndiumSoftwareModule()
+  const jobs = indiumSoftware.extractIndiaJobs({
+    code: 'success',
+    data: [
+      {
+        id: '1',
+        Job_Opening_Name: 'Devops Architect',
+        Posting_Title: 'Devops Architect',
+        Job_Type: 'Permanent',
+        City: 'Chennai',
+        State: 'Tamil Nadu',
+        Country: 'India',
+        Date_Opened: '04/08/2026',
+        $url: 'https://indiumsoft.zohorecruit.com/jobs/Careers/1/Devops-Architect?source=CareerSite',
+        Job_Description:
+          'Role title: Dev Ops Architect. Work Location - Chennai. Required Skills: Experience in Devops Consulting, Solutioning and Implementations. Minimum 8 years of experience in cloud-native architecture and CI/CD modernization.',
+      },
+      {
+        id: '2',
+        Job_Opening_Name: 'Test Engineer',
+        Posting_Title: 'Test Engineer',
+        Job_Type: 'Permanent',
+        City: 'Bengaluru',
+        State: 'Karnataka',
+        Country: 'India',
+        Date_Opened: '04/08/2026',
+        $url: 'https://indiumsoft.zohorecruit.com/jobs/Careers/2/Test-Engineer?source=CareerSite',
+        Job_Description:
+          'Should have expert Communication Skills. Expertise testing on Mobile Platform. Should have hands on experience using Charles Proxy. Should have hands on experience using Jira, Asana and TestRail. Should be able to support release validation and client reporting.',
+      },
+    ],
+  })
+
+  assert.equal(jobs[0].experienceRequired, '8+ years')
+  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
 test('run validates the Indium official portal before fetching and decorating India jobs', async () => {
@@ -126,6 +167,48 @@ test('run validates the Indium official portal before fetching and decorating In
   assert.equal(jobs[0].source, 'indiumsoftware')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-09T00:00:00.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, false)
+})
+
+test('run falls back to a browser-backed portal loader when Node fetch times out', async () => {
+  const indiumSoftware = await loadIndiumSoftwareModule()
+  const requestedPortalUrls = []
+  const requestedBrowserUrls = []
+  const requestedPrimaryApiUrls = []
+  const requestedBrowserApiUrls = []
+
+  const jobs = await indiumSoftware.createIndiumSoftwareScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      requestedPortalUrls.push(url)
+      throw new TypeError('fetch failed | Connect Timeout Error')
+    },
+    fetchBrowserText: async (url) => {
+      requestedBrowserUrls.push(url)
+      return portalHtml
+    },
+    fetchJson: async (url) => {
+      requestedPrimaryApiUrls.push(url)
+      throw new TypeError('fetch failed | Connect Timeout Error')
+    },
+    fetchBrowserJson: async (url, landingUrl) => {
+      requestedBrowserApiUrls.push({ url, landingUrl })
+      return apiPayload
+    },
+    now: () => '2026-08-02T10:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedPortalUrls, [indiumSoftware.CAREERS_PORTAL_URL])
+  assert.deepEqual(requestedBrowserUrls, [indiumSoftware.CAREERS_PORTAL_URL])
+  assert.deepEqual(requestedPrimaryApiUrls, [indiumSoftware.CAREERS_API_URL])
+  assert.deepEqual(requestedBrowserApiUrls, [
+    {
+      url: indiumSoftware.CAREERS_API_URL,
+      landingUrl: indiumSoftware.CAREERS_PORTAL_URL,
+    },
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '668572000021002942')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T10:00:00.000Z')
 })
 
 test('run fails closed when the Indium official portal signal disappears', async () => {

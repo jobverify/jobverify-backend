@@ -5,13 +5,13 @@ const CAREERS_PAGE_HTML = `
 <!doctype html>
 <html>
   <head>
-    <title>Careers - Stratogent</title>
+    <title>PTP India Careers: Grow Fast in Biotech &amp; Life Sciences IT</title>
   </head>
   <body>
-    <h2>JOIN US!</h2>
+    <h2>Opportunities at PTP / Stratogent: Build trusted life sciences cloud from India</h2>
     <p>We are an "always hiring" company, please drop us your resume.</p>
-    <p>US: <a href="mailto:careers@stratogent.com">careers@stratogent.com</a></p>
     <p>India: <a href="mailto:careers-india@stratogent.com">careers-india@stratogent.com</a></p>
+    <p>Verification: <a href="mailto:verifications@stratogent.com">verifications@stratogent.com</a></p>
   </body>
 </html>
 `
@@ -46,7 +46,7 @@ test('Stratogent Technology Services fails closed if public jobs appear', async 
 
   await assert.rejects(
     stratogent.createStratogentTechnologyServicesScraper().run({
-      fetchText: async () => `${CAREERS_PAGE_HTML}<form action="/apply"></form>`,
+      fetchText: async () => `${CAREERS_PAGE_HTML}<section><h2>Current Openings</h2><a href="/jobs/cloud-platform-engineer">Apply now</a></section>`,
     }),
     /appears to expose public jobs/i,
   )

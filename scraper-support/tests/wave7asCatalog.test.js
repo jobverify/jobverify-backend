@@ -60,7 +60,7 @@ test('Techtree It Systems local catalog captures the verified first-party wp-job
   })
 })
 
-test('Rocket Software local catalog captures the verified careers handoff and Workday outage sentinel contract', async () => {
+test('Rocket Software local catalog captures the verified careers handoff and recovered public Workday contract', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/rocketsoftware/script.js')
   const {
     ROCKET_SOFTWARE_CATALOG,
@@ -76,17 +76,19 @@ test('Rocket Software local catalog captures the verified careers handoff and Wo
   assert.equal(provider.companyCareerPage, 'https://www.rocketsoftware.com/en-us/careers')
   assert.equal(provider.workdayBoardUrl, 'https://rocket.wd5.myworkdayjobs.com/rocket_careers')
   assert.equal(provider.companyDomain, 'rocketsoftware.com')
-  assert.equal(provider.atsPlatform, 'official-careers-workday-handoff-with-upstream-outage')
+  assert.equal(provider.atsPlatform, 'official-careers-workday-handoff')
   assert.equal(
     provider.paginationStrategy,
-    'first-party-careers-page-plus-workday-outage-validation',
+    'first-party-careers-page-plus-public-workday-jobs-api',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+verified-workday-handoff+verified-workday-outage-return-empty',
+    'verified-careers-page+browser-fallback+public-workday-jobs-api+india-detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Workday is currently unavailable/i)
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare challenge/i)
+  assert.match(provider.verifiedSurfaceSummary, /5 India postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Software Engineer III - Java Full Stack Development/i)
 
   assertBacklogRowMatches({
     provider,

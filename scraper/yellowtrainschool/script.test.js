@@ -14,7 +14,7 @@ const OPENINGS_SENTENCE = 'We are looking for Kindergarten, Primary, Waldorf Art
 const homepageHtml = `
   <html>
     <head>
-      <title>Yellow Train School</title>
+      <title>Yellow Train</title>
     </head>
     <body>
       <nav>
@@ -40,7 +40,7 @@ const recruitmentHtml = `
     <body>
       <h1>Recruitment</h1>
       <p>${OPENINGS_SENTENCE}</p>
-      <p>A minimum commitment of two years is expected from all applicants.</p>
+      <p>A commitment of minimum two years is non-negotiable.</p>
       <a href="mailto:careers@yellowtrainschool.com">careers@yellowtrainschool.com</a>
     </body>
   </html>

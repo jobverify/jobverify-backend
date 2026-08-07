@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -12,6 +13,9 @@ export const JOBS_API_URL = 'https://finastra.wd3.myworkdayjobs.com/wday/cxs/fin
 export const SOURCE = 'finastra'
 export const COMPANY_NAME = 'Finastra'
 export const DEFAULT_PAGE_SIZE = 20
+const DETAIL_FETCH_CONCURRENCY = 4
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const INDIA_LOCATION_DESCRIPTORS = new Set([
   'bangalore',
@@ -29,6 +33,35 @@ const normalizeWhitespace = (value) => {
 }
 
 const isGroupedLocationLabel = (value) => /^\d+\s+locations?$/i.test(normalizeWhitespace(value) || '')
+
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let firstError = null
+
+  const worker = async () => {
+    while (!firstError) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+
+      if (currentIndex >= items.length) return
+      try {
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  )
+
+  if (firstError) throw firstError
+  return results
+}
 
 const normalizePathLocation = (value) => {
   const normalized = normalizeWhitespace(
@@ -192,12 +225,31 @@ const defaultFetchJson = async (url, options = {}) => {
   return response.json()
 }
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
 export const createFinastraScraper = ({
   pageSize = DEFAULT_PAGE_SIZE,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
 } = {}) => ({
-  async run({ fetchJson = defaultFetchJson } = {}) {
+  async run({
+    fetchJson = defaultFetchJson,
+    fetchPage = defaultFetchPage,
+  } = {}) {
     const discoveryPayload = await fetchJson(JOBS_API_URL, {
       method: 'POST',
       body: JSON.stringify(buildJobsRequest({
@@ -243,7 +295,41 @@ export const createFinastraScraper = ({
       if (!summary.hasNext) break
     }
 
-    return jobs
+    const enrichedJobs = await mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.sourceUrl)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailPage.html,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            requisitionId: detail.requisitionId || job.requisitionId,
+            postingDate: detail.postingDate || job.postingDate,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
+
+    return enrichedJobs
   },
 })
 

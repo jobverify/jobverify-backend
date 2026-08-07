@@ -186,7 +186,7 @@ export const createJswScraper = ({
     }
 
     const handoffUrl = extractTurboHireHandoffUrl(careersHtml)
-    if (handoffUrl !== ORIGIN) {
+    if (!handoffUrl || !handoffUrl.startsWith(ORIGIN)) {
       throw new Error('JSW official careers page no longer exposes the verified TurboHire handoff')
     }
 

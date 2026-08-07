@@ -3,217 +3,221 @@ import test from 'node:test'
 
 const loadQuantboxResearchModule = async () => import('../../scraper/quantboxresearch/script.js')
 
-const homepageHtml = `
+const careersHtml = `
 <!doctype html>
-<html lang="en" class="home_page">
+<html lang="en">
   <head>
-    <title class="s123-js-pjax">Quantbox Research</title>
-    <link rel="canonical" href="https://www.quantboxresearch.com/" class="s123-js-pjax">
+    <title>Careers &mdash; Quantbox</title>
   </head>
   <body>
-    <section
-      id="section-5fa761ff93b2f"
-      class="s123-module s123-module-jobs"
-      data-module-type="jobs"
-    >
-      <h2 id="section-5fa761ff93b2f-title" class="s123-page-header">Jobs</h2>
-      <div class="job-item" data-unique-id="5fa761ff76460">
-        <h4 class="job-title">
-          <a href="/jobs/software-developer">Software Developer</a>
-        </h4>
-        <div class="job-sub-title">
-          <span class="section_small_text">Bangalore, Karnataka, India</span>
-          -
-          <span class="section_small_text">SD-01</span>
-        </div>
-        <div class="responsive-handler fr-view breakable box-text-primary main-description-text">
-          Quantbox is a technology-driven Proprietary trading firm.
-          <br>
-          We are looking for a Software Developer for our Core Engineering group.
-          <br>
-          Quantbox is an equal opportunity employer.
-        </div>
-        <div class="panel-group">
-          <div class="panel">
-            <div class="heading">
-              <span class="panel-title">Requirements</span>
-            </div>
-            <div class="panel-body responsive-handler fr-view breakable box-primary box-text-primary">
-              Quantbox encourages bachelor's, or master's in computer science/mathematics and related fields to apply.
-              <ul>
-                <li>Excellent Software Development knowledge demonstrated through course work</li>
-                <li>Proficiency in C++, object oriented design, GDB</li>
-                <li>Experience with Linux/Unix</li>
-              </ul>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="heading">
-              <span class="panel-title">Responsibilities</span>
-            </div>
-            <div class="panel-body responsive-handler fr-view breakable box-primary box-text-primary">
-              Day-to-day work includes:
-              <ul>
-                <li>Designing, developing, and testing proprietary software</li>
-                <li>Collaboration with quantitative traders and researchers</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <a class="jobsApplyBtn btn btn-primary" data-application-id="1">Apply Now</a>
-      </div>
-
-      <div class="job-item" data-unique-id="5fa761ff7f9dd">
-        <h4 class="job-title">
-          <a href="/jobs/quantitative-researcher-quant-trader">Quantitative Researcher / Quant Trader</a>
-        </h4>
-        <div class="job-sub-title">
-          <span class="section_small_text">Singapore</span>
-          -
-          <span class="section_small_text">QT-02</span>
-        </div>
-        <div class="responsive-handler fr-view breakable box-text-primary main-description-text">
-          Quantbox is a technology-driven Proprietary trading firm.
-        </div>
-        <div class="panel-group">
-          <div class="panel">
-            <div class="heading">
-              <span class="panel-title">Requirements</span>
-            </div>
-            <div class="panel-body responsive-handler fr-view breakable box-primary box-text-primary">
-              <ul>
-                <li>Deep experience in HF Trading</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <a class="jobsApplyBtn btn btn-primary" data-application-id="2">Apply Now</a>
-      </div>
-
-      <div class="job-item" data-unique-id="5fa7906c2c6b7">
-        <h4 class="job-title">
-          <a href="/jobs/campus-hiring-junior-quantitative-research">Campus Hiring- Junior Quantitative Research</a>
-        </h4>
-        <div class="job-sub-title">
-          <span class="section_small_text">Bangalore, Karnataka, India</span>
-          -
-          <span class="section_small_text">QT-03</span>
-        </div>
-        <div class="responsive-handler fr-view breakable box-text-primary main-description-text">
-          Quantbox is a technology-driven Proprietary trading firm.
-          <br>
-          We are looking to appoint a Junior Quantitative Researcher/Trader.
-          <br>
-          Quantbox is an equal opportunity employer.
-        </div>
-        <div class="panel-group">
-          <div class="panel">
-            <div class="heading">
-              <span class="panel-title">Requirements</span>
-            </div>
-            <div class="panel-body responsive-handler fr-view breakable box-primary box-text-primary">
-              What you'll need:
-              <ul>
-                <li>You possess a bachelor's degree / Phd in mathematics, computer science, statistics, physics, or a related field</li>
-                <li>Ability to think independently and use creative approach in problem solving</li>
-                <li>Familiarity with python, C++, R programming languages</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <a class="jobsApplyBtn btn btn-primary" data-application-id="3">Apply Now</a>
-      </div>
-    </section>
+    <main>
+      <h1>Build what markets need next.</h1>
+      <a href="https://job-boards.eu.greenhouse.io/quantboxresearchpte">View current open roles</a>
+      <a href="#open-roles">See open roles</a>
+      <p>Current openings are listed below.</p>
+      <p>Stay connected for what&#x27;s next</p>
+      <p>Quantbox recruiting messages will come through our official channels.</p>
+    </main>
   </body>
 </html>
 `
 
-test('Quantbox Research validates the official first-party jobs homepage and extracts the public role cards', async () => {
+const greenhousePayload = {
+  jobs: [
+    {
+      absolute_url: 'https://job-boards.eu.greenhouse.io/quantboxresearchpte/jobs/4001033101',
+      id: 4001033101,
+      requisition_id: '1',
+      title: 'Experienced Quantitative Researcher ',
+      company_name: 'Quantbox Research ',
+      first_published: '2021-08-23T04:41:15-04:00',
+      updated_at: '2026-06-12T00:26:34-04:00',
+      content: '&lt;p&gt;Quantbox is a technology-driven Proprietary trading firm that specializes in systematic alpha research.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Python&lt;/li&gt;&lt;li&gt;C++&lt;/li&gt;&lt;/ul&gt;',
+      location: { name: 'Bengaluru, Karnataka, India; Hong Kong; Singapore, Central, Singapore' },
+      departments: [{ name: 'Research & Trading' }],
+      offices: [
+        { location: 'Amsterdam, North Holland, Netherlands' },
+        { location: 'Bengaluru, Karnataka, India' },
+        { location: 'Singapore, Central, Singapore' },
+      ],
+    },
+    {
+      absolute_url: 'https://job-boards.eu.greenhouse.io/quantboxresearchpte/jobs/4001696101',
+      id: 4001696101,
+      requisition_id: '3',
+      title: 'FPGA Design & Verification Engineer',
+      company_name: 'Quantbox Research ',
+      first_published: '2021-10-04T21:37:45-04:00',
+      content: '&lt;p&gt;Design low-latency trading hardware and verification flows.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;FPGA&lt;/li&gt;&lt;/ul&gt;',
+      location: { name: 'Bengaluru, Karnataka, India' },
+      departments: [{ name: 'Hardware ' }],
+      offices: [{ location: 'Bengaluru, Karnataka, India' }],
+    },
+    {
+      absolute_url: 'https://job-boards.eu.greenhouse.io/quantboxresearchpte/jobs/4001979101',
+      id: 4001979101,
+      requisition_id: '8',
+      title: 'Junior Quantitative Researcher',
+      company_name: 'Quantbox Research ',
+      first_published: '2021-10-04T21:37:57-04:00',
+      content: '&lt;p&gt;Research and trading internship pathway for early-career candidates.&lt;/p&gt;',
+      location: { name: 'Bengaluru, Karnataka, India; Singapore, Central, Singapore' },
+      departments: [{ name: 'Research & Trading' }],
+      offices: [
+        { location: 'Bengaluru, Karnataka, India' },
+        { location: 'Singapore, Central, Singapore' },
+      ],
+    },
+    {
+      absolute_url: 'https://job-boards.eu.greenhouse.io/quantboxresearchpte/jobs/4081386101',
+      id: 4081386101,
+      requisition_id: '10',
+      title: 'Junior Quantitative Researcher - Amsterdam ',
+      company_name: 'Quantbox Research ',
+      first_published: '2022-09-22T01:09:31-04:00',
+      content: '&lt;p&gt;Amsterdam role.&lt;/p&gt;',
+      location: { name: 'Amsterdam, North Holland, Netherlands' },
+      departments: [{ name: 'Research & Trading' }],
+      offices: [{ location: 'Amsterdam, North Holland, Netherlands' }],
+    },
+    {
+      absolute_url: 'https://job-boards.eu.greenhouse.io/quantboxresearchpte/jobs/4081385101',
+      id: 4081385101,
+      requisition_id: '9',
+      title: 'Junior Software Developer - Amsterdam ',
+      company_name: 'Quantbox Research ',
+      first_published: '2022-09-22T01:09:11-04:00',
+      content: '&lt;p&gt;Amsterdam software role.&lt;/p&gt;',
+      location: { name: 'Amsterdam, North Holland, Netherlands' },
+      departments: [{ name: 'Development ' }],
+      offices: [{ location: 'Amsterdam, North Holland, Netherlands' }],
+    },
+    {
+      absolute_url: 'https://job-boards.eu.greenhouse.io/quantboxresearchpte/jobs/4001041101',
+      id: 4001041101,
+      requisition_id: '2',
+      title: 'Software Developer ',
+      company_name: 'Quantbox Research ',
+      first_published: '2021-10-04T21:38:29-04:00',
+      content: '&lt;p&gt;Develop proprietary software for market-making systems.&lt;/p&gt;',
+      location: { name: 'Bengaluru, Karnataka, India; Hong Kong; Singapore, Central, Singapore' },
+      departments: [{ name: 'Development ' }],
+      offices: [
+        { location: 'Bengaluru, Karnataka, India' },
+        { location: 'Hong Kong' },
+      ],
+    },
+  ],
+}
+
+test('Quantbox Research validates the official first-party careers page and Greenhouse handoff', async () => {
   const quantboxResearch = await loadQuantboxResearchModule()
 
-  assert.equal(quantboxResearch.CAREERS_URL, 'https://www.quantboxresearch.com/')
-  assert.equal(quantboxResearch.hasOfficialCareersSignal(homepageHtml), true)
-  assert.equal(quantboxResearch.hasOfficialCareersSignal('<html><body><h1>Jobs</h1></body></html>'), false)
-
-  const jobs = quantboxResearch.extractJobCards(homepageHtml)
-
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(jobs[0], {
-    title: 'Software Developer',
-    company: 'Quantbox Research',
-    department: null,
-    location: 'Bangalore, Karnataka, India',
-    city: 'Bangalore',
-    country: 'India',
-    jobId: 'SD-01',
-    requisitionId: 'SD-01',
-    sourceUrl: 'https://www.quantboxresearch.com/jobs/software-developer',
-    applyUrl: 'https://www.quantboxresearch.com/jobs/software-developer',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [
-      'Excellent Software Development knowledge demonstrated through course work',
-      'Proficiency in C++, object oriented design, GDB',
-      'Experience with Linux/Unix',
-    ],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'Quantbox is a technology-driven Proprietary trading firm. We are looking for a Software Developer for our Core Engineering group. Quantbox is an equal opportunity employer. Requirements Quantbox encourages bachelor\'s, or master\'s in computer science/mathematics and related fields to apply. Excellent Software Development knowledge demonstrated through course work Proficiency in C++, object oriented design, GDB Experience with Linux/Unix Responsibilities Day-to-day work includes: Designing, developing, and testing proprietary software Collaboration with quantitative traders and researchers',
-    remoteStatus: 'On-site',
-  })
-  assert.equal(jobs[1].location, 'Singapore')
-  assert.equal(jobs[2].jobId, 'QT-03')
+  assert.equal(quantboxResearch.CAREERS_URL, 'https://www.quantboxresearch.com/careers')
+  assert.equal(quantboxResearch.GREENHOUSE_BOARD_URL, 'https://job-boards.eu.greenhouse.io/quantboxresearchpte')
+  assert.equal(
+    quantboxResearch.GREENHOUSE_JOBS_API_WITH_CONTENT_URL,
+    'https://boards-api.greenhouse.io/v1/boards/quantboxresearchpte/jobs?content=true',
+  )
+  assert.equal(quantboxResearch.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(
+    quantboxResearch.hasOfficialCareersSignal(
+      careersHtml.replace('&mdash;', '—').replace("what&#x27;s", 'what’s'),
+    ),
+    true,
+  )
+  assert.equal(quantboxResearch.hasOfficialCareersSignal('<html><body><h1>Quantbox</h1></body></html>'), false)
 })
 
-test('Quantbox Research run returns only India jobs from the verified first-party public surface', async () => {
+test('Quantbox Research extracts only India jobs from the verified Greenhouse payload', async () => {
   const quantboxResearch = await loadQuantboxResearchModule()
-  const requestedUrls = []
+
+  assert.equal(quantboxResearch.isIndiaJob(greenhousePayload.jobs[0]), true)
+  assert.equal(quantboxResearch.isIndiaJob(greenhousePayload.jobs[3]), false)
+
+  const jobs = quantboxResearch.extractJobsFromGreenhousePayload(greenhousePayload)
+
+  assert.equal(jobs.length, 4)
+  assert.deepEqual(jobs.map((job) => job.title), [
+    'Experienced Quantitative Researcher',
+    'FPGA Design & Verification Engineer',
+    'Junior Quantitative Researcher',
+    'Software Developer',
+  ])
+  assert.deepEqual(jobs.map((job) => job.location), [
+    'Bengaluru, Karnataka, India',
+    'Bengaluru, Karnataka, India',
+    'Bengaluru, Karnataka, India',
+    'Bengaluru, Karnataka, India',
+  ])
+  assert.deepEqual(jobs.map((job) => job.city), [
+    'Bangalore',
+    'Bangalore',
+    'Bangalore',
+    'Bangalore',
+  ])
+  assert.equal(jobs[0].department, 'Research & Trading')
+  assert.equal(jobs[0].requiredSkills.join(','), 'Python,C++')
+  assert.equal(jobs[1].department, 'Hardware')
+  assert.equal(jobs[1].requiredSkills.join(','), 'FPGA')
+  assert.equal(jobs[3].requisitionId, '2')
+  assert.equal(jobs[0].postingDate, '2021-08-23')
+  assert.match(jobs[0].jobDescription, /systematic alpha research/i)
+})
+
+test('Quantbox Research run validates the official careers page and returns normalized India jobs', async () => {
+  const quantboxResearch = await loadQuantboxResearchModule()
+  const requestedTextUrls = []
+  const requestedJsonUrls = []
 
   const jobs = await quantboxResearch.createQuantboxResearchScraper().run({
     fetchText: async (url) => {
-      requestedUrls.push(url)
+      requestedTextUrls.push(url)
       assert.equal(url, quantboxResearch.CAREERS_URL)
-      return homepageHtml
+      return careersHtml
     },
+    fetchJson: async (url) => {
+      requestedJsonUrls.push(url)
+      assert.equal(url, quantboxResearch.GREENHOUSE_JOBS_API_WITH_CONTENT_URL)
+      return greenhousePayload
+    },
+    now: () => '2026-08-04T00:00:00.000Z',
   })
 
-  assert.deepEqual(requestedUrls, [quantboxResearch.CAREERS_URL])
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(jobs.map((job) => job.jobId), ['SD-01', 'QT-03'])
+  assert.deepEqual(requestedTextUrls, [quantboxResearch.CAREERS_URL])
+  assert.deepEqual(requestedJsonUrls, [quantboxResearch.GREENHOUSE_JOBS_API_WITH_CONTENT_URL])
+  assert.equal(jobs.length, 4)
   assert.equal(jobs[0].source, 'quantboxresearch')
-  assert.equal(jobs[0].link, 'https://www.quantboxresearch.com/jobs/software-developer')
-  assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
+  assert.equal(
+    jobs[0].link,
+    'https://job-boards.eu.greenhouse.io/quantboxresearchpte/jobs/4001033101',
+  )
+  assert.equal(jobs[0].scrapedAt, '2026-08-04T00:00:00.000Z')
 })
 
-test('Quantbox Research fails closed when the verified homepage shell loses identity or no longer exposes public role cards', async () => {
+test('Quantbox Research fails closed when the verified careers page or Greenhouse payload drifts', async () => {
   const quantboxResearch = await loadQuantboxResearchModule()
 
   await assert.rejects(
     quantboxResearch.createQuantboxResearchScraper().run({
       fetchText: async () => '<html><body><h1>Quantbox</h1></body></html>',
+      fetchJson: async () => greenhousePayload,
     }),
-    /Quantbox Research homepage no longer matches the verified first-party public jobs surface/i,
+    /Quantbox Research careers page no longer matches the verified first-party public jobs surface/i,
   )
 
   await assert.rejects(
     quantboxResearch.createQuantboxResearchScraper().run({
-      fetchText: async () => `
-        <html>
-          <head>
-            <title>Quantbox Research</title>
-            <link rel="canonical" href="https://www.quantboxresearch.com/">
-          </head>
-          <body>
-            <section class="s123-module s123-module-jobs" data-module-type="jobs">
-              <h2 class="s123-page-header">Jobs</h2>
-            </section>
-            <p>No openings listed right now.</p>
-          </body>
-        </html>
-      `,
+      fetchText: async () => careersHtml,
+      fetchJson: async () => ({
+        jobs: [
+          {
+            ...greenhousePayload.jobs[0],
+            absolute_url: 'https://job-boards.eu.greenhouse.io/other/jobs/4001033101',
+          },
+        ],
+      }),
     }),
-    /Quantbox Research homepage no longer exposes the verified public job cards/i,
+    /Quantbox Research Greenhouse payload no longer exposes the verified public job detail URLs/i,
   )
 })

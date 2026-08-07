@@ -114,8 +114,13 @@ export const extractJobDetail = (html, listing) => {
     page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]
       || page.match(/<title[^>]*>(.*?)\s+Job Details/i)?.[1],
   )
-  const rawLocation = page.match(/Location:\s*([\s\S]*?)\s*(?:Requisition ID:|<\/p>)/i)?.[1]
-  const requisitionId = normalizeWhitespace(page.match(/Requisition ID:\s*([A-Z0-9-]+)/i)?.[1])
+  const rawLocation = page.match(
+    /data-careersite-propertyid=["']location["'][^>]*>[\s\S]*?<span[^>]*class=["'][^"']*jobGeoLocation[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+  )?.[1] || page.match(/Location:\s*([\s\S]*?)\s*(?:Requisition ID:|<\/p>)/i)?.[1]
+  const requisitionId = normalizeWhitespace(
+    page.match(/data-careersite-propertyid=["']customfield2["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]
+      || page.match(/Requisition ID:\s*([A-Z0-9-]+)/i)?.[1],
+  )
   const description = normalizeWhitespace(
     page.match(/Job Description:\s*([\s\S]*?)\s*(?:Required Skills|Does this role excite you\?|<\/body>)/i)?.[1],
   )

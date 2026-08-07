@@ -5,7 +5,7 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Fresh Food Delivery - Bowls Beyond Borders</title>
+    <title>Order food online. Get fresh food delivery from FreshMenu.</title>
   </head>
   <body>
     <main>
@@ -14,11 +14,11 @@ const homepageHtml = `
       <a href="/about">About</a>
       <a href="/blogs">Blogs</a>
       <a href="/signin">Sign In</a>
-      <p>we speak fluent food</p>
-      <h1>no matter which corner of the world it's from.</h1>
-      <h2>Bowls Beyond Borders</h2>
-      <p>Freshly cooked global food bowls.</p>
-      <p>order@freshmenu.com grievance@freshmenu.com</p>
+      <p>FreshMenu cares</p>
+      <p>FreshPass</p>
+      <p>Open the link in Mobile Browser for Better Experience</p>
+      <p>To avail corporate discount, address needs to be updated.</p>
+      <p>Add to Cart</p>
     </main>
   </body>
 </html>
@@ -28,18 +28,16 @@ const aboutPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Fresh Food Delivery - Bowls Beyond Borders</title>
+    <title>Fresh food online. Order Tasty food from FreshMenu.</title>
   </head>
   <body>
     <main>
-      <h2>Bowls Beyond Borders</h2>
-      <p>This is our belief.</p>
-      <p>Global cuisine doesn't belong behind velvet ropes.</p>
-      <p>So we bring the world to your table. One bowl at a time.</p>
       <a href="/menu">Menu</a>
+      <a href="/blogs">Blogs</a>
       <a href="/about">About Us</a>
       <a href="/corporate">Corporate Ordering</a>
-      <p>order@freshmenu.com grievance@freshmenu.com</p>
+      <p>Add to Cart</p>
+      <p>To avail corporate discount, address needs to be updated.</p>
     </main>
   </body>
 </html>
@@ -63,7 +61,7 @@ const publicJobsHtml = `
 </html>
 `
 
-const missingRouteHtml = '<html><body><h1>404</h1><p>Not Found</p></body></html>'
+const missingRouteHtml = aboutPageHtml
 
 const loadModule = async () => {
   try {
@@ -73,18 +71,18 @@ const loadModule = async () => {
   }
 }
 
-test('FreshMenu helpers stay pinned to the verified no-public-jobs homepage and about-page contract', async () => {
+test('FreshMenu helpers stay pinned to the verified no-public-jobs apex-domain contract', async () => {
   const freshMenu = await loadModule()
 
   assert.equal(freshMenu.COMPANY, 'FreshMenu')
   assert.equal(freshMenu.SOURCE, 'freshmenu')
-  assert.equal(freshMenu.HOMEPAGE_URL, 'https://www.freshmenu.com/')
-  assert.equal(freshMenu.ABOUT_URL, 'https://www.freshmenu.com/about')
+  assert.equal(freshMenu.HOMEPAGE_URL, 'https://freshmenu.com/')
+  assert.equal(freshMenu.ABOUT_URL, 'https://freshmenu.com/about')
   assert.deepEqual(freshMenu.MISSING_JOB_ROUTE_URLS, [
-    'https://www.freshmenu.com/careers',
-    'https://www.freshmenu.com/jobs',
+    'https://freshmenu.com/careers',
+    'https://freshmenu.com/jobs',
   ])
-  assert.equal(freshMenu.VERIFIED_ON, '2026-07-15')
+  assert.equal(freshMenu.VERIFIED_ON, '2026-08-02')
   assert.match(freshMenu.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
   assert.equal(freshMenu.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(freshMenu.hasOfficialAboutPageSignal(aboutPageHtml), true)
@@ -93,14 +91,14 @@ test('FreshMenu helpers stay pinned to the verified no-public-jobs homepage and 
   assert.equal(freshMenu.hasPublicJobListingSignal(publicJobsHtml), true)
   assert.equal(
     freshMenu.isKnownMissingJobRoute(
-      { status: 404, url: 'https://www.freshmenu.com/jobs', html: missingRouteHtml },
-      'https://www.freshmenu.com/jobs',
+      { status: 200, url: 'https://freshmenu.com/jobs', html: missingRouteHtml },
+      'https://freshmenu.com/jobs',
     ),
     true,
   )
 })
 
-test('FreshMenu returns no jobs only while the verified first-party no-public-jobs contract holds', async () => {
+test('FreshMenu returns no jobs only while the verified apex no-public-jobs contract holds', async () => {
   const freshMenu = await loadModule()
   const requestedUrls = []
 
@@ -117,7 +115,7 @@ test('FreshMenu returns no jobs only while the verified first-party no-public-jo
       }
 
       if (freshMenu.MISSING_JOB_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: missingRouteHtml }
+        return { status: 200, url, html: missingRouteHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -181,7 +179,7 @@ test('FreshMenu fails closed when homepage/about markers drift or a public jobs 
         }
 
         if (url === freshMenu.MISSING_JOB_ROUTE_URLS[1]) {
-          return { status: 404, url, html: missingRouteHtml }
+          return { status: 200, url, html: missingRouteHtml }
         }
 
         throw new Error(`Unexpected URL: ${url}`)

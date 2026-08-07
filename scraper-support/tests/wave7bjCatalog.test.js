@@ -54,13 +54,14 @@ test('AVIZVA local catalog captures the verified first-party careers inventory a
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+inline-role-cards+keka-apply-links',
+    'verified-first-party-careers-page+job-boxes-and-legacy-role-cards+keka-apply-links',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.match(provider.verifiedSurfaceSummary, /Senior Python Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Python Engineer/i)
   assert.match(provider.verifiedSurfaceSummary, /Scrum Master/i)
-  assert.match(provider.verifiedSurfaceSummary, /Development Engineer/i)
   assert.match(provider.verifiedSurfaceSummary, /avizva\.keka\.com/i)
 
   assertCatalogMatchesBacklogRow({
@@ -88,13 +89,16 @@ test('CDW local catalog captures the verified first-party job search results and
   assert.equal(provider.paginationStrategy, 'server-rendered-search-results-plus-detail-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-search-results-page+server-rendered-india-job-cards+detail-pages',
+    'verified-search-results-page+india-country-filter-results+detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.match(provider.verifiedSurfaceSummary, /Job Search Results/i)
-  assert.match(provider.verifiedSurfaceSummary, /Country India \(5 jobs\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /search\/jobs\/in\/country\/india/i)
+  assert.match(provider.verifiedSurfaceSummary, /Country India filter/i)
+  assert.match(provider.verifiedSurfaceSummary, /4 open jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Consultant-QA/i)
   assert.match(provider.verifiedSurfaceSummary, /Senior Data Engineer-2/i)
 
   assertCatalogMatchesBacklogRow({

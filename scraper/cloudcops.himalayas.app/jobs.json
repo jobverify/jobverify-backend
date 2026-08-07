@@ -1,0 +1,166 @@
+[
+  {
+    "title": "Junior DevOps / Cloud Engineer",
+    "company": "CloudCops",
+    "location": "Worldwide / India eligible",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "Worldwide / India eligible",
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/companies/cloudcops/jobs/junior-devops-cloud-engineer-5760182217",
+    "applyUrl": "https://himalayas.app/companies/cloudcops/jobs/junior-devops-cloud-engineer-5760182217",
+    "sourceUrl": "https://himalayas.app/companies/cloudcops/jobs/junior-devops-cloud-engineer-5760182217",
+    "source": "cloudcops.himalayas.app",
+    "jobId": "https://himalayas.app/companies/cloudcops/jobs/junior-devops-cloud-engineer-5760182217",
+    "requisitionId": "https://himalayas.app/companies/cloudcops/jobs/junior-devops-cloud-engineer-5760182217",
+    "department": "Cloud-Engineer",
+    "employmentType": "Full Time",
+    "experienceRequired": "Mid-level",
+    "postingDate": "1970-01-21T00:00:00.000Z",
+    "expiresAt": "1970-01-21",
+    "jobDescription": "deine aufgaben Bau und Pflege von CI/CD-Pipelines in Git Hub Actions und / oder Git Lab CI Infrastructure-as-Code mit Terraform / Terragrunt – von Green-field bis Brown-field Betrieb & Tuning von Kubernetes-Clustern (AWS EKS, GKE, AKS oder on-prem) Einführung von Git Ops-Workflows mit Argo CD oder Flux CD Aufbau eines durchgängigen Observability-Stacks (Prometheus, Grafana, Loki, Tempo, Open Telemetry) Betrieb verteilter Dienste wie Kafka, Rabbit MQ, Redis innerhalb von Kubernetes Enge Zusammenarbeit mit unseren Kund:innen – von Architekturdiskussion bis Incident-Debugging Zwischendurch Hacktime für unsere eigenen Startup-Projekte, an denen du direkt mitbaust Regelmäßige Up-/Crossgrades entlang der CNCF-Landscape – wir probieren neue Projekte gern aus dein profil Leidenschaft für Cloud-Technologien & Automatisierung; du verstehst unseren Ethos \"Everything-as-Code\". Erste Hands-on-Erfahrung mit einer großen Cloud (AWS, GCP, Azure o. Ä.) Solides Git-, Linux- und Shell-Know-how Lernhunger & Neugier: Du probierst gern neue Tools aus und teilst dein Wissen offen Teamspirit, Kommunikationsfreude (Deutsch oder Englisch) und den Mut, Fragen zu stellen warum wir? Remote-first – work from anywhere Output-orientierte Kultur: Wir zählen Ergebnisse, nicht Stunden Kurze Wege, wenig Hierarchie, viel Gestaltungsfreiheit bei Tools & Tech Jahresbudget für Konferenzen, Zertifizierungen (CKA/CKAD etc.) & Hardware deiner Wahl Freie Mitgestaltung deines Vertrages: Bei Arbeitszeit, Urlaub, etc. sind wir flexibel. DU stehst bei uns im Vordergrund Ein Team, das Dev Ops atmet Originally posted on Himalayas",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T22:52:46.955Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/backend-engineer",
+    "companyDomain": "cloudcops.himalayas.app",
+    "originalTitle": "Junior DevOps / Cloud Engineer",
+    "normalizedTitle": "Junior DevOps / Cloud Engineer",
+    "jobCategory": "Junior DevOps / Cloud Engineer",
+    "engineeringDomain": "DevOps",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "1970-01-21T00:00:00.000Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T22:52:46.955Z",
+    "skillIds": [
+      "terraform",
+      "kubernetes",
+      "aws",
+      "kafka",
+      "redis",
+      "gcp",
+      "azure",
+      "linux"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "terraform",
+        "canonicalName": "Terraform",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Terraform"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kafka"
+      },
+      {
+        "skillId": "redis",
+        "canonicalName": "Redis",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Redis"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Linux"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Mid-level",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T22:53:00.486Z"
+  }
+]

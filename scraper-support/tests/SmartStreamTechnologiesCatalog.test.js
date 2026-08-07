@@ -32,7 +32,7 @@ const assertHydratedCatalogLoadsScript = async (provider) => {
   assert.equal(typeof module.run, 'function')
 }
 
-test('SmartStream Technologies catalog captures the verified exact-name careers page without a public jobs catalog', async () => {
+test('SmartStream Technologies catalog captures the verified blocked first-party Smartstream routes', async () => {
   const { SMARTSTREAM_TECHNOLOGIES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(SMARTSTREAM_TECHNOLOGIES_CATALOG)
 
@@ -43,18 +43,18 @@ test('SmartStream Technologies catalog captures the verified exact-name careers 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://smart.stream/')
   assert.equal(provider.companyCareerPage, 'https://smart.stream/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-no-public-jobs-catalog')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
+  assert.equal(provider.atsPlatform, 'official-company-site-cloudflare-blocked-no-public-jobs-catalog')
+  assert.equal(provider.paginationStrategy, 'verified-cloudflare-blocked-homepage-and-careers-routes')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+email-only-interest-flow+no-public-job-catalog',
+    'verified-cloudflare-blocked-homepage+verified-cloudflare-blocked-careers-route-return-empty',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.companyDomain, 'smart.stream')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /careers@smart\.stream/i)
-  assert.match(provider.verifiedSurfaceSummary, /View All Roles/i)
-  assert.match(provider.verifiedSurfaceSummary, /no enumerable public jobs catalog/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare-backed HTTP 403 Forbidden/i)
+  assert.match(provider.verifiedSurfaceSummary, /Error 403 Forbidden/i)
+  assert.match(provider.verifiedSurfaceSummary, /no enumerable public Smartstream jobs feed/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

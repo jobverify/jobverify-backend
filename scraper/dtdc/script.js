@@ -45,7 +45,9 @@ const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /peoplestrong/i,
 ]
 
-const normalizeWhitespace = (value) => String(value ?? '')
+const stripHtmlComments = (value) => String(value ?? '').replace(/<!--[\s\S]*?-->/g, ' ')
+
+const normalizeWhitespace = (value) => stripHtmlComments(String(value ?? ''))
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
@@ -76,17 +78,27 @@ const defaultFetchPage = async (url) => {
 const getFinalUrl = (page, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
 
 export const hasPublicJobListingSignal = (html = '') =>
-  PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+  PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(stripHtmlComments(html)))
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const normalizedLower = normalized.toLowerCase()
+  const hasKnownTitle =
+    /<title>\s*DTDC\s*\|\s*India[^<]*Trusted Courier Delivery & Logistics Company\s*<\/title>/i.test(rawHtml)
+  const hasOfficialWebsiteBanner =
+    normalizedLower.includes("www.dtdc.com is dtdc's only official website.")
+  const hasCanonical =
+    /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.dtdc\.com\/in\/["']/i.test(rawHtml)
+  const hasHero = /Leading Courier and Logistics Company in India/i.test(normalized)
+  const hasCareerLink =
+    /href=["'](?:https:\/\/www\.dtdc\.com)?\/career\/["']/i.test(rawHtml)
 
-  return /<title>\s*DTDC \| India(?:’|')s Trusted Courier Delivery & Logistics Company\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.dtdc\.com\/in\/["']/i.test(rawHtml)
-    && /Leading Courier and Logistics Company in India/i.test(normalized)
-    && /href=["']https:\/\/www\.dtdc\.com\/career\/["']/i.test(rawHtml)
-  }
+  return (hasKnownTitle || hasOfficialWebsiteBanner)
+    && hasCanonical
+    && hasHero
+    && hasCareerLink
+}
 
 export const hasResumeDropCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
@@ -97,7 +109,7 @@ export const hasResumeDropCareersSignal = (html = '') => {
     && /Drive Your Career Forward in Logistics/i.test(normalized)
     && /mailto:careers@dtdc\.com/i.test(rawHtml)
     && /careers@dtdc\.com/i.test(normalized)
-  }
+}
 
 export const extractSitemapUrlFromRobots = (robotsTxt = '') =>
   String(robotsTxt ?? '').match(/^\s*Sitemap:\s*(\S+)/im)?.[1] || null

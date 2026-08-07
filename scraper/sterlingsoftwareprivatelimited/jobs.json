@@ -1,0 +1,214 @@
+[
+  {
+    "title": "Application Engineer",
+    "company": "Sterling Software Private Limited",
+    "department": null,
+    "location": "Chennai, India",
+    "city": "Chennai",
+    "state": null,
+    "country": "India",
+    "jobId": "1",
+    "requisitionId": "1",
+    "sourceUrl": "https://sterlingsoftware.global/new/application-engineer",
+    "applyUrl": "https://sterlingsoftware.global/new/application-engineer",
+    "employmentType": "Full-time",
+    "experienceRequired": "2 - 3 Years",
+    "minimumQualification": "BE/BTech (or higher) in computer science, electrical engineering or any other related field(with a strong demonstrated experience and passion for programming)",
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2019-05-15T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job\n\nRESPONSIBILITIES:\nDesign and develop clean and intuitive user interface to teach and program robots. Closely work with software engineering teams to experiment, prototype and iterate to make the human-robot interaction intuitive and responsive Collaborate with other engineers and communicate design priorities and provide constructive guidance Key Skills & Experience: 2+ years of experience with c++ and object-oriented software design Passion to create clean, efficient and scalable code Experience with standalone GUI design and development with QT/QML and Open GL Experience in Linux application development Strong design, communication and presentation skills Ability to work in a fast-paced, iterative development environment(Agile-SCRUM) A willingness to explore new technologies and unfamiliar concepts Desired Skills: Experience in Python, Java, Objective-C etc is a plus Experience in software development for fault-intolerant applications Knowledge of unit testing methodologies Experience working in a collaborative software team, applying agile development practices and software engineering tools\n\nEDUCATION:\nBE/BTech (or higher) in computer science, electrical engineering or any other related field(with a strong demonstrated experience and passion for programming)",
+    "remoteStatus": "On-site",
+    "source": "sterlingsoftwareprivatelimited",
+    "link": "https://sterlingsoftware.global/new/application-engineer",
+    "scrapedAt": "2026-08-05T00:54:44.230Z",
+    "originalTitle": "Application Engineer",
+    "normalizedTitle": "Application Engineer",
+    "jobCategory": "Application Engineer",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2019-05-15T00:00:00.000Z",
+    "companyCareerPage": null,
+    "companyDomain": "sterlingsoftware.global",
+    "atsPlatform": null,
+    "scrapedTimestamp": "2026-08-05T00:54:44.230Z",
+    "skillIds": [
+      "linux",
+      "python",
+      "java"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Linux"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2 - 3 Years BE/BTech (or higher) in computer science, electrical engineering or any other related field(with a strong demonstrated experience and passion for programming)",
+      "minimumYears": 2,
+      "maximumYears": 2,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2 years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-05T00:54:46.725Z"
+  },
+  {
+    "title": "Java Architect",
+    "company": "Sterling Software Private Limited",
+    "department": null,
+    "location": "Chennai, India",
+    "city": "Chennai",
+    "state": null,
+    "country": "India",
+    "jobId": "2",
+    "requisitionId": "2",
+    "sourceUrl": "https://sterlingsoftware.global/new/java-architect",
+    "applyUrl": "https://sterlingsoftware.global/new/java-architect",
+    "employmentType": "Full-time",
+    "experienceRequired": "2 - 3 Years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2019-05-15T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job\n\nRESPONSIBILITIES:\nDesign and develop clean and intuitive user interface to teach and program robots. Closely work with software engineering teams to experiment, prototype and iterate to make the human-robot interaction intuitive and responsive Collaborate with other engineers and communicate design priorities and provide constructive guidance Key Skills & Experience: 2+ years of experience with c++ and object-oriented software design Passion to create clean, efficient and scalable code Experience with standalone GUI design and development with QT/QML and Open GL Experience in Linux application development Strong design, communication and presentation skills Ability to work in a fast-paced, iterative development environment(Agile-SCRUM) A willingness to explore new technologies and unfamiliar concepts Desired Skills: Experience in Python, Java, Objective-C etc is a plus Experience in software development for fault-intolerant applications Knowledge of unit testing methodologies Experience working in a collaborative software team, applying agile development practices and software engineering tools BE/BTech (or higher) in computer science, electrical engineering or any other related field(with a strong demonstrated experience and passion for programming)",
+    "remoteStatus": "On-site",
+    "source": "sterlingsoftwareprivatelimited",
+    "link": "https://sterlingsoftware.global/new/java-architect",
+    "scrapedAt": "2026-08-05T00:54:46.683Z",
+    "originalTitle": "Java Architect",
+    "normalizedTitle": "Java Architect",
+    "jobCategory": "Java Architect",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "salary": null,
+    "postedAt": "2019-05-15T00:00:00.000Z",
+    "companyCareerPage": null,
+    "companyDomain": "sterlingsoftware.global",
+    "atsPlatform": null,
+    "scrapedTimestamp": "2026-08-05T00:54:46.683Z",
+    "skillIds": [
+      "java",
+      "linux",
+      "python"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Linux"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2 - 3 Years",
+      "minimumYears": 2,
+      "maximumYears": 2,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2 years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-05T00:54:46.736Z"
+  }
+]

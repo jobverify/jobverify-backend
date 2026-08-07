@@ -44,6 +44,7 @@ test('saveToDB persists normalized experience years for filtering', async () => 
     })
 
     assert.deepEqual(persistedJob.experienceYears, [2])
+    assert.equal(persistedJob.publicExperienceChecked, false)
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.deleteMany = originalDeleteMany
@@ -91,6 +92,7 @@ test('saveToDB enriches missing experience from the official public job page bef
 
     assert.equal(persistedJob.experienceRequired, '5 years')
     assert.deepEqual(persistedJob.experienceYears, [5])
+    assert.equal(persistedJob.publicExperienceChecked, true)
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.deleteMany = originalDeleteMany

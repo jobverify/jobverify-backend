@@ -394,3 +394,40 @@ test('Aindra Systems stays fail-closed while trusted first-party host variants r
   ])
   assert.deepEqual(jobs, [])
 })
+
+test('Aindra Systems treats first-party browser timeouts as trusted host unavailability', async () => {
+  const aindra = await loadModule()
+  const browserUrls = []
+
+  const jobs = await aindra.createAindraSystemsScraper().run({
+    fetchText: async (url) => {
+      if (url === 'https://www.aindra.in/') {
+        throw new Error('getaddrinfo ENOTFOUND www.aindra.in')
+      }
+
+      if (url === 'https://aindra.in/') {
+        throw new TypeError('fetch failed')
+      }
+
+      throw new Error(`Unexpected Aindra Systems URL: ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+
+      if (url === 'https://www.aindra.in/') {
+        throw new Error('net::ERR_FAILED at https://www.aindra.in/')
+      }
+
+      if (url === 'https://aindra.in/') {
+        throw new Error('net::ERR_CONNECTION_TIMED_OUT at https://aindra.in/')
+      }
+
+      throw new Error(`Unexpected browser-backed Aindra Systems URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    'https://aindra.in/',
+  ])
+  assert.deepEqual(jobs, [])
+})

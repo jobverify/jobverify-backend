@@ -16,13 +16,27 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/<br\s*\/?>/gi, '\n')
-  .replace(/<[^>]+>/g, ' ')
+const decodeHtml = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
+  .replace(/&quot;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, '-')
+
+const normalizeWhitespace = (value) => decodeHtml(String(value ?? ''))
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const normalizeOptionalValue = (value) => {
+  const normalized = normalizeWhitespace(value)
+  return normalized || null
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -34,42 +48,90 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const parseListItems = (html) => [...String(html ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
-  .map((match) => normalizeWhitespace(match[1]))
+  .map((match) => normalizeOptionalValue(match[1]))
   .filter(Boolean)
 
-export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+const cleanJobTitle = (value) => normalizeOptionalValue(value)?.replace(/:\s*$/u, '') || null
 
-  return /<title>\s*Careers\s*-\s*iNube\s*<\/title>/i.test(String(html ?? ''))
+const extractJobSpecificationValues = (block = '', specificationClass) =>
+  [...String(block ?? '').matchAll(
+    new RegExp(
+      `<div[^>]*class=["'][^"']*${specificationClass}[^"']*["'][^>]*>([\\s\\S]*?)<\\/div>`,
+      'gi',
+    ),
+  )]
+    .flatMap((match) => [...match[1].matchAll(/<span[^>]*class=["'][^"']*awsm-job-specification-term[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi)])
+    .map((match) => normalizeOptionalValue(match[1]))
+    .filter(Boolean)
+
+const buildIndiaLocation = (locations = []) => {
+  const uniqueLocations = [
+    ...new Set((Array.isArray(locations) ? locations : []).map(normalizeOptionalValue).filter(Boolean)),
+  ]
+
+  if (uniqueLocations.length === 0) return null
+  return `${uniqueLocations.join(', ')}, India`
+}
+
+const buildJobId = (detailUrl) => detailUrl?.split('/').filter(Boolean).at(-1) || null
+
+export const hasOfficialCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Careers\s*-\s*iNube\s*<\/title>/i.test(page)
+    && /class=["'][^"']*awsm-job-listings[^"']*["']/i.test(page)
     && normalized.includes('View all 0penings')
-    && normalized.includes('Technical Lead PPS')
+    && normalized.includes('Senior Business Analyst')
+    && normalized.includes('Associate Project Manager')
 }
 
 export const extractRoleSummaries = (html = '') =>
-  [...String(html ?? '').matchAll(/<article[^>]*>\s*<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<span[^>]*>([^<]+)<\/span>\s*<span[^>]*>([^<]+)<\/span>\s*<span[^>]*>([^<]+)<\/span>\s*<\/article>/gi)]
-    .map((match) => ({
-      title: normalizeWhitespace(match[2]),
-      detailUrl: normalizeWhitespace(match[1]),
-      department: normalizeWhitespace(match[3]),
-      employmentType: normalizeWhitespace(match[4]),
-      location: normalizeWhitespace(match[5]),
-    }))
+  [...String(html ?? '').matchAll(
+    /<div[^>]*class=["'][^"']*awsm-job-listing-item[^"']*["'][^>]*>([\s\S]*?)<\/div>\s*<\/a>\s*<\/div>/gi,
+  )]
+    .map((match) => {
+      const block = match[1]
+      const detailUrl = normalizeOptionalValue(
+        block.match(/<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*awsm-job-item[^"']*["']/i)?.[1],
+      )
+      const title = cleanJobTitle(
+        block.match(/<h2[^>]*class=["'][^"']*awsm-job-post-title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i)?.[1],
+      )
+
+      return {
+        title,
+        detailUrl,
+        department: extractJobSpecificationValues(block, 'awsm-job-specification-job-category')[0] || null,
+        employmentType: extractJobSpecificationValues(block, 'awsm-job-specification-job-type')[0] || null,
+        locations: extractJobSpecificationValues(block, 'awsm-job-specification-job-location'),
+      }
+    })
     .filter((item) => item.title && item.detailUrl)
 
 export const extractRoleDetail = (html = '', summary = {}) => {
-  const location = normalizeWhitespace(String(html ?? '').match(/Location:\s*([^<\n]+)/i)?.[1])
-  const experienceRequired = normalizeWhitespace(String(html ?? '').match(/(\d+\s*-\s*\d+\s*years?|\d+\s*-\s*\d+\s*years?\s+experience)/i)?.[1])
-    ?.replace(/\s+experience$/i, '')
+  const detailText = normalizeWhitespace(html)
+  const location = normalizeOptionalValue(detailText.match(
+    /Location:\s*([\s\S]{1,160}?)(?:Roles and responsibilities|Main responsibilities|Key Responsibilities|Qualifications|Work experience|Experience|Skills:|$)/i,
+  )?.[1])
+  const experienceRequired = normalizeOptionalValue(
+    detailText.match(/(\d+\s*-\s*\d+\s*years?(?:\s+of\s+experience|\s+experience)?|\d+\+\s*years?(?:\s+of\s+experience)?)/i)?.[1],
+  )?.replace(/\s+(?:of\s+)?experience$/i, '')
+  const normalizedLocations = location
+    ? [location]
+    : Array.isArray(summary.locations) ? summary.locations : []
+  const jobId = buildJobId(summary.detailUrl)
+  const primaryCity = normalizedLocations[0] || null
 
   return {
-    title: summary.title,
+    title: cleanJobTitle(summary.title),
     company: COMPANY,
     department: summary.department,
-    location: location ? `${location}, India` : summary.location ? `${summary.location}, India` : null,
-    city: location || summary.location || null,
+    location: buildIndiaLocation(normalizedLocations),
+    city: primaryCity,
     country: 'India',
-    jobId: summary.detailUrl.split('/').filter(Boolean).at(-1),
-    requisitionId: summary.detailUrl.split('/').filter(Boolean).at(-1),
+    jobId,
+    requisitionId: jobId,
     sourceUrl: summary.detailUrl,
     applyUrl: summary.detailUrl,
     employmentType: summary.employmentType,
@@ -79,8 +141,14 @@ export const extractRoleDetail = (html = '', summary = {}) => {
     requiredSkills: parseListItems(html),
     postingDate: null,
     closingDate: null,
-    jobDescription: normalizeWhitespace(String(html ?? '').match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1]),
-    remoteStatus: /Work from Office/i.test(String(html ?? '')) ? 'On-site' : null,
+    jobDescription: normalizeOptionalValue(String(html ?? '').match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1]) || detailText,
+    remoteStatus: /Work from Office|On-?site/i.test(detailText)
+      ? 'On-site'
+      : /Hybrid/i.test(detailText)
+        ? 'Hybrid'
+        : /Remote/i.test(detailText)
+          ? 'Remote'
+          : null,
   }
 }
 

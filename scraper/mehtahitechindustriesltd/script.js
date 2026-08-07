@@ -28,6 +28,15 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
 
 const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[^>]+>/g, ' '))
 
+const toTextLines = (value) => decodeHtmlEntities(String(value ?? ''))
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\u00a0/g, ' ')
+  .split(/\r?\n/)
+  .map((line) => normalizeWhitespace(line)?.replace(/^"+|"+$/g, ''))
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
 const slugify = (value) => normalizeWhitespace(value)
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -71,21 +80,74 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   return /<title>\s*Mehta Hitech Industries Limited - Manufacturer of Fiber Laser Cutting Machine from Ahmedabad\s*<\/title>/i.test(page)
-    && /<h1[^>]*>\s*Mehta Hitech Industries Limited\s*<\/h1>/i.test(page)
-    && /href=["']\/jobs\.html["']/i.test(page)
-    && /Career Opportunities/i.test(page)
+    && /Mehta Hitech Industries Limited/i.test(page)
+    && /Kathawada,\s*Ahmedabad,\s*Gujarat/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   return /<title>\s*Career Opportunities at Mehta Hitech Industries Limited\s*<\/title>/i.test(page)
-    && /<h1[^>]*>\s*Career Opportunities\s*<\/h1>/i.test(page)
     && /Marketing Executives/i.test(page)
     && /Job Application Form/i.test(page)
     && /Apply Now/i.test(page)
     && /Qualification/i.test(page)
     && /Skills Required/i.test(page)
     && /Experience/i.test(page)
+}
+
+const parseLiveInlineOpening = (page) => {
+  const title = stripTags(
+    String(page ?? '').match(
+      /<div[^>]*class=["'][^"']*\bpflInrHdng\b[^"']*["'][^>]*>\s*<h3[^>]*>([\s\S]*?)<\/h3>/i,
+    )?.[1],
+  )
+  const bodyHtml = String(page ?? '').match(
+    /<div[^>]*class=["'][^"']*\bpflInrTxtv\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+  )?.[1]
+
+  if (!title || !bodyHtml) return null
+
+  const lines = toTextLines(bodyHtml)
+    .filter((line) => !/^less$/i.test(line))
+  if (lines.length === 0) return null
+
+  const sections = new Map()
+  const summary = []
+  let currentLabel = null
+
+  for (const line of lines) {
+    const label = line.match(/^(Qualification|Skills Required|Experience):?$/i)?.[1]
+    if (label) {
+      currentLabel = label.toLowerCase()
+      sections.set(currentLabel, [])
+      continue
+    }
+
+    if (!currentLabel) {
+      summary.push(line)
+      continue
+    }
+
+    sections.get(currentLabel)?.push(line)
+  }
+
+  const qualification = joinUnique(sections.get('qualification') || [])
+  const skills = sections.get('skills required') || []
+  const experienceRequired = joinUnique(sections.get('experience') || [])
+  const summaryText = joinUnique(summary)
+
+  if (!summaryText || !qualification || !experienceRequired || skills.length === 0) {
+    return null
+  }
+
+  return {
+    title,
+    summary: summaryText,
+    qualification,
+    skills,
+    experienceRequired,
+    applyUrl: CAREERS_URL,
+  }
 }
 
 export const extractPublicListings = (html) => {
@@ -97,7 +159,42 @@ export const extractPublicListings = (html) => {
   const openingHtml = page.match(/<section\b[^>]*class=["'][^"']*\bcareer-opening\b[^"']*["'][^>]*>([\s\S]*?)<\/section>/i)?.[1]
 
   if (!openingHtml) {
-    throw new Error('Mehta Hitech Industries Ltd. verified careers surface changed or disappeared')
+    const liveOpening = parseLiveInlineOpening(page)
+    if (!liveOpening) {
+      throw new Error('Mehta Hitech Industries Ltd. verified careers surface changed or disappeared')
+    }
+
+    const location = 'Ahmedabad, Gujarat, India'
+    const city = 'Ahmedabad'
+    const jobSlug = slugify(liveOpening.title)
+    const jobId = `${SOURCE}-${jobSlug}`
+
+    return [{
+      title: liveOpening.title,
+      company: COMPANY,
+      department: 'Marketing',
+      location,
+      city,
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      sourceUrl: `${CAREERS_URL}#${jobId}`,
+      applyUrl: liveOpening.applyUrl,
+      employmentType: null,
+      experienceRequired: liveOpening.experienceRequired,
+      minimumQualification: liveOpening.qualification,
+      preferredQualification: joinUnique(liveOpening.skills),
+      requiredSkills: liveOpening.skills,
+      postingDate: null,
+      closingDate: null,
+      jobDescription: [
+        `Company: ${COMPANY}`,
+        `Location: ${city}`,
+        `Qualification: ${liveOpening.qualification}`,
+        `Year of experience: ${liveOpening.experienceRequired}`,
+        `Notes: ${liveOpening.summary}`,
+      ].join(' | '),
+    }]
   }
 
   const title = stripTags(openingHtml.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1])

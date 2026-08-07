@@ -13,15 +13,15 @@ const companyHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Innoval Digital Solutions | Company</title>
+    <title>About Innoval Digital Solutions | SAP Compliance Experts | Innoval Digital Solutions</title>
   </head>
   <body>
     <main>
       <h1>Company</h1>
-      <a href="/company/?tab=careers">Careers</a>
-      <p>We're hiring across engineering, quality assurance, and digital delivery teams.</p>
-      <p>See open roles and apply</p>
-      <p>Grow with IVL in SAP, Node.js, and enterprise delivery.</p>
+      <a href="/company/">Careers</a>
+      <a href="/life-at-ivl/">Life @ IVL</a>
+      <p>Enterprise intelligent solutions on SAP BTP. Value delivered through innovations. Digital AI Business Apps.</p>
+      <p>SAP BTP Certified CMMI L5</p>
     </main>
   </body>
 </html>
@@ -33,7 +33,7 @@ test('Innoval Digital Solutions sentinel pins the verified first-party recruitin
   assert.equal(innoval.SOURCE, 'innovaldigitalsolutions')
   assert.equal(innoval.COMPANY, 'Innoval Digital Solutions')
   assert.equal(innoval.CAREERS_URL, 'https://www.ivldsp.com/company/')
-  assert.equal(innoval.VERIFIED_ON, '2026-07-17')
+  assert.equal(innoval.VERIFIED_ON, '2026-08-02')
   assert.equal(innoval.hasVerifiedCareersSignal(companyHtml), true)
 })
 

@@ -10,7 +10,7 @@ const officialHomepageHtml = `
   <body>
     <main>
       <nav>
-        <a href="https://careers.db.com/professionals/search-roles/">Search Roles</a>
+        <a href="/professionals/search-roles">Search Roles</a>
         <a href="https://careers.db.com/students-graduates/search-programmes/">Search Programmes</a>
       </nav>
       <section>
@@ -35,7 +35,7 @@ const searchRolesHtml = `
         id="job-module"
         data-jobmodule="PROFESSIONAL"
       ></div>
-      <script src="/application/project/js/jobplatform.js?38"></script>
+      <script src="/application/project/js/careersJs.js?v40"></script>
     </main>
   </body>
 </html>
@@ -85,7 +85,7 @@ const indiaPageOnePayload = {
       Facets: {
         'PositionLocation.Country': {
           Terms: [
-            { Term: '81', Count: 272 },
+            { Term: '81', Count: 234 },
           ],
         },
       },
@@ -271,7 +271,7 @@ test('Deutsche Bank run validates the verified first-party careers surface and r
   const jsonRequests = []
 
   const jobs = await deutscheBank.createDeutscheBankScraper({
-    now: () => '2026-07-15T12:00:00.000Z',
+    now: () => '2026-08-01T12:00:00.000Z',
   }).run({
     fetchPage: async (url) => {
       pageRequests.push(url)
@@ -376,7 +376,7 @@ test('Deutsche Bank run validates the verified first-party careers surface and r
       companyDomain: 'db.com',
       atsPlatform: 'first-party-beesite-search-api',
       link: 'https://db.wd3.myworkdayjobs.com/DBWebsite/job/Mumbai-Nirlon-Know-Pk-B4-B5/Apprentice---Non-Technology_R0357981/apply',
-      scrapedAt: '2026-07-15T12:00:00.000Z',
+      scrapedAt: '2026-08-01T12:00:00.000Z',
     },
     {
       title: 'Senior Engineer - SAP SDLC / Cloud ALM, VP',
@@ -405,7 +405,7 @@ test('Deutsche Bank run validates the verified first-party careers surface and r
       companyDomain: 'db.com',
       atsPlatform: 'first-party-beesite-search-api',
       link: 'https://db.wd3.myworkdayjobs.com/DBWebsite/job/Pune/SAP-Basis-Operations-Expert--VP_R0394318/apply',
-      scrapedAt: '2026-07-15T12:00:00.000Z',
+      scrapedAt: '2026-08-01T12:00:00.000Z',
     },
   ])
 })

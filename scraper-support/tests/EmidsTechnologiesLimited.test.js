@@ -16,7 +16,26 @@ const careersHtml = `
     <title>Careers - Emids</title>
   </head>
   <body>
+    <h1>Help Shape the Future of Health</h1>
+    <h4>Be A Part Of Our Growth Story</h4>
     <a href="https://fa-eupt-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs" target="_blank">
+      Explore Open Roles
+    </a>
+  </body>
+</html>
+`
+
+const bibhaCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers - Emids</title>
+  </head>
+  <body>
+    <h1>Help Shape the Future of Health</h1>
+    <p>Join our global team of expert problem solvers.</p>
+    <h4>Be A Part Of Our Growth Story</h4>
+    <a href="https://emids.bibha.ai/career/emids/" target="_blank">
       Explore Open Roles
     </a>
   </body>
@@ -190,6 +209,25 @@ test('Emids Technologies Limited scraper extracts India jobs from the Oracle Clo
     ],
   )
   assert.match(jobs[0].jobDescription, /stakeholders/i)
+})
+
+test('Emids Technologies Limited detects when the first-party careers page changes its handoff to a new public board', async () => {
+  const emids = await loadScriptModule()
+
+  assert.equal(emids.hasOfficialCorporateCareersSignal(bibhaCareersHtml), true)
+  assert.equal(emids.extractCorporateHandoffUrl(bibhaCareersHtml), 'https://emids.bibha.ai/career/emids/')
+
+  await assert.rejects(
+    emids.run({
+      fetchText: async (url) => {
+        if (url === emids.CAREERS_URL) return bibhaCareersHtml
+        if (url === emids.CANDIDATE_EXPERIENCE_URL) return candidateExperienceHtml
+        assert.fail(`Unexpected fetchText URL: ${url}`)
+      },
+      fetchJson: async () => listingPayload,
+    }),
+    /careers handoff changed to https:\/\/emids\.bibha\.ai\/career\/emids\//i,
+  )
 })
 
 test('Emids Technologies Limited scraper fails closed when the first-party handoff changes', async () => {

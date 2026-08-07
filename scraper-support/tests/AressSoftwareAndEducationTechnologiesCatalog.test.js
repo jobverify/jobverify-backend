@@ -42,9 +42,9 @@ test('Aress Software and Education Technologies local catalog captures the verif
     provider.extractionStrategy,
     'verified-first-party-careers-page+division-job-cards+same-page-details-handoff',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Digital Marketing Executive/i)
   assert.match(provider.verifiedSurfaceSummary, /Nashik/i)
 

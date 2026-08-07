@@ -58,9 +58,10 @@ test('Cognus Technology local catalog captures the verified first-party homepage
     provider.extractionStrategy,
     'verified-first-party-homepage+official-zoho-careers-hidden-input-jobs-payload',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.match(provider.verifiedSurfaceSummary, /Join Us/i)
-  assert.match(provider.verifiedSurfaceSummary, /Currently we don't have any open jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /Find the career of your dreams/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Manager/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

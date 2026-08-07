@@ -52,7 +52,10 @@ const officialLeverBoardHtml = `
     <a href="https://jobs.lever.co/dozee/ccbcd4a2-0672-4139-b067-bb3905ff2738">Business Finance</a>
     <a href="https://jobs.lever.co/dozee/5255c181-b6e4-4383-9068-c7cf2949ea48">Area Sales Manager</a>
     <a href="https://jobs.lever.co/dozee/2ad42193-c533-4440-8fdf-f4a6e98b1d43">Biomedical Engineer - CSA</a>
-    <p>Jobs powered by Lever</p>
+    <a href="https://www.lever.co/job-seeker-support/" class="image-link">
+      <span>Jobs powered by </span>
+      <img alt="Lever logo" src="/img/lever-logo-full.svg" />
+    </a>
   </body>
 </html>
 `

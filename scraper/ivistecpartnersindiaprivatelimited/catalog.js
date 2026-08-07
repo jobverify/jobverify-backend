@@ -15,9 +15,9 @@ export const IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'homepage-about-contact-verification',
   extractionStrategy: 'verified-homepage+verified-about+verified-contact+no-first-party-careers-surface',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that the official Vistec Partners pages at /Index.html, /About.html, and /Contact-Us.html described the healthcare business, identified Noida, India, and exposed no trustworthy public jobs surface or first-party careers route.',
+    'Verified on Sunday, August 2, 2026 that the official Vistec Partners pages at /Index.html, /About.html, and /Contact-Us.html still describe the healthcare business, still identify the Noida office through the current contact block, and still expose no trustworthy public jobs surface or first-party careers route.',
 }
 
 export default IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG

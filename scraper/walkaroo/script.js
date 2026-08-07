@@ -39,12 +39,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
 
   return normalized.includes('Walkaroo Footwear')
     && normalized.includes('Homegrown Indian Brand')
     && /Free shipping above/i.test(normalized)
-    && /https:\/\/www\.walkaroo\.in\/pages\/about-us/i.test(String(html ?? ''))
-    && /https:\/\/www\.walkaroo\.in\/pages\/contact-us/i.test(String(html ?? ''))
+    && (
+      /https:\/\/www\.walkaroo\.in\/pages\/about-us/i.test(page)
+      || /href=["']\/pages\/about-us["']/i.test(page)
+    )
+    && (
+      /https:\/\/www\.walkaroo\.in\/pages\/contact-us/i.test(page)
+      || /href=["']\/pages\/contact-us["']/i.test(page)
+    )
 }
 
 export const hasAboutPageSignal = (html) => {
@@ -68,11 +75,17 @@ export const hasContactPageSignal = (html) => {
 
 export const hasOfficialCareersHandoffSignal = (html) => {
   const normalized = normalizeWhitespace(html)
+  const compact = normalized.toLowerCase()
 
   return /<title>\s*Careers\s*<\/title>/i.test(String(html ?? ''))
-    && /\bCareers\b/i.test(normalized)
-    && /\bwalkaroo\b/i.test(normalized)
-    && /Powered by Zappyhire/i.test(normalized)
+    && (
+      /^careers(?:\s+careers)?$/i.test(compact)
+      || (
+        /\bcareers\b/i.test(normalized)
+        && /\bwalkaroo\b/i.test(normalized)
+        && /Powered by Zappyhire/i.test(normalized)
+      )
+    )
 }
 
 const validateNoPublicListings = (jobs) => {

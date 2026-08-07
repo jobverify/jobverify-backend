@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -62,22 +63,32 @@ export const hasCosmicCircuitsBrandSignal = (html) =>
   COSMIC_BRAND_PATTERN.test(String(html ?? ''))
 
 export const createCosmicCircuitsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    const textFetcher = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+    })
 
-    if (!hasOfficialParentCareersSignal(careersHtml)) {
-      throw new Error('Cosmic Circuits verified Cadence parent careers surface changed')
+    try {
+      const careersHtml = await textFetcher.fetchText(CAREERS_URL)
+
+      if (!hasOfficialParentCareersSignal(careersHtml)) {
+        throw new Error('Cosmic Circuits verified Cadence parent careers surface changed')
+      }
+
+      if (extractWorkdayHandoffUrls(careersHtml).length === 0) {
+        throw new Error('Cosmic Circuits verified Cadence careers handoff changed')
+      }
+
+      if (hasCosmicCircuitsBrandSignal(careersHtml)) {
+        throw new Error('Cosmic Circuits brand-specific jobs surface detected on the Cadence careers page')
+      }
+
+      return []
+    } finally {
+      await textFetcher.close()
     }
-
-    if (extractWorkdayHandoffUrls(careersHtml).length === 0) {
-      throw new Error('Cosmic Circuits verified Cadence careers handoff changed')
-    }
-
-    if (hasCosmicCircuitsBrandSignal(careersHtml)) {
-      throw new Error('Cosmic Circuits brand-specific jobs surface detected on the Cadence careers page')
-    }
-
-    return []
   },
 })
 

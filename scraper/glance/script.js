@@ -156,16 +156,16 @@ export const extractEmbeddedFirstPartyJobs = (html = '') => {
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
+  const normalized = decodeRepeatedHtmlEntities(normalizeWhitespace(page) || '')
   const payload = extractNextDataPayload(page)
   const jobs = flattenEmbeddedJobs(payload?.props?.pageProps?.jobsDepartmentWise)
 
   return page.includes('__NEXT_DATA__')
     && payload?.page === '/careers/latest'
+    && normalized.includes("Why you'd love being here.")
     && normalized.includes('Search')
     && normalized.includes('Everywhere')
     && normalized.includes('All')
-    && normalized.includes('Glance AI, Inc. © 2026')
     && jobs.length > 0
     && jobs.some((job) => String(job?.id) === VERIFIED_SAMPLE_JOB_ID)
     && jobs.some((job) => isIndiaJob(job))

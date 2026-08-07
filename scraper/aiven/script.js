@@ -170,6 +170,10 @@ export const createAivenScraper = ({
     const indiaJobUrls = extractIndiaJobUrls(listingHtml)
     const jobs = []
 
+    if (indiaJobUrls.length === 0) {
+      return []
+    }
+
     for (const url of indiaJobUrls) {
       const detailHtml = await fetchText(url, { signal })
       const job = extractJobFromDetail(url, detailHtml)

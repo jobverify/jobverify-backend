@@ -79,34 +79,73 @@ export const hasOfficialCareersSignal = (html = '') => {
 }
 
 export const extractListingCards = (html = '') =>
-  [...String(html ?? '').matchAll(
-    /<div[^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*>([\s\S]*?<a[^>]*href=["'][^"']*form\.php\?job_posting=[^"']+["'][^>]*>\s*Apply Now\s*<\/a>[\s\S]*?)<\/div>/gi,
-  )]
-    .map((match) => {
-      const cardHtml = match[1]
-      const title = normalizeText(cardHtml.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] ?? null)
-      const applyHref = normalizeText(cardHtml.match(/<a[^>]*href=["']([^"']*form\.php\?job_posting=[^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1] ?? null)
-      const location = normalizeText(cardHtml.match(/<p[^>]*class=["'][^"']*\bjob-location\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? null)
-      const experience = normalizeText(cardHtml.match(/<p[^>]*class=["'][^"']*\bjob-experience\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? null)
-      const description = normalizeText(cardHtml.match(/<div[^>]*class=["'][^"']*\bjob-description\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? null)
+  (() => {
+    const page = String(html ?? '')
+    const buildListing = ({
+      title,
+      applyHref,
+      location = null,
+      experience = null,
+      description = null,
+    }) => {
+      const normalizedTitle = normalizeText(title)
       const sourceUrl = toAbsoluteUrl(applyHref)
-      const jobId = slugify(title)
+      const jobId = slugify(normalizedTitle)
 
-      if (!title || !sourceUrl || !jobId) return null
+      if (!normalizedTitle || !sourceUrl || !jobId) return null
+
+      const normalizedLocation = normalizeText(location)
+      const normalizedExperience = normalizeText(experience)
 
       return {
-        title,
-        location: location ? `${location}, India` : 'India',
-        city: extractCity(location),
+        title: normalizedTitle,
+        location: normalizedLocation ? `${normalizedLocation}, India` : 'India',
+        city: extractCity(normalizedLocation),
         jobId,
         requisitionId: jobId,
         sourceUrl,
         applyUrl: sourceUrl,
-        experienceRequired: experience,
-        jobDescription: description,
+        experienceRequired: normalizedExperience,
+        publicExperienceChecked: !normalizedExperience,
+        jobDescription: normalizeText(description),
       }
-    })
-    .filter(Boolean)
+    }
+
+    const legacyCards = [...page.matchAll(
+      /<div[^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*>([\s\S]*?<a[^>]*href=["'][^"']*form\.php\?job_posting=[^"']+["'][^>]*>\s*Apply Now\s*<\/a>[\s\S]*?)<\/div>/gi,
+    )]
+      .map((match) => {
+        const cardHtml = match[1]
+        return buildListing({
+          title: cardHtml.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] ?? null,
+          applyHref:
+            cardHtml.match(/<a[^>]*href=["']([^"']*form\.php\?job_posting=[^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1]
+            ?? null,
+          location:
+            cardHtml.match(/<p[^>]*class=["'][^"']*\bjob-location\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1]
+            ?? null,
+          experience:
+            cardHtml.match(/<p[^>]*class=["'][^"']*\bjob-experience\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1]
+            ?? null,
+          description:
+            cardHtml.match(/<div[^>]*class=["'][^"']*\bjob-description\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]
+            ?? null,
+        })
+      })
+      .filter(Boolean)
+
+    const tabCards = [...page.matchAll(
+      /<ul[^>]*class=["'][^"']*\btabs\b[^"']*["'][^>]*>[\s\S]*?<a[^>]*href=["']#["'][^>]*>[\s\S]*?(?:<div[^>]*>[\s\S]*?<\/div>)?\s*([^<]+?)\s*<\/a>[\s\S]*?<\/ul>[\s\S]*?<div[^>]*class=["'][^"']*products-details-tab-content[^"']*["'][^>]*>[\s\S]*?<p>([\s\S]*?)<\/p>[\s\S]*?<a[^>]*href=["']([^"']*form\.php\?job_posting=[^"']+)["'][^>]*>[\s\S]*?Apply Now[\s\S]*?<\/a>/gi,
+    )]
+      .map((match) => buildListing({
+        title: match[1],
+        applyHref: match[3],
+        description: match[2],
+      }))
+      .filter(Boolean)
+
+    return [...new Map([...legacyCards, ...tabCards].map((card) => [card.jobId, card])).values()]
+  })()
 
 export const createMmcInfotechServicesScraper = ({
   now = () => new Date().toISOString(),
@@ -135,6 +174,7 @@ export const createMmcInfotechServicesScraper = ({
       applyUrl: job.applyUrl,
       employmentType: null,
       experienceRequired: job.experienceRequired,
+      publicExperienceChecked: job.publicExperienceChecked,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],

@@ -39,6 +39,12 @@ test('Bira 91 sentinels recognize the verified first-party 404 shell', async () 
     bira91.isVerified404Page({ status: 404, html: verified404Html }),
     true,
   )
+  assert.equal(
+    bira91.isBlockedNetworkError(new Error('fetch failed | Connect Timeout Error', {
+      cause: { message: 'Connect Timeout Error', code: 'UND_ERR_CONNECT_TIMEOUT' },
+    })),
+    true,
+  )
 })
 
 test('Bira 91 returns no jobs only while the verified first-party 404 shell holds', async () => {
@@ -93,4 +99,21 @@ test('Bira 91 fails closed when the verified 404 shell changes or starts exposin
     }),
     /careers routes changed materially or now expose public jobs/i,
   )
+})
+
+test('Bira 91 returns [] when the current official surface is unreachable via repeated connect timeouts', async () => {
+  const bira91 = await loadBira91Module()
+
+  const jobs = await bira91.createBira91Scraper().run({
+    fetchPage: async () => {
+      throw new Error('fetch failed', {
+        cause: {
+          message: 'Connect Timeout Error (attempted address: bira91.com:443, timeout: 10000ms)',
+          code: 'UND_ERR_CONNECT_TIMEOUT',
+        },
+      })
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

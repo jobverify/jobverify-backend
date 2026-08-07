@@ -127,38 +127,127 @@ const colanCareersHtml = `
   <body>
     <h1>Build your future at Colan</h1>
     <h2>LATEST JOBS</h2>
-    <section class="job-detail">
-      <h6>Job Summary</h6>
-      <p>Job Code:JD005</p>
-      <p>Designation:Android Developer</p>
-      <p>Qualification:Any graduate</p>
-      <p>Experience:3 to 8 Years</p>
-      <p>Job type:Full Time</p>
-      <p>No. of Positions :10</p>
-      <p>Location :Chennai</p>
-      <a href="#apply">Apply Now</a>
-      <h6>Job Description</h6>
-      <ul>
-        <li>Solid understanding of the full mobile application development life cycle.</li>
-        <li>Proficient in Kotlin and MVVM architecture.</li>
+    <div class="accordion table-responsive company-inner-table desktop" id="accordionExample">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Job Title</th>
+            <th>Experience</th>
+            <th>Job Location</th>
+            <th>Job Code</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="jobcard collapsed" id="JD005" data-bs-toggle="collapse" href="#collapseOne1">
+            <td><span class="font-26 key_value" id="Android Developer">Android Developer</span></td>
+            <td class="font-24">3 to 8 Years</td>
+            <td class="font-24">Chennai</td>
+            <td class="font-24">JD005</td>
+            <td><button class="nowapplys1 btn apply-btn font-22 aply">Apply</button></td>
+          </tr>
+          <tr class="job_detail_description">
+            <td colspan="5">
+              <div id="collapseOne1" class="collapse" data-bs-parent="#accordionExample">
+                <div class="card-body row">
+                  <div class="col-6">
+                    <div class="summarypara">
+                      <h6>Job Summary</h6>
+                      <div class="sector-files"><label>Job Code</label>:<span class="automobile">JD005</span></div>
+                      <div class="sector-files"><label>Designation</label>:<span class="automobile">Android Developer</span></div>
+                      <div class="sector-files"><label>Qualification</label>:<span class="automobile">Any graduate</span></div>
+                      <div class="sector-files"><label>Experience</label>:<span class="automobile">3 to 8 Years</span></div>
+                      <div class="sector-files"><label>Job type</label>:<span class="automobile">Full Time</span></div>
+                      <div class="sector-files"><label>No. of Positions</label>:<span class="automobile">10</span></div>
+                      <div class="sector-files"><label>Location</label>:<span class="automobile">Chennai</span></div>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="describepara">
+                      <h6>Job Description</h6>
+                      <ul>
+                        <li>Solid understanding of the full mobile application development life cycle.</li>
+                        <li>Proficient in Kotlin and MVVM architecture.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="jobcard collapsed" id="JD021" data-bs-toggle="collapse" href="#collapseOne2">
+            <td><span class="font-26 key_value" id="Data Scientist">Data Scientist</span></td>
+            <td class="font-24">5+ Years</td>
+            <td class="font-24">Bangalore</td>
+            <td class="font-24">JD021</td>
+            <td><button class="nowapplys1 btn apply-btn font-22 aply">Apply</button></td>
+          </tr>
+          <tr class="job_detail_description">
+            <td colspan="5">
+              <div id="collapseOne2" class="collapse" data-bs-parent="#accordionExample">
+                <div class="card-body row">
+                  <div class="col-6">
+                    <div class="summarypara">
+                      <h6>Job Summary</h6>
+                      <div class="sector-files"><label>Job Code</label>:<span class="automobile">JD021</span></div>
+                      <div class="sector-files"><label>Designation</label>:<span class="automobile">Data Scientist</span></div>
+                      <div class="sector-files"><label>Qualification</label>:<span class="automobile">Any graduate</span></div>
+                      <div class="sector-files"><label>Experience</label>:<span class="automobile">5+ Years</span></div>
+                      <div class="sector-files"><label>Job type</label>:<span class="automobile">Full Time</span></div>
+                      <div class="sector-files"><label>No. of Positions</label>:<span class="automobile">3</span></div>
+                      <div class="sector-files"><label>Location</label>:<span class="automobile">Bangalore</span></div>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="describepara">
+                      <h6>Job Description</h6>
+                      <ul>
+                        <li>Practical knowledge and working experience on Statistics and Operation Research methods.</li>
+                        <li>Hands-on experience in machine learning and data mining.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="change-pop mobpop jobcard1">
+      <ul class="popup-ul">
+        <li class="font-28">Job Title</li>
+        <li class="font-24">Android Developer</li>
       </ul>
-    </section>
-    <section class="job-detail">
-      <h6>Job Summary</h6>
-      <p>Job Code:JD021</p>
-      <p>Designation:Data Scientist</p>
-      <p>Qualification:Any graduate</p>
-      <p>Experience:5+ Years</p>
-      <p>Job type:Full Time</p>
-      <p>No. of Positions :3</p>
-      <p>Location :Bangalore</p>
-      <a href="#apply">Apply Now</a>
-      <h6>Job Description</h6>
-      <ul>
-        <li>Practical knowledge and working experience on Statistics and Operation Research methods.</li>
-        <li>Hands-on experience in machine learning and data mining.</li>
+      <ul class="popup-ul">
+        <li class="font-28">Experience</li>
+        <li class="font-24">3 to 8 Years</li>
       </ul>
-    </section>
+      <ul class="popup-ul">
+        <li class="font-28">Job Location</li>
+        <li class="font-24">Chennai</li>
+      </ul>
+      <ul class="popup-ul">
+        <li class="font-28">Job Code</li>
+        <li class="font-24">JD005</li>
+      </ul>
+      <ul class="popup-ul">
+        <li class="font-28">Job Title</li>
+        <li class="font-24">Data Scientist</li>
+      </ul>
+      <ul class="popup-ul">
+        <li class="font-28">Experience</li>
+        <li class="font-24">5+ Years</li>
+      </ul>
+      <ul class="popup-ul">
+        <li class="font-28">Job Location</li>
+        <li class="font-24">Bangalore</li>
+      </ul>
+      <ul class="popup-ul">
+        <li class="font-28">Job Code</li>
+        <li class="font-24">JD021</li>
+      </ul>
+    </div>
   </body>
 </html>
 `
@@ -173,34 +262,54 @@ const customerAnalyticsCareersHtml = `
     <h1>Craft Your Success Story with Us</h1>
     <p>At Customer Analytics, we're looking for talented professionals who are passionate about innovation and growth.</p>
     <p>IMPORTANT: Please note that job offers at Customer Analytics and related communications will only come from customeranalytics.com and not from any other domain.</p>
-    <h3>Current Opportunities</h3>
-    <section class="opportunity">
-      <h5>MS Dynamics 365 F&amp;O Functional Consultant</h5>
-      <p>The role offers a legion of chances to explore and use latest technologies in delivering quality assurance to our clients through best process and practices.</p>
-      <h6>Key Responsibility</h6>
-      <ul>
-        <li>Should be able to analyze business needs and to convert those needs into requirements.</li>
-        <li>Should be able to run Fit-Gap analysis.</li>
-      </ul>
-      <h6>Requirements</h6>
-      <ul>
-        <li>Candidate has a Bachelor’s degree in any engineering background or in a related field with strong relevant work experience.</li>
-        <li>Hands-on experience in the implementation of Dynamics 365 F&amp;O.</li>
-      </ul>
-    </section>
-    <section class="opportunity">
-      <h5>MS Dynamics 365 F&amp;O Developer</h5>
-      <p>The role offers a legion of chances to explore and use latest technologies in delivering quality assurance to our clients through best process and practices.</p>
-      <h6>Key Responsibility</h6>
-      <ul>
-        <li>Hands-on with Finance, Accounts receivable, Accounts payable and Retail modules.</li>
-        <li>End-to-end implementation.</li>
-      </ul>
-      <h6>Requirements</h6>
-      <ul>
-        <li>Candidate has a Bachelor’s degree in any engineering background or in a related field with strong relevant work experience.</li>
-        <li>Create unit test cases and perform unit testing.</li>
-      </ul>
+    <section class="Opportunities_sec right-mix overflow-hidden bg-backgroundGray">
+      <h3>Current Opportunities</h3>
+      <div class="mb-8 md:mb-16">
+        <div class="relative p-3 pt-2 transition bg-white mb-4">
+          <div class="group w-full items-center justify-between p-4 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+              <h5>MS Dynamics 365 F&amp;O Functional Consultant</h5>
+            </div>
+            <p>The role offers a legion of chances to explore and use latest technologies in delivering quality assurance to our clients through best process and practices.</p>
+          </div>
+          <div class="text-sm transition-all duration-200 ease-in-out overflow-hidden h-0 opacity-0">
+            <div class="px-4 pb-4">
+              <h6>Key Responsibility</h6>
+              <ul>
+                <li>Should be able to analyze business needs and to convert those needs into requirements.</li>
+                <li>Should be able to run Fit-Gap analysis.</li>
+              </ul>
+              <h6>Requirements</h6>
+              <ul>
+                <li>Candidate has a Bachelor’s degree in any engineering background or in a related field with strong relevant work experience.</li>
+                <li>Hands-on experience in the implementation of Dynamics 365 F&amp;O.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="relative p-3 pt-2 transition bg-white mb-4">
+          <div class="group w-full items-center justify-between p-4 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+              <h5>MS Dynamics 365 F&amp;O Developer</h5>
+            </div>
+            <p>The role offers a legion of chances to explore and use latest technologies in delivering quality assurance to our clients through best process and practices.</p>
+          </div>
+          <div class="text-sm transition-all duration-200 ease-in-out overflow-hidden h-0 opacity-0">
+            <div class="px-4 pb-4">
+              <h6>Key Responsibility</h6>
+              <ul>
+                <li>Hands-on with Finance, Accounts receivable, Accounts payable and Retail modules.</li>
+                <li>End-to-end implementation.</li>
+              </ul>
+              <h6>Requirements</h6>
+              <ul>
+                <li>Candidate has a Bachelor’s degree in any engineering background or in a related field with strong relevant work experience.</li>
+                <li>Create unit test cases and perform unit testing.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
     <section class="office">
       <h6>India</h6>
@@ -339,13 +448,13 @@ test('V2soft extracts the verified India listing page and first-party detail pag
   )
 })
 
-test('Colan Infotech extracts the verified single-page openings and descriptions', async () => {
+test('Colan Infotech extracts the verified job-card rows and detail panels', async () => {
   const colan = await loadModule('../../scraper/colaninfotech/script.js')
 
   assert.equal(colan.hasOfficialCareersSignal(colanCareersHtml), true)
 
   const jobs = await colan.createColanInfotechScraper({
-    now: () => '2026-07-18T00:00:00.000Z',
+    now: () => '2026-08-01T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
       assert.equal(url, colan.CAREERS_URL)

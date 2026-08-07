@@ -113,6 +113,7 @@ export const extractSearchResults = (payload) => (Array.isArray(payload?.data) ?
     const requisitionId = normalizeWhitespace(record.ref || record.source_ref || record.id)
     const sourceUrl = normalizeWhitespace(record.apply_job_url)
     const location = normalizeLocation(record.location)
+    const jobDescription = stripTags(record.description)
 
     if (!jobId || !requisitionId || !sourceUrl || !location) return null
 
@@ -133,7 +134,8 @@ export const extractSearchResults = (payload) => (Array.isArray(payload?.data) ?
       requiredSkills: [],
       postingDate: normalizeWhitespace(record.updated_at || record.indexed_at),
       closingDate: null,
-      jobDescription: stripTags(record.description),
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription),
     }
   })
   .filter(Boolean)

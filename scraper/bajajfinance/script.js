@@ -206,6 +206,9 @@ export const extractSearchResults = (payload = {}) => (
         record.jobType,
       ),
       experienceRequired: firstNonEmpty(record.expRange, record.experience, record.experienceRange),
+      publicExperienceChecked: Boolean(
+        firstNonEmpty(record.expRange, record.experience, record.experienceRange),
+      ),
       minimumQualification: firstNonEmpty(record.minimumQualification, record.minQualification),
       preferredQualification: firstNonEmpty(record.preferredQualification, record.prefQualification),
       requiredSkills: flattenSkills(record.skills),

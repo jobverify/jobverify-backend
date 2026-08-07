@@ -43,22 +43,24 @@ test('insightsoftware local catalog captures the verified first-party careers pa
   assert.equal(provider.homepageUrl, 'https://insightsoftware.com/')
   assert.equal(provider.companyCareerPage, 'https://insightsoftware.com/careers/')
   assert.equal(provider.workdayTenantHost, 'https://magnitudesoftware.wd1.myworkdayjobs.com/')
+  assert.equal(provider.officialWorkdayBoardUrl, 'https://magnitudesoftware.wd1.myworkdayjobs.com/External')
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-careers-html-job-card-scan')
+  assert.equal(provider.paginationStrategy, 'verified-first-party-careers-shell-plus-shared-workday-runner')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+india-workday-links',
+    'verified-first-party-careers-shell+verified-workday-shell+shared-workday-runner',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'insightsoftware.com')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/insightsoftware\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /Current Job Openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /Customer Success Analyst/i)
-  assert.match(provider.verifiedSurfaceSummary, /Director - Engineering/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/magnitudesoftware\.wd1\.myworkdayjobs\.com\/External/i)
+  assert.match(provider.verifiedSurfaceSummary, /HR Business Partner/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead Software Engineer/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /insightsoftware.workday[\\/]jobs\.json$/i)
 

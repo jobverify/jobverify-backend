@@ -110,43 +110,85 @@ export const buildListRequestBody = ({
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
+  const normalized = (normalizeWhitespace(page) || '').toLowerCase()
+  const visibleText = (stripTags(page) || '').toLowerCase()
 
   return /<title>\s*Samsung Display\s*<\/title>/i.test(page)
-    && normalized.includes('Samsung Display')
-    && normalized.includes('OLED Technology and Innovation')
-    && normalized.includes('Change the world with advanced display technology')
-    && /\/eng\/career-info\/recruit\/junior-step\.jsp/i.test(page)
+    && visibleText.includes('samsung display')
+    && (
+      (
+        visibleText.includes('oled technology and innovation')
+        && visibleText.includes('change the world with advanced display technology')
+      )
+      || (
+        visibleText.includes('a window to the digital world')
+        && visibleText.includes('oled finder')
+      )
+    )
+    && (
+      /\/eng\/career-info\/recruit\/junior-step\.jsp/i.test(page)
+      || (
+        visibleText.includes('careers')
+        && visibleText.includes('hiring process')
+      )
+    )
 }
 
 export const hasOfficialLocationPageSignal = (html) => {
   const normalized = normalizeWhitespace(html) || ''
 
-  return normalized.includes('Samsung Display Noida (SDN)')
-    && normalized.includes('Noida, Uttar Pradesh, India')
-    && normalized.includes('Tel +91-120-000-0000')
-    && normalized.includes('Global Network')
+  return (
+    normalized.includes('Samsung Display Noida (SDN)')
+      && normalized.includes('Noida, Uttar Pradesh, India')
+      && normalized.includes('Tel +91-120-000-0000')
+      && normalized.includes('Global Network')
+  ) || (
+    normalized.includes('Business Place Information')
+      && normalized.includes('Global Operation')
+      && normalized.includes('Noida')
+      && normalized.includes('India')
+      && normalized.includes('SDN')
+  )
 }
 
 export const hasOfficialRecruitPageSignal = (html) => {
-  const normalized = normalizeWhitespace(html) || ''
+  const visibleText = stripTags(html) || ''
 
-  return normalized.includes('Junior Recruitment Process')
-    && normalized.includes('Application')
-    && normalized.includes('Interview')
-    && normalized.includes('Health Check')
-    && normalized.includes('Final Acceptance')
+  return (
+    visibleText.includes('Junior Recruitment Process')
+      || visibleText.includes('Entry-level Hiring Process')
+      || visibleText.includes('Hiring Process (Entry-level)')
+  )
+    && (
+      (
+        visibleText.includes('Application')
+        && visibleText.includes('Interview')
+        && (
+          visibleText.includes('Health Check')
+          || visibleText.includes('Offer Acceptance')
+          || visibleText.includes('Final Acceptance')
+        )
+      )
+      || (
+        visibleText.includes('Submit Application')
+        && visibleText.includes('Review Application')
+        && visibleText.includes('Samsung Aptitude Test')
+        && visibleText.includes('Interview')
+        && visibleText.includes('Medical Test')
+      )
+    )
 }
 
 export const hasExactCompanyPageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<h2>\s*Samsung Display(?: Noida Pvt\. Ltd\.)?\s*<\/h2>/i.test(page)
-    && /data-index="C90"/i.test(page)
+  return (
+    /<h2>\s*Samsung Display(?: Noida Pvt\. Ltd\.)?\s*<\/h2>/i.test(page)
+      || normalized.includes('THIS IS NOT THE END with Samsung Display')
+  )
     && normalized.includes('Samsung Display')
     && normalized.includes('https://www.samsungdisplay.com')
-    && normalized.includes('sdn.recruit@samsung.com')
 }
 
 export const extractRoleCodesFromCompanyPage = (html) => [...String(html ?? '').matchAll(
@@ -158,6 +200,18 @@ export const extractRoleCodesFromCompanyPage = (html) => [...String(html ?? '').
 export const extractMaxPage = (html) => {
   const match = String(html ?? '').match(/class="divCnt"[^>]+data-max="(\d+)"/i)
   return match ? Number.parseInt(match[1], 10) : 0
+}
+
+export const hasNoCurrentPostingsSignal = (html) => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+
+  return /class="divCnt"[^>]+data-max="0"/i.test(page)
+    && /class="noData"/i.test(page)
+    && (
+      normalized.includes('현재 채용중인 공고가 없습니다.')
+      || normalized.includes('검색어 또는 검색 조건을 확인해주시기 바랍니다.')
+    )
 }
 
 const parsePeriodDate = (value) => {
@@ -463,11 +517,6 @@ export const createSamsungDisplayNoidaScraper = ({
       throw new Error('Samsung Display Noida exact-company Samsung Careers page no longer matches the verified first-party surface')
     }
 
-    const roleCodes = extractRoleCodesFromCompanyPage(companyPageHtml)
-    if (roleCodes.length === 0) {
-      throw new Error('Samsung Display Noida exact-company Samsung Careers page no longer exposes public role links')
-    }
-
     const cardsBySeq = new Map()
     let currentPageNo = 1
     let totalPages = 1
@@ -485,8 +534,13 @@ export const createSamsungDisplayNoidaScraper = ({
         totalPages = maxPage
       }
 
-      for (const card of extractListingCards(listingHtml)) {
+      const cards = extractListingCards(listingHtml)
+      for (const card of cards) {
         cardsBySeq.set(card.seq, card)
+      }
+
+      if (cards.length === 0 && hasNoCurrentPostingsSignal(listingHtml)) {
+        return []
       }
 
       currentPageNo += 1

@@ -64,6 +64,16 @@ test('Ecom Express helpers stay pinned to the verified merger landing page and r
   assert.equal(ecomExpress.hasMergerLandingSignal(mergerLandingHtml), true)
   assert.equal(ecomExpress.hasPublicJobsSignal(mergerLandingHtml), false)
   assert.equal(ecomExpress.hasPublicJobsSignal(publicJobsHtml), true)
+  assert.equal(
+    ecomExpress.isRecoverableCertificateError({
+      message: 'fetch failed',
+      cause: {
+        code: 'CERT_HAS_EXPIRED',
+        message: 'certificate has expired',
+      },
+    }),
+    true,
+  )
 })
 
 test('Ecom Express returns [] only while the homepage, common careers routes, robots.txt, and sitemap.xml all serve the same merger landing page', async () => {
@@ -82,6 +92,36 @@ test('Ecom Express returns [] only while the homepage, common careers routes, ro
     ecomExpress.ROBOTS_TXT_URL,
     ecomExpress.SITEMAP_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Ecom Express falls back to an expired-certificate fetch only for the verified first-party landing pages', async () => {
+  const ecomExpress = await loadEcomExpressModule()
+  const primaryRequests = []
+  const insecureRequests = []
+
+  const jobs = await ecomExpress.createEcomExpressScraper().run({
+    fetchPage: async (url) => {
+      primaryRequests.push(url)
+      throw Object.assign(new TypeError('fetch failed'), {
+        cause: {
+          code: 'CERT_HAS_EXPIRED',
+          message: 'certificate has expired',
+        },
+      })
+    },
+    fetchPageAllowingExpiredCertificate: async (url) => {
+      insecureRequests.push(url)
+      return { status: 200, url, html: mergerLandingHtml }
+    },
+  })
+
+  assert.deepEqual(primaryRequests, [
+    ...ecomExpress.CHECKED_LANDING_PAGE_URLS,
+    ecomExpress.ROBOTS_TXT_URL,
+    ecomExpress.SITEMAP_URL,
+  ])
+  assert.deepEqual(insecureRequests, primaryRequests)
   assert.deepEqual(jobs, [])
 })
 

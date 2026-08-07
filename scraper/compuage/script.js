@@ -8,7 +8,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'compuage'
 export const COMPANY = 'Compuage Infocom Ltd'
-export const CAREERS_URL = 'https://www.compuageindia.com/careers'
+export const CAREERS_URL = 'http://www.compuageindia.com/careers'
 export const APPLICATION_EMAIL = 'careers@compuageindia.com'
 
 const USER_AGENT =

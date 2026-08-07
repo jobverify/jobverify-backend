@@ -73,12 +73,27 @@ test('extractSearchResults maps Apple hydration results into shared scraper fiel
   assert.equal(retailPipelineRole.department, 'Apple Retail')
 })
 
-test('run paginates Apple search pages and decorates shared runner fields', async () => {
-  const { buildSearchUrl, createAppleScraper } = await loadAppleModule()
+test('extractJobDetail reads Apple detail hydration and derives experience evidence', async () => {
+  const { extractJobDetail } = await loadAppleModule()
+  const detailHtml = readHtmlFixture('detail-software-engineer-data-ai.html')
+
+  assert.deepEqual(extractJobDetail(detailHtml), {
+    minimumQualification: "* Bachelor's degree or equivalent experience, with 4+ years in data engineering and applied AI/ML engineering\n* Strong Python and SQL skills",
+    preferredQualification: '* Experience with AWS, GCP, or Azure\n* Experience with React or FastAPI',
+    experienceRequired: '4+ years',
+    jobDescription: 'Build data and AI platforms at Apple.\n\nDesign scalable data pipelines for enterprise analytics.\n\nShip production systems with strong governance and observability.',
+  })
+})
+
+test('run paginates Apple search pages, hydrates detail pages, and decorates shared runner fields', async () => {
+  const { buildSearchUrl, createAppleScraper, extractSearchResults } = await loadAppleModule()
   const page1Html = readHtmlFixture('search-page-1.html')
   const page2Html = readHtmlFixture('search-page-2.html')
+  const detailHtml = readHtmlFixture('detail-software-engineer-data-ai.html')
   const requests = []
-  const scraper = createAppleScraper({ maxPages: 2 })
+  const firstPageJobs = extractSearchResults(page1Html)
+  const expectedDetailUrls = firstPageJobs.slice(0, 2).map((job) => job.sourceUrl)
+  const scraper = createAppleScraper({ maxPages: 2, maxJobs: 2 })
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
@@ -86,19 +101,21 @@ test('run paginates Apple search pages and decorates shared runner fields', asyn
 
       if (url === buildSearchUrl()) return page1Html
       if (url === buildSearchUrl({ page: 2 })) return page2Html
+      if (expectedDetailUrls.includes(url)) return detailHtml
       throw new Error(`Unexpected Apple URL: ${url}`)
     },
   })
 
   assert.deepEqual(requests, [
     buildSearchUrl(),
-    buildSearchUrl({ page: 2 }),
+    ...expectedDetailUrls,
   ])
-  assert.equal(jobs.length, 40)
+  assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'apple')
   assert.equal(jobs[0].company, 'Apple')
   assert.ok(jobs.every((job) => job.link === job.applyUrl))
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
-  assert.ok(jobs.some((job) => job.jobId === '200656479-0321'))
-  assert.ok(jobs.some((job) => job.jobId === '200665225-3541'))
+  assert.ok(jobs.every((job) => job.minimumQualification?.includes('4+ years')))
+  assert.ok(jobs.every((job) => job.preferredQualification?.includes('AWS, GCP, or Azure')))
+  assert.ok(jobs.every((job) => job.experienceRequired === '4+ years'))
 })

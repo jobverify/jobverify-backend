@@ -213,6 +213,17 @@ export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
   const location = getEffectiveLocation(detail) || listing.location || null
   const sourceUrl = listing.sourceUrl || buildJobDetailUrl(detail.Id)
+  const requiredSkills = Array.isArray(detail.skills)
+    ? detail.skills
+      .map((skill) => normalizeWhitespace(skill?.Skill))
+      .filter(Boolean)
+    : []
+  const jobDescription = joinDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ShortDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ExternalQualificationsStr,
+  ) || listing.jobDescription || null
 
   return {
     title: normalizeWhitespace(detail.Title) || listing.title || null,
@@ -230,19 +241,15 @@ export const extractJobDetail = (payload, listing = {}) => {
     experienceRequired: null,
     minimumQualification: normalizeWhitespace(detail.StudyLevel || detail.ExternalQualificationsStr),
     preferredQualification: null,
-    requiredSkills: Array.isArray(detail.skills)
-      ? detail.skills
-        .map((skill) => normalizeWhitespace(skill?.Skill))
-        .filter(Boolean)
-      : [],
+    requiredSkills,
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ExternalDescriptionStr,
-      detail.ShortDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-      detail.ExternalQualificationsStr,
-    ) || listing.jobDescription || null,
+    jobDescription,
+    publicExperienceChecked: Boolean(
+      jobDescription
+      || normalizeWhitespace(detail.StudyLevel || detail.ExternalQualificationsStr)
+      || requiredSkills.length > 0
+    ),
   }
 }
 

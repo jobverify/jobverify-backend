@@ -8,7 +8,7 @@ const VERIFIED_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Syllable AI - AI Infrastructure & Agent Platform</title>
+      <title>Careers at Syllable AI - AI Infrastructure &amp; Agent Platform</title>
   </head>
   <body>
     <main>
@@ -26,7 +26,7 @@ const VERIFIED_BOARD_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Syllable Corporation Jobs</title>
+    <title>Syllable Corporation</title>
   </head>
   <body>
     <main>
@@ -52,25 +52,23 @@ const VERIFIED_DETAIL_HTML = `
   </head>
   <body>
     <main>
-      <h1>Software Engineer II</h1>
       <p>Syllable Corporation</p>
-      <p>A1000 ActiumHealth</p>
-      <p>Remote (Mountain View, California, US)</p>
-      <p>Mountain View, CA</p>
-      <div class="description">
-        <p>(Syllable Corporation has an opening in Mountain View, CA) Software Engineer II:</p>
-        <p>Responsible for full lifecycle software development.</p>
-        <p>Responsible for building and maintaining the web applications and backend services that will power customer experience.</p>
-        <p>Building backend web services and APIs to power web applications.</p>
-        <p>Building modern and responsive web applications using state of the art web application frameworks.</p>
-        <p>Working with product owners from creation of vision to QA of final product.</p>
-        <p>Telecommuting permitted from anywhere in the U.S.</p>
-        <p>Requires Bachelors in Computer Science, or related technical field.</p>
-        <p>Requires any demonstrated knowledge of, or university coursework involving: Python, JavaScript, Java, C#, or C++.</p>
-        <p>$150,000.00 per year.</p>
-        <p>Send resume to HR@syllable.ai and refer to job title.</p>
-      </div>
+      <p>Software Engineer II</p>
+      <p>(Syllable Corporation has an opening in Mountain View, CA) Software Engineer II:</p>
+      <p>Responsible for full lifecycle software development.</p>
+      <p>Responsible for building and maintaining the web applications and backend services that will power customer experience.</p>
+      <p>Building backend web services and APIs to power web applications.</p>
+      <p>Building modern and responsive web applications using state of the art web application frameworks.</p>
+      <p>Working with product owners from creation of vision to QA of final product.</p>
+      <p>Telecommuting permitted from anywhere in the U.S.</p>
+      <p>Requires Bachelors in Computer Science, or related technical field.</p>
+      <p>Requires any demonstrated knowledge of, or university coursework involving: Python, JavaScript, Java, C#, or C++.</p>
+      <p>$150,000.00 per year.</p>
+      <p>Send resume to HR@syllable.ai and refer to job title.</p>
       <a href="${JOB_DETAIL_URL}">Apply now</a>
+      <p>A1000 ActiumHealth</p>
+      <p>Mountain View, CA</p>
+      <p>Remote (Mountain View, California, US)</p>
     </main>
   </body>
 </html>
@@ -90,7 +88,7 @@ test('Syllable verifies the first-party careers page and linked Rippling board s
   assert.equal(syllable.SOURCE, 'syllable')
   assert.equal(syllable.COMPANY_NAME, 'Syllable')
   assert.equal(syllable.OFFICIAL_BRAND_NAME, 'Syllable AI')
-  assert.equal(syllable.VERIFIED_ON, '2026-07-17')
+  assert.equal(syllable.VERIFIED_ON, '2026-08-05')
   assert.equal(syllable.CAREERS_URL, 'https://syllable.ai/careers')
   assert.equal(syllable.JOBS_URL, 'https://ats.rippling.com/syllable-corporation/jobs')
   assert.equal(syllable.JOB_BOARD_SLUG, 'syllable-corporation')

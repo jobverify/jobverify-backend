@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('TekFriday Processing Solutions local catalog captures the verified no-public-careers contract', async () => {
+test('TekFriday Processing Solutions local catalog captures the verified embedded Zoho Recruit careers contract', async () => {
   const { TEKFRIDAY_PROCESSING_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(TEKFRIDAY_PROCESSING_SOLUTIONS_CATALOG)
 
@@ -25,15 +25,18 @@ test('TekFriday Processing Solutions local catalog captures the verified no-publ
   assert.equal(provider.source, 'tekfridayprocessingsolutions')
   assert.equal(provider.companyName, 'TekFriday Processing Solutions')
   assert.equal(provider.homepageUrl, 'https://www.tekfriday.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.tekfriday.com/ContactUs.html')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-contact-validation')
+  assert.equal(provider.companyCareerPage, 'https://www.tekfriday.com/careers.html')
+  assert.equal(provider.atsPlatform, 'zohorecruit')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-zohorecruit-portal-plus-public-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage-without-careers-link+verified-contact-page-without-jobs-surface+fail-closed-sentinel',
+    'verified-homepage+verified-first-party-careers-page+embedded-zohorecruit-portal+public-job-openings-api',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /tag@tekfriday\.com/i)
+  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.tekfriday\.com\/careers\.html/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/tekfriday\.zohorecruit\.in\/jobs\/Careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /Job_Openings\?pagename=Careers&source=CareerSite/i)
   assert.equal(provider.modulePath, modulePath)
 })
 

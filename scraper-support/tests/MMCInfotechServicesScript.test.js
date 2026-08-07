@@ -11,19 +11,33 @@ const careersHtml = `
   </head>
   <body>
     <h1>Join Our Family</h1>
-    <div class="job-card">
-      <h2>Voice Operations</h2>
-      <p class="job-location">Chennai</p>
-      <p class="job-experience">0 - 1 Years</p>
-      <div class="job-description">Handle inbound customer calls and process service requests.</div>
-      <a href="form.php?job_posting=Voice%20Operations">Apply Now</a>
+    <div class="tab products-details-tab">
+      <ul class="tabs">
+        <li><a href="#"><div class="dot"></div>Voice Operations </a></li>
+      </ul>
+      <div class="tab-content">
+        <div class="tabs-item">
+          <div class="products-details-tab-content">
+            <h3>Job Description</h3>
+            <p><ol><li>Handle inbound customer calls and process service requests.</li><li>Convey accurate and required information to the clients.</li></ol></p>
+            <a href="form.php?job_posting=Voice Operations" class="default-btn"><span class="label">Apply Now</span></a>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="job-card">
-      <h2>Backend Process</h2>
-      <p class="job-location">Chennai</p>
-      <p class="job-experience">1 - 3 Years</p>
-      <div class="job-description">Support backend processing operations and quality checks.</div>
-      <a href="form.php?job_posting=Backend%20Process">Apply Now</a>
+    <div class="tab products-details-tab">
+      <ul class="tabs">
+        <li><a href="#"><div class="dot"></div>Backend Process </a></li>
+      </ul>
+      <div class="tab-content">
+        <div class="tabs-item">
+          <div class="products-details-tab-content">
+            <h3>Job Description</h3>
+            <p><ol><li>Support backend processing operations and quality checks.</li><li>Attention to detail and the ability to multi task.</li></ol></p>
+            <a href="form.php?job_posting=Backend Process" class="default-btn"><span class="label">Apply Now</span></a>
+          </div>
+        </div>
+      </div>
     </div>
   </body>
 </html>
@@ -57,21 +71,21 @@ test('MMC Infotech Services parses the verified first-party inline openings page
       title: 'Voice Operations',
       company: 'MMC Infotech Services',
       department: null,
-      location: 'Chennai, India',
-      city: 'Chennai',
+      location: 'India',
+      city: null,
       country: 'India',
       jobId: 'voice-operations',
       requisitionId: 'voice-operations',
       sourceUrl: 'https://www.mmcinfotech.com/form.php?job_posting=Voice%20Operations',
       applyUrl: 'https://www.mmcinfotech.com/form.php?job_posting=Voice%20Operations',
       employmentType: null,
-      experienceRequired: '0 - 1 Years',
+      experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: 'Handle inbound customer calls and process service requests.',
+      jobDescription: 'Handle inbound customer calls and process service requests.\nConvey accurate and required information to the clients.',
       source: 'mmcinfotechservices',
       companyCareerPage: 'https://www.mmcinfotech.com/career.php',
       companyDomain: 'mmcinfotech.com',
@@ -83,21 +97,21 @@ test('MMC Infotech Services parses the verified first-party inline openings page
       title: 'Backend Process',
       company: 'MMC Infotech Services',
       department: null,
-      location: 'Chennai, India',
-      city: 'Chennai',
+      location: 'India',
+      city: null,
       country: 'India',
       jobId: 'backend-process',
       requisitionId: 'backend-process',
       sourceUrl: 'https://www.mmcinfotech.com/form.php?job_posting=Backend%20Process',
       applyUrl: 'https://www.mmcinfotech.com/form.php?job_posting=Backend%20Process',
       employmentType: null,
-      experienceRequired: '1 - 3 Years',
+      experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: 'Support backend processing operations and quality checks.',
+      jobDescription: 'Support backend processing operations and quality checks.\nAttention to detail and the ability to multi task.',
       source: 'mmcinfotechservices',
       companyCareerPage: 'https://www.mmcinfotech.com/career.php',
       companyDomain: 'mmcinfotech.com',

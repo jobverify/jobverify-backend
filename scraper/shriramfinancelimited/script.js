@@ -233,17 +233,22 @@ const extractEmbeddedCurrentOpeningsPage = (html, page = 0) => {
 const defaultFetchImpl = (url, options = {}) => fetch(url, options)
 
 const fetchCurrentOpeningsPage = async ({ fetchImpl, page, cookieHeader }) => {
+  const headers = {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    'Content-Type': 'application/json',
+    'api-referrer': '/careers',
+    Referer: CAREERS_URL,
+    Origin: CAREERS_ORIGIN,
+    'X-Requested-With': 'XMLHttpRequest',
+  }
+
+  if (cookieHeader) {
+    headers.Cookie = cookieHeader
+  }
+
   const response = await fetchImpl(buildCurrentOpeningsApiUrl(page), {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json,text/plain,*/*',
-      'Content-Type': 'application/json',
-      'api-referrer': '/careers',
-      Referer: CAREERS_URL,
-      Origin: CAREERS_ORIGIN,
-      'X-Requested-With': 'XMLHttpRequest',
-      Cookie: cookieHeader,
-    },
+    headers,
   })
 
   if (!response?.ok) {
@@ -285,9 +290,6 @@ export const createShriramFinanceLimitedScraper = ({
 
     const expectedOpeningCount = extractExpectedOpeningCount(careersHtml)
     const cookieHeader = buildCookieHeader(careersResponse)
-    if (!cookieHeader) {
-      throw new Error('SHRIRAM FINANCE LIMITED first-party careers session cookies missing')
-    }
 
     const jobs = []
     const seenJobIds = new Set()

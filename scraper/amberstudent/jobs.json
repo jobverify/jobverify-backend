@@ -1,0 +1,73 @@
+[
+  {
+    "title": "Sales Associate",
+    "company": "Amberstudent",
+    "department": "Sales",
+    "location": "Pune,, Maharashtra, India",
+    "city": "Pune,",
+    "country": "India",
+    "link": "https://jobs.smartrecruiters.com/AmberStudent/743999728950415-sales-associate",
+    "applyUrl": "https://jobs.smartrecruiters.com/AmberStudent/743999728950415-sales-associate?oga=true",
+    "sourceUrl": "https://jobs.smartrecruiters.com/AmberStudent/743999728950415-sales-associate",
+    "source": "amberstudent",
+    "jobId": "743999728950415",
+    "requisitionId": "REF2N",
+    "employmentType": "Full-time",
+    "experienceRequired": "No experience required",
+    "experienceLevel": "Entry Level",
+    "minimumQualification": "Requirements Excellent written and oral communication skills Active Listening skills Good time management and planning skills Objection handling skills Strategic Prospecting skills Negotiation skills Closing techniques Qualifications : Education level - Graduate Experience - 0-2years Minimum 60% required in academics",
+    "preferredQualification": "Benefits 3.6LPA+4lakh variable Training duration is 4 months where salary would be 15,000 INR Fully remote Great Incentives Fun activities every weekend Employee friendly policies Amazing work culture",
+    "requiredSkills": [],
+    "postingDate": "2020-12-22T14:06:59.000Z",
+    "closingDate": null,
+    "jobDescription": "Act as a mediator between the students and the property management groups. Communicating with the prospects through calls/emails/Whats App. Suggesting them suitable properties using our database according to their preferences. Communicating with property management groups regarding any queries on a daily basis. Closing the deal and getting the paperwork done.",
+    "remoteStatus": "Remote",
+    "scrapedAt": "2026-08-04T22:58:26.550Z",
+    "companyCareerPage": "https://amberstudent.com/career",
+    "companyDomain": "amberstudent.com",
+    "atsPlatform": "smartrecruiters",
+    "originalTitle": "Sales Associate",
+    "normalizedTitle": "Sales Associate",
+    "jobCategory": "Sales Associate",
+    "engineeringDomain": "Unknown",
+    "jobType": "Full-time Fresher",
+    "state": null,
+    "salary": null,
+    "postedAt": "2020-12-22T14:06:59.000Z",
+    "scrapedTimestamp": "2026-08-04T22:58:26.550Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "No experience required Requirements Excellent written and oral communication skills Active Listening skills Good time management and planning skills Objection handling skills Strategic Prospecting skills Negotiation skills Closing techniques Qualifications : Education level - Graduate Experience - 0-2years Minimum 60% required in academics Benefits 3.6LPA+4lakh variable Training duration is 4 months where salary would be 15,000 INR Fully remote Great Incentives Fun activities every weekend Employee friendly policies Amazing work culture",
+      "minimumYears": 0,
+      "maximumYears": 0,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "No experience required",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Sales & Customer Success",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T22:58:27.257Z"
+  }
+]

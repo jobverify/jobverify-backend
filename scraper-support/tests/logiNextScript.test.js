@@ -110,6 +110,7 @@ test('LogiNext helpers stay pinned to the verified first-party job roles page an
         '',
         'If you want to Co-Lead the development efforts, and write awesome codes in Java.',
       ].join('\n'),
+      publicExperienceChecked: true,
       source: 'loginext',
       companyCareerPage: 'https://www.loginextsolutions.com/job-roles',
       companyDomain: 'loginextsolutions.com',
@@ -118,6 +119,41 @@ test('LogiNext helpers stay pinned to the verified first-party job roles page an
       scrapedAt: '2026-07-16T11:00:00.000Z',
     },
   )
+})
+
+test('LogiNext infers experience from substantive embedded role descriptions and marks rich no-years descriptions as checked', async () => {
+  const logiNext = await loadScriptModule()
+
+  const withExperience = logiNext.mapRoleRecordToJob(
+    {
+      department: 'Technology',
+      id: 'technology-tech-lead-java',
+      title: 'Tech Lead - Java',
+      description:
+        'If you are a person who can lead the back-end architectural efforts, mentor engineers, and bring 6+ years of experience building large-scale Java systems, then we must talk.',
+      location: 'Mumbai',
+      link: 'https://loginext.recruiterbox.com/jobs/fk01ts4/',
+    },
+    { scrapedAt: '2026-07-16T12:00:00.000Z' },
+  )
+
+  const verifiedMissing = logiNext.mapRoleRecordToJob(
+    {
+      department: 'Technology',
+      id: 'technology-senior-ui-developer',
+      title: 'Senior UI Developer',
+      description:
+        'If you are a technically savvy and experienced Senior UI Developer who loves taking up front-end development challenges, building polished interfaces, collaborating with product teams, and improving component quality, then we look forward to hearing from you.',
+      location: 'Mumbai',
+      link: 'https://loginext.recruiterbox.com/jobs/fk01i2h/',
+    },
+    { scrapedAt: '2026-07-16T12:00:00.000Z' },
+  )
+
+  assert.equal(withExperience?.experienceRequired, '6+ years')
+  assert.equal(withExperience?.publicExperienceChecked, false)
+  assert.equal(verifiedMissing?.experienceRequired, null)
+  assert.equal(verifiedMissing?.publicExperienceChecked, true)
 })
 
 test('LogiNext run validates the official page and returns normalized India roles only', async () => {

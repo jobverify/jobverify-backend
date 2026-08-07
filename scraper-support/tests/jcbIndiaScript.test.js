@@ -82,6 +82,23 @@ const ENGINEER_DETAIL_HTML = `
 </html>
 `
 
+const LIVE_DETAIL_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Deputy Manager</title>
+  </head>
+  <body>
+    <h1><span>Deputy Manager</span></h1>
+    <p>Location: Jaipur, IN</p>
+    <p>Department: Manufacturing</p>
+    <p>Support production planning, vendor coordination, and manufacturing process improvements.</p>
+    <p>Job Segment: Manufacturing, Production Planning, Vendor Management</p>
+    <button type="button">Apply now »</button>
+  </body>
+</html>
+`
+
 const ASSISTANT_MANAGER_DETAIL_HTML = `
 <!doctype html>
 <html lang="en">
@@ -192,6 +209,36 @@ test('JCB India extracts first-party search cards and enriches them from detail 
     'Technology',
     'Engineering',
   ])
+})
+
+test('JCB India normalizes live listing locations and falls back to the detail URL when no explicit apply link is present', async () => {
+  const jcbIndia = await loadModule()
+
+  const [card] = jcbIndia.extractJobCards(`
+    <!doctype html>
+    <html lang="en">
+      <body>
+        <h1>Search results for ""</h1>
+        <table id="searchresults">
+          <tbody>
+            <tr>
+              <td><a href="/job/Jaipur-Deputy-Manager-Jaip/1365157066/">Deputy Manager</a></td>
+              <td>Jaipur, IN</td>
+              <td>31 Jul 2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `)
+  const detail = jcbIndia.extractJobDetail(LIVE_DETAIL_HTML, card)
+
+  assert.equal(card.location, 'Jaipur, India')
+  assert.equal(card.country, 'India')
+  assert.equal(detail.location, 'Jaipur, India')
+  assert.equal(detail.country, 'India')
+  assert.equal(detail.applyUrl, 'https://career-in.jcb.com/job/Jaipur-Deputy-Manager-Jaip/1365157066/')
+  assert.equal(detail.sourceUrl, 'https://career-in.jcb.com/job/Jaipur-Deputy-Manager-Jaip/1365157066/')
 })
 
 test('JCB India run verifies the trusted careers surface before scraping paginated search results and detail pages', async () => {

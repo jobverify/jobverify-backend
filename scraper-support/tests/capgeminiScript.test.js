@@ -80,6 +80,7 @@ test('extractSearchResults maps Capgemini India API records into shared scraper 
     postingDate: '2026-06-26T16:31:06.000Z',
     closingDate: null,
     jobDescription: jobs[1].jobDescription,
+    publicExperienceChecked: true,
   })
   assert.match(jobs[1].jobDescription, /Choosing Capgemini means choosing a company/i)
   assert.match(jobs[1].jobDescription, /Your Role/i)
@@ -113,6 +114,7 @@ test('run paginates Capgemini India API pages and decorates shared runner fields
   assert.equal(jobs.length, 20)
   assert.equal(jobs[0].source, 'capgemini')
   assert.equal(jobs[0].company, 'Capgemini')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.ok(jobs.every((job) => job.link === job.applyUrl))
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
   assert.ok(jobs.some((job) => job.jobId === '382960-en_GB_SAPBTP'))

@@ -52,6 +52,13 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const DETAIL_END_MARKERS = [
+  'The Okta Experience',
+  'Apply First Name',
+  'Apply Resume',
+  'Individuals seeking employment',
+]
+
 const normalizeExperience = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -104,9 +111,9 @@ export const hasOfficialJobDetailSignal = (html = '') => {
   const text = stripTags(page) || ''
 
   return /<title>\s*.+\|\s*Okta\s*<\/title>/i.test(page)
-    && /<h1[^>]*>.+<\/h1>/i.test(page)
+    && /<h1[^>]*>[\s\S]+?<\/h1>/i.test(page)
     && text.includes('India')
-  }
+}
 
 export const extractIndiaJobsFromJobListing = (html) => {
   const jobs = []
@@ -163,6 +170,64 @@ export const extractIndiaJobsFromJobListing = (html) => {
 const extractDetailTitle = (html = '') =>
   stripTags(String(html ?? '').match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
 
+const extractMetaDescription = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<meta[^>]+name=["']description["'][^>]+content=["']([\s\S]*?)["'][^>]*>/i)?.[1],
+)
+
+const extractLegacyBodyDescription = (html = '') => stripTags(
+  String(html ?? '').match(/<div class="field--name-body">([\s\S]*?)<\/div>\s*<\/article>/i)?.[1],
+)
+
+const trimOktaDetailText = (value = '', listing = {}) => {
+  let text = normalizeWhitespace(value)
+  if (!text) return null
+
+  const startMarker = 'Secure Every Identity, from AI to Human'
+  const startIndex = text.indexOf(startMarker)
+  if (startIndex >= 0) {
+    text = text.slice(startIndex).trim()
+  } else {
+    const title = normalizeWhitespace(listing.title)
+    if (title) {
+      const titleIndex = text.indexOf(title)
+      if (titleIndex >= 0) {
+        text = text.slice(titleIndex + title.length).trim()
+      }
+    }
+
+    const location = normalizeWhitespace(listing.location)
+    if (location && text.startsWith(location)) {
+      text = text.slice(location.length).trim()
+    }
+  }
+
+  let earliestEndIndex = -1
+  for (const marker of DETAIL_END_MARKERS) {
+    const markerIndex = text.indexOf(marker)
+    if (markerIndex < 0) continue
+    if (earliestEndIndex < 0 || markerIndex < earliestEndIndex) {
+      earliestEndIndex = markerIndex
+    }
+  }
+
+  if (earliestEndIndex >= 0) {
+    text = text.slice(0, earliestEndIndex).trim()
+  }
+
+  return text || null
+}
+
+const extractDetailDescription = (html = '', listing = {}) => {
+  const legacyBodyText = extractLegacyBodyDescription(html)
+  const mainText = trimOktaDetailText(
+    stripTags(String(html ?? '').match(/<main[\s\S]*?<\/main>/i)?.[0]),
+    listing,
+  )
+  const metaDescription = extractMetaDescription(html)
+
+  return legacyBodyText || mainText || metaDescription || listing.jobDescription || null
+}
+
 const extractExperienceRequiredFromDetail = (html = '') => {
   const text = stripTags(html) || ''
   const candidate = text.match(
@@ -174,16 +239,18 @@ const extractExperienceRequiredFromDetail = (html = '') => {
 
 export const extractJobDetail = (html = '', listing = {}) => {
   const title = extractDetailTitle(html) || listing.title || null
-  const jobDescription = stripTags(
-    String(html ?? '').match(/<div class="field--name-body">([\s\S]*?)<\/div>\s*<\/article>/i)?.[1]
-      || html,
-  )
+  const jobDescription = extractDetailDescription(html, listing)
+  const experienceRequired =
+    extractExperienceRequiredFromDetail(html)
+    || listing.experienceRequired
+    || null
 
   return {
     ...listing,
     title,
-    experienceRequired: extractExperienceRequiredFromDetail(html) || listing.experienceRequired || null,
+    experienceRequired,
     jobDescription: jobDescription || listing.jobDescription || null,
+    publicExperienceChecked: Boolean(jobDescription || experienceRequired),
   }
 }
 

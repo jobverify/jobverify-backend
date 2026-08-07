@@ -63,7 +63,8 @@ export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
   return /<title>\s*all jobs\s*<\/title>/i.test(page)
     && /collection-item-6-copy/i.test(page)
-    && /Explore Job Openings/i.test(page)
+    && /All Jobs/i.test(page)
+    && /Join Our Team/i.test(page)
 }
 
 export const extractJobs = (html) => {

@@ -204,13 +204,17 @@ export const createJobsListPayload = ({
 const extractCareerSectionRow = (payload) =>
   Array.isArray(payload?.data?.rows) ? payload.data.rows[0] ?? null : null
 
+const extractGridColumnField = (column) =>
+  normalizeWhitespace(column?.field)
+  || normalizeWhitespace(column?.prop)
+
 const hasExpectedGridSchema = (payload) => {
   if (!payload || payload.code !== EXPECTED_GRID_CODE || payload.formCode !== EXPECTED_FORM_CODE) {
     return false
   }
 
   const fields = Array.isArray(payload.columns)
-    ? payload.columns.map((column) => normalizeWhitespace(column?.field)).filter(Boolean)
+    ? payload.columns.map((column) => extractGridColumnField(column)).filter(Boolean)
     : []
 
   return ['job_title', 'date_posted', 'location', 'department', 'functional_area', 'business_unit_name']

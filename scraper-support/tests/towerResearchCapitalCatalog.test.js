@@ -47,16 +47,18 @@ test('Tower Research Capital local catalog captures the verified first-party rol
   assert.equal(provider.paginationStrategy, 'single-greenhouse-jobs-api-content-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-pages+greenhouse-jobs-api+first-party-detail-url+india-location-filter',
+    'verified-first-party-careers-pages+greenhouse-jobs-api+first-party-detail-url+primary-or-multi-location-india-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-06')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 6, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/tower-research\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/tower-research\.com\/roles\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/towerresearchcapital\/jobs\?content=true/i)
   assert.match(provider.verifiedSurfaceSummary, /AI Operations Manager/i)
-  assert.match(provider.verifiedSurfaceSummary, /79 jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /74 jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /India-primary roles or multi-location roles that explicitly include an India office/i)
   assert.match(provider.dryRunFile, /towerresearchcapital[\\/]jobs\.json$/i)
   assert.match(provider.modulePath, /towerresearchcapital[\\/]script\.js$/i)
   assert.equal(provider.modulePath, towerResearchCapitalModulePath)

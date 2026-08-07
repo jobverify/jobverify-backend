@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 import SETU_CATALOG from './catalog.js'
 
@@ -57,6 +58,121 @@ const slugify = (value) => String(value ?? '')
   .replace(/^-+|-+$/g, '')
 
 const normalizeUrl = (value) => String(value ?? '').trim()
+
+const extractMetaContent = (html = '', key = '') => {
+  const escapedKey = String(key ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (!escapedKey) return null
+
+  const match = String(html ?? '').match(
+    new RegExp(
+      `<meta\\b[^>]+(?:property|name)=["']${escapedKey}["'][^>]+content=["']([\\s\\S]*?)["'][^>]*>`,
+      'i',
+    ),
+  )
+
+  return normalizeWhitespace(match?.[1])
+}
+
+const normalizeTurbohireDetailDescription = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/([a-z0-9])([A-Z][a-z])/g, '$1 $2')
+    .replace(/\b(About Setu|Importance of the role|What we do:|What will you do at Setu\?|Who is the right fit for this role\?|Why Setu\?|To know more - Click on View full description)\b/g, ' $1 ')
+    .replace(/\b(Setu India’s)\b/g, 'Setu. India’s')
+    .replace(/\b(role)([A-Z])/g, '$1. $2')
+    .replace(/\b(experience)(About Setu)\b/gi, '$1. $2'),
+)
+
+const extractTurbohireExperienceFromText = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const patterns = [
+    /\b(\d{1,2}\s*-\s*\d{1,2})\s*years?\s+of\s+experience\b/i,
+    /\bexperience\s*[:\-]?\s*(\d{1,2}\s*-\s*\d{1,2})\s*years?\b/i,
+    /\b(\d{1,2}\s*\+)\s*years?(?:\s+of\s+experience)?\b/i,
+    /\b(\d{1,2})\s*years?\s+of\s+experience\b/i,
+  ]
+
+  for (const pattern of patterns) {
+    const matchedValue = normalized.match(pattern)?.[1]
+    if (!matchedValue) continue
+
+    const years = normalizeWhitespace(
+      matchedValue
+        .replace(/\s*-\s*/g, '-')
+        .replace(/\s*\+\s*/g, '+'),
+    )
+
+    if (!years) continue
+    return /\+$/.test(years) ? `${years} years` : `${years} years`
+  }
+
+  return null
+}
+
+const inferExperienceFromDescription = (value) => {
+  const normalized = normalizeTurbohireDetailDescription(value)
+  if (!normalized) return null
+
+  const explicitYears = extractTurbohireExperienceFromText(normalized)
+  if (explicitYears) return explicitYears
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+const isUnavailableTurbohireDetailError = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+
+    if (Number(current?.status) === 404 || Number(current?.status) === 410) {
+      return true
+    }
+
+    if (/HTTP (404|410)\b/i.test(normalizeWhitespace(current?.message) || '')) {
+      return true
+    }
+
+    current = current?.cause
+  }
+
+  return false
+}
+
+export const extractTurbohireDetailDescription = (html = '') => (
+  normalizeTurbohireDetailDescription(
+    extractMetaContent(html, 'og:description')
+    || extractMetaContent(html, 'description')
+    || null,
+  )
+)
+
+export const enrichSetuJobFromDetailPage = (job, detailHtml = '') => {
+  const detailDescription = extractTurbohireDetailDescription(detailHtml)
+  const experienceRequired = inferExperienceFromDescription(detailDescription)
+
+  return {
+    ...job,
+    jobDescription: detailDescription || job.jobDescription || null,
+    experienceRequired: experienceRequired || job.experienceRequired || null,
+    publicExperienceChecked: Boolean(detailDescription || job.jobDescription),
+  }
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -250,8 +366,7 @@ export const createSetuScraper = ({
     }
 
     const limitedJobs = maxJobs ? extractedJobs.slice(0, maxJobs) : extractedJobs
-
-    return limitedJobs.map((job) => ({
+    const baseJobs = limitedJobs.map((job) => ({
       title: job.title,
       company: COMPANY_NAME,
       department: job.department,
@@ -274,6 +389,26 @@ export const createSetuScraper = ({
       link: job.applyUrl,
       scrapedAt: now(),
     }))
+
+    const jobs = []
+    for (const job of baseJobs) {
+      try {
+        const detailHtml = await fetchText(job.sourceUrl)
+        jobs.push(enrichSetuJobFromDetailPage(job, detailHtml))
+      } catch (error) {
+        if (isUnavailableTurbohireDetailError(error)) {
+          jobs.push({
+            ...job,
+            publicExperienceChecked: true,
+          })
+          continue
+        }
+
+        jobs.push(job)
+      }
+    }
+
+    return jobs
   },
 })
 

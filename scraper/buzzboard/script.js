@@ -3,32 +3,16 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 export const SOURCE = 'buzzboard'
 export const COMPANY = 'BuzzBoard'
 export const OFFICIAL_BRAND = 'BuzzBoard'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://www.buzzboard.ai/careers/'
 export const BOARD_URL = 'https://buzzboard.applytojob.com/apply'
 export const DISPOSITION = 'verified-first-party-careers-page-plus-public-jazzhr-board'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.buzzboard.ai/careers/ was the live first-party BuzzBoard careers surface, that it handed applicants to the public JazzHR board at https://buzzboard.applytojob.com/apply, and that the board plus linked public apply pages exposed trustworthy current openings including Associate Product Manager / Product Manager and Software Engineer (Node JS Developer). This scraper validates those verified surfaces and returns the public BuzzBoard openings.'
+  'Verified on Saturday, August 1, 2026 that https://www.buzzboard.ai/careers/ was the live first-party BuzzBoard careers surface, that it still handed applicants to the public JazzHR board at https://buzzboard.applytojob.com/apply, and that the first-party careers page publicly exposed current openings including Associate Product Manager / Product Manager, Software Engineer (Node JS Developer), and Test Engineer (Automation). This scraper validates those verified surfaces and returns the public BuzzBoard openings.'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 const BOARD_HOST = new URL(BOARD_URL).hostname
 const BOARD_PATH = '/apply'
-const CAREERS_REQUIRED_PATTERNS = [
-  /<title[^>]*>\s*Careers at BuzzBoard:\s*The Future of Autonomous Marketing Services\s*<\/title>/i,
-  /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.buzzboard\.ai\/careers\/["']/i,
-  /\bJoin the future of autonomous\s*digital marketing\b/i,
-  /\bWhy work at BuzzBoard\b/i,
-  /<h[1-6][^>]*>\s*Open Positions\s*<\/h[1-6]>/i,
-  /\bCurrent opportunities\b/i,
-  /\bOur Address\b/i,
-]
-const BOARD_REQUIRED_PATTERNS = [
-  /<title[^>]*>\s*BuzzBoard\s*-\s*Career Page\s*<\/title>/i,
-  /\bThanks for visiting our Career Page\./i,
-  /\bCurrent Openings\b/i,
-  /\bView Our Website\b/i,
-  /\bPowered by JazzHR\b/i,
-]
 const GENERIC_CONTEXT_PATTERNS = [
   /\bOpen Positions\b/i,
   /\bCurrent opportunities\b/i,
@@ -154,7 +138,15 @@ const extractTitle = (html = '') =>
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html)
-  return CAREERS_REQUIRED_PATTERNS.every((pattern) => pattern.test(page) || pattern.test(normalizeText(page)))
+  const text = normalizeText(page)
+
+  return /<title[^>]*>\s*Careers at BuzzBoard:\s*The Future of Autonomous Marketing Services\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.buzzboard\.ai\/careers\/["']/i.test(page)
+    && /\bBuzzBoard\b/i.test(text)
+    && /\bWhy work at BuzzBoard\b/i.test(text)
+    && /\bOpen Positions\b/i.test(text)
+    && /\bView open positions\b/i.test(text)
+    && /\bautonomous digital marketing\b/i.test(text)
 }
 
 export const extractOfficialApplyUrls = (html = '') => {
@@ -192,8 +184,40 @@ export const hasVerifiedBoardSignal = (html = '') => {
   const page = String(html)
   const text = normalizeText(page)
 
-  return BOARD_REQUIRED_PATTERNS.every((pattern) => pattern.test(page) || pattern.test(text))
-    && /https:\/\/www\.buzzboard\.(?:ai|com)\b/i.test(page)
+  return /<title[^>]*>\s*BuzzBoard\s*-\s*Career Page\s*<\/title>/i.test(page)
+    && /\bThanks for visiting our Career Page\b/i.test(text)
+    && /\bCurrent Openings\b/i.test(text)
+    && /\bView Our Website\b/i.test(text)
+    && (
+      /\bPowered by JazzHR\b/i.test(text)
+      || (/\bPowered by\b/i.test(text) && /\binfo\.jazzhr\.com\b/i.test(page))
+    )
+    && /https?:\/\/(?:www\.)?buzzboard\.(?:ai|com)\b/i.test(page)
+}
+
+export const hasGenericBoardListingSignal = (html = '') => {
+  const page = String(html)
+  const text = normalizeText(page)
+
+  return /<title[^>]*>\s*JazzHR\s*&raquo;\s*Job Listings\s*<\/title>/i.test(page)
+    && /\bCurrent Openings\b/i.test(text)
+}
+
+export const extractVerifiedBoardJobIds = (html = '') => {
+  const jobIds = new Set()
+
+  for (const match of String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const url = toAbsoluteBoardUrl(match[1], BOARD_URL)
+    const text = normalizeText(match[2])
+    const jobId = extractJobId(url)
+
+    if (!url || !jobId) continue
+    if (/^view all jobs$/i.test(text || '')) continue
+
+    jobIds.add(jobId)
+  }
+
+  return [...jobIds]
 }
 
 const buildListingContext = (lines = []) => {
@@ -361,13 +385,19 @@ export const createBuzzBoardScraper = ({ maxJobs = null } = {}) => ({
       throw new Error('BuzzBoard verified public JazzHR board changed materially')
     }
 
+    const verifiedBoardJobIds = new Set(extractVerifiedBoardJobIds(boardHtml))
     const listings = extractOfficialOpenings(careersHtml)
+      .filter((listing) => verifiedBoardJobIds.size === 0 || verifiedBoardJobIds.has(listing.jobId))
     const selectedJobs = Number.isInteger(maxJobs) ? listings.slice(0, maxJobs) : listings
     const jobs = []
 
     for (const listing of selectedJobs) {
       try {
         const detailHtml = await fetchText(listing.sourceUrl)
+        if (hasGenericBoardListingSignal(detailHtml)) {
+          continue
+        }
+
         jobs.push(mergeListingWithDetail(listing, extractJobDetail(detailHtml, listing)))
       } catch (error) {
         console.warn(

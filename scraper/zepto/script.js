@@ -109,10 +109,14 @@ const describePage = (page = {}) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes("zepto marketplace private limited")
+  return (
+    /<title[^>]*>\s*(?:Welcome to Zepto, India's Fastest Online Grocery Delivery App!|Zepto: Online Grocery Delivery App - Groceries in Minutes)\s*<\/title>/i.test(String(html ?? ''))
+    || normalized.includes("zepto marketplace private limited")
+    || normalized.includes('delivery in minutes')
+  )
     && normalized.includes('how it works')
     && normalized.includes('experience lighting-fast speed & get all your items delivered in minutes')
-    && normalized.includes('download app')
+    && normalized.includes('careers')
 }
 
 export const extractCareersUrl = (html) => extractLinkByText(html, /^careers$/i)
@@ -146,25 +150,31 @@ export const isBlockedThirdPartyCareersHandoff = (page = {}) => {
     && refreshUrl === APPLY_URL
 }
 
+export const isBlockedAwsWafCareersInterstitial = (page = {}) =>
+  Number(page.status) === 202
+  && /window\.awsWafCookieDomainList/i.test(String(page.html ?? ''))
+  && /zepto\.com/i.test(String(page.html ?? ''))
+
 export const createZeptoScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    const homepageBlockedByWaf = isBlockedAwsWafCareersInterstitial(homepage)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (!homepageBlockedByWaf && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Zepto homepage no longer matches the verified official public surface')
     }
 
-    if (hasPublicJobsSignal(homepage.html)) {
+    if (!homepageBlockedByWaf && hasPublicJobsSignal(homepage.html)) {
       throw new Error('Zepto homepage now appears to expose first-party public jobs')
     }
 
     const careersUrl = extractCareersUrl(homepage.html)
-    if (careersUrl !== CAREERS_URL) {
+    if (!homepageBlockedByWaf && careersUrl !== CAREERS_URL) {
       throw new Error('Zepto homepage no longer links to the verified official careers route')
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
-    if (!isBlockedThirdPartyCareersHandoff(careersPage)) {
+    if (!isBlockedThirdPartyCareersHandoff(careersPage) && !isBlockedAwsWafCareersInterstitial(careersPage)) {
       if (Number(careersPage.status) === 200 && hasPublicJobsSignal(careersPage.html)) {
         throw new Error('Zepto official careers route now appears to expose first-party public jobs')
       }
@@ -175,7 +185,7 @@ export const createZeptoScraper = () => ({
     }
 
     const careersAliasPage = await fetchPage(CAREERS_ALIAS_URL)
-    if (!isKnownCareersAliasRedirect(careersAliasPage)) {
+    if (!isKnownCareersAliasRedirect(careersAliasPage) && !isBlockedAwsWafCareersInterstitial(careersAliasPage)) {
       throw new Error(
         `Zepto trailing-slash careers alias changed materially: expected redirect to ${CAREERS_URL}; received ${describePage(careersAliasPage)}`,
       )

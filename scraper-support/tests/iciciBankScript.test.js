@@ -150,8 +150,8 @@ test('extractSearchResults decrypts ICICI search payloads and derives public job
     jobCategory: 'Retail Banking',
     jobId: '2204493',
     requisitionId: '2204493',
-    sourceUrl: 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204493',
-    applyUrl: 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204493',
+    sourceUrl: 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493',
+    applyUrl: 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493',
     experienceRequired: '1 - 5 Yrs',
     minimumQualification: 'Graduation',
     closingDate: '2026-12-31',
@@ -160,7 +160,7 @@ test('extractSearchResults decrypts ICICI search payloads and derives public job
   })
 
   assert.equal(jobs[1].city, 'Hyderabad')
-  assert.equal(jobs[1].applyUrl, 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204494')
+  assert.equal(jobs[1].applyUrl, 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204494')
 })
 
 test('extractJobDetail decrypts ICICI single-job payloads and preserves the public detail page as the apply surface', async () => {
@@ -176,8 +176,8 @@ test('extractJobDetail decrypts ICICI single-job payloads and preserves the publ
       jobCategory: 'Retail Banking',
       jobId: '2204493',
       requisitionId: '2204493',
-      sourceUrl: 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204493',
-      applyUrl: 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204493',
+      sourceUrl: 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493',
+      applyUrl: 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493',
       experienceRequired: '1 - 5 Yrs',
       minimumQualification: 'Graduation',
       shortDescription: 'Evaluate corporate borrowers and approve credit proposals.',
@@ -199,13 +199,13 @@ test('extractJobDetail decrypts ICICI single-job payloads and preserves the publ
   ])
   assert.match(detail.jobDescription, /About the role/i)
   assert.match(detail.jobDescription, /Evaluate corporate borrowers/i)
-  assert.equal(detail.applyUrl, 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204493')
-  assert.equal(detail.sourceUrl, 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204493')
+  assert.equal(detail.applyUrl, 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493')
+  assert.equal(detail.sourceUrl, 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493')
 
   const normalized = normalizeScrapedJob(detail, {
     source: 'icicibank',
     companyName: 'ICICI Bank Ltd',
-    companyCareerPage: 'https://www.icicicareers.com/CareerApplicant/Career/Home',
+    companyCareerPage: 'https://careers.icici.bank.in/CareerApplicant/Career/Home',
     atsPlatform: 'official-company-careers',
   })
 
@@ -245,12 +245,70 @@ test('run fetches the ICICI public search and detail APIs, then decorates jobs f
 
   assert.deepEqual(requested.map((entry) => entry.method), ['POST', 'GET', 'GET'])
   assert.equal(requested[0].headers.authorization, 'Bearer token')
-  assert.equal(requested[0].headers.Referer, 'https://www.icicicareers.com/CareerApplicant/career/job-listing/')
-  assert.deepEqual(decryptIciciPayload(requested[0].body), iciciBank.buildSearchRequestPayload())
+  assert.equal(requested[0].headers.Referer, 'https://careers.icici.bank.in/CareerApplicant/career/job-listing/')
+  assert.deepEqual(
+    decryptIciciPayload(JSON.parse(requested[0].body).data),
+    iciciBank.buildSearchRequestPayload(),
+  )
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].company, 'ICICI Bank Ltd')
   assert.equal(jobs[0].source, 'icicibank')
-  assert.equal(jobs[0].link, 'https://www.icicicareers.com/CareerApplicant/Career/job-details/2204493')
+  assert.equal(jobs[0].link, 'https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493')
   assert.equal(jobs[0].scrapedAt, '2026-07-10T00:00:00.000Z')
   assert.equal(jobs[1].city, 'Hyderabad')
+})
+
+test('run falls back to browser-backed ICICI APIs when Node fetch times out', async () => {
+  const iciciBank = await loadIciciBankModule()
+  const requestedPrimary = []
+  const requestedBrowser = []
+
+  const jobs = await iciciBank.createIciciBankScraper({ maxJobs: 1 }).run({
+    now: () => '2026-08-02T12:00:00.000Z',
+    fetchJson: async (url, options = {}) => {
+      requestedPrimary.push({
+        url,
+        method: options.method || 'GET',
+      })
+      throw new TypeError('fetch failed | Connect Timeout Error')
+    },
+    fetchBrowserJson: async (url, options = {}, landingUrl) => {
+      requestedBrowser.push({
+        url,
+        method: options.method || 'GET',
+        landingUrl,
+      })
+
+      if (url === iciciBank.SEARCH_API_URL) {
+        return { Data: encryptIciciPayload(searchResponsePayload) }
+      }
+
+      const detailJobId = url.split('/').at(-1)
+      if (detailPayloads[detailJobId]) {
+        return { Data: encryptIciciPayload(detailPayloads[detailJobId]) }
+      }
+
+      throw new Error(`Unexpected browser ICICI URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedPrimary, [
+    { url: iciciBank.SEARCH_API_URL, method: 'POST' },
+    { url: `${iciciBank.DETAIL_API_BASE_URL}/2204493`, method: 'GET' },
+  ])
+  assert.deepEqual(requestedBrowser, [
+    {
+      url: iciciBank.SEARCH_API_URL,
+      method: 'POST',
+      landingUrl: iciciBank.CAREERS_PORTAL_URL,
+    },
+    {
+      url: `${iciciBank.DETAIL_API_BASE_URL}/2204493`,
+      method: 'GET',
+      landingUrl: iciciBank.CAREERS_PORTAL_URL,
+    },
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '2204493')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T12:00:00.000Z')
 })

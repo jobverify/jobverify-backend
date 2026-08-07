@@ -23,13 +23,13 @@ const homepageHtml = `
         <a href="/platforms.php">Platforms</a>
         <a href="/contact.php">Contact Us</a>
         <a href="careers.php">Careers</a>
+        <a href="careers.php">Apply Now</a>
       </header>
       <main>
         <h1>Station-S</h1>
-        <p>The Startup Studio</p>
+        <p>T h e S t a r t u p S t u d i o</p>
         <p>Let's Get Your Venture Started in Sri City</p>
         <p>Station-S, Sri City, AP, India</p>
-        <p>Info@station-s.org</p>
       </main>
       <footer>
         <p>© Copyright Station-S All Rights Reserved.</p>
@@ -47,6 +47,7 @@ const careersHtml = `
     <body>
       <header>
         <a href="careers.php">Careers</a>
+        <a href="careers.php">Apply Now</a>
       </header>
       <main>
         <h2>Join Our Team</h2>

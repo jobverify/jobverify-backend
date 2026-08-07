@@ -23,6 +23,54 @@ const companyHtml = `
 </html>
 `
 
+const companyHtmlViaFirstPartyCareers = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About Prefect - Company & Mission</title>
+  </head>
+  <body>
+    <main>
+      <h1>We are Prefect</h1>
+      <p>Defining automation for the context era.</p>
+      <section>
+        <h2>Join the team defining the future of workflow automation</h2>
+        <a href="/careers">See Open Roles</a>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
+const careersHtmlWithEmbeddedBoard = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Prefect - Open Roles</title>
+    <meta
+      name="description"
+      content="See every open role at Prefect. We're remote first and have carefully created a supportive, high-performance culture."
+    />
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>Join the team defining the future of workflow automation</h1>
+        <p>We're remote first and have carefully created a supportive, high-performance culture.</p>
+        <h2>Open roles</h2>
+        <p>Loading open roles…</p>
+      </section>
+      <script>
+        self.__next_f.push([
+          1,
+          "customCssUrl":"https://www.prefect.io/ashby-job-board.css"
+        ])
+      </script>
+    </main>
+  </body>
+</html>
+`
+
 const ashbyPayload = {
   jobs: [
     {
@@ -119,6 +167,7 @@ test('Prefect pins the verified first-party company page and Ashby endpoints', a
   assert.equal(prefect.SOURCE, 'prefect')
   assert.equal(prefect.COMPANY, 'Prefect')
   assert.equal(prefect.COMPANY_PAGE_URL, 'https://www.prefect.io/company')
+  assert.equal(prefect.CAREERS_PAGE_URL, 'https://www.prefect.io/careers')
   assert.equal(prefect.ASHBY_PUBLIC_BOARD_URL, 'https://jobs.ashbyhq.com/prefect')
   assert.equal(
     prefect.ASHBY_JOB_BOARD_URL,
@@ -185,6 +234,31 @@ test('Prefect run validates the first-party handoff and returns an authoritative
   })
 
   assert.deepEqual(requestedTexts, [prefect.COMPANY_PAGE_URL])
+  assert.deepEqual(requestedJson, [prefect.ASHBY_JOB_BOARD_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Prefect accepts the verified first-party careers route when the company page no longer exposes the Ashby public board URL directly', async () => {
+  const prefect = await loadPrefectModule()
+  const requestedTexts = []
+  const requestedJson = []
+
+  const jobs = await prefect.createPrefectScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      requestedTexts.push(url)
+      if (url === prefect.COMPANY_PAGE_URL) return companyHtmlViaFirstPartyCareers
+      if (url === prefect.CAREERS_PAGE_URL) return careersHtmlWithEmbeddedBoard
+      throw new Error(`Unexpected Prefect text URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedJson.push(url)
+      return nonIndiaPayload
+    },
+  })
+
+  assert.deepEqual(requestedTexts, [prefect.COMPANY_PAGE_URL, prefect.CAREERS_PAGE_URL])
   assert.deepEqual(requestedJson, [prefect.ASHBY_JOB_BOARD_URL])
   assert.deepEqual(jobs, [])
 })

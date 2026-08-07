@@ -146,13 +146,18 @@ export const hasOfficialHomepageSignal = (page = {}) => {
 export const hasOfficialCareersSignal = (page = {}) => {
   const rawHtml = String(page?.html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const hasLegacyHero = /<h1[^>]*>\s*Careers\s*<\/h1>/i.test(rawHtml)
+  const hasCurrentHero = normalized.includes('Your opportunity starts here')
+  const hasTrustedCopy = normalized.includes('Ready to take your next step?')
+    || normalized.includes('Where could your career take you?')
 
   return Number(page?.status) === 200
     && extractTitle(rawHtml) === 'Careers | Everest'
     && String(page?.url ?? '') === CAREERS_OVERVIEW_URL
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.everestglobal\.com\/us-en\/career-opportunities\/overview["']/i.test(rawHtml)
-    && /<h1[^>]*>\s*Careers\s*<\/h1>/i.test(rawHtml)
-    && normalized.includes('Ready to take your next step?')
+    && (hasLegacyHero || hasCurrentHero)
+    && hasTrustedCopy
+    && /(Search Jobs|View Job Openings)/i.test(normalized)
 }
 
 const isVerifiedWorkdayBoardUrl = (value) => {

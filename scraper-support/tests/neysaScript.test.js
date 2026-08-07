@@ -5,11 +5,11 @@ const careersPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Neysa | Build the Future of AI Infrastructure</title>
+    <title>Career - Neysa</title>
   </head>
   <body>
-    <h1>Build the Future of AI Infrastructure</h1>
-    <p>Own the next wave of cloud, AI, and cyber infrastructure with us.</p>
+    <h1>Career</h1>
+    <p>Build the Future of AI Infrastructure with Neysa.</p>
     <a href="https://neysa.ai/careers/job-openings/">View Job Openings</a>
   </body>
 </html>
@@ -19,7 +19,7 @@ const jobOpeningsHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Job Opening - Build a Career at Neysa</title>
+    <title>Job Openings - Neysa</title>
   </head>
   <body>
     <script>var ajaxAction = "filter_career_listings";</script>
@@ -28,18 +28,18 @@ const jobOpeningsHtml = `
       <div class="job-card">
         <h3 class="job-title">Backend Engineer</h3>
         <div class="job-meta">
-          <div class="meta-row"><span>Minimum Experience</span><span>5 to 7 years</span></div>
-          <div class="meta-row"><span>Location</span><span>Mumbai</span></div>
+          <div class="meta-row"><span>Minimum Experience:</span><span>5 to 7 years</span></div>
+          <div class="meta-row"><span>Location:</span><span>Mumbai</span></div>
         </div>
-        <a class="job-btn" href="https://neysa.ai/careers/job-openings/backend-engineer/">Apply Now</a>
+        <a class="job-btn" href="https://neysa.ai/careers/job-openings/backend-engineer/">Job Details</a>
       </div>
       <div class="job-card">
         <h3 class="job-title">Threat Detection Engineer - Cybersecurity</h3>
         <div class="job-meta">
-          <div class="meta-row"><span>Minimum Experience</span><span>3 to 5 years</span></div>
-          <div class="meta-row"><span>Location</span><span>Chennai</span></div>
+          <div class="meta-row"><span>Minimum Experience:</span><span>3 to 5 years</span></div>
+          <div class="meta-row"><span>Location:</span><span>Chennai</span></div>
         </div>
-        <a class="job-btn" href="https://neysa.ai/careers/job-openings/threat-detection-engineer-cybersecurity/">Apply Now</a>
+        <a class="job-btn" href="https://neysa.ai/careers/job-openings/threat-detection-engineer-cybersecurity/">Job Details</a>
       </div>
     </div>
     <div class="job-section">
@@ -47,10 +47,10 @@ const jobOpeningsHtml = `
       <div class="job-card">
         <h3 class="job-title">Legal Counsel</h3>
         <div class="job-meta">
-          <div class="meta-row"><span>Minimum Experience</span><span>2 to 5 years</span></div>
-          <div class="meta-row"><span>Location</span><span>Mumbai</span></div>
+          <div class="meta-row"><span>Minimum Experience:</span><span>2 to 5 years</span></div>
+          <div class="meta-row"><span>Location:</span><span>Mumbai</span></div>
         </div>
-        <a class="job-btn" href="https://neysa.ai/careers/job-openings/legal-counsel/">Apply Now</a>
+        <a class="job-btn" href="https://neysa.ai/careers/job-openings/legal-counsel/">Job Details</a>
       </div>
     </div>
   </body>
@@ -127,7 +127,7 @@ test('Neysa verifies the official careers page and same-domain job openings sign
   assert.equal(neysa.CAREERS_PAGE_URL, 'https://neysa.ai/careers/')
   assert.equal(neysa.JOB_OPENINGS_URL, 'https://neysa.ai/careers/job-openings/')
   assert.equal(neysa.COMPANY_DOMAIN, 'neysa.ai')
-  assert.equal(neysa.VERIFIED_ON, '2026-07-16')
+  assert.equal(neysa.VERIFIED_ON, '2026-08-03')
   assert.equal(neysa.hasOfficialCareersPageSignal(careersPageHtml), true)
   assert.equal(neysa.hasOfficialJobOpeningsSignal(jobOpeningsHtml), true)
   assert.equal(

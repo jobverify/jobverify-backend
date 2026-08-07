@@ -49,7 +49,10 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*India Office\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*India Office\s*<\/title>/i.test(page)
+    || /<title>\s*India\s*-\s*DYNINNO\s*<\/title>/i.test(page)
+  )
     && /India Office/i.test(normalized)
     && /Jobs in India/i.test(normalized)
     && /Trevolution/i.test(normalized)

@@ -12,6 +12,8 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const ABOUT_URL = PROVIDER_METADATA.aboutUrl
 export const HANDOFF_URL = PROVIDER_METADATA.handoffUrl
 export const JOBS_URL = PROVIDER_METADATA.jobsUrl
+export const HANDOFF_FINAL_URL = 'https://jobs.goodfit.so/careers/springworks'
+export const JOBS_FALLBACK_URL = 'https://v2.app.goodfit.so/jobs/springworks'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -56,6 +58,7 @@ const defaultFetchPage = async (url) => {
 }
 
 const sameUrl = (left, right) => String(left ?? '').replace(/\/$/, '') === String(right ?? '').replace(/\/$/, '')
+const sameUrlAny = (actual, expectedUrls) => expectedUrls.some((expectedUrl) => sameUrl(actual, expectedUrl))
 
 const stripTags = (value = '') => normalizeWhitespace(
   String(value ?? '')
@@ -74,9 +77,21 @@ export const hasFirstPartyAboutSignal = (html = '') => {
     && String(html ?? '').includes(HANDOFF_URL)
 }
 
+export const hasGoodfitHandoffSignal = (html = '') => {
+  const normalized = stripTags(html).toLowerCase()
+  const title = (extractTitle(html) || '').toLowerCase()
+
+  return title.includes('springworks at springworks')
+    && normalized.includes('goodfit')
+    && String(html ?? '').toLowerCase().includes('noindex')
+}
+
 export const hasGoodfitJobsSignal = (html = '') => {
   const normalized = stripTags(html).toLowerCase()
-  return normalized.includes('springworks')
+  const rawHtml = String(html ?? '').toLowerCase()
+
+  return rawHtml.includes('https://jobs.goodfit.so/jobs/springworks')
+    && normalized.includes('open positions')
     && normalized.includes('remote')
     && /\/jobs\/springworks\//i.test(String(html ?? ''))
 }
@@ -84,11 +99,11 @@ export const hasGoodfitJobsSignal = (html = '') => {
 export const extractSpringworksJobs = (html = '') => {
   const cards = []
   const seen = new Set()
-  const pattern = /<a[^>]+href="(\/jobs\/springworks\/[^"]+)"[^>]*>[\s\S]*?<h3[^>]*>([\s\S]*?)<\/h3>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/gi
+  const pattern = /<a[^>]+href="(\/jobs\/springworks\/[^"]+)"[^>]*>[\s\S]*?<span[^>]*class="[^"]*font-medium[^"]*"[^>]*>([\s\S]*?)<\/span>[\s\S]*?<span[^>]*class="[^"]*text-xs[^"]*"[^>]*>([\s\S]*?)<\/span>/gi
 
   for (const match of String(html ?? '').matchAll(pattern)) {
     const relativeUrl = match[1]
-    const sourceUrl = new URL(relativeUrl, 'https://app.goodfit.so').toString()
+    const sourceUrl = new URL(relativeUrl, JOBS_URL).toString()
     if (seen.has(sourceUrl)) continue
     seen.add(sourceUrl)
 
@@ -96,22 +111,18 @@ export const extractSpringworksJobs = (html = '') => {
     const locationText = normalizeWhitespace(decodeHtmlEntities(match[3]))
     if (!title || !locationText) continue
 
-    const [brand = null, location = null, employmentType = null] = locationText
-      .split(/[✦•|]/)
-      .map((part) => normalizeWhitespace(part))
-
     cards.push({
       title,
-      company: brand || COMPANY,
+      company: COMPANY,
       department: null,
-      location: location || locationText,
+      location: locationText,
       city: null,
-      country: /india/i.test(locationText) ? 'India' : null,
+      country: /india/i.test(locationText) || /remote/i.test(locationText) ? 'India' : null,
       jobId: sourceUrl.split('id=').pop() || relativeUrl,
       requisitionId: sourceUrl.split('id=').pop() || relativeUrl,
       sourceUrl,
       applyUrl: sourceUrl,
-      employmentType,
+      employmentType: /intern/i.test(title) ? 'Internship' : null,
       experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
@@ -136,10 +147,19 @@ export const createSpringworksScraper = () => ({
       throw new Error('Springworks first-party about page no longer matches the trusted careers handoff surface')
     }
 
+    const handoffPage = await fetchPage(HANDOFF_URL)
+    if (
+      handoffPage.status !== 200
+      || !sameUrlAny(handoffPage.url, [HANDOFF_URL, HANDOFF_FINAL_URL])
+      || !hasGoodfitHandoffSignal(handoffPage.html)
+    ) {
+      throw new Error('Springworks Goodfit handoff page no longer matches the trusted goodfit handoff surface')
+    }
+
     const jobsPage = await fetchPage(JOBS_URL)
     if (
       jobsPage.status !== 200
-      || !sameUrl(jobsPage.url, JOBS_URL)
+      || !sameUrlAny(jobsPage.url, [JOBS_URL, JOBS_FALLBACK_URL])
       || !hasGoodfitJobsSignal(jobsPage.html)
     ) {
       throw new Error('Springworks Goodfit jobs page no longer matches the verified SSR jobs surface')

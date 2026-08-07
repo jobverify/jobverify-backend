@@ -127,7 +127,7 @@ export const hasOfficialSearchResultsSignal = (html) => {
   const page = String(html ?? '')
 
   return /id="job-tile-list"/i.test(page)
-    && /class="jobTitle-link"/i.test(page)
+    && /class="[^"]*\bjobTitle-link\b[^"]*"/i.test(page)
     && (/jobRecordsFound:\s*parseInt\("\d+"\)/i.test(page) || /Showing\s+\d+\s+to\s+\d+\s+of\s+\d+\s+Jobs/i.test(page))
 }
 
@@ -138,13 +138,13 @@ export const extractSearchResults = (html) => {
     .map((rowMatch) => {
       const rowHtml = rowMatch[0]
       const relativeLink = normalizeWhitespace(
-        extractFirst(/<a(?=[^>]*class="jobTitle-link")(?=[^>]*href="([^"]+)")[^>]*>/i, rowHtml),
+        extractFirst(/<a(?=[^>]*class="[^"]*\bjobTitle-link\b[^"]*")(?=[^>]*href="([^"]+)")[^>]*>/i, rowHtml),
       )
       const sourceUrl = toAbsoluteUrl(relativeLink)
       if (!sourceUrl || /\/ecofirst\/job\//i.test(sourceUrl)) return null
 
       const title = normalizeWhitespace(
-        extractFirst(/<a[^>]*class="jobTitle-link"[^>]*>([\s\S]*?)<\/a>/i, rowHtml),
+        extractFirst(/<a[^>]*class="[^"]*\bjobTitle-link\b[^"]*"[^>]*>([\s\S]*?)<\/a>/i, rowHtml),
       )
       const location = extractSectionValueByLabel(rowHtml, 'Location')
       const department = extractSectionValueByLabel(rowHtml, 'Department')

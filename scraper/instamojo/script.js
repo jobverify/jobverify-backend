@@ -68,10 +68,13 @@ const getJobsList = (html) => {
 
 export const hasOfficialTeamPageSignal = (html) => {
   const page = String(html ?? '')
+  const hasVerifiedTeamCopy = /Join the Instamojo team/i.test(page)
+    || /People That Put The Mojo \(Magic\) In Instamojo/i.test(page)
+    || /Discover the people of Instamojo/i.test(page)
 
   return /<title>\s*Life at Instamojo - Culture, team, jobs, and mojo!\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.instamojo\.com\/company\/team\/["']/i.test(page)
-    && /Join the Instamojo team/i.test(page)
+    && hasVerifiedTeamCopy
     && /careers@instamojo\.com/i.test(page)
     && extractJobsBoardUrl(page) === JOBS_BOARD_URL
 }

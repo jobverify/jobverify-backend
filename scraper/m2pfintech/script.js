@@ -27,6 +27,14 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const extractVisibleText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+([?!,.:;])/g, '$1'),
+)
+
 const toAbsoluteUrl = (value, baseUrl) => {
   try {
     return new URL(String(value ?? ''), baseUrl).toString()
@@ -37,17 +45,17 @@ const toAbsoluteUrl = (value, baseUrl) => {
 
 export const hasVerifiedCareersHomeSignal = (html) => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const visibleText = extractVisibleText(page)
 
-  return /<title>\s*M2P Fintech \| Build your career in fintech with us\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*M2P Fintech \| Build your career in fintech with us\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/careers\.m2pfintech\.com\/["']/i.test(
       page,
     )
-    && /Ambitious\?/i.test(page)
-    && normalized?.includes("You'll fit right in.")
-    && /View Jobs/i.test(page)
-    && /Join us/i.test(page)
-  }
+    && /you.?ll fit right in\./i.test(visibleText || '')
+    && /at m2p, we don.?t just work, we build the future of fintech\./i.test(visibleText || '')
+    && visibleText?.includes('View Jobs')
+    && visibleText?.includes('Join us')
+}
 
 export const extractViewJobsUrl = (html) => {
   const page = String(html ?? '')
@@ -66,7 +74,7 @@ export const hasVerifiedZeroJobsPageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*M2P Fintech \| Careers \| Job Listing\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*M2P Fintech \| Careers \| Job Listing\s*<\/title>/i.test(page)
     && normalized?.includes('Our Job Openings')
     && normalized?.includes('No Jobs Found')
     && normalized?.includes('Keep exploring this space.')

@@ -16,6 +16,19 @@ const homepageHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <html>
+    <head>
+      <title>Games24x7: Where the Science of Gaming Meets AI &amp; Data</title>
+    </head>
+    <body>
+      <h1>Entertaining 120 million + players using The Science of Gaming</h1>
+      <a href="/life">Life at Games24x7</a>
+      <a href="/life">Join Us</a>
+    </body>
+  </html>
+`
+
 const lifeHtml = `
   <html>
     <head>
@@ -103,6 +116,7 @@ test('Games24x7 scraper keeps the verified official Darwinbox handoff explicit a
     'https://games24x7.darwinbox.in/ms/candidatev2/a6150564417204/careers/allJobs',
   )
   assert.equal(hasOfficialGames24x7HomepageSignals(homepageHtml), true)
+  assert.equal(hasOfficialGames24x7HomepageSignals(currentHomepageHtml), true)
   assert.equal(hasOfficialGames24x7LifeSignals(lifeHtml), true)
   assert.equal(extractOfficialDarwinboxUrl(lifeHtml), OFFICIAL_CAREERS_HANDOFF_URL)
   assert.equal(

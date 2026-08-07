@@ -19,9 +19,9 @@ export const INUBE_SOFTWARE_SOLUTIONS_CATALOG = {
     'verified-official-jobs-archive+verified-role-detail-pages+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://inubesolutions.com/careers-inube/ is the live first-party iNube careers surface and that it publicly lists openings such as Technical Lead PPS and Project Manager/Associate Project Manager. Verified that linked first-party detail pages under /jobs/ expose responsibilities, experience, work mode, and India locations such as Mumbai and Bangalore, so the local scraper follows those role pages and keeps only India jobs.',
+    'Verified on Sunday, August 2, 2026 that https://www.inubesolutions.com/careers-inube/ is the live first-party iNube careers surface and that it currently lists four openings including Senior Business Analyst, Associate Project Manager, Inside Sales Executive, and Senior Sales Position. Verified that linked first-party detail pages under /jobs/ still expose responsibilities, experience, and India locations such as Bangalore and Mumbai, so the local scraper follows those role pages and keeps only India jobs.',
 }
 
 export default INUBE_SOFTWARE_SOLUTIONS_CATALOG

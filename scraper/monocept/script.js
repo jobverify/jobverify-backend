@@ -49,18 +49,19 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return title.includes('monocept')
     && title.includes('careers')
-    && normalized.includes('insurtech careers')
+    && (normalized.includes('build the future of insurtech') || title.includes('build the future of insurance'))
     && normalized.includes('explore opportunities')
     && normalized.includes('hyderabad')
 }
 
 export const hasTurboHireShellSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html).toLowerCase()
+  const page = String(html ?? '')
   const title = (extractTitle(html) || '').toLowerCase()
 
-  return title.includes('monocept consulting pvt. ltd. - career page')
-    && normalized.includes('career page')
-    && normalized.includes('turbohire')
+  return title.includes('monocept consulting pvt. ltd.')
+    && /Monocept Consulting Pvt\. Ltd\.\s*-\s*Career Page/i.test(page)
+    && /Explore job opportunities at Monocept Consulting Pvt\. Ltd\./i.test(page)
+    && /You need to enable JavaScript to run this app\./i.test(page)
 }
 
 export const hasServerRenderedJobsSignal = (html = '') =>

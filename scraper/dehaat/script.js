@@ -107,8 +107,9 @@ export const hasOfficialCareersPageSignal = (page) => {
   return status === 200
     && finalUrl === normalizeUrl(CAREERS_PAGE_URL)
     && /<title[^>]*>\s*Dehaat\s*-\s*Current Openings\s*<\/title>/i.test(rawHtml)
-    && /Cultivate your potential with DeHaat's career opportunities\./i.test(rawHtml)
-    && /Work Culture/i.test(rawHtml)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']DeHaat is the fastest growing AgTech startup in India and the only full stack agri platform in India\.["']/i.test(rawHtml)
+    && /\/_next\/static\/chunks\/pages\/careers-[^"']+\.js/i.test(rawHtml)
+    && /(Great\s+Work\s+Culture|Work\s+Culture)/i.test(rawHtml)
 }
 
 export const hasWorkableBoardSignal = (page) => {
@@ -128,7 +129,7 @@ export const hasWorkableBoardSignal = (page) => {
 export const hasOfficialJobsFeedSignal = (markdown) => {
   const value = String(markdown ?? '')
 
-  return /^#\s*Dehaat\s*-\s*All Open Positions/im.test(value)
+  return /^#\s*Dehaat\s*[-—–]\s*All Open Positions/im.test(value)
     && /^>\s*Last updated:/im.test(value)
     && /^\|\s*Title\s*\|\s*Department\s*\|\s*Location\s*\|\s*Type\s*\|\s*Salary\s*\|\s*Posted\s*\|\s*Details\s*\|/im.test(value)
     && /Powered by\s+\[Workable\]\(https:\/\/www\.workable\.com\)/i.test(value)

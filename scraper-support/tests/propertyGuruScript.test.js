@@ -167,6 +167,36 @@ const JOB_DETAIL_PAGE = {
   `,
 }
 
+const RAW_WORKDAY_JOB_DETAIL_PAGE = {
+  status: 200,
+  url: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931',
+  html: `
+    <!DOCTYPE html>
+    <html lang="en-US">
+      <head>
+        <title></title>
+        <link
+          rel="canonical"
+          href="https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Senior-Product-Manager_JR100931"
+        />
+        <meta
+          name="title"
+          property="og:title"
+          content="Senior Product Manager"
+        >
+        <meta
+          name="description"
+          property="og:description"
+          content="PropertyGuru is Southeast Asia’s leading PropTech company. We’re looking for a Senior Product Manager. Responsibilities include leading product strategy. Requirements 5+ years crafting and delivering world-class products. Experience building marketplace or platform products preferred."
+        >
+      </head>
+      <body>
+        <div id="app"></div>
+      </body>
+    </html>
+  `,
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/propertyguru.workday/script.js')
@@ -369,6 +399,50 @@ test('PropertyGuru extracts experience from the official Workday job detail page
   assert.deepEqual(propertyGuru.enrichJobWithDetailPage(listing, JOB_DETAIL_PAGE), {
     ...listing,
     experienceRequired: '5+ years',
+    jobDescription:
+      'We’re looking for a Senior Product Manager. Requirements 5+ years crafting and delivering world-class products Experience building marketplace or platform products preferred.',
+    publicExperienceChecked: true,
+  })
+})
+
+test('PropertyGuru accepts metadata-only raw Workday detail pages and marks them checked', async () => {
+  const propertyGuru = await loadModule()
+  const listing = {
+    jobId: 'JR100931',
+    title: 'Senior Product Manager',
+    company: 'PropertyGuru',
+    department: null,
+    location: 'Bengaluru, India',
+    city: 'Bengaluru',
+    state: null,
+    country: 'India',
+    sourceUrl: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931',
+    applyUrl: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931/apply',
+    employmentType: 'Full time',
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: 'Posted Today',
+    closingDate: null,
+    jobDescription: null,
+    requisitionId: 'JR100931',
+    source: 'propertyguru',
+    link: 'https://propertyguru.wd105.myworkdayjobs.com/en-US/PropertyGuru/job/Bengaluru/Senior-Product-Manager_JR100931/apply',
+    scrapedAt: FIXED_SCRAPED_AT,
+  }
+
+  assert.equal(propertyGuru.hasOfficialJobDetailSignal(RAW_WORKDAY_JOB_DETAIL_PAGE), true)
+  assert.equal(
+    propertyGuru.extractExperienceFromJobDetailPage(RAW_WORKDAY_JOB_DETAIL_PAGE.html),
+    '5+ years',
+  )
+  assert.deepEqual(propertyGuru.enrichJobWithDetailPage(listing, RAW_WORKDAY_JOB_DETAIL_PAGE), {
+    ...listing,
+    experienceRequired: '5+ years',
+    jobDescription:
+      'PropertyGuru is Southeast Asia’s leading PropTech company. We’re looking for a Senior Product Manager. Responsibilities include leading product strategy. Requirements 5+ years crafting and delivering world-class products. Experience building marketplace or platform products preferred.',
+    publicExperienceChecked: true,
   })
 })
 

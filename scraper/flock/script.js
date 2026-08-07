@@ -53,6 +53,8 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/[\u2013\u2014]/g, '-')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -69,7 +71,11 @@ const toAbsoluteUrl = (value, baseUrl = HOMEPAGE_URL) => {
   if (!value) return null
 
   try {
-    return new URL(value, baseUrl).toString()
+    const url = new URL(value, baseUrl)
+    if (url.hostname.toLowerCase() === 'careers.flock.com') {
+      url.protocol = 'https:'
+    }
+    return url.toString()
   } catch {
     return null
   }
@@ -110,7 +116,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
   return /<title>\s*Flock Careers\s*<\/title>/i.test(rawHtml)
-    && normalized.includes("we're changing how teams communicate and work together")
+    && normalized.includes('changing how teams communicate and work together')
     && normalized.includes('join the team')
     && normalized.includes('all teams')
     && normalized.includes('all locations')

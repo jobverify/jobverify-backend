@@ -22,29 +22,31 @@ const buildProvider = (catalogEntry) => hydrateProviderCatalogEntry({
   modulePath,
 })
 
-test('Valtech India Systems local catalog captures the verified Teamtailor-backed first-party jobs surface', async () => {
+test('Valtech India Systems local catalog captures the verified Valtech global careers-page contract', async () => {
   const { VALTECH_INDIA_SYSTEMS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = buildProvider(VALTECH_INDIA_SYSTEMS_CATALOG)
 
   assert.equal(defaultCatalog, VALTECH_INDIA_SYSTEMS_CATALOG)
   assert.equal(provider.source, 'valtechindiasystems')
   assert.equal(provider.companyName, 'Valtech India Systems')
-  assert.equal(provider.officialBrandName, 'Valtech India')
+  assert.equal(provider.officialBrandName, 'Valtech')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://careers.india.valtech.com/')
-  assert.equal(provider.companyCareerPage, 'https://careers.india.valtech.com/jobs')
-  assert.equal(provider.sampleJobUrl, 'https://careers.india.valtech.com/jobs/5421672-java-lead-developer')
-  assert.equal(provider.atsPlatform, 'teamtailor')
+  assert.equal(provider.homepageUrl, 'https://www.valtech.com/en-in/career/')
+  assert.equal(provider.companyCareerPage, 'https://www.valtech.com/en-in/career/')
+  assert.equal(provider.sampleJobUrl, 'https://www.valtech.com/en-in/career/jobs/4944510101/')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page-plus-greenhouse-apply-handoff')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-teamtailor-listing-page')
-  assert.equal(provider.extractionStrategy, 'verified-teamtailor-job-listing+first-party-detail-pages')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-detail-pages')
+  assert.equal(provider.extractionStrategy, 'verified-careers-page-visible-job-links+first-party-detail-pages+india-filter')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'careers.india.valtech.com')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.companyDomain, 'valtech.com')
+  assert.equal(provider.verifiedOn, '2026-08-06')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Teamtailor/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 6, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /careers\.india\.valtech\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /Bengaluru/i)
+  assert.match(provider.verifiedSurfaceSummary, /Greenhouse/i)
 })
 
 test('Valtech India Systems exact backlog row resolves from the local provider contract', async () => {

@@ -125,6 +125,7 @@ test('Legrand scraper normalizes India Oracle CE requisitions and enriches them 
   assert.deepEqual(detail.requiredSkills, ['PLC', 'Controls'])
   assert.equal(detail.postingDate, '2026-07-09')
   assert.equal(detail.closingDate, '2026-08-09')
+  assert.equal(detail.publicExperienceChecked, true)
   assert.match(detail.jobDescription, /digital power and automation systems/i)
   assert.match(detail.jobDescription, /Design controls/i)
   assert.match(detail.jobDescription, /Support plants/i)
@@ -151,4 +152,5 @@ test('Legrand scraper normalizes India Oracle CE requisitions and enriches them 
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
   assert.equal(jobs[0].title, 'Senior Automation Engineer')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })

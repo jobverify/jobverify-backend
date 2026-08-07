@@ -67,7 +67,7 @@ test('Deltecs local catalog captures the verified DronaHQ first-party jobs surfa
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dronahq\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dronahq\.com\/careers\//i)
   assert.match(

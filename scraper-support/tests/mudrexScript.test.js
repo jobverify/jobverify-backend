@@ -140,6 +140,32 @@ test('Mudrex extracts public India jobs from the board and detail pages', async 
   assert.equal(jobs[0].country, 'India')
   assert.equal(jobs[0].employmentType, 'Full-time')
   assert.equal(jobs[0].remoteStatus, 'On-site')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].source, 'mudrex')
   assert.equal(jobs[0].scrapedAt, '2026-07-25T10:30:00.000Z')
+})
+
+test('Mudrex falls back to the board listing when a detail page transiently rate-limits', async () => {
+  const mudrex = await loadMudrexModule()
+
+  const jobs = await mudrex.createMudrexScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === mudrex.ABOUT_URL) return officialAboutHtml
+      if (url === mudrex.CAREERS_BOARD_URL) return boardHtml
+      if (url === 'https://mudrex.careers-page.com/jobs/19f745ba-cedd-4784-9469-ce1a25380822') {
+        throw new Error('HTTP 429 for https://mudrex.careers-page.com/jobs/19f745ba-cedd-4784-9469-ce1a25380822')
+      }
+      throw new Error(`Unexpected Mudrex fixture URL: ${url}`)
+    },
+    now: () => '2026-07-25T10:30:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Forward Deployed Engineer')
+  assert.equal(jobs[0].location, 'Bangalore, Karnataka, India')
+  assert.equal(jobs[0].city, 'Bangalore')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.equal(jobs[0].source, 'mudrex')
 })

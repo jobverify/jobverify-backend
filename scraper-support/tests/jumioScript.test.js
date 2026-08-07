@@ -21,6 +21,38 @@ const officialJobListingsHtml = `
 </html>
 `
 
+const greenhouseDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <a href="/jumio">Back to jobs</a>
+    <h1>DevOps Engineer IV (Obs)</h1>
+    <div>India (remote)</div>
+    <button>Apply</button>
+    <h3>Role Purpose</h3>
+    <p>As a DevOps Engineer IV at Jumio, you are expected to be strong in both the “Dev” and “Ops” aspects of DevOps.</p>
+    <h3>Experience &amp; Qualifications</h3>
+    <ul>
+      <li>8+ years of professional DevOps / Infrastructure management experience, with 5+ years in AWS.</li>
+      <li>Strong scripting and automation skills.</li>
+    </ul>
+    <h2>Apply for this job</h2>
+    <form></form>
+  </body>
+</html>
+`
+
+const unavailableGreenhouseDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>Current openings at Jumio</h1>
+    <p>Create a Job Alert</p>
+    <a href="https://job-boards.greenhouse.io/jumio/jobs/4640303005">DevOps Engineer IV (Obs)</a>
+  </body>
+</html>
+`
+
 const jumioJobsPayload = {
   departments: {
     engineeringGroup: {
@@ -202,6 +234,9 @@ test('Jumio run validates the official openings page before reading the first-pa
     fetchText: async (url) => {
       requested.push({ type: 'text', url })
       if (url === jumio.CAREERS_URL) return officialJobListingsHtml
+      if (/^https:\/\/job-boards\.greenhouse\.io\/jumio\/jobs\/\d+$/i.test(url)) {
+        return greenhouseDetailHtml
+      }
       throw new Error(`Unexpected Jumio fixture URL: ${url}`)
     },
     fetchJson: async (url) => {
@@ -214,9 +249,48 @@ test('Jumio run validates the official openings page before reading the first-pa
   assert.deepEqual(requested, [
     { type: 'text', url: 'https://www.jumio.com/careers/job-listings/' },
     { type: 'json', url: 'https://www.jumio.com/wp-json/jobs/filter' },
+    { type: 'text', url: 'https://job-boards.greenhouse.io/jumio/jobs/4640303005' },
+    { type: 'text', url: 'https://job-boards.greenhouse.io/jumio/jobs/4713778005' },
+    { type: 'text', url: 'https://job-boards.greenhouse.io/jumio/jobs/4630737005' },
+    { type: 'text', url: 'https://job-boards.greenhouse.io/jumio/jobs/4664041005' },
   ])
   assert.equal(jobs.length, 4)
   assert.equal(jobs[0].source, 'jumio')
+})
+
+test('Jumio run enriches Greenhouse detail pages to recover public experience evidence', async () => {
+  const jumio = await loadJumioModule()
+  const jobs = await jumio.createJumioScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === jumio.CAREERS_URL) return officialJobListingsHtml
+      if (url === 'https://job-boards.greenhouse.io/jumio/jobs/4640303005') return greenhouseDetailHtml
+      throw new Error(`Unexpected Jumio fixture URL: ${url}`)
+    },
+    fetchJson: async () => jumioJobsPayload,
+    now: () => '2026-07-16T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].experienceRequired, '8+ years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription, /8\+ years of professional DevOps/i)
+})
+
+test('Jumio marks redirected Greenhouse detail pages as publicly checked when experience is unavailable', async () => {
+  const jumio = await loadJumioModule()
+  const jobs = await jumio.createJumioScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === jumio.CAREERS_URL) return officialJobListingsHtml
+      if (url === 'https://job-boards.greenhouse.io/jumio/jobs/4640303005') return unavailableGreenhouseDetailHtml
+      throw new Error(`Unexpected Jumio fixture URL: ${url}`)
+    },
+    fetchJson: async () => jumioJobsPayload,
+    now: () => '2026-07-16T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].experienceRequired, null)
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('Jumio fails closed when the verified openings page or jobs payload drifts materially', async () => {

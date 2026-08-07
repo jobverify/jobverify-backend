@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-18T12:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-02T12:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
@@ -26,10 +26,11 @@ const careersHtml = `
       <p>Qatar</p>
     </section>
     <section>
-      <h2>Content Writer - CRM/ERP/HCM</h2>
+      <h2>Social Media Specialist</h2>
       <p>Hyderabad Locations</p>
-      <p>1-3 years</p>
+      <p>2-4 years</p>
       <p>Full-time</p>
+      <p>Apply Now</p>
       <h3>Open Locations</h3>
       <p>Hyderabad</p>
     </section>
@@ -63,7 +64,7 @@ test('Focus Softnet helpers stay pinned to the verified first-party careers cont
   assert.equal(focusSoftnet.SOURCE, 'focussoftnet')
   assert.equal(focusSoftnet.COMPANY, 'Focus Softnet')
   assert.equal(focusSoftnet.CAREERS_URL, 'https://www.focussoftnet.com/careers')
-  assert.equal(focusSoftnet.VERIFIED_ON, '2026-07-18')
+  assert.equal(focusSoftnet.VERIFIED_ON, '2026-08-02')
   assert.equal(focusSoftnet.hasVerifiedCareersPageSignal(careersHtml), true)
   assert.deepEqual(focusSoftnet.extractJobListings(careersHtml), [
     {
@@ -75,12 +76,12 @@ test('Focus Softnet helpers stay pinned to the verified first-party careers cont
       sourceUrl: 'https://www.focussoftnet.com/careers#sales-consultant-crm-erp-hcm',
     },
     {
-      title: 'Content Writer - CRM/ERP/HCM',
+      title: 'Social Media Specialist',
       location: 'Hyderabad, India',
       employmentType: 'Full-time',
-      experienceRequired: '1-3 years',
-      applyUrl: 'https://www.focussoftnet.com/careers#content-writer-crm-erp-hcm',
-      sourceUrl: 'https://www.focussoftnet.com/careers#content-writer-crm-erp-hcm',
+      experienceRequired: '2-4 years',
+      applyUrl: 'https://www.focussoftnet.com/careers#social-media-specialist',
+      sourceUrl: 'https://www.focussoftnet.com/careers#social-media-specialist',
     },
   ])
 })
@@ -102,7 +103,7 @@ test('Focus Softnet run parses the verified careers page into the shared job con
   assert.equal(jobs[0].experienceRequired, '2-4 years')
   assert.equal(jobs[0].jobId, 'sales-consultant-crm-erp-hcm')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-  assert.equal(jobs[1].title, 'Content Writer - CRM/ERP/HCM')
+  assert.equal(jobs[1].title, 'Social Media Specialist')
   assert.equal(jobs[1].location, 'Hyderabad, India')
 })
 

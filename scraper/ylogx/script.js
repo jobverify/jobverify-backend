@@ -19,13 +19,11 @@ const USER_AGENT =
 const REQUIRED_SITEMAP_URLS = [
   'https://ylogx.io/',
   'https://ylogx.io/blogs',
-  'https://ylogx.io/blogs/medium',
   'https://ylogx.io/casestudies',
   'https://ylogx.io/capabilities',
   'https://ylogx.io/solutions',
   'https://ylogx.io/contact',
   'https://ylogx.io/team',
-  'https://ylogx.io/faq',
 ]
 
 const BUNDLE_REQUIRED_SIGNALS = [
@@ -182,7 +180,7 @@ export const createYlogxScraper = () => ({
 
 export const run = async (options = {}) => createYlogxScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

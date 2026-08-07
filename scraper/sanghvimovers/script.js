@@ -2,6 +2,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { SANGHVI_MOVERS_CATALOG } from './catalog.js'
+import {
+  createBrowserTextFallback,
+  defaultShouldUseBrowserTextFallback,
+} from '../../scraper-support/shared/browserTextFallback.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -114,6 +118,16 @@ export const defaultFetchText = async (url, {
   return response.text()
 }
 
+const shouldUseBrowserFallback = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return defaultShouldUseBrowserTextFallback(error)
+    || /unable to verify the first certificate|certificate|ssl|tls|trust relationship|unable_to_verify_leaf_signature/i.test(combined)
+}
+
 const extractBlocks = (html = '') => {
   const text = htmlToText(html)
   const startIndex = text.indexOf('Join Our Team')
@@ -184,25 +198,37 @@ export const createSanghviMoversScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText = undefined,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasVerifiedCareersPageSignal(careersHtml)) {
-      throw new Error('Verified Sanghvi Movers careers page changed materially')
-    }
-
-    if (!hasPublicJobSignals(careersHtml)) {
-      throw new Error('Verified Sanghvi Movers public jobs surface changed materially')
-    }
-
-    const jobs = extractStaticJobs(careersHtml, {
-      scrapedAt: now(),
+    const browserFallback = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+      shouldUseBrowserFallback,
     })
 
-    if (jobs.length === 0) {
-      throw new Error('Verified Sanghvi Movers public jobs surface changed materially')
-    }
+    try {
+      const careersHtml = await browserFallback.fetchText(CAREERS_URL)
+      if (!hasVerifiedCareersPageSignal(careersHtml)) {
+        throw new Error('Verified Sanghvi Movers careers page changed materially')
+      }
 
-    return jobs
+      if (!hasPublicJobSignals(careersHtml)) {
+        throw new Error('Verified Sanghvi Movers public jobs surface changed materially')
+      }
+
+      const jobs = extractStaticJobs(careersHtml, {
+        scrapedAt: now(),
+      })
+
+      if (jobs.length === 0) {
+        throw new Error('Verified Sanghvi Movers public jobs surface changed materially')
+      }
+
+      return jobs
+    } finally {
+      await browserFallback.close()
+    }
   },
 })
 

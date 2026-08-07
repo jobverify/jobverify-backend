@@ -284,3 +284,16 @@ test('Fanclash fails closed when the parked domain, missing routes, or unresolve
     /verified unresolved first-party surface changed/i,
   )
 })
+
+test('Fanclash accepts the current parked-domain redirect even when Atom now returns HTTP 200', async () => {
+  const fanclash = await loadFanclashModule()
+
+  assert.equal(
+    fanclash.hasVerifiedAtomParkedRedirect({
+      status: 200,
+      finalUrl: fanclash.PARKED_DOMAIN_REDIRECT_URL,
+      html: parkedDomainHtml,
+    }),
+    true,
+  )
+})

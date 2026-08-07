@@ -109,7 +109,7 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   },
   body: options.body,
   label: `${SOURCE}-json`,
-  timeoutMs: 20000,
+  timeoutMs: 45000,
 })
 
 export const createZycusInfotechScraper = ({

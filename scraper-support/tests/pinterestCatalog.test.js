@@ -63,19 +63,18 @@ test('Pinterest local catalog captures the verified first-party careers domain a
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /pinterest[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.pinterestcareers\.com\/jobs\//i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/pinterest\/jobs\?content=true/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /\b195\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /Chief of Staff, Marketing/i)
-  assert.match(provider.verifiedSurfaceSummary, /Agency Lead/i)
+  assert.match(provider.verifiedSurfaceSummary, /\b218\b/i)
   assert.match(provider.verifiedSurfaceSummary, /zero India roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Pinterest'), false)
 
   assert.equal(pinterest.PROVIDER_METADATA.source, PINTEREST_CATALOG.source)

@@ -49,7 +49,7 @@ const detailHtml = `
   <body>
     <div class="jobDisplayShell">
       <div class="applylink pull-right">
-        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn hidden-phone" href="/talentcommunity/apply/1250901/?locale=en_US">Apply now</a>
+        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/talentcommunity/apply/1250901/?locale=en_US">Apply now</a>
       </div>
       <div class="joblayouttoken">
         <div class="inner">
@@ -65,8 +65,43 @@ const detailHtml = `
       </p>
       <p class="jobDate" id="job-date"><strong>Date:</strong> 08 Jul 2026</p>
       <input type="text" value="1250901" name="jobid" id="jobid" />
-      <span itemprop="description" class="jobdescription">
-        <p>Lead regional crop solutions sales for the UPL India business.</p>
+      <span itemprop="description" data-careersite-propertyid="description" class="rtltextaligneligible">
+        <span class="jobdescription">
+          <p>Lead regional crop solutions sales for the UPL India business.</p>
+        </span>
+      </span>
+    </div>
+  </body>
+</html>
+`
+
+const detailHtmlWithExplicitExperience = `
+<!doctype html>
+<html>
+  <body>
+    <div class="jobDisplayShell">
+      <div class="applylink pull-right">
+        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/talentcommunity/apply/1250901/?locale=en_US">Apply now</a>
+      </div>
+      <div class="joblayouttoken">
+        <div class="inner">
+          <div class="row">
+            <div class="col-xs-12 fontalign-left">
+              <h1 id="job-title" itemprop="title">Area Sales Manager</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p id="job-location">
+        <span class="jobGeoLocation">Mumbai, Maharashtra, India</span>
+      </p>
+      <p class="jobDate" id="job-date"><strong>Date:</strong> 08 Jul 2026</p>
+      <input type="text" value="1250901" name="jobid" id="jobid" />
+      <span itemprop="description" data-careersite-propertyid="description" class="rtltextaligneligible">
+        <span class="jobdescription">
+          <p>5-7 years of experience in regional crop protection sales.</p>
+          <p>Lead regional crop solutions sales for the UPL India business.</p>
+        </span>
       </span>
     </div>
   </body>
@@ -123,6 +158,7 @@ test('run keeps UPL on the public SuccessFactors search/detail/apply flow and fi
     closingDate: null,
     applyUrl: 'https://careers.upl-ltd.com/talentcommunity/apply/1250901/?locale=en_US',
     sourceUrl: 'https://careers.upl-ltd.com/job/Mumbai-Area-Sales-Manager/1250901/',
+    publicExperienceChecked: true,
   })
 
   const jobs = await run({
@@ -153,5 +189,21 @@ test('run keeps UPL on the public SuccessFactors search/detail/apply flow and fi
   assert.equal(
     jobs[0].link,
     'https://careers.upl-ltd.com/talentcommunity/apply/1250901/?locale=en_US',
+  )
+  assert.equal(jobs[0].publicExperienceChecked, true)
+})
+
+test('extractJobDetail captures explicit experience from the live UPL SuccessFactors description block', async () => {
+  const { extractJobDetail } = await loadUplModule()
+
+  assert.equal(
+    extractJobDetail(detailHtmlWithExplicitExperience, {
+      title: 'Area Sales Manager',
+      location: 'Mumbai, Maharashtra, India',
+      city: 'Mumbai',
+      jobId: '1250901',
+      sourceUrl: 'https://careers.upl-ltd.com/job/Mumbai-Area-Sales-Manager/1250901/',
+    }).experienceRequired,
+    '5-7 years',
   )
 })

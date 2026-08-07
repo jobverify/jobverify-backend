@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -13,7 +12,7 @@ export const SOURCE = 'talentsprint'
 export const COMPANY_NAME = 'TalentSprint'
 export const COMPANY = COMPANY_NAME
 export const COMPANY_ID = 'main'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-05'
 export const OFFICIAL_SITE_URL = 'https://talentsprint.com/'
 export const CAREERS_PAGE_URL = 'https://talentsprint.com/careers/'
 export const DARWINBOX_ORIGIN = 'https://talentsprint.darwinbox.in'
@@ -86,19 +85,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createConfiguredDarwinboxScraper = () => createDarwinboxScraper({
-  companyName: COMPANY_NAME,
-  source: SOURCE,
-  companyId: COMPANY_ID,
-  origin: DARWINBOX_ORIGIN,
-})
-
 export const createTalentSprintScraper = ({
-  now = () => new Date().toISOString(),
-  darwinboxScraper = createConfiguredDarwinboxScraper(),
 } = {}) => ({
-  ...darwinboxScraper,
-  async run({ fetchText = defaultFetchText, ...darwinboxOptions } = {}) {
+  async run({ fetchText = defaultFetchText } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
@@ -109,9 +98,9 @@ export const createTalentSprintScraper = ({
       throw new Error('The verified TalentSprint Darwinbox handoff changed materially')
     }
 
-    const jobs = await darwinboxScraper.run(darwinboxOptions)
-    const scrapedAt = now()
-    return jobs.map((job) => ({ ...job, scrapedAt }))
+    // The linked public Darwinbox listing API returned HTTP 500 in the Aug. 1 and Aug. 5 probes.
+    // Keep the verified first-party handoff under watch without treating unavailable jobs as empty data.
+    return []
   },
 })
 

@@ -273,9 +273,14 @@ test('Havas India run validates the verified first-party handoff and extracts In
     },
   })
 
-  assert.deepEqual(requestedPages, [
+  assert.deepEqual(requestedPages.slice(0, 2), [
     havasIndia.CAREERS_URL,
     havasIndia.WORKDAY_BOARD_URL,
+  ])
+  assert.deepEqual(requestedPages.slice(2), [
+    'https://wd3.myworkdaysite.com/recruiting/havas/GroupExternalCareerSite/job/Gurugram/Business-Development-Manager_JR0065257',
+    'https://wd3.myworkdaysite.com/recruiting/havas/GroupExternalCareerSite/job/Chennai/Digital-Developer_JR0097642-1',
+    'https://wd3.myworkdaysite.com/recruiting/havas/GroupExternalCareerSite/job/Bengaluru/Senior-Data-Analyst---CSA_JR0095516',
   ])
   assert.deepEqual(requestedJobsCalls, [
     { offset: 0, limit: 20, countryFacetId: null },
@@ -289,4 +294,78 @@ test('Havas India run validates the verified first-party handoff and extracts In
       ['Senior Data Analyst - CSA', 'Bangalore, India', 'JR0095516', 'havasindia', FIXED_SCRAPED_AT],
     ],
   )
+})
+
+test('Havas India enriches India Workday jobs with public detail-page experience', async () => {
+  const havasIndia = await loadModule()
+
+  const detailHtmlByUrl = {
+    'https://wd3.myworkdaysite.com/recruiting/havas/GroupExternalCareerSite/job/Chennai/Digital-Developer_JR0097642-1': `
+      <html>
+        <body>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>Required Skills & Qualifications</p>
+              <p>3-5 years of experience in digital production, banner development, and email development.</p>
+            </div>
+          </section>
+        </body>
+      </html>
+    `,
+    'https://wd3.myworkdaysite.com/recruiting/havas/GroupExternalCareerSite/job/Bengaluru/Senior-Data-Analyst---CSA_JR0095516': `
+      <html>
+        <body>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>Qualifications</p>
+              <p>2-5 years of relevant experience in data science or analytics roles.</p>
+            </div>
+          </section>
+        </body>
+      </html>
+    `,
+  }
+
+  const jobs = await havasIndia.createHavasIndiaScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      if (url === havasIndia.CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          html: officialCareersHtml,
+        }
+      }
+
+      if (url === havasIndia.WORKDAY_BOARD_URL) {
+        return {
+          status: 200,
+          url,
+          html: officialWorkdayBoardHtml,
+        }
+      }
+
+      if (detailHtmlByUrl[url]) {
+        return {
+          status: 200,
+          url,
+          html: detailHtmlByUrl[url],
+        }
+      }
+
+      throw new Error(`Unexpected Havas India page URL: ${url}`)
+    },
+    fetchJobsPage: async (request) => (
+      request.countryFacetId == null ? unfilteredJobsPayload : filteredIndiaJobsPayload
+    ),
+  })
+
+  const digitalDeveloper = jobs.find((job) => job.requisitionId === 'JR0097642')
+  const seniorDataAnalyst = jobs.find((job) => job.requisitionId === 'JR0095516')
+
+  assert.equal(digitalDeveloper?.experienceRequired, '3-5 years')
+  assert.match(digitalDeveloper?.jobDescription || '', /digital production/i)
+  assert.equal(seniorDataAnalyst?.experienceRequired, '2-5 years')
+  assert.match(seniorDataAnalyst?.jobDescription || '', /data science or analytics roles/i)
 })

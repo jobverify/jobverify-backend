@@ -4,10 +4,11 @@ import test from 'node:test'
 const joinUsHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Join Us | brigosha Technologies</title>
+  </head>
   <body>
-    <h1>Unlock Your True Potential</h1>
-    <p>Make Your Dream Come True At brigosha</p>
-    <a href="https://login.brigosha.com/">Explore Jobs</a>
+    <main></main>
   </body>
 </html>
 `
@@ -37,9 +38,9 @@ test('Brigosha Technologies validates the verified join-us page and opaque porta
   assert.equal(brigosha.COMPANY, 'Brigosha Technologies')
   assert.equal(brigosha.CAREERS_PAGE_URL, 'https://www.brigosha.com/join-us/')
   assert.equal(brigosha.OFFICIAL_CAREERS_HANDOFF_URL, 'https://login.brigosha.com/')
-  assert.equal(brigosha.VERIFIED_ON, '2026-07-18')
+  assert.equal(brigosha.VERIFIED_ON, '2026-08-01')
   assert.equal(brigosha.hasOfficialCareersSignal(joinUsHtml), true)
-  assert.equal(brigosha.extractOfficialPortalHandoffUrl(joinUsHtml), 'https://login.brigosha.com/')
+  assert.equal(brigosha.extractOfficialPortalHandoffUrl(joinUsHtml), null)
   assert.equal(brigosha.matchesVerifiedOpaquePortalState({ status: 200, url: 'https://login.brigosha.com/', html: portalHtml }), true)
 })
 

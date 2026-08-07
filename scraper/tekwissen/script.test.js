@@ -52,6 +52,21 @@ const indiaCareersHtml = `
   </html>
 `
 
+const indiaCareersHtmlWithEscapedWidgetConfig = `
+  <html>
+    <head>
+      <title>PAN INDIA - TekWissen.com</title>
+    </head>
+    <body>
+      <nav>Home > Careers > PAN INDIA</nav>
+      <h1>Apply for Future Roles at TekWissen</h1>
+      <script>
+        window.__next_f.push([1,"{\\"apiKey\\":\\"abc123\\",\\"careerPortalId\\":\\"portal456\\"}"])
+      </script>
+    </body>
+  </html>
+`
+
 const widgetHtml = `
   <html>
     <head>
@@ -88,6 +103,10 @@ test('TekWissen scraper validates the official careers landing flow and CEIPAL w
   assert.equal(tekwissen.hasCareersLandingSignal(careersLandingHtml), true)
   assert.equal(tekwissen.hasIndiaCareersSignal(indiaCareersHtml), true)
   assert.deepEqual(tekwissen.extractWidgetConfig(indiaCareersHtml), {
+    apiKey: 'abc123',
+    careerPortalId: 'portal456',
+  })
+  assert.deepEqual(tekwissen.extractWidgetConfig(indiaCareersHtmlWithEscapedWidgetConfig), {
     apiKey: 'abc123',
     careerPortalId: 'portal456',
   })

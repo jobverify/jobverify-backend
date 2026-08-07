@@ -56,10 +56,10 @@ test('Moonfrog Labs local catalog captures the verified first-party no-openings 
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.match(provider.dryRunFile, /moonfroglabs[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/moonfroglabs\.com\/careers\//i)
   assert.match(
     provider.verifiedSurfaceSummary,

@@ -63,8 +63,42 @@ const toAbsoluteUrl = (value) => {
   }
 }
 
-export const extractJobCards = (html = '') => {
-  const rawHtml = String(html ?? '')
+const buildCard = ({
+  title,
+  department,
+  openings,
+  location,
+  experience,
+  jobCode,
+  detailUrl,
+}) => {
+  if (!title || !department || !jobCode || !detailUrl) return null
+
+  const normalizedLocation = ensureIndiaLocation(location)
+  return {
+    title,
+    department,
+    openings,
+    location: normalizedLocation,
+    city: normalizeWhitespace(normalizedLocation.split(',')[0]),
+    experience,
+    jobCode,
+    detailUrl,
+  }
+}
+
+const extractLabeledValue = (html = '', label) =>
+  normalizeWhitespace(
+    String(html ?? '').match(
+      new RegExp(
+        `<p[^>]*>\\s*${label}:\\s*<\\/p>[\\s\\S]*?<div[^>]*class=["'][^"']*job-value[^"']*["'][^>]*>\\s*<p[^>]*>([\\s\\S]*?)<\\/p>`,
+        'i',
+      ),
+    )?.[1],
+  )
+  || normalizeWhitespace(String(html ?? '').match(new RegExp(`${label}:\\s*([^<\\n\\r]+)`, 'i'))?.[1])
+
+const extractLegacyJobCards = (rawHtml = '') => {
   const sectionPattern = /<section[^>]*>[\s\S]*?<h3[^>]*>([\s\S]*?)<\/h3>([\s\S]*?)<\/section>/gi
   const cards = []
 
@@ -74,29 +108,73 @@ export const extractJobCards = (html = '') => {
 
     for (const articleMatch of sectionHtml.matchAll(/<article[^>]*>([\s\S]*?)<\/article>/gi)) {
       const articleHtml = articleMatch[1]
-      const title = normalizeWhitespace(articleHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i)?.[1])
-      const openings = normalizeWhitespace(articleHtml.match(/Openings\s*([0-9]+)/i)?.[1])
-      const location = ensureIndiaLocation(articleHtml.match(/Location:\s*([^<\n\r]+)/i)?.[1])
-      const experience = normalizeWhitespace(articleHtml.match(/Experience:\s*([^<\n\r]+)/i)?.[1])
-      const jobCode = normalizeWhitespace(articleHtml.match(/Jobcode:\s*([^<\n\r]+)/i)?.[1])
-      const detailUrl = toAbsoluteUrl(articleHtml.match(/href=["']([^"']+)["']/i)?.[1])
-
-      if (!title || !department || !jobCode || !detailUrl) continue
-
-      cards.push({
-        title,
+      const card = buildCard({
+        title: normalizeWhitespace(articleHtml.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i)?.[1]),
         department,
-        openings,
-        location,
-        city: normalizeWhitespace(location.split(',')[0]),
-        experience,
-        jobCode,
-        detailUrl,
+        openings: normalizeWhitespace(articleHtml.match(/Openings\s*([0-9]+)/i)?.[1]),
+        location: articleHtml.match(/Location:\s*([^<\n\r]+)/i)?.[1],
+        experience: normalizeWhitespace(articleHtml.match(/Experience:\s*([^<\n\r]+)/i)?.[1]),
+        jobCode: normalizeWhitespace(articleHtml.match(/Jobcode:\s*([^<\n\r]+)/i)?.[1]),
+        detailUrl: toAbsoluteUrl(articleHtml.match(/href=["']([^"']+)["']/i)?.[1]),
       })
+
+      if (card) cards.push(card)
     }
   }
 
   return cards
+}
+
+const extractAccordionJobCards = (rawHtml = '') => {
+  const sections = String(rawHtml ?? '')
+    .split(/<div[^>]*class=["'][^"']*accordion-item[^"']*["'][^>]*>/i)
+    .slice(1)
+  const cards = []
+
+  for (const section of sections) {
+    const department = normalizeWhitespace(section.match(/<button[^>]*>([\s\S]*?)<\/button>/i)?.[1])
+    if (!department) continue
+
+    const jobSegments = section
+      .split(/<div[^>]*class=["'][^"']*job-item[^"']*["'][^>]*>/i)
+      .slice(1)
+
+    for (const jobSegment of jobSegments) {
+      const card = buildCard({
+        title: normalizeWhitespace(jobSegment.match(/<h[34][^>]*>([\s\S]*?)<\/h[34]>/i)?.[1]),
+        department,
+        openings:
+          normalizeWhitespace(jobSegment.match(/<span[^>]*>\s*Openings\s*<\/span>\s*([0-9]+)/i)?.[1])
+          || normalizeWhitespace(jobSegment.match(/Openings\s*([0-9]+)/i)?.[1]),
+        location: extractLabeledValue(jobSegment, 'Location'),
+        experience: extractLabeledValue(jobSegment, 'Experience'),
+        jobCode: extractLabeledValue(jobSegment, 'Jobcode'),
+        detailUrl: toAbsoluteUrl(jobSegment.match(/href=["']([^"']+)["'][^>]*>\s*More Details/i)?.[1]),
+      })
+
+      if (card) cards.push(card)
+    }
+  }
+
+  return cards
+}
+
+export const extractJobCards = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const cards = [
+    ...extractLegacyJobCards(rawHtml),
+    ...extractAccordionJobCards(rawHtml),
+  ]
+
+  return cards.filter((card, index, collection) =>
+    collection.findIndex((candidate) =>
+      candidate.jobCode === card.jobCode
+      || (
+        candidate.title === card.title
+        && candidate.department === card.department
+        && candidate.detailUrl === card.detailUrl
+      )
+    ) === index)
 }
 
 export const createAressSoftwareAndEducationTechnologiesScraper = () => ({

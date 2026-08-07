@@ -16,6 +16,15 @@ export const CONTACT_URL = 'https://www.workcohol.com/page-contact'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const BLOCKED_TLS_PATTERNS = [
+  /\bcertificate has expired\b/i,
+  /\bcert_has_expired\b/i,
+  /\berr_cert_date_invalid\b/i,
+  /\berr_cert_common_name_invalid\b/i,
+  /\berr_cert_authority_invalid\b/i,
+  /hostname\/ip does not match certificate's altnames/i,
+]
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -53,6 +62,24 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const collectErrorMessages = (error) => {
+  const messages = []
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    messages.push(String(current?.message ?? current ?? ''))
+    current = current?.cause
+  }
+
+  return messages.filter(Boolean)
+}
+
+export const hasBlockedTlsFailure = (error) =>
+  collectErrorMessages(error)
+    .some((message) => BLOCKED_TLS_PATTERNS.some((pattern) => pattern.test(message)))
 
 const extractFirst = (pattern, value) => {
   const match = pattern.exec(String(value ?? ''))
@@ -167,22 +194,50 @@ const extractJobDetail = (html, { detailUrl, location }) => {
 
 export const createWorkcoholScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    const fetchVerifiedText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (hasBlockedTlsFailure(error)) {
+          return null
+        }
+
+        throw error
+      }
+    }
+
+    const homepageHtml = await fetchVerifiedText(HOMEPAGE_URL)
+    if (homepageHtml == null) {
+      return []
+    }
+
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Workcohol homepage no longer matches the verified official site')
     }
 
-    const aboutHtml = await fetchText(ABOUT_URL)
+    const aboutHtml = await fetchVerifiedText(ABOUT_URL)
+    if (aboutHtml == null) {
+      return []
+    }
+
     if (!hasOfficialAboutSignal(aboutHtml)) {
       throw new Error('Workcohol about page no longer matches the verified official site')
     }
 
-    const contactHtml = await fetchText(CONTACT_URL)
+    const contactHtml = await fetchVerifiedText(CONTACT_URL)
+    if (contactHtml == null) {
+      return []
+    }
+
     if (!hasOfficialContactSignal(contactHtml)) {
       throw new Error('Workcohol contact page no longer matches the verified official site')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchVerifiedText(CAREERS_URL)
+    if (careersHtml == null) {
+      return []
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Workcohol careers page no longer matches the verified official surface')
     }
@@ -196,7 +251,11 @@ export const createWorkcoholScraper = () => ({
         continue
       }
 
-      const detailHtml = await fetchText(opening.detailUrl)
+      const detailHtml = await fetchVerifiedText(opening.detailUrl)
+      if (detailHtml == null) {
+        return []
+      }
+
       const detail = extractJobDetail(detailHtml, {
         detailUrl: opening.detailUrl,
         location: normalizedLocation,

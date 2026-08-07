@@ -31,7 +31,6 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bopen positions?\b/i,
   /\bjob openings?\b/i,
   /\bsearch jobs\b/i,
-  /\bapply now\b/i,
   /\bjob description\b/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
@@ -138,13 +137,11 @@ export const hasPublicJobsSignal = (html = '') =>
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const description = extractMetaContent(rawHtml, { name: 'description' })
 
   return extractTitle(rawHtml) === 'Trade Finance Simplified | Drip Capital'
     && sameUrl(extractCanonicalUrl(rawHtml), HOMEPAGE_URL)
-    && sameUrl(extractMetaContent(rawHtml, { property: 'og:url' }), HOMEPAGE_URL)
-    && normalized.includes('Trade Finance Simplified')
-    && normalized.includes('Careers')
+    && description?.startsWith('Drip Capital is a Trade Finance company')
 }
 
 export const extractPayloadUrl = (html = '') => {
@@ -165,11 +162,11 @@ export const hasCareersShellSignal = (html = '', {
 } = {}) => {
   const rawHtml = String(html ?? '')
 
-  if (!sameUrl(extractCanonicalUrl(rawHtml), routeUrl)) return false
+  const canonicalUrl = extractCanonicalUrl(rawHtml)
+  if (canonicalUrl && !sameUrl(canonicalUrl, routeUrl)) return false
   if (extractPayloadUrl(rawHtml) !== payloadUrl) return false
   if (!hasStatePreload(rawHtml)) return false
   if (!/id=["']__nuxt["']/i.test(rawHtml)) return false
-  if (!/Loading\.\.\.|page-loader/i.test(rawHtml)) return false
   if (hasPublicJobsSignal(rawHtml)) return false
 
   if (requireTitle && extractTitle(rawHtml) !== expectedTitle) return false

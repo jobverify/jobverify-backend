@@ -81,11 +81,14 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const links = Array.from(page.matchAll(/href=["']([^"']+)["']/gi))
+    .map((match) => normalizeComparableUrl(new URL(match[1], CAREERS_URL).toString()))
+    .filter(Boolean)
 
   return /<title>\s*Careers at Ginesys/i.test(page)
     && normalized.includes('Believe in Yourself. We believe in you')
     && normalized.includes('Open Positions')
-    && new RegExp(`href=["']${OPEN_POSITIONS_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i').test(page)
+    && links.includes(normalizeComparableUrl(OPEN_POSITIONS_URL))
 }
 
 export const extractCareerConfig = (html = '') => {
@@ -134,7 +137,10 @@ export const hasExpectedPortalIdentity = (payload) => {
   return normalizedName === EXPECTED_PORTAL_NAME
     && normalizedShortName === EXPECTED_PORTAL_NAME
     && normalizedPortalDomain === EXPECTED_PORTAL_DOMAIN
-    && normalizedCompanyWebsite === normalizeComparableUrl(EXPECTED_COMPANY_WEBSITE)
+    && (
+      normalizedCompanyWebsite == null
+      || normalizedCompanyWebsite === normalizeComparableUrl(EXPECTED_COMPANY_WEBSITE)
+    )
 }
 
 const isIndiaLocation = (location = {}) => String(location.countryCode ?? '').toUpperCase() === 'IN'

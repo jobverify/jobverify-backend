@@ -1,0 +1,1153 @@
+[
+  {
+    "source": "neuleap",
+    "title": "Junior Data Engineer / Associate Data Engineer",
+    "company": "NeuLeap",
+    "department": "Engineering",
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "0 - 2 Years Experience",
+    "minimumQualification": "Bachelor’s degree in Computer Science, Engineering, or related field. Proficiency in ANSI SQL and Spark SQL. Basic knowledge of Python and cloud data services (AWS Glue, Azure Data Factory, Databricks). Familiarity with Git and CI/CD practices. Awareness of how Generative AI can augment data engineering workflows, such as generating test data, documentation, or pipeline debugging assistance.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AWS Lambda",
+      "AWS Glue",
+      "Amazon Redshift",
+      "Amazon EMR",
+      "Apache Airflow"
+    ],
+    "jobDescription": "ROLE:\nAs a Junior Data Engineer, you will work closely with senior team members to design, build, and maintain modern data pipelines. This is an entry-level role ideal for candidates who are enthusiastic about learning cloud-based data engineering practices and applying them to real-world analytics use cases.\n\nRESPONSIBILITIES:\n- Support the design and development of scalable data ingestion and transformation pipelines on AWS or Azure.\n- Work with Spark (Py Spark, Spark SQL) to process structured and unstructured data.\n- Ensure data quality and integrity through validation, monitoring, and troubleshooting.\n- Learn and apply best practices in data modeling under guidance.\n- Gain hands-on exposure to workflow orchestration (Airflow, AWS Step Functions, or equivalent).\n- Explore and apply Gen AI tools for tasks like automated documentation, metadata enrichment, or pipeline optimization.\n\nMINIMUM\n\nQUALIFICATIONS:\n- Bachelor’s degree in Computer Science, Engineering, or related field.\n- Proficiency in ANSI SQL and Spark SQL.\n- Basic knowledge of Python and cloud data services (AWS Glue, Azure Data Factory, Databricks).\n- Familiarity with Git and CI/CD practices.\n- Awareness of how Generative AI can augment data engineering workflows, such as generating test data, documentation, or pipeline debugging assistance. Required Skills:\n- AWS Lambda\n- AWS Glue\n- Amazon Redshift\n- Amazon EMR\n- Apache Airflow What We Offer:\n- Opportunity to work with a modern data stack in a cloud-native environment.\n- Mentorship and learning opportunities to grow into a senior engineering role.\n- A collaborative team culture focused on innovation and continuous improvement. Department: Engineering Location: Pune Employment Type: Full-Time Experience: 0\n- 2 Years Experience",
+    "jobId": "neuleap-junior-data-engineer-associate-data-engineer-pune",
+    "requisitionId": "neuleap-junior-data-engineer-associate-data-engineer-pune",
+    "scrapedAt": "2026-08-01T15:05:28.181Z",
+    "originalTitle": "Junior Data Engineer / Associate Data Engineer",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.181Z",
+    "postingDate": "2026-08-01T15:05:28.181Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.181Z",
+    "skillIds": [
+      "aws",
+      "airflow",
+      "sql",
+      "spark",
+      "python",
+      "azure",
+      "databricks",
+      "generative-ai"
+    ],
+    "requiredSkillIds": [
+      "aws",
+      "airflow",
+      "sql",
+      "spark",
+      "python",
+      "azure",
+      "databricks",
+      "generative-ai"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "airflow",
+        "canonicalName": "Airflow",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Apache Airflow"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Spark"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Generative AI"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0 - 2 Years Experience Bachelor’s degree in Computer Science, Engineering, or related field. Proficiency in ANSI SQL and Spark SQL. Basic knowledge of Python and cloud data services (AWS Glue, Azure Data Factory, Databricks). Familiarity with Git and CI/CD practices. Awareness of how Generative AI can augment data engineering workflows, such as generating test data, documentation, or pipeline debugging assistance.",
+      "minimumYears": 0,
+      "maximumYears": 2,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0 - 2 Years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1,
+      2
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:17.998Z"
+  },
+  {
+    "source": "neuleap",
+    "title": "Data Engineer",
+    "company": "NeuLeap",
+    "department": "Engineering",
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "2 - 4 Years Experience",
+    "minimumQualification": "Bachelor’s or Master’s degree in Computer Science, Engineering, or related discipline. Proven hands-on experience with Spark, PySpark, and SQL performance tuning. Solid understanding of AWS/Azure data ecosystems (S3, Redshift, Glue, Synapse, Databricks). Experience with workflow orchestration (Step Function, Azure Data Flow, or similar). Familiarity with CI/CD pipelines and containerization (Docker, Kubernetes). Demonstrated awareness of how GenAI can be integrated into data engineering, such as automating pipeline monitoring or accelerating documentation.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AWS Lambda",
+      "AWS Glue",
+      "Amazon Redshift",
+      "Amazon EMR",
+      "Apache Airflow"
+    ],
+    "jobDescription": "ROLE:\nAs a Data Engineer, you will design and implement efficient, scalable, and reliable data pipelines. You will collaborate with analysts, scientists, and business teams to ensure that data is transformed into a trusted asset for decision-making. This role requires technical expertise, problem-solving skills, and a forward-looking mindset to leverage both traditional and emerging tools, including Generative AI.\n\nRESPONSIBILITIES:\n- Design, build, and maintain data pipelines and ETL workflows in AWS or Azure environments.\n- Work extensively with Spark and Py Spark, focusing on performance tuning and large-scale processing.\n- Contribute to data modeling efforts, ensuring scalability and performance.\n- Implement data governance and quality frameworks.\n- Use Airflow or equivalent to orchestrate complex workflows.\n- Apply advanced SQL techniques for data extraction and transformation.\n- Experiment with Gen AI-based solutions for improving query optimization, automated lineage tracking, and metadata generation.\n\nMINIMUM\n\nQUALIFICATIONS:\n- Bachelor’s or Master’s degree in Computer Science, Engineering, or related discipline.\n- Proven hands-on experience with Spark, Py Spark, and SQL performance tuning.\n- Solid understanding of AWS/Azure data ecosystems (S3, Redshift, Glue, Synapse, Databricks).\n- Experience with workflow orchestration (Step Function, Azure Data Flow, or similar).\n- Familiarity with CI/CD pipelines and containerization (Docker, Kubernetes).\n- Demonstrated awareness of how Gen AI can be integrated into data engineering, such as automating pipeline monitoring or accelerating documentation. Required Skills:\n- AWS Lambda\n- AWS Glue\n- Amazon Redshift\n- Amazon EMR\n- Apache Airflow What We Offer:\n- Opportunity to work with a modern data stack in a cloud-native environment.\n- Mentorship and learning opportunities to grow into a senior engineering role.\n- A collaborative team culture focused on innovation and continuous improvement. Department: Engineering Location: Pune Employment Type: Full-Time Experience: 2\n- 4 Years Experience",
+    "jobId": "neuleap-data-engineer-pune",
+    "requisitionId": "neuleap-data-engineer-pune",
+    "scrapedAt": "2026-08-01T15:05:28.184Z",
+    "originalTitle": "Data Engineer",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.184Z",
+    "postingDate": "2026-08-01T15:05:28.184Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.184Z",
+    "skillIds": [
+      "aws",
+      "airflow",
+      "sql",
+      "azure",
+      "databricks",
+      "docker",
+      "kubernetes",
+      "generative-ai"
+    ],
+    "requiredSkillIds": [
+      "aws",
+      "airflow",
+      "sql",
+      "azure",
+      "databricks",
+      "docker",
+      "kubernetes",
+      "generative-ai"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "airflow",
+        "canonicalName": "Airflow",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Apache Airflow"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "GenAI"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2 - 4 Years Experience Bachelor’s or Master’s degree in Computer Science, Engineering, or related discipline. Proven hands-on experience with Spark, PySpark, and SQL performance tuning. Solid understanding of AWS/Azure data ecosystems (S3, Redshift, Glue, Synapse, Databricks). Experience with workflow orchestration (Step Function, Azure Data Flow, or similar). Familiarity with CI/CD pipelines and containerization (Docker, Kubernetes). Demonstrated awareness of how GenAI can be integrated into data engineering, such as automating pipeline monitoring or accelerating documentation.",
+      "minimumYears": 2,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2 - 4 Years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:18.000Z"
+  },
+  {
+    "source": "neuleap",
+    "title": "Senior Data Engineer",
+    "company": "NeuLeap",
+    "department": "Engineering",
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "4 - 6 Years Experience",
+    "minimumQualification": "Bachelor’s or Master’s degree in Computer Science, Engineering, or related field. 5+ years of experience in data engineering roles with cloud-based architectures. Deep expertise in Spark, PySpark, and large-scale data pipeline optimization. Strong knowledge of data modeling, dimensional modeling, and data warehouse principles. Hands-on experience with AWS Glue, Redshift, EMR, Azure Synapse, and Databricks. Experience mentoring engineers and leading data engineering projects. Awareness and practical application of Generative AI in data engineering, leveraging AI agents for automation, monitoring, and knowledge retrieval.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AWS Lambda",
+      "AWS Glue",
+      "Amazon Redshift",
+      "Amazon EMR",
+      "Apache Airflow"
+    ],
+    "jobDescription": "ROLE:\nAs a Senior Data Engineer, you will take ownership of complex data engineering projects, mentor junior engineers, and play a key role in designing enterprise-scale data architectures. You will work across teams to deliver high-quality, high-performance data platforms that drive analytics and innovation. Additionally, you will guide the adoption of Generative AI techniques to improve efficiency and scalability.\n\nRESPONSIBILITIES:\n- Lead the design and optimization of data pipelines, ETL processes, and data architectures on cloud platforms (AWS or Azure).\n- Architect and implement data models to support analytics, machine learning, and reporting needs.\n- Drive Spark and Py Spark optimizations for large-scale data processing.\n- Ensure data security, compliance, and governance best practices.\n- Mentor and guide junior engineers, conducting code reviews and providing technical leadership.\n- Integrate Airflow or enterprise orchestration tools into end-to-end workflows.\n- Champion the use of Gen AI for data engineering, such as RAG-based knowledge search for pipeline debugging, AI-powered test data generation, or auto-scaling pipeline recommendations.\n\nMINIMUM\n\nQUALIFICATIONS:\n- Bachelor’s or Master’s degree in Computer Science, Engineering, or related field.\n- 5+ years of experience in data engineering roles with cloud-based architectures.\n- Deep expertise in Spark, Py Spark, and large-scale data pipeline optimization.\n- Strong knowledge of data modeling, dimensional modeling, and data warehouse principles.\n- Hands-on experience with AWS Glue, Redshift, EMR, Azure Synapse, and Databricks.\n- Experience mentoring engineers and leading data engineering projects.\n- Awareness and practical application of Generative AI in data engineering, leveraging AI agents for automation, monitoring, and knowledge retrieval. Required Skills:\n- AWS Lambda\n- AWS Glue\n- Amazon Redshift\n- Amazon EMR\n- Apache Airflow What We Offer:\n- Challenging projects with cutting-edge technologies.\n- Mentorship and career growth opportunities.\n- Hybrid work flexibility. Department: Engineering Location: Pune Employment Type: Full-Time Experience: 4\n- 6 Years Experience",
+    "jobId": "neuleap-senior-data-engineer-pune",
+    "requisitionId": "neuleap-senior-data-engineer-pune",
+    "scrapedAt": "2026-08-01T15:05:28.186Z",
+    "originalTitle": "Senior Data Engineer",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.186Z",
+    "postingDate": "2026-08-01T15:05:28.186Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.186Z",
+    "skillIds": [
+      "aws",
+      "airflow",
+      "azure",
+      "databricks",
+      "generative-ai",
+      "machine-learning"
+    ],
+    "requiredSkillIds": [
+      "aws",
+      "airflow",
+      "azure",
+      "databricks",
+      "generative-ai"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "airflow",
+        "canonicalName": "Airflow",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Apache Airflow"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Generative AI"
+      },
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "machine learning"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 - 6 Years Experience Bachelor’s or Master’s degree in Computer Science, Engineering, or related field. 5+ years of experience in data engineering roles with cloud-based architectures. Deep expertise in Spark, PySpark, and large-scale data pipeline optimization. Strong knowledge of data modeling, dimensional modeling, and data warehouse principles. Hands-on experience with AWS Glue, Redshift, EMR, Azure Synapse, and Databricks. Experience mentoring engineers and leading data engineering projects. Awareness and practical application of Generative AI in data engineering, leveraging AI agents for automation, monitoring, and knowledge retrieval.",
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 - 6 Years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:18.001Z"
+  },
+  {
+    "source": "neuleap",
+    "title": "Junior Generative AI Engineer",
+    "company": "NeuLeap",
+    "department": "Engineering",
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "0 - 2 Years Experience",
+    "minimumQualification": "Bachelor’s degree in Computer Science, Data Science, AI/ML, or related field 0–2 years of experience (internships/projects count) Python proficiency; knowledge of LangChain/Langgraph or Hugging Face a plus Good understanding of NLP concepts, Deep Learning concepts, Transformers, Encoder-Decoder architectures Familiarity with cloud platforms (AWS, Azure, or GCP) preferred Strong problem-solving and learning mindset",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Python",
+      "LLMs",
+      "Machine Learning",
+      "GenAI Frameworks",
+      "API Development"
+    ],
+    "jobDescription": "ROLE:\nWe are looking for a Junior Generative AI Engineer to join our AI & Data Science team. This role is ideal for early-career professionals eager to work with cutting-edge large language models (LLMs) and Gen AI frameworks. You will contribute to building, testing, and deploying AI-powered applications under the guidance of senior team members.\n\nRESPONSIBILITIES:\n- Support the development of Gen AI solutions such as chatbots, summarizers, and content generation tools\n- Assist in prompt engineering and evaluation for LLMs\n- Help prepare and process structured/unstructured data for model consumption\n- Work with vector databases (e.g., Pinecone, FAISS, Weaviate) for semantic search and RAG pipelines\n- Integrate AI APIs (Open AI, Anthropic, Azure Open AI, Hugging Face) into applications\n- Document processes, prompts, and workflows\n\nMINIMUM\n\nQUALIFICATIONS:\n- Bachelor’s degree in Computer Science, Data Science, AI/ML, or related field\n- 0–2 years of experience (internships/projects count)\n- Python proficiency; knowledge of Lang Chain/Langgraph or Hugging Face a plus\n- Good understanding of NLP concepts, Deep Learning concepts, Transformers, Encoder-Decoder architectures\n- Familiarity with cloud platforms (AWS, Azure, or GCP) preferred\n- Strong problem-solving and learning mindset Required Skills:\n- Python\n- LLMs\n- Machine Learning\n- Gen AI Frameworks\n- API Development What We Offer:\n- Opportunity to work with a modern data stack in a cloud-native environment.\n- Mentorship and learning opportunities to grow into a senior engineering role.\n- A collaborative team culture focused on innovation and continuous improvement. Department: Engineering Location: Pune Employment Type: Full-Time Experience: 0\n- 2 Years Experience",
+    "jobId": "neuleap-junior-generative-ai-engineer-pune",
+    "requisitionId": "neuleap-junior-generative-ai-engineer-pune",
+    "scrapedAt": "2026-08-01T15:05:28.188Z",
+    "originalTitle": "Junior Generative AI Engineer",
+    "normalizedTitle": "Junior Generative AI Engineer",
+    "jobCategory": "Junior Generative AI Engineer",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.188Z",
+    "postingDate": "2026-08-01T15:05:28.188Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.188Z",
+    "skillIds": [
+      "python",
+      "machine-learning",
+      "generative-ai",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "requiredSkillIds": [
+      "python",
+      "machine-learning",
+      "generative-ai",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Machine Learning"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "GenAI"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "GCP"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0 - 2 Years Experience Bachelor’s degree in Computer Science, Data Science, AI/ML, or related field 0-2 years of experience (internships/projects count) Python proficiency; knowledge of LangChain/Langgraph or Hugging Face a plus Good understanding of NLP concepts, Deep Learning concepts, Transformers, Encoder-Decoder architectures Familiarity with cloud platforms (AWS, Azure, or GCP) preferred Strong problem-solving and learning mindset",
+      "minimumYears": 0,
+      "maximumYears": 2,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0 - 2 Years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1,
+      2
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:18.002Z"
+  },
+  {
+    "source": "neuleap",
+    "title": "Generative AI Engineer",
+    "company": "NeuLeap",
+    "department": "Engineering",
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "2 - 4 Years Experience",
+    "minimumQualification": "Bachelor’s or Master’s degree in Computer Science, AI/ML, or related field 2–5 years of software engineering or AI development experience Hands-on experience with GenAI frameworks (LangChain, Hugging Face, LlamaIndex) Strong Python skills and experience with REST APIs Knowledge of containerization (Docker, Kubernetes) and CI/CD workflows Understanding of AI ethics, model evaluation, and responsible AI practices",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Python",
+      "LangChain",
+      "OpenAI",
+      "Vector Databases",
+      "Docker"
+    ],
+    "jobDescription": "ROLE:\nAs a Generative AI Engineer, you will be responsible for designing, developing, and deploying robust AI solutions using state-of-the-art LLMs and Gen AI architectures. You will work closely with data scientists, software engineers, and product teams to deliver enterprise-ready AI applications.\n\nRESPONSIBILITIES:\n- Design and implement Retrieval-Augmented Generation (RAG) systems.\n- Develop and optimize prompts for LLMs (few-shot, zero-shot, chain-of-thought)\n- Fine-tune open-source LLMs using domain-specific data\n- Build multi-agent AI workflows using Lang Chain/Langgraph, Llama Index etc.\n- Manage embedding generation and vector database integrations.\n- Deploy Gen AI applications in production using cloud infrastructure (AWS/Azure/GCP).\n- Collaborate with cross-functional teams on solution architecture and deployment pipelines.\n\nMINIMUM\n\nQUALIFICATIONS:\n- Bachelor’s or Master’s degree in Computer Science, AI/ML, or related field\n- 2–5 years of software engineering or AI development experience\n- Hands-on experience with Gen AI frameworks (Lang Chain, Hugging Face, Llama Index)\n- Strong Python skills and experience with REST APIs\n- Knowledge of containerization (Docker, Kubernetes) and CI/CD workflows\n- Understanding of AI ethics, model evaluation, and responsible AI practices Required Skills:\n- Python\n- Lang Chain\n- Open AI\n- Vector Databases\n- Docker What We Offer:\n- Opportunity to work with a modern data stack in a cloud-native environment.\n- Mentorship and learning opportunities to grow into a senior engineering role.\n- A collaborative team culture focused on innovation and continuous improvement. Department: Engineering Location: Pune Employment Type: Full-Time Experience: 2\n- 4 Years Experience",
+    "jobId": "neuleap-generative-ai-engineer-pune",
+    "requisitionId": "neuleap-generative-ai-engineer-pune",
+    "scrapedAt": "2026-08-01T15:05:28.189Z",
+    "originalTitle": "Generative AI Engineer",
+    "normalizedTitle": "Generative AI Engineer",
+    "jobCategory": "Generative AI Engineer",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.189Z",
+    "postingDate": "2026-08-01T15:05:28.189Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.189Z",
+    "skillIds": [
+      "python",
+      "docker",
+      "generative-ai",
+      "kubernetes",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "requiredSkillIds": [
+      "python",
+      "docker",
+      "generative-ai",
+      "kubernetes"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "GenAI"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "rawText": "2 - 4 Years Experience Bachelor’s or Master’s degree in Computer Science, AI/ML, or related field 2-5 years of software engineering or AI development experience Hands-on experience with GenAI frameworks (LangChain, Hugging Face, LlamaIndex) Strong Python skills and experience with REST APIs Knowledge of containerization (Docker, Kubernetes) and CI/CD workflows Understanding of AI ethics, model evaluation, and responsible AI practices",
+      "minimumYears": 2,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2 - 4 Years",
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4
+    ],
+    "seniority": "Associate",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:18.004Z"
+  },
+  {
+    "source": "neuleap",
+    "title": "Senior Generative AI Engineer",
+    "company": "NeuLeap",
+    "department": "Engineering",
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "4 - 6 Years Experience",
+    "minimumQualification": "Bachelor’s or Master’s degree in Computer Science, AI/ML, or related discipline. 5+ years of AI/ML or software engineering experience, with 2+ years in GenAI/LLM-based projects. Proven track record of deploying GenAI solutions in production environments. Expertise in GenAI frameworks, vector databases, and API integrations. Strong cloud expertise (AWS Sagemaker, Azure AI, GCP Vertex AI). Leadership experience in guiding teams and managing technical delivery.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "AI Architecture",
+      "LLMs",
+      "Microservices",
+      "Team Leadership",
+      "Cloud Platforms"
+    ],
+    "jobDescription": "ROLE:\nWe are seeking a Senior Generative AI Engineer to lead the design and deployment of advanced AI solutions at scale. In this role, you will architect Gen AI platforms, mentor junior engineers, and drive innovation in LLM applications for enterprise use cases.\n\nRESPONSIBILITIES:\n- Lead architecture and implementation of enterprise-scale Gen AI solutions.\n- Design advanced multi-agent systems and domain-specific fine-tuning strategies.\n- Oversee RAG pipelines with high performance and low latency requirements.\n- Evaluate and select optimal LLM models, APIs, and infrastructure for projects.\n- Collaborate with business stakeholders to translate requirements into technical solutions.\n- Mentor and guide junior/mid-level engineers in best practices for Gen AI development.\n- Ensure compliance with data security, privacy, and AI governance standards.\n\nMINIMUM\n\nQUALIFICATIONS:\n- Bachelor’s or Master’s degree in Computer Science, AI/ML, or related discipline.\n- 5+ years of AI/ML or software engineering experience, with 2+ years in Gen AI/LLM-based projects.\n- Proven track record of deploying Gen AI solutions in production environments.\n- Expertise in Gen AI frameworks, vector databases, and API integrations.\n- Strong cloud expertise (AWS Sagemaker, Azure AI, GCP Vertex AI).\n- Leadership experience in guiding teams and managing technical delivery. Required Skills:\n- AI Architecture\n- LLMs\n- Microservices\n- Team Leadership\n- Cloud Platforms What We Offer:\n- Opportunity to work with a modern data stack in a cloud-native environment.\n- Mentorship and learning opportunities to grow into a senior engineering role.\n- A collaborative team culture focused on innovation and continuous improvement. Department: Engineering Location: Pune Employment Type: Full-Time Experience: 4\n- 6 Years Experience",
+    "jobId": "neuleap-senior-generative-ai-engineer-pune",
+    "requisitionId": "neuleap-senior-generative-ai-engineer-pune",
+    "scrapedAt": "2026-08-01T15:05:28.191Z",
+    "originalTitle": "Senior Generative AI Engineer",
+    "normalizedTitle": "Senior Generative AI Engineer",
+    "jobCategory": "Senior Generative AI Engineer",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.191Z",
+    "postingDate": "2026-08-01T15:05:28.191Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.191Z",
+    "skillIds": [
+      "generative-ai",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "requiredSkillIds": [
+      "generative-ai",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "GenAI"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "GCP"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4 - 6 Years Experience Bachelor’s or Master’s degree in Computer Science, AI/ML, or related discipline. 5+ years of AI/ML or software engineering experience, with 2+ years in GenAI/LLM-based projects. Proven track record of deploying GenAI solutions in production environments. Expertise in GenAI frameworks, vector databases, and API integrations. Strong cloud expertise (AWS Sagemaker, Azure AI, GCP Vertex AI). Leadership experience in guiding teams and managing technical delivery.",
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 - 6 Years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Data Science & AI"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:18.005Z"
+  },
+  {
+    "source": "neuleap",
+    "title": "Chief Business Officer",
+    "company": "NeuLeap",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "12 - 18+ Years Experience",
+    "minimumQualification": "12–18+ years of progressive experience in business leadership roles, preferably in technology, consulting, or SaaS/AI startups. Proven track record of driving revenue growth, strategic partnerships, and market expansion. Strong understanding of enterprise technology ecosystems (cloud, data engineering, AI/ML, GenAI). Excellent leadership, negotiation, and stakeholder management skills. MBA or equivalent advanced degree preferred.",
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "jobDescription": "ROLE:\nAs the CBO, you will play a pivotal role in shaping the future of a fast-growing technology startup. You will not only define the business trajectory but also influence how cutting-edge technologies like Gen AI and Agentic AI are brought to enterprises worldwide. Business Strategy & Growth:\n- Define and execute the company’s business and go-to-market strategies in alignment with organizational vision and objectives.\n- Identify new markets, customer segments, and revenue opportunities, especially in emerging areas like Data Engineering, Gen AI, and Agentic AI solutions.\n- Drive expansion into new geographies and industry verticals. Partnerships & Alliances:\n- Build and manage strategic partnerships and alliances with technology vendors (AWS, Azure, Databricks, etc.), consulting firms, and enterprise clients.\n- Explore collaborations that accelerate the company’s growth and strengthen its product/service ecosystem. Sales & Revenue Leadership:\n- Lead sales strategy, ensuring the achievement of revenue targets and profitability goals.\n- Design and implement scalable sales frameworks to grow enterprise accounts and recurring revenue streams.\n- Oversee key account management and customer success initiatives. Marketing & Positioning:\n- Build a strong brand presence through targeted marketing campaigns, thought leadership, and participation in industry forums.\n- Drive positioning of the company as a trusted leader in Generative AI-powered solutions. Leadership & Execution:\n- Mentor and lead cross-functional teams across sales, partnerships, and marketing.\n- Establish KPIs and operational excellence frameworks to ensure accountability.\n- Work closely with the CEO to align business and technology strategies.\n\nMINIMUM\n\nQUALIFICATIONS:\n- 12–18+ years of progressive experience in business leadership roles, preferably in technology, consulting, or Saa S/AI startups.\n- Proven track record of driving revenue growth, strategic partnerships, and market expansion.\n- Strong understanding of enterprise technology ecosystems (cloud, data engineering, AI/ML, Gen AI).\n- Excellent leadership, negotiation, and stakeholder management skills.\n- MBA or equivalent advanced degree preferred. Location: Pune Employment Type: Full-Time Experience: 12\n- 18+ Years Experience",
+    "jobId": "neuleap-chief-business-officer-pune",
+    "requisitionId": "neuleap-chief-business-officer-pune",
+    "scrapedAt": "2026-08-01T15:05:28.192Z",
+    "originalTitle": "Chief Business Officer",
+    "normalizedTitle": "Chief Business Officer",
+    "jobCategory": "Chief Business Officer",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.192Z",
+    "postingDate": "2026-08-01T15:05:28.192Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.192Z",
+    "skillIds": [
+      "generative-ai",
+      "aws",
+      "azure",
+      "databricks"
+    ],
+    "requiredSkillIds": [
+      "generative-ai"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "minimumQualification",
+        "matchedPhrase": "GenAI"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Databricks"
+      }
+    ],
+    "experienceBucket": "12-plus",
+    "experienceProfile": {
+      "rawText": "12 - 18+ Years Experience 12-18+ years of progressive experience in business leadership roles, preferably in technology, consulting, or SaaS/AI startups. Proven track record of driving revenue growth, strategic partnerships, and market expansion. Strong understanding of enterprise technology ecosystems (cloud, data engineering, AI/ML, GenAI). Excellent leadership, negotiation, and stakeholder management skills. MBA or equivalent advanced degree preferred.",
+      "minimumYears": 18,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "18+ Years",
+      "experienceBucket": "12-plus"
+    },
+    "experienceYears": [
+      15
+    ],
+    "seniority": "Executive",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Data Science & AI"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:18.006Z"
+  },
+  {
+    "source": "neuleap",
+    "title": "Office Administrative & HR Assistant",
+    "company": "NeuLeap",
+    "department": "Operations",
+    "location": "Pune",
+    "city": "Pune",
+    "country": "India",
+    "sourceUrl": "https://neuleap.ai/#careers",
+    "applyUrl": "https://neuleap.ai/#careers",
+    "companyCareerPage": "https://neuleap.ai/#careers",
+    "companyDomain": "neuleap.ai",
+    "atsPlatform": "official-company-careers",
+    "employmentType": "Full-time",
+    "experienceRequired": "1 - 2 Years Experience",
+    "minimumQualification": "Bachelor's degree (mandatory). 1–2 years of experience in an administrative or office support role. Strong organizational and documentation skills. Good communication skills, both written and verbal. Proficiency in MS Office (Word, Excel, Outlook). Ability to handle confidential information responsibly. Proactive with a strong sense of ownership and accountability. People-friendly with a collaborative team mindset. Detail-oriented, process-driven, and comfortable coordinating events across teams. Ability to multitask and manage deadlines effectively.",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "MS Office",
+      "HR Documentation",
+      "Employee Engagement",
+      "Vendor Coordination",
+      "Communication"
+    ],
+    "jobDescription": "ROLE:\nWe're hiring an Office Administrative & HR Assistant to support day-to-day office administration while playing an active role in HR documentation, employee events, and engagement initiatives. This position is ideal for someone who enjoys working with people, stays organized, and wants to be involved in employee engagement and HR coordination. HR Support & Employee Engagement:\n- Assist with onboarding formalities and employee documentation.\n- Maintain and update employee records and HR databases.\n- Support payroll inputs, leave tracking, and attendance records.\n- Help plan and coordinate employee engagement activities and company events.\n- Assist in organizing team-building activities, celebrations, and internal initiatives.\n- Support internal communication related to HR policies and updates.\n- Coordinate interviews and assist with recruitment scheduling. Administrative Support:\n- Manage office documentation and maintain organized filing systems.\n- Handle vendor coordination and basic office procurement.\n- Support day-to-day office operations to ensure smooth functioning.\n- Prepare reports, letters, and internal communications as required.\n- Assist leadership team with scheduling and administrative tasks.\n\nMINIMUM\n\nQUALIFICATIONS:\n- Bachelor's degree (mandatory).\n- 1–2 years of experience in an administrative or office support role.\n- Strong organizational and documentation skills.\n- Good communication skills, both written and verbal.\n- Proficiency in MS Office (Word, Excel, Outlook).\n- Ability to handle confidential information responsibly.\n- Proactive with a strong sense of ownership and accountability.\n- People-friendly with a collaborative team mindset.\n- Detail-oriented, process-driven, and comfortable coordinating events across teams.\n- Ability to multitask and manage deadlines effectively. Required Skills:\n- MS Office\n- HR Documentation\n- Employee Engagement\n- Vendor Coordination\n- Communication What We Offer:\n- Opportunity to grow in HR and people operations.\n- Exposure to a fast-growing AI company.\n- Collaborative and supportive work environment.\n- Hands-on experience in employee engagement and culture-building. Department: Operations Location: Pune Employment Type: Full-Time Experience: 1\n- 2 Years Experience",
+    "jobId": "neuleap-office-administrative-hr-assistant-pune",
+    "requisitionId": "neuleap-office-administrative-hr-assistant-pune",
+    "scrapedAt": "2026-08-01T15:05:28.194Z",
+    "originalTitle": "Office Administrative & HR Assistant",
+    "normalizedTitle": "Office Administrative & HR Assistant",
+    "jobCategory": "Office Administrative & HR Assistant",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Entry Level",
+    "jobType": "Full-time Fresher",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:05:28.194Z",
+    "postingDate": "2026-08-01T15:05:28.194Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-01T15:05:28.194Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "1 - 2 Years Experience Bachelor's degree (mandatory). 1-2 years of experience in an administrative or office support role. Strong organizational and documentation skills. Good communication skills, both written and verbal. Proficiency in MS Office (Word, Excel, Outlook). Ability to handle confidential information responsibly. Proactive with a strong sense of ownership and accountability. People-friendly with a collaborative team mindset. Detail-oriented, process-driven, and comfortable coordinating events across teams. Ability to multitask and manage deadlines effectively.",
+      "minimumYears": 1,
+      "maximumYears": 2,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "1 - 2 Years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      1,
+      2
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Human Resources",
+    "secondaryRoleDomains": [
+      "Finance & Operations"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:18.008Z"
+  }
+]

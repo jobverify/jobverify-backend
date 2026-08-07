@@ -224,6 +224,14 @@ curl.exe -X POST http://localhost:5000/api/auth/logout `
 
 ## Scraper Commands
 
+Remove all dry run jobs.json in all scraper folder:
+
+```powershell
+npm run clean:workspace
+```
+
+
+
 Run all scrapers sequentially and save to MongoDB:
 
 ```powershell
@@ -250,7 +258,7 @@ npm run scrape:parallel:dry
 
 ```powershell
 cd jobverify-backend
-$env:SCRAPER_CONCURRENCY = "10"
+$env:SCRAPER_CONCURRENCY = "5"
 $env:WORKDAY_DETAIL_FETCH_CONCURRENCY = "1"
 $env:NODE_OPTIONS = "--use-system-ca"
 $runStamp = Get-Date -Format "yyyyMMddTHHmmss"

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { inferExperienceFromPublicPageHtml } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -39,6 +40,8 @@ const normalizeWhitespace = (value) => {
 
 const stripTagsToLines = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/\r/g, '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<(br|\/p|\/div|\/li|\/section|\/article|\/main|\/h[1-6]|\/a)\b[^>]*>/gi, '\n')
   .replace(/<(p|div|li|section|article|main|h[1-6]|a)\b[^>]*>/gi, '\n')
   .replace(/<[^>]+>/g, ' ')
@@ -76,13 +79,18 @@ const deriveCity = (location) => {
   return normalizeCity(firstPart || normalized)
 }
 
+const extractDetailUrls = (html) => [...String(html ?? '').matchAll(
+  /data-post-link="([^"]+)"/gi,
+)]
+  .map((match) => normalizeWhitespace(match[1]))
+  .filter(Boolean)
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  const text = stripTagsToLines(page).join(' ')
-
-  return /Molecular Connections Pvt Ltd/i.test(page)
-    && /Career at Molecular Connections/i.test(text)
-    && /view the open positions and apply/i.test(text)
+  return /<title[^>]*>\s*Molecular Connections\s*<\/title>/i.test(page)
+    && /Molecular Connections Private Limited|MC Group/i.test(page)
+    && /Powered by AI(?:\s*&amp;\s*|\s*&\s*)5,000\+\s*Experts/i.test(page)
+    && /Experience applied AI/i.test(page)
     && /https:\/\/career\.molecularconnections\.com\/?/i.test(page)
 }
 
@@ -123,6 +131,7 @@ export const extractTechnologyOpenings = (html) => {
   }
 
   const lines = stripTagsToLines(html)
+  const detailUrls = extractDetailUrls(html)
   const headerIndex = lines.findIndex((line) => /^POSTED ON$/i.test(line))
   if (headerIndex === -1) {
     throw new Error('Molecular Connections public technology openings header is missing')
@@ -152,7 +161,15 @@ export const extractTechnologyOpenings = (html) => {
     throw new Error('Molecular Connections public technology openings could not be extracted from the verified surface')
   }
 
-  return jobs
+  if (detailUrls.length < jobs.length) {
+    throw new Error('Molecular Connections public technology openings no longer expose the expected first-party job detail links')
+  }
+
+  return jobs.map((job, index) => ({
+    ...job,
+    sourceUrl: detailUrls[index],
+    applyUrl: APPLY_URL,
+  }))
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -183,7 +200,7 @@ export const createMolecularConnectionsScraper = () => ({
       throw new Error('Molecular Connections official apply form changed; refusing to route applications blindly')
     }
 
-    return extractTechnologyOpenings(technologyOpeningsHtml).map((job) => {
+    const jobs = extractTechnologyOpenings(technologyOpeningsHtml).map((job) => {
       const identitySlug = slugify(`${job.title}-${job.location}-${job.postingDate}`)
 
       return {
@@ -205,6 +222,25 @@ export const createMolecularConnectionsScraper = () => ({
         scrapedAt: new Date().toISOString(),
       }
     })
+
+    const jobsWithDetails = await Promise.all(jobs.map(async (job) => {
+      try {
+        const detailHtml = await fetchText(job.sourceUrl)
+        const enriched = inferExperienceFromPublicPageHtml(job, detailHtml)
+
+        return {
+          ...job,
+          experienceRequired: enriched.experienceRequired || job.experienceRequired,
+          jobDescription: enriched.jobDescription || job.jobDescription,
+          description: enriched.description || job.jobDescription || null,
+          publicExperienceChecked: enriched.publicExperienceChecked === true,
+        }
+      } catch {
+        return job
+      }
+    }))
+
+    return jobsWithDetails
   },
 })
 

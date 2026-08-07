@@ -87,6 +87,7 @@ test('extractSearchResults maps public PeopleStrong listing fields for Larsen & 
     applyUrl: 'https://larsentoubrocareers.peoplestrong.com/job/detail/LT-REQ-001',
     employmentType: 'Full Time',
     experienceRequired: '3-5 years',
+    publicExperienceChecked: true,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: ['Node.js', 'Automation', 'Playwright'],

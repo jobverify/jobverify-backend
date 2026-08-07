@@ -72,9 +72,19 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   }
 }
 
-const extractFieldValue = (html, label) => normalizeText(
-  String(html ?? '').match(new RegExp(`${label}:\\s*([^<\\n]+)`, 'i'))?.[1],
-)
+const extractFieldValue = (html, label) => {
+  const page = String(html ?? '')
+  const structuredMatch = page.match(
+    new RegExp(`${label}:\\s*<\\/strong><\\/span><a[^>]*>([\\s\\S]*?)<\\/a>`, 'i'),
+  )
+  if (structuredMatch) {
+    return normalizeText(structuredMatch[1])
+  }
+
+  return normalizeText(
+    page.match(new RegExp(`${label}:\\s*([^<\\n]+)`, 'i'))?.[1],
+  )
+}
 
 const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
   .map((match) => normalizeText(match[1]))
@@ -109,6 +119,7 @@ const buildGenericJob = (title) => {
     postingDate: null,
     closingDate: null,
     jobDescription: 'Apply through the public first-party Fusion careers form.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   }
 }
@@ -126,10 +137,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Fusion Finance Limited\s*-\s*NBFC\s*\|\s*MFI Company\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/fusionfin\.com\/careers\/["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
-    && /href=["']https:\/\/fusionfin\.com\/careers\/["'][^>]*>\s*Current Openings\s*<\/a>/i.test(page)
-    && normalized.includes('Fusion Finance Limited (Formerly known as "Fusion Micro Finance Limited").')
+  return /<title>\s*Fusion Finance Limited\b[\s\S]*MFI Company[\s\S]*<\/title>/i.test(page)
+    && /href=["']https:\/\/fusionfin\.com\/careers\/["'][^>]*>\s*Careers\b[\s\S]*?<\/a>/i.test(page)
+    && normalized.includes('Fusion Finance Limited')
 }
 
 export const extractGenericJobTitles = (html) => {
@@ -139,7 +149,7 @@ export const extractGenericJobTitles = (html) => {
 
   return [...selectHtml.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)]
     .map((match) => normalizeText(match[1]))
-    .filter((option) => option && !/^Select The Job Title$/i.test(option))
+    .filter((option) => option && !/^Select The Job(?: Title)?$/i.test(option))
 }
 
 export const extractFeaturedListings = (html) => {
@@ -162,7 +172,7 @@ export const hasOfficialCareersSurface = (html = '') => {
   const genericTitles = extractGenericJobTitles(page)
   const featuredListings = extractFeaturedListings(page)
 
-  return /<title>\s*Careers\s*-\s*Fusion Finance Limited\s*<\/title>/i.test(page)
+  return /<title>\s*Fusion Finance\b[\s\S]*Careers\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/fusionfin\.com\/careers\/["']/i.test(page)
     && normalized.includes('Current Openings')
     && normalized.includes('Click here to apply against open job postings')
@@ -181,11 +191,11 @@ export const hasOfficialDetailPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<h1>\s*QA Engineer\/Sr\.\s*QA Engineer\s*<\/h1>/i.test(page)
-    && normalized.includes('Experience: 1-5')
-    && normalized.includes('State: Haryana')
-    && normalized.includes('City: Gurgaon/Gurugram')
-    && normalized.includes('Job Role: Automation Testing')
+  return normalized.includes('QA Engineer/Sr. QA Engineer')
+    && extractFieldValue(page, 'Experience') === '1-5'
+    && extractFieldValue(page, 'State') === 'Haryana'
+    && extractFieldValue(page, 'City') === 'Gurgaon/Gurugram'
+    && extractFieldValue(page, 'Job Role') === 'Automation Testing'
     && normalized.includes(`Interested applicants can reach out to us at ${RECRUITER_EMAIL}`)
     && normalized.includes('Apply for this position')
     && /<input[^>]+type=["']file["']/i.test(page)
@@ -235,6 +245,7 @@ export const extractFeaturedJobDetail = (html, listing = VERIFIED_FEATURED_LISTI
     jobDescription: normalizeText(
       `Job Role: ${department} ${requiredSkills.join(' ')} ${recruiterLine || ''}`,
     ),
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   }
 }

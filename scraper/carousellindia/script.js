@@ -3,13 +3,14 @@ import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/ut
 export const SOURCE = 'carousellindia'
 export const COMPANY = 'Carousell India'
 export const OFFICIAL_BRAND = 'Carousell Group'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://careers.smartrecruiters.com/CarousellGroup'
-export const HOME_PAGE_URL = 'https://careers.carousell.com/'
+export const HOME_PAGE_URL = 'https://careers.carousell.com/who-we-are/'
+export const HOME_PAGE_HOSTNAME = 'careers.carousell.com'
 export const SMARTRECRUITERS_COMPANY_IDENTIFIER = 'CarousellGroup'
 export const DISPOSITION = 'verified-public-smartrecruiters-board-plus-public-jobs-api'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://careers.smartrecruiters.com/CarousellGroup was the accessible public Carousell Group careers board for this workbook source, that it linked Home Page back to https://careers.carousell.com/, and that the public SmartRecruiters postings API at https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings?limit=100 exposed a current Bengaluru, India opening including iOS intern (6 months internship). Direct fetches to https://careers.carousell.com/ returned a Cloudflare challenge in this environment, so this scraper validates the public SmartRecruiters board and returns India jobs only from the public SmartRecruiters API.'
+  'Verified on Saturday, August 1, 2026 that https://careers.smartrecruiters.com/CarousellGroup remained the accessible public Carousell Group careers board for this workbook source, that its Home Page link now resolves to https://careers.carousell.com/who-we-are/, and that the public SmartRecruiters postings API at https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings?limit=100 exposed current public Carousell Group openings but no India postings in the live payload. Direct fetches to https://careers.carousell.com/ still returned a Cloudflare challenge in this environment, so this scraper validates the public SmartRecruiters board and returns India jobs only from the public SmartRecruiters API.'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 const SMARTRECRUITERS_JOB_HOST = 'jobs.smartrecruiters.com'
@@ -20,7 +21,6 @@ const BOARD_REQUIRED_PATTERNS = [
   /\bJobs at Carousell\b/i,
   /\bBrowse by:/i,
   /\bLocation\b/i,
-  /\bBengaluru,\s*India\b/i,
 ]
 
 const decodeEntities = (value = '') =>
@@ -156,6 +156,15 @@ export const extractHomePageUrl = (html = '', pageUrl = CAREERS_URL) => {
   }
 }
 
+export const isTrustedHomePageUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    return url.protocol === 'https:' && url.hostname === HOME_PAGE_HOSTNAME
+  } catch {
+    return false
+  }
+}
+
 export const hasVerifiedBoardSignal = (html = '') => {
   const page = String(html)
   const text = normalizeText(page)
@@ -168,7 +177,7 @@ const assertVerifiedBoardSignal = (html = '') => {
 }
 
 const assertVerifiedHomePageLink = (html = '') => {
-  if (extractHomePageUrl(html) === HOME_PAGE_URL) return
+  if (isTrustedHomePageUrl(extractHomePageUrl(html))) return
   throw new Error('Carousell India verified Home Page link changed materially')
 }
 

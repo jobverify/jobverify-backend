@@ -17,6 +17,10 @@ const mobineersCareersHtml = `
   <body>
     <h2>Career</h2>
     <h2>Recent Jobs</h2>
+    <a href="https://mobineers.com/jobs/sr-sales-manager/">Sr. Sales Manager</a>
+    <span>Marketing</span>
+    <span>Full Time</span>
+    <span>Delhi</span>
     <a href="https://mobineers.com/jobs/qa-automation-tester/">QA Automation Tester</a>
     <span>Marketing</span>
     <span>Full Time</span>
@@ -32,6 +36,15 @@ const mobineersCareersHtml = `
 `
 
 const mobineersDetailByUrl = {
+  'https://mobineers.com/jobs/sr-sales-manager/': `
+    <!doctype html>
+    <html lang="en">
+      <body>
+        <h2>Sr. Sales Manager</h2>
+        <p>Sr. Sales Manager Job Category: Marketing Job Type: Full Time Job Location: Delhi Apply for this position</p>
+      </body>
+    </html>
+  `,
   'https://mobineers.com/jobs/qa-automation-tester/': `
     <!doctype html>
     <html lang="en">
@@ -238,7 +251,7 @@ test('Mobineers Info Systems run returns normalized jobs from the verified first
   const requestedUrls = []
 
   assert.equal(mobineers.hasOfficialCareersSignal(mobineersCareersHtml), true)
-  assert.equal(mobineers.extractListingCards(mobineersCareersHtml).length, 3)
+  assert.equal(mobineers.extractListingCards(mobineersCareersHtml).length, 4)
 
   const jobs = await mobineers.createMobineersInfoSystemsScraper({
     now: () => FIXED_SCRAPED_AT,
@@ -253,20 +266,24 @@ test('Mobineers Info Systems run returns normalized jobs from the verified first
 
   assert.deepEqual(requestedUrls, [
     mobineers.CAREERS_URL,
+    'https://mobineers.com/jobs/sr-sales-manager/',
     'https://mobineers.com/jobs/qa-automation-tester/',
     'https://mobineers.com/jobs/sql-developer/',
     'https://mobineers.com/jobs/sr-business-developer/',
   ])
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 4)
   assert.deepEqual(jobs.map((job) => job.title), [
     'QA Automation Tester',
     'SQL DEVELOPER',
     'Sr. Business Developer',
+    'Sr. Sales Manager',
   ])
   assert.equal(jobs[0].location, 'Delhi')
   assert.match(jobs[0].jobDescription, /Appium/i)
   assert.equal(jobs[1].location, 'Hisar Varanasi')
   assert.match(jobs[1].jobDescription, /database queries/i)
+  assert.equal(jobs[2].location, 'Delhi')
+  assert.equal(jobs[2].employmentType, 'Full Time')
 })
 
 test('BUSINESSNEXT run returns normalized jobs from the verified first-party current openings page', async () => {

@@ -30,7 +30,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Innovapptive local catalog captures the verified first-party careers handoff to the public ApplyToJob board', async () => {
+test('Innovapptive local catalog captures the verified first-party careers shell and mixed-region ApplyToJob board', async () => {
   const { INNOVAPPTIVE_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const innovapptive = await loadScriptModule()
   const provider = buildCatalogReadyProvider(INNOVAPPTIVE_CATALOG)
@@ -50,11 +50,13 @@ test('Innovapptive local catalog captures the verified first-party careers hando
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'innovapptive.com')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /innovapptive\.applytojob\.com\/apply/i)
+  assert.match(provider.verifiedSurfaceSummary, /AI Platform Lead/i)
   assert.match(provider.verifiedSurfaceSummary, /Associate Solution Consultant - EAM/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Engineer - iOS/i)
+  assert.match(provider.verifiedSurfaceSummary, /Support Manager/i)
+  assert.match(provider.verifiedSurfaceSummary, /mixed-region remote roles/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /innovapptive[\\/]jobs\.json$/i)
 

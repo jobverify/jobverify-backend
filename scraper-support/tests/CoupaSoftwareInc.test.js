@@ -67,6 +67,62 @@ const jobsPageTwoHtml = `
 </html>
 `
 
+const currentJobsGridHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs - Explore opportunities to make an impact. | Coupa Careers</title>
+  </head>
+  <body>
+    <h1>Shape your career at Coupa</h1>
+    <p class="job-count">Displaying <strong>1</strong> to <strong>20</strong> of <strong>98</strong> matching jobs</p>
+    <div class="grid job-listing" id="js-job-search-results" data-results="98">
+      <div class="swiper-slide js-card-job" data-id="40371abd-d819-4f4a-8cd1-f8f75a8eae26">
+        <div class="card card-job">
+          <a class="stretched-link js-view-job" href="/en/jobs/40371abd-d819-4f4a-8cd1-f8f75a8eae26/technical-support-engineer-11774/" aria-label="View job: Technical Support Engineer - 11774"></a>
+          <div class="card-body">
+            <h2 class="card-title">Technical Support Engineer - 11774</h2>
+            <ul class="list-inline job-meta">
+              <li class="list-inline-item">Pune, India</li>
+              <li class="list-inline-item">Engineering - India</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="swiper-slide js-card-job" data-id="1c0a5fca-d282-4235-bba5-a1d33ce09732">
+        <div class="card card-job">
+          <a class="stretched-link js-view-job" href="/en/jobs/1c0a5fca-d282-4235-bba5-a1d33ce09732/ruby-on-rails-sr-software-engineer-11752/" aria-label="View job: Ruby on Rails - Sr. Software Engineer - 11752"></a>
+          <div class="card-body">
+            <h2 class="card-title">Ruby on Rails - Sr. Software Engineer - 11752</h2>
+            <ul class="list-inline job-meta">
+              <li class="list-inline-item">Pune, India</li>
+              <li class="list-inline-item">Engineering - GRC</li>
+              <li class="list-inline-item">Hybrid</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="swiper-slide js-card-job" data-id="2de54e3a-57da-4947-b885-f0db58a79a44">
+        <div class="card card-job">
+          <a class="stretched-link js-view-job" href="/en/jobs/2de54e3a-57da-4947-b885-f0db58a79a44/sr-account-director-customer-growth/" aria-label="View job: Sr. Account Director, Customer Growth"></a>
+          <div class="card-body">
+            <h2 class="card-title">Sr. Account Director, Customer Growth</h2>
+            <ul class="list-inline job-meta">
+              <li class="list-inline-item">United States</li>
+              <li class="list-inline-item">Sales</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav aria-label="Pagination">
+      <a href="https://careers.coupa.com/en/jobs/?page=2#results">2</a>
+      <a href="https://careers.coupa.com/en/jobs/?page=3#results">3</a>
+    </nav>
+  </body>
+</html>
+`
+
 const loadCatalogModule = async () => {
   try {
     return await import('../../scraper/coupasoftwareinc/catalog.js')
@@ -148,6 +204,34 @@ test('Coupa Software Inc helpers stay pinned to the verified first-party jobs pa
   ])
 })
 
+test('Coupa Software Inc extracts India jobs from the current js-card-job grid layout', async () => {
+  const coupa = await loadScriptModule()
+
+  assert.equal(coupa.hasOfficialJobsPageSignal(currentJobsGridHtml), true)
+  assert.deepEqual(coupa.extractIndiaJobsFromPage(currentJobsGridHtml), [
+    {
+      title: 'Technical Support Engineer - 11774',
+      location: 'Pune, India',
+      department: 'Engineering - India',
+      employmentType: null,
+      sourceUrl: 'https://careers.coupa.com/en/jobs/40371abd-d819-4f4a-8cd1-f8f75a8eae26/technical-support-engineer-11774/',
+      jobId: '11774',
+    },
+    {
+      title: 'Ruby on Rails - Sr. Software Engineer - 11752',
+      location: 'Pune, India',
+      department: 'Engineering - GRC',
+      employmentType: 'Hybrid',
+      sourceUrl: 'https://careers.coupa.com/en/jobs/1c0a5fca-d282-4235-bba5-a1d33ce09732/ruby-on-rails-sr-software-engineer-11752/',
+      jobId: '11752',
+    },
+  ])
+  assert.deepEqual(coupa.extractPaginationUrls(currentJobsGridHtml), [
+    'https://careers.coupa.com/en/jobs/?page=2',
+    'https://careers.coupa.com/en/jobs/?page=3',
+  ])
+})
+
 test('Coupa Software Inc run paginates the verified first-party jobs pages and returns India jobs', async () => {
   const coupa = await loadScriptModule()
   const requestedUrls = []
@@ -174,6 +258,29 @@ test('Coupa Software Inc run paginates the verified first-party jobs pages and r
   assert.equal(jobs[0].atsPlatform, 'coupa-careers-site')
   assert.equal(jobs[2].location, 'Bangalore, India')
   assert.equal(jobs[2].employmentType, 'Remote')
+})
+
+test('Coupa Software Inc falls back to browser-backed jobs pages when direct requests return 403', async () => {
+  const coupa = await loadScriptModule()
+  const browserUrls = []
+
+  const jobs = await coupa.createCoupaSoftwareIncScraper().run({
+    fetchText: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      if (url === coupa.JOBS_PAGE_URL) return jobsPageOneHtml
+      if (url === 'https://careers.coupa.com/en/jobs/?page=2') return jobsPageTwoHtml
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(browserUrls, [
+    coupa.JOBS_PAGE_URL,
+    'https://careers.coupa.com/en/jobs/?page=2',
+  ])
 })
 
 test('Coupa Software Inc fails closed when the verified jobs shell changes materially', async () => {

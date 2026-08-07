@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'infinitylearn'
@@ -14,6 +16,10 @@ export const MISSING_ROUTE_URLS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const HOMEPAGE_SIGNALS = [
   'infinity learn india s top online learning platform for class 6 to 12',
@@ -29,10 +35,9 @@ const CAREER_SIGNALS = [
   'infinity learn s selection process',
 ]
 
-const MISSING_ROUTE_SIGNALS = [
+const MISSING_ROUTE_CORE_SIGNALS = [
   '404 page not found',
   'page not found',
-  'go to home',
 ]
 
 const PUBLIC_JOB_BOARD_PATTERNS = [
@@ -106,40 +111,76 @@ export const isVerifiedMissingRoute = (page = {}) => {
   }
 
   const normalized = normalizeWhitespace(page?.html)
-  return MISSING_ROUTE_SIGNALS.every((signal) => normalized.includes(signal))
+  return MISSING_ROUTE_CORE_SIGNALS.every((signal) => normalized.includes(signal))
 }
 
 export const createInfinitylearnScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Infinity Learn verified official homepage no longer matches the known public surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          settleTimeMs: 4000,
+        })
+      }
+
+      return browserSession
     }
 
-    if (hasPublicJobBoardSignal(homepage.html)) {
-      throw new Error('Infinity Learn homepage now appears to expose public job listings')
-    }
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
 
-    const careerPage = await fetchPage(CAREER_URL)
+    const fetchPageWithBrowserFallback = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
 
-    if (hasPublicJobBoardSignal(careerPage.html)) {
-      throw new Error('Infinity Learn career page now appears to expose public job listings')
-    }
-
-    if (careerPage.status !== 200 || !hasOfficialCareerSignal(careerPage.html)) {
-      throw new Error('Infinity Learn career page no longer matches the verified generic apply shell')
-    }
-
-    for (const routeUrl of MISSING_ROUTE_URLS) {
-      const missingRoute = await fetchPage(routeUrl)
-
-      if (!isVerifiedMissingRoute(missingRoute)) {
-        throw new Error('Infinity Learn missing careers routes changed materially or now expose public jobs')
+        return browserPageFetcher(url)
       }
     }
 
-    return []
+    try {
+      const homepage = await fetchPageWithBrowserFallback(HOMEPAGE_URL)
+
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Infinity Learn verified official homepage no longer matches the known public surface')
+      }
+
+      if (hasPublicJobBoardSignal(homepage.html)) {
+        throw new Error('Infinity Learn homepage now appears to expose public job listings')
+      }
+
+      const careerPage = await fetchPageWithBrowserFallback(CAREER_URL)
+
+      if (hasPublicJobBoardSignal(careerPage.html)) {
+        throw new Error('Infinity Learn career page now appears to expose public job listings')
+      }
+
+      if (careerPage.status !== 200 || !hasOfficialCareerSignal(careerPage.html)) {
+        throw new Error('Infinity Learn career page no longer matches the verified generic apply shell')
+      }
+
+      for (const routeUrl of MISSING_ROUTE_URLS) {
+        const missingRoute = await fetchPageWithBrowserFallback(routeUrl)
+
+        if (!isVerifiedMissingRoute(missingRoute)) {
+          throw new Error('Infinity Learn missing careers routes changed materially or now expose public jobs')
+        }
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 

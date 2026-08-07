@@ -49,6 +49,26 @@ const VERIFIED_LINKEDIN_COMPANY_HTML = `
   </html>
 `
 
+const CURRENT_LINKEDIN_COMPANY_HTML = `
+  <html>
+    <head><title>Aventior | LinkedIn</title></head>
+    <body>
+      <nav>
+        <a href="https://www.linkedin.com/jobs/search?trk=organization_guest_guest_nav_menu_jobs">Jobs</a>
+      </nav>
+      <h1>Aventior</h1>
+      <p>IT Services and IT Consulting</p>
+      <p>Cambridge, MA</p>
+      <p>Driving AI and Digital Transformation</p>
+      <a href="https://www.linkedin.com/redir/redirect?url=http%3A%2F%2Fwww%2Eaventior%2Ecom&urlhash=Tkpf&trk=about_website">
+        http://www.aventior.com
+      </a>
+      <p>Pride Gateway, Baner</p>
+      <p>Pune, Maharashtra 411045, IN</p>
+    </body>
+  </html>
+`
+
 const VERIFIED_LINKEDIN_JOBS_HTML = `
   <html>
     <head><title>2 Aventior jobs in Worldwide</title></head>
@@ -104,6 +124,20 @@ const VERIFIED_LINKEDIN_DETAIL_HTML = `
   </script>
 `
 
+const ZERO_LINKEDIN_JOBS_HTML = `
+  <html>
+    <head>
+      <title>0 Aventior jobs in Worldwide</title>
+      <meta pageKey="d_jobs_guest_search" />
+    </head>
+    <body>
+      <h1>0 Aventior jobs in Worldwide</h1>
+      <p>LinkedIn</p>
+      <p>Aventior in Worldwide</p>
+    </body>
+  </html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/aventior/script.js')
@@ -119,7 +153,7 @@ test('Aventior validates the verified first-party page, LinkedIn company page, a
 
   assert.equal(aventior.SOURCE, 'aventior')
   assert.equal(aventior.COMPANY, 'Aventior')
-  assert.equal(aventior.VERIFIED_ON, '2026-07-25')
+  assert.equal(aventior.VERIFIED_ON, '2026-08-01')
   assert.equal(aventior.CAREERS_URL, 'https://www.aventior.com/careers')
   assert.equal(aventior.LINKEDIN_COMPANY_PAGE_URL, 'https://www.linkedin.com/company/aventior/')
   assert.equal(
@@ -128,9 +162,9 @@ test('Aventior validates the verified first-party page, LinkedIn company page, a
   )
   assert.equal(
     aventior.DISPOSITION,
-    'verified-first-party-careers-page-plus-linkedin-company-handoff-and-public-jobs-search',
+    'verified-first-party-careers-page-plus-linkedin-company-validation-and-public-jobs-search',
   )
-  assert.match(aventior.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(aventior.VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/)
   assert.match(aventior.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.aventior\.com\/careers/i)
   assert.match(
     aventior.VERIFIED_SURFACE_SUMMARY,
@@ -140,8 +174,7 @@ test('Aventior validates the verified first-party page, LinkedIn company page, a
     aventior.VERIFIED_SURFACE_SUMMARY,
     /https:\/\/www\.linkedin\.com\/jobs\/aventior-jobs-worldwide\?f_C=27234995/i,
   )
-  assert.match(aventior.VERIFIED_SURFACE_SUMMARY, /Technical Project Manager/i)
-  assert.match(aventior.VERIFIED_SURFACE_SUMMARY, /R Shiny Engineer \/ R Developer/i)
+  assert.match(aventior.VERIFIED_SURFACE_SUMMARY, /0 Aventior jobs in Worldwide/i)
   assert.equal(aventior.hasOfficialCareersPageSignal(VERIFIED_CAREERS_HTML), true)
   assert.equal(
     aventior.extractLinkedInCompanyUrl(VERIFIED_CAREERS_HTML),
@@ -156,9 +189,15 @@ test('Aventior validates the verified first-party page, LinkedIn company page, a
     'https://www.linkedin.com/jobs/aventior-jobs-worldwide?f_C=27234995&trk=top-card_top-card-primary-button-top-card-primary-cta',
   )
   assert.equal(
+    aventior.pageIndicatesAventiorLinkedInCompany(CURRENT_LINKEDIN_COMPANY_HTML),
+    true,
+  )
+  assert.equal(aventior.extractCompanyJobsUrl(CURRENT_LINKEDIN_COMPANY_HTML), null)
+  assert.equal(
     aventior.hasVerifiedLinkedInJobsPageSignal(VERIFIED_LINKEDIN_JOBS_HTML),
     true,
   )
+  assert.equal(aventior.hasVerifiedLinkedInJobsPageSignal(ZERO_LINKEDIN_JOBS_HTML), true)
   assert.equal(listings.length, 2)
   assert.deepEqual(
     {
@@ -230,6 +269,34 @@ test('Aventior run validates the public contract and returns India jobs from the
   )
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-25T00:00:00.000Z')
+})
+
+test('Aventior run accepts the current LinkedIn company page and writes an empty result when the public jobs search has no listings', async () => {
+  const aventior = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await aventior.createAventiorScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === aventior.CAREERS_URL) return VERIFIED_CAREERS_HTML
+      if (url === aventior.LINKEDIN_COMPANY_PAGE_URL) return CURRENT_LINKEDIN_COMPANY_HTML
+      if (url === aventior.LINKEDIN_COMPANY_JOBS_URL) return ZERO_LINKEDIN_JOBS_HTML
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    now: () => '2026-08-01T00:00:00.000Z',
+  })
+
+  assert.deepEqual(
+    requestedUrls,
+    [
+      aventior.CAREERS_URL,
+      aventior.LINKEDIN_COMPANY_PAGE_URL,
+      aventior.LINKEDIN_COMPANY_JOBS_URL,
+    ],
+  )
+  assert.deepEqual(jobs, [])
 })
 
 test('Aventior run keeps conservative listing data when LinkedIn detail enrichment fails', async () => {

@@ -75,7 +75,7 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   const normalized = normalizeWhitespace(page) || ''
   const hasVerifiedBoardLink = /href=["']https:\/\/ats\.rippling\.com\/syllable-corporation\/jobs["']/i.test(page)
 
-  return /<title>\s*Careers at Syllable AI - AI Infrastructure & Agent Platform\s*<\/title>/i.test(page)
+  return normalized.includes('Careers at Syllable AI - AI Infrastructure & Agent Platform')
     && normalized.includes('Build the Future of AI Infrastructure')
     && normalized.includes('Open Positions')
     && normalized.includes('View Open Positions')
@@ -103,7 +103,7 @@ export const hasVerifiedBoardPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(html) || ''
 
-  return /<title>\s*Syllable Corporation Jobs\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Syllable Corporation(?:\s+Jobs)?\s*<\/title>/i.test(page)
     && normalized.includes('Syllable Corporation')
     && normalized.includes('View job')
     && normalized.includes('Powered by Rippling')
@@ -169,17 +169,41 @@ export const extractJobDetail = (html = '', detailUrl) => {
     throw new Error('Syllable verified Rippling job detail no longer matches the trusted public surface')
   }
 
-  const title = stripHtml(page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
   const paragraphs = [...page.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
     .map((match) => stripHtml(match[1]))
     .filter(Boolean)
+  const title = stripHtml(page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+    || stripHtml(page.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+    || paragraphs.find((value) =>
+      value
+      && value !== 'Syllable Corporation'
+      && value !== 'A1000 ActiumHealth'
+      && !/^\(/.test(value)
+      && !/^Remote \(/i.test(value)
+      && !/^[A-Za-z .'-]+,\s*[A-Z]{2}$/i.test(value)
+      && !/^Share on:/i.test(value))
+    || null
   const department = paragraphs.find((value) => value === 'A1000 ActiumHealth') || null
   const location = paragraphs.find((value) => /^Remote \(/i.test(value)) || null
   const locationShort = paragraphs.find((value) => /^[A-Za-z .'-]+,\s*[A-Z]{2}$/i.test(value)) || null
   const city = locationShort ? locationShort.split(',')[0].trim() : null
   const employmentType = /^Remote \(/i.test(location ?? '') ? 'Remote' : 'On-site'
   const country = isIndiaLocation(location) ? 'India' : 'United States'
-  const description = stripHtml(page.match(/<div class=["']description["'][^>]*>([\s\S]*?)<\/div>/i)?.[1])
+  const descriptionStartIndex = paragraphs.findIndex((value) =>
+    /^\(Syllable Corporation has an opening/i.test(value) || /^Responsible for /i.test(value))
+  const descriptionEndIndex = paragraphs.findIndex((value) =>
+    value === department || value === locationShort || value === location || /^Share on:/i.test(value))
+  const fallbackDescription = descriptionStartIndex >= 0
+    ? normalizeWhitespace(
+        paragraphs
+          .slice(
+            descriptionStartIndex,
+            descriptionEndIndex > descriptionStartIndex ? descriptionEndIndex : paragraphs.length,
+          )
+          .join(' '),
+      )
+    : null
+  const description = stripHtml(page.match(/<div class=["']description["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]) || fallbackDescription
   const rawId = getLastPathSegment(detailUrl)
   const jobId = rawId ? `syllable-${rawId}` : null
 

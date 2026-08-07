@@ -43,7 +43,7 @@ test('Fedility Investments catalog captures the verified Fidelity India jobs pag
   assert.equal(FEDILITY_INVESTMENTS_CATALOG.parser, 'custom-script')
   assert.equal(FEDILITY_INVESTMENTS_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(FEDILITY_INVESTMENTS_CATALOG.companyDomain, 'jobs.fidelity.com')
-  assert.equal(FEDILITY_INVESTMENTS_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(FEDILITY_INVESTMENTS_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(FEDILITY_INVESTMENTS_CATALOG.modulePath, scriptModulePath)
   assert.match(FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.fidelity\.com\/in\/jobs\//i)
   assert.match(FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.fidelity\.com\/in\/jobs\/xml\/\?rss=true/i)
@@ -51,9 +51,13 @@ test('Fedility Investments catalog captures the verified Fidelity India jobs pag
     FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary,
     /https:\/\/jobs\.fidelity\.com\/in\/jobs\/2130684\/principal-network-engineer\//i,
   )
+  assert.match(
+    FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary,
+    /https:\/\/jobs\.fidelity\.com\/in\/jobs\/2133239\/data-scientist\//i,
+  )
   assert.match(FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary, /Principal Network Engineer/i)
-  assert.match(FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary, /Bangalore/i)
-  assert.match(FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary, /Chennai/i)
+  assert.match(FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary, /Data Scientist/i)
+  assert.match(FEDILITY_INVESTMENTS_CATALOG.verifiedSurfaceSummary, /Cloudflare/i)
 })
 
 test('Fedility Investments backlog matching works directly from the local catalog metadata without an alias', async () => {

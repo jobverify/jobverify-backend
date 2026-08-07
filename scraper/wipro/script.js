@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -46,6 +47,81 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   return match ? transform(match) : null
 }
 
+const execPatternFromIndex = (pattern, value, startIndex = 0) => {
+  const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`
+  const scopedPattern = new RegExp(pattern.source, flags)
+  scopedPattern.lastIndex = startIndex
+  return scopedPattern.exec(String(value ?? ''))
+}
+
+const extractBalancedTagInnerHtml = (value, openingTagStartIndex, tagName) => {
+  if (!Number.isInteger(openingTagStartIndex) || openingTagStartIndex < 0) return null
+
+  const source = String(value ?? '')
+  const openingTagEndIndex = source.indexOf('>', openingTagStartIndex)
+  if (openingTagEndIndex < 0) return null
+
+  const tagPattern = new RegExp(`<\\/?${tagName}\\b[^>]*>`, 'gi')
+  tagPattern.lastIndex = openingTagEndIndex + 1
+
+  let depth = 1
+  let match = tagPattern.exec(source)
+
+  while (match) {
+    depth += match[0].startsWith('</') ? -1 : 1
+    if (depth === 0) {
+      return source.slice(openingTagEndIndex + 1, match.index)
+    }
+    match = tagPattern.exec(source)
+  }
+
+  return source.slice(openingTagEndIndex + 1) || null
+}
+
+const collectBalancedTagInnerHtml = (value, openingTagPattern, tagName) => {
+  const source = String(value ?? '')
+  const matches = []
+  let searchIndex = 0
+
+  while (searchIndex < source.length) {
+    const match = execPatternFromIndex(openingTagPattern, source, searchIndex)
+    if (!match) break
+
+    const innerHtml = extractBalancedTagInnerHtml(source, match.index, tagName)
+    if (innerHtml) {
+      matches.push(innerHtml)
+    }
+
+    searchIndex = match.index + match[0].length
+  }
+
+  return matches
+}
+
+const extractPrimaryDescriptionHtml = (html) => {
+  const labelMatch = new RegExp(
+    `<span class="joblayouttoken-label"[^>]*>\\s*Job Description:${LABEL_NBSP_PATTERN}<\\/span>`,
+    'i',
+  ).exec(String(html ?? ''))
+  if (!labelMatch) return null
+
+  const contentMatch = execPatternFromIndex(
+    /<span\b(?=[^>]*class="rtltextaligneligible")[^>]*>/i,
+    html,
+    labelMatch.index + labelMatch[0].length,
+  )
+
+  return contentMatch
+    ? extractBalancedTagInnerHtml(html, contentMatch.index, 'span')
+    : null
+}
+
+const extractExtraDescriptionBlocks = (html) => collectBalancedTagInnerHtml(
+  html,
+  /<span\b(?=[^>]*itemprop="description")(?=[^>]*class="rtltextaligneligible")[^>]*>/i,
+  'span',
+)
+
 const slugifyTitle = (value) => normalizeWhitespace(value)
   ?.replace(/[^\p{L}\p{N}]+/gu, '-')
   .replace(/^-+|-+$/g, '') || 'untitled'
@@ -74,8 +150,10 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
+const LABEL_NBSP_PATTERN = String.raw`\s*(?:&nbsp;|\u00a0)\s*`
+
 const extractLabeledValue = (label, html) => normalizeWhitespace(extractFirst(
-  new RegExp(`${label}:&nbsp;<\\/span>\\s*<span[^>]*class="rtltextaligneligible"[^>]*>([\\s\\S]*?)<\\/span>`, 'i'),
+  new RegExp(`${label}:${LABEL_NBSP_PATTERN}<\\/span>\\s*<span[^>]*class="rtltextaligneligible"[^>]*>([\\s\\S]*?)<\\/span>`, 'i'),
   html,
 ))
 
@@ -146,23 +224,29 @@ export const extractJobDetail = (html, listing = {}) => {
   const cityList = extractLabeledValue('City', html) || listing.location || null
   const state = extractLabeledValue('State/Province', html) || listing.state || null
   const postingDate = extractLabeledValue('Posting Start Date', html) || listing.postingDate || null
-  const primaryDescriptionHtml = extractFirst(
-    /<span class="joblayouttoken-label"[^>]*>\s*Job Description:&nbsp;\s*<\/span>\s*<span[^>]*class="rtltextaligneligible"[^>]*>([\s\S]*?)<\/span>/i,
-    html,
-  )
-  const extraDescriptionBlocks = [...String(html).matchAll(/itemprop="description" class="rtltextaligneligible">([\s\S]*?)<\/span>/gi)]
-    .map((match) => match[1])
+  const primaryDescriptionHtml = extractPrimaryDescriptionHtml(html)
+  const descriptionSectionsHtml = unique([
+    primaryDescriptionHtml,
+    ...extractExtraDescriptionBlocks(html),
+  ])
+  const extraDescriptionBlocks = descriptionSectionsHtml
+    .slice(primaryDescriptionHtml ? 1 : 0)
     .map((value) => stripTags(value))
     .filter(Boolean)
   const jobDescription = normalizeWhitespace([
-    stripTags(primaryDescriptionHtml),
-    ...extraDescriptionBlocks,
+    ...descriptionSectionsHtml.map((value) => stripTags(value)),
   ].filter(Boolean).join(' '))
-  const requiredSkills = extractListItems(primaryDescriptionHtml)
+  const requiredSkills = extractListItems(descriptionSectionsHtml.join(' '))
+  const experienceProfile = extractJobFilterSignals({
+    title,
+    jobDescription,
+    experienceRequired: listing.experienceRequired || null,
+  }).experienceProfile
   const jobId = normalizeWhitespace(
     extractFirst(/jobID\s*:\s*(\d+)/i, html),
   ) || listing.jobId || null
   const sourceUrl = listing.sourceUrl || (title && jobId ? buildDetailUrl(title, jobId) : null)
+  const hasPublicDetailEvidence = descriptionSectionsHtml.length > 0
 
   return {
     title,
@@ -172,7 +256,8 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId,
     requisitionId: listing.requisitionId || jobId,
     employmentType: normalizeEmploymentType(title),
-    experienceRequired: listing.experienceRequired || null,
+    experienceRequired: listing.experienceRequired
+      || (experienceProfile?.confidence === 'high' ? experienceProfile.evidence || null : null),
     jobDescription,
     minimumQualification: null,
     preferredQualification: null,
@@ -181,6 +266,7 @@ export const extractJobDetail = (html, listing = {}) => {
     closingDate: listing.closingDate || null,
     applyUrl: buildApplyUrl(jobId),
     sourceUrl,
+    publicExperienceChecked: hasPublicDetailEvidence,
   }
 }
 
@@ -299,6 +385,7 @@ export const run = async () => {
         requiredSkills: detail.requiredSkills,
         postingDate: detail.postingDate || listing.postingDate,
         closingDate: detail.closingDate || listing.closingDate,
+        publicExperienceChecked: detail.publicExperienceChecked === true,
         scrapedAt: new Date().toISOString(),
       })
     }

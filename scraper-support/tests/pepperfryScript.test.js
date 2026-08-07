@@ -5,12 +5,13 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Buy Furniture & Home Decor Online – Up to 65% Off at Best Prices in India | Pepperfry</title>
+    <title>Buy Furniture &amp; Home Decor Online – Up to 65% Off at Best Prices in India | Pepperfry</title>
   </head>
   <body>
-    <h1>Buy Furniture Online at Pepperfry- India's All-in-One Furniture Solution for Your Needs</h1>
-    <div>Corporate Governance</div>
-    <div>Pepperfry in the News</div>
+    <h1>Buy Furniture &amp; Home Decor Online</h1>
+    <div>Browse All Categories</div>
+    <div>Partner With Us</div>
+    <div>Check Out Bonhomie, Our Blog</div>
     <footer>
       <a href="https://www.pepperfry.com/pages/careers.html?type=footer">Careers</a>
     </footer>
@@ -18,27 +19,39 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
-const MISSING_CAREERS_HTML = `
+const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
     <title>Online Furniture Shopping Store: Shop Online in India for Furniture, Home Decor, Homeware Products @ Pepperfry</title>
   </head>
   <body>
-    <h1>404-Soul Not Found</h1>
-    <p>Page Also Not Found</p>
-    <a href="/customer/needhelp/contactus">Contact Us</a>
-    <button>GO BACK & RETRY</button>
+    <section class="crpg-crnt-opening-container">
+      <div class="crpg-opn-listitem">
+        <span class="crpg-opn-listitem-ttl font-medium text-lg">(Assistant) Manager - Assisted Buying</span>
+        <span class="crpg-opn-listitem-location text-sm"> Mumbai </span>
+        <a target="_blank" rel="noopener" class="crpg-opn-view-desc-link text-sm" href="https://trendsys.darwinbox.in/ms/candidate/careers/a6690d8c6351c2">
+          View Job Description
+        </a>
+      </div>
+      <div class="crpg-opn-listitem">
+        <span class="crpg-opn-listitem-ttl font-medium text-lg">Area Manager (Studios)</span>
+        <span class="crpg-opn-listitem-location text-sm"> Hyderabad,Mumbai,New Delhi </span>
+        <a target="_blank" rel="noopener" class="crpg-opn-view-desc-link text-sm" href="https://trendsys.darwinbox.in/ms/candidate/careers/a695b99381bd79">
+          View Job Description
+        </a>
+      </div>
+    </section>
   </body>
 </html>
 `
 
-const PUBLIC_JOBS_HTML = `
+const BROKEN_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>Open Positions</h1>
-    <a href="https://boards.greenhouse.io/pepperfry">Apply now</a>
+    <h1>Careers</h1>
+    <p>Open positions coming soon.</p>
   </body>
 </html>
 `
@@ -51,12 +64,12 @@ const loadModule = async () => {
   }
 }
 
-test('Pepperfry sentinel helpers stay pinned to the verified homepage footer link and missing careers page', async () => {
+test('Pepperfry parser helpers stay pinned to the verified homepage footer link and current first-party careers listings', async () => {
   const pepperfry = await loadModule()
 
   assert.equal(pepperfry.COMPANY, 'Pepperfry')
   assert.equal(pepperfry.OFFICIAL_BRAND_NAME, 'Pepperfry')
-  assert.equal(pepperfry.VERIFIED_ON, '2026-07-17')
+  assert.equal(pepperfry.VERIFIED_ON, '2026-08-04')
   assert.equal(pepperfry.HOMEPAGE_URL, 'https://www.pepperfry.com/')
   assert.equal(
     pepperfry.CAREERS_PAGE_URL,
@@ -67,13 +80,23 @@ test('Pepperfry sentinel helpers stay pinned to the verified homepage footer lin
     pepperfry.extractVerifiedCareersPageUrl(HOMEPAGE_HTML),
     'https://www.pepperfry.com/pages/careers.html?type=footer',
   )
-  assert.equal(pepperfry.hasMissingCareersSurfaceSignal(MISSING_CAREERS_HTML), true)
-  assert.equal(pepperfry.pageExposesPublicJobListings(HOMEPAGE_HTML), false)
-  assert.equal(pepperfry.pageExposesPublicJobListings(MISSING_CAREERS_HTML), false)
-  assert.equal(pepperfry.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
+
+  const listings = pepperfry.extractCareerListings(CAREERS_HTML)
+  assert.deepEqual(listings, [
+    {
+      title: '(Assistant) Manager - Assisted Buying',
+      location: 'Mumbai',
+      applyUrl: 'https://trendsys.darwinbox.in/ms/candidate/careers/a6690d8c6351c2',
+    },
+    {
+      title: 'Area Manager (Studios)',
+      location: 'Hyderabad, Mumbai, New Delhi',
+      applyUrl: 'https://trendsys.darwinbox.in/ms/candidate/careers/a695b99381bd79',
+    },
+  ])
 })
 
-test('Pepperfry returns [] when the verified homepage points to the first-party missing careers page', async () => {
+test('Pepperfry returns normalized jobs from the verified first-party careers page', async () => {
   const pepperfry = await loadModule()
   const requestedUrls = []
 
@@ -86,7 +109,7 @@ test('Pepperfry returns [] when the verified homepage points to the first-party 
       }
 
       if (url === pepperfry.CAREERS_PAGE_URL) {
-        return { status: 200, url, html: MISSING_CAREERS_HTML }
+        return { status: 200, url, html: CAREERS_HTML }
       }
 
       throw new Error(`Unexpected Pepperfry URL: ${url}`)
@@ -97,10 +120,32 @@ test('Pepperfry returns [] when the verified homepage points to the first-party 
     pepperfry.HOMEPAGE_URL,
     pepperfry.CAREERS_PAGE_URL,
   ])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(
+    jobs.map((job) => [job.title, job.location, job.city, job.jobId]),
+    [
+      [
+        '(Assistant) Manager - Assisted Buying',
+        'Mumbai, India',
+        'Mumbai',
+        'a6690d8c6351c2',
+      ],
+      [
+        'Area Manager (Studios)',
+        'Hyderabad, Mumbai, New Delhi, India',
+        null,
+        'a695b99381bd79',
+      ],
+    ],
+  )
+  assert.equal(jobs[0].company, 'Pepperfry')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceUrl, 'https://trendsys.darwinbox.in/ms/candidate/careers/a6690d8c6351c2')
+  assert.equal(jobs[0].applyUrl, 'https://trendsys.darwinbox.in/ms/candidate/careers/a6690d8c6351c2')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
-test('Pepperfry fails closed when the verified homepage link or careers surface changes into a public jobs board', async () => {
+test('Pepperfry fails closed when the verified homepage link or current careers listing structure drifts', async () => {
   const pepperfry = await loadModule()
 
   await assert.rejects(
@@ -144,29 +189,12 @@ test('Pepperfry fails closed when the verified homepage link or careers surface 
         }
 
         if (url === pepperfry.CAREERS_PAGE_URL) {
-          return { status: 200, url, html: PUBLIC_JOBS_HTML }
+          return { status: 200, url, html: BROKEN_CAREERS_HTML }
         }
 
         throw new Error(`Unexpected Pepperfry URL: ${url}`)
       },
     }),
-    /careers surface now appears to expose public jobs/i,
-  )
-
-  await assert.rejects(
-    pepperfry.createPepperfryScraper().run({
-      fetchPage: async (url) => {
-        if (url === pepperfry.HOMEPAGE_URL) {
-          return { status: 200, url, html: HOMEPAGE_HTML }
-        }
-
-        if (url === pepperfry.CAREERS_PAGE_URL) {
-          return { status: 200, url, html: '<html><body><h1>Careers</h1></body></html>' }
-        }
-
-        throw new Error(`Unexpected Pepperfry URL: ${url}`)
-      },
-    }),
-    /verified missing careers surface changed materially/i,
+    /verified first-party careers listings changed materially/i,
   )
 })

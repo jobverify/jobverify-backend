@@ -25,10 +25,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
   return normalized.includes('Stable, Rewarding Remote Work Opportunities from Capital Numbers')
     && normalized.includes('Build Your Career with Capital Numbers')
-    && normalized.includes('career@capitalnumbers.com')
+    && normalized.includes('See Current Openings')
+    && normalized.includes('Rated 4.2 out of 5 on Glassdoor')
+    && normalized.includes('Beware of Fake Job or Freelancing Offers')
+    && (normalized.includes('jobs@capitalnumbers.com') || /mailto:jobs@capitalnumbers\.com/i.test(rawHtml))
   }
 
 export const hasPublicJobListingSignal = (html = '') => {

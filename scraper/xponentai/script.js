@@ -152,7 +152,7 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<h1[^>]*>\s*Career\s*<\/h1>/i.test(page)
+  return /<title[^>]*>\s*Career\b[\s\S]*?<\/title>/i.test(page)
     && /Current Openings/i.test(page)
     && /(wp-job-openings|awsm-job-listings)/i.test(page)
 }

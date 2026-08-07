@@ -1,0 +1,101 @@
+[
+  {
+    "title": "Vice President of Enterprise Sales",
+    "company": "SmithRx",
+    "location": "Worldwide / India eligible",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "Worldwide / India eligible",
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/companies/smithrx/jobs/vice-president-of-enterprise-sales",
+    "applyUrl": "https://himalayas.app/companies/smithrx/jobs/vice-president-of-enterprise-sales",
+    "sourceUrl": "https://himalayas.app/companies/smithrx/jobs/vice-president-of-enterprise-sales",
+    "source": "smithrx.himalayas.app",
+    "jobId": "https://himalayas.app/companies/smithrx/jobs/vice-president-of-enterprise-sales",
+    "requisitionId": "https://himalayas.app/companies/smithrx/jobs/vice-president-of-enterprise-sales",
+    "department": "Enterprise-Sales",
+    "employmentType": "Full Time",
+    "experienceRequired": "5+ years",
+    "postingDate": "1970-01-21T00:00:00.000Z",
+    "expiresAt": "1970-01-21",
+    "jobDescription": "Who We Are: Smith Rx is a rapidly growing, venture-backed Health-Tech company. Our mission is to disrupt the expensive and inefficient Pharmacy Benefit Management (PBM) sector by building a next-generation drug acquisition platform driven by cutting edge technology, innovative cost saving tools, and best-in-class customer service. With hundreds of thousands of members onboarded since 2016, Smith Rx has a solution that is resonating with clients all across the country. We pride ourselves for our mission-driven and collaborative culture that inspires our employees to do their best work. We believe that the U.S healthcare system is in need of transformation, and we come to work each day dedicated to making that change a reality. At our core, we are guided by our company values: Integrity: Our purpose guides our actions and gives us confidence in the path ahead. With unwavering honesty and dependability, we embrace the pressure of challenging the old and exemplify ethical leadership to create the new. Courage: We face continuous challenges with grit and resilience. We embrace the discomfort of the unknown by balancing autonomy with empathy, and ownership with vulnerability. We boldly challenge the status quo to keep moving forward—always. Together: The success of Smith Rx reflects the strength of our partnerships and the commitment of our team. Our shared values bind us together and make us one. When one falls, we all fall; when one rises, we all rise. Job Summary: The Vice President of Enterprise Sales will lead Smith Rx ’s strategy and execution for acquiring large employer groups (20,000+ member lives). This role is responsible for building strong relationships with C-level executives, benefits leaders, key channel partners, national and regional broker offices, pharmacy consultants, large employers, and will drive revenue growth through strategic selling and deep industry knowledge. The ideal candidate will bring a strong background in the PBM space, a proven ability to close complex, high-value deals, and fluency in using Salesforce and sales automation tools to drive performance and pipeline visibility. What you will do: Own and drive the full sales cycle from prospecting to contract signature for employer groups with 20,000+ covered lives. Develop and execute enterprise sales strategies that align with Smith Rx ’s growth goals and value proposition. Establish trusted advisor relationships with benefits decision-makers, consultants, brokers, large employers and internal stakeholders. Deliver compelling presentations and solution demonstrations that clearly articulate the Smith Rx value proposition and clinical/economic impact. Collaborate with internal teams including Clinical, Account Management, Legal, Pricing/Proposals to ensure alignment and readiness for onboarding large clients. Accurately forecast pipeline and deal status using Salesforce, maintaining meticulous records of all prospecting and sales activities. Represent Smith Rx at industry events, conferences, and client meetings as a senior face of the enterprise sales team. Willing to travel and attend this events on a regular cadence. Maintain a deep understanding of market dynamics, competitor positioning, and healthcare/PBM trends to inform strategy and positioning. What you will bring to Smith Rx : 5+ years in PBM or pharmacy benefits-related roles with an additional 5+ years of sales experience in healthcare. Bachelor’s degree required; MBA or relevant graduate degree preferred. Proven track record or exposure to the process of closing large, complex deals with employer groups of 20,000+ member lives. Deep understanding of pharmacy benefit design, pricing models, and competitive positioning within the PBM landscape. Comfortable using Salesforce CRM for pipeline management, reporting, and opportunity tracking. Exceptional communication, presentation, and negotiation skills. High degree of professionalism, executive presence, and ability to influence cross-functional stakeholders. Enjoyable to work with as a person and committed to maintain and build the amazing culture at Smith Rx . What Smith Rx Offers You: Highly competitive wellness benefits including Medical, Pharmacy, Dental, Vision, and Life Insurance and AD&D Insurance Flexible Spending Benefits 401(k) Retirement Savings Program Short-term and long-term disability Discretionary Paid Time Off Paid Company Holidays Wellness Benefits Commuter Benefits Paid Parental Leave benefits Employee Assistance Program (EAP) Well-stocked kitchen in office locations Professional development and training opportunities Originally posted on Himalayas",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T21:49:46.213Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/frontend-engineer",
+    "companyDomain": "smithrx.himalayas.app",
+    "originalTitle": "Vice President of Enterprise Sales",
+    "normalizedTitle": "Vice President of Enterprise Sales",
+    "jobCategory": "Vice President of Enterprise Sales",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full Time",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "1970-01-21T00:00:00.000Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T21:49:46.213Z",
+    "skillIds": [
+      "salesforce"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "salesforce",
+        "canonicalName": "Salesforce",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Salesforce"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5+ years",
+      "minimumYears": 5,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5+ years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Vice President",
+    "primaryRoleDomain": "Sales & Customer Success",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:50:04.439Z"
+  }
+]

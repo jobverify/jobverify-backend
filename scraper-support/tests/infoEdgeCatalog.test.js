@@ -53,7 +53,7 @@ test('InfoEdge local catalog captures the verified first-party careers page and 
   )
   assert.equal(INFOEDGE_CATALOG.parser, 'custom-script')
   assert.equal(INFOEDGE_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(INFOEDGE_CATALOG.modulePath, '../../scraper/infoedge/script.js')
+  assert.equal(INFOEDGE_CATALOG.modulePath, '../infoedge/script.js')
   assert.equal(INFOEDGE_CATALOG.dryRunFile, 'infoedge/jobs.json')
   assert.equal(INFOEDGE_CATALOG.verifiedOn, '2026-07-16')
   assert.match(INFOEDGE_CATALOG.verifiedSurfaceSummary, /careers\.infoedge\.com\/infoedge\/jobslist/i)

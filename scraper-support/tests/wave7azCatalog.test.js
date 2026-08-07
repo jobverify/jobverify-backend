@@ -62,7 +62,7 @@ test('SPARX IT Solutions local catalog captures the verified first-party careers
   })
 })
 
-test('Perpetuuiti Technosoft Services local catalog captures the verified careers shell and broken form handoff sentinel', async () => {
+test('Perpetuuiti Technosoft Services local catalog captures the verified migrated homepage and no-public-careers sentinel', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/perpetuuititechnosoftservices/script.js')
   const {
     PERPETUUITI_TECHNOSOFT_SERVICES_CATALOG,
@@ -75,24 +75,25 @@ test('Perpetuuiti Technosoft Services local catalog captures the verified career
   assert.equal(provider.companyName, 'Perpetuuiti Technosoft Services')
   assert.equal(provider.officialBrandName, 'Perpetuuiti')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://perpetuuiti.com/')
-  assert.equal(provider.companyCareerPage, 'https://perpetuuiti.com/Careers.php')
-  assert.equal(provider.applicationFormUrl, 'https://perpetuuiti.com/Careers-Form.php')
-  assert.equal(provider.companyDomain, 'perpetuuiti.com')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-broken-application-form')
+  assert.equal(provider.homepageUrl, 'https://ptechnosoft.com/')
+  assert.equal(provider.companyCareerPage, 'https://ptechnosoft.com/')
+  assert.equal(provider.legacyCareersUrl, 'https://perpetuuiti.com/Careers.php')
+  assert.equal(provider.legacyApplicationFormUrl, 'https://perpetuuiti.com/Careers-Form.php')
+  assert.equal(provider.companyDomain, 'ptechnosoft.com')
+  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(
     provider.paginationStrategy,
-    'single-first-party-careers-page-plus-broken-form-handoff',
+    'verified-homepage-plus-sitemap-plus-legacy-careers-redirect-plus-missing-routes',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+generic-open-positions-cta+broken-careers-form-handoff+fail-closed-sentinel',
+    'verified-homepage+verified-sitemap-without-careers-routes+legacy-careers-redirects-to-homepage+verified-missing-routes-return-empty',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /great people/i)
-  assert.match(provider.verifiedSurfaceSummary, /open positions/i)
-  assert.match(provider.verifiedSurfaceSummary, /Careers-Form\.php/i)
-  assert.match(provider.verifiedSurfaceSummary, /HTTP 500/i)
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/ptechnosoft\.com\//i)
+  assert.match(provider.verifiedSurfaceSummary, /sitemap\.xml/i)
+  assert.match(provider.verifiedSurfaceSummary, /Careers\.php/i)
+  assert.match(provider.verifiedSurfaceSummary, /404 pages/i)
 
   assertBacklogRowMatches({
     provider,

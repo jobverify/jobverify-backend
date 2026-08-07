@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that https://www.telstra.com.au/careers is the live first-party Telstra careers page currently serving the Telstra India Careers shell and linking Find a career to the public Workday board at https://telstra.wd3.myworkdayjobs.com/Telstra_Careers. Verified that the public Workday jobs API at https://telstra.wd3.myworkdayjobs.com/wday/cxs/telstra/Telstra_Careers/jobs is live, returned 169 unfiltered jobs, and returned 2 India-filtered Bengaluru jobs including WFM Specialist and Customer Service Consultant - International Voice Process.'
+  'Revalidated on Saturday, August 1, 2026 that https://www.telstra.com.au/careers is the live first-party Telstra careers page now serving the Careers at Telstra shell with the hero Define Your Possible at Telstra and still linking Find a career to the public Workday board at https://telstra.wd3.myworkdayjobs.com/Telstra_Careers. Reconfirmed that the public Workday jobs API at https://telstra.wd3.myworkdayjobs.com/wday/cxs/telstra/Telstra_Careers/jobs remains live and still returns current India openings including Customer Service Consultant - International Voice Process in Bengaluru, Karnataka.'
 
 export const TELSTRA_CATALOG = {
   source: 'telstra',
@@ -22,7 +22,7 @@ export const TELSTRA_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+verified-workday-handoff+workday-jobs-api+india-country-facet',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'telstra.workday/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

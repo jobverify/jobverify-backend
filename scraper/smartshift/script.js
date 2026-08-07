@@ -9,7 +9,7 @@ export const VERIFIED_SURFACE_SUMMARY =
 const REQUIRED_BRAND_PATTERN = /\bsmartshift\b/i
 const TITLE_BRAND_PATTERN = /<title[^>]*>[\s\S]*?\bsmartshift\b[\s\S]*?<\/title>/i
 const CANONICAL_SURFACE_PATTERN =
-  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/www\.smartshiftnow\.com\/?["'][^>]*>/i
+  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/www\.(?:smartshiftnow|smartshift)\.com\/?["'][^>]*>/i
 
 const LISTING_COPY_PATTERNS = [
   /\bcurrent openings\b/i,

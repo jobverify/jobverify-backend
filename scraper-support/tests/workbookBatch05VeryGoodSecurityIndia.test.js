@@ -49,6 +49,21 @@ test('Very Good Security India stays fail-closed on the verified non-enumerable 
   assert.equal(typeof createVeryGoodSecurityIndiaScraper, 'function')
 })
 
+test('Very Good Security India ignores same-origin Nuxt payload assets when no public jobs surface exists', async () => {
+  const jobs = await run({
+    fetchHtml: async () => `
+      ${VERIFIED_NON_ENUMERABLE_HTML}
+      <link
+        rel="preload"
+        as="fetch"
+        href="/careers/_payload.json?fc098e94-ac75-47d4-88f9-6a172d46b040"
+      >
+    `,
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Very Good Security India rejects when the verified careers contract disappears', async () => {
   await assert.rejects(
     run({

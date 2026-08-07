@@ -89,7 +89,7 @@ export const isVerifiedNoSignalFirstPartySurface = (page = {}) => {
   )
     || (
       String(page.status) === 'FETCH_ERROR'
-      && hasDnsResolutionFailure(page.errorMessage)
+      && (hasDnsResolutionFailure(page.errorMessage) || /\bfetch failed\b/i.test(String(page.errorMessage ?? '')))
       && normalizedText === ''
     )
 }
@@ -113,7 +113,17 @@ export const createTechnologicsGlobalResearchProjectScraper = () => ({
 export const run = async (options = {}) =>
   createTechnologicsGlobalResearchProjectScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const isDirectExecution = (() => {
+  if (!process.argv[1]) return false
+
+  try {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

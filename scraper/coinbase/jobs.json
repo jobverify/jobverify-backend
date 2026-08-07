@@ -1,0 +1,111 @@
+[
+  {
+    "title": "Capacity Planning Lead",
+    "company": "Coinbase",
+    "location": "Hybrid - Bangalore, India",
+    "city": "Bangalore",
+    "country": "India",
+    "link": "https://www.coinbase.com/careers/positions/8013889",
+    "applyUrl": "https://www.coinbase.com/careers/positions/8013889",
+    "sourceUrl": "https://www.coinbase.com/careers/positions/8013889",
+    "source": "coinbase",
+    "jobId": "8013889",
+    "requisitionId": "P77108",
+    "department": null,
+    "employmentType": "Full-time",
+    "experienceRequired": "4+ years",
+    "jobDescription": "󰝲 Ready to do the most impactful work of your career? At Coinbase , we are uncompromising on our mission to increase economic freedom. The bar is high, the environment is intense, and we like it that way. This isn't a place for complacency, it’s a place to be pushed past your perceived limits. If you're ready to build the future of finance alongside people who refuse to settle for \"good enough,\" you belong here. Coinbase is a remote-first, but not remote-only company. Expect to get together quarterly for intense in-person working sessions called “surges.” learn more about working at Coinbase . We are seeking Capacity Planning Lead to join Coinbase's Consumer (CX) Workforce Management team. This role is central to translating volume trends, staffing assumptions, and business inputs into actionable short- and medium-range capacity plans that help our consumer support operation meet customer demand efficiently and cost-effectively. The ideal candidate brings deep WFM domain expertise, strong analytical fundamentals, and the ability to operate with ownership and precision in a fast-moving, AI-informed planning environment. You'll work at the intersection of forecasting, operations, and cross-functional stakeholder collaboration to ensure CX is always staffed to deliver a high-quality customer experience. What you’ll do: Own forecasts and short-range capacity plans across multiple consumer support queues and markets, translating volume, AHT, and shrinkage trends into staffing requirements and coverage plans Use hybrid human–AI tooling to build and maintain capacity models that reflect the growing complexity of our support channels and workforce structure Create multi-scenario staffing plans that model trade-offs between Customer Experience/Service Levels, Employee Experience, Operational Flexibility, and Cost Effectiveness Partner with vendor management and BPO partners to ensure staffing targets and contractual SLAs are met at the interval level Collaborate with CX Operations, Finance, and Recruiting to align capacity plans with headcount budgets, growth targets, and business priorities Analyze drivers of forecast misses and continuously improve forecasting methodology using statistical and data-driven approaches Automate and streamline planning processes to reduce manual effort and increase the accuracy and scalability of outputs Clearly communicate capacity risks, dependencies, and staffing recommendations to operational stakeholders and WFM leadership Utilize generative AI responsibly, maintaining human oversight to deliver business-ready outputs and drive measurable improvements in workflow efficiency, cost, and quality Required skills and experience: Minimum 4 years of relevant experience in Workforce Management, with demonstrated expertise in capacity planning and forecasting Proven ability to build and maintain capacity models, with strong proficiency in Excel and/or Google Sheets; experience with WFM platforms (e.g., Assembled or comparable) Experience working across multiple support channels and planning for both FTE and vendor/BPO workforces Ability to work with large datasets to identify trends, model scenarios, and translate quantitative outputs into clear operational recommendations Strong analytical skills with a data-driven approach to workforce decision-making Excellent written and verbal communication skills, with the ability to clearly convey capacity risks and staffing plans to operational and cross-functional stakeholders Highly flexible and adaptable to the evolving needs of a high-growth, fast-paced organization Nice to haves: Experience with BI tools such as Looker; SQL experience; familiarity with agentic or AI-assisted planning tools; experience in tech or fintech Utilizes generative AI responsibly, maintaining human oversight to deliver business-ready outputs and drive measurable improvements in workflow efficiency, cost, and quality.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-08-04T02:17:56.543Z",
+    "remoteStatus": "Hybrid",
+    "scrapedAt": "2026-08-04T02:17:56.543Z",
+    "companyCareerPage": "https://www.coinbase.com/careers/positions",
+    "companyDomain": "coinbase.com",
+    "atsPlatform": "greenhouse",
+    "publicExperienceChecked": true,
+    "originalTitle": "Capacity Planning Lead",
+    "normalizedTitle": "Capacity Planning Lead",
+    "jobCategory": "Capacity Planning Lead",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "salary": null,
+    "postedAt": "2026-08-04T02:17:56.543Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-04T02:17:56.543Z",
+    "skillIds": [
+      "generative-ai",
+      "sql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "generative AI"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4+ years",
+      "minimumYears": 4,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4+ years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [
+      "Data Engineering"
+    ],
+    "workArrangement": "Hybrid",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T02:17:57.243Z"
+  }
+]

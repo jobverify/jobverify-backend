@@ -26,36 +26,45 @@ const loadScriptModule = async () => {
   }
 }
 
-test('LG Electronics India local catalog captures the verified exact-name no-openings first-party surface without alias churn', async () => {
-  const { LG_ELECTRONICS_INDIA_CATALOG } = await loadCatalogModule()
+test('LG Electronics India local catalog captures the verified exact-name careers page and first-party jobs API without alias churn', async () => {
+  const {
+    LG_ELECTRONICS_INDIA_CATALOG,
+    default: defaultCatalog,
+  } = await loadCatalogModule()
   const lgElectronicsIndia = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(LG_ELECTRONICS_INDIA_CATALOG)
 
+  assert.equal(defaultCatalog, LG_ELECTRONICS_INDIA_CATALOG)
   assert.equal(provider.source, 'lgelectronicsindia')
   assert.equal(provider.companyName, 'LG Electronics India')
   assert.equal(provider.officialBrandName, 'LG Electronics India')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://globalcareers.lge.com/locations/IN')
   assert.equal(provider.companyDomain, 'globalcareers.lge.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site-plus-first-party-jobs-api')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-lg-global-careers-india-location-page-no-openings',
+    'browser-validated-india-location-page-plus-paged-first-party-jobs-api',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-lg-global-careers-india-location-page+verified-no-openings-message-return-empty',
+    'browser-validated-lg-india-location-page+verified-first-party-jobs-api+india-country-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.dryRunFile, /lgelectronicsindia[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, lgElectronicsIndiaModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/globalcareers\.lge\.com\/locations\/IN/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/globalcareers\.lge\.com\/api\/job\/v1\/jobs\//i)
   assert.match(provider.verifiedSurfaceSummary, /LG Electronics India/i)
-  assert.match(provider.verifiedSurfaceSummary, /There are no open positions at the moment/i)
+  assert.match(provider.verifiedSurfaceSummary, /Noida Factory/i)
+  assert.match(provider.verifiedSurfaceSummary, /Pune Factory/i)
+  assert.match(provider.verifiedSurfaceSummary, /R&D Office/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thermal Design Engineer - Refrigeration Cycle Module Development/i)
+  assert.match(provider.verifiedSurfaceSummary, /Talent Acquisition_Manager/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'LG Electronics India'), false)
 
   assert.equal(

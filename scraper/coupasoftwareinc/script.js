@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import COUPA_SOFTWARE_INC_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -33,7 +34,9 @@ const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[
 
 const normalizeUrl = (value) => {
   try {
-    return new URL(String(value), JOBS_PAGE_URL).toString()
+    const url = new URL(String(value), JOBS_PAGE_URL)
+    url.hash = ''
+    return url.toString()
   } catch {
     return null
   }
@@ -66,12 +69,15 @@ export const hasOfficialJobsPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Shape your career at Coupa - Explore opportunities to make an impact\.\s*\|\s*Coupa Careers\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Shape your career at Coupa|Jobs)\s*-\s*Explore opportunities to make an impact\.\s*\|\s*Coupa Careers\s*<\/title>/i.test(page)
     && text.includes('Shape your career at Coupa')
-    && /Displaying\s+1\s+to\s+20\s+of\s+101\s+matching\s+jobs/i.test(text)
+    && (
+      /Displaying\s+\d+\s+to\s+\d+\s+of\s+\d+\s+matching\s+jobs/i.test(text)
+      || /class=["'][^"']*js-card-job[^"']*["']/i.test(page)
+    )
 }
 
-export const extractIndiaJobsFromPage = (html = '') => Array.from(
+const extractLegacyIndiaJobsFromPage = (html = '') => Array.from(
   String(html ?? '').matchAll(
     /<article\b[^>]*>[\s\S]*?<h2>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h2>[\s\S]*?<li>([\s\S]*?)<\/li>[\s\S]*?<li>([\s\S]*?)<\/li>(?:[\s\S]*?<li>([\s\S]*?)<\/li>)?/gi,
   ),
@@ -93,6 +99,37 @@ export const extractIndiaJobsFromPage = (html = '') => Array.from(
     }
   },
 ).filter((job) => job.title && /,\s*India$/i.test(job.location || '') && job.sourceUrl && job.jobId)
+
+const extractCardGridIndiaJobsFromPage = (html = '') => Array.from(
+  String(html ?? '').matchAll(
+    /<div\b[^>]*class=["'][^"']*js-card-job[^"']*["'][^>]*>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*aria-label=["'][^"']*View job:\s*([^"']+)["'][^>]*>\s*<\/a>[\s\S]*?<ul[^>]*class=["'][^"']*job-meta[^"']*["'][^>]*>([\s\S]*?)<\/ul>/gi,
+  ),
+  (match) => {
+    const sourceUrl = normalizeUrl(match[1])
+    const title = stripTags(match[2])
+    const metaItems = [...String(match[3] ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+      .map((item) => stripTags(item[1]))
+      .filter(Boolean)
+    const [location = null, department = null, employmentType = null] = metaItems
+    const jobId = buildJobId(title, sourceUrl)
+
+    return {
+      title,
+      location,
+      department,
+      employmentType,
+      sourceUrl,
+      jobId,
+    }
+  },
+).filter((job) => job.title && /,\s*India$/i.test(job.location || '') && job.sourceUrl && job.jobId)
+
+export const extractIndiaJobsFromPage = (html = '') => {
+  const jobs = extractLegacyIndiaJobsFromPage(html)
+  if (jobs.length > 0) return jobs
+
+  return extractCardGridIndiaJobsFromPage(html)
+}
 
 export const extractPaginationUrls = (html = '') => {
   const urls = new Set()
@@ -140,29 +177,39 @@ const normalizeJob = (job, scrapedAt) => ({
 export const createCoupaSoftwareIncScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const firstPage = await fetchText(JOBS_PAGE_URL)
-    if (!hasOfficialJobsPageSignal(firstPage)) {
-      throw new Error('The verified Coupa jobs page no longer matches the trusted first-party surface')
-    }
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    const textFetcher = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+    })
 
-    const visited = new Set([JOBS_PAGE_URL])
-    const queue = extractPaginationUrls(firstPage)
-    const jobs = extractIndiaJobsFromPage(firstPage)
+    try {
+      const firstPage = await textFetcher.fetchText(JOBS_PAGE_URL)
+      if (!hasOfficialJobsPageSignal(firstPage)) {
+        throw new Error('The verified Coupa jobs page no longer matches the trusted first-party surface')
+      }
 
-    while (queue.length > 0) {
-      const nextUrl = queue.shift()
-      if (!nextUrl || visited.has(nextUrl)) continue
-      visited.add(nextUrl)
-      const html = await fetchText(nextUrl)
-      for (const job of extractIndiaJobsFromPage(html)) {
-        if (!jobs.some((existing) => existing.jobId === job.jobId)) {
-          jobs.push(job)
+      const visited = new Set([JOBS_PAGE_URL])
+      const queue = extractPaginationUrls(firstPage)
+      const jobs = extractIndiaJobsFromPage(firstPage)
+
+      while (queue.length > 0) {
+        const nextUrl = queue.shift()
+        if (!nextUrl || visited.has(nextUrl)) continue
+        visited.add(nextUrl)
+        const html = await textFetcher.fetchText(nextUrl)
+        for (const job of extractIndiaJobsFromPage(html)) {
+          if (!jobs.some((existing) => existing.jobId === job.jobId)) {
+            jobs.push(job)
+          }
         }
       }
-    }
 
-    return jobs.map((job) => normalizeJob(job, now()))
+      return jobs.map((job) => normalizeJob(job, now()))
+    } finally {
+      await textFetcher.close()
+    }
   },
 })
 

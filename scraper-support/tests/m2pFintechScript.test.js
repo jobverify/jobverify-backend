@@ -10,8 +10,8 @@ const careersHomeHtml = `
   </head>
   <body>
     <main>
-      <h1>Ambitious? You'll fit right in.</h1>
-      <p>At M2P, we don't just work, we build the future of fintech.</p>
+      <h1><span>Ambitious</span><span>?</span> <span>You’ll</span> <em>fit right in.</em></h1>
+      <p>At M2P, we <strong>don't just work</strong>, we build the future of fintech.</p>
       <a href="/view-jobs/">View Jobs</a>
       <a href="/view-jobs/">Join us</a>
     </main>

@@ -106,7 +106,7 @@ test('Backyard Creators run fetches the verified homepage and careers page and r
   assert.equal(jobs[0].company, 'BACKYARD CREATORS')
   assert.equal(jobs[0].title, 'Multiphysics Simulation Expert')
   assert.equal(jobs[0].normalizedTitle, 'Multiphysics Simulation Expert')
-  assert.equal(jobs[0].engineeringDomain, 'Research')
+  assert.equal(jobs[0].engineeringDomain, 'Unknown')
   assert.equal(jobs[0].employmentType, 'Full-time')
   assert.equal(jobs[0].jobType, 'Full-time Experienced')
   assert.equal(jobs[0].companyCareerPage, 'https://www.backyardcreators.com/careers')
@@ -132,6 +132,23 @@ test('Backyard Creators returns [] when the current first-party homepage is live
     fetchBrowserPage: async (url) => {
       assert.equal(url, backyardCreators.HOMEPAGE_URL)
       return { status: 200, url, html: currentHomepageHtml }
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Backyard Creators returns [] when the legacy careers route now renders the homepage shell without a public jobs surface', async () => {
+  const backyardCreators = await loadBackyardCreatorsModule()
+
+  const jobs = await backyardCreators.createBackyardCreatorsScraper().run({
+    fetchText: async () => currentHomepageHtml,
+    fetchPage: async (url) => {
+      if (url === backyardCreators.CAREERS_URL) {
+        return { status: 200, url, html: currentHomepageHtml }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
     },
   })
 

@@ -101,7 +101,7 @@ export const hasOfficialCareersLandingSignal = (html = '') => {
 
   return /<title>\s*Careers in AI &amp; Agentic AI \| Transform Enterprise Change – HTC\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.htcinc\.com\/careers\/["']/i.test(page)
-    && normalized.includes('Careers at HTC Global Services')
+    && /Join HTC in shaping enterprise transformation through AI and Agentic AI/i.test(page)
     && page.includes('https://www.htcinc.com/career-job-listing/')
 }
 

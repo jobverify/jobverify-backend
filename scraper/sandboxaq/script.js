@@ -23,6 +23,13 @@ const normalizeString = (value) => {
   return normalized || null
 }
 
+const stripTags = (value) => normalizeString(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
+
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeString(value)
   return normalized ? normalized.replace(/([a-z])([A-Z])/g, '$1 $2') : null
@@ -50,11 +57,16 @@ const getAddress = (job = {}) => job?.address?.postalAddress || {}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
+  const visibleText = stripTags(rawHtml) || ''
 
   return /<title[^>]*>\s*Careers\s*\|\s*SandboxAQ\s*<\/title>/i.test(rawHtml)
-    && /Careers at Sandbox AQ/i.test(rawHtml)
-    && /Residency Program/i.test(rawHtml)
-    && /href=["'](?:https:\/\/www\.sandboxaq\.com)?\/careers-list["']/i.test(rawHtml)
+    && (
+      /Careers at Sandbox AQ/i.test(visibleText)
+      || /Careers at SandboxAQ/i.test(visibleText)
+    )
+    && /Residency Program/i.test(visibleText)
+    && /View Job Openings/i.test(visibleText)
+    && /href=["'](?:https:\/\/www\.sandboxaq\.com)?\/careers-list(?:[/?#][^"']*)?["']/i.test(rawHtml)
 }
 
 export const extractVerifiedCareersListUrl = (html = '') => {

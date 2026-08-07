@@ -138,7 +138,7 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /NewRocket \| ServiceNow Partner \| Go Beyond Workflows/i.test(page)
+  return /NewRocket\s*\|\s*(?:Anthropic and )?ServiceNow Partner\s*\|\s*(?:AI workflows that customers trust|Go Beyond Workflows)/i.test(page)
     && /Trusted AI/i.test(page)
     && /Go Beyond Workflows/i.test(page)
 }

@@ -19,9 +19,10 @@ export const M2P_FINTECH_CATALOG = {
   normalizationProfile: 'engineering-default',
   companyDomain: 'm2pfintech.com',
   dryRunFile: 'm2pfintech/jobs.json',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
+  verifiedPublicPostingCount: 0,
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://careers.m2pfintech.com/ is the current first-party M2P Fintech careers homepage with a visible View Jobs handoff to https://careers.m2pfintech.com/view-jobs/. The live first-party jobs page renders the heading "Our Job Openings" and the explicit empty-state copy "No Jobs Found" plus "Keep exploring this space.", so the verified public jobs surface currently has zero openings and should return an honest empty result.',
+    'Verified on Monday, August 3, 2026 that https://careers.m2pfintech.com/ is still the current first-party M2P Fintech careers homepage with a visible View Jobs handoff to https://careers.m2pfintech.com/view-jobs/. The live first-party jobs page still renders the heading "Our Job Openings" and the explicit empty-state copy "No Jobs Found" plus "Keep exploring this space.", so the verified public jobs surface currently has zero openings and should return an honest empty result.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

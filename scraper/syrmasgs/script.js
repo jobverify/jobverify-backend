@@ -98,6 +98,24 @@ const extractTitle = (html = '') => normalizeWhitespace(
   String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
 )
 
+const extractJobCardTitle = (html = '') => {
+  const cardHtml = String(html ?? '')
+  const headingTitle = normalizeWhitespace(
+    cardHtml.match(
+      /<h[1-6]\b[^>]*class=["'][^"']*\bawsm-job-post-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h[1-6]>/i,
+    )?.[1],
+  )
+
+  if (headingTitle) {
+    return headingTitle
+  }
+
+  const text = normalizeWhitespace(cardHtml)
+  if (!text) return null
+
+  return normalizeWhitespace(text.replace(/\bMore Details\b/i, ''))
+}
+
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -135,6 +153,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -240,13 +259,21 @@ const toJobId = (title, sourceUrl) => {
 }
 
 export const extractOfficialJobsUrl = (html = '') => {
-  const explicitUrl = String(html ?? '').match(/https:\/\/syrmasgs\.com\/job-openings\/?/i)?.[0]
-  if (explicitUrl) {
-    return explicitUrl.endsWith('/') ? explicitUrl : `${explicitUrl}/`
-  }
+  const hrefs = [...String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)]
+    .map((match) => toAbsoluteUrl(match[1]))
+    .filter(Boolean)
 
-  const relativeHref = String(html ?? '').match(/href=["']([^"']*job-openings\/?)["']/i)?.[1]
-  return normalizeDetailUrl(relativeHref)?.replace('/jobs/', '/job-openings/') ?? toAbsoluteUrl(relativeHref)
+  const officialJobsUrl = hrefs.find((href) => {
+    try {
+      const parsed = new URL(href)
+      return parsed.hostname.replace(/^www\./i, '').toLowerCase() === COMPANY_DOMAIN
+        && /^\/job-openings\/?$/i.test(parsed.pathname)
+    } catch {
+      return false
+    }
+  })
+
+  return officialJobsUrl ?? null
 }
 
 export const hasOfficialLifeAtSignal = (html = '') => {
@@ -271,7 +298,7 @@ export const extractJobCards = (html = '') => {
     const text = normalizeWhitespace(match[2])
     if (!text || !/More Details/i.test(text)) continue
 
-    const title = normalizeWhitespace(text.replace(/\bMore Details\b/i, ''))
+    const title = extractJobCardTitle(match[2])
     if (!title) continue
 
     const jobId = toJobId(title, sourceUrl)

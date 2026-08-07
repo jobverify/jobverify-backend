@@ -26,6 +26,26 @@ const officialCareersHtml = `
 </html>
 `
 
+const officialGreenhouseBoardHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs at Couchbase, Inc.</title>
+    <meta property="og:title" content="Couchbase, Inc." />
+    <link rel="canonical" href="http://job-boards.greenhouse.io/couchbaseinc" />
+  </head>
+  <body>
+    <main>
+      <h1>Jobs at Couchbase, Inc.</h1>
+      <p>Current openings at Couchbase, Inc.</p>
+      <label>Search Department</label>
+      <label>Office</label>
+      <a href="https://job-boards.greenhouse.io/couchbaseinc/jobs/4649193006">Lead Software Engineer</a>
+    </main>
+  </body>
+</html>
+`
+
 const greenhousePayload = {
   jobs: [
     {
@@ -159,6 +179,41 @@ test('Couchbase run validates the official page before fetching the Greenhouse j
 
   assert.deepEqual(requested, [
     { type: 'text', url: couchbase.CAREERS_URL },
+    {
+      type: 'json',
+      url: 'https://boards-api.greenhouse.io/v1/boards/couchbaseinc/jobs?content=true',
+      options: { method: 'GET' },
+    },
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'couchbase')
+})
+
+test('Couchbase falls back to the verified Greenhouse board when the first-party careers page is blocked', async () => {
+  const couchbase = await loadCouchbaseModule()
+  const requested = []
+
+  const jobs = await couchbase.createCouchbaseScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      requested.push({ type: 'text', url })
+      if (url === couchbase.CAREERS_URL) {
+        throw new Error(`HTTP 403 for ${url}`)
+      }
+      if (url === couchbase.GREENHOUSE_BOARD_URL) {
+        return officialGreenhouseBoardHtml
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchJson: async (url, options = {}) => {
+      requested.push({ type: 'json', url, options })
+      return greenhousePayload
+    },
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  assert.deepEqual(requested, [
+    { type: 'text', url: couchbase.CAREERS_URL },
+    { type: 'text', url: couchbase.GREENHOUSE_BOARD_URL },
     {
       type: 'json',
       url: 'https://boards-api.greenhouse.io/v1/boards/couchbaseinc/jobs?content=true',

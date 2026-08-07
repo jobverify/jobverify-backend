@@ -55,7 +55,8 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*Managed Office Space in Bangalore\s*\|\s*Novel Office\s*<\/title>/i.test(page)
     && text.includes('officeenquiry@noveloffice.in')
     && text.includes('Want to join us?')
-    && text.includes("Apply now and show us what you've got.")
+    && /Explore our careers page and discover opportunities to grow with us\./i.test(text)
+    && /Apply now and show us what you(?:'|’)?ve got\./i.test(text)
     && /https:\/\/noveloffice\.in\/careers\?src=internal/i.test(page)
 }
 

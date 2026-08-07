@@ -69,7 +69,7 @@ export const extractLinktreeJobLinks = (html = '') => [...String(html ?? '').mat
   /<a\b[^>]*href=["'](https:\/\/www\.linkedin\.com\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
 )]
   .map((match) => ({
-    label: normalizeWhitespace(match[2]),
+    label: stripTags(match[2]),
     url: normalizeWhitespace(match[1]),
   }))
   .filter((link) => link.label && link.url)

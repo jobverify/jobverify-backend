@@ -130,7 +130,8 @@ test('run enriches DBS Workday listings with postedAt, description, and experien
   assert.equal(jobs[0].location, 'Patna, India')
   assert.equal(jobs[0].postedAt, '2026-06-12')
   assert.equal(jobs[0].postingDate, '2026-06-12')
-  assert.equal(jobs[0].experienceRequired, '5 to 10 years')
+  assert.equal(jobs[0].experienceRequired, '5-10 years')
+  assert.equal(jobs[0].publicExperienceChecked, false)
   assert.match(jobs[0].jobDescription, /Business Function: DBS Consumer Banking Group/)
 })
 
@@ -171,5 +172,6 @@ test('run retries DBS detail enrichment after a Workday 429 response', async () 
 
   assert.equal(detailAttempts, 2)
   assert.equal(jobs[0].postedAt, '2026-06-12')
-  assert.equal(jobs[0].experienceRequired, '5 to 10 years')
+  assert.equal(jobs[0].experienceRequired, '5-10 years')
+  assert.equal(jobs[0].publicExperienceChecked, false)
 })

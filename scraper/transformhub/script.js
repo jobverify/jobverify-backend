@@ -96,9 +96,18 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   ].some((role) => text.includes(role))
 
   return text.includes('careers')
+    && text.includes('transforming careers')
     && text.includes('current openings')
-    && text.includes('apply now')
+    && text.includes('if you can understand accountability')
     && hasVerifiedRole
+}
+
+const isSectionHeading = (value) => /^(current openings|responsibilities|skills|benefits of working at transformhub)$/i.test(value || '')
+
+const isPotentialRoleTitle = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized || isSectionHeading(normalized)) return false
+  return /^[A-Z0-9/&(), +.-]{4,}$/.test(normalized)
 }
 
 export const extractInlineJobs = (
@@ -116,7 +125,7 @@ export const extractInlineJobs = (
   for (let index = openingsIndex + 1; index < lines.length; index += 1) {
     const title = lines[index]
     const nextLine = lines[index + 1] || null
-    if (!title || !/^location:/i.test(nextLine || '')) continue
+    if (!isPotentialRoleTitle(title) || !nextLine || isSectionHeading(nextLine)) continue
 
     const rawLocation = normalizeWhitespace(nextLine.replace(/^location:\s*/i, ''))
     const descriptionLines = []
@@ -126,16 +135,19 @@ export const extractInlineJobs = (
       const candidate = lines[index]
       const candidateNext = lines[index + 1] || null
 
-      if (/^apply now$/i.test(candidate)) {
-        break
-      }
-
-      if (candidate && /^location:/i.test(candidateNext || '')) {
+      if (/^benefits of working at transformhub$/i.test(candidate)) {
         index -= 1
         break
       }
 
-      descriptionLines.push(candidate)
+      if (isPotentialRoleTitle(candidate) && candidateNext && !isSectionHeading(candidateNext)) {
+        index -= 1
+        break
+      }
+
+      if (!isSectionHeading(candidate)) {
+        descriptionLines.push(candidate)
+      }
       index += 1
     }
 
@@ -204,7 +216,7 @@ export const createTransformHubScraper = ({
 
 export const run = async (options = {}) => createTransformHubScraper(options).run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

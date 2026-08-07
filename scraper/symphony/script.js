@@ -41,9 +41,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('current openings')
+  return normalized.includes('current openings - grow your career with extraordinary symphony team')
     && normalized.includes('grow your career with our extraordinary symphony team')
-    && normalized.includes('write to us with your resume at careers@symphonylimited.com')
     && normalized.includes('there are no current openings. please check this space later.')
 }
 

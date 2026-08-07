@@ -18,14 +18,17 @@ const careerHtml = `
   <body>
     <h1>Career @ HestaBit</h1>
     <h4 class="career--heading">Senior PHP Developer</h4>
+    The developer would be required to work on complex web-based applications which include custom application Development, plugin development for CMS and Frameworks, website Development, eCommerce and other MVC based projects.
     <a href="https://docs.google.com/forms/d/e/1FAIpQLSfXioSOGYzPIXMVe9as38gl_tS_ZmQM3ETDoSokRaAwOJOK_w/viewform" target="_blank">
       <span>Apply now</span>
     </a>
     <h4 class="career--heading">Associate PHP Developer</h4>
+    The candidate would be required to work on complex web-based applications which include the website, eCommerce, Wordpress plugin development, Laravel and other MVC based projects.
     <a href="https://docs.google.com/forms/d/e/1FAIpQLSfXioSOGYzPIXMVe9as38gl_tS_ZmQM3ETDoSokRaAwOJOK_w/viewform" target="_blank">
       <span>Apply now</span>
     </a>
     <h4 class="career--heading">Senior Graphic Designer</h4>
+    The candidate must possess great visualisation abilities and should be able to create a combination of attractiveness and usability.
     <a href="https://docs.google.com/forms/d/e/1FAIpQLSfXioSOGYzPIXMVe9as38gl_tS_ZmQM3ETDoSokRaAwOJOK_w/viewform" target="_blank">
       <span>Apply now</span>
     </a>
@@ -51,7 +54,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('Hestabit Technologies local catalog captures the verified fail-closed Google Forms handoff contract', async () => {
+test('Hestabit Technologies local catalog captures the verified first-party role teaser surface and Google Forms handoff', async () => {
   const { HESTABIT_TECHNOLOGIES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const hestabit = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(HESTABIT_TECHNOLOGIES_CATALOG)
@@ -66,25 +69,53 @@ test('Hestabit Technologies local catalog captures the verified fail-closed Goog
   assert.equal(provider.companyDomain, 'hestabit.com')
   assert.equal(provider.atsPlatform, 'first-party-careers-page-third-party-google-forms-handoff')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'fail-closed-single-page')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-role-teasers+verified-google-forms-handoff+fail-closed-sentinel',
+    'verified-first-party-role-teasers+shared-google-forms-apply-handoff',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /hestabittechnologies[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 2, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /docs\.google\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /Senior PHP Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /shared Google Forms URL/i)
 
   assert.equal(hestabit.hasVerifiedCareersPageSignal(careerHtml), true)
   const jobs = await hestabit.run({
     fetchText: async () => careerHtml,
+    now: () => '2026-08-02T00:00:00.000Z',
   })
-  assert.deepEqual(jobs, [])
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(
+    jobs.map((job) => [job.title, job.location, job.applyUrl, job.jobId, job.scrapedAt]),
+    [
+      [
+        'Senior PHP Developer',
+        'Noida, Uttar Pradesh, India',
+        'https://docs.google.com/forms/d/e/1FAIpQLSfXioSOGYzPIXMVe9as38gl_tS_ZmQM3ETDoSokRaAwOJOK_w/viewform',
+        'senior-php-developer',
+        '2026-08-02T00:00:00.000Z',
+      ],
+      [
+        'Associate PHP Developer',
+        'Noida, Uttar Pradesh, India',
+        'https://docs.google.com/forms/d/e/1FAIpQLSfXioSOGYzPIXMVe9as38gl_tS_ZmQM3ETDoSokRaAwOJOK_w/viewform',
+        'associate-php-developer',
+        '2026-08-02T00:00:00.000Z',
+      ],
+      [
+        'Senior Graphic Designer',
+        'Noida, Uttar Pradesh, India',
+        'https://docs.google.com/forms/d/e/1FAIpQLSfXioSOGYzPIXMVe9as38gl_tS_ZmQM3ETDoSokRaAwOJOK_w/viewform',
+        'senior-graphic-designer',
+        '2026-08-02T00:00:00.000Z',
+      ],
+    ],
+  )
 })
 
 test('Hestabit Technologies exact backlog row resolves from the local provider contract', async () => {

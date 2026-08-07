@@ -1,13 +1,21 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'panasonicindiadigital'
 export const COMPANY = 'Panasonic India Digital'
 export const OFFICIAL_BRAND = 'Panasonic India'
 export const PUBLIC_SURFACE_URL = 'https://www.panasonic.com/in/'
 export const CORPORATE_URL = 'https://www.panasonic.com/in/corporate.html'
-export const GLOBAL_CAREERS_URL =
-  'https://careers.na.panasonic.com/corporate/jobs/locations/country/India'
-export const DISPOSITION = 'verified-panasonic-india-corporate-handoff-fail-closed'
+export const INDIA_CAREERS_URL = 'https://www.panasoniccareersindia.in/'
+export const GLOBAL_CAREERS_URL = 'https://holdings.panasonic/global/corporate/careers.html'
+export const DISPOSITION = 'verified-panasonic-india-careers-handoff-expired-cert-fail-closed'
+export const VERIFIED_ON = '2026-08-03'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.panasonic.com/in/ and https://www.panasonic.com/in/corporate.html were the live Panasonic India public surfaces reviewed for Panasonic India Digital, and that the corporate page handed off to Panasonic\'s global careers experience at https://careers.na.panasonic.com/. Local repo evidence does not establish that the broader Panasonic India jobs inventory is attributable specifically to the exact workbook entity Panasonic India Digital, so this company-specific scraper remains fail-closed and returns no jobs until an exact-name public openings contract is verified.'
+  "Verified on Monday, August 3, 2026 that https://www.panasonic.com/in/ and https://www.panasonic.com/in/corporate.html were the live Panasonic India public surfaces reviewed for Panasonic India Digital, that both pages handed off to Panasonic's India careers site at https://www.panasoniccareersindia.in/, and that the India careers handoff currently failed with CERT_HAS_EXPIRED. Local repo evidence still does not establish that the broader Panasonic India jobs inventory is attributable specifically to the exact workbook entity Panasonic India Digital, so this company-specific scraper remains fail-closed and returns no jobs until an exact-name public openings contract is verified."
+
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
 
 const TRUSTED_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -61,16 +69,6 @@ const normalizePathname = (value = '') => {
 const extractTitle = (html = '') =>
   normalizeText(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '')
 
-const hasCanonicalUrl = (html = '', expectedUrl) => {
-  const rawHtml = String(html)
-  const escapedUrl = expectedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-  return new RegExp(
-    `<(?:link|meta)\\b[^>]+(?:href|content)=["']${escapedUrl}["'][^>]*>`,
-    'i',
-  ).test(rawHtml)
-}
-
 const resolveUrl = (value, baseUrl) => {
   if (!value) return null
 
@@ -79,6 +77,15 @@ const resolveUrl = (value, baseUrl) => {
   } catch {
     return null
   }
+}
+
+const urlsMatch = (left, right) => {
+  const leftUrl = resolveUrl(left, PUBLIC_SURFACE_URL)
+  const rightUrl = resolveUrl(right, PUBLIC_SURFACE_URL)
+  if (!leftUrl || !rightUrl) return false
+
+  return leftUrl.origin === rightUrl.origin
+    && normalizePathname(leftUrl.pathname) === normalizePathname(rightUrl.pathname)
 }
 
 const extractAnchors = (html = '', pageUrl) => {
@@ -128,54 +135,102 @@ const hasJobPostingMarkup = (html = '') => {
   return false
 }
 
-export const hasVerifiedIndiaPublicSurface = (html = '') => {
-  const text = normalizeText(html)
-  const title = extractTitle(html)
+export const defaultFetchPage = async (url, { fetchImpl = fetch } = {}) => {
+  try {
+    const response = await fetchImpl(url, {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': USER_AGENT,
+      },
+    })
 
-  return /\bpanasonic\b/i.test(title)
-    && /\bindia\b/i.test(title || text)
-    && /\bpanasonic\b/i.test(text)
-    && hasCanonicalUrl(html, PUBLIC_SURFACE_URL)
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+      errorCode: null,
+      errorMessage: null,
+      errorReason: null,
+    }
+  } catch (error) {
+    return {
+      status: 0,
+      url,
+      html: '',
+      errorCode: error?.cause?.code || error?.code || null,
+      errorMessage: error?.message || String(error),
+      errorReason: error?.cause?.reason || null,
+    }
+  }
 }
+
+export const isExpiredCertificateSurface = (page = {}) =>
+  page.status === 0 && /CERT_HAS_EXPIRED/i.test(String(page.errorCode ?? ''))
+
+export const findVerifiedIndiaCareersHandoff = (html = '', pageUrl = PUBLIC_SURFACE_URL) =>
+  extractAnchors(html, pageUrl).find(
+    ({ text, url }) =>
+      /careers/i.test(text)
+      && urlsMatch(url.toString(), INDIA_CAREERS_URL),
+  ) || null
 
 export const findVerifiedGlobalCareersHandoff = (html = '', pageUrl = CORPORATE_URL) =>
   extractAnchors(html, pageUrl).find(
     ({ text, url }) =>
-      /\bcareers\b/i.test(text)
-      && url.hostname.toLowerCase() === 'careers.na.panasonic.com'
-      && /^\/corporate(?:\/|$)/i.test(url.pathname),
+      /careers/i.test(text)
+      && urlsMatch(url.toString(), GLOBAL_CAREERS_URL),
   ) || null
+
+export const hasVerifiedIndiaPublicSurface = (html = '') => {
+  const text = normalizeText(html)
+  const title = extractTitle(html)
+
+  return /panasonic/i.test(title)
+    && /india/i.test(title)
+    && /panasonic/i.test(text)
+    && Boolean(findVerifiedIndiaCareersHandoff(html, PUBLIC_SURFACE_URL))
+}
 
 export const hasVerifiedCorporateSurface = (html = '') => {
   const text = normalizeText(html)
   const title = extractTitle(html)
 
-  return /\bpanasonic\b/i.test(title || text)
-    && /\bindia\b/i.test(text)
-    && hasCanonicalUrl(html, CORPORATE_URL)
+  return /about us/i.test(title)
+    && /panasonic/i.test(title)
+    && /india/i.test(title)
+    && /panasonic india/i.test(text)
+    && Boolean(findVerifiedIndiaCareersHandoff(html, CORPORATE_URL))
     && Boolean(findVerifiedGlobalCareersHandoff(html, CORPORATE_URL))
 }
 
-const assertVerifiedIndiaPublicSurface = (html = '') => {
-  if (hasVerifiedIndiaPublicSurface(html)) return
+const assertVerifiedIndiaPublicSurface = (page = {}) => {
+  if (page.status === 200 && hasVerifiedIndiaPublicSurface(page.html)) return
 
   throw new Error(
     'Panasonic India Digital verified Panasonic India public surface changed; review the public contract before promoting a real parser.',
   )
 }
 
-const assertVerifiedCorporateHandoff = (html = '') => {
-  if (hasVerifiedCorporateSurface(html)) return
+const assertVerifiedCorporateHandoff = (page = {}) => {
+  if (page.status === 200 && hasVerifiedCorporateSurface(page.html)) return
 
   throw new Error(
     'Panasonic India Digital verified Panasonic careers handoff changed; review the corporate surface before promoting a real parser.',
   )
 }
 
+const assertVerifiedIndiaCareersBlocked = (page = {}) => {
+  if (isExpiredCertificateSurface(page)) return
+
+  throw new Error(
+    'Panasonic India Digital verified India careers handoff changed; review the exact-entity openings contract before promoting a real parser.',
+  )
+}
+
 const assertNoUnexpectedPublicJobsSurface = (
   html = '',
   pageUrl,
-  { allowUrl = null } = {},
+  { allowUrls = [] } = {},
 ) => {
   if (hasJobPostingMarkup(html)) {
     throw new Error(
@@ -185,16 +240,11 @@ const assertNoUnexpectedPublicJobsSurface = (
 
   const page = new URL(pageUrl)
   const pagePath = normalizePathname(page.pathname)
-  const allowedUrl = allowUrl ? new URL(allowUrl) : null
 
   const linkedUrls = extractLinkedUrls(html, pageUrl)
 
   const atsUrl = linkedUrls.find((url) => {
-    if (
-      allowedUrl
-      && url.origin === allowedUrl.origin
-      && normalizePathname(url.pathname) === normalizePathname(allowedUrl.pathname)
-    ) {
+    if (allowUrls.some((allowedUrl) => urlsMatch(url.toString(), allowedUrl))) {
       return false
     }
 
@@ -208,6 +258,10 @@ const assertNoUnexpectedPublicJobsSurface = (
   }
 
   const sameOriginJobUrl = linkedUrls.find((url) => {
+    if (allowUrls.some((allowedUrl) => urlsMatch(url.toString(), allowedUrl))) {
+      return false
+    }
+
     if (url.origin !== page.origin) return false
 
     const pathname = normalizePathname(url.pathname)
@@ -223,35 +277,56 @@ const assertNoUnexpectedPublicJobsSurface = (
   }
 }
 
-const defaultFetchHtml = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
-    },
-  })
-
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
-
 export const createPanasonicIndiaDigitalScraper = () => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const [publicSurfaceHtml, corporateHtml] = await Promise.all([
-      fetchHtml(PUBLIC_SURFACE_URL),
-      fetchHtml(CORPORATE_URL),
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const [publicSurfacePage, corporatePage, indiaCareersPage] = await Promise.all([
+      fetchPage(PUBLIC_SURFACE_URL),
+      fetchPage(CORPORATE_URL),
+      fetchPage(INDIA_CAREERS_URL),
     ])
 
-    assertVerifiedIndiaPublicSurface(publicSurfaceHtml)
-    assertNoUnexpectedPublicJobsSurface(publicSurfaceHtml, PUBLIC_SURFACE_URL)
-
-    assertVerifiedCorporateHandoff(corporateHtml)
-    assertNoUnexpectedPublicJobsSurface(corporateHtml, CORPORATE_URL, {
-      allowUrl: GLOBAL_CAREERS_URL,
+    assertVerifiedIndiaPublicSurface(publicSurfacePage)
+    assertNoUnexpectedPublicJobsSurface(publicSurfacePage.html, PUBLIC_SURFACE_URL, {
+      allowUrls: [INDIA_CAREERS_URL],
     })
+
+    assertVerifiedCorporateHandoff(corporatePage)
+    assertNoUnexpectedPublicJobsSurface(corporatePage.html, CORPORATE_URL, {
+      allowUrls: [INDIA_CAREERS_URL, GLOBAL_CAREERS_URL],
+    })
+
+    assertVerifiedIndiaCareersBlocked(indiaCareersPage)
 
     return []
   },
 })
 
 export const run = async (options = {}) => createPanasonicIndiaDigitalScraper().run(options)
+
+export const persistScrapeResults = async ({
+  argv = process.argv,
+  runImpl = run,
+  saveToFileImpl,
+  saveToDBImpl,
+  outputFile = path.join(currentDir, 'jobs.json'),
+} = {}) => {
+  const jobs = await runImpl()
+
+  if (!saveToFileImpl || !saveToDBImpl) {
+    const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+    saveToFileImpl ??= saveToFile
+    saveToDBImpl ??= saveToDB
+  }
+
+  if (argv.includes('--dry-run')) {
+    await saveToFileImpl(jobs, outputFile)
+    return jobs
+  }
+
+  await saveToDBImpl(jobs, SOURCE)
+  return jobs
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await persistScrapeResults()
+}

@@ -82,15 +82,22 @@ const getCurrentDateIso = (date = new Date()) => {
 }
 
 export const hasHomepageSignal = (html) =>
-  /<a[^>]+href=["']https:\/\/www\.isro\.gov\.in\/Careers\.html["']/i.test(String(html ?? ''))
+  /<a[^>]+href=["'](?:https:\/\/www\.isro\.gov\.in\/)?Careers\.html["']/i.test(String(html ?? ''))
+  || /CAREERS[\s\S]{0,160}prestigious space agency/i.test(String(html ?? ''))
 
 export const hasCareersPageSignal = (html) => {
   const page = String(html ?? '')
-  return /About Current Opportunities/i.test(page)
-    && /Current opportunities/i.test(page)
-    && /View All Current Opportunities/i.test(page)
-    && /CurrentOpportunities\.html/i.test(page)
-    && /ViewAllOpportunities\.html/i.test(page)
+  return /Current opportunities/i.test(page)
+    && (
+      /View All Current Opportunities/i.test(page)
+      || /CurrentOpportunities\.html/i.test(page)
+      || /CareerOpportunities\.html/i.test(page)
+      || /Recruitment Notice/i.test(page)
+    )
+    && (
+      /ViewAllOpportunities\.html/i.test(page)
+      || /Read more/i.test(page)
+    )
 }
 
 export const hasCurrentOpportunitiesSignal = (html) =>

@@ -120,8 +120,10 @@ export const parseCompanyCsv = (csvText) =>
     )
     const hasStructuredHeader =
       firstColumn === 'row'
-      && ['company_name', 'companyname'].includes(secondColumn)
-    const hasSingleColumnHeader = firstColumn === 'company_name' && !secondColumn
+      && ['company_name', 'companyname', 'company name'].includes(secondColumn)
+    const hasSingleColumnHeader =
+      ['company_name', 'companyname', 'company name'].includes(firstColumn)
+      && !secondColumn
     const dataLines = hasStructuredHeader || hasSingleColumnHeader ? remainingLines : lines
 
     return dataLines.map((line, index) => {

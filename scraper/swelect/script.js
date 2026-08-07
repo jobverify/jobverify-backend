@@ -13,9 +13,6 @@ const USER_AGENT =
 
 const FETCH_TIMEOUT_MS = 15000
 
-const INDIA_LOCATION_PATTERN =
-  /\b(india|chennai|noida|bangalore|bengaluru|kerala|andhra pradesh)\b/i
-
 const createFetchTimeoutSignal = () => AbortSignal.timeout(FETCH_TIMEOUT_MS)
 
 const normalizeText = (value) => String(value ?? '')
@@ -57,12 +54,13 @@ const getPrimaryCity = (location) => {
   if (/bengaluru|bangalore/i.test(normalized)) return 'Bangalore'
   if (/chennai/i.test(normalized)) return 'Chennai'
   if (/noida/i.test(normalized)) return 'Noida'
+  if (/trichy|tiruchirappalli/i.test(normalized)) return 'Trichy'
   return null
 }
 
 const normalizeLocation = (value) => {
   const normalized = normalizeText(value)
-  if (!normalized || !INDIA_LOCATION_PATTERN.test(normalized)) {
+  if (!normalized) {
     return null
   }
 

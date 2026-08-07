@@ -4,14 +4,16 @@ import test from 'node:test'
 const officialCareersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Careers at SplashLearn</title>
+  </head>
   <body>
     <main>
-      <h1>SplashLearn Overview</h1>
-      <p>We are the world's first scientifically-designed, game-based curriculum spanning pre-kindergarten to Grade 5.</p>
+      <p>1 in 7 elementary school children in the US love SplashLearn!</p>
       <h2>Culture at SplashLearn</h2>
       <p>At SplashLearn, we dig individuality.</p>
+      <h2>Meet Our Founders</h2>
       <p>Arpit Jain - CEO and a Co-founder, SplashLearn.</p>
-      <p>help@splashlearn.com</p>
       <footer>StudyPad &amp; SplashLearn are registered Trademarks of StudyPad, Inc.</footer>
     </main>
   </body>

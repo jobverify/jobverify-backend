@@ -16,6 +16,7 @@ export const SOURCE = 'prefect'
 export const COMPANY = 'Prefect'
 export const VERIFIED_ON = '2026-07-25'
 export const COMPANY_PAGE_URL = 'https://www.prefect.io/company'
+export const CAREERS_PAGE_URL = 'https://www.prefect.io/careers'
 export const ASHBY_PUBLIC_BOARD_URL = 'https://jobs.ashbyhq.com/prefect'
 export const ASHBY_JOB_BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board/prefect'
 
@@ -114,6 +115,27 @@ export const hasVerifiedCompanyPageSignal = (html) => {
     && /Careers|See Open Roles/i.test(normalized)
 }
 
+export const hasVerifiedCareersPageSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeString(rawHtml) || ''
+
+  return /Careers at Prefect - Open Roles/i.test(rawHtml)
+    && normalized.includes('Join the team defining the future of workflow automation')
+    && normalized.includes("We're remote first and have carefully created a supportive, high-performance culture.")
+    && /Open roles|Loading open roles/i.test(normalized)
+    && /ashby-job-board\.css/i.test(rawHtml)
+}
+
+export const extractVerifiedCareersPageUrl = (html = '') =>
+  /href=["']\/careers["']|href=["']https:\/\/www\.prefect\.io\/careers["']|data-analytics-cta-destination":"\/careers"/i.test(String(html ?? ''))
+    ? CAREERS_PAGE_URL
+    : null
+
+export const extractAnyAshbyPublicBoardUrl = (html = '') => {
+  const match = String(html ?? '').match(/https:\/\/jobs\.ashbyhq\.com\/[A-Za-z0-9._-]+\b/i)
+  return match ? match[0] : null
+}
+
 export const extractVerifiedAshbyPublicBoardUrl = (html = '') =>
   /https:\/\/jobs\.ashbyhq\.com\/prefect\b/i.test(String(html ?? ''))
     ? ASHBY_PUBLIC_BOARD_URL
@@ -183,7 +205,32 @@ export const createPrefectScraper = ({
       throw new Error('Verified Prefect company page changed materially')
     }
 
-    const verifiedPublicBoardUrl = extractVerifiedAshbyPublicBoardUrl(companyHtml)
+    let verifiedPublicBoardUrl = extractVerifiedAshbyPublicBoardUrl(companyHtml)
+    const detectedPublicBoardUrl = extractAnyAshbyPublicBoardUrl(companyHtml)
+
+    if (detectedPublicBoardUrl && detectedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
+      throw new Error('Verified Ashby public board handoff changed materially')
+    }
+
+    if (!verifiedPublicBoardUrl) {
+      const verifiedCareersPageUrl = extractVerifiedCareersPageUrl(companyHtml)
+      if (verifiedCareersPageUrl !== CAREERS_PAGE_URL) {
+        throw new Error('Verified Ashby public board handoff changed materially')
+      }
+
+      const careersHtml = await fetchText(verifiedCareersPageUrl)
+      if (!hasVerifiedCareersPageSignal(careersHtml)) {
+        throw new Error('Verified Prefect careers page changed materially')
+      }
+
+      const careersDetectedPublicBoardUrl = extractAnyAshbyPublicBoardUrl(careersHtml)
+      if (careersDetectedPublicBoardUrl && careersDetectedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
+        throw new Error('Verified Ashby public board handoff changed materially')
+      }
+
+      verifiedPublicBoardUrl = careersDetectedPublicBoardUrl || ASHBY_PUBLIC_BOARD_URL
+    }
+
     if (verifiedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
       throw new Error('Verified Ashby public board handoff changed materially')
     }

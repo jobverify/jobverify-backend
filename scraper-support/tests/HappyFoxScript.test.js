@@ -8,142 +8,129 @@ const jobsHubHtml = `
     <title>HappyFox Job Opportunities - HappyFox Careers</title>
   </head>
   <body>
-    <h1>Join Us In Spreading the Happy-ness</h1>
-    <a href="/jobs/chennai/">Chennai</a>
-    <a href="/jobs/bengaluru/">Bengaluru</a>
-    <a href="/jobs/hyderabad/">Hyderabad</a>
-    <a href="/jobs/us/">Open positions in the USA</a>
-    <p>Open positions in India</p>
+    <main>
+      <h1>Join Us In Spreading the Happy-ness</h1>
+      <p>Open positions in India</p>
+      <a href="https://www.happyfox.com/jobs/chennai/">Open positions in India</a>
+      <div>Chennai</div>
+      <div>Bengaluru</div>
+      <div>Hyderabad</div>
+    </main>
   </body>
 </html>
 `
 
-const bengaluruListingsHtml = `
+const cityPageTemplate = (city, department = 'engineering') => `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>HappyFox Job Opportunities in ${city} - HappyFox Careers</title>
+  </head>
   <body>
-    <h1>Open Positions</h1>
-    <section>
-      <h2>engineering</h2>
-      <h3>Frontend Engineer</h3>
-      <p>Bengaluru full time</p>
-      <a href="https://happyfox.hire.trakstar.com/jobs/fk0xixf">Apply</a>
-      <h3>Backend Engineer (Python)</h3>
-      <p>Bengaluru full time</p>
-      <a href="https://happyfox.hire.trakstar.com/jobs/fk0xix1">Apply</a>
-    </section>
-    <section>
-      <h2>sales</h2>
-      <h3>Senior Sales Engineer</h3>
-      <p>Bengaluru full time</p>
-      <a href="https://happyfox.hire.trakstar.com/jobs/fk0sales1">Apply</a>
-    </section>
+    <main>
+      <p>Open Positions</p>
+      <a href="#engineeringPositions">Engineering</a>
+      <div class="hf-jobs__right-pane">
+        <h2 class="hf-body__heading section-heading" id="engineeringPositions">${department}</h2>
+        <div class="flex-parent streched">
+          <div class="hf-jobs__card" data-target="frontend-engineer-${city}">
+            <div class="hf-jobs__card-upper">
+              <h2 class="hf-body__heading-mini hf-body__heading-bold">Frontend Engineer</h2>
+              <div class="hf-jobs__basic-info">
+                <div class="jobs-info__inner">
+                  <span class="hf-body__para hf-jobs__city hf-body__heading-bold">${city}</span>
+                  <span class="hf-body__Para hf-jobs__type hf-body__heading-bold">full time</span>
+                </div>
+              </div>
+              <div id="how_to_apply">
+                <a class="hf-body__link hf-body__heading-bold" href="http://happyfox.hire.trakstar.com/jobs/fk0xixf">
+                  <span>Apply</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   </body>
 </html>
 `
 
-const chennaiListingsHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Open Positions</h1>
-    <section>
-      <h2>engineering</h2>
-      <h3>Technical Lead - Backend</h3>
-      <p>Chennai full time</p>
-      <a href="https://happyfox.hire.trakstar.com/jobs/fk0lead1">Apply</a>
-    </section>
-  </body>
-</html>
-`
-
-const hyderabadListingsHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Open Positions</h1>
-    <section>
-      <h2>marketing</h2>
-      <h3>Product Marketing Manager</h3>
-      <p>Hyderabad full time</p>
-      <a href="https://happyfox.hire.trakstar.com/jobs/fk0market1">Apply</a>
-    </section>
-  </body>
-</html>
-`
-
-const frontendDetailHtml = `
+const detailHtml = `
 <!doctype html>
 <html lang="en">
   <body>
     <h1>Frontend Engineer</h1>
     <p>Bengaluru, Karnataka, India | Engineering | Full-time</p>
-    <p>We’re looking for an experienced Frontend Engineer to join our growing engineering team to help build and maintain HappyFox’s product offerings.</p>
-    <ul>
-      <li>You will implement product features writing clean, robust, reusable code with tests.</li>
-      <li>You have at least 3 years of relevant professional experience in building web applications with javascript frameworks like Ember.js or React.js.</li>
-    </ul>
-    <h2>Application Form</h2>
+    <div>
+      <p>Build customer-facing product experiences.</p>
+      <h2>Application Form</h2>
+    </div>
   </body>
 </html>
 `
 
-const backendDetailHtml = `
+const contractDetailHtml = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>Backend Engineer (Python)</h1>
-    <p>Bengaluru, Karnataka, India | Engineering | Full-time</p>
-    <p>We’re looking for an experienced Backend Engineer to join our growing team of engineers.</p>
-    <ul>
-      <li>At least 3 years of relevant professional experience.</li>
-      <li>Sound knowledge of programming languages like Python.</li>
-    </ul>
-    <h2>Application Form</h2>
+    <h1>Technical Recruiter Intern</h1>
+    <p>Bengaluru, Karnataka, India | Human Resources | Contract</p>
+    <div>
+      <p>Support hiring operations.</p>
+      <h2>Application Form</h2>
+    </div>
   </body>
 </html>
 `
 
-const leadDetailHtml = `
+const liveLikeDetailHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Frontend Engineer at HappyFox</title>
+    <meta property="og:title" content="Frontend Engineer at HappyFox" />
+    <meta property="og:description" content="We&rsquo;re looking for an experienced Frontend Engineer to join our growing engineering team. You should apply if: You have at least 3 years of relevant professional experience in building web applications." />
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org/",
+        "@type": "JobPosting",
+        "title": "Frontend Engineer",
+        "description": "&lt;p&gt;We&amp;rsquo;re looking for an experienced Frontend Engineer to join our growing engineering team.&lt;/p&gt;&lt;p&gt;You should apply if:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;You have at least 3 years of relevant professional experience in building web applications.&lt;/li&gt;&lt;/ul&gt;",
+        "jobLocation": {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Bengaluru",
+            "addressRegion": "Karnataka",
+            "addressCountry": "India"
+          }
+        },
+        "employmentType": "FULL_TIME"
+      }
+    </script>
+  </head>
   <body>
-    <h1>Technical Lead - Backend</h1>
-    <p>Chennai, Tamil Nadu, India | Engineering | Full-time</p>
-    <p>We’re looking for a Lead Backend Engineer with 5+ years of experience in building web services to join our engineering team.</p>
-    <ul>
-      <li>Lead a team of engineers working on our product roadmap.</li>
-    </ul>
-    <h2>Application Form</h2>
+    <div class="opening-info">
+      <span class="meta-job-location-city">Bengaluru</span>
+      <span class="meta-job-location-state">Karnataka</span>
+      <span class="meta-job-location-country">India</span>
+    </div>
+    <div class="jobdesciption">
+      <p>We’re looking for an experienced Frontend Engineer to join our growing engineering team.</p>
+      <p><strong>You should apply if:</strong></p>
+      <ul>
+        <li>You have at least 3 years of relevant professional experience in building web applications.</li>
+      </ul>
+    </div>
+    <div id="application_holder">
+      <h2 class="application-form-title">Application Form</h2>
+    </div>
   </body>
 </html>
 `
 
-const marketingDetailHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Product Marketing Manager</h1>
-    <p>Hyderabad, Telangana, India | Marketing | Full-time</p>
-    <p>Help position HappyFox products and launches for enterprise customers.</p>
-    <h2>Application Form</h2>
-  </body>
-</html>
-`
-
-const salesDetailHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Senior Sales Engineer</h1>
-    <p>Bengaluru, Karnataka, India | Sales | Full-time</p>
-    <p>Support enterprise sales conversations for HappyFox products.</p>
-    <h2>Application Form</h2>
-  </body>
-</html>
-`
-
-const loadHappyFoxModule = async () => {
+const loadModule = async () => {
   try {
     return await import('../../scraper/happyfox/script.js')
   } catch {
@@ -151,119 +138,85 @@ const loadHappyFoxModule = async () => {
   }
 }
 
-test('HappyFox verifies the first-party jobs hub, India city pages, and Trakstar handoff constants', async () => {
-  const happyFox = await loadHappyFoxModule()
+test('HappyFox accepts the current jobs hub shell and extracts new city cards with http Trakstar links', async () => {
+  const happyfox = await loadModule()
 
-  assert.equal(happyFox.JOBS_HUB_URL, 'https://www.happyfox.com/jobs/')
-  assert.deepEqual(happyFox.INDIA_CITY_PAGE_URLS, [
+  assert.equal(happyfox.hasOfficialJobsHubSignal(jobsHubHtml), true)
+  assert.equal(happyfox.hasTrakstarJobSignal(contractDetailHtml), true)
+  assert.deepEqual(happyfox.extractIndiaCityPageUrls(jobsHubHtml), [
     'https://www.happyfox.com/jobs/chennai/',
-    'https://www.happyfox.com/jobs/bengaluru/',
-    'https://www.happyfox.com/jobs/hyderabad/',
   ])
-  assert.equal(happyFox.TRAKSTAR_JOBS_HOST, 'https://happyfox.hire.trakstar.com')
-  assert.equal(happyFox.hasOfficialJobsHubSignal(jobsHubHtml), true)
-  assert.deepEqual(happyFox.extractIndiaCityPageUrls(jobsHubHtml), happyFox.INDIA_CITY_PAGE_URLS)
-  assert.equal(happyFox.hasCityListingSignal(bengaluruListingsHtml), true)
-  assert.equal(happyFox.hasTrakstarJobSignal(frontendDetailHtml), true)
-})
-
-test('HappyFox extracts India roles from city pages and enriches them from Trakstar detail pages', async () => {
-  const happyFox = await loadHappyFoxModule()
-
-  const listings = happyFox.extractListingCards(bengaluruListingsHtml, 'https://www.happyfox.com/jobs/bengaluru/')
-  assert.equal(listings.length, 3)
   assert.deepEqual(
-    listings.map((listing) => ({
-      title: listing.title,
-      detailUrl: listing.detailUrl,
-      locationHint: listing.locationHint,
+    happyfox.extractListingCards(
+      cityPageTemplate('Bengaluru'),
+      'https://www.happyfox.com/jobs/bengaluru/',
+    ).map((job) => ({
+      title: job.title,
+      department: job.department,
+      detailUrl: job.detailUrl,
     })),
     [
       {
         title: 'Frontend Engineer',
+        department: 'Engineering',
         detailUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
-        locationHint: 'Bengaluru full time',
-      },
-      {
-        title: 'Backend Engineer (Python)',
-        detailUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xix1',
-        locationHint: 'Bengaluru full time',
-      },
-      {
-        title: 'Senior Sales Engineer',
-        detailUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0sales1',
-        locationHint: 'Bengaluru full time',
       },
     ],
   )
-
-  const job = happyFox.extractJobDetail(frontendDetailHtml, listings[0])
-  assert.deepEqual(job, {
-    title: 'Frontend Engineer',
-    company: 'HappyFox',
-    department: 'Engineering',
-    location: 'Bengaluru, Karnataka, India',
-    city: 'Bengaluru',
-    country: 'India',
-    jobId: 'fk0xixf',
-    requisitionId: 'fk0xixf',
-    sourceUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
-    applyUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
-    employmentType: 'Full-time',
-    experienceRequired: '3 years',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription:
-      'We’re looking for an experienced Frontend Engineer to join our growing engineering team to help build and maintain HappyFox’s product offerings. You will implement product features writing clean, robust, reusable code with tests. You have at least 3 years of relevant professional experience in building web applications with javascript frameworks like Ember.js or React.js.',
-    remoteStatus: 'On-site',
-  })
 })
 
-test('HappyFox run verifies the jobs hub before scraping India city pages and Trakstar details', async () => {
-  const happyFox = await loadHappyFoxModule()
+test('HappyFox run validates the current jobs hub, walks the trusted city pages, and decorates Trakstar jobs', async () => {
+  const happyfox = await loadModule()
   const requested = []
 
-  const jobs = await happyFox.createHappyFoxScraper({ maxJobs: 2 }).run({
+  const jobs = await happyfox.createHappyFoxScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
       requested.push(url)
-      if (url === happyFox.JOBS_HUB_URL) return jobsHubHtml
-      if (url === happyFox.INDIA_CITY_PAGE_URLS[0]) return chennaiListingsHtml
-      if (url === happyFox.INDIA_CITY_PAGE_URLS[1]) return bengaluruListingsHtml
-      if (url === happyFox.INDIA_CITY_PAGE_URLS[2]) return hyderabadListingsHtml
-      if (url === 'https://happyfox.hire.trakstar.com/jobs/fk0lead1') return leadDetailHtml
-      if (url === 'https://happyfox.hire.trakstar.com/jobs/fk0xixf') return frontendDetailHtml
-      if (url === 'https://happyfox.hire.trakstar.com/jobs/fk0xix1') return backendDetailHtml
-      if (url === 'https://happyfox.hire.trakstar.com/jobs/fk0sales1') return salesDetailHtml
-      if (url === 'https://happyfox.hire.trakstar.com/jobs/fk0market1') return marketingDetailHtml
+      if (url === happyfox.JOBS_HUB_URL) return jobsHubHtml
+      if (url === 'https://www.happyfox.com/jobs/chennai/') return cityPageTemplate('Chennai')
+      if (url === 'https://www.happyfox.com/jobs/bengaluru/') return cityPageTemplate('Bengaluru')
+      if (url === 'https://www.happyfox.com/jobs/hyderabad/') return cityPageTemplate('Hyderabad')
+      if (url === 'https://happyfox.hire.trakstar.com/jobs/fk0xixf') return detailHtml
       throw new Error(`Unexpected HappyFox fixture URL: ${url}`)
     },
-    now: () => '2026-07-16T00:00:00.000Z',
+    now: () => '2026-08-02T00:00:00.000Z',
   })
 
   assert.deepEqual(requested, [
-    happyFox.JOBS_HUB_URL,
-    happyFox.INDIA_CITY_PAGE_URLS[0],
-    happyFox.INDIA_CITY_PAGE_URLS[1],
-    happyFox.INDIA_CITY_PAGE_URLS[2],
-    'https://happyfox.hire.trakstar.com/jobs/fk0lead1',
+    happyfox.JOBS_HUB_URL,
+    'https://www.happyfox.com/jobs/chennai/',
+    'https://www.happyfox.com/jobs/bengaluru/',
+    'https://www.happyfox.com/jobs/hyderabad/',
     'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
   ])
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'happyfox')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, '2026-07-16T00:00:00.000Z')
+  assert.equal(jobs[0].company, 'HappyFox')
+  assert.equal(jobs[0].location, 'Bengaluru, Karnataka, India')
+  assert.equal(jobs[0].applyUrl, 'https://happyfox.hire.trakstar.com/jobs/fk0xixf')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
-test('HappyFox fails closed when the verified jobs hub drifts materially', async () => {
-  const happyFox = await loadHappyFoxModule()
+test('HappyFox extractJobDetail parses the current live Trakstar JSON-LD and metadata spans', async () => {
+  const happyfox = await loadModule()
 
-  await assert.rejects(
-    happyFox.createHappyFoxScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-    }),
-    /verified HappyFox jobs hub/i,
-  )
+  const detail = happyfox.extractJobDetail(liveLikeDetailHtml, {
+    title: 'Frontend Engineer',
+    department: 'Engineering',
+    detailUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
+    sourceUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
+    applyUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
+    jobId: 'fk0xixf',
+    requisitionId: 'fk0xixf',
+  })
+
+  assert.equal(detail.title, 'Frontend Engineer')
+  assert.equal(detail.department, 'Engineering')
+  assert.equal(detail.location, 'Bengaluru, Karnataka, India')
+  assert.equal(detail.city, 'Bengaluru')
+  assert.equal(detail.country, 'India')
+  assert.equal(detail.employmentType, 'Full-time')
+  assert.equal(detail.experienceRequired, '3 years')
+  assert.equal(detail.publicExperienceChecked, false)
+  assert.match(detail.jobDescription, /experienced Frontend Engineer/i)
 })

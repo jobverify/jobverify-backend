@@ -46,6 +46,24 @@ const publicBoardHtml = `
 </html>
 `
 
+const zeroListingsPayload = {
+  totalFound: 0,
+  content: [],
+}
+
+const publicListingsPayload = {
+  totalFound: 1,
+  content: [
+    {
+      id: '744000140000001',
+      name: 'Full Stack Developer',
+      location: {
+        fullLocation: 'Pune, India',
+      },
+    },
+  ],
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/cloudmoyo/script.js')
@@ -65,43 +83,57 @@ test('CloudMoyo helpers stay pinned to the verified contact-page handoff and emp
     cloudmoyo.BOARD_URL,
     'https://careers.smartrecruiters.com/CloudMoyo/cloudmoyo-india-careers?remoteLocation=true',
   )
+  assert.equal(
+    cloudmoyo.LISTINGS_API_URL,
+    'https://api.smartrecruiters.com/v1/companies/CloudMoyo/postings?limit=100&offset=0',
+  )
   assert.equal(cloudmoyo.hasOfficialContactSignal(officialContactHtml), true)
   assert.equal(cloudmoyo.hasVerifiedEmptyBoardSignal(emptyBoardHtml), true)
+  assert.equal(cloudmoyo.hasVerifiedZeroListingsSignal(zeroListingsPayload), true)
+  assert.equal(cloudmoyo.hasVerifiedZeroListingsSignal(publicListingsPayload), false)
   assert.equal(cloudmoyo.pageExposesPublicJobListings(emptyBoardHtml), false)
   assert.equal(cloudmoyo.pageExposesPublicJobListings(publicBoardHtml), true)
 })
 
-test('CloudMoyo returns [] while the verified SmartRecruiters India board stays empty', async () => {
+test('CloudMoyo returns [] while the verified public SmartRecruiters API stays at zero listings', async () => {
   const cloudmoyo = await loadModule()
   const requestedUrls = []
+  const requestedJson = []
 
   const jobs = await cloudmoyo.createCloudMoyoScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === cloudmoyo.CONTACT_URL) return officialContactHtml
-      if (url === cloudmoyo.BOARD_URL) return emptyBoardHtml
       throw new Error(`Unexpected CloudMoyo URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedJson.push(url)
+      if (url === cloudmoyo.LISTINGS_API_URL) return zeroListingsPayload
+      throw new Error(`Unexpected CloudMoyo JSON URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [cloudmoyo.CONTACT_URL, cloudmoyo.BOARD_URL])
+  assert.deepEqual(requestedUrls, [cloudmoyo.CONTACT_URL])
+  assert.deepEqual(requestedJson, [cloudmoyo.LISTINGS_API_URL])
   assert.deepEqual(jobs, [])
 })
 
-test('CloudMoyo fails closed when the verified contact page or empty board drift', async () => {
+test('CloudMoyo fails closed when the verified contact page or zero-listings API state drift', async () => {
   const cloudmoyo = await loadModule()
 
   await assert.rejects(
     cloudmoyo.createCloudMoyoScraper().run({
-      fetchText: async (url) => (url === cloudmoyo.CONTACT_URL ? '<html><body>Contact</body></html>' : emptyBoardHtml),
+      fetchText: async () => '<html><body>Contact</body></html>',
+      fetchJson: async () => zeroListingsPayload,
     }),
     /contact page/i,
   )
 
   await assert.rejects(
     cloudmoyo.createCloudMoyoScraper().run({
-      fetchText: async (url) => (url === cloudmoyo.CONTACT_URL ? officialContactHtml : publicBoardHtml),
+      fetchText: async () => officialContactHtml,
+      fetchJson: async () => publicListingsPayload,
     }),
-    /public job listings|empty board/i,
+    /zero-listings api state/i,
   )
 })

@@ -11,9 +11,11 @@ test('MCX is registered against the verified first-party careers surface', () =>
   assert.equal(provider.companyName, 'MCX')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.companyCareerPage, 'https://classic.mcxindia.com/careers/workwithus')
-  assert.equal(provider.companyDomain, 'classic.mcxindia.com')
+  assert.equal(provider.companyCareerPage, 'https://www.mcxindia.com/careers/job-openings')
+  assert.equal(provider.companyDomain, 'mcxindia.com')
   assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedPublicJobCount, 5)
 })
 
 test('MCX resolves in company coverage and exposes a runnable scraper', () => {

@@ -3,6 +3,45 @@ import test from 'node:test'
 
 const FIXED_SCRAPED_AT = '2026-07-15T00:00:00.000Z'
 
+const darwinboxListingPayload = {
+  job_counts: 3,
+  data: [
+    {
+      id: 'a688746f77752a',
+      title: 'Head of Engineering',
+      department_name: 'Autonomous Cloud',
+      locations: 'Chennai, Tamil Nadu, India',
+      country: 'India',
+      emp_type_name: 'On-Roll',
+      experience: '10 - 20 Years',
+      posted_on: '15-04-2026',
+      jd: '<p>Lead the engineering org.</p>',
+    },
+    {
+      id: 'a6888578510db2',
+      title: 'Python Engineer',
+      department_name: 'Autonomous Cloud',
+      locations: 'Nashik, Maharashtra, India',
+      country: 'India',
+      emp_type_name: 'On-Roll',
+      experience: '4 - 7 Years',
+      posted_on: '11-06-2026',
+      jd: '<p>Build Python services.</p>',
+    },
+    {
+      id: 'dbx-extra-001',
+      title: 'Ignore Extra Portal Job',
+      department_name: 'Platform',
+      locations: 'Pune, Maharashtra, India',
+      country: 'India',
+      emp_type_name: 'On-Roll',
+      experience: '2 - 4 Years',
+      posted_on: '20-06-2026',
+      jd: '<p>Not visible on the verified first-party ESDS page.</p>',
+    },
+  ],
+}
+
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -138,9 +177,19 @@ test('ESDS helpers keep the verified first-party careers listing and detail rout
   assert.equal(esds.SOURCE, 'esds')
   assert.equal(esds.COMPANY, 'ESDS')
   assert.equal(esds.OFFICIAL_BRAND_NAME, 'ESDS Software Solution Limited')
-  assert.equal(esds.VERIFIED_ON, '2026-07-15')
+  assert.equal(esds.VERIFIED_ON, '2026-08-02')
   assert.equal(esds.HOMEPAGE_URL, 'https://www.esds.co.in/')
   assert.equal(esds.CAREERS_URL, 'https://www.esds.co.in/careers/')
+  assert.equal(
+    esds.OFFICIAL_CAREERS_HANDOFF_URL,
+    'https://esds.darwinbox.in/ms/candidatev2/main/careers/home',
+  )
+  assert.equal(esds.DARWINBOX_ORIGIN, 'https://esds.darwinbox.in')
+  assert.equal(esds.DARWINBOX_COMPANY_ID, 'main')
+  assert.equal(
+    esds.PUBLIC_PORTAL_URL,
+    'https://esds.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
   assert.equal(
     esds.buildDetailUrl('a688746f77752a'),
     'https://www.esds.co.in/career-details/a688746f77752a',
@@ -223,9 +272,10 @@ test('ESDS extracts the verified job cards and detail handoff fields from the fi
   )
 })
 
-test('run validates the verified ESDS careers surface and decorates first-party jobs with Darwinbox apply handoffs', async () => {
+test('run validates the verified ESDS careers surface and keeps only Darwinbox jobs that are still visible on the first-party ESDS page', async () => {
   const esds = await loadEsdsModule()
   const requestedUrls = []
+  const requestedListingPages = []
 
   const jobs = await esds.createEsdsScraper({
     maxJobs: 1,
@@ -235,28 +285,31 @@ test('run validates the verified ESDS careers surface and decorates first-party 
       requestedUrls.push(url)
 
       if (url === esds.CAREERS_URL) return careersHtml
-      if (url === esds.buildDetailUrl('a688746f77752a')) return headOfEngineeringDetailHtml
 
       throw new Error(`Unexpected ESDS URL: ${url}`)
+    },
+    fetchListingPage: async ({ page }) => {
+      requestedListingPages.push(page)
+      return darwinboxListingPayload
     },
   })
 
   assert.deepEqual(requestedUrls, [
     'https://www.esds.co.in/careers/',
-    'https://www.esds.co.in/career-details/a688746f77752a',
   ])
+  assert.deepEqual(requestedListingPages, [1])
   assert.deepEqual(jobs, [
     {
       title: 'Head of Engineering',
       company: 'ESDS',
       department: 'Autonomous Cloud',
-      location: 'Chennai',
+      location: 'Chennai, Tamil Nadu, India',
       city: 'Chennai',
       country: 'India',
       jobId: 'a688746f77752a',
-      requisitionId: 'a688746f77752a',
-      sourceUrl: 'https://www.esds.co.in/career-details/a688746f77752a',
-      applyUrl: 'https://esds.darwinbox.in/ms/candidate/candidate/login?redirect=%2Fms%2Fcandidate%2Fcareers%2Fa688746f77752a___apply%3D1',
+      requisitionId: null,
+      sourceUrl: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a688746f77752a',
+      applyUrl: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a688746f77752a',
       employmentType: 'On-Roll',
       experienceRequired: '10 - 20 Years',
       minimumQualification: null,
@@ -264,16 +317,15 @@ test('run validates the verified ESDS careers surface and decorates first-party 
       requiredSkills: [],
       postingDate: '15-04-2026',
       closingDate: null,
-      jobDescription: null,
-      remoteStatus: null,
+      jobDescription: '<p>Lead the engineering org.</p>',
       source: 'esds',
-      link: 'https://esds.darwinbox.in/ms/candidate/candidate/login?redirect=%2Fms%2Fcandidate%2Fcareers%2Fa688746f77752a___apply%3D1',
+      link: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a688746f77752a',
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
 })
 
-test('run fails closed when the verified ESDS careers listing or detail surface drifts materially', async () => {
+test('run fails closed when the verified ESDS careers listing drifts or no longer lines up with the Darwinbox public portal', async () => {
   const esds = await loadEsdsModule()
 
   await assert.rejects(
@@ -287,12 +339,25 @@ test('run fails closed when the verified ESDS careers listing or detail surface 
     esds.createEsdsScraper().run({
       fetchText: async (url) => {
         if (url === esds.CAREERS_URL) return careersHtml
-        return headOfEngineeringDetailHtml.replace(
-          'https://esds.darwinbox.in/ms/candidate/candidate/login?redirect=%2Fms%2Fcandidate%2Fcareers%2Fa688746f77752a___apply%3D1',
-          'https://example.com/apply/a688746f77752a',
-        )
+        throw new Error(`Unexpected ESDS URL: ${url}`)
       },
+      fetchListingPage: async () => ({
+        job_counts: 1,
+        data: [
+          {
+            id: 'dbx-mismatch-001',
+            title: 'Portal-Only Role',
+            department_name: 'Platform',
+            locations: 'Pune, Maharashtra, India',
+            country: 'India',
+            emp_type_name: 'On-Roll',
+            experience: '2 - 4 Years',
+            posted_on: '20-06-2026',
+            jd: '<p>Missing from the first-party ESDS page.</p>',
+          },
+        ],
+      }),
     }),
-    /verified public detail\/apply surface/i,
+    /darwinbox public jobs portal/i,
   )
 })

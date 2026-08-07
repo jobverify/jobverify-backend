@@ -1,0 +1,78 @@
+[
+  {
+    "title": "Join our Talent Community to learn about future job opportunities!",
+    "company": "Sourcegraph",
+    "location": "Worldwide / India eligible",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "Worldwide / India eligible",
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/companies/sourcegraph-com/jobs/join-our-talent-community-to-learn-about-future-job-opportunities",
+    "applyUrl": "https://himalayas.app/companies/sourcegraph-com/jobs/join-our-talent-community-to-learn-about-future-job-opportunities",
+    "sourceUrl": "https://himalayas.app/companies/sourcegraph-com/jobs/join-our-talent-community-to-learn-about-future-job-opportunities",
+    "source": "sourcegraph.himalayas.app",
+    "jobId": "https://himalayas.app/companies/sourcegraph-com/jobs/join-our-talent-community-to-learn-about-future-job-opportunities",
+    "requisitionId": "https://himalayas.app/companies/sourcegraph-com/jobs/join-our-talent-community-to-learn-about-future-job-opportunities",
+    "department": "Software-Engineering",
+    "employmentType": "Full Time",
+    "experienceRequired": "Entry-level",
+    "postingDate": "1970-01-21T00:00:00.000Z",
+    "expiresAt": "1970-01-21",
+    "jobDescription": "Who we are Everything is changing in how software gets built, and Sourcegraph is at the center of that transformation. With Code Search, Deep Search, and MCP, Sourcegraph is the world’s most powerful code intelligence platform that developers and agents rely on to navigate, understand, and operate on massive, complex codebases with speed and confidence. Teams at companies like Stripe, Uber, and Dropbox rely on Sourcegraph to ship faster and with higher quality. We’re backed by a16z, Sequoia, and Redpoint, and proud to operate as a globally distributed team that values high agency, direct communication, and a deep love for developers and their craft. If you want to contribute to infrastructure that empowers millions of developers to do their best work\n- join us. Join our Talent Community If you're interested in joining our team at Sourcegraph but don't see an opportunity that you'd like to apply to, please fill out a quick application below to join our Talent Community to stay connected with us to learn about future opportunities that align with your background! Learn more about us You can learn more about what it is like to work at Sourcegraph by reading our handbook. We are an ambitious team who are collectively working hard to build the most influential company in the world. You can read more about our culture, competitive compensation and benefits here. Sourcegraph is an equal opportunity workplace; we welcome people from all backgrounds. Sourcegraph participates in E-Verify for U.S. Employees. Originally posted on Himalayas",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T21:51:04.607Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-development-engineer",
+    "companyDomain": "sourcegraph.himalayas.app",
+    "originalTitle": "Join our Talent Community to learn about future job opportunities!",
+    "normalizedTitle": "Join our Talent Community to learn about future job opportunities!",
+    "jobCategory": "Join our Talent Community to learn about future job opportunities!",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Entry Level",
+    "jobType": "Full Time",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "1970-01-21T00:00:00.000Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T21:51:04.607Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "Entry-level",
+      "minimumYears": 0,
+      "maximumYears": 0,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "medium",
+      "evidence": "Entry-level",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "medium",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:51:21.034Z"
+  }
+]

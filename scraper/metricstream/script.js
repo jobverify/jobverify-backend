@@ -21,6 +21,8 @@ const DEFAULT_MAX_PAGES = 10
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -189,7 +191,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = stripTags(rawHtml) || ''
 
-  return /<title>\s*Careers\s*&\s*Job Opportunities\s*-\s*MetricStream\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*Careers\s*(?:&|&amp;)\s*Job Opportunities\s*-\s*MetricStream\s*<\/title>/i.test(rawHtml)
     && /search open positions/i.test(normalized)
     && /career5\.successfactors\.eu\/career\?company=metricstre/i.test(rawHtml)
 }
@@ -311,7 +313,18 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const getLiveSearchPages = async ({
+const readFirstRequisitionId = async (page) => {
+  const handle = await page.$('tr.jobResultItem .jobContentEM')
+  if (!handle) return null
+
+  try {
+    return await handle.evaluate((element) => element?.textContent?.trim() || null)
+  } finally {
+    await handle.dispose?.()
+  }
+}
+
+export const getLiveSearchPages = async ({
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
   maxPages = DEFAULT_MAX_PAGES,
   launchBrowserImpl = launchBrowser,
@@ -327,26 +340,37 @@ const getLiveSearchPages = async ({
     const pages = []
 
     for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-      await page.waitForTimeout(1000)
+      await sleep(1000)
       pages.push(await page.content())
 
-      const nextCount = await page.locator('a[title="Next Page"]').count()
-      if (nextCount === 0) break
+      const nextHandle = await page.$('a[title="Next Page"]')
+      if (!nextHandle) break
 
-      const next = page.locator('a[title="Next Page"]').first()
-      const className = await next.getAttribute('class')
-      if (className?.includes('disabled')) break
-
-      const firstReqId = await page.locator('tr.jobResultItem .jobContentEM').first().textContent()
-      await next.click()
-      await page.waitForFunction(
-        (previousReqId) => {
-          const currentReqId = document.querySelector('tr.jobResultItem .jobContentEM')?.textContent?.trim() || null
-          return currentReqId && currentReqId !== previousReqId
-        },
-        (firstReqId || '').trim(),
-        { timeout: DEFAULT_TIMEOUT_MS },
+      const className = await nextHandle.evaluate(
+        (element) => element?.getAttribute?.('class') || '',
       )
+      if (className?.includes('disabled')) {
+        await nextHandle.dispose?.()
+        break
+      }
+
+      const firstReqId = await readFirstRequisitionId(page)
+      await nextHandle.click()
+      await nextHandle.dispose?.()
+
+      if (firstReqId) {
+        await page.waitForFunction(
+          (selector, previousReqId) => {
+            const currentReqId = document.querySelector(selector)?.textContent?.trim() || null
+            return currentReqId && currentReqId !== previousReqId
+          },
+          { timeout: DEFAULT_TIMEOUT_MS },
+          'tr.jobResultItem .jobContentEM',
+          firstReqId,
+        )
+      } else {
+        await page.waitForFunction(() => document.querySelector('tr.jobResultItem'), { timeout: DEFAULT_TIMEOUT_MS })
+      }
     }
 
     return pages

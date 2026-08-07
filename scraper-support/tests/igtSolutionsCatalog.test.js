@@ -12,15 +12,15 @@ const loadIgtSolutionsCatalogModule = async () => {
   }
 }
 
-test('IGT Solutions catalog captures the verified no-public-jobs first-party surface from July 16, 2026', async () => {
+test('IGT Solutions catalog captures the verified no-public-jobs first-party surface from August 2, 2026', async () => {
   const { IGT_SOLUTIONS_CATALOG } = await loadIgtSolutionsCatalogModule()
   const provider = hydrateProviderCatalogEntry(IGT_SOLUTIONS_CATALOG)
 
   assert.equal(provider.source, 'igtsolutions')
   assert.equal(provider.companyName, 'IGT Solutions')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.igtsolutions.com/careers/')
-  assert.equal(provider.companyDomain, 'igtsolutions.com')
+  assert.equal(provider.companyCareerPage, 'https://atain.com/careers/')
+  assert.equal(provider.companyDomain, 'atain.com')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(
     provider.paginationStrategy,
@@ -32,14 +32,13 @@ test('IGT Solutions catalog captures the verified no-public-jobs first-party sur
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.modulePath, /igtsolutions[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 16, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.igtsolutions\.com\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /August 2, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/atain\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/atain\.com\/join-the-squad\//i)
   assert.match(provider.verifiedSurfaceSummary, /careers\.igtsolutions\.com/i)
-  assert.match(provider.verifiedSurfaceSummary, /403/i)
+  assert.match(provider.verifiedSurfaceSummary, /SAP/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 })
 
@@ -64,8 +63,8 @@ test('getScraperCatalog includes IGT Solutions as a verified no-public-jobs prov
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'IGT Solutions')
-  assert.equal(provider.companyCareerPage, 'https://www.igtsolutions.com/careers/')
-  assert.equal(provider.companyDomain, 'igtsolutions.com')
+  assert.equal(provider.companyCareerPage, 'https://atain.com/careers/')
+  assert.equal(provider.companyDomain, 'atain.com')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.match(provider.modulePath, /igtsolutions[\\/]script\.js$/i)
 })

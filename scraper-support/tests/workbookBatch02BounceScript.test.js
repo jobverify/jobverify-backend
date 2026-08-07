@@ -13,7 +13,7 @@ const HOMEPAGE_HTML = `
     <main>
       <h1>Bounce Infinity Electric Scooters</h1>
       <p>Made for Indian Roads. Made in India.</p>
-      <p>Reserve for Rs 499/-</p>
+      <p>Reserve for ₹499/-</p>
       <section>
         <h2>Our Products</h2>
         <p>e.1+</p>
@@ -86,7 +86,7 @@ test('Bounce helper signals stay pinned to the verified homepage, legacy about p
 
   assert.equal(bounce.SOURCE, 'bounce')
   assert.equal(bounce.COMPANY, 'Bounce')
-  assert.equal(bounce.VERIFIED_ON, '2026-07-30')
+  assert.equal(bounce.VERIFIED_ON, '2026-08-01')
   assert.equal(bounce.HOMEPAGE_URL, 'https://bounceinfinity.com/')
   assert.equal(bounce.ABOUT_URL, 'https://bounce-v2.bounceinfinity.com/about.html')
   assert.equal(bounce.CAREERS_URL, 'https://bounceinfinity.com/careers')

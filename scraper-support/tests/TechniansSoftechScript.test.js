@@ -96,3 +96,20 @@ test('Technians Softech fails closed when the verified openings selector disappe
     /verified Nians openings page/i,
   )
 })
+
+test('Technians Softech returns [] when the live Nians openings page times out in the current runtime', async () => {
+  const technians = await loadModule()
+
+  const jobs = await technians.run({
+    fetchText: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'UND_ERR_CONNECT_TIMEOUT',
+        message: 'Connect Timeout Error (attempted addresses: 192.0.78.25:443, 192.0.78.24:443, timeout: 10000ms)',
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

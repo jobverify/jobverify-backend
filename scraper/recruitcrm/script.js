@@ -9,7 +9,6 @@ export const SOURCE = 'recruitcrm'
 export const COMPANY = 'Recruit CRM'
 export const CAREERS_URL = 'https://recruitcrm.io/careers/'
 export const JOBS_URL = 'https://careers.recruitcrm.io/'
-export const LISTINGS_ACTION_ID = '7ff5b071bb562c087f31031341744a13bbc5ca9755'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -70,6 +69,55 @@ export const extractBoardUuid = (html) => {
 
   if (!companyMatch || !uuidMatch) return null
   return uuidMatch[1]
+}
+
+const extractScriptUrls = (html) => (
+  [...String(html ?? '').matchAll(/<script[^>]+src=["']([^"']+\.js[^"']*)["']/gi)]
+    .map((match) => {
+      try {
+        return new URL(match[1], JOBS_URL).href
+      } catch {
+        return null
+      }
+    })
+    .filter(Boolean)
+)
+
+const prioritizeBundleUrls = (urls) => {
+  const layoutBundles = []
+  const otherBundles = []
+
+  for (const url of urls) {
+    if (/\/_next\/static\/chunks\/app\/layout-[^/]+\.js(?:[?#].*)?$/i.test(url)) {
+      layoutBundles.push(url)
+    } else {
+      otherBundles.push(url)
+    }
+  }
+
+  return [...layoutBundles, ...otherBundles]
+}
+
+export const extractGetJobsActionIdFromBundle = (bundleText) => {
+  const match = String(bundleText ?? '').match(
+    /createServerReference\)?\("([0-9a-f]+)"[^)]*"getJobs"\)/i,
+  )
+
+  return match?.[1] ?? null
+}
+
+export const discoverGetJobsActionId = async (
+  boardShellHtml,
+  { fetchAssetText },
+) => {
+  const bundleUrls = prioritizeBundleUrls(extractScriptUrls(boardShellHtml))
+
+  for (const bundleUrl of bundleUrls) {
+    const actionId = extractGetJobsActionIdFromBundle(await fetchAssetText(bundleUrl))
+    if (actionId) return actionId
+  }
+
+  throw new Error('Recruit CRM getJobs action id changed or disappeared')
 }
 
 const parseActionEnvelope = (responseText) => {
@@ -169,14 +217,27 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchAction = async (boardUuid) => {
+const defaultFetchAssetText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/javascript,text/javascript,*/*;q=0.8',
+  },
+  label: `${SOURCE}-asset`,
+  timeoutMs: 15000,
+})
+
+const defaultFetchAction = async (
+  boardUuid,
+  { boardShellHtml, fetchAssetText = defaultFetchAssetText },
+) => {
+  const actionId = await discoverGetJobsActionId(boardShellHtml, { fetchAssetText })
   const response = await fetch(JOBS_URL, {
     method: 'POST',
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/x-component',
       'Content-Type': 'text/plain;charset=UTF-8',
-      'Next-Action': LISTINGS_ACTION_ID,
+      'Next-Action': actionId,
     },
     body: JSON.stringify([boardUuid]),
   })
@@ -189,7 +250,11 @@ const defaultFetchAction = async (boardUuid) => {
 }
 
 export const createRecruitCrmScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchAction = defaultFetchAction } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    fetchAssetText = defaultFetchAssetText,
+    fetchAction = defaultFetchAction,
+  } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml) || !pageLinksToVerifiedBoard(careersHtml)) {
@@ -203,7 +268,10 @@ export const createRecruitCrmScraper = () => ({
       throw new Error('Recruit CRM public board uuid changed or disappeared')
     }
 
-    const listings = extractListingsFromActionResponse(await fetchAction(boardUuid))
+    const listings = extractListingsFromActionResponse(await fetchAction(boardUuid, {
+      boardShellHtml,
+      fetchAssetText,
+    }))
     const hydratedJobs = await Promise.all(
       listings.map(async (listing) => {
         const sourceUrl = toDetailUrl(listing.slug)

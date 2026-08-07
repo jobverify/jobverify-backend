@@ -40,11 +40,11 @@ test('Tata Teleservices local catalog captures the verified TTBS careers handoff
   assert.equal(provider.companyCareerPage, 'https://www.tatatelebusiness.com/careers/')
   assert.equal(
     provider.officialJobsHandoffUrl,
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?mode=job-location',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?mode=job-location',
   )
   assert.equal(
     provider.oracleCandidateExperienceUrl,
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?mode=job-location',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?mode=job-location',
   )
   assert.equal(provider.workspaceDomain, 'fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com')
   assert.equal(
@@ -57,9 +57,9 @@ test('Tata Teleservices local catalog captures the verified TTBS careers handoff
   )
   assert.equal(
     provider.publicJobsBaseUrl,
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/',
   )
-  assert.equal(provider.siteNumber, 'CX_1')
+  assert.equal(provider.siteNumber, 'CX_1001')
   assert.equal(provider.companyDomain, 'tatatelebusiness.com')
   assert.equal(provider.atsPlatform, 'oracle-cloud')
   assert.equal(provider.countryFilter, 'India')
@@ -70,18 +70,18 @@ test('Tata Teleservices local catalog captures the verified TTBS careers handoff
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.equal(provider.verifiedIndiaJobCount, 13)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.equal(provider.verifiedIndiaJobCount, 11)
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/2258',
+    'https://fa-evmm-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/2411',
   )
   assert.match(provider.dryRunFile, /tatateleservices[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.tatatelebusiness\.com\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /13 India roles/i)
-  assert.match(provider.verifiedSurfaceSummary, /Product Sales Specialist - IAAS/i)
+  assert.match(provider.verifiedSurfaceSummary, /11 India roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead Product - Managed WiFi/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Tata Teleservices'), false)
 
   assert.equal(tata.PROVIDER_METADATA.source, TATA_TELESERVICES_CATALOG.source)

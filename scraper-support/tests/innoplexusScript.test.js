@@ -58,6 +58,25 @@ const careersHtml = `
 </html>
 `
 
+const escapedCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Partex.AI | Join the Future of AI Pharma</title>
+  </head>
+  <body>
+    <main>
+      <h1>Join the Journey at Partex.AI</h1>
+      <a href="#open-positions">View Openings</a>
+      <a href="https://partex.zohorecruit.in/forms/a8246d12a6edcdc0c07688faef96118fef29cd68ad9ccd670493d066c7a36f55">Talent pool</a>
+      <script>
+        self.__next_f.push([1,"$L1f",null,{\\"initialJobs\\":[{\\"id\\":4,\\"title\\":\\"AVP/VP/Sr. VP. - Business Development\\",\\"location\\":\\"Pune (Onsite)\\",\\"shortDescription\\":\\"Lead commercial expansion across US and European markets.\\",\\"applyUrl\\":\\"https://partex.zohorecruit.in/forms/a8246d12a6edcdc0c07688faef96118fef29cd68ad9ccd670493d066c7a36f55\\"},{\\"id\\":25,\\"title\\":\\"AI Engineer\\",\\"location\\":\\"Delhi, Pune, India (Onsite Role)\\",\\"shortDescription\\":\\"Build, deploy, and scale AI-driven product features.\\",\\"applyUrl\\":\\"https://partex.zohorecruit.in/forms/a8246d12a6edcdc0c07688faef96118fef29cd68ad9ccd670493d066c7a36f55\\"}] }])
+      </script>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/innoplexus/script.js')
@@ -99,6 +118,11 @@ test('Innoplexus helpers stay pinned to the verified redirect careers page and e
     jobDescription: 'Lead commercial expansion across US and European markets.',
     remoteStatus: 'On-site',
   })
+
+  const escapedJobs = innoplexus.extractIndiaJobsFromHtml(escapedCareersHtml)
+  assert.equal(escapedJobs.length, 2)
+  assert.equal(escapedJobs[0].jobId, '4')
+  assert.equal(escapedJobs[1].jobId, '25')
 })
 
 test('Innoplexus validates the careers redirect page and returns India openings from the embedded array', async () => {

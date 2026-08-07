@@ -6,7 +6,7 @@ const verifiedHomepageHtml = `
     <head>
       <meta property="og:url" content="https://mosil.com/">
       <link rel="canonical" href="https://mosil.com/">
-      <title>Custom & Specialty Lubricants Manufacturer | MOSIL</title>
+      <title>Custom & Specialty Lubricants Manufacturer | MOSIL Lubricants</title>
       <script type="application/ld+json">
         {
           "@type": "Organization",
@@ -16,7 +16,7 @@ const verifiedHomepageHtml = `
     </head>
     <body>
       <a href="https://mosil.com/careers">Career</a>
-      <h1>Custom & Specialty Lubricants Manufacturer | MOSIL</h1>
+      <h1>Custom & Specialty Lubricants Manufacturer | MOSIL Lubricants</h1>
       <p>Our three advanced manufacturing units two in Navi Mumbai and one in Palghar provides flexible production lines and integrated quality control systems.</p>
       <p>Research & Development & QA Lab</p>
     </body>
@@ -103,6 +103,7 @@ test('MOSIL scraper recognizes the verified homepage and first-party careers for
   assert.equal(jobs[0].applyUrl, 'https://mosil.com/careers')
   assert.equal(jobs[0].sourceUrl, 'https://mosil.com/careers#mosillubricantspvtltd-sales-team-pan-india')
   assert.match(jobs[0].jobDescription, /official MOSIL careers page/i)
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('MOSIL scraper returns the public first-party positions from the verified careers surface', async () => {
@@ -131,6 +132,7 @@ test('MOSIL scraper returns the public first-party positions from the verified c
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('MOSIL scraper fails closed when the verified homepage or careers form drifts', async () => {

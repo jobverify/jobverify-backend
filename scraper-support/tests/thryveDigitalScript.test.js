@@ -1,22 +1,20 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T11:30:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-05T11:30:00.000Z'
 
 const officialCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>enGen Global</title>
+    <title>Careers</title>
   </head>
   <body>
     <main>
-      <p>Thryve Digital is currently in the process of rebranding itself to "enGen Global"</p>
-      <p>Prospective candidates can explore job openings here</p>
-      <h2>Join our Global Team of Information Technology Specialists</h2>
-      <h2>Global Collaboration – Integrity – Strong Principles</h2>
-      <p>Click here to explore opportunities</p>
-      <a href="https://tdh.darwinbox.in/ms/candidate/careers">Click here to explore opportunities</a>
+      <h1>An enGenious career, rooted in India.</h1>
+      <h2>Our Employee Value Proposition</h2>
+      <h2>CULTURE WE ARE BUILDING TOGETHER</h2>
+      <a href="https://tdh.darwinbox.in/ms/candidate/careers">CLICK HERE TO JOIN US</a>
     </main>
   </body>
 </html>
@@ -30,12 +28,13 @@ const loadModule = async () => {
   }
 }
 
-test('Thryve Digital helpers stay pinned to the verified first-party Darwinbox handoff from Friday, July 17, 2026', async () => {
+test('Thryve Digital helpers stay pinned to the verified first-party Darwinbox handoff from Wednesday, August 5, 2026', async () => {
   const thryveDigital = await loadModule()
 
   assert.equal(thryveDigital.SOURCE, 'thryvedigital')
   assert.equal(thryveDigital.COMPANY, 'Thryve Digital')
-  assert.equal(thryveDigital.OFFICIAL_CAREERS_URL, 'https://www.thryvedigital.com/')
+  assert.equal(thryveDigital.HOMEPAGE_URL, 'https://www.goengen.in/')
+  assert.equal(thryveDigital.OFFICIAL_CAREERS_URL, 'https://www.goengen.in/careers')
   assert.equal(
     thryveDigital.OFFICIAL_CAREERS_HANDOFF_URL,
     'https://tdh.darwinbox.in/ms/candidate/careers',
@@ -45,8 +44,8 @@ test('Thryve Digital helpers stay pinned to the verified first-party Darwinbox h
     thryveDigital.PUBLIC_PORTAL_URL,
     'https://tdh.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
-  assert.equal(thryveDigital.VERIFIED_ON, '2026-07-17')
-  assert.match(thryveDigital.VERIFIED_SURFACE_SUMMARY, /Thryve Digital/i)
+  assert.equal(thryveDigital.VERIFIED_ON, '2026-08-05')
+  assert.match(thryveDigital.VERIFIED_SURFACE_SUMMARY, /goengen\.in\/careers/i)
   assert.equal(
     thryveDigital.extractOfficialDarwinboxUrl(officialCareersHtml),
     thryveDigital.OFFICIAL_CAREERS_HANDOFF_URL,
@@ -84,7 +83,7 @@ test('Thryve Digital run validates the first-party careers page before delegatin
             country: 'India',
             emp_type_name: 'Full Time',
             experience: '4 - 7 Years',
-            posted_on: '17-Jul-2026',
+            posted_on: '05-Aug-2026',
             jd: '<p>Analyze healthcare operations data and build actionable insights.</p>',
           },
           {
@@ -95,7 +94,7 @@ test('Thryve Digital run validates the first-party careers page before delegatin
             country: 'United States',
             emp_type_name: 'Full Time',
             experience: '3 - 5 Years',
-            posted_on: '17-Jul-2026',
+            posted_on: '05-Aug-2026',
             jd: '<p>Support US-only claims operations.</p>',
           },
         ],
@@ -122,9 +121,10 @@ test('Thryve Digital run validates the first-party careers page before delegatin
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '17-Jul-2026',
+      postingDate: '05-Aug-2026',
       closingDate: null,
       jobDescription: '<p>Analyze healthcare operations data and build actionable insights.</p>',
+      publicExperienceChecked: false,
       source: 'thryvedigital',
       link: 'https://tdh.darwinbox.in/ms/candidatev2/main/careers/jobDetails/thryve-001',
       scrapedAt: FIXED_SCRAPED_AT,

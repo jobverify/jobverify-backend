@@ -1,0 +1,302 @@
+[
+  {
+    "title": "Systems support Engineer",
+    "company": "Qualigy Tech",
+    "department": null,
+    "location": "Bangalore",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "country": "India",
+    "jobId": "3172",
+    "requisitionId": "3172",
+    "sourceUrl": "https://www.qualigytech.com/jobs/systems-support-engineer/",
+    "applyUrl": "https://www.qualigytech.com/jobs/systems-support-engineer/",
+    "employmentType": "Full-time",
+    "experienceRequired": "4+ years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Excellent verbal and written communication skills.",
+      "Decision-making",
+      "Information security",
+      "Analytical skills",
+      "Knowledge of systems engineering software tools",
+      "Attention to detail"
+    ],
+    "postingDate": "2026-08-01T15:11:10.682Z",
+    "closingDate": null,
+    "jobDescription": "Location: Bangalore Responsibilities At least 4+ years hands-on experience in relevant industry experience Installation of operating systems like ubuntu/windows etc. Domain joining the system . creating user/group and attaching different levels of permission(admin) Partitioning and merging of hard drive . Enabling bit locker, backing up recovery key and retrieving them when user requests for it. Updating the firm ware of BIOS/TPM etc. Troubleshooting onedrive sync issues. Trouble shooting issues related to system like , system is too slow , system is shutting down intermittently . Trouble shooting issues related to office 365 . Installing and configuring office 365(Outlook ,word. EXEL etc) Installation and configuration of teamviewer/anydesk. Interaction with customer care of vendors like DELL/lenovo/HP to trouble shoot issues and if necessary getting the hardware replaced. Make sure patches are up to date on all systems. Resetting local user/admin password on system. Configuration/trouble shooting of LAN . Configuration/trouble shooting of router/wifi. Installation/configuration of endpoint protections like sohpos/cisco etc. Replacement of RAM/hardisk on the system. Implements warranty and support activities Plans and implements system automation as required for better efficiency Write and maintain custom scripts to increase system efficiency and lower the human intervention time on any tasks Maintain security, backup, and redundancy strategies Proactively ensure the highest levels of systems and infrastructure availability. Knowledge of Installation and configuration of firewall and switches a bonus Requirements: Excellent verbal and written communication skills. Decision-making Information security Analytical skills Knowledge of systems engineering software tools Attention to detail",
+    "source": "qualigytech",
+    "link": "https://www.qualigytech.com/jobs/systems-support-engineer/",
+    "companyCareerPage": "https://www.qualigytech.com/jobs/",
+    "companyDomain": "qualigytech.com",
+    "atsPlatform": "official-company-careers",
+    "scrapedAt": "2026-08-01T15:11:10.682Z",
+    "originalTitle": "Systems support Engineer",
+    "normalizedTitle": "Systems support Engineer",
+    "jobCategory": "Systems support Engineer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T15:11:10.682Z",
+    "scrapedTimestamp": "2026-08-01T15:11:10.682Z",
+    "skillIds": [
+      "cybersecurity"
+    ],
+    "requiredSkillIds": [
+      "cybersecurity"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "cybersecurity",
+        "canonicalName": "Cybersecurity",
+        "category": "Security",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Information security"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4+ years",
+      "minimumYears": 4,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4+ years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Cybersecurity",
+      "Sales & Customer Success"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-07T01:47:30.010Z"
+  },
+  {
+    "title": "Lead DevOps Engineer",
+    "company": "Qualigy Tech",
+    "department": null,
+    "location": null,
+    "city": null,
+    "state": null,
+    "country": "India",
+    "jobId": "3132",
+    "requisitionId": "3132",
+    "sourceUrl": "https://www.qualigytech.com/jobs/lead-devops-engineer/",
+    "applyUrl": "https://www.qualigytech.com/jobs/lead-devops-engineer/",
+    "employmentType": "Full-time",
+    "experienceRequired": "7+ years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Skill set/ competencies",
+      "Must: AWS, git, Python,shell scripting, Linux,Terraform, Cloudformation, Jenkins",
+      "Good to have: Chef/Puppet/Ansible, Kubernetes"
+    ],
+    "postingDate": "2026-08-01T15:11:10.765Z",
+    "closingDate": null,
+    "jobDescription": "Details: Skill set/ competencies Must: AWS, git, Python,shell scripting, Linux,Terraform, Cloudformation, Jenkins Good to have: Chef/Puppet/Ansible, Kubernetes Responsibilities At least 7+ years hands-on experience in infrastructure engineering, Dev Ops In-depth knowledge of CI/CD concepts and tooling. Good understanding of design of native Cloud applications, Cloudapplication design patternsand practices, preferably AWS and/or Azure Workingknowledge of Relational and No SQL Databases, Caching, Object and Block Storage, Scaling, Load Balancing, CDNs, Networking etc Follow cloud deployment best practices and mentor juniormembers of the team Excellent Python,bash scripting fundamentals Able to build tools from scratchwhen needed Proficient at Linux system administration Proficient with container technologies like Docker Ability to quickly learn new any existing technologies Strong problem solving skills Excellent oral and written English communication skills. Requirements Skill set/ competencies Must: AWS, git, Python,shell scripting, Linux,Terraform, Cloudformation, Jenkins Good to have: Chef/Puppet/Ansible, Kubernetes Job Features Job Category Devops Apply For This Job Attach Resume * Submit Close Qualigy Tech +1 (512) 456-8843 [email&#160;protected] Company Home About us Career Quick Links Services Solutions Case Studies Legal POSH Policy © 2023 Qualigy Tech. All rights reserved.",
+    "source": "qualigytech",
+    "link": "https://www.qualigytech.com/jobs/lead-devops-engineer/",
+    "companyCareerPage": "https://www.qualigytech.com/jobs/",
+    "companyDomain": "qualigytech.com",
+    "atsPlatform": "official-company-careers",
+    "scrapedAt": "2026-08-01T15:11:10.765Z",
+    "originalTitle": "Lead DevOps Engineer",
+    "normalizedTitle": "DevOps Engineer",
+    "jobCategory": "DevOps Engineer",
+    "engineeringDomain": "DevOps",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "remoteStatus": null,
+    "salary": null,
+    "postedAt": "2026-08-01T15:11:10.765Z",
+    "scrapedTimestamp": "2026-08-01T15:11:10.765Z",
+    "skillIds": [
+      "aws",
+      "python",
+      "linux",
+      "terraform",
+      "jenkins",
+      "kubernetes",
+      "azure",
+      "sql",
+      "docker"
+    ],
+    "requiredSkillIds": [
+      "aws",
+      "python",
+      "linux",
+      "terraform",
+      "jenkins",
+      "kubernetes"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Linux"
+      },
+      {
+        "skillId": "terraform",
+        "canonicalName": "Terraform",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Terraform"
+      },
+      {
+        "skillId": "jenkins",
+        "canonicalName": "Jenkins",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Jenkins"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "7+ years",
+      "minimumYears": 7,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "7+ years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "DevOps & SRE",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Not specified",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "low"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-07T01:47:30.011Z",
+    "description": "Details: Skill set/ competencies Must: AWS, git, Python,shell scripting, Linux,Terraform, Cloudformation, Jenkins Good to have: Chef/Puppet/Ansible, Kubernetes Responsibilities At least 7+ years hands-on experience in infrastructure engineering, Dev Ops In-depth knowledge of CI/CD concepts and tooling. Good understanding of design of native Cloud applications, Cloudapplication design patternsand practices, preferably AWS and/or Azure Workingknowledge of Relational and No SQL Databases, Caching, Object and Block Storage, Scaling, Load Balancing, CDNs, Networking etc Follow cloud deployment best practices and mentor juniormembers of the team Excellent Python,bash scripting fundamentals Able to build tools from scratchwhen needed Proficient at Linux system administration Proficient with container technologies like Docker Ability to quickly learn new any existing technologies Strong problem solving skills Excellent oral and written English communication skills. Requirements Skill set/ competencies Must: AWS, git, Python,shell scripting, Linux,Terraform, Cloudformation, Jenkins Good to have: Chef/Puppet/Ansible, Kubernetes Job Features Job Category Devops Apply For This Job Attach Resume * Submit Close Qualigy Tech +1 (512) 456-8843 [email&#160;protected] Company Home About us Career Quick Links Services Solutions Case Studies Legal POSH Policy © 2023 Qualigy Tech. All rights reserved.",
+    "publicExperienceChecked": true
+  }
+]

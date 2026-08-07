@@ -11,26 +11,30 @@ const contractHtml = `
     <main>
       <h1>State of Illinois</h1>
       <p>Central Management Services, State of Illinois has awarded a contract to 22nd Century Technologies, Inc. for its Temporary Staffing Needs.</p>
-      <h2>Region 1</h2>
-      <table>
-        <tr><th>Job Title</th><th>Link to Apply</th></tr>
-        <tr>
-          <td>Basic Clerical</td>
-          <td><a href="https://www.tscti.com/careers/state-il/region-1/basic-clerical">Apply Now</a></td>
-        </tr>
-        <tr>
-          <td>Accounting Assistant</td>
-          <td><a href="https://www.tscti.com/careers/state-il/region-1/accounting-assistant">Apply Now</a></td>
-        </tr>
-      </table>
-      <h2>Region 2</h2>
-      <table>
-        <tr><th>Job Title</th><th>Link to Apply</th></tr>
-        <tr>
-          <td>Basic Clerical</td>
-          <td><a href="https://www.tscti.com/careers/state-il/region-2/basic-clerical">Apply Now</a></td>
-        </tr>
-      </table>
+      <fieldset class="region1">
+        <legend>Region 1</legend>
+        <table class="regionJobs">
+          <tr><th>Job Title</th><th>Link to Apply</th></tr>
+          <tr>
+            <td class="region1">Basic Clerical</td>
+            <td class="region1"><a href="mailto:soil@tscti.com?subject=Region-1 / Basic Clerical">Apply Now</a></td>
+          </tr>
+          <tr>
+            <td class="region1">Accounting Assistant</td>
+            <td class="region1"><a href="mailto:soil@tscti.com?subject=Region-1 / Accounting Assistant">Apply Now</a></td>
+          </tr>
+        </table>
+      </fieldset>
+      <fieldset class="region2">
+        <legend>Region 2</legend>
+        <table class="regionJobs">
+          <tr><th>Job Title</th><th>Link to Apply</th></tr>
+          <tr>
+            <td class="region2">Basic Clerical</td>
+            <td class="region2"><a href="mailto:soil@tscti.com?subject=Region-2 / Basic Clerical">Apply Now</a></td>
+          </tr>
+        </table>
+      </fieldset>
     </main>
   </body>
 </html>
@@ -54,7 +58,7 @@ test('22nd Century Technologies extracts first-party current openings from the v
       department: 'State of Illinois - Region 1',
       location: 'Illinois, United States',
       city: 'Illinois',
-      applyUrl: 'https://www.tscti.com/careers/state-il/region-1/basic-clerical',
+      applyUrl: 'mailto:soil@tscti.com?subject=Region-1%20/%20Basic%20Clerical',
       jobId: 'state-of-illinois-region-1-basic-clerical',
     },
     {
@@ -62,7 +66,7 @@ test('22nd Century Technologies extracts first-party current openings from the v
       department: 'State of Illinois - Region 1',
       location: 'Illinois, United States',
       city: 'Illinois',
-      applyUrl: 'https://www.tscti.com/careers/state-il/region-1/accounting-assistant',
+      applyUrl: 'mailto:soil@tscti.com?subject=Region-1%20/%20Accounting%20Assistant',
       jobId: 'state-of-illinois-region-1-accounting-assistant',
     },
     {
@@ -70,7 +74,7 @@ test('22nd Century Technologies extracts first-party current openings from the v
       department: 'State of Illinois - Region 2',
       location: 'Illinois, United States',
       city: 'Illinois',
-      applyUrl: 'https://www.tscti.com/careers/state-il/region-2/basic-clerical',
+      applyUrl: 'mailto:soil@tscti.com?subject=Region-2%20/%20Basic%20Clerical',
       jobId: 'state-of-illinois-region-2-basic-clerical',
     },
   ])

@@ -1,36 +1,20 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'renaultgroup'
 export const COMPANY = 'Renault Group'
 export const HOMEPAGE_URL = 'https://www.renaultgroup.com/en/'
 export const CAREERS_URL = 'https://www.renaultgroup.com/en/careers/'
-export const OFFERS_URL = 'https://www.renaultgroup.com/en/careers/our-international-vacancies/'
+export const WORKDAY_BOARD_URL = 'https://alliancewd.wd3.myworkdayjobs.com/en-US/renault-group-careers'
+export const WORKDAY_JOBS_API_URL =
+  'https://alliancewd.wd3.myworkdayjobs.com/wday/cxs/alliancewd/renault-group-careers/jobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const PUBLIC_JOBS_SIGNAL_PATTERNS = [
-  /\bapply now\b/i,
-  /\bjob description\b/i,
-  /\bview details\b/i,
-  /\bopen positions\b/i,
-  /\bcurrent openings\b/i,
-  /jobs\.lever\.co/i,
-  /boards\.greenhouse\.io/i,
-  /job-boards\.greenhouse\.io/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs/i,
-  /workdayjobs/i,
-  /smartrecruiters/i,
-  /jobvite/i,
-  /greenhouse\.io/i,
-  /recruitcrm/i,
-  /linkedin\.com\/jobs/i,
-  /href=["'][^"']*\/jobs\/[^"']+/i,
-]
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -48,6 +32,7 @@ const defaultFetchPage = async (url) => {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    redirect: 'follow',
   })
 
   return {
@@ -56,6 +41,8 @@ const defaultFetchPage = async (url) => {
     html: await response.text(),
   }
 }
+
+const defaultRunWorkday = (options) => runWorkdayScraper(options)
 
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
@@ -77,21 +64,25 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes('reknow university')
 }
 
-export const hasOfficialOffersSignal = (html) => {
-  const normalized = normalizeWhitespace(html).toLowerCase()
+export const hasOfficialWorkdayBoardSignal = (html) => {
+  const page = String(html ?? '')
 
-  return normalized.includes('find your next job')
-    && normalized.includes('join our tech force and be part of the future of mobility')
-    && normalized.includes('software architects, devops, cybersecurity engineers, scrum masters')
-    && normalized.includes('working at renault group')
-    && normalized.includes('recruitement privacy information policy')
+  return /<link rel="canonical" href="https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers/i.test(page)
+    && /property="og:title" content="Careers \| Renault Group"/i.test(page)
+    && /property="og:description" content="Since 1889, Renault Group has relied on a legacy of innovation/i.test(page)
+    && /tenant:\s*"alliancewd"/i.test(page)
+    && /siteId:\s*"renault-group-careers"/i.test(page)
+    && /requestLocale:\s*"en-US"/i.test(page)
+    && /appName:\s*"cxs"/i.test(page)
 }
 
-export const hasPublicJobsSignal = (html) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
-
-export const createRenaultGroupScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+export const createRenaultGroupScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
+  async run({
+    fetchPage = defaultFetchPage,
+    runWorkday = defaultRunWorkday,
+  } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Renault Group verified official homepage no longer matches the trusted first-party surface')
@@ -102,20 +93,28 @@ export const createRenaultGroupScraper = () => ({
       throw new Error('Renault Group verified careers page no longer matches the trusted first-party surface')
     }
 
-    const offersPage = await fetchPage(OFFERS_URL)
-    if (offersPage.status !== 200 || !hasOfficialOffersSignal(offersPage.html)) {
-      throw new Error('Renault Group verified offers page no longer matches the trusted first-party surface')
+    const workdayBoard = await fetchPage(WORKDAY_BOARD_URL)
+    if (workdayBoard.status !== 200 || !hasOfficialWorkdayBoardSignal(workdayBoard.html)) {
+      throw new Error('Renault Group verified Workday board no longer matches the trusted public jobs surface')
     }
 
-    if (hasPublicJobsSignal(offersPage.html)) {
-      throw new Error('Renault Group offers page now appears to expose a direct public jobs surface')
-    }
+    const jobs = await runWorkday({
+      company: COMPANY,
+      source: SOURCE,
+      baseUrl: WORKDAY_BOARD_URL,
+      scraperDir: currentDir,
+    })
 
-    return []
+    return jobs.map((job) => ({
+      ...job,
+      company: COMPANY,
+      source: SOURCE,
+      scrapedAt: now(),
+    }))
   },
 })
 
-export const run = async (options = {}) => createRenaultGroupScraper().run(options)
+export const run = async (options = {}) => createRenaultGroupScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

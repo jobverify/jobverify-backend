@@ -96,10 +96,12 @@ export const hasOfficialCulturePageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /<title>\s*Culture\s*(?:&|&amp;)\s*Engagement\s*\|\s*Hinge Health\s*<\/title>/i.test(page)
-    && normalized.includes('people-first. culture-forward. always learning.')
-    && normalized.includes('moving people beyond pain')
-    && /https:\/\/jobs\.ashbyhq\.com\//i.test(page)
+  return /<title[^>]*>\s*Culture\s*(?:&|&amp;)\s*Engagement\s*\|\s*Hinge Health\s*<\/title>/i.test(page)
+    && /https:\/\/jobs\.ashbyhq\.com\/hinge-health\b/i.test(page)
+    && (
+      normalized.includes('people-first. culture-forward. always learning.')
+      || normalized.includes('moving people beyond pain')
+    )
 }
 
 export const extractVerifiedAshbyPublicBoardUrl = (html) => {

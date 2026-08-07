@@ -25,9 +25,9 @@ export const KARNIVAL_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'karnival/jobs.json',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that the official Karnival homepage at https://www.karnival.com/ is a marketing site with navigation for Solutions, Success, Resources, and Contact us plus a Get a demo CTA, while the public sitemap at https://www.karnival.com/sitemap.xml lists only homepage, contact, blogs, and policy URLs with no careers or jobs routes. Also verified that https://www.karnival.com/careers and https://www.karnival.com/jobs return the same first-party 404 shell. There is no trustworthy public jobs surface to scrape.',
+    'Verified on Sunday, August 2, 2026 that the official Karnival homepage at https://www.karnival.com/ remains a marketing site with navigation for Solutions, Success, Resources, and Contact us plus a Get a demo CTA, while the public sitemap at https://www.karnival.com/sitemap.xml now includes additional non-jobs URLs such as DPA and blog pages but still includes no careers or jobs routes. Also verified that https://www.karnival.com/careers and https://www.karnival.com/jobs return the same first-party 404 shell. There is no trustworthy public jobs surface to scrape.',
 }
 
 export default KARNIVAL_CATALOG

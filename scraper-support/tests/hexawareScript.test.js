@@ -92,7 +92,7 @@ test('extractJobDetail reads Hexaware detail metadata, skills, and description t
   assert.equal(detail.jobId, '654953')
   assert.equal(detail.requisitionId, '654953')
   assert.equal(detail.employmentType, null)
-  assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.experienceRequired, '9 years')
   assert.equal(detail.minimumQualification, null)
   assert.equal(detail.preferredQualification, null)
   assert.deepEqual(detail.requiredSkills, [
@@ -119,4 +119,5 @@ test('extractJobDetail reads Hexaware detail metadata, skills, and description t
   assert.match(detail.jobDescription, /Microsoft Fabric Data Engineer Job Description/i)
   assert.match(detail.jobDescription, /market data/i)
   assert.match(detail.jobDescription, /Power BI exposure/i)
+  assert.equal(detail.publicExperienceChecked, true)
 })

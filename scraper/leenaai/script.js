@@ -192,6 +192,8 @@ export const extractPyjamaHrRoleDetail = (html = '') => {
 
   if (!detail || typeof detail !== 'object') return null
 
+  const jobDescription = stripHtml(detail.description)
+
   return {
     title: normalizeWhitespace(detail.title),
     department: normalizeWhitespace(detail.department_name),
@@ -207,8 +209,31 @@ export const extractPyjamaHrRoleDetail = (html = '') => {
       : [],
     postingDate: normalizeWhitespace(detail.created_at),
     closingDate: normalizeWhitespace(detail.valid_through),
-    jobDescription: stripHtml(detail.description),
+    jobDescription,
     remoteStatus: normalizeRemoteStatus(detail, detail.location),
+    publicExperienceChecked: Boolean(jobDescription),
+  }
+}
+
+const extractPyjamaHrGenericShellEvidence = (html = '', job = {}) => {
+  const nextData = extractNextData(html)
+  const pageProps = nextData?.props?.pageProps ?? null
+  const companyDetails = pageProps?.companyDetails ?? null
+  const queryJobUuid = normalizeWhitespace(nextData?.query?.job_uuid || nextData?.query?.jobUuid)
+  const title = extractTitle(html) || ''
+
+  const hasGenericShell = (
+    title === 'Leena Ai'
+    && companyDetails
+    && queryJobUuid
+  )
+
+  if (!hasGenericShell) return null
+
+  return {
+    publicExperienceChecked: true,
+    experienceRequired: null,
+    jobDescription: null,
   }
 }
 
@@ -226,10 +251,15 @@ const mergeRoleDetail = (job, detail) => {
     closingDate: detail.closingDate || job.closingDate,
     jobDescription: detail.jobDescription || job.jobDescription,
     remoteStatus: detail.remoteStatus || job.remoteStatus,
+    publicExperienceChecked: detail.publicExperienceChecked ?? job.publicExperienceChecked ?? false,
   }
 }
 
-export const enrichJobsWithPyjamaHrDetails = async (jobs, fetchText = defaultFetchText) => Promise.all(
+export const enrichJobsWithPyjamaHrDetails = async (
+  jobs,
+  fetchText = defaultFetchText,
+  { failOnMissingDetail = true } = {},
+) => Promise.all(
   jobs.map(async (job) => {
     const detailUrl = normalizePyjamaHrJobUrl(job?.sourceUrl)
     if (!detailUrl) return job
@@ -237,7 +267,25 @@ export const enrichJobsWithPyjamaHrDetails = async (jobs, fetchText = defaultFet
     const detailHtml = await fetchText(detailUrl)
     const detail = extractPyjamaHrRoleDetail(detailHtml)
     if (!detail) {
-      throw new Error(`Leena AI PyjamaHR role page no longer exposes structured job data for ${detailUrl}`)
+      const genericShellEvidence = extractPyjamaHrGenericShellEvidence(detailHtml, job)
+      if (genericShellEvidence) {
+        return mergeRoleDetail(job, {
+          department: null,
+          employmentType: null,
+          minimumQualification: null,
+          requiredSkills: [],
+          postingDate: null,
+          closingDate: null,
+          remoteStatus: null,
+          ...genericShellEvidence,
+        })
+      }
+
+      if (failOnMissingDetail) {
+        throw new Error(`Leena AI PyjamaHR role page no longer exposes structured job data for ${detailUrl}`)
+      }
+
+      return job
     }
 
     return mergeRoleDetail(job, detail)
@@ -422,6 +470,7 @@ export const createLeenaAiScraper = ({
     const jobs = await enrichJobsWithPyjamaHrDetails(
       extractVisibleOpenRoles(cards, { scrapedAt: now() }),
       fetchText,
+      { failOnMissingDetail: false },
     )
 
     if (jobs.length === 0) {

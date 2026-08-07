@@ -33,7 +33,7 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = decodeHtmlEntities(value)
-    .replace(/[–—−]/g, '-')
+    .replace(/[\u2013\u2014\u2212â€“â€”âˆ’]/g, '-')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<br\s*\/?>/gi, ' ')
@@ -50,6 +50,9 @@ const normalizeWhitespace = (value) => {
 const stripTags = (value) => normalizeWhitespace(value)
 
 const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const hasExpectedNeysaTitle = (rawHtml, patterns) =>
+  patterns.some((pattern) => pattern.test(String(rawHtml ?? '')))
 
 const firstMatch = (source, patterns) => {
   for (const pattern of patterns) {
@@ -128,7 +131,7 @@ const extractJobIdFromUrl = (value) => {
 }
 
 const extractLabeledValue = (source, label) => firstMatch(source, [
-  new RegExp(`${escapeRegex(label)}\\s*<\\/[^>]+>\\s*<[^>]+>([\\s\\S]*?)<\\/[^>]+>`, 'i'),
+  new RegExp(`${escapeRegex(label)}\\s*:?\\s*<\\/[^>]+>\\s*<[^>]+>([\\s\\S]*?)<\\/[^>]+>`, 'i'),
   new RegExp(`${escapeRegex(label)}\\s*[:|-]\\s*([^<\\n]+)`, 'i'),
 ])
 
@@ -157,7 +160,7 @@ const hasJobDetailSignal = (html) => {
     && /Apply Now/i.test(normalized)
     && (
       /<meta[^>]+property=["']og:title["']/i.test(rawHtml)
-      || /<title[^>]*>[\s\S]*?- Neysa<\/title>/i.test(rawHtml)
+      || /<title[^>]*>[\s\S]*?[\u2013-]\s*Neysa<\/title>/i.test(rawHtml)
       || /<h1[^>]*>/i.test(rawHtml)
     )
 }
@@ -220,8 +223,11 @@ export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title[^>]*>\s*Careers at Neysa \| Build the Future of AI Infrastructure\s*<\/title>/i.test(rawHtml)
-    && /Build the Future of AI Infrastructure/i.test(normalized)
+  return hasExpectedNeysaTitle(rawHtml, [
+    /<title[^>]*>\s*Careers at Neysa \| Build the Future of AI Infrastructure\s*<\/title>/i,
+    /<title[^>]*>\s*Career\s*[\u2013-]\s*Neysa\s*<\/title>/i,
+  ])
+    && (/Build the Future of AI Infrastructure/i.test(normalized) || /\bCareer\b/i.test(normalized))
     && /View Job Openings/i.test(normalized)
 }
 
@@ -237,12 +243,15 @@ export const hasOfficialJobOpeningsSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title[^>]*>\s*Job Opening - Build a Career at Neysa\s*<\/title>/i.test(rawHtml)
+  return hasExpectedNeysaTitle(rawHtml, [
+    /<title[^>]*>\s*Job Opening - Build a Career at Neysa\s*<\/title>/i,
+    /<title[^>]*>\s*Job Openings?\s*[\u2013-]\s*Neysa\s*<\/title>/i,
+  ])
     && /filter_career_listings/i.test(rawHtml)
     && /job-section/i.test(rawHtml)
     && /job-title/i.test(rawHtml)
-    && /Backend Engineer/i.test(normalized)
-  }
+    && (/Backend Engineer/i.test(normalized) || /Job Details/i.test(normalized))
+}
 
 export const extractJobListings = (html) =>
   extractSectionSlices(html)
@@ -253,7 +262,7 @@ export const extractJobDetail = (html, listing = {}) => {
   const title = firstMatch(html, [
     /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
     /<h1[^>]*>([\s\S]*?)<\/h1>/i,
-    /<title[^>]*>([\s\S]*?)\s*-\s*Neysa<\/title>/i,
+    /<title[^>]*>([\s\S]*?)\s*[\u2013-]\s*Neysa<\/title>/i,
   ]) || listing.title
   const detailUrl = listing.detailUrl || listing.sourceUrl || listing.applyUrl
   const jobId = listing.jobId || extractJobIdFromUrl(detailUrl)

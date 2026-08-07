@@ -80,7 +80,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractJobsApiUrl = (html = '') =>
   normalizeWhitespace(
-    String(html ?? '').match(/fetch\('([^']*admin-ajax\.php\?action=get_jobs_secure)'/i)?.[1],
+    String(html ?? '').match(/fetch\(\s*(['"])([^'"]*admin-ajax\.php\?action=get_jobs_secure)\1/i)?.[2],
   )
 
 export const normalizeJobPayload = (job = {}, { scrapedAt } = {}) => {

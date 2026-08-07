@@ -30,6 +30,7 @@ const decodeHtml = (value) => String(value ?? '')
 
 const normalizeWhitespace = (value) => decodeHtml(String(value ?? ''))
   .replace(/\u00a0/g, ' ')
+  .replace(/[\u2013\u2014]/g, '-')
   .replace(/<br\s*\/?>/gi, '\n')
   .replace(/<\/(li|p|div|tr|td|th|h[1-6]|ul|ol)>/gi, '\n')
   .replace(/<[^>]+>/g, ' ')
@@ -62,12 +63,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const lowerNormalized = normalized.toLowerCase()
 
-  return /<title[^>]*>\s*Careers for Experience Candidates\s*-\s*Winman Software\s*<\/title>/i.test(page)
+  return lowerNormalized.includes('careers for experience candidates - winman software')
     && page.includes('experienced_table')
-    && normalized.includes('Opportunities For Experienced Candidates')
-    && normalized.includes('Senior Accountant')
-    && normalized.includes('Electrical Maintenance Supervisor')
+    && lowerNormalized.includes('designation and job profile')
+    && lowerNormalized.includes('apply now')
+    && lowerNormalized.includes('senior accountant')
+    && lowerNormalized.includes('electrical maintenance supervisor')
     && page.includes(APPLY_URL)
 }
 

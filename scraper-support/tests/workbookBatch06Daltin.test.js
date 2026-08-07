@@ -33,6 +33,40 @@ const VERIFIED_SURFACE_HTML = `
   </html>
 `
 
+const CURRENT_OFFICIAL_SURFACE_HTML = `
+  <html>
+    <body>
+      <main>
+        <a href="https://www.linkedin.com/company/daltinedugroup/">Linkedin</a>
+        <h1>Who We Are</h1>
+        <p>
+          Daltin Edu Group is on a mission to empower global education. This means
+          simplifying study abroad journeys, fostering international collaboration,
+          and creating opportunities for students, universities, and partners worldwide.
+        </p>
+        <h3>Our values.</h3>
+        <p>Finding simple solutions for complex problems.</p>
+        <p>Growing with pace. Grow Daltin Group, grow yourself.</p>
+        <p>Being a team of champions, keep it fun.</p>
+        <p>Taking responsibility with our purpose driven mission in mind.</p>
+        <h3>Benefits &#038; Perks</h3>
+        <p>Health &#038; Retirement</p>
+        <p>Flexible Time-off &#038; Company Closures</p>
+        <p>Learning &#038; Development</p>
+        <h3>Our ride so far</h3>
+        <p>100 + Members</p>
+        <p>500 + Colleges</p>
+        <p>Join our movement!</p>
+        <h2>Looking to participate in Global Education revolution? Connect with us!</h2>
+        <p>info@daltinedugroup.com</p>
+      </main>
+      <script>
+        t.src=e,t.defer=!0,s.head.appendChild(t)
+      </script>
+    </body>
+  </html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/daltin/script.js')
@@ -71,6 +105,29 @@ test('Daltin validates the verified official careers surface and returns [] whil
   assert.match(daltin.VERIFIED_SURFACE_SUMMARY, /Benefits & Perks/i)
   assert.match(daltin.VERIFIED_SURFACE_SUMMARY, /Global Education revolution/i)
   assert.match(daltin.VERIFIED_SURFACE_SUMMARY, /no trustworthy enumerable public jobs contract/i)
+})
+
+test('Daltin accepts the current official no-jobs careers surface despite updated copy and inline script noise', async () => {
+  const daltin = await loadModule()
+
+  const jobs = await daltin.run({
+    fetchHtml: async () => CURRENT_OFFICIAL_SURFACE_HTML,
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Daltin ignores same-page contact hash fragments on the official careers surface', async () => {
+  const daltin = await loadModule()
+
+  const jobs = await daltin.run({
+    fetchHtml: async () => `
+      ${CURRENT_OFFICIAL_SURFACE_HTML}
+      <a href="#wpcf7-f1155-o1">Contact form</a>
+    `,
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Daltin rejects when the verified official careers surface markers disappear', async () => {

@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'bounce'
 export const COMPANY = 'Bounce'
-export const VERIFIED_ON = '2026-07-30'
+export const VERIFIED_ON = '2026-08-01'
 export const HOMEPAGE_URL = 'https://bounceinfinity.com/'
 export const ABOUT_URL = 'https://bounce-v2.bounceinfinity.com/about.html'
 export const CAREERS_URL = 'https://bounceinfinity.com/careers'
@@ -102,7 +102,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
   return text.includes('Bounce Infinity Electric Scooters')
     && text.includes('Made for Indian Roads. Made in India.')
-    && text.includes('Reserve for Rs 499/-')
+    && /Reserve for (?:Rs\s*|₹)499\/-/i.test(text)
     && text.includes('Our Products')
     && text.includes('e.1+')
     && text.includes('e.1LE')
@@ -131,7 +131,7 @@ export const isVerifiedMissingCareerRoute = (page = {}, expectedUrl = '') => {
   return Number(page.status) === 404
     && matchesExpectedUrl(page.url || '', expectedUrl)
     && /^404: This page could not be found$/i.test(extractTitle(html) || '')
-    && text.includes('This page could not be found.')
+    && /\bThis page could not be found\b/i.test(text)
     && !pageExposesPublicJobListings(html)
 }
 

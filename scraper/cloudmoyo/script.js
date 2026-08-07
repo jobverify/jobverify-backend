@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+
 import { CLOUDMOYO_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -12,6 +14,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const CONTACT_URL = PROVIDER_METADATA.companyCareerPage
 export const BOARD_URL = PROVIDER_METADATA.boardUrl
+export const LISTINGS_API_URL = 'https://api.smartrecruiters.com/v1/companies/CloudMoyo/postings?limit=100&offset=0'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -40,6 +43,16 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    Referer: CONTACT_URL,
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
 export const hasOfficialContactSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Explore Job Openings at')
@@ -56,6 +69,11 @@ export const hasVerifiedEmptyBoardSignal = (html = '') => {
     && normalized.includes('No job postings are currently available.')
   }
 
+export const hasVerifiedZeroListingsSignal = (payload = {}) =>
+  Array.isArray(payload?.content)
+  && payload.content.length === 0
+  && Number(payload?.totalFound ?? 0) === 0
+
 export const pageExposesPublicJobListings = (html = '') => {
   const normalized = normalizeWhitespace(html)
   if (normalized.includes('No job postings are currently available.')) return false
@@ -63,19 +81,15 @@ export const pageExposesPublicJobListings = (html = '') => {
 }
 
 export const createCloudMoyoScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
     const contactHtml = await fetchText(CONTACT_URL)
     if (!hasOfficialContactSignal(contactHtml)) {
       throw new Error('The official CloudMoyo contact page no longer matches the verified careers handoff surface')
     }
 
-    const boardHtml = await fetchText(BOARD_URL)
-    if (!hasVerifiedEmptyBoardSignal(boardHtml)) {
-      throw new Error('The verified CloudMoyo SmartRecruiters India empty board no longer matches the trusted public surface')
-    }
-
-    if (pageExposesPublicJobListings(boardHtml)) {
-      throw new Error('The verified CloudMoyo SmartRecruiters India empty board now exposes public job listings')
+    const listingsPayload = await fetchJson(LISTINGS_API_URL)
+    if (!hasVerifiedZeroListingsSignal(listingsPayload)) {
+      throw new Error('The verified CloudMoyo public SmartRecruiters zero-listings API state changed materially')
     }
 
     return []

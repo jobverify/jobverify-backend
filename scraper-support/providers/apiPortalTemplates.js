@@ -119,6 +119,52 @@ const API_PORTAL_TEMPLATES = {
       listingApiUrl: `https://api.lever.co/v0/postings/${templateOptions.boardToken}`,
     },
   }),
+  atlassian: ({ templateOptions = {} }) => ({
+    request: {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    },
+    pagination: {
+      strategy: 'single-page',
+    },
+    mapping: {
+      title: 'title',
+      location: 'locations.0',
+      jobId: 'id',
+      requisitionId: 'id',
+      sourceUrl: {
+        strategy: 'template',
+        template: 'https://www.atlassian.com/company/careers/details/{{jobId}}',
+        values: {
+          jobId: 'id',
+        },
+      },
+      applyUrl: 'applyUrl',
+      department: 'category',
+      employmentType: 'type',
+      postingDate: 'portalJobPost.updatedDate',
+      jobDescription: {
+        strategy: 'template',
+        template: '{{overview}}\n\n{{responsibilities}}\n\n{{qualifications}}\n\n{{compensation}}',
+        values: {
+          overview: 'overview',
+          responsibilities: 'responsibilities',
+          qualifications: 'qualifications',
+          compensation: 'compensation',
+        },
+      },
+      minimumQualification: 'qualifications',
+      preferredQualification: 'responsibilities',
+    },
+    resultFilter: withLocationFilter(templateOptions.locationPattern),
+    discovery: {
+      listingApiUrl: 'https://www.atlassian.com/endpoint/careers/listings',
+    },
+  }),
   smartrecruiters: ({ templateOptions = {} }) => ({
     request: {
       method: 'GET',

@@ -71,7 +71,7 @@ test('NewFold Digital local catalog captures the verified official careers hando
   )
   assert.match(NEWFOLD_DIGITAL_CATALOG.verifiedSurfaceSummary, /India - Remote/i)
   assert.match(NEWFOLD_DIGITAL_CATALOG.verifiedSurfaceSummary, /Mumbai, India/i)
-  assert.match(NEWFOLD_DIGITAL_CATALOG.modulePath, /newfolddigital[\\/]script\.js$/i)
+  assert.match(NEWFOLD_DIGITAL_CATALOG.modulePath, /newfolddigital\.workday[\\/]script\.js$/i)
 
   assert.equal(newFoldDigital.PROVIDER_METADATA.source, NEWFOLD_DIGITAL_CATALOG.source)
   assert.equal(newFoldDigital.PROVIDER_METADATA.companyName, NEWFOLD_DIGITAL_CATALOG.companyName)

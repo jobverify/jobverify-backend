@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url'
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
+  '..',
+  'scraper-support',
   'tests',
   'fixtures',
   'infocuspinnovations',
@@ -19,6 +21,50 @@ const homepageHtml = readFixture('homepage.html')
 const careersHtml = readFixture('careers-openings.html')
 const careersBundleJs = readFixture('current-openings-bundle.js')
 const activeJobsPayload = readJsonFixture('active-jobs.json')
+const liveCareersShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Openings - Infocusp</title>
+    <link rel="canonical" href="https://www.infocusp.com/careers/openings/" />
+  </head>
+  <body>
+    <main>
+      <p>Innovate, Grow, Thrive - Together</p>
+      <h1>Join us to shape tomorrow</h1>
+      <a href="https://www.infocusp.com/careers/openings/">Explore Open Positions</a>
+      <h2>Current Openings</h2>
+    </main>
+  </body>
+</html>
+`
+
+const renderedNoOpeningsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Openings - Infocusp</title>
+    <link rel="canonical" href="https://www.infocusp.com/careers/openings/" />
+  </head>
+  <body>
+    <main>
+      <p>Innovate, Grow, Thrive - Together</p>
+      <h1>Join us to shape tomorrow</h1>
+      <a href="https://www.infocusp.com/careers/openings/">Explore Open Positions</a>
+      <h2>Current Openings</h2>
+      <div id="jobs-container">
+        <div>
+          <p>
+            Interested in joining our team? Share your CV with us at
+            <a href="mailto:careers@infocusp.com">careers@infocusp.com</a>
+            and we’ll reach out when a suitable opportunity arises.
+          </p>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+`
 
 const loadModule = async () => {
   try {
@@ -37,8 +83,16 @@ test('InfoCusp Innovations verifies the official homepage and extracts the first
   assert.equal(infocusp.CAREERS_URL, 'https://www.infocusp.com/careers/openings/')
   assert.equal(infocusp.EXPECTED_IDENTIFIER, 'd8a117a8-6620-46fb-959e-742de38602e5')
   assert.equal(infocusp.EXPECTED_KEKA_DOMAIN, 'https://infocusp.keka.com/careers/')
+  assert.equal(
+    infocusp.shouldUseBrowserFallback(
+      new Error('Forbidden HTML response for https://infocusp.keka.com/careers/api/embedjobs/default/active/d8a117a8-6620-46fb-959e-742de38602e5'),
+    ),
+    true,
+  )
   assert.equal(infocusp.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(infocusp.hasVerifiedCareersPageSignal(careersHtml), true)
+  assert.equal(infocusp.hasVerifiedCareersPageSignal(liveCareersShellHtml), true)
+  assert.equal(infocusp.hasRenderedNoOpeningsSignal(renderedNoOpeningsHtml), true)
   assert.equal(
     infocusp.extractCareersBundlePath(careersHtml),
     '/_astro/CurrentOpeningsList.astro_astro_type_script_index_0_lang.D10wGgkc.js',
@@ -122,6 +176,67 @@ test('InfoCusp Innovations keeps India jobs from the verified Keka feed and deco
   assert.equal(jobs[0].source, 'infocuspinnovations')
   assert.equal(jobs[0].link, 'https://infocusp.keka.com/careers/jobdetails/76348')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+})
+
+test('InfoCusp Innovations falls back to browser JSON when Keka returns forbidden HTML', async () => {
+  const infocusp = await loadModule()
+
+  const requestedBrowserJson = []
+  const jobs = await infocusp.createInfoCuspInnovationsScraper().run({
+    fetchText: async (url) => {
+      if (url === infocusp.HOMEPAGE_URL) return homepageHtml
+      if (url === infocusp.CAREERS_URL) return careersHtml
+      if (url === 'https://www.infocusp.com/_astro/CurrentOpeningsList.astro_astro_type_script_index_0_lang.D10wGgkc.js') {
+        return careersBundleJs
+      }
+
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async () => {
+      throw new Error(
+        'Forbidden HTML response for https://infocusp.keka.com/careers/api/embedjobs/default/active/d8a117a8-6620-46fb-959e-742de38602e5',
+      )
+    },
+    fetchBrowserText: async () => liveCareersShellHtml,
+    fetchBrowserJson: async (url) => {
+      requestedBrowserJson.push(url)
+      return activeJobsPayload
+    },
+  })
+
+  assert.deepEqual(requestedBrowserJson, [
+    'https://infocusp.keka.com/careers/api/embedjobs/default/active/d8a117a8-6620-46fb-959e-742de38602e5',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'infocuspinnovations')
+  assert.equal(jobs[0].link, 'https://infocusp.keka.com/careers/jobdetails/76348')
+})
+
+test('InfoCusp Innovations returns no jobs when the rendered first-party page shows the public CV fallback', async () => {
+  const infocusp = await loadModule()
+
+  const jobs = await infocusp.createInfoCuspInnovationsScraper().run({
+    fetchText: async (url) => {
+      if (url === infocusp.HOMEPAGE_URL) return homepageHtml
+      if (url === infocusp.CAREERS_URL) return careersHtml
+      if (url === 'https://www.infocusp.com/_astro/CurrentOpeningsList.astro_astro_type_script_index_0_lang.D10wGgkc.js') {
+        return careersBundleJs
+      }
+
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async () => {
+      throw new Error(
+        'Forbidden HTML response for https://infocusp.keka.com/careers/api/embedjobs/default/active/d8a117a8-6620-46fb-959e-742de38602e5',
+      )
+    },
+    fetchBrowserText: async () => renderedNoOpeningsHtml,
+    fetchBrowserJson: async () => {
+      throw new Error('browser JSON should not be used when the page already renders a no-openings fallback')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('InfoCusp Innovations fails closed when the verified official surfaces or Keka config change', async () => {

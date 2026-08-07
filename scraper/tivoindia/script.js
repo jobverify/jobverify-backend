@@ -27,14 +27,19 @@ export const BRAND_HOMEPAGE_URL = PROVIDER_METADATA.officialBrandHomepageUrl
 export const SHARED_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const LOCATIONS_URL = PROVIDER_METADATA.officialLocationsPageUrl
 
-const normalizeWhitespace = (value) => String(value ?? '')
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
+  .replace(/&copy;/gi, '(c)')
+
+const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
-  .replace(/&quot;/gi, '"')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -73,23 +78,27 @@ export const pageExposesPublicJobListings = (html = '') =>
   PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const hasOfficialTiVoHomepageSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return normalized.includes('With TiVo, the choice is always yours.')
-    && normalized.includes('A smart TV Powered by TiVo gives you the power to choose what you want to watch.')
-    && normalized.includes('©2026 Xperi Inc. All Rights Reserved.')
-    && /href=["']https:\/\/www\.xperi\.com\/careers\/?["']/i.test(String(html ?? ''))
-    && /href=["']https:\/\/www\.xperi\.com\/company\/locations\/?["']/i.test(String(html ?? ''))
+  return normalized.includes('with tivo, the choice is always yours.')
+    && normalized.includes('a smart tv powered by tivo gives you the power to choose what you want to watch.')
+    && normalized.includes('xperi inc.')
+    && normalized.includes('all rights reserved.')
+    && /href=["']https:\/\/(?:www\.)?xperi\.com\/careers\/?["']/i.test(rawHtml)
+    && /href=["']https:\/\/(?:www\.)?xperi\.com\/company\/?["']/i.test(rawHtml)
 }
 
 export const hasSharedXperiCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('Careers')
-    && normalized.includes('Extraordinary opportunities await.')
-    && normalized.includes('Through our brands – DTS®, HD Radio™, IMAX® Enhanced and TiVo®')
-    && normalized.includes('Search Jobs')
-    && normalized.includes('View Openings')
+  return normalized.includes('careers')
+    && normalized.includes('extraordinary opportunities await.')
+    && normalized.includes('through our brands')
+    && normalized.includes('tivo')
+    && normalized.includes('search jobs')
+    && (normalized.includes('view openings') || normalized.includes('open positions'))
+    && normalized.includes('life @ xperi')
 }
 
 export const hasIndiaLocationsSignal = (html = '') => {

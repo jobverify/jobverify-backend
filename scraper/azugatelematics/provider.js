@@ -11,9 +11,9 @@ export const provider = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'azuga.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.azuga.com/careers remained the official Azuga careers page, displayed the message No items found., and linked the company careers handoff to www.bebridgestone.com rather than exposing an Azuga-hosted public openings list.',
+    'Verified on Saturday, August 1, 2026 that https://www.azuga.com/careers remained the official Azuga careers page, displayed the message No items found., and linked the company careers handoff to Bridgestone via bebridgestone.com rather than exposing an Azuga-hosted public openings list.',
   dryRunFile: 'azugatelematics/jobs.json',
 }
 

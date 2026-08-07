@@ -9,14 +9,15 @@ const aboutPageHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>About Us | Iron Mountain</title>
+      <title>Discover who we are | Iron Mountain United States</title>
+      <meta name="careers-board-domain" content="ironmountain.jobs" />
     </head>
     <body>
       <main>
         <h1>About Iron Mountain</h1>
         <nav>
           <a href="https://www.ironmountain.com/en-in">India</a>
-          <a href="https://ironmountain.jobs/">Careers</a>
+          <a href="/company/about/careers">Careers</a>
         </nav>
         <p>We protect what our customers value most.</p>
       </main>
@@ -84,7 +85,7 @@ test('Iron Mountain India pins the verified first-party careers handoff and site
   assert.equal(ironMountainIndia.ABOUT_PAGE_URL, ABOUT_PAGE_URL)
   assert.equal(ironMountainIndia.CAREERS_URL, CAREERS_URL)
   assert.equal(ironMountainIndia.JOBS_SITEMAP_URL, JOBS_SITEMAP_URL)
-  assert.equal(ironMountainIndia.VERIFIED_ON, '2026-07-16')
+  assert.equal(ironMountainIndia.VERIFIED_ON, '2026-08-03')
   assert.equal(ironMountainIndia.hasOfficialAboutPageCareersSignal(aboutPageHtml), true)
   assert.equal(ironMountainIndia.hasOfficialAboutPageCareersSignal('<html><title>About Another Company</title></html>'), false)
   assert.equal(ironMountainIndia.hasOfficialJobsBoardSignal(jobsBoardHtml), true)
@@ -271,6 +272,38 @@ test('Iron Mountain India can recover with browser-backed first-party HTML when 
     `http:${CAREERS_URL}`,
     `browser:${CAREERS_URL}`,
     `http:${JOBS_SITEMAP_URL}`,
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'ironmountainindia')
+})
+
+test('Iron Mountain India also falls back to browser-backed HTML when direct requests time out', async () => {
+  const ironMountainIndia = await loadIronMountainIndiaModule()
+  const attempts = []
+
+  const jobs = await ironMountainIndia.createIronMountainIndiaScraper({
+    now: () => '2026-08-02T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      attempts.push(`http:${url}`)
+      throw new TypeError(`fetch failed | Connect Timeout Error for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      attempts.push(`browser:${url}`)
+      if (url === ABOUT_PAGE_URL) return aboutPageHtml
+      if (url === CAREERS_URL) return jobsBoardHtml
+      if (url === JOBS_SITEMAP_URL) return sitemapXml
+      throw new Error(`Unexpected Iron Mountain India browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(attempts, [
+    `http:${ABOUT_PAGE_URL}`,
+    `browser:${ABOUT_PAGE_URL}`,
+    `http:${CAREERS_URL}`,
+    `browser:${CAREERS_URL}`,
+    `http:${JOBS_SITEMAP_URL}`,
+    `browser:${JOBS_SITEMAP_URL}`,
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'ironmountainindia')

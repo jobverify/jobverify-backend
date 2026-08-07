@@ -66,10 +66,17 @@ const toAbsoluteJobsUrl = (value) => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
-  return /<title>\s*Jobs at Kumaran Systems Pvt Ltd\s*<\/title>/i.test(rawHtml)
-    && /Engineer What's Next Alongside People Who Care/i.test(rawHtml)
+  const normalized = normalizeWhitespace(rawHtml)
+  const hasLegacyRecruitingSurface = /Engineer What's Next Alongside People Who Care/i.test(rawHtml)
     && /kumaranite/i.test(rawHtml)
     && /RBP_offshore@kumaran\.com/i.test(rawHtml)
+  const hasCurrentBrandedShell = /href=["'][^"']*\/careers\/?["']/i.test(rawHtml)
+    && /info@kumaran\.com/i.test(rawHtml)
+    && /Founded in 1992, Kumaran Systems is a global technology partner/i.test(normalized)
+    && /Life At Kumaran'?s/i.test(normalized)
+
+  return /<title>\s*Jobs at Kumaran Systems Pvt Ltd\s*<\/title>/i.test(rawHtml)
+    && (hasLegacyRecruitingSurface || hasCurrentBrandedShell)
 }
 
 export const extractIndiaJobs = (payload = {}) =>

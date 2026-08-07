@@ -19,23 +19,60 @@ const listingHtml = `
     <div>No 18</div>
     <div>Yes 1</div>
 
-    <a href="/jobs/17870993-software-development-expert">
-      Software Development Expert
-    </a>
-    <div>Location: Bengaluru, Karnataka, India</div>
-    <div>Company: HITACHI VANTARA INDIA PRIVATE LIMITED</div>
+    <div class="jobs-section__item page-section-1">
+      <div class="row">
+        <div class="large-5 columns">
+          <a href="/jobs/17870993-software-development-expert">
+            Software Development Expert
+          </a>
+        </div>
+        <div class="large-4 columns">
+          <span class="hide">Location: </span>
+          Bengaluru,
+          Karnataka,
+          India
+        </div>
+        <div class="large-3 columns">
+          <span class="hide-for-large">Company: </span>HITACHI VANTARA INDIA PRIVATE LIMITED
+        </div>
+      </div>
+    </div>
 
-    <a href="/jobs/17910000-senior-technical-writer">
-      Senior Technical Writer
-    </a>
-    <div>Location: Remote</div>
-    <div>Company: HITACHI VANTARA INDIA PRIVATE LIMITED</div>
+    <div class="jobs-section__item page-section-1">
+      <div class="row">
+        <div class="large-5 columns">
+          <a href="/jobs/17910000-senior-technical-writer">
+            Senior Technical Writer
+          </a>
+        </div>
+        <div class="large-4 columns">
+          <span class="hide">Location: </span>
+          Remote
+        </div>
+        <div class="large-3 columns">
+          <span class="hide-for-large">Company: </span>HITACHI VANTARA INDIA PRIVATE LIMITED
+        </div>
+      </div>
+    </div>
 
-    <a href="/jobs/17948888-grid-automation-engineer">
-      Grid Automation Engineer
-    </a>
-    <div>Location: Chennai, Tamil Nadu, India</div>
-    <div>Company: HITACHI ENERGY INDIA LTD</div>
+    <div class="jobs-section__item page-section-1">
+      <div class="row">
+        <div class="large-5 columns">
+          <a href="/jobs/17948888-grid-automation-engineer">
+            Grid Automation Engineer
+          </a>
+        </div>
+        <div class="large-4 columns">
+          <span class="hide">Location: </span>
+          Chennai,
+          Tamil Nadu,
+          India
+        </div>
+        <div class="large-3 columns">
+          <span class="hide-for-large">Company: </span>HITACHI ENERGY INDIA LTD
+        </div>
+      </div>
+    </div>
   </main>
 `
 
@@ -201,4 +238,53 @@ test('Hitachi Vantara India run verifies the search shell, enriches detail pages
   assert.equal(jobs[0].applyUrl, FINAL_APPLY_URL)
   assert.equal(jobs[0].link, FINAL_APPLY_URL)
   assert.equal(jobs[0].scrapedAt, '2026-07-16T12:00:00.000Z')
+})
+
+test('Hitachi Vantara India resolves the final Workday apply URL through the browser when the public redirect is blocked', async () => {
+  const { resolveApplyUrl } = await loadHitachiVantaraIndiaModule()
+
+  const applyUrl = await resolveApplyUrl(PUBLIC_APPLY_URL, {
+    fetchImpl: async () => ({
+      ok: false,
+      status: 403,
+    }),
+    fetchBrowserFinalUrl: async () => `${FINAL_APPLY_URL}?source=jobsite&tm_job=17870993#apply`,
+  })
+
+  assert.equal(applyUrl, FINAL_APPLY_URL)
+})
+
+test('Hitachi Vantara India falls back to browser-readable HTML when direct text fetch is blocked', async () => {
+  const { createHitachiVantaraIndiaScraper } = await loadHitachiVantaraIndiaModule()
+  const requestedTextUrls = []
+  const requestedBrowserUrls = []
+
+  const jobs = await createHitachiVantaraIndiaScraper().run({
+    maxJobs: 1,
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      requestedBrowserUrls.push(url)
+      if (url === SEARCH_PAGE_URL) return listingHtml
+      if (url === DETAIL_URL) return detailHtml
+      throw new Error(`Unexpected Hitachi Vantara India browser fixture URL: ${url}`)
+    },
+    fetchImpl: async (url) => {
+      if (url === PUBLIC_APPLY_URL) {
+        return {
+          ok: true,
+          url: `${FINAL_APPLY_URL}?source=jobsite&tm_job=17870993`,
+        }
+      }
+      throw new Error(`Unexpected Hitachi Vantara India apply fixture URL: ${url}`)
+    },
+    now: () => '2026-07-16T12:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedTextUrls, [SEARCH_PAGE_URL, DETAIL_URL])
+  assert.deepEqual(requestedBrowserUrls, [SEARCH_PAGE_URL, DETAIL_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].applyUrl, FINAL_APPLY_URL)
 })

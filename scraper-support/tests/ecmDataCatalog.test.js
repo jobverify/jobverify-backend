@@ -29,7 +29,7 @@ test('ECM Data local catalog captures the verified unavailable first-party surfa
   assert.equal(provider.source, 'ecmdata')
   assert.equal(provider.companyName, 'ECM Data')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/ecmdata/script.js')
+  assert.match(provider.modulePath, /ecmdata[\\/]script\.js$/i)
   assert.equal(provider.companyCareerPage, 'https://ecmdata.com/')
   assert.equal(provider.companyDomain, 'ecmdata.com')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')

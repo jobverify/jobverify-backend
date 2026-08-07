@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { getScraperCatalog } from '../providers/index.js'
 
 const loadLumenModule = async () => {
   try {
@@ -19,12 +19,25 @@ const HOMEPAGE_HTML = `
   </head>
   <body>
     <main>
-      <a href="https://careers.lumen.com/careers?sort_by=hot&start=0">VIEW CAREERS</a>
+      <p>Lumen Technologies</p>
+      <a href="https://jobs.lumen.com/" target="_blank" rel="noopener noreferrer">Careers</a>
       <p>AI-Ready Networking & Secure Cloud Solutions</p>
     </main>
   </body>
 </html>
 `
+
+const PCS_X_PAYLOAD = JSON.stringify({
+  domain: 'lumen.com',
+  configs: {
+    pcsxConfig: {
+      enabled: true,
+      searchConfig: {
+        allFilters: ['location_country', 'category'],
+      },
+    },
+  },
+}).replace(/"/g, '&#34;')
 
 const CAREERS_HTML = `
 <!doctype html>
@@ -36,77 +49,94 @@ const CAREERS_HTML = `
     <main>
       <h1>Challenge Accepted.</h1>
       <h2>Build the Future.</h2>
-      <p>View All Jobs</p>
-      <script type="application/json" id="lumen-jobs-data">
-        ${JSON.stringify({
-          items: [
-            {
-              title: 'Senior Network Engineer',
-              publicationDate: '2026-07-08T00:00:00Z',
-              url: 'https://careers.lumen.com/careers/job/senior-network-engineer/12345',
-              applyNowUrl: 'https://careers.lumen.com/careers/apply/12345',
-              location: 'Bengaluru, Karnataka, India',
-              primaryLocation: 'Bengaluru, India',
-              jobType: 'Full time',
-              contractType: 'Regular',
-              experience: 'Experienced',
-              jobFunction: 'Engineering & Science',
-            },
-            {
-              title: 'Solutions Architect',
-              publicationDate: '2026-07-08T00:00:00Z',
-              url: 'https://careers.lumen.com/careers/job/solutions-architect/98765',
-              applyNowUrl: 'https://careers.lumen.com/careers/apply/98765',
-              location: 'Denver, Colorado, United States',
-              primaryLocation: 'Denver, United States',
-              jobType: 'Full time',
-              contractType: 'Regular',
-              experience: 'Experienced',
-              jobFunction: 'Sales, Marketing & Product Management',
-            },
-          ],
-          loadMore: true,
-          totalNumber: 2238,
-        })}
-      </script>
+      <script>window._EF_GROUP_ID = "lumen.com";</script>
+      <code id="pcsx-data" style="display:none;" data-nosnippet>${PCS_X_PAYLOAD}</code>
     </main>
   </body>
 </html>
 `
 
-test('getScraperCatalog includes Lumen as an official-company-careers provider', async () => {
+const SEARCH_API_PAYLOAD = {
+  data: {
+    count: 2,
+    positions: [
+      {
+        id: 1133910625764,
+        displayJobId: '340953',
+        name: 'Senior Network Engineer',
+        locations: ['Bengaluru, Karnataka, India'],
+        standardizedLocations: ['Bengaluru, Karnataka, IN'],
+        postedTs: Date.parse('2026-07-08T00:00:00Z') / 1000,
+        department: 'Engineering & Science',
+        workLocationOption: 'onsite',
+        positionUrl: '/careers/job/1133910625764',
+      },
+      {
+        id: 1133913469015,
+        displayJobId: '342319',
+        name: 'Solutions Architect',
+        locations: ['Denver, Colorado, United States'],
+        standardizedLocations: ['Denver, CO, US'],
+        postedTs: Date.parse('2026-07-08T00:00:00Z') / 1000,
+        department: 'Sales, Marketing & Product Management',
+        workLocationOption: 'onsite',
+        positionUrl: '/careers/job/1133913469015',
+      },
+    ],
+  },
+}
+
+test('getScraperCatalog includes Lumen as an Eightfold provider with verified public API metadata', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'lumen')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'eightfold')
   assert.equal(provider.companyName, 'Lumen Technologies')
+  assert.equal(provider.homepageUrl, 'https://www.lumen.com/en-us/home.html')
   assert.equal(provider.companyCareerPage, 'https://careers.lumen.com/careers?sort_by=hot&start=0')
+  assert.equal(provider.listingApiUrl, 'https://careers.lumen.com/api/pcsx/search')
+  assert.deepEqual(provider.apiQuery, {
+    domain: 'lumen.com',
+    query: '',
+    location: 'India',
+  })
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.equal(provider.companyDomain, 'lumen.com')
   assert.match(provider.modulePath, /lumen[\\/]script\.js$/i)
 })
 
-test('createLumenScraper validates the official homepage and extracts India jobs from the careers surface', async () => {
+test('createLumenScraper validates the official homepage and extracts India jobs from the live Eightfold search API', async () => {
   const lumen = await loadLumenModule()
 
   assert.equal(lumen.HOMEPAGE_URL, 'https://www.lumen.com/en-us/home.html')
   assert.equal(lumen.CAREERS_URL, 'https://careers.lumen.com/careers?sort_by=hot&start=0')
+  assert.equal(lumen.SEARCH_API_URL, 'https://careers.lumen.com/api/pcsx/search')
   assert.equal(lumen.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
   assert.equal(lumen.hasVerifiedCareersSignal(CAREERS_HTML), true)
 
-  const requestedUrls = []
+  const requestedPageUrls = []
+  const requestedApiUrls = []
   const jobs = await lumen.createLumenScraper().run({
     fetchText: async (url) => {
-      requestedUrls.push(url)
+      requestedPageUrls.push(url)
       if (url === lumen.HOMEPAGE_URL) return HOMEPAGE_HTML
       if (url === lumen.CAREERS_URL) return CAREERS_HTML
       throw new Error(`Unexpected Lumen URL: ${url}`)
     },
+    fetchJson: async (url) => {
+      requestedApiUrls.push(url)
+      assert.equal(url, lumen.buildSearchApiUrl({ start: 0, limit: lumen.SEARCH_PAGE_SIZE }))
+      return SEARCH_API_PAYLOAD
+    },
   })
 
-  assert.deepEqual(requestedUrls, [
+  assert.deepEqual(requestedPageUrls, [
     lumen.HOMEPAGE_URL,
     lumen.CAREERS_URL,
+  ])
+  assert.deepEqual(requestedApiUrls, [
+    lumen.buildSearchApiUrl({ start: 0, limit: lumen.SEARCH_PAGE_SIZE }),
   ])
   assert.equal(jobs.length, 1)
   assert.deepEqual(
@@ -133,12 +163,12 @@ test('createLumenScraper validates the official homepage and extracts India jobs
       city: 'Bengaluru',
       country: 'India',
       source: 'lumen',
-      sourceUrl: 'https://careers.lumen.com/careers/job/senior-network-engineer/12345',
-      applyUrl: 'https://careers.lumen.com/careers/apply/12345',
-      link: 'https://careers.lumen.com/careers/apply/12345',
+      sourceUrl: 'https://careers.lumen.com/careers/job/1133910625764',
+      applyUrl: 'https://careers.lumen.com/careers/job/1133910625764',
+      link: 'https://careers.lumen.com/careers/job/1133910625764',
       department: 'Engineering & Science',
-      employmentType: 'Full-time',
-      experienceRequired: 'Experienced',
+      employmentType: null,
+      experienceRequired: null,
       postingDate: '2026-07-08',
       requiredSkills: [],
     },

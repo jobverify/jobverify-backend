@@ -93,7 +93,7 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const section = getCurrentPositionsSection(page)
 
-  return /Let(?:'|&#39;|&rsquo;)?s Grow Together/i.test(page)
+  return /Let(?:'|’|&#39;|&rsquo;)?s Grow Together/i.test(page)
     && /Current Positions/i.test(page)
     && /India-based,\s*Remote Position/i.test(page)
     && /https:\/\/opsera\.ai\/careers\/[^"' ]+\/?/i.test(section || '')

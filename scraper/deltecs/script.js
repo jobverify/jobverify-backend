@@ -186,11 +186,15 @@ const parseLocation = (value) => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*DronaHQ \| Enterprise platform to build apps and agents faster\s*<\/title>/i.test(page)
-    && /"name"\s*:\s*"DronaHQ"/i.test(page)
+  const hasLegacyOwnershipSignals = /"name"\s*:\s*"DronaHQ"/i.test(page)
     && /"foundingOrganization"\s*:\s*{[\s\S]*?"name"\s*:\s*"Deltecs Infotech Pvt Ltd"/i.test(page)
     && /https:\/\/www\.linkedin\.com\/company\/deltecs-infotech/i.test(page)
-    && /href=["']\/careers\/["']/i.test(page)
+
+  const hasCurrentOwnershipSignals = /Copyright[\sÂ]*©?\s*Deltecs Infotech Pvt Ltd\. All Rights Reserved/i.test(page)
+    && /href=["'][^"']*\/careers\/?["']/i.test(page)
+
+  return /<title>\s*DronaHQ \| Enterprise platform to build apps and agents faster\s*<\/title>/i.test(page)
+    && (hasLegacyOwnershipSignals || hasCurrentOwnershipSignals)
 }
 
 export const hasOfficialCareersPageSignal = (html = '') => {

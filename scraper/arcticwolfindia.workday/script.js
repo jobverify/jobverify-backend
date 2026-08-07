@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -45,6 +46,26 @@ const normalizeWhitespace = (value) => {
     .trim()
 
   return normalized || null
+}
+
+const mapWithConcurrency = async (items, limit, iteratee) => {
+  const concurrency = Math.max(1, Number.isInteger(limit) ? limit : 1)
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  )
+
+  return results
 }
 
 const normalizeComparableUrl = (value) => {
@@ -352,7 +373,42 @@ export const createArcticWolfIndiaScraper = ({
       }
     }
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = await mapWithConcurrency(
+      selectedJobs,
+      6,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.sourceUrl)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailPage.html,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            requisitionId: detail.requisitionId || job.requisitionId,
+            postingDate: detail.postingDate || job.postingDate,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
+
+    return enrichedJobs
   },
 })
 

@@ -57,6 +57,37 @@ const searchPageTwoHtml = `
   </html>
 `
 
+const currentSearchPageHtml = `
+  <html>
+    <body>
+      <div class="career_filter_result bhavin123">
+        <a href="https://www.globallogic.com/careers/aidlc-engineer-fde-irc296096-4/" class="job_box">
+          <div class="top_area">
+            <span class="job_location">Croatia</span>
+            <span class="job_tag">Hybrid</span>
+          </div>
+          <h4>AIDLC Engineer/FDE IRC296096</h4>
+        </a>
+        <a href="https://www.globallogic.com/careers/technical-support-engineer-irc300798/" class="job_box">
+          <div class="top_area">
+            <span class="job_location">India</span>
+            <span class="job_location">Nagpur</span>
+            <span class="job_tag">On-site</span>
+          </div>
+          <h4>Technical Support Engineer IRC300798</h4>
+        </a>
+      </div>
+      <div class="pagination_area">
+        <div class="pagination">
+          <span aria-current="page" class="page-numbers current">1</span>
+          <a class="page-numbers" href="https://www.globallogic.com/career-search-page/page/2/">2</a>
+          <a class="next page-numbers" href="https://www.globallogic.com/career-search-page/page/2/">Next »</a>
+        </div>
+      </div>
+    </body>
+  </html>
+`
+
 const awsDevopsLeadDetailHtml = `
   <html>
     <head>
@@ -150,6 +181,39 @@ const technicalManagerDetailHtml = `
   </html>
 `
 
+const currentTechnicalSupportDetailHtml = `
+  <html>
+    <head>
+      <link rel="canonical" href="https://www.globallogic.com/careers/technical-support-engineer-irc300798/" />
+    </head>
+    <body>
+      <div class="career_detail_banner_right">
+        <div class="career_banner_sub_head">Published on 31 July 2026</div>
+        <h1>Technical Support Engineer IRC300798</h1>
+        <div class="row">
+          <div class="col-4 career_banner_details">
+            <span>Experience</span>
+            <p>3-5 years</p>
+          </div>
+          <div class="col-4 career_banner_details">
+            <span>Location</span>
+            <p>India - Nagpur</p>
+          </div>
+        </div>
+      </div>
+      <div class="career_detail_content">
+        <h4>Description</h4>
+        <p>Technical Support Engineer - AI/ML</p>
+        <p>1+ years of experience in AI/ML technologies, LLM models, and any Cloud platform. Candidates should have experience in Technical Support and fair knowledge of SQL.</p>
+        <h4>Requirements</h4>
+        <p>Bachelor's degree in Computer Science or a related discipline and/or equivalent.<br />0-1 years of troubleshooting experience on cloud or hybrid cloud environments.<br />Excellent communication skills.</p>
+        <h4>Job responsibilities</h4>
+        <p>Engage with customers via email, chat, or phone to diagnose and resolve support queries.<br />Document issues and provide clear assessments for complex product bugs.</p>
+      </div>
+    </body>
+  </html>
+`
+
 test('buildSearchPageUrl keeps GlobalLogic on the official paginated careers route', async () => {
   const {
     CAREERS_PAGE_URL,
@@ -193,6 +257,35 @@ test('extractSearchResults maps GlobalLogic India cards into the shared scraper 
   })
 })
 
+test('extractSearchResults also supports the current GlobalLogic job_box listing markup', async () => {
+  const { extractSearchResults, hasNextSearchPage } = await loadGlobalLogicModule()
+  const jobs = extractSearchResults(currentSearchPageHtml)
+
+  assert.equal(hasNextSearchPage(currentSearchPageHtml), true)
+  assert.deepEqual(jobs, [
+    {
+      title: 'Technical Support Engineer',
+      company: 'GlobalLogic',
+      department: null,
+      location: 'India - Nagpur',
+      city: 'Nagpur',
+      country: 'India',
+      jobId: 'IRC300798',
+      requisitionId: 'IRC300798',
+      sourceUrl: 'https://www.globallogic.com/careers/technical-support-engineer-irc300798/',
+      applyUrl: 'https://www.globallogic.com/careers/technical-support-engineer-irc300798/',
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+    },
+  ])
+})
+
 test('extractJobDetail enriches a GlobalLogic listing from the official detail page', async () => {
   const { extractJobDetail, extractSearchResults } = await loadGlobalLogicModule()
   const listing = extractSearchResults(searchPageOneHtml)[0]
@@ -227,6 +320,22 @@ test('extractJobDetail enriches a GlobalLogic listing from the official detail p
   assert.equal(job.closingDate, null)
   assert.match(job.jobDescription, /experienced AWS DevOps Technical Architect/i)
   assert.match(job.jobDescription, /Design and implement scalable AWS infrastructure/i)
+})
+
+test('extractJobDetail supports the current GlobalLogic detail markup with banner fields and h4 sections', async () => {
+  const { extractJobDetail, extractSearchResults } = await loadGlobalLogicModule()
+  const listing = extractSearchResults(currentSearchPageHtml)[0]
+  const job = extractJobDetail(currentTechnicalSupportDetailHtml, listing)
+
+  assert.equal(job.title, 'Technical Support Engineer')
+  assert.equal(job.location, 'India - Nagpur')
+  assert.equal(job.city, 'Nagpur')
+  assert.equal(job.country, 'India')
+  assert.equal(job.experienceRequired, '3-5 years')
+  assert.equal(job.postingDate, '2026-07-31')
+  assert.match(job.minimumQualification || '', /Bachelor's degree/i)
+  assert.match(job.jobDescription || '', /AI\/ML/i)
+  assert.match(job.jobDescription || '', /diagnose and resolve support queries/i)
 })
 
 test('run paginates the official GlobalLogic search pages and decorates shared runner fields', async () => {
@@ -293,4 +402,36 @@ test('run bounds default GlobalLogic fetches with abort signals', async () => {
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+test('run falls back to browser text when GlobalLogic blocks direct HTTP fetches', async () => {
+  const { buildSearchPageUrl, createGlobalLogicScraper } = await loadGlobalLogicModule()
+  const directRequests = []
+  const browserRequests = []
+
+  const jobs = await createGlobalLogicScraper({ maxJobs: 1, maxPages: 1 }).run({
+    fetchText: async (url) => {
+      directRequests.push(url)
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserRequests.push(url)
+
+      if (url === buildSearchPageUrl(1)) return searchPageOneHtml
+      if (url === 'https://www.globallogic.com/careers/aws-devops-lead-irc299563/') {
+        return awsDevopsLeadDetailHtml
+      }
+
+      throw new Error(`Unexpected GlobalLogic browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(directRequests, [
+    buildSearchPageUrl(1),
+    'https://www.globallogic.com/careers/aws-devops-lead-irc299563/',
+  ])
+  assert.deepEqual(browserRequests, directRequests)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'AWS DevOps Lead')
+  assert.equal(jobs[0].city, 'Noida')
 })

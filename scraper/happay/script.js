@@ -53,9 +53,16 @@ export const hasBrokenJobsShortcodeSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return normalized.includes('Home » Jobs')
+  return (
+    normalized.includes('Home Â» Jobs')
     && normalized.includes('[jobs per_page="12" show_filters="true"]')
     && /Happay-MMT/i.test(page)
+  ) || (
+    /<title>\s*Jobs\s*-\s*Expense Management Software/i.test(page)
+    && normalized.includes('Expense Management')
+    && normalized.includes('Travel Management')
+    && /Happay-MMT/i.test(page)
+  )
 }
 
 export const hasOfficialCareersContactSignal = (html = '') => {
@@ -64,7 +71,10 @@ export const hasOfficialCareersContactSignal = (html = '') => {
   return normalized.includes('Looking to get in touch with us?')
     && normalized.includes('To join the Happay team')
     && normalized.includes('careers@happay.in')
-    && normalized.includes('MakeMyTrip India Private Limited')
+    && (
+      normalized.includes('MakeMyTrip India Private Limited')
+      || normalized.includes('MakeMyTrip (India) Limited')
+    )
     && normalized.includes('Bengaluru office address')
 }
 

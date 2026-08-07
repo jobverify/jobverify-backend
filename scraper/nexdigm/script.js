@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import NEXDIGM_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -14,39 +13,39 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const HOMEPAGE_URL = PROVIDER_METADATA.officialHomepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const CURRENT_OPENINGS_URL = PROVIDER_METADATA.officialCurrentOpeningsUrl
-export const CAREER_DETAILS_BASE_URL = PROVIDER_METADATA.officialCareerDetailsBaseUrl
+export const CURRENT_OPENINGS_DATA_URL = PROVIDER_METADATA.officialCurrentOpeningsDataUrl
+export const CURRENT_OPENINGS_UPSTREAM_ERROR = PROVIDER_METADATA.reviewedUpstreamErrorValue
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const decodeHtmlEntities = (value) => String(value ?? '')
-  .replace(/&nbsp;|&#160;/gi, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
-  .replace(/&lt;/gi, '<')
-  .replace(/&gt;/gi, '>')
-  .replace(/\u00a0/g, ' ')
+const decodeHtmlEntities = (value = '') =>
+  String(value)
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
 
-const stripTags = (value) => decodeHtmlEntities(value)
-  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-  .replace(/<br\s*\/?>/gi, '\n')
-  .replace(/<\/p>/gi, '\n')
-  .replace(/<\/div>/gi, '\n')
-  .replace(/<[^>]+>/g, ' ')
+const stripHtmlComments = (value = '') => String(value).replace(/<!--[\s\S]*?-->/g, ' ')
 
-const normalizeWhitespace = (value) => stripTags(value)
-  .replace(/[ \t]+\n/g, '\n')
-  .replace(/\n[ \t]+/g, '\n')
-  .replace(/[ \t]+/g, ' ')
-  .replace(/\n+/g, '\n')
-  .trim()
+const stripTags = (value = '') =>
+  stripHtmlComments(String(value))
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
 
-const normalizeInlineText = (value) =>
-  normalizeWhitespace(value)
+const normalizeText = (value = '') =>
+  decodeHtmlEntities(stripTags(String(value)))
     .replace(/\s+/g, ' ')
-    .trim() || null
+    .trim()
+
+const normalizeLocation = (value = '') =>
+  normalizeText(value)
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*,/g, ',')
+    .replace(/,\s*$/, '')
 
 const normalizeComparableUrl = (value) => {
   try {
@@ -60,7 +59,7 @@ const normalizeComparableUrl = (value) => {
 
 const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchHtml = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -72,235 +71,168 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const extractHrefMatches = (html = '') =>
-  Array.from(String(html ?? '').matchAll(/href=["']([^"']+)["']/gi), (match) => match[1])
+  Array.from(stripHtmlComments(String(html)).matchAll(/href=["']([^"']+)["']/gi), (match) => match[1])
 
-const extractMetaValue = (html = '', label) => {
-  const escaped = String(label).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const match = String(html ?? '').match(
-    new RegExp(`<b>\\s*${escaped}\\s*<\\/b><\\/span>\\s*<span>([\\s\\S]*?)<\\/span>`, 'i'),
-  )
-
-  return normalizeInlineText(match?.[1])
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title>([\s\S]*?)<\/title>/i)
+  return normalizeText(match?.[1] || '')
 }
 
-const extractContentValue = (html = '', label) => {
-  const escaped = String(label).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const match = String(html ?? '').match(
-    new RegExp(`${escaped}\\s*<\\/b><\\/span>([\\s\\S]*?)<\\/p>`, 'i'),
-  )
+const extractFirst = (pattern, value = '') => normalizeText(pattern.exec(String(value ?? ''))?.[1] || '')
 
-  return normalizeInlineText(match?.[1])
+const escapeRegExp = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const buildJobDescription = ({ officeLocation, department, posted }) => {
+  const lines = []
+  if (officeLocation) lines.push(`Office Location: ${officeLocation}`)
+  if (department) lines.push(`Department: ${department}`)
+  if (posted) lines.push(`Posted: ${posted}`)
+  return lines.join('\n') || null
 }
 
-const normalizeOfficeLocation = (value) => {
-  const normalized = normalizeInlineText(value)
-  if (!normalized) return null
+const extractDetailField = (html = '', label = '') => extractFirst(
+  new RegExp(
+    `<div[^>]*class=["'][^"']*result-left[^"']*["'][^>]*>\\s*${escapeRegExp(label)}\\s*<\\/div>\\s*<div[^>]*class=["'][^"']*result-right[^"']*["'][^>]*>([\\s\\S]*?)<\\/div>`,
+    'i',
+  ),
+  html,
+)
 
-  return normalized
-    .replace(/\s+,/g, ',')
-    .replace(/,\s*,/g, ', ')
-    .replace(/,\s*$/g, '')
-    .trim()
-}
-
-const extractOfficeLocations = (html = '') => {
-  const escaped = 'Office Location :'
-  const match = String(html ?? '').match(
-    new RegExp(`${escaped}\\s*<\\/b><\\/span>([\\s\\S]*?)<\\/p>`, 'i'),
-  )
-  if (!match?.[1]) return []
-
-  return match[1]
-    .split(/<br\s*\/?>/i)
-    .map((value) => normalizeOfficeLocation(value))
-    .filter(Boolean)
-}
-
-const extractJobIdFromUrl = (url) => {
-  try {
-    return new URL(String(url ?? ''), HOMEPAGE_URL).searchParams.get('id') || null
-  } catch {
-    return null
+const extractDetailJobDescription = (html = '') => {
+  const page = stripHtmlComments(String(html ?? ''))
+  const marker = page.match(/<div[^>]*class=["'][^"']*job-title[^"']*["'][^>]*>\s*Job Description\s*<\/div>/i)
+  if (!marker?.index) {
+    if (marker == null) return null
   }
-}
 
-const extractDetailTitle = (html = '') => {
-  const match = String(html ?? '').match(
-    /class=["']main-hd result-heading["'][^>]*>\s*<a[^>]*>([\s\S]*?)<\/a>/i,
-  )
+  const start = marker.index + marker[0].length
+  const remainder = page.slice(start)
+  let end = remainder.length
 
-  return normalizeInlineText(match?.[1])
-}
-
-const extractDetailValue = (html = '', label) => {
-  const escaped = String(label).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const match = String(html ?? '').match(
-    new RegExp(
-      `<div class=["']result-left["']>\\s*${escaped}\\s*<\\/div>\\s*<div class=["']result-right["']>([\\s\\S]*?)<\\/div>`,
-      'i',
-    ),
-  )
-
-  return normalizeInlineText(match?.[1])
-}
-
-const extractEmployeeType = (html = '') => {
-  const match = String(html ?? '').match(
-    /<div class=["']job-title["']>\s*Employee Type\s*<\/div>\s*([\s\S]*?)\s*<\/div>/i,
-  )
-
-  return normalizeInlineText(match?.[1])
-}
-
-const extractApplyUrl = (html = '') => {
-  const match = String(html ?? '').match(/onclick=["']apply\('([^']+)'\);?["']/i)
-  return normalizeInlineText(match?.[1])
-}
-
-const extractJobDescription = (html = '') => {
-  const page = String(html ?? '')
-  const marker = /<div class=["']job-title["']>\s*Job Description\s*<\/div>/i.exec(page)
-  if (!marker) return null
-
-  const startIndex = marker.index + marker[0].length
-  const remainder = page.slice(startIndex)
-  const endCandidates = [
-    remainder.search(/<input class=["']btn["'][^>]*value=["']Apply["']/i),
-    remainder.search(/<a[^>]+href=["']https:\/\/www\.nexdigm\.com\/careers\/current-openings\/["']/i),
-    remainder.search(/<h2[^>]*>\s*Join our mailing list/i),
-  ].filter((value) => value >= 0)
-
-  const endIndex = endCandidates.length > 0 ? Math.min(...endCandidates) : remainder.length
-  return normalizeInlineText(remainder.slice(0, endIndex))
-}
-
-const buildFallbackLocation = (city) => {
-  const normalizedCity = normalizeCity(city || '')
-  return normalizedCity ? `${normalizedCity}, India` : null
-}
-
-const normalizeDetailUrlFromId = (jobId) => {
-  if (!jobId) return null
-  return `${CAREER_DETAILS_BASE_URL}?id=${jobId}`
-}
-
-export const normalizeDetailUrl = (value) => {
-  try {
-    const url = new URL(String(value ?? ''), HOMEPAGE_URL)
-    const jobId = url.searchParams.get('id')
-    return normalizeDetailUrlFromId(jobId)
-  } catch {
-    return null
+  for (const endPattern of [
+    /<!--input[^>]*value=["']Apply["']/i,
+    /<input[^>]*value=["']Apply["']/i,
+    /<div[^>]*class=["'][^"']*col-lg-3[^"']*["']/i,
+  ]) {
+    const match = remainder.match(endPattern)
+    if (match?.index != null && match.index < end) {
+      end = match.index
+    }
   }
+
+  return normalizeText(remainder.slice(0, end))
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeInlineText(page) || ''
+  const normalized = normalizeText(page)
 
-  return /<title>\s*Careers\b[\s\S]*Nexdigm\s*<\/title>/i.test(page)
-    && /Job Search/i.test(normalized)
-    && /View All/i.test(normalized)
+  return extractTitle(page) === 'Nexdigm | Explore Career Opportunities'
+    && /\bJob Search\b/i.test(normalized)
+    && /\bCurrent Opportunities\b/i.test(normalized)
+    && /\bView All\b/i.test(normalized)
     && extractHrefMatches(page).some((href) => sameUrl(href, CURRENT_OPENINGS_URL))
 }
 
 export const extractCurrentOpeningsUrl = (html = '') =>
   extractHrefMatches(html).find((href) => sameUrl(href, CURRENT_OPENINGS_URL)) || null
 
-export const hasCurrentOpeningsSignal = (html = '') => {
+export const hasVerifiedCurrentOpeningsShell = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeInlineText(page) || ''
+  const normalized = normalizeText(page)
 
-  return /<title>\s*Current Opportunities\b[\s\S]*Nexdigm\s*<\/title>/i.test(page)
-    && /Current Openings/i.test(normalized)
-    && /career-details\?id=/i.test(page)
-    && /result-heading/i.test(page)
+  return extractTitle(page) === 'Current Opportunities | Job Openings | Nexdigm'
+    && /\bCurrent Openings\b/i.test(normalized)
+    && /placeholder=["'][^"']*Search by Position Name, Location Name etc[^"']*["']/i.test(page)
+    && /id=["']my_form["']/i.test(page)
+    && /id=["']load_data["']/i.test(page)
+    && /id=["']loadmore["']/i.test(page)
+    && new RegExp(CURRENT_OPENINGS_DATA_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(page)
 }
 
-export const hasCareerDetailSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeInlineText(page) || ''
-
-  return /Career Details/i.test(normalized)
-    && /Location City/i.test(normalized)
-    && /Job Description/i.test(normalized)
-    && /Current Openings/i.test(normalized)
+export const extractCurrentOpeningsErrorValue = (html = '') => {
+  const match = stripHtmlComments(String(html)).match(
+    /id=["']arr["'][^>]*name=["']arr["'][^>]*value=(?:"([^"]*)"|'([^']*)')/i,
+  )
+  return normalizeText(match?.[1] || match?.[2] || '')
 }
 
-export const extractListings = (html = '') => {
-  const listings = []
-  const pattern =
-    /<div class="result-col">\s*<div class="result-heading[^"]*">\s*<a href="([^"]+)">([\s\S]*?)<\/a>\s*<\/div>\s*<div class="result-col2">([\s\S]*?)<\/div>\s*<div class="result-content">([\s\S]*?)<div class="tags-area">/gi
+export const hasVerifiedUpstreamErrorCurrentOpeningsState = (html = '') =>
+  extractCurrentOpeningsErrorValue(html).toLowerCase() === CURRENT_OPENINGS_UPSTREAM_ERROR
 
-  for (const match of String(html ?? '').matchAll(pattern)) {
-    const sourceUrl = normalizeDetailUrl(match[1])
-    const title = normalizeInlineText(match[2])
-    const metaHtml = match[3]
-    const contentHtml = match[4]
-    const city = normalizeCity(extractMetaValue(metaHtml, 'Location City') || '')
-    const employmentType = extractMetaValue(metaHtml, 'Employee Type')
-    const postingDate = extractMetaValue(metaHtml, 'Posted')
-    const department = extractContentValue(contentHtml, 'Department :')
-    const locations = extractOfficeLocations(contentHtml)
-    const location = locations[0] || buildFallbackLocation(city)
-    const jobId = extractJobIdFromUrl(sourceUrl)
+export const extractInlineJobs = (html = '', { scrapedAt = new Date().toISOString() } = {}) => {
+  const cards = String(html ?? '').split('<div class="result-inside careerdata">').slice(1)
+  const jobsById = new Map()
 
-    if (!sourceUrl || !title || !location || !jobId) {
-      throw new Error('Nexdigm verified current openings page no longer matches the trusted listing contract')
-    }
+  for (const cardHtml of cards) {
+    const sourceUrl = extractFirst(/<div class="result-heading result-heading3[^"]*">\s*<a href="([^"]+)"/i, cardHtml)
+    const title = extractFirst(/<div class="result-heading result-heading3[^"]*">\s*<a href="[^"]+">([\s\S]*?)<\/a>/i, cardHtml)
+    const city = extractFirst(/<span><b>Location City<\/b><\/span>\s*<span>([\s\S]*?)<\/span>/i, cardHtml)
+    const employmentType = extractFirst(/<span><b>Employee Type<\/b><\/span>\s*<span>([\s\S]*?)<\/span>/i, cardHtml)
+    const posted = extractFirst(/<span><b>Posted<\/b><\/span>\s*<span>([\s\S]*?)<\/span>/i, cardHtml)
+    const officeLocation = normalizeLocation(
+      extractFirst(/<span><b>Office Location : <\/b><\/span>([\s\S]*?)<br\/?>/i, cardHtml),
+    )
+    const department = extractFirst(/<span><b>Department : <\/b><\/span>([\s\S]*?)<\/p>/i, cardHtml)
+    const applyUrl = extractFirst(/onclick="apply\('([^']+)'\);?"/i, cardHtml)
 
-    listings.push({
+    if (!sourceUrl || !title) continue
+
+    const jobId = (() => {
+      try {
+        return new URL(sourceUrl, CURRENT_OPENINGS_URL).searchParams.get('id')
+      } catch {
+        return null
+      }
+    })()
+
+    if (!jobId) continue
+
+    jobsById.set(jobId, {
       title,
       company: COMPANY,
-      department,
-      location,
+      department: department || null,
+      location: officeLocation || null,
       city: city || null,
-      locations,
-      sourceUrl,
-      applyUrl: sourceUrl,
+      state: null,
+      country: officeLocation ? 'India' : null,
       jobId,
       requisitionId: jobId,
-      employmentType,
+      sourceUrl,
+      applyUrl: applyUrl || sourceUrl,
+      link: applyUrl || sourceUrl,
+      source: SOURCE,
+      employmentType: employmentType || null,
       experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate,
+      postingDate: null,
       closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
+      jobDescription: buildJobDescription({
+        officeLocation,
+        department,
+        posted,
+      }),
+      scrapedAt,
     })
   }
 
-  return listings
+  return [...jobsById.values()]
 }
 
-export const extractJobDetail = (html = '', listing = {}) => {
-  if (!hasCareerDetailSignal(html)) {
-    throw new Error('Nexdigm verified detail page no longer matches the trusted public surface')
-  }
-
-  const title = extractDetailTitle(html) || listing.title
-  const city = normalizeCity(extractDetailValue(html, 'Location City') || listing.city || '')
-  const department = extractDetailValue(html, 'Department') || listing.department || null
-  const experienceRequired = extractDetailValue(html, 'Experience') || listing.experienceRequired || null
-  const employmentType = extractEmployeeType(html) || listing.employmentType || null
-  const applyUrl = extractApplyUrl(html) || listing.applyUrl || listing.sourceUrl || null
-  const jobDescription = extractJobDescription(html)
-
-  if (!title || !applyUrl) {
-    throw new Error('Nexdigm verified detail page no longer exposes the trusted apply contract')
-  }
+export const enrichInlineJobFromDetail = (job = {}, detailHtml = '') => {
+  const experienceRequired = extractDetailField(detailHtml, 'Experience')
+  const detailDescription = extractDetailJobDescription(detailHtml)
+  const applyUrl = extractFirst(/onclick="apply\('([^']+)'\);?"/i, detailHtml) || job.applyUrl
 
   return {
-    ...listing,
-    title,
-    department,
-    city: city || listing.city || null,
+    ...job,
     applyUrl,
-    employmentType,
-    experienceRequired,
-    jobDescription,
+    link: applyUrl || job.link || job.sourceUrl,
+    experienceRequired: experienceRequired || job.experienceRequired || null,
+    jobDescription: detailDescription || job.jobDescription || null,
+    publicExperienceChecked: true,
   }
 }
 
@@ -308,10 +240,10 @@ export const createNexdigmScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchHtml = defaultFetchHtml,
     now = defaultNow,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchHtml(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Nexdigm verified careers page no longer matches the trusted first-party surface')
     }
@@ -321,32 +253,31 @@ export const createNexdigmScraper = ({
       throw new Error('Nexdigm verified careers handoff changed materially')
     }
 
-    const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
-    if (!hasCurrentOpeningsSignal(currentOpeningsHtml)) {
-      throw new Error('Nexdigm verified current openings page no longer matches the trusted first-party surface')
+    const currentOpeningsHtml = await fetchHtml(CURRENT_OPENINGS_URL)
+    if (!hasVerifiedCurrentOpeningsShell(currentOpeningsHtml)) {
+      throw new Error('Nexdigm verified current openings shell no longer matches the trusted first-party surface')
     }
 
-    const listings = extractListings(currentOpeningsHtml)
-    if (listings.length === 0) {
-      throw new Error('Nexdigm verified current openings page no longer matches the trusted listing contract')
+    const jobs = extractInlineJobs(currentOpeningsHtml, { scrapedAt: now() })
+    if (jobs.length > 0) {
+      const enrichedJobs = await Promise.all(jobs.map(async (job) => {
+        try {
+          const detailHtml = await fetchHtml(job.sourceUrl)
+          return enrichInlineJobFromDetail(job, detailHtml)
+        } catch {
+          return job
+        }
+      }))
+
+      return enrichedJobs
     }
 
-    const scrapedAt = now()
-    const jobs = []
-
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const job = extractJobDetail(detailHtml, listing)
-      jobs.push({
-        ...job,
-        link: job.applyUrl || job.sourceUrl,
-        source: SOURCE,
-        scrapedAt,
-      })
+    if (hasVerifiedUpstreamErrorCurrentOpeningsState(currentOpeningsHtml)) {
+      return []
     }
 
-    return jobs.sort(
-      (left, right) => left.title.localeCompare(right.title) || left.jobId.localeCompare(right.jobId),
+    throw new Error(
+      'Nexdigm current openings shell no longer exposes public cards or the reviewed upstream-error empty state',
     )
   },
 })

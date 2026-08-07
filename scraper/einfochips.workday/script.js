@@ -1,8 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { EINFOCHIPS_CATALOG } from './catalog.js'
@@ -30,6 +32,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const PAGE_SIZE = 20
+const DETAIL_FETCH_CONCURRENCY = 4
 const INDIA_COUNTRY_FACET_PARAMETER = 'Location_Country'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -402,6 +405,7 @@ export const createEInfochipsScraper = ({
     const jobs = []
     const seenJobIds = new Set()
     let offset = 0
+    let reachedMaxJobs = false
 
     for (let page = 1; page <= maxPages; page += 1) {
       const payload = await fetchJson(
@@ -422,11 +426,16 @@ export const createEInfochipsScraper = ({
 
         seenJobIds.add(job.jobId)
         jobs.push(job)
+
+        if (maxJobs && jobs.length >= maxJobs) {
+          reachedMaxJobs = true
+          break
+        }
       }
 
       offset += postings.length
-      if (maxJobs && jobs.length >= maxJobs) {
-        return jobs.slice(0, maxJobs)
+      if (reachedMaxJobs) {
+        break
       }
 
       if (!shouldContinueWorkdayJobsApiPagination({
@@ -439,7 +448,41 @@ export const createEInfochipsScraper = ({
       }
     }
 
-    return jobs
+    const jobsToEnrich = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+    return mapWithConcurrency(
+      jobsToEnrich,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.sourceUrl)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailPage.html,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            requisitionId: detail.requisitionId || job.requisitionId,
+            postingDate: detail.postingDate || job.postingDate,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 

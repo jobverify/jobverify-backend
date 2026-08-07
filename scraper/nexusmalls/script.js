@@ -14,7 +14,7 @@ const USER_AGENT =
 const HOMEPAGE_TITLE_PATTERN =
   /<title>\s*Nexus Select Trust\s*\|\s*Listed Real Estate Investment Trust\s*\(REIT\)\s*<\/title>/i
 const HOMEPAGE_REIT_PATTERN =
-  /India[’']s first publicly listed urban consumption\s+centre\s+Real Estate Investment Trust/i
+  /India[^A-Za-z0-9]{0,4}s first publicly listed retail Real Estate Investment Trust(?:\s*\(REIT\))?/i
 const HOMEPAGE_ABOUT_PATTERN =
   /Nexus has emerged to be biggest retail real estate platform in India/i
 const CAREER_LINK_PATTERN = /href=["']([^"']*(?:career|job|work-with-us|workwithus)[^"']*)["']/gi
@@ -59,10 +59,11 @@ const defaultFetchPage = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
   return HOMEPAGE_TITLE_PATTERN.test(page)
-    && HOMEPAGE_REIT_PATTERN.test(page)
-    && HOMEPAGE_ABOUT_PATTERN.test(page)
+    && HOMEPAGE_REIT_PATTERN.test(normalized)
+    && HOMEPAGE_ABOUT_PATTERN.test(normalized)
 }
 
 export const extractCareerLikeLinks = (html) => {

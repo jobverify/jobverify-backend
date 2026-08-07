@@ -1,3 +1,5 @@
 {
-  "maxPages": 10
+  "maxPages": 10,
+  "locationCountry": null,
+  "searchText": "India"
 }

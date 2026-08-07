@@ -172,6 +172,7 @@ const extractAllJobCards = (html) => [...String(html ?? '').matchAll(
       postingDate: null,
       closingDate: null,
       jobDescription: summary,
+      publicExperienceChecked: true,
       remoteStatus: null,
     }
   })

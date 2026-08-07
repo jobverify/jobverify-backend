@@ -70,6 +70,17 @@ const isFirstPartyUrl = (value) => {
   }
 }
 
+const isFirstPartyHomepageUrl = (value) => {
+  const absoluteUrl = toAbsoluteUrl(value)
+  if (!absoluteUrl || !isFirstPartyUrl(absoluteUrl.href)) {
+    return false
+  }
+
+  return absoluteUrl.pathname === '/'
+    && !absoluteUrl.search
+    && !absoluteUrl.hash
+}
+
 const extractXmlLocUrls = (xml) => [...String(xml ?? '').matchAll(/<loc>([^<]+)<\/loc>/gi)]
   .map((match) => match[1].trim())
   .filter(Boolean)
@@ -128,7 +139,7 @@ export const hasVerifiedPagesSitemap = (xml) => {
   const urls = extractXmlLocUrls(xml)
 
   return urls.length > 0
-    && urls.some((url) => url === HOMEPAGE_URL)
+    && urls.some((url) => isFirstPartyHomepageUrl(url))
     && urls.every((url) => !CAREER_PATH_PATTERN.test(new URL(url).pathname))
 }
 

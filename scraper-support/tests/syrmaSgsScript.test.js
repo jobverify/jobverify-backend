@@ -30,14 +30,72 @@ const jobsHtml = `
     <h1>Jobs</h1>
     <p>Search</p>
     <p>Filter by</p>
-    <a href="https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/">
-      Manager/Sr.Manager &#8211; NPI &amp; Engineering
-      <span>More Details</span>
+    <a href="https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/" class="awsm-job-item">
+      <div class="awsm-grid-left-col">
+        <h2 class="awsm-job-post-title">Manager/Sr.Manager &#8211; NPI &amp; Engineering</h2>
+      </div>
+      <div class="awsm-grid-right-col">
+        <div class="awsm-job-more-container"><span class="awsm-job-more">More Details</span></div>
+      </div>
     </a>
-    <a href="https://syrmasgs.com/jobs/22188/">
-      Power Electronics Lead / Architect
-      <span>More Details</span>
+    <a href="https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/" class="awsm-job-item">
+      <div class="awsm-grid-left-col">
+        <h2 class="awsm-job-post-title">Asst. Manager/Senior Engineer &#8211; SMT Machine Maintenance</h2>
+      </div>
+      <div class="awsm-grid-right-col">
+        <div class="awsm-job-specification-wrapper">
+          <div class="awsm-job-specification-item awsm-job-specification-job-type">
+            <span class="awsm-job-specification-term">Full Time</span>
+          </div>
+          <div class="awsm-job-specification-item awsm-job-specification-job-location">
+            <span class="awsm-job-specification-term">Manesar</span>
+          </div>
+        </div>
+        <div class="awsm-job-more-container"><span class="awsm-job-more">More Details</span></div>
+      </div>
     </a>
+    <a href="https://syrmasgs.com/jobs/22188/" class="awsm-job-item">
+      <div class="awsm-grid-left-col">
+        <h2 class="awsm-job-post-title">Power Electronics Lead / Architect</h2>
+      </div>
+      <div class="awsm-grid-right-col">
+        <div class="awsm-job-more-container"><span class="awsm-job-more">More Details</span></div>
+      </div>
+    </a>
+  </body>
+</html>
+`
+
+const jobsHtmlWithSpecificationCard = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs - Syrma SGS</title>
+  </head>
+  <body>
+    <h1>Jobs</h1>
+    <p>Search</p>
+    <p>Filter by</p>
+    <div class="awsm-job-listing-item awsm-grid-item" id="awsm-grid-item-19964">
+      <a href="https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/" class="awsm-job-item">
+        <div class="awsm-grid-left-col">
+          <h2 class="awsm-job-post-title">
+            Asst. Manager/Senior Engineer &#8211; SMT Machine Maintenance
+          </h2>
+        </div>
+        <div class="awsm-grid-right-col">
+          <div class="awsm-job-specification-wrapper">
+            <div class="awsm-job-specification-item awsm-job-specification-job-type">
+              <span class="awsm-job-specification-term">Full Time</span>
+            </div>
+            <div class="awsm-job-specification-item awsm-job-specification-job-location">
+              <span class="awsm-job-specification-term">Manesar</span>
+            </div>
+          </div>
+          <div class="awsm-job-more-container"><span class="awsm-job-more">More Details <span></span></span></div>
+        </div>
+      </a>
+    </div>
   </body>
 </html>
 `
@@ -93,6 +151,28 @@ const powerDetailHtml = `
 </html>
 `
 
+const maintenanceDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Asst. Manager/Senior Engineer &#8211; SMT Machine Maintenance - Syrma SGS</title>
+  </head>
+  <body>
+    <h1>Asst. Manager/Senior Engineer &#8211; SMT Machine Maintenance</h1>
+    <p>Location : Manesar</p>
+    <p>Qualification : Diploma / BE</p>
+    <p>Work Experience : 5 to 8 Years</p>
+    <p>Skills Required :</p>
+    <ul>
+      <li>SMT line maintenance and troubleshooting</li>
+      <li>Preventive maintenance planning</li>
+    </ul>
+    <h2>Apply for this position</h2>
+    <p>Upload CV/Resume</p>
+  </body>
+</html>
+`
+
 const loadSyrmaSgsModule = async () => {
   try {
     return await import('../../scraper/syrmasgs/script.js')
@@ -119,6 +199,12 @@ test('Syrma SGS script helpers stay pinned to the verified first-party life page
       sourceUrl: 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
       applyUrl: 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
       jobId: 'manager-sr-manager-npi-engineering',
+    },
+    {
+      title: 'Asst. Manager/Senior Engineer - SMT Machine Maintenance',
+      sourceUrl: 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+      applyUrl: 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+      jobId: 'asst-manager-senior-engineer-smt-machine-maintenance',
     },
     {
       title: 'Power Electronics Lead / Architect',
@@ -165,6 +251,34 @@ test('Syrma SGS detail parsing reads both the structured and free-form first-par
   assert.ok(
     powerDetail.requiredSkills.some((skill) => /embedded hardware product design/i.test(skill)),
   )
+
+  const maintenanceDetail = syrmaSgs.extractJobDetail(maintenanceDetailHtml, {
+    title: 'Asst. Manager/Senior Engineer - SMT Machine Maintenance',
+    sourceUrl: 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+    applyUrl: 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+    jobId: 'asst-manager-senior-engineer-smt-machine-maintenance',
+  })
+  assert.equal(maintenanceDetail.title, 'Asst. Manager/Senior Engineer - SMT Machine Maintenance')
+  assert.equal(maintenanceDetail.location, 'Manesar, India')
+  assert.equal(maintenanceDetail.city, 'Manesar')
+  assert.equal(maintenanceDetail.experienceRequired, '5 to 8 Years')
+  assert.equal(maintenanceDetail.minimumQualification, 'Diploma / BE')
+  assert.ok(
+    maintenanceDetail.requiredSkills.some((skill) => /SMT line maintenance/i.test(skill)),
+  )
+})
+
+test('Syrma SGS extractJobCards keeps the canonical title when archive cards append job metadata', async () => {
+  const syrmaSgs = await loadSyrmaSgsModule()
+
+  assert.deepEqual(syrmaSgs.extractJobCards(jobsHtmlWithSpecificationCard), [
+    {
+      title: 'Asst. Manager/Senior Engineer - SMT Machine Maintenance',
+      sourceUrl: 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+      applyUrl: 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+      jobId: 'asst-manager-senior-engineer-smt-machine-maintenance',
+    },
+  ])
 })
 
 test('Syrma SGS run uses browser-backed first-party HTML when direct HTTP access is blocked', async () => {
@@ -181,6 +295,9 @@ test('Syrma SGS run uses browser-backed first-party HTML when direct HTTP access
       if (url === syrmaSgs.LIFE_AT_URL) return lifeAtHtml
       if (url === syrmaSgs.JOBS_URL) return jobsHtml
       if (url === 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/') return npiDetailHtml
+      if (url === 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/') {
+        return maintenanceDetailHtml
+      }
       if (url === 'https://syrmasgs.com/jobs/22188/') return powerDetailHtml
       throw new Error(`Unexpected browser URL: ${url}`)
     },
@@ -194,10 +311,12 @@ test('Syrma SGS run uses browser-backed first-party HTML when direct HTTP access
     `browser:${syrmaSgs.JOBS_URL}`,
     'http:https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
     'browser:https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
+    'http:https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+    'browser:https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
     'http:https://syrmasgs.com/jobs/22188/',
     'browser:https://syrmasgs.com/jobs/22188/',
   ])
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 3)
   assert.equal(jobs[0].source, 'syrmasgs')
   assert.equal(jobs[0].company, 'Syrma SGS')
   assert.equal(jobs[0].companyCareerPage, 'https://syrmasgs.com/job-openings/')
@@ -205,7 +324,46 @@ test('Syrma SGS run uses browser-backed first-party HTML when direct HTTP access
   assert.equal(jobs[0].atsPlatform, 'wp-job-openings')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-17T05:00:00.000Z')
-  assert.equal(jobs[1].location, 'Chennai, India')
+  assert.equal(jobs[1].location, 'Manesar, India')
+  assert.equal(jobs[2].location, 'Chennai, India')
+})
+
+test('Syrma SGS default HTTP fetch falls back after a single connect-timeout pass per page', async () => {
+  const syrmaSgs = await loadSyrmaSgsModule()
+  const fetchCalls = []
+  const originalFetch = globalThis.fetch
+
+  globalThis.fetch = async (url) => {
+    fetchCalls.push(String(url))
+    throw new Error(`Connect Timeout Error for ${url}`)
+  }
+
+  try {
+    const jobs = await syrmaSgs.createSyrmaSgsScraper().run({
+      fetchBrowserText: async (url) => {
+        if (url === syrmaSgs.LIFE_AT_URL) return lifeAtHtml
+        if (url === syrmaSgs.JOBS_URL) return jobsHtml
+        if (url === 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/') return npiDetailHtml
+        if (url === 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/') {
+          return maintenanceDetailHtml
+        }
+        if (url === 'https://syrmasgs.com/jobs/22188/') return powerDetailHtml
+        throw new Error(`Unexpected browser URL: ${url}`)
+      },
+      now: () => '2026-08-05T05:00:00.000Z',
+    })
+
+    assert.equal(jobs.length, 3)
+    assert.deepEqual(fetchCalls, [
+      syrmaSgs.LIFE_AT_URL,
+      syrmaSgs.JOBS_URL,
+      'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
+      'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
+      'https://syrmasgs.com/jobs/22188/',
+    ])
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('Syrma SGS fails closed when the verified life page, jobs archive, or detail page drifts', async () => {

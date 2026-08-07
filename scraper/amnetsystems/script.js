@@ -22,18 +22,19 @@ const normalizeWhitespace = (value) => String(value ?? '')
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const normalizedPage = normalizeWhitespace(page)
 
   return /Life at Amnet/i.test(page)
     && /Current Openings/i.test(page)
-    && /careers@amnet\.com/i.test(page)
-  }
+    && (/careers@amnet\.com/i.test(page) || /Email your resume to/i.test(normalizedPage))
+}
 
 export const hasEmailOnlyCurrentOpenings = (html = '') => {
   const normalizedPage = normalizeWhitespace(html)
 
   return /Email your resume to/i.test(normalizedPage)
-    && /careers@amnet\.com/i.test(normalizedPage)
-  }
+    && !/apply now|current roles|job-card|job posting/i.test(normalizedPage)
+}
 
 export const hasPublicJobListingSignal = (html = '') => {
   const page = String(html ?? '')

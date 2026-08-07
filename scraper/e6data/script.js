@@ -12,7 +12,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const OFFICIAL_HOMEPAGE_TITLE_PATTERN =
-  /<title>\s*e6data:\s*10x Faster Lakehouse Queries at 60% Lower Cost\s*\|\s*SQL & AI Engine\s*<\/title>/i
+  /<title>\s*e6data:\s*10x Faster Lakehouse Queries at 60% Lower Cost\s*\|\s*SQL\s*&(?:amp;)?\s*AI Engine\s*<\/title>/i
 const OFFICIAL_HOMEPAGE_HERO_PATTERN =
   /Compute Engine for Iceberg,\s*Delta Lake,\s*Hudi:\s*Query\s*\|\s*ETL\s*\|\s*Ingestion/i
 const OFFICIAL_HOMEPAGE_PRODUCT_PATTERN = /The only engine built for the Agentic AI era/i

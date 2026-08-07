@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -24,6 +25,8 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = String(value)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&quot;/gi, '"')
@@ -105,23 +108,115 @@ const buildJobUrl = (listing) => (
   `${JOB_AD_LINK_PREFIX}${listing?.jobUrl || listing?.refNumber || ''}`
 )
 
+const joinUniqueTextParts = (parts) => {
+  const seen = new Set()
+  const ordered = []
+
+  for (const part of parts) {
+    const normalized = normalizeWhitespace(part)
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    ordered.push(normalized)
+  }
+
+  return normalizeWhitespace(ordered.join(' '))
+}
+
+const formatExperienceEvidence = (experienceProfile, evidence) => {
+  if (!experienceProfile || !evidence) return null
+
+  if (experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0) {
+    return 'No experience required'
+  }
+
+  if (Number.isFinite(experienceProfile.minimumYears) && Number.isFinite(experienceProfile.maximumYears)) {
+    return experienceProfile.minimumYears === experienceProfile.maximumYears
+      ? `${experienceProfile.minimumYears} years`
+      : `${experienceProfile.minimumYears}-${experienceProfile.maximumYears} years`
+  }
+
+  if (Number.isFinite(experienceProfile.minimumYears) && experienceProfile.isOpenEnded) {
+    return `${experienceProfile.minimumYears}+ years`
+  }
+
+  return normalizeWhitespace(evidence)
+    ?.replace(/\s*-\s*/g, '-')
+    .replace(/\s*\+\s*/g, '+')
+    .replace(/\byears?\b/i, 'years') || null
+}
+
+const inferExperienceFromText = (text) => {
+  const normalized = normalizeWhitespace(text)
+  if (!normalized) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return formatExperienceEvidence(experienceProfile, evidence)
+}
+
+const buildExperienceSourceText = (detail) => {
+  const sections = detail?.jobAd?.sections || {}
+
+  return joinUniqueTextParts([
+    stripTags(sections.jobDescription?.text),
+    stripTags(sections.qualifications?.text),
+    stripTags(sections.additionalInformation?.text),
+  ])
+}
+
+const normalizeBoschExperienceBand = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const rangeMatch = normalized.match(/^(\d+)\s*(?:-|~|to)\s*(\d+)\+?(?:\s*years?)?$/i)
+  if (rangeMatch) {
+    return `${rangeMatch[1]}-${rangeMatch[2]} years`
+  }
+
+  const plusMatch = normalized.match(/^(\d+)\s*\+(?:\s*years?)?$/i)
+  if (plusMatch) {
+    return `${plusMatch[1]}+ years`
+  }
+
+  const exactMatch = normalized.match(/^(\d+)(?:\s*years?)?$/i)
+  if (exactMatch) {
+    return `${exactMatch[1]} years`
+  }
+
+  return null
+}
+
 const extractExperience = (detail) => {
   const additionalInformation = stripTags(
     detail?.jobAd?.sections?.additionalInformation?.text,
   )
   const match = additionalInformation?.match(/Experience\s*:\s*([^|]+)/i)
-  return normalizeWhitespace(match?.[1]) || null
+  const explicitExperience = normalizeWhitespace(match?.[1])
+
+  return (
+    normalizeBoschExperienceBand(explicitExperience)
+    || normalizeBoschExperienceBand(additionalInformation)
+    || explicitExperience
+    || inferExperienceFromText(buildExperienceSourceText(detail))
+  )
 }
 
 const buildDescription = (detail) => {
   const sections = detail?.jobAd?.sections || {}
 
-  return normalizeWhitespace([
+  return joinUniqueTextParts([
     stripTags(sections.companyDescription?.text),
     stripTags(sections.jobDescription?.text),
     stripTags(sections.qualifications?.text),
     stripTags(sections.additionalInformation?.text),
-  ].filter(Boolean).join(' '))
+  ])
 }
 
 const mapListingToJob = (listing, detail) => {
@@ -155,6 +250,7 @@ const mapListingToJob = (listing, detail) => {
     postingDate: normalizeWhitespace(detail?.releasedDate || listing?.releasedDate),
     closingDate: null,
     jobDescription: buildDescription(detail),
+    publicExperienceChecked: Boolean(buildExperienceSourceText(detail)),
   }
 }
 

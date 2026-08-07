@@ -45,7 +45,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  attempts: 1,
+  timeoutMs: 5000,
 })
 
 export const isExpectedMissingSurfaceError = (error) => {
@@ -59,9 +60,7 @@ export const isExpectedMissingSurfaceError = (error) => {
 }
 
 const buildProbeUrls = () =>
-  OFFICIAL_SURFACE_CANDIDATES.flatMap((baseUrl) =>
-    CAREERS_PATHS.map((route) => new URL(route, `${baseUrl}/`).toString()),
-  )
+  OFFICIAL_SURFACE_CANDIDATES.map((baseUrl) => new URL('/', `${baseUrl}/`).toString())
 
 export const createYespealTechnologiesScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {

@@ -84,10 +84,8 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*HiLITE Group\s*<\/title>/i.test(page)
-    && /About HiLITE Group/i.test(page)
     && /href=["'](?:https?:\/\/hilitegroup\.com)?\/explore-careers\/?["']/i.test(page)
     && /Explore Careers/i.test(page)
-    && /Life At HiLITE/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -95,7 +93,7 @@ export const hasOfficialCareersSignal = (html) => {
   const applyCount = (page.match(/>\s*Apply Now\s*</gi) || []).length
 
   return /Explore Career Opportunities at HiLITE Group|Explore Careers/i.test(page)
-    && /Home Careers Explore Careers/i.test(page)
+    && (/Home Careers Explore Careers/i.test(page) || /<h2>\s*Explore Careers\s*<\/h2>/i.test(page))
     && /Year of experience/i.test(page)
     && /Qualification/i.test(page)
     && /Vacancy/i.test(page)
@@ -108,16 +106,18 @@ export const extractPublicListings = (html) => {
   }
 
   const page = String(html ?? '')
-  const sections = [...page.matchAll(
+  const articleSections = [...page.matchAll(
     /<article\b[^>]*class=["'][^"']*\bjob-opening\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi,
-  )]
+  )].map((match) => match[1])
+  const sections = articleSections.length > 0
+    ? articleSections
+    : page.split(/<div\b[^>]*class=["'][^"']*\bcareer-box-inn\b[^"']*["'][^>]*>/i).slice(1)
 
   if (sections.length === 0) {
     throw new Error('Expected verified HiLITE careers surface with first-party public listings')
   }
 
-  const jobs = sections.map((match) => {
-    const sectionHtml = match[1]
+  const jobs = sections.map((sectionHtml) => {
     const title = stripTags(sectionHtml.match(/<h4\b[^>]*>([\s\S]*?)<\/h4>/i)?.[1])
     const company = extractFieldValue(sectionHtml, 'Company')
     const locationText = extractFieldValue(sectionHtml, 'Location')

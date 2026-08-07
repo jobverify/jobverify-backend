@@ -11,7 +11,7 @@ const loadMovateModule = async () => {
 
 const HOMEPAGE_HTML = `
   <html>
-    <head><title>Careers at Movate</title></head>
+    <head><title>Careers at Movate | Rewarding and Flexible Career Paths</title></head>
     <body>
       <h1>Careers at Movate</h1>
       <a href="https://www.movate.com/careers/latest-job-openings/">Latest Job Openings</a>
@@ -21,14 +21,14 @@ const HOMEPAGE_HTML = `
 
 const JOBS_PAGE_HTML = `
   <html>
-    <head><title>Latest Job Openings - Movate</title></head>
+    <head><title>Latest Job Openings India - Movate</title></head>
     <body>
       <script>
         var arrayList = ${JSON.stringify([
           {
             job_id: 'a695e221105b23',
             job_title: 'Senior Technical Support Engineer',
-            location: 'Chennai, Tamil Nadu, India',
+            location: ['Ambit, Chennai, Tamil Nadu, India (IN_Ambit_2)'],
             location_country: 'India',
             department: 'Customer Success',
             experience: '3 - 5 Years',
@@ -38,7 +38,7 @@ const JOBS_PAGE_HTML = `
           {
             job_id: 'a695e221105b24',
             job_title: 'Enterprise Sales Director',
-            location: 'Dallas, Texas, United States',
+            location: ['Dallas, Texas, United States'],
             location_country: 'United States',
             department: 'Sales',
             experience: '8 - 10 Years',
@@ -48,7 +48,7 @@ const JOBS_PAGE_HTML = `
           {
             job_id: 'a695e221105b25',
             job_title: 'Hidden QA Engineer',
-            location: 'Bangalore, Karnataka, India',
+            location: ['Bangalore, Karnataka, India (IN_ITPL -Bangalore_6)'],
             location_country: 'India',
             department: 'Engineering',
             experience: '2 - 4 Years',
@@ -63,17 +63,35 @@ const JOBS_PAGE_HTML = `
 
 const DETAIL_HTML = `
   <html>
-    <head><title>Senior Technical Support Engineer - Movate</title></head>
+    <head><title>Job Details | Movate</title></head>
     <body>
-      <h1>Senior Technical Support Engineer</h1>
-      <div class="job-location">Chennai, Tamil Nadu, India</div>
-      <div class="job-department">Customer Success</div>
-      <div class="job-description">
+      <h1>Latest Job Openings India</h1>
+      <div class="col-md-8">
+        <h5 class="mb-1">Senior Technical Support Engineer</h5>
+      </div>
+      <div class="border rounded-start p-3">
+        <p class="text-muted mb-0 fs-13">Department</p>
+        <p class="fw-medium fs-15 mb-0">Customer Success</p>
+      </div>
+      <div class="job-detail-desc">
         <p>Deliver enterprise support for global customers.</p>
-        <ul>
-          <li>Technical troubleshooting</li>
-          <li>Customer communication</li>
-        </ul>
+        <p>Responsibilities:</p>
+        <p>· Technical troubleshooting</p>
+        <p>o Customer communication</p>
+      </div>
+      <div class="card job-overview">
+        <div class="ms-3">
+          <h6 class="fs-14 mb-2">Job Title</h6>
+          <p class="text-muted mb-0">Senior Technical Support Engineer</p>
+        </div>
+        <div class="ms-3">
+          <h6 class="fs-14 mb-2">Experience</h6>
+          <p class="text-muted mb-0">3 - 5 Years</p>
+        </div>
+        <div class="ms-3">
+          <h6 class="fs-14 mb-2">Location</h6>
+          <p class="text-muted mb-0">Chennai</p>
+        </div>
       </div>
       <a
         class="apply-now"
@@ -91,10 +109,20 @@ test('Movate constants stay pinned to the verified official careers and jobs pag
 
   assert.equal(movate.HOMEPAGE_URL, 'https://www.movate.com/careers-at-movate/')
   assert.equal(movate.JOBS_PAGE_URL, 'https://www.movate.com/careers/latest-job-openings/')
+  assert.equal(movate.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(movate.hasOfficialJobsPageSignal(JOBS_PAGE_HTML), true)
   assert.equal(
     movate.buildDetailUrl('a695e221105b23'),
     'https://www.movate.com/job-details/?job_id=a695e221105b23',
   )
+})
+
+test('Movate surface validators accept the verified August 3, 2026 homepage and jobs page titles', async () => {
+  const movate = await loadMovateModule()
+  assert.ok(movate)
+
+  assert.equal(movate.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(movate.hasOfficialJobsPageSignal(JOBS_PAGE_HTML), true)
 })
 
 test('extractIndiaJobs keeps only visible India jobs from the embedded Movate arrayList payload', async () => {
@@ -109,7 +137,7 @@ test('extractIndiaJobs keeps only visible India jobs from the embedded Movate ar
     title: 'Senior Technical Support Engineer',
     company: 'Movate',
     department: 'Customer Success',
-    location: 'Chennai, Tamil Nadu, India',
+    location: 'Ambit, Chennai, Tamil Nadu, India',
     city: 'Chennai',
     country: 'India',
     jobId: 'a695e221105b23',
@@ -156,8 +184,9 @@ test('extractJobDetail pulls the Movate Darwinbox apply handoff and detail descr
 
   assert.equal(detail.title, 'Senior Technical Support Engineer')
   assert.equal(detail.department, 'Customer Success')
-  assert.equal(detail.location, 'Chennai, Tamil Nadu, India')
+  assert.equal(detail.location, 'Chennai')
   assert.equal(detail.city, 'Chennai')
+  assert.equal(detail.experienceRequired, '3 - 5 Years')
   assert.match(detail.jobDescription, /enterprise support/i)
   assert.deepEqual(detail.requiredSkills, ['Technical troubleshooting', 'Customer communication'])
   assert.equal(

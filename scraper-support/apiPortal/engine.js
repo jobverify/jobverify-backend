@@ -282,6 +282,31 @@ const createBlockedEightfoldSignalJob = (provider) => {
   }
 }
 
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const workerCount = Math.max(1, Math.min(
+    items.length || 1,
+    Number.isFinite(concurrency) ? Math.floor(concurrency) : 1,
+  ))
+  const results = new Array(items.length)
+  let nextIndex = 0
+
+  const worker = async () => {
+    while (true) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+
+      if (currentIndex >= items.length) {
+        return
+      }
+
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, () => worker()))
+  return results
+}
+
 export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson }) => {
   const config = normalizeApiPortalConfig(provider.config || {})
   if (
@@ -368,34 +393,42 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       })
       const records = getValueAtPath(listingPayload, config.pagination.resultsPath) || []
 
-      for (const record of records) {
-        let detailPayload = {}
+      const mappedRecords = await mapWithConcurrency(
+        records,
+        config.detail.enabled ? (config.detail.concurrency || 1) : 1,
+        async (record) => {
+          let detailPayload = {}
 
-        if (config.detail.enabled) {
-          const detailUrl = expandTemplate(config.detail.urlTemplate, {
-            jobId: getMappedValue(record, config.mapping.jobId),
-            requisitionId: getMappedValue(record, config.mapping.requisitionId),
-          })
-
-          try {
-            detailPayload = await fetchJsonWithFallback(detailUrl, {
-              method: config.detail.method,
-              headers: config.detail.headers,
-              body: serializeRequestBody(config.detail.body, config.detail.headers),
+          if (config.detail.enabled) {
+            const detailUrl = expandTemplate(config.detail.urlTemplate, {
+              jobId: getMappedValue(record, config.mapping.jobId),
+              requisitionId: getMappedValue(record, config.mapping.requisitionId),
             })
-          } catch (error) {
-            if (config.detail.required) throw error
 
-            detailPayload = {
-              sourceUrl: createFallbackDetailUrl(provider, record, config),
-              applyUrl: createFallbackDetailUrl(provider, record, config),
-              detailFetchError: error.message,
+            try {
+              detailPayload = await fetchJsonWithFallback(detailUrl, {
+                method: config.detail.method,
+                headers: config.detail.headers,
+                body: serializeRequestBody(config.detail.body, config.detail.headers),
+              })
+            } catch (error) {
+              if (config.detail.required) throw error
+
+              detailPayload = {
+                sourceUrl: createFallbackDetailUrl(provider, record, config),
+                applyUrl: createFallbackDetailUrl(provider, record, config),
+                detailFetchError: error.message,
+              }
             }
           }
-        }
 
-        const mapped = mapRecord(record, provider, config, detailPayload)
-        if (mapped && passesResultFilter(mapped, config.resultFilter)) jobs.push(mapped)
+          const mapped = mapRecord(record, provider, config, detailPayload)
+          return mapped && passesResultFilter(mapped, config.resultFilter) ? mapped : null
+        },
+      )
+
+      for (const mapped of mappedRecords) {
+        if (mapped) jobs.push(mapped)
       }
 
       const hasMore = config.pagination.hasMorePath

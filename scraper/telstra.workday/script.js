@@ -24,8 +24,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const CAREERS_TITLE_PATTERN = /<title>\s*Telstra India Careers\s*<\/title>/i
-const CAREERS_LINK_PATTERN = /<a[^>]*>\s*Find a career\s*<\/a>/i
+const CAREERS_TITLE_PATTERN = /<title>\s*(?:Telstra India Careers|Careers at Telstra - Telstra)\s*<\/title>/i
 
 export const buildScraperOptions = () => ({
   company: COMPANY_NAME,
@@ -38,11 +37,16 @@ export const buildScraperOptions = () => ({
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasLegacyHero =
+    normalized.includes('Discover rewarding career opportunities at Telstra.')
+    && normalized.includes('shape tomorrow through technology.')
+  const hasCurrentHero =
+    normalized.includes('Define Your Possible at Telstra')
+    && normalized.includes('engineering the possibilities of tomorrow.')
 
   return CAREERS_TITLE_PATTERN.test(page)
-    && normalized.includes('Discover rewarding career opportunities at Telstra.')
-    && normalized.includes('shape tomorrow through technology.')
-    && CAREERS_LINK_PATTERN.test(page)
+    && (hasLegacyHero || hasCurrentHero)
+    && /Find a career/i.test(page)
 }
 
 const isVerifiedWorkdayHandoffUrl = (value) => {

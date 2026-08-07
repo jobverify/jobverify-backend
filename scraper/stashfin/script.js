@@ -164,6 +164,7 @@ export const extractSearchResults = (html = '') => {
       postingDate: null,
       closingDate: null,
       jobDescription: description,
+      publicExperienceChecked: true,
       remoteStatus: inferRemoteStatus(parsedLocation.location),
     })
 

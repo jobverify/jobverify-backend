@@ -63,7 +63,7 @@ test('Techved Consulting local catalog captures the verified first-party ASP.NET
     provider.extractionStrategy,
     'verified-first-party-careers-page+inline-job-cards+same-page-detail-panels',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.verifiedSurfaceSummary, /All Jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /Sr Marketing Associate/i)
   assert.match(provider.verifiedSurfaceSummary, /UX Designer/i)
@@ -96,7 +96,7 @@ test('Nxtgen Datacenter Cloud Technologies local catalog captures the verified f
     provider.extractionStrategy,
     'verified-first-party-careers-page+visible-featured-job-cards+same-page-apply-modals+pdf-detail-links',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.verifiedSurfaceSummary, /Featured Jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /Customer Life Cycle Manager/i)
   assert.match(provider.verifiedSurfaceSummary, /Priority Support Consultant - Compute/i)

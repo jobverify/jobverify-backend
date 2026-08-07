@@ -1,7 +1,26 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const COMPANY_PAGE_HTML = `
+const HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Arivihan - India's First Fully Automated Vernacular Online Learning Platform</title>
+  </head>
+  <body>
+    <nav>
+      <a>Home</a>
+      <a>About</a>
+      <a>Contact</a>
+      <a>Blogs</a>
+      <a>Results</a>
+    </nav>
+    <button>Install Now</button>
+  </body>
+</html>
+`
+
+const ABOUT_PAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
@@ -61,13 +80,15 @@ test('Arivihan helper signals stay pinned to the verified homepage, about page, 
 
   assert.equal(arivihan.SOURCE, 'arivihan')
   assert.equal(arivihan.COMPANY, 'Arivihan')
-  assert.equal(arivihan.VERIFIED_ON, '2026-07-30')
+  assert.equal(arivihan.VERIFIED_ON, '2026-08-01')
   assert.equal(arivihan.HOMEPAGE_URL, 'https://www.arivihan.com/')
   assert.equal(arivihan.ABOUT_URL, 'https://www.arivihan.com/about')
   assert.equal(arivihan.CAREERS_URL, 'https://www.arivihan.com/careers')
   assert.equal(arivihan.NON_WWW_CAREERS_URL, 'https://arivihan.com/careers')
-  assert.equal(arivihan.hasOfficialCompanySignal(COMPANY_PAGE_HTML), true)
-  assert.equal(arivihan.pageExposesPublicJobListings(COMPANY_PAGE_HTML), false)
+  assert.equal(arivihan.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(arivihan.hasOfficialAboutPageSignal(ABOUT_PAGE_HTML), true)
+  assert.equal(arivihan.hasOfficialCompanySignal(ABOUT_PAGE_HTML), true)
+  assert.equal(arivihan.pageExposesPublicJobListings(ABOUT_PAGE_HTML), false)
   assert.equal(arivihan.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
   assert.equal(
     arivihan.isVerifiedMissingCareerRoute(
@@ -87,11 +108,11 @@ test('Arivihan returns [] only while the verified homepage and about page stay c
       requestedUrls.push(url)
 
       if (url === arivihan.HOMEPAGE_URL) {
-        return { status: 200, url, html: COMPANY_PAGE_HTML }
+        return { status: 200, url, html: HOMEPAGE_HTML }
       }
 
       if (url === arivihan.ABOUT_URL) {
-        return { status: 200, url, html: COMPANY_PAGE_HTML }
+        return { status: 200, url, html: ABOUT_PAGE_HTML }
       }
 
       if (url === arivihan.CAREERS_URL) {
@@ -126,7 +147,7 @@ test('Arivihan fails closed when the verified company surface changes materially
         }
 
         if (url === arivihan.ABOUT_URL) {
-          return { status: 200, url, html: COMPANY_PAGE_HTML }
+          return { status: 200, url, html: ABOUT_PAGE_HTML }
         }
 
         if (url === arivihan.CAREERS_URL) {
@@ -147,7 +168,7 @@ test('Arivihan fails closed when the verified company surface changes materially
     arivihan.createArivihanScraper().run({
       fetchPage: async (url) => {
         if (url === arivihan.HOMEPAGE_URL) {
-          return { status: 200, url, html: COMPANY_PAGE_HTML }
+          return { status: 200, url, html: HOMEPAGE_HTML }
         }
 
         if (url === arivihan.ABOUT_URL) {
@@ -172,11 +193,11 @@ test('Arivihan fails closed when the verified company surface changes materially
     arivihan.createArivihanScraper().run({
       fetchPage: async (url) => {
         if (url === arivihan.HOMEPAGE_URL) {
-          return { status: 200, url, html: COMPANY_PAGE_HTML }
+          return { status: 200, url, html: HOMEPAGE_HTML }
         }
 
         if (url === arivihan.ABOUT_URL) {
-          return { status: 200, url, html: COMPANY_PAGE_HTML }
+          return { status: 200, url, html: ABOUT_PAGE_HTML }
         }
 
         if (url === arivihan.CAREERS_URL) {
@@ -197,11 +218,11 @@ test('Arivihan fails closed when the verified company surface changes materially
     arivihan.createArivihanScraper().run({
       fetchPage: async (url) => {
         if (url === arivihan.HOMEPAGE_URL) {
-          return { status: 200, url, html: COMPANY_PAGE_HTML }
+          return { status: 200, url, html: HOMEPAGE_HTML }
         }
 
         if (url === arivihan.ABOUT_URL) {
-          return { status: 200, url, html: COMPANY_PAGE_HTML }
+          return { status: 200, url, html: ABOUT_PAGE_HTML }
         }
 
         if (url === arivihan.CAREERS_URL) {

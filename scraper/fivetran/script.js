@@ -205,11 +205,23 @@ export const normalizeGreenhouseJobUrl = (value, jobId) => {
     const url = new URL(value)
     const normalizedHost = url.hostname.replace(/^www\./i, '').toLowerCase()
     const normalizedPathname = url.pathname.replace(/\/+$/, '')
+    const ghJid = normalizeWhitespace(url.searchParams.get('gh_jid'))
+
+    if (normalizedHost === 'fivetran.com') {
+      if (normalizedPathname !== '/careers/job') return null
+      if (ghJid !== canonicalJobId) return null
+
+      const canonicalUrl = new URL('https://www.fivetran.com/careers/job')
+      canonicalUrl.searchParams.set('gh_jid', canonicalJobId)
+      return canonicalUrl.toString()
+    }
 
     if (!['job-boards.greenhouse.io', 'boards.greenhouse.io'].includes(normalizedHost)) return null
     if (normalizedPathname !== `/fivetran/jobs/${canonicalJobId}`) return null
 
-    return `${GREENHOUSE_BOARD_URL}/jobs/${canonicalJobId}?gh_jid=${canonicalJobId}`
+    const canonicalUrl = new URL('https://www.fivetran.com/careers/job')
+    canonicalUrl.searchParams.set('gh_jid', canonicalJobId)
+    return canonicalUrl.toString()
   } catch {
     return null
   }

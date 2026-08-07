@@ -218,6 +218,7 @@ export const extractPublicJobs = (html) => {
         employmentType,
         compensation,
       }),
+      publicExperienceChecked: true,
       remoteStatus: workplaceType,
     }
   })

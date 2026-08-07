@@ -16,6 +16,11 @@ export const CONTACT_URL = PROVIDER_METADATA.contactPageUrl
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const CAREERS_HREF_PATTERN =
+  /(?:href|action)=["'][^"']*\/(?:careers?|jobs?|join-us|work-with-us)(?:[\/"'#?]|$)/i
+const PUBLIC_CAREERS_COPY_PATTERN =
+  /\b(join our team|current openings|open positions|job openings|apply now|submit your resume|search open roles)\b/i
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -27,11 +32,17 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const hasOfficialHomepageSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
-  return normalized.includes('Generative AI')
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+  return /<title[^>]*>\s*Generative AI\s*-\s*Quale Infotech\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/qualeinfotech\.com\/["']/i.test(rawHtml)
+    && normalized.includes('Generative AI')
     && normalized.includes('Unlock Infinite Potential')
     && normalized.includes('430-432 Tower A')
-    && normalized.includes('info@qualeinfotech.com')
+    && (
+      rawHtml.includes('info@qualeinfotech.com')
+      || /cdn-cgi\/l\/email-protection/i.test(rawHtml)
+    )
   }
 
 export const hasOfficialAboutSignal = (html = '') => {
@@ -52,8 +63,8 @@ export const hasPublicCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /href=["'][^"']*(careers?|jobs?|join-us|work-with-us)[^"']*["']/i.test(rawHtml)
-    || /join our team|current openings|open positions|apply now/i.test(normalized)
+  return CAREERS_HREF_PATTERN.test(rawHtml)
+    || PUBLIC_CAREERS_COPY_PATTERN.test(normalized)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

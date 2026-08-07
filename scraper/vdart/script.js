@@ -1,3 +1,8 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'vdart'
 export const COMPANY = 'VDart'
 export const HOMEPAGE_URL = 'https://www.vdart.com/'
@@ -13,23 +18,23 @@ export const PROVIDER_METADATA = {
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers-blocked',
   countryFilter: 'India',
-  paginationStrategy: 'jobsnet-home-shell-plus-browser-and-cli-access-validation',
-  extractionStrategy: 'verified-jobsnet-shell+verified-talent-network-copy+live-403-blocked-surface+fail-closed-sentinel',
+  paginationStrategy: 'jobsnet-cloudflare-blocked-root-and-jobs-route-validation',
+  extractionStrategy: 'verified-jobsnet-cloudflare-block-page+verified-403-blocked-surface+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'vdart.jobs.net',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://vdart.jobs.net/ was the branded VDart public jobs shell, but the surface still required JavaScript while live direct requests returned HTTP 403 even when retried with a browser user agent, so this provider remains fail-closed until a trustworthy fetchable public jobs listing is confirmed.',
+    'Verified on Tuesday, August 4, 2026 that both https://vdart.jobs.net/ and its /jobs route now resolve to the same Cloudflare block page with live HTTP 403 responses, so this provider remains fail-closed until a trustworthy fetchable public jobs listing is confirmed.',
   dryRunFile: 'vdart/jobs.json',
 }
 
 export const hasExpectedShellSignals = (html) => {
   const page = String(html ?? '')
-  return /Find a Job \| vdart\.jobs\.net/i.test(page)
-    && /Careers at Vdart Technologies Pvt\. Ltd\./i.test(page)
-    && /This site requires JavaScript/i.test(page)
-    && /Talent Network/i.test(page)
+  return /Attention Required!\s*\|\s*Cloudflare/i.test(page)
+    && /Please enable cookies/i.test(page)
+    && /Sorry,\s*you have been blocked/i.test(page)
+    && /cf-wrapper|cf-error-details/i.test(page)
 }
 
 export const isBlockedJobsSurface = (response) => Number(response?.status) === 403
@@ -80,4 +85,16 @@ export const run = async ({ fetchPage = defaultFetchPage } = {}) => {
   }
 
   return []
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
 }

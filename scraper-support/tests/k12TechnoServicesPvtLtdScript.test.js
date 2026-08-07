@@ -14,6 +14,79 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const HOMEPAGE_HTML = readFixture('homepage.html')
 const CAREERS_HTML = readFixture('we-are-hiring.html')
+const CURRENT_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta property="og:site_name" content="ORCHIDS The International School" />
+    <link rel="canonical" href="https://www.orchidsinternationalschool.com/" />
+  </head>
+  <body>
+    <header>
+      <a href="/we-are-hiring">We&#x27;re Hiring</a>
+      <a href="/admissions">Admissions 2026-27</a>
+      <span>9999431999</span>
+      <span>info@orchids.edu.in</span>
+    </header>
+    <main>
+      <h1>ORCHIDS The International School</h1>
+      <p>Eduvate AI</p>
+      <p>Day &amp; Boarding Schools</p>
+    </main>
+  </body>
+</html>
+`
+
+const CURRENT_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="canonical" href="https://www.orchidsinternationalschool.com/we-are-hiring" />
+  </head>
+  <body>
+    <main>
+      <section>
+        <p>Orchids is one of India's leading school networks. Join a team that shapes young minds every day.</p>
+      </section>
+      <section>
+        <h3>Open Roles</h3>
+        <p>Tap a role to email us — we'll prefill the subject line for you.</p>
+        <ul class="we-are-hiring_openRolesList__djfHN">
+          <li><span class="we-are-hiring_openRolesLabel__XwRwH">Pre-Primary</span></li>
+          <li><span class="we-are-hiring_openRolesLabel__XwRwH">Primary</span></li>
+          <li><span class="we-are-hiring_openRolesLabel__XwRwH">Secondary</span></li>
+          <li><span class="we-are-hiring_openRolesLabel__XwRwH">Arts &amp; Computers</span></li>
+          <li><span class="we-are-hiring_openRolesLabel__XwRwH">Sports</span></li>
+        </ul>
+      </section>
+      <section>
+        <h4>Campus Locations</h4>
+        <p>Bangalore (HQ) &amp; 110+ campuses across India. Apply for the campus nearest to you.</p>
+        <h4>Experience Required</h4>
+        <p>Freshers to 10+ years welcome. Role-specific criteria are shared during the selection process.</p>
+        <h4>Joining Timeline</h4>
+        <p>Immediate openings available. Planned intake also for the June / July 2026 academic year.</p>
+      </section>
+      <section>
+        <h2>Online application form</h2>
+        <label for="role">Role applying for *</label>
+        <select id="role" name="role">
+          <option value="" disabled="" selected="">Select a role</option>
+          <option value="Pre-Primary">Pre-Primary</option>
+          <option value="Primary">Primary</option>
+          <option value="Secondary">Secondary</option>
+          <option value="Arts &amp; Computers">Arts &amp; Computers</option>
+          <option value="Sports">Sports</option>
+        </select>
+      </section>
+      <footer>
+        <p>careers@orchids.edu.in</p>
+        <p>Copyright @2026 | K12 Techno Services Pvt. Ltd. ®</p>
+      </footer>
+    </main>
+  </body>
+</html>
+`
 
 const loadModule = async () => {
   try {
@@ -32,6 +105,14 @@ test('K12 Techno Services Pvt. Ltd. validates the verified homepage and first-pa
   assert.equal(scraperModule.CAREERS_URL, 'https://www.orchidsinternationalschool.com/we-are-hiring')
   assert.equal(scraperModule.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
   assert.equal(scraperModule.hasOfficialCareersSignal(CAREERS_HTML), true)
+})
+
+test('K12 Techno Services Pvt. Ltd. accepts the current Orchids homepage and hiring-page markup', async () => {
+  const scraperModule = await loadModule()
+
+  assert.equal(scraperModule.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
+  assert.equal(scraperModule.hasOfficialCareersSignal(CURRENT_CAREERS_HTML), true)
+  assert.equal(scraperModule.extractPublicListings(CURRENT_CAREERS_HTML).length, 5)
 })
 
 test('K12 Techno Services Pvt. Ltd. extracts the verified public role categories from the hiring page', async () => {

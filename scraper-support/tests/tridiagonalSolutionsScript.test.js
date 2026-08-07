@@ -60,6 +60,52 @@ const officialCareersHtml = `
 </html>
 `
 
+const businessDevelopmentManagerDetailPayload = {
+  data: {
+    id: 'business-development-manager-cfd',
+    title: 'Business Development Manager | AMS',
+    department: 'Advanced Modeling & Simulation (CFD/FEA)',
+    location: 'Pune (Travel based on business meetings)',
+    type: 'Full-time',
+    date: 'July 1, 2026',
+    experience: '6–10 years',
+    education: 'B.Tech / M.Tech or equivalent in Chemical Engineering, Mechanical Engineering',
+    overview: '<p>Drive consultative sales for CFD and simulation solutions.</p>',
+    responsibilities: [
+      'Lead new business development across process industries',
+      'Manage customer discovery and proposal creation',
+    ],
+    requirements: [
+      '6–10 years of technical B2B sales experience',
+      'Strong communication skills',
+    ],
+    benefits: [
+      'Performance-linked incentives',
+    ],
+  },
+}
+
+const proposalEngineerDetailPayload = {
+  data: {
+    id: 'proposal-engineer',
+    title: 'Proposal Engineer',
+    department: 'Technology Validation & Scale-up Centre',
+    location: 'Shirwal, Dist. - Satara. (Candidate should be willing to relocate)',
+    type: 'Full-time',
+    date: 'March 26, 2026',
+    experience: '2-4 years',
+    education: 'B.E. / B.Tech in Mechanical or Chemical Engineering',
+    overview: '<p>Prepare technical and commercial proposals for scale-up projects.</p>',
+    responsibilities: [
+      'Draft technical proposals',
+      'Coordinate with the process team',
+    ],
+    requirements: [
+      '2-4 years of proposal engineering experience',
+    ],
+  },
+}
+
 test('Tridiagonal Solutions scraper validates the official careers page and extracts public openings', async () => {
   const tridiagonal = await loadTridiagonalSolutionsModule()
 
@@ -92,20 +138,49 @@ test('Tridiagonal Solutions scraper validates the official careers page and extr
       remoteStatus: 'On-site',
     },
   ])
+
+  assert.deepEqual(
+    tridiagonal.extractJobDetail(businessDevelopmentManagerDetailPayload),
+    {
+      department: 'Advanced Modeling & Simulation (CFD/FEA)',
+      location: 'Pune (Travel based on business meetings), India',
+      employmentType: 'Full-time',
+      postingDate: 'July 1, 2026',
+      experienceRequired: '6-10 years',
+      minimumQualification: 'B.Tech / M.Tech or equivalent in Chemical Engineering, Mechanical Engineering',
+      jobDescription: 'Drive consultative sales for CFD and simulation solutions. Responsibilities: Lead new business development across process industries Manage customer discovery and proposal creation Requirements: 6-10 years of technical B2B sales experience Strong communication skills Benefits: Performance-linked incentives',
+      publicExperienceChecked: true,
+    },
+  )
 })
 
-test('Tridiagonal Solutions run decorates the public openings with shared scraper metadata', async () => {
+test('Tridiagonal Solutions run enriches public openings with detail API experience and descriptions', async () => {
   const tridiagonal = await loadTridiagonalSolutionsModule()
-  const requestedUrls = []
+  const requestedListingUrls = []
+  const requestedDetailUrls = []
 
   const jobs = await tridiagonal.createTridiagonalSolutionsScraper().run({
     fetchText: async (url) => {
-      requestedUrls.push(url)
+      requestedListingUrls.push(url)
       return officialCareersHtml
+    },
+    fetchJson: async (url) => {
+      requestedDetailUrls.push(url)
+      if (url === 'https://www.tridiagonal.com/api/careers/jobs/business-development-manager-cfd') {
+        return businessDevelopmentManagerDetailPayload
+      }
+      if (url === 'https://www.tridiagonal.com/api/careers/jobs/proposal-engineer') {
+        return proposalEngineerDetailPayload
+      }
+      throw new Error(`Unexpected Tridiagonal detail URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [tridiagonal.CAREERS_URL])
+  assert.deepEqual(requestedListingUrls, [tridiagonal.CAREERS_URL])
+  assert.deepEqual(requestedDetailUrls, [
+    'https://www.tridiagonal.com/api/careers/jobs/business-development-manager-cfd',
+    'https://www.tridiagonal.com/api/careers/jobs/proposal-engineer',
+  ])
   assert.equal(jobs.length, 2)
   assert.deepEqual(jobs[0], {
     title: 'Business Development Manager | AMS',
@@ -123,14 +198,19 @@ test('Tridiagonal Solutions run decorates the public openings with shared scrape
     employmentType: 'Full-time',
     postingDate: 'July 1, 2026',
     closingDate: null,
+    minimumQualification: 'B.Tech / M.Tech or equivalent in Chemical Engineering, Mechanical Engineering',
     preferredQualification: null,
     requiredSkills: [],
-    jobDescription: null,
+    experienceRequired: '6-10 years',
+    jobDescription: 'Drive consultative sales for CFD and simulation solutions. Responsibilities: Lead new business development across process industries Manage customer discovery and proposal creation Requirements: 6-10 years of technical B2B sales experience Strong communication skills Benefits: Performance-linked incentives',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
   })
   assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
   assert.equal(jobs[1].jobId, 'tridiagonalsolutions-proposal-engineer')
+  assert.equal(jobs[1].experienceRequired, '2-4 years')
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
 test('Tridiagonal Solutions fails closed when the verified official careers surface changes', async () => {

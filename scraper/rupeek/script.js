@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { enrichJobsWithPublicExperience } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
 import RUPEEK_CATALOG from './catalog.js'
 
@@ -169,8 +170,7 @@ export const createRupeekScraper = ({
     }
 
     const limitedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return limitedJobs.map((job) => ({
+    const baseJobs = limitedJobs.map((job) => ({
       title: job.title,
       company: COMPANY_NAME,
       department: null,
@@ -191,6 +191,17 @@ export const createRupeekScraper = ({
       jobDescription: null,
       source: SOURCE,
       link: job.applyUrl,
+    }))
+    const enrichedJobs = await enrichJobsWithPublicExperience(baseJobs, {
+      fetchText,
+      useBrowserFallback: false,
+      concurrency: Math.min(4, Math.max(1, baseJobs.length)),
+    })
+
+    return enrichedJobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))
   },

@@ -2015,9 +2015,19 @@ test('runWorkdayScraper falls back to the DOM listing when an inferred jobs API 
   }
 })
 
-test('runWorkdayScraper retries an inferred jobs API without the country facet when the generic facet returns HTTP 400', async () => {
+test('runWorkdayScraper starts BrowserStack with India search text instead of the rejected generic country facet', async () => {
   const originalFetch = global.fetch
+  const originalConsoleLog = console.log
+  const originalConsoleWarn = console.warn
   const calls = []
+  const logMessages = []
+  const warnMessages = []
+  console.log = (...args) => {
+    logMessages.push(args.join(' '))
+  }
+  console.warn = (...args) => {
+    warnMessages.push(args.join(' '))
+  }
   global.fetch = async (url, options = {}) => {
     const method = options.method || 'GET'
     const parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : null
@@ -2110,28 +2120,39 @@ test('runWorkdayScraper retries an inferred jobs API without the country facet w
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].title, 'Senior Engineer')
     assert.equal(jobs[0].location, 'Bangalore, India')
-    assert.equal(calls.filter((call) => call.method === 'POST').length, 2)
+    assert.equal(calls.filter((call) => call.method === 'POST').length, 1)
     assert.deepEqual(calls[1].body, {
-      appliedFacets: { locationCountry: ['c4f78be1a8f14da0ab49ce1162348a5e'] },
-      limit: 20,
-      offset: 0,
-      searchText: '',
-    })
-    assert.deepEqual(calls[2].body, {
       appliedFacets: {},
       limit: 20,
       offset: 0,
       searchText: 'India',
     })
+    assert.equal(logMessages.some((message) => message.includes('rejected the generic country facet')), false)
+    assert.equal(
+      warnMessages.some((message) => message.includes('Workday jobs API rejected the generic country facet; retrying with India search text.')),
+      false,
+    )
   } finally {
     global.fetch = originalFetch
+    console.log = originalConsoleLog
+    console.warn = originalConsoleWarn
   }
 })
 
 test('runWorkdayScraper preserves a prefiltered Location_Country facet before retrying the inferred jobs API without it', async () => {
   const originalFetch = global.fetch
+  const originalConsoleLog = console.log
+  const originalConsoleWarn = console.warn
   const calls = []
+  const logMessages = []
+  const warnMessages = []
   let postAttempt = 0
+  console.log = (...args) => {
+    logMessages.push(args.join(' '))
+  }
+  console.warn = (...args) => {
+    warnMessages.push(args.join(' '))
+  }
 
   global.fetch = async (url, options = {}) => {
     const method = options.method || 'GET'
@@ -2248,8 +2269,18 @@ test('runWorkdayScraper preserves a prefiltered Location_Country facet before re
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].location, 'Chennai, India')
     assert.equal(jobs[0].city, 'Chennai')
+    assert.match(
+      logMessages.join('\n'),
+      /Workday jobs API rejected the remaining location facets; retrying with India search text only\./,
+    )
+    assert.equal(
+      warnMessages.some((message) => message.includes('Workday jobs API rejected the remaining location facets; retrying with India search text only.')),
+      false,
+    )
   } finally {
     global.fetch = originalFetch
+    console.log = originalConsoleLog
+    console.warn = originalConsoleWarn
   }
 })
 

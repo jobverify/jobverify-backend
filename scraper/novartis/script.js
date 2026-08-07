@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,10 +17,18 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = String(value)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&#39;|&apos;/gi, "'")
     .replace(/&quot;/gi, '"')
+    .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/&rsquo;|&#8217;/gi, "'")
+    .replace(/&ndash;|&#8211;/gi, '-')
+    .replace(/&mdash;|&#8212;/gi, '-')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -46,6 +55,126 @@ const deriveCity = (site) => {
     .trim()
 
   return city || null
+}
+
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|hr)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const parseJsonValue = (value) => {
+  try {
+    return JSON.parse(value)
+  } catch {
+    return null
+  }
+}
+
+const flattenJsonLdNodes = (value) => {
+  if (!value) return []
+  if (Array.isArray(value)) return value.flatMap((item) => flattenJsonLdNodes(item))
+  if (typeof value !== 'object') return []
+
+  return [
+    value,
+    ...flattenJsonLdNodes(value['@graph']),
+  ]
+}
+
+const extractJobPosting = (html) => {
+  const scripts = [...String(html ?? '').matchAll(
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  )]
+
+  for (const match of scripts) {
+    const parsed = parseJsonValue(match[1])
+    if (!parsed) continue
+
+    const jobPosting = flattenJsonLdNodes(parsed).find((node) => {
+      const type = node?.['@type']
+      return Array.isArray(type) ? type.includes('JobPosting') : type === 'JobPosting'
+    })
+
+    if (jobPosting) return jobPosting
+  }
+
+  return null
+}
+
+const inferExperienceRequired = (jobDescription) => {
+  const experienceProfile = extractJobFilterSignals({
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    jobDescription,
+  })?.experienceProfile
+
+  if (experienceProfile?.confidence === 'high' && experienceProfile.evidence) {
+    return normalizeWhitespace(
+      experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+        ? 'No experience required'
+        : experienceProfile.evidence,
+    )
+  }
+
+  return null
+}
+
+const extractMinimumQualification = (jobDescription) => normalizeWhitespace(
+  String(jobDescription ?? '').match(
+    /\b(?:essential|minimum)\s+requirements?\s*:\s*([^.!?]+[.!?]?)/i,
+  )?.[1],
+)
+
+export const extractJobDetailFromHtml = (html, listing = {}) => {
+  const jobPosting = extractJobPosting(html)
+  if (!jobPosting) return listing
+
+  const jobDescription = [
+    stripTags(jobPosting.description),
+    stripTags(jobPosting.responsibilities),
+  ].filter(Boolean).join(' ').trim() || null
+  const location = normalizeWhitespace(
+    jobPosting?.jobLocation?.address?.addressLocality
+      || jobPosting?.jobLocation?.[0]?.address?.addressLocality,
+  )
+  const employmentType = normalizeWhitespace(jobPosting.employmentType)
+
+  return {
+    ...listing,
+    title: normalizeWhitespace(jobPosting.title) || listing.title || null,
+    location: location ? `${location}, India` : listing.location || null,
+    city: deriveCity(location) || listing.city || null,
+    postingDate: normalizeWhitespace(jobPosting.datePosted) || listing.postingDate || null,
+    employmentType: employmentType || listing.employmentType || null,
+    jobDescription: jobDescription || listing.jobDescription || null,
+    minimumQualification: extractMinimumQualification(jobDescription) || listing.minimumQualification || null,
+    experienceRequired: inferExperienceRequired(jobDescription) || listing.experienceRequired || null,
+    department: normalizeWhitespace(jobPosting.industry) || listing.department || null,
+  }
+}
+
+const mapWithConcurrency = async (items, limit, iteratee) => {
+  const concurrency = Math.max(1, Number.isInteger(limit) ? limit : 1)
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  )
+
+  return results
 }
 
 const extractField = (rowHtml, fieldClass) => normalizeWhitespace(
@@ -187,7 +316,21 @@ export const createNovartisScraper = ({
       }
     }
 
-    return jobs
+    const selectedJobs = Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = await mapWithConcurrency(
+      selectedJobs,
+      6,
+      async (job) => {
+        try {
+          const detailHtml = await fetchText(job.sourceUrl || job.applyUrl)
+          return extractJobDetailFromHtml(detailHtml, job)
+        } catch {
+          return job
+        }
+      },
+    )
+
+    return enrichedJobs
   },
 })
 

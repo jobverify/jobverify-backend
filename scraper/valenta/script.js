@@ -7,7 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const API_URL =
-  'https://valentabpo.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers'
+  'https://valentabpo.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers&extra_fields=%5B%22Work_Experience%22,%22Job_Description%22,%22Date_Opened%22%5D'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -48,6 +48,26 @@ const normalizeLocation = (record = {}) => {
   return { location: null, city: null }
 }
 
+const toDateOnly = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const slashMatch = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (slashMatch) {
+    const [, month, day, year] = slashMatch
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+  }
+
+  const parsed = new Date(normalized)
+  if (Number.isNaN(parsed.getTime())) return null
+
+  return [
+    parsed.getUTCFullYear(),
+    String(parsed.getUTCMonth() + 1).padStart(2, '0'),
+    String(parsed.getUTCDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 // Valenta's public feed includes fully remote roles with blank country fields.
 // Keep the scraper aligned with the India-only catalog contract.
 const isIndiaJob = (record = {}) => /india/i.test(normalizeWhitespace(record.Country) || '')
@@ -68,7 +88,7 @@ export const extractSearchResults = (payload) =>
       return {
         title,
         company: 'Valenta',
-        department: null,
+        department: normalizeWhitespace(record.Industry),
         location,
         city,
         jobId,
@@ -76,13 +96,16 @@ export const extractSearchResults = (payload) =>
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeEmploymentType(record.Job_Type),
-        experienceRequired: null,
+        experienceRequired: normalizeWhitespace(record.Work_Experience),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
-        postingDate: null,
+        postingDate: toDateOnly(record.Date_Opened),
         closingDate: null,
-        jobDescription: null,
+        jobDescription: normalizeWhitespace(record.Job_Description),
+        publicExperienceChecked: Boolean(
+          normalizeWhitespace(record.Work_Experience) || normalizeWhitespace(record.Job_Description),
+        ),
       }
     })
     .filter(Boolean)

@@ -29,31 +29,35 @@ test('SenseHQ local catalog captures the verified first-party SenseHQ board with
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.sensehq.com/')
   assert.equal(provider.companyCareerPage, 'https://www.sensehq.com/careers')
-  assert.equal(provider.verifiedJobsPageUrl, 'https://sensehr.sensehq.com/careers/jobs')
+  assert.equal(provider.verifiedJobsPageUrl, 'https://sensehr.sensehq.com/careers')
   assert.equal(provider.sampleJobUrl, 'https://sensehr.sensehq.com/careers/jobs/217')
   assert.equal(provider.companyDomain, 'sensehq.com')
   assert.equal(provider.atsPlatform, 'sensehq')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.jobsDataSource, '__NEXT_DATA__.props.pageProps.jobsData.jobs')
+  assert.equal(provider.jobsDataSource, '__NEXT_DATA__.props.pageProps.jobsData.rows')
   assert.equal(
     provider.paginationStrategy,
-    'verified-sensehq-board-next-data-root-page-only',
+    'verified-sensehq-board-next-data-rows-root-page-only',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-sensehq-next-data+open-job-filter+india-country-filter+first-party-detail-url-build',
+    'verified-sensehq-next-data-rows+open-job-filter+india-country-filter+first-party-detail-url-build',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /sensehq[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, expectedModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sensehq\.com\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sensehr\.sensehq\.com\/careers\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /\b14 open jobs\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sensehr\.sensehq\.com\/careers\/js\/sense-career-inject\.js/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sensehr\.sensehq\.com\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /\b10 open India roles\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /jobsData\.rows/i)
   assert.match(provider.verifiedSurfaceSummary, /DevOps Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Implementation Consultant/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead Software Engineer II - Backend/i)
+  assert.match(provider.verifiedSurfaceSummary, /count 11/i)
+  assert.match(provider.verifiedSurfaceSummary, /page=2/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'SenseHQ'), false)
 })
 

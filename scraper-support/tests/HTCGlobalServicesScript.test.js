@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-16T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-02T00:00:00.000Z'
 
 const careersLandingHtml = `
 <!doctype html>
@@ -9,11 +9,14 @@ const careersLandingHtml = `
   <head>
     <title>Careers in AI &amp; Agentic AI | Transform Enterprise Change – HTC</title>
     <link rel="canonical" href="https://www.htcinc.com/careers/" />
+    <meta
+      name="description"
+      content="Join HTC in shaping enterprise transformation through AI and Agentic AI. Explore careers where intelligent automation, claims processing agents, and conversational AI agents drive change"
+    />
   </head>
   <body>
     <main>
-      <h1>Careers at HTC Global Services</h1>
-      <p>Build what matters in AI and Agentic AI.</p>
+      <p>Join HTC in shaping enterprise transformation through AI and Agentic AI.</p>
       <a href="https://www.htcinc.com/career-job-listing/">Explore Open Roles</a>
     </main>
   </body>

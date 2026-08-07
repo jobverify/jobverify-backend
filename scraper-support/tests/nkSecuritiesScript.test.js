@@ -12,9 +12,17 @@ const homepageHtml = `
     />
   </head>
   <body>
-    <h1>Where Technology Meets Markets Analyze. Execute. Excel.</h1>
-    <p>A high-frequency proprietary trading firm at the intersection of technology, data science, and global financial markets.</p>
-    <a href="open-positions.html">Open Positions</a>
+    <span class="label hero-tagline">EST. 2011 · SEBI REG. INZ000206920</span>
+    <h1 class="display-lg hero-title">
+      <span class="line">Where Technology</span>
+      <span class="line italic">Meets Markets</span>
+      <span class="line accent-text">Analyze. Execute. Excel.</span>
+    </h1>
+    <p class="body-text hero-description">
+      A high-frequency proprietary trading firm at the intersection of technology, data science, and global financial markets.
+      We solve complex market problems in real time with speed, precision, and innovation at scale.
+    </p>
+    <a href="open-positions.html" class="link-arrow accent">Open positions</a>
     <p>SEBI Regd. No: INZ000206920</p>
   </body>
 </html>
@@ -31,15 +39,20 @@ const openPositionsHtml = `
     />
   </head>
   <body>
-    <h1>Build With The Best</h1>
-    <label>Search by role or location</label>
-    <label>All Locations</label>
-    <p id="gh-jobs-count"></p>
+    <span class="label fade-up">CURRENT OPENINGS</span>
+    <h2 class="display-md fade-up">Find your role</h2>
+    <div class="gh-filters fade-up">
+      <input type="text" class="gh-filter-input" id="ghSearch" placeholder="Search by role or location">
+      <select class="gh-filter-select" id="ghLocation">
+        <option value="">All Locations</option>
+      </select>
+    </div>
+    <p class="gh-jobs-count fade-up" id="gh-jobs-count"></p>
+    <div id="gh-jobs-board" class="fade-up"></div>
     <script>
       fetch('https://api.greenhouse.io/v1/boards/nksecuritiesresearch/jobs')
       .then(function(r) { return r.json(); });
       var empty = 'No open positions at this time. Check back soon.';
-      var keys = 'absolute_url internal_job_id';
     </script>
   </body>
 </html>
@@ -50,7 +63,7 @@ const greenhousePayload = {
     {
       absolute_url: 'https://job-boards.eu.greenhouse.io/nksecuritiesresearch/jobs/4914411101',
       internal_job_id: 4494849101,
-      location: { name: 'Gurugram' },
+      location: { name: 'Gurugram, Haryana, India' },
       id: 4914411101,
       updated_at: '2026-07-01T05:15:15-04:00',
       requisition_id: '90',
@@ -123,7 +136,7 @@ test('NK Securities extracts India jobs from the verified Greenhouse payload sha
       title: 'AI/ML Researcher',
       company: 'NK Securities Research',
       department: null,
-      location: 'Gurugram',
+      location: 'Gurugram, Haryana, India',
       city: 'Gurugram',
       country: 'India',
       jobId: '4914411101',

@@ -68,6 +68,7 @@ test('mapCumminsJob maps official Cummins India Jobsyn records to shared scraper
     postingDate: '2026-07-03T18:21:54.816Z',
     closingDate: null,
     jobDescription: 'Build AI-powered software for Cummins products.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
 })
@@ -93,6 +94,7 @@ test('Cummins India scraper paginates the official India feed', async () => {
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'cumminsindia')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[1].city, 'Phaltan')
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })

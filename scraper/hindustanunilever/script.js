@@ -7,8 +7,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'hindustanunilever'
 export const COMPANY = 'Hindustan Unilever Limited'
-export const CAREERS_URL = 'https://www.hul.co.in/careers/'
-export const LOCATION_PAGE_URL = 'https://careers.unilever.com/en/india'
+export const CAREERS_URL = 'https://careers.unilever.com/en/location/india-jobs/34155/1269750/2/1'
+export const LOCATION_PAGE_URL = CAREERS_URL
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -24,49 +24,69 @@ const normalizeWhitespace = (value) => String(value ?? '')
 
 const stripTags = (value) => normalizeWhitespace(String(value ?? ''))
 
-const slugify = (value) => normalizeWhitespace(value)
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
+const extractJobId = (value) => {
+  const normalized = String(value ?? '')
+  const dataJobId = normalized.match(/data-job-id=["'](\d+)["']/i)?.[1]
+  if (dataJobId) return dataJobId
 
-const extractLocationCity = (location) => {
+  const segments = [...normalized.matchAll(/\/(\d+)(?:[/?#]|$)/g)]
+  return segments.at(-1)?.[1] || null
+}
+
+const splitLocation = (location) => {
   const normalized = normalizeWhitespace(location)
-  const city = normalized.replace(/,\s*india$/i, '').trim()
-  return city && city.toLowerCase() !== 'india' ? city : null
+  const parts = normalized
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  return {
+    city: parts[0] || null,
+    state: parts.length > 2 ? parts[1] : null,
+    country: parts.at(-1) || 'India',
+  }
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes('india')
-    && normalized.includes('our local jobs')
-    && /<h1[^>]*>\s*India\s*<\/h1>/i.test(page)
-    && /https:\/\/careers\.unilever\.com\/en\/job\//i.test(page)
+  return /<title[^>]*>\s*Search India Jobs at Unilever\s*<\/title>/i.test(page)
+    && normalized.includes('jobs in india')
+    && /class=["'][^"']*global-job-list__title[^"']*["']/i.test(page)
+    && /href=["'](?:https:\/\/careers\.unilever\.com)?\/en\/job\/[^"']+["']/i.test(page)
 }
-
-export const pageLinksToVerifiedIndiaCareersSurface = (html) => (
-  /https:\/\/careers\.unilever\.com\/en\/india/i.test(String(html ?? ''))
-)
 
 export const extractLocalJobs = (html) => Array.from(
   String(html ?? '').matchAll(
-    /<a[^>]+href=["'](https:\/\/careers\.unilever\.com\/en\/job\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+    /<a\b([^>]*href=["']((?:https:\/\/careers\.unilever\.com)?\/en\/job\/[^"']+)["'][^>]*)>([\s\S]*?)<\/a>/gi,
   ),
   (match) => {
-    const applyUrl = match[1]
-    const anchorHtml = match[2]
-    const location = stripTags(anchorHtml.match(/<span[^>]*>([\s\S]*?)<\/span>/i)?.[1])
-    const withoutLocation = anchorHtml.replace(/<span[^>]*>[\s\S]*?<\/span>/i, ' ')
-    const title = stripTags(withoutLocation)
+    const attributes = match[1]
+    const applyUrl = new URL(match[2], LOCATION_PAGE_URL).toString()
+    const anchorHtml = match[3]
+    const rawLocation = stripTags(
+      anchorHtml.match(/<span[^>]*class=["'][^"']*job-location[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1],
+    )
+    const title = stripTags(
+      anchorHtml.match(/<h2[^>]*class=["'][^"']*global-job-list__title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i)?.[1],
+    ) || stripTags(anchorHtml)
+    const location = /india/i.test(rawLocation) ? rawLocation : `${rawLocation}, India`
+    const { city, state, country } = splitLocation(location)
+    const jobId = extractJobId(attributes) || extractJobId(applyUrl)
 
     return {
+      jobId,
       title,
       location,
+      city,
+      state,
+      country,
+      sourceUrl: applyUrl,
       applyUrl,
     }
   },
-).filter((job) => job.title && /,\s*india$/i.test(job.location))
+).filter((job) => job.jobId && job.title && job.location)
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -79,12 +99,6 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createHindustanUnileverScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!pageLinksToVerifiedIndiaCareersSurface(careersHtml)) {
-      throw new Error('Hindustan Unilever official careers handoff changed; refusing to guess the public jobs surface')
-    }
-
     const locationHtml = await fetchText(LOCATION_PAGE_URL)
 
     if (!hasOfficialCareersSignal(locationHtml)) {
@@ -93,14 +107,15 @@ export const createHindustanUnileverScraper = () => ({
 
     const jobs = extractLocalJobs(locationHtml)
       .map((job) => ({
+        jobId: job.jobId,
         title: job.title,
         company: COMPANY,
         location: job.location,
-        city: extractLocationCity(job.location),
-        country: 'India',
-        jobId: `${SOURCE}-${slugify(`${job.title}-${job.location}`)}`,
+        city: job.city,
+        state: job.state,
+        country: job.country,
         requisitionId: null,
-        sourceUrl: LOCATION_PAGE_URL,
+        sourceUrl: job.sourceUrl,
         applyUrl: job.applyUrl,
         employmentType: null,
         department: null,

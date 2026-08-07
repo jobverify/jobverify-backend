@@ -10,6 +10,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const PROVIDER_METADATA = VELANINFOSERVICES_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
+export const OVERVIEW_URL = 'https://www.velaninfo.com/careers/'
 export const JOBS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
@@ -34,13 +35,23 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+export const hasOfficialCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return normalized.includes('Career Opportunities')
+    && normalized.includes('Current Openings')
+    && normalized.includes('Build Your Dream Career with Velan')
+    && page.includes(JOBS_URL)
+}
+
 export const hasOfficialJobsSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Join Our Team')
     && normalized.includes('Current Openings')
-    && normalized.includes('Apply Now')
-    && normalized.includes('Location:')
+    && normalized.includes('careers@velaninfo.com')
     && normalized.includes('Posted on:')
+    && normalized.includes('Apply Now')
 }
 
 const slugify = (value) => normalizeWhitespace(value)
@@ -50,18 +61,27 @@ const slugify = (value) => normalizeWhitespace(value)
 
 export const extractJobs = (html = '') => {
   const jobs = []
-  const pattern = /<h3[^>]*>([\s\S]*?)<\/h3>\s*<p[^>]*>([\s\S]*?)<\/p>\s*<p[^>]*>\s*Posted on:\s*([^<]+)<\/p>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/gi
+  const pattern = /<h3[^>]*>([\s\S]*?)<\/h3>[\s\S]*?<ul>([\s\S]*?)<\/ul>[\s\S]*?<p class=["']cpst["']>\s*Posted on:\s*([^<]+)<\/p>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>[\s\S]*?Apply Now[\s\S]*?<\/a>/gi
 
   for (const match of String(html ?? '').matchAll(pattern)) {
-    const heading = normalizeWhitespace(match[1])
-    const meta = normalizeWhitespace(match[2])
+    const rawHeading = match[1]
+    const heading = normalizeWhitespace(rawHeading)
+    const metaItems = [...String(match[2] ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
+      .map((item) => normalizeWhitespace(item[1]))
+      .filter((item) => item && item !== '|')
     const postedOn = normalizeWhitespace(match[3])
-    const applyUrl = match[4]
+    const applyUrl = new URL(match[4], JOBS_URL).toString()
     const title = normalizeWhitespace(heading.replace(/\s*\(JOB ID:[\s\S]*$/i, ''))
-    const jobId = heading.match(/\(JOB ID:\s*([^)]+)\)/i)?.[1]?.trim() || slugify(title)
-    const experienceRequired = meta.match(/Experience:\s*([^|]+)/i)?.[1]?.trim() || null
-    const city = meta.match(/Location:\s*([^|]+)/i)?.[1]?.trim() || null
-    const description = meta.split('|')[0]?.trim() || null
+    const jobId = rawHeading.match(/\(JOB ID:\s*([^)]+)\)/i)?.[1]?.trim() || slugify(title)
+    const experienceRequired = metaItems
+      .find((item) => /^Experience:/i.test(item))
+      ?.replace(/^Experience:\s*/i, '')
+      ?.trim() || null
+    const city = metaItems
+      .find((item) => /^Location:/i.test(item))
+      ?.replace(/^Location:\s*/i, '')
+      ?.trim() || null
+    const description = metaItems[0] || null
 
     if (!title || !city) continue
 
@@ -76,7 +96,7 @@ export const extractJobs = (html = '') => {
       requisitionId: jobId,
       sourceUrl: JOBS_URL,
       applyUrl,
-      employmentType: 'Full Time',
+      employmentType: 'Full-time',
       experienceRequired,
       minimumQualification: null,
       preferredQualification: null,
@@ -94,6 +114,11 @@ export const createVelanInfoServicesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow = now } = {}) {
+    const careersHtml = await fetchText(OVERVIEW_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Velan Info Services verified careers page no longer links to the trusted current openings surface')
+    }
+
     const html = await fetchText(JOBS_URL)
     if (!hasOfficialJobsSignal(html)) {
       throw new Error('Velan Info Services verified first-party current openings page changed materially')
@@ -116,7 +141,7 @@ export const createVelanInfoServicesScraper = ({
 
 export const run = async (options = {}) => createVelanInfoServicesScraper(options).run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 

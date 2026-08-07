@@ -13,8 +13,10 @@ const careersHtml = `
       <p>Browse open positions</p>
       <section>
         <h2>Explore Open Positions</h2>
-        <a href="https://suryoday.workline.hr/Candidate/GeneralOpening.aspx?Flag=C">
-          Find the right-fit job role for you
+        <a href="https://suryoday.workline.hr/Candidate/GeneralOpening.aspx?Flag=C" target="_blank" rel="noopener noreferrer">
+          <button type="button">
+            <span>Find the right-fit job role for you</span>
+          </button>
         </a>
       </section>
     </main>
@@ -48,7 +50,7 @@ const jobsBoardHtml = `
           <td>JLG</td>
           <td>Sales</td>
           <td>Pune</td>
-          <td><a href="../../scraper/Candidate/CanPRFApplyBL.aspx?PRFCode=54923&amp;Flag=C" class="btn btn-primary">Apply</a></td>
+          <td><a href="../Candidate/CanPRFApplyBL.aspx?PRFCode=54923&amp;Flag=C" class="btn btn-primary">Apply</a></td>
         </tr>
         <tr>
           <td>85866</td>
@@ -56,7 +58,7 @@ const jobsBoardHtml = `
           <td>Support</td>
           <td>Customer Service</td>
           <td>CO Belapur ST</td>
-          <td><a href="../../scraper/Candidate/CanPRFApplyBL.aspx?PRFCode=49210&amp;Flag=C" class="btn btn-primary">Apply</a></td>
+          <td><a href="../Candidate/CanPRFApplyBL.aspx?PRFCode=49210&amp;Flag=C" class="btn btn-primary">Apply</a></td>
         </tr>
         <tr>
           <td>84868</td>
@@ -64,7 +66,7 @@ const jobsBoardHtml = `
           <td>Branch Banking</td>
           <td>Sales</td>
           <td>Panvel</td>
-          <td><a href="../../scraper/Candidate/CanPRFApplyBL.aspx?PRFCode=48845&amp;Flag=C" class="btn btn-primary">Apply</a></td>
+          <td><a href="../Candidate/CanPRFApplyBL.aspx?PRFCode=48845&amp;Flag=C" class="btn btn-primary">Apply</a></td>
         </tr>
       </tbody>
     </table>
@@ -151,6 +153,7 @@ test('Suryoday parses verified public Workline listing rows into normalized jobs
     applyUrl: job.applyUrl,
     jobId: job.jobId,
     requisitionId: job.requisitionId,
+    publicExperienceChecked: job.publicExperienceChecked,
     link: job.link,
     scrapedAt: job.scrapedAt,
   })), [
@@ -164,6 +167,7 @@ test('Suryoday parses verified public Workline listing rows into normalized jobs
       applyUrl: 'https://suryoday.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=54923&Flag=C',
       jobId: 'suryoday-96910',
       requisitionId: '96910',
+      publicExperienceChecked: true,
       link: 'https://suryoday.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=54923&Flag=C',
       scrapedAt: '2026-07-25T11:45:00.000Z',
     },
@@ -177,6 +181,7 @@ test('Suryoday parses verified public Workline listing rows into normalized jobs
       applyUrl: 'https://suryoday.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=49210&Flag=C',
       jobId: 'suryoday-85866',
       requisitionId: '85866',
+      publicExperienceChecked: true,
       link: 'https://suryoday.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=49210&Flag=C',
       scrapedAt: '2026-07-25T11:45:00.000Z',
     },
@@ -190,12 +195,14 @@ test('Suryoday parses verified public Workline listing rows into normalized jobs
       applyUrl: 'https://suryoday.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=48845&Flag=C',
       jobId: 'suryoday-84868',
       requisitionId: '84868',
+      publicExperienceChecked: true,
       link: 'https://suryoday.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=48845&Flag=C',
       scrapedAt: '2026-07-25T11:45:00.000Z',
     },
   ])
   assert.ok(jobs.every((job) => job.company === 'Suryoday' && job.source === 'suryoday'))
   assert.ok(jobs.every((job) => job.jobDescription?.includes('Reference No.:')))
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('Suryoday fails closed with no jobs when the verified Workline table contract is absent', async () => {

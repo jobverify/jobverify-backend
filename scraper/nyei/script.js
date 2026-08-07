@@ -133,7 +133,10 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*MEP Engineering &amp; Design Consulting Firm \| BIM Services \| NY Engineers\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*MEP Engineering &amp; Design Consulting Firm \| BIM Services \| NY Engineers\s*<\/title>/i.test(page)
+      || /<title>\s*MEP Consultant for Commercial Building Projects \| NY Engineers\s*<\/title>/i.test(page)
+  )
     && /<a[^>]+href=["']https:\/\/www\.ny-engineers\.com\/about\/engineering-career-opportunities["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
     && /info@ny-engineers\.com/i.test(text)
     && /NY Engineers/i.test(text)

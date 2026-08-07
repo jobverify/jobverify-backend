@@ -45,11 +45,11 @@ test('Auriga IT Consulting Private Limited local catalog captures the verified f
   assert.equal(provider.paginationStrategy, 'first-party-careers-page-plus-single-keka-active-jobs-endpoint')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-keka-handoff+embedded-khConfig+active-keka-embed-api+india-location-filter',
+    'verified-first-party-careers-page+verified-keka-handoff+embedded-khConfig-or-bootstrapped-careerportal-document+active-keka-embed-api+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /Find Job Openings/i)
   assert.match(provider.verifiedSurfaceSummary, /aurigait\.keka\.com/i)

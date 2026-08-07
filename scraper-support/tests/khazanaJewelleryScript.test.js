@@ -56,7 +56,7 @@ test('Khazana Jewellery pins the verified email-only careers surface and Cloudfl
   assert.equal(khazanaJewellery.HOMEPAGE_URL, 'https://www.khazanajewellery.com/')
   assert.equal(khazanaJewellery.OFFICIAL_CAREERS_URL, 'https://www.khazanajewellery.com/careers?page_id=33')
   assert.equal(khazanaJewellery.CAREERS_APPLY_EMAIL, 'careers@khazanajewellery.com')
-  assert.equal(khazanaJewellery.VERIFIED_ON, '2026-07-16')
+  assert.equal(khazanaJewellery.VERIFIED_ON, '2026-08-02')
   assert.equal(khazanaJewellery.hasKhazanaCareersSignal(careersPageHtml), true)
   assert.equal(khazanaJewellery.hasKhazanaCareersSignal('<html><body>Contact us</body></html>'), false)
   assert.equal(khazanaJewellery.isCloudflareInterstitial(cloudflareInterstitialHtml), true)

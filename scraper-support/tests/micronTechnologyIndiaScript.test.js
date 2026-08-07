@@ -5,14 +5,14 @@ const OFFICIAL_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers | Micron India</title>
+    <title>Careers | Micron Technology Inc.</title>
   </head>
   <body>
     <main>
       <h1>Great place to work in India</h1>
       <p>At Micron Hyderabad and Bengaluru, we advance the transformation of information into intelligence.</p>
-      <a href="https://careers.micron.com/careers?domain=micron.com&pid=25253497&sort_by=relevance">Search current jobs</a>
-      <a href="https://careers.micron.com/careers?domain=micron.com&pid=25253497&sort_by=relevance">Find your next career</a>
+      <a href="https://careers.micron.com/careers">Search jobs</a>
+      <a href="https://micron.eightfold.ai/careers?location=India&domain=micron.com">Search current jobs</a>
     </main>
   </body>
 </html>
@@ -51,28 +51,22 @@ const SEARCH_PAYLOAD = {
   },
 }
 
-const DETAIL_PAYLOADS = new Map([
-  [
-    42296091,
-    {
-      status: 200,
-      data: {
-        publicUrl: 'https://careers.micron.com/careers/job/42296091',
-        jobDescription: '<p>Drive HBM physical design execution from Hyderabad.</p>',
-      },
+const DETAIL_PAYLOADS = {
+  42296091: {
+    data: {
+      publicUrl: 'https://careers.micron.com/careers/job/42296091',
+      postedTs: 1780963200,
+      jobDescription: '<p>Required Experience: 6 years in HBM layout design.</p>',
     },
-  ],
-  [
-    42296092,
-    {
-      status: 200,
-      data: {
-        publicUrl: 'https://careers.micron.com/careers/job/42296092',
-        jobDescription: '<p>Ignore this non-India role.</p>',
-      },
+  },
+  42296092: {
+    data: {
+      publicUrl: 'https://careers.micron.com/careers/job/42296092',
+      postedTs: 1780963200,
+      jobDescription: '<p>Required Experience: 4 years in US manufacturing operations.</p>',
     },
-  ],
-])
+  },
+}
 
 const loadModule = async () => {
   try {
@@ -82,18 +76,18 @@ const loadModule = async () => {
   }
 }
 
-test('Micron Technology India scraper constants stay pinned to the verified first-party careers page and public Eightfold routes from Thursday, July 16, 2026', async () => {
+test('Micron Technology India scraper constants stay pinned to the verified first-party careers page and public Eightfold routes from Tuesday, August 4, 2026', async () => {
   const micron = await loadModule()
 
   assert.equal(micron.SOURCE, 'microntechnologyindia')
   assert.equal(micron.COMPANY, 'Micron Technology India')
   assert.equal(micron.OFFICIAL_BRAND_NAME, 'Micron Technology')
-  assert.equal(micron.VERIFIED_ON, '2026-07-16')
+  assert.equal(micron.VERIFIED_ON, '2026-08-04')
   assert.equal(micron.HOMEPAGE_URL, 'https://in.micron.com/')
   assert.equal(micron.OFFICIAL_CAREERS_URL, 'https://in.micron.com/about/careers')
   assert.equal(
     micron.PUBLIC_BOARD_URL,
-    'https://careers.micron.com/careers?domain=micron.com&pid=25253497&sort_by=relevance',
+    'https://micron.eightfold.ai/careers?location=India&domain=micron.com',
   )
   assert.equal(micron.LISTING_API_URL, 'https://careers.micron.com/api/pcsx/search')
   assert.equal(
@@ -109,7 +103,10 @@ test('Micron Technology India scraper constants stay pinned to the verified firs
     'https://careers.micron.com/api/pcsx/position_details?position_id=42296091&domain=micron.com&hl=en',
   )
   assert.match(micron.VERIFIED_SURFACE_SUMMARY, /Search current jobs/i)
-  assert.match(micron.VERIFIED_SURFACE_SUMMARY, /Principal Engineer- HIG HBM Layout/i)
+  assert.match(micron.VERIFIED_SURFACE_SUMMARY, /Search jobs/i)
+  assert.match(micron.VERIFIED_SURFACE_SUMMARY, /micron\.eightfold\.ai\/careers\?location=India&domain=micron\.com/i)
+  assert.match(micron.VERIFIED_SURFACE_SUMMARY, /288 live India openings/i)
+  assert.match(micron.VERIFIED_SURFACE_SUMMARY, /STAFF ENG-HIG-HBM-LAYOUT/i)
   assert.equal(micron.hasOfficialMicronIndiaCareersSignal(OFFICIAL_CAREERS_HTML), true)
   assert.equal(micron.hasOfficialMicronIndiaCareersSignal('<html><body>unexpected</body></html>'), false)
   assert.equal(micron.isIndiaLocation('Hyderabad, Telangana, India'), true)
@@ -120,6 +117,9 @@ test('Micron Technology India run verifies the official careers page and maps pu
   const micron = await loadModule()
   const requestedUrls = []
   const scraper = micron.createMicronTechnologyIndiaScraper()
+  const expectedListingUrl = micron.buildListingApiUrl()
+  const expectedIndiaDetailUrl = micron.buildDetailApiUrl(42296091)
+  const expectedUsDetailUrl = micron.buildDetailApiUrl(42296092)
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
@@ -134,25 +134,31 @@ test('Micron Technology India run verifies the official careers page and maps pu
     fetchJson: async (url) => {
       requestedUrls.push(url)
 
-      if (url === micron.buildListingApiUrl()) {
+      if (url === expectedListingUrl) {
         return SEARCH_PAYLOAD
       }
 
-      const detailMatch = url.match(/position_id=(\d+)/)
-      if (detailMatch) {
-        return DETAIL_PAYLOADS.get(Number(detailMatch[1]))
+      if (url === expectedIndiaDetailUrl) {
+        return DETAIL_PAYLOADS[42296091]
+      }
+
+      if (url === expectedUsDetailUrl) {
+        return DETAIL_PAYLOADS[42296092]
       }
 
       throw new Error(`Unexpected Micron Technology India JSON URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    micron.OFFICIAL_CAREERS_URL,
-    micron.buildListingApiUrl(),
-    micron.buildDetailApiUrl(42296091),
-    micron.buildDetailApiUrl(42296092),
-  ])
+  assert.deepEqual(
+    [...requestedUrls].sort(),
+    [
+      micron.OFFICIAL_CAREERS_URL,
+      expectedListingUrl,
+      expectedIndiaDetailUrl,
+      expectedUsDetailUrl,
+    ].sort(),
+  )
   assert.deepEqual(jobs, [
     {
       title: 'Principal Engineer- HIG HBM Layout',
@@ -168,13 +174,14 @@ test('Micron Technology India run verifies the official careers page and maps pu
       requisitionId: 'JR102906',
       department: 'HIG',
       employmentType: null,
-      experienceRequired: null,
-      postingDate: 1780963200,
-      jobDescription: '<p>Drive HBM physical design execution from Hyderabad.</p>',
+      experienceRequired: '6 years',
+      postingDate: '2026-06-09T00:00:00.000Z',
+      jobDescription: '<p>Required Experience: 6 years in HBM layout design.</p>',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
       remoteStatus: 'On-site',
+      publicExperienceChecked: true,
       scrapedAt: jobs[0].scrapedAt,
     },
   ])

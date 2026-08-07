@@ -79,7 +79,6 @@ export const hasOfficialWorkWithUsSignal = (html = '') => {
     /formvalidate_workwithus_lumax\.php/i,
     /springboard@lumaxmail\.com/i,
   ]) && /work with us/i.test(text)
-    && /position applied for/i.test(text)
 }
 
 export const hasLivePublicOpeningSignal = (html = '') => {

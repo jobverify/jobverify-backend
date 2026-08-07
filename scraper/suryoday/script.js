@@ -1,3 +1,6 @@
+import crypto from 'node:crypto'
+import http from 'node:http'
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -12,6 +15,8 @@ export const ATS_PLATFORM = 'workline-public-general-openings-table'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
+const MAX_REDIRECTS = 5
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -65,14 +70,82 @@ const toAbsoluteUrl = (value, baseUrl = JOBS_BOARD_URL) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
+export const hasLegacyRenegotiationError = (error) => {
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  return /unsafe legacy renegotiation disabled/i.test(message)
+    || /ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED/i.test(code)
+}
+
+const fetchPageWithLegacyTls = (url, redirectsRemaining = MAX_REDIRECTS) =>
+  new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url)
+    const requestImpl = parsedUrl.protocol === 'http:' ? http : https
+
+    const request = requestImpl.request(parsedUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      ...(parsedUrl.protocol === 'https:'
+        ? { secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT }
+        : {}),
+    }, (response) => {
+      const status = Number(response.statusCode) || 0
+      const location = response.headers.location
+
+      if (REDIRECT_STATUSES.has(status) && location) {
+        response.resume?.()
+
+        if (redirectsRemaining <= 0) {
+          reject(new Error(`Too many redirects for ${url}`))
+          return
+        }
+
+        const nextUrl = new URL(location, parsedUrl).toString()
+        resolve(fetchPageWithLegacyTls(nextUrl, redirectsRemaining - 1))
+        return
+      }
+
+      let html = ''
+      response.setEncoding?.('utf8')
+      response.on('data', (chunk) => {
+        html += chunk
+      })
+      response.on('end', () => {
+        resolve({
+          status,
+          url: parsedUrl.toString(),
+          html,
+        })
+      })
+    })
+
+    request.setTimeout?.(20000, () => {
+      request.destroy(new Error(`Timeout fetching ${url}`))
+    })
+    request.on('error', reject)
+    request.end()
   })
+
+const defaultFetchPage = async (url) => {
+  let response
+  try {
+    response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+    })
+  } catch (error) {
+    if (!hasLegacyRenegotiationError(error)) {
+      throw error
+    }
+
+    return fetchPageWithLegacyTls(url)
+  }
 
   return {
     status: response.status,
@@ -92,6 +165,14 @@ const extractTableBodyHtml = (html = '') => extractListingTableHtml(html)?.match
 const extractCells = (rowHtml = '') => Array.from(
   String(rowHtml).matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi),
   ([, cellHtml]) => cellHtml,
+)
+
+const extractAnchors = (html = '') => Array.from(
+  String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi),
+  ([, href, innerHtml]) => ({
+    href: toAbsoluteUrl(href, CAREERS_URL),
+    text: stripTagsToText(innerHtml),
+  }),
 )
 
 const extractApplyUrl = (cellHtml = '') => toAbsoluteUrl(
@@ -127,12 +208,13 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /Shape your career with a growing Bank/i.test(text)
     && /Browse open positions/i.test(text)
     && /Explore Open Positions/i.test(text)
-    && /href=["']https:\/\/suryoday\.workline\.hr\/Candidate\/GeneralOpening\.aspx\?Flag=C["'][^>]*>\s*Find the right-fit job role for you\s*<\/a>/i.test(page)
+    && extractJobsBoardUrl(page) === JOBS_BOARD_URL
 }
 
-export const extractJobsBoardUrl = (html = '') => String(html ?? '').match(
-  /href=["'](https:\/\/suryoday\.workline\.hr\/Candidate\/GeneralOpening\.aspx\?Flag=C)["'][^>]*>\s*Find the right-fit job role for you\s*<\/a>/i,
-)?.[1] ?? null
+export const extractJobsBoardUrl = (html = '') => extractAnchors(html).find((anchor) =>
+  anchor.href === JOBS_BOARD_URL
+  && /find the right-fit job role for you/i.test(anchor.text),
+)?.href ?? null
 
 export const hasOfficialJobsBoardSignal = (html = '') => {
   const page = String(html ?? '')
@@ -221,6 +303,7 @@ export const mapListingRowToJob = (row, { scrapedAt = new Date().toISOString() }
     postingDate: null,
     closingDate: null,
     jobDescription: buildJobDescription(row),
+    publicExperienceChecked: true,
     source: SOURCE,
     companyCareerPage: CAREERS_URL,
     companyDomain: COMPANY_DOMAIN,

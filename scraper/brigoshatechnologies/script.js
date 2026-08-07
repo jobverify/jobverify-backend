@@ -23,6 +23,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+
 const matchesExpectedUrl = (value, expected) => {
   try {
     const actualUrl = new URL(value)
@@ -57,10 +60,15 @@ export const extractOfficialPortalHandoffUrl = (html = '') => {
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
+  const title = extractTitle(html)
   const normalized = normalizeWhitespace(html)
-  return normalized.includes('Unlock Your True Potential')
+
+  return /^Join Us\s*\|\s*brigosha Technologies$/i.test(title || '')
+    || (
+      normalized.includes('Unlock Your True Potential')
     && normalized.includes('Make Your Dream Come True At brigosha')
     && extractOfficialPortalHandoffUrl(html) === OFFICIAL_CAREERS_HANDOFF_URL
+    )
 }
 
 const pageExposesPublicJobListings = (html = '') =>

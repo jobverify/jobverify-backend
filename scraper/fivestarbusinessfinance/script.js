@@ -53,9 +53,16 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, '-')
+  .replace(/&#038;|&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+
 const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-  return normalizeWhitespace(match?.[1]) || null
+  return normalizeWhitespace(decodeHtmlEntities(match?.[1])) || null
 }
 
 const extractLinks = (html = '') => (

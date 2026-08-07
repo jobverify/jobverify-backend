@@ -274,6 +274,7 @@ const normalizeJob = ({ department, html }, scrapedAt) => {
     postingDate: null,
     closingDate: null,
     jobDescription: normalizeWhitespace(html) || null,
+    publicExperienceChecked: true,
     requisitionId: slugify(title),
     source: SOURCE,
     link: selectedUrl,

@@ -1,4 +1,9 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'vrinsofttechnology'
 export const COMPANY = 'Vrinsoft Technology'
@@ -25,7 +30,14 @@ export const PROVIDER_METADATA = {
   dryRunFile: 'vrinsofttechnology/jobs.json',
 }
 
-const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/\s+/g, ' ')
+  .trim()
 
 export const defaultFetchText = (url, {
   fetchImpl = fetch,
@@ -44,27 +56,38 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   return /Vrinsoft Careers \| Jobs in AI, Web &amp; Software Development/i.test(page)
     && /Apply Now/i.test(page)
-    && /Developer|Engineer/i.test(page)
+    && /career-hiring-heading1/i.test(page)
+    && /Apply Now On\s*<a href="mailto:hr@vrinsofts\.com">/i.test(page)
 }
 
 export const extractJobCards = (html) => {
   const page = String(html ?? '')
   const jobs = []
 
-  for (const match of page.matchAll(/<div class="job-card">([\s\S]*?)<\/div>/gi)) {
-    const section = match[1]
-    const title = normalizeWhitespace(section.match(/<h2>(.*?)<\/h2>/i)?.[1])
-    const location = normalizeWhitespace(section.match(/<span>(.*?)<\/span>/i)?.[1])
-    const href = section.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1]
+  for (const match of page.matchAll(
+    /<div class="accordion-item accordion-item-career"[\s\S]*?<div class="accordion-header" id="([^"]+)"[\s\S]*?<p class="heading-four blue-text">([\s\S]*?)<\/p>[\s\S]*?<div class="career-hiring-details">\s*([\s\S]*?)\s*<\/div>[\s\S]*?<a[^>]*class="[^"]*apply-btn[^"]*"[^>]*data-id="([^"]+)"[^>]*>/gi,
+  )) {
+    const headingId = normalizeWhitespace(match[1])
+    const title = normalizeWhitespace(match[2])
+    const details = normalizeWhitespace(match[3])
+    const jobId = normalizeWhitespace(match[4])
 
-    if (!title || !location || !href) continue
+    const detailsMatch = details.match(/^(.*?\byears?)\s+([A-Za-z][A-Za-z\s]+)$/i)
+    const experienceRequired = normalizeWhitespace(detailsMatch?.[1] || null)
+    const city = normalizeWhitespace(detailsMatch?.[2] || null)
 
-    const sourceUrl = new URL(href, CAREERS_URL).toString()
+    if (!title || !city || !jobId) continue
+
+    const sourceUrl = `${CAREERS_URL}#${headingId || `job-${jobId}`}`
     jobs.push({
       title,
-      location,
+      location: `${city}, India`,
+      city,
       sourceUrl,
       applyUrl: sourceUrl,
+      jobId,
+      requisitionId: jobId,
+      experienceRequired,
     })
   }
 
@@ -87,8 +110,28 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     ...job,
     company: COMPANY,
     country: 'India',
+    city: job.city || null,
+    employmentType: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
     link: job.applyUrl || job.sourceUrl,
     source: SOURCE,
     scrapedAt: now(),
   }))
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
 }

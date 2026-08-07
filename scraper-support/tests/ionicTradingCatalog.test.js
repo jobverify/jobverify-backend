@@ -21,8 +21,8 @@ test('Ionic Trading catalog metadata captures the verified homepage-only no-jobs
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://ionic.trade/')
   assert.equal(provider.homepageUrl, 'https://ionic.trade/')
-  assert.equal(provider.documentationUrl, 'https://dev.api.ionic.trade/')
-  assert.equal(provider.officialBrandName, 'ionic')
+  assert.equal(provider.documentationUrl, 'https://dev.api.ionic.trade/docs')
+  assert.equal(provider.officialBrandName, 'Ionic')
   assert.equal(provider.productTagline, 'Solana Trading Infrastructure')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'Global')
@@ -34,7 +34,7 @@ test('Ionic Trading catalog metadata captures the verified homepage-only no-jobs
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'ionic.trade')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.deepEqual(provider.adjacentRouteUrls, [
     'https://ionic.trade/about',
     'https://ionic.trade/careers',
@@ -43,9 +43,9 @@ test('Ionic Trading catalog metadata captures the verified homepage-only no-jobs
   ])
   assert.match(provider.modulePath, /ionictrading[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /ionictrading[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/ionic\.trade\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/dev\.api\.ionic\.trade\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/dev\.api\.ionic\.trade\/docs/i)
   assert.match(provider.verifiedSurfaceSummary, /Solana Trading Infrastructure/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public careers or jobs surface/i)
 })

@@ -4,24 +4,25 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://www.solverminds.com/ is the live Solverminds homepage, https://www.solverminds.com/about includes first-party careers copy for the company, and https://careers.solverminds.com/candidateportal?source=career currently resolves to a login-gated candidate portal requiring TOTP-based sign-in rather than exposing trustworthy public job listings. The implementation therefore fails closed until a public first-party jobs surface appears.'
+  'Verified on Tuesday, August 4, 2026 that https://www.solverminds.com/ is the live Solverminds homepage, that https://www.solverminds.com/about includes a first-party "See open roles" handoff to the public Zoho Recruit board at https://careers.solverminds.com/jobs/Careers, and that the public jobs API at https://careers.solverminds.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite returns live Solverminds job records. Verified sample public detail pages including Associate Software Engineer and Senior Business Analyst on the careers.solverminds.com domain.'
 
 export const SOLVERMINDS_SOLUTIONS_AND_TECHNOLOGIES_CATALOG = {
   source: 'solvermindssolutionsandtechnologies',
   companyName: 'Solverminds Solutions and Technologies',
-  officialBrandName: 'Solverminds Solutions and Technologies Pvt. Ltd.',
+  officialBrandName: 'Solverminds Solutions & Technologies Pvt. Ltd.',
   adapter: 'script',
   homepageUrl: 'https://www.solverminds.com/',
-  companyCareerPage: 'https://careers.solverminds.com/candidateportal?source=career',
+  companyCareerPage: 'https://careers.solverminds.com/jobs/Careers',
   aboutPageUrl: 'https://www.solverminds.com/about',
+  careersApiUrl: 'https://careers.solverminds.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
   companyDomain: 'solverminds.com',
-  atsPlatform: 'official-company-site-blocked-no-public-careers',
+  atsPlatform: 'zohorecruit',
   countryFilter: 'India',
-  paginationStrategy: 'homepage-plus-about-plus-login-gated-candidate-portal-validation',
-  extractionStrategy: 'verified-homepage+verified-about-careers-copy+verified-login-gated-candidate-portal-return-empty',
+  paginationStrategy: 'official-about-page-handoff-plus-public-zoho-api',
+  extractionStrategy: 'verified-homepage+verified-about-page-handoff+verified-zohorecruit-portal+public-job-openings-api+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'solvermindssolutionsandtechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

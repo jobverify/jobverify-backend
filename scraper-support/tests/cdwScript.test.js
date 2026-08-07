@@ -6,13 +6,32 @@ const searchHtml = `
 <html>
   <body>
     <h1>Job Search Results</h1>
-    <p>Country India (5 jobs)</p>
-    <article>
-      <a href="/search/jobs/senior-data-engineer-2">Senior Data Engineer-2</a>
-      <h4>Job Search Results</h4>
-      <p>Data &amp; Analytics</p>
-      <p>Bengaluru, India</p>
-    </article>
+    <p>Search All Jobs</p>
+    <p>Recruitment Fraud Alert</p>
+    <a href="/search/jobs/in/country/india">India (4 jobs)</a>
+  </body>
+</html>
+`
+
+const indiaSearchHtml = `
+<!doctype html>
+<html>
+  <body>
+    <h1>India Careers</h1>
+    <p>Country India (4 jobs)</p>
+    <div class="jobs-section__item" id="R26_00002003">
+      <div class="row">
+        <div class="column">
+          <h4 class="heading-5 space-xsmall">
+            <a href="https://www.cdwjobs.com/jobs/17992081-senior-data-engineer-2">Senior Data Engineer-2</a>
+          </h4>
+          <div class="row">
+            <div class="columns medium-7">Technology</div>
+            <div class="columns medium-5 text-right">Hyderabad, TS, India</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
 `
@@ -36,7 +55,23 @@ const detailHtml = `
 </html>
 `
 
-const currentSearchHtml = `
+const legacyIndiaSearchHtml = `
+<!doctype html>
+<html>
+  <body>
+    <h1>Job Search Results</h1>
+    <p>Country India (5 jobs)</p>
+    <article>
+      <a href="/search/jobs/senior-data-engineer-2">Senior Data Engineer-2</a>
+      <h4>Job Search Results</h4>
+      <p>Data &amp; Analytics</p>
+      <p>Bengaluru, India</p>
+    </article>
+  </body>
+</html>
+`
+
+const currentIndiaSearchHtml = `
 <!doctype html>
 <html>
   <body>
@@ -84,13 +119,16 @@ test('CDW parses the verified search results and India job details', async () =>
   const cdw = await loadModule()
 
   assert.equal(cdw.hasOfficialSearchResultsSignal(searchHtml), true)
+  assert.equal(cdw.extractIndiaSearchUrl(searchHtml), cdw.INDIA_SEARCH_URL)
+  assert.equal(cdw.hasOfficialIndiaResultsSignal(indiaSearchHtml), true)
 
   const jobs = await cdw.createCdwScraper({
     now: () => '2026-07-24T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
       if (url === cdw.SEARCH_URL) return searchHtml
-      if (url === 'https://www.cdwjobs.com/search/jobs/senior-data-engineer-2') return detailHtml
+      if (url === cdw.INDIA_SEARCH_URL) return indiaSearchHtml
+      if (url === 'https://www.cdwjobs.com/jobs/17992081-senior-data-engineer-2') return detailHtml
       throw new Error(`Unexpected CDW URL: ${url}`)
     },
   })
@@ -116,14 +154,16 @@ test('CDW can recover with browser-backed listing and detail pages when direct r
       browserUrls.push(url)
 
       if (url === cdw.SEARCH_URL) return searchHtml
-      if (url === 'https://www.cdwjobs.com/search/jobs/senior-data-engineer-2') return detailHtml
+      if (url === cdw.INDIA_SEARCH_URL) return indiaSearchHtml
+      if (url === 'https://www.cdwjobs.com/jobs/17992081-senior-data-engineer-2') return detailHtml
       throw new Error(`Unexpected browser CDW URL: ${url}`)
     },
   })
 
   assert.deepEqual(browserUrls, [
     cdw.SEARCH_URL,
-    'https://www.cdwjobs.com/search/jobs/senior-data-engineer-2',
+    cdw.INDIA_SEARCH_URL,
+    'https://www.cdwjobs.com/jobs/17992081-senior-data-engineer-2',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Senior Data Engineer-2')
@@ -132,8 +172,8 @@ test('CDW can recover with browser-backed listing and detail pages when direct r
 test('CDW accepts the current jobs-section layout and broader India country counts', async () => {
   const cdw = await loadModule()
 
-  assert.equal(cdw.hasOfficialSearchResultsSignal(currentSearchHtml), true)
-  assert.deepEqual(cdw.extractListingCards(currentSearchHtml), [
+  assert.equal(cdw.hasOfficialSearchResultsSignal(currentIndiaSearchHtml), true)
+  assert.deepEqual(cdw.extractListingCards(currentIndiaSearchHtml), [
     {
       title: 'Senior Consultant-QA',
       detailUrl: 'https://www.cdwjobs.com/jobs/18030353-senior-consultant-qa',
@@ -145,6 +185,21 @@ test('CDW accepts the current jobs-section layout and broader India country coun
       detailUrl: 'https://www.cdwjobs.com/jobs/17992081-senior-data-engineer-2',
       focusArea: 'Technology',
       location: 'Hyderabad, TS, India',
+    },
+  ])
+})
+
+test('CDW still accepts legacy article-based India result cards when the first-party page renders them directly', async () => {
+  const cdw = await loadModule()
+
+  assert.equal(cdw.hasOfficialSearchResultsSignal(legacyIndiaSearchHtml), true)
+  assert.equal(cdw.hasOfficialIndiaResultsSignal(legacyIndiaSearchHtml), true)
+  assert.deepEqual(cdw.extractListingCards(legacyIndiaSearchHtml), [
+    {
+      title: 'Senior Data Engineer-2',
+      detailUrl: 'https://www.cdwjobs.com/search/jobs/senior-data-engineer-2',
+      focusArea: 'Data & Analytics',
+      location: 'Bengaluru, India',
     },
   ])
 })

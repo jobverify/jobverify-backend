@@ -153,7 +153,18 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 
   try {
     const openings = extractEmbeddedJobOpenings(page)
-    const titles = new Set(openings.map((opening) => normalizeWhitespace(opening.job_title)).filter(Boolean))
+    const publicIndiaOpenings = openings.filter(
+      (opening) => isPublicCareerOpening(opening) && isIndiaOpening(opening),
+    )
+    const detailLinks = extractDarwinboxJobLinks(page)
+    const allOpeningsHaveMatchedDetailLinks = publicIndiaOpenings.every((opening) => {
+      const title = normalizeWhitespace(opening.job_title)
+      const jobId = normalizeWhitespace(opening.job_id)
+
+      if (!title || !jobId) return false
+
+      return Boolean(detailLinks.byId.get(jobId) || detailLinks.byTitle.get(title))
+    })
 
     return /<title>\s*Careers\s*\|\s*Scripbox\s*<\/title>/i.test(page)
       && hasCanonicalCareersUrl(page)
@@ -161,9 +172,8 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
       && text.includes('Join us in helping make every Indian financially secure')
       && text.includes('Job Openings')
       && text.includes('Get In Touch')
-      && titles.has('Associate')
-      && titles.has('Software Development Engineer in Test')
-      && openings.filter((opening) => isPublicCareerOpening(opening) && isIndiaOpening(opening)).length >= 3
+      && publicIndiaOpenings.length >= 3
+      && allOpeningsHaveMatchedDetailLinks
   } catch {
     return false
   }

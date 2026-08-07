@@ -28,9 +28,10 @@ test('Excelsoft Technologies provider metadata captures the verified no-public-o
     provider.extractionStrategy,
     'verified-careers-landing-page+no-public-openings-return-empty',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.modulePath, /excelsofttechnologies[\\/]script\.js$/i)
   assert.match(provider.verifiedSurfaceSummary, /One Team One Dream/i)
+  assert.match(provider.verifiedSurfaceSummary, /No current Openings/i)
 })
 
 test('Excelsoft Technologies backlog row matches directly from the local provider metadata', async () => {

@@ -31,7 +31,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
-  .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
+  .replace(/&#039;|&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
@@ -101,6 +101,7 @@ export const isExpectedVerificationFailure = (error) => {
     || /Could not establish trust relationship for the SSL\/TLS secure channel/i.test(combined)
     || /DEPTH_ZERO_SELF_SIGNED_CERT/i.test(combined)
     || /self-signed certificate/i.test(combined)
+    || /certificate has expired/i.test(combined)
 }
 
 const fetchVerifiedPage = async (url, fetchPage) => {

@@ -43,6 +43,16 @@ test('Hike sentinels recognize the verified first-party outage shell', async () 
     hike.isVerifiedOutagePage({ status: 502, html: verifiedCareersHtml }),
     true,
   )
+  assert.equal(
+    hike.isRecoverableCertificateError({
+      message: 'fetch failed',
+      cause: {
+        code: 'CERT_HAS_EXPIRED',
+        message: 'certificate has expired',
+      },
+    }),
+    true,
+  )
 })
 
 test('Hike returns no jobs only while the verified first-party outage shell holds', async () => {
@@ -77,6 +87,39 @@ test('Hike returns no jobs only while the verified first-party outage shell hold
     hike.HOMEPAGE_URL,
     ...hike.CAREERS_ROUTE_URLS,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Hike falls back to an expired-certificate fetch only for the verified first-party outage pages', async () => {
+  const hike = await loadHikeModule()
+  const primaryRequests = []
+  const insecureRequests = []
+
+  const jobs = await hike.createHikeScraper().run({
+    fetchPage: async (url) => {
+      primaryRequests.push(url)
+      throw Object.assign(new TypeError('fetch failed'), {
+        cause: {
+          code: 'CERT_HAS_EXPIRED',
+          message: 'certificate has expired',
+        },
+      })
+    },
+    fetchPageAllowingExpiredCertificate: async (url) => {
+      insecureRequests.push(url)
+      return {
+        status: 502,
+        url,
+        html: url === hike.HOMEPAGE_URL ? verifiedHomepageHtml : verifiedCareersHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(primaryRequests, [
+    hike.HOMEPAGE_URL,
+    ...hike.CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(insecureRequests, primaryRequests)
   assert.deepEqual(jobs, [])
 })
 

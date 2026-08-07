@@ -34,21 +34,21 @@ test('Hero MotoCorp local catalog captures the verified first-party jobs board c
   assert.equal(HERO_MOTO_CORP_CATALOG.companyDomain, 'heromotocorp.com')
   assert.equal(HERO_MOTO_CORP_CATALOG.atsPlatform, 'successfactors')
   assert.equal(HERO_MOTO_CORP_CATALOG.countryFilter, 'India')
-  assert.equal(HERO_MOTO_CORP_CATALOG.paginationStrategy, 'category-discovery+page-query')
+  assert.equal(HERO_MOTO_CORP_CATALOG.paginationStrategy, 'search-board-or-category-discovery+page-query')
   assert.equal(
     HERO_MOTO_CORP_CATALOG.extractionStrategy,
-    'official-careers-page+jobs2web-view-all-categories+html-category-rows+detail-pages+talentcommunity-apply-handoff',
+    'official-careers-page+jobs2web-search-board-or-categories+html-search-rows+detail-pages+talentcommunity-apply-handoff',
   )
   assert.equal(HERO_MOTO_CORP_CATALOG.parser, 'custom-script')
   assert.equal(HERO_MOTO_CORP_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(
     HERO_MOTO_CORP_CATALOG.officialCareersHandoffUrl,
-    'https://jobs.heromotocorp.com/viewalljobs/',
+    'https://jobs.heromotocorp.com/search/?createNewAlert=false&q=&optionsFacetsDD_department=&locationsearch=',
   )
   assert.equal(HERO_MOTO_CORP_CATALOG.verifiedOn, '2026-07-16')
   assert.equal(HERO_MOTO_CORP_CATALOG.dryRunFile, 'heromotocorp/jobs.json')
   assert.match(HERO_MOTO_CORP_CATALOG.verifiedSurfaceSummary, /career-overview/i)
-  assert.match(HERO_MOTO_CORP_CATALOG.verifiedSurfaceSummary, /viewalljobs/i)
+  assert.match(HERO_MOTO_CORP_CATALOG.verifiedSurfaceSummary, /jobs\.heromotocorp\.com\/search/i)
   assert.match(HERO_MOTO_CORP_CATALOG.modulePath, /heromotocorp[\\/]script\.js$/i)
 
   assert.equal(heroMotoCorp.PROVIDER_METADATA.source, HERO_MOTO_CORP_CATALOG.source)

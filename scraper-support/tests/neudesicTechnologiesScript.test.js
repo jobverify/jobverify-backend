@@ -5,7 +5,7 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers</title>
+    <title>Careers - Neudesic</title>
   </head>
   <body>
     <h1>Careers</h1>
@@ -13,6 +13,8 @@ const careersHtml = `
     <a href="https://www.linkedin.com/jobs/search/?geoId=103644278&f_C=14887">Greater Bengaluru Area</a>
     <a href="https://www.linkedin.com/jobs/search/?geoId=105214831&f_C=14887">Bengaluru, Karnataka</a>
     <a href="https://www.linkedin.com/jobs/search/?geoId=104869687&f_C=14887">Hyderabad, Telangana</a>
+    <a href="https://www.neudesic.com/careers/phishing-scams/">Phishing Scams</a>
+    <a href="https://www.neudesic.com/careers/lca-notices/">Click Here</a>
     <p>Neudesic is an IBM subsidiary.</p>
   </body>
 </html>
@@ -32,8 +34,9 @@ test('Neudesic Technologies validates the first-party careers shell and stays fa
   assert.equal(neudesic.SOURCE, 'neudesictechnologies')
   assert.equal(neudesic.COMPANY, 'Neudesic Technologies')
   assert.equal(neudesic.CAREERS_URL, 'https://www.neudesic.com/careers/')
-  assert.equal(neudesic.VERIFIED_ON, '2026-07-18')
+  assert.equal(neudesic.VERIFIED_ON, '2026-08-03')
   assert.equal(neudesic.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(neudesic.hasFirstPartyJobsSignal(careersHtml), false)
 
   const jobs = await neudesic.createNeudesicTechnologiesScraper().run({
     fetchText: async () => careersHtml,

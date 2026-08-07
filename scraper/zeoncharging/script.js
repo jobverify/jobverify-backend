@@ -2,9 +2,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const SOURCE = 'zeoncharging'
 export const COMPANY = 'Zeon Electric Pvt Ltd'
@@ -65,12 +67,13 @@ const defaultFetchPage = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*Zeon Charging\s*<\/title>/i.test(page)
-    && /rel=["']canonical["'][^>]+href=["']https:\/\/zeoncharging\.com\/["']/i.test(page)
-    && /href=["']\/about_us["']/i.test(page)
-    && /href=["']\/careers["']/i.test(page)
-    && /href=["']\/contact_us["']/i.test(page)
+  return /<title>\s*Zeon Charging(?:\s+[—-]\s+EV Charging Solutions)?\s*<\/title>/i.test(page)
+    && /\bOur Charging Network\b/i.test(normalized)
+    && /\bFind Nearest Station\b/i.test(normalized)
+    && /\bLocations\b/i.test(normalized)
+    && /\bBusiness\b/i.test(normalized)
 }
 
 export const hasOfficialAboutSignal = (html) =>
@@ -84,39 +87,51 @@ export const hasOfficialContactSignal = (html) => {
 }
 
 export const extractJobCards = (html) =>
-  Array.from(
-    String(html ?? '').matchAll(
-      /<article\b[^>]*class=["'][^"']*\bposition-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi,
-    ),
-  )
-    .map((match) => {
-      const articleHtml = match[1]
+  String(html ?? '')
+    .split(/<div class="card\s*">/i)
+    .slice(1)
+    .map((cardHtml) => {
+      const location = normalizeWhitespace(
+        cardHtml.match(/<div class="col-xs-6 pad_lr">([\s\S]*?)<\/div>/i)?.[1],
+      )
+      const experienceRequired = normalizeWhitespace(
+        cardHtml.match(/<div class="experience col-xs-6">([\s\S]*?)<\/div>/i)?.[1],
+      )
+      const roleId = normalizeWhitespace(cardHtml.match(/<h3 id="job_title_(\d+)"/i)?.[1])
       const title = normalizeWhitespace(
-        articleHtml.match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1],
+        cardHtml.match(/<h3 id="job_title_\d+"[^>]*>([\s\S]*?)<\/h3>/i)?.[1],
       )
+      const department = normalizeWhitespace(cardHtml.match(/<h6>([\s\S]*?)<\/h6>/i)?.[1])
       const jobDescription = normalizeWhitespace(
-        articleHtml.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1],
+        cardHtml.match(/<p>([\s\S]*?)<a href="JavaScript:show_job_role/i)?.[1],
       )
+      const detailHtml = roleId
+        ? String(cardHtml.match(new RegExp(`<div id="job_role_${roleId}" class="hide">([\\s\\S]*?)<\\/div>`, 'i'))?.[1] ?? '')
+        : ''
       const titleSlug = slugify(title)
+      const employmentType = normalizeWhitespace(
+        detailHtml.match(/<h3>\s*Job Type\s*<\/h3>\s*<p>([\s\S]*?)<\/p>/i)?.[1],
+      ) || (/\binternship\b/i.test(title) ? 'Internship' : null)
 
-      if (!title || !jobDescription || !titleSlug) return null
+      if (!location || !roleId || !title || !department || !jobDescription || !titleSlug) return null
 
-      const jobId = `${SOURCE}-${titleSlug}`
+      const jobId = `${SOURCE}-${roleId}`
+      const jobUrl = `${CAREERS_URL}#job-${roleId}`
 
       return {
         title,
         company: COMPANY,
-        department: null,
-        location: null,
-        city: null,
+        department,
+        location: `${location}, India`,
+        city: location,
         state: null,
         country: 'India',
         jobId,
-        requisitionId: jobId,
-        sourceUrl: CAREERS_URL,
-        applyUrl: CAREERS_URL,
-        employmentType: null,
-        experienceRequired: null,
+        requisitionId: roleId,
+        sourceUrl: jobUrl,
+        applyUrl: jobUrl,
+        employmentType,
+        experienceRequired,
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
@@ -135,11 +150,85 @@ export const hasOfficialCareersSignal = (html) => {
     && extractJobCards(page).length > 0
 }
 
+export const extractRenderedJobCards = async (url = CAREERS_URL) => {
+  const browser = await launchBrowser()
+
+  try {
+    const page = await createOptimizedPage(browser)
+    page.setDefaultNavigationTimeout(60000)
+    await page.goto(url, { waitUntil: 'domcontentloaded' })
+    await delay(5000)
+
+    const renderedCards = await page.evaluate(() => {
+      const normalize = (value) => String(value ?? '').replace(/\s+/g, ' ').trim() || null
+
+      return Array.from(document.querySelectorAll('article'))
+        .map((article) => {
+          const titleEl = article.querySelector('h3')
+          const departmentEl = article.querySelector('h6')
+          const topRow = article.querySelector('div.flex')
+          const topRowCells = Array.from(topRow?.children || [])
+            .map((element) => normalize(element.textContent))
+            .filter(Boolean)
+          const summaryContainer = titleEl?.parentElement?.querySelector('div.mb-5')
+          const summaryText = (() => {
+            if (!summaryContainer) return null
+            const clone = summaryContainer.cloneNode(true)
+            clone.querySelectorAll('details').forEach((details) => details.remove())
+            return normalize(clone.textContent)
+          })()
+          const applyLink = article.querySelector('a[href*="job_id="]')
+
+          return {
+            title: normalize(titleEl?.textContent),
+            department: normalize(departmentEl?.textContent),
+            location: topRowCells[0] || null,
+            experienceRequired: topRowCells[1] || null,
+            jobDescription: summaryText,
+            applyUrl: applyLink?.href || null,
+          }
+        })
+        .filter((card) => card.title && card.applyUrl)
+    })
+
+    return renderedCards.map((card) => {
+      const roleId = card.applyUrl.match(/[?&]job_id=(\d+)/i)?.[1] || slugify(card.title)
+      const employmentType = /internship/i.test(`${card.department || ''} ${card.title}`) ? 'Internship' : null
+
+      return {
+        title: card.title,
+        company: COMPANY,
+        department: card.department,
+        location: card.location ? `${card.location}, India` : 'India',
+        city: card.location || null,
+        state: null,
+        country: 'India',
+        jobId: `${SOURCE}-${roleId}`,
+        requisitionId: roleId,
+        sourceUrl: card.applyUrl,
+        applyUrl: card.applyUrl,
+        employmentType,
+        experienceRequired: card.experienceRequired,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription: card.jobDescription,
+        remoteStatus: 'On-site',
+      }
+    })
+  } finally {
+    await browser.close()
+  }
+}
+
 export const createZeonChargingScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
+    extractRenderedJobs = extractRenderedJobCards,
     now = () => new Date().toISOString(),
   } = {}) {
     const homepage = await fetchPage(LEGACY_HOMEPAGE_URL)
@@ -162,11 +251,18 @@ export const createZeonChargingScraper = ({
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+    if (careersPage.status !== 200) {
       throw new Error('Response is not the verified official careers page for Zeon Charging')
     }
 
-    const jobs = extractJobCards(careersPage.html)
+    let jobs = hasOfficialCareersSignal(careersPage.html) ? extractJobCards(careersPage.html) : []
+    if (jobs.length === 0) {
+      jobs = await extractRenderedJobs(CAREERS_URL)
+    }
+    if (jobs.length === 0) {
+      throw new Error('Response is not the verified official careers page for Zeon Charging')
+    }
+
     const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
 
     return selectedJobs.map((job) => ({

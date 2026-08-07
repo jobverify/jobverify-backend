@@ -1,16 +1,41 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const BLOCKED_HTML = `
+const HOMEPAGE_HTML = `
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Access Denied</title>
+    <title>Netrack | Server Enclosures | Network Enclosures | Server Racks</title>
   </head>
   <body>
-    <h1>Access Denied</h1>
-    <p>You don't have permission to access "http://www.netrackindia.com/en" on this server.</p>
-    <p>https://errors.edgesuite.net/18.6fbd5668.1784245388.196a4745</p>
+    <h1>Netrack</h1>
+    <p>Server Enclosures | Network Enclosures | Server Racks</p>
+  </body>
+</html>
+`
+
+const CONTACT_HTML = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Contact | Netrack | quiet server cabinet Manufacturers</title>
+  </head>
+  <body>
+    <h1>Contact</h1>
+    <p>Netrack contact information.</p>
+  </body>
+</html>
+`
+
+const TEAM_HTML = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Netrack Team | Server enclosures manufacturers</title>
+  </head>
+  <body>
+    <h1>Netrack Team</h1>
+    <p>Meet the Netrack leadership team.</p>
   </body>
 </html>
 `
@@ -38,13 +63,13 @@ const loadModule = async () => {
   }
 }
 
-test('Netrack sentinel helpers stay pinned to the verified blocked first-party route state', async () => {
+test('Netrack sentinel helpers stay pinned to the verified informational-page-plus-missing-route state', async () => {
   const netrack = await loadModule()
 
   assert.equal(netrack.SOURCE, 'netrack')
   assert.equal(netrack.COMPANY, 'Netrack')
   assert.equal(netrack.OFFICIAL_BRAND_NAME, 'NetRack Enclosures Private Ltd.')
-  assert.equal(netrack.VERIFIED_ON, '2026-07-16')
+  assert.equal(netrack.VERIFIED_ON, '2026-08-03')
   assert.equal(netrack.HOMEPAGE_URL, 'https://www.netrackindia.com/en')
   assert.equal(netrack.CONTACT_URL, 'https://www.netrackindia.com/en/contact-0')
   assert.equal(netrack.TEAM_URL, 'https://www.netrackindia.com/en/about-us/about-company/team')
@@ -57,28 +82,60 @@ test('Netrack sentinel helpers stay pinned to the verified blocked first-party r
     'https://www.netrackindia.com/en/jobs',
     'https://www.netrackindia.com/jobs',
   ])
-  assert.match(netrack.VERIFIED_SURFACE_SUMMARY, /\b403\b/i)
-  assert.match(netrack.VERIFIED_SURFACE_SUMMARY, /Access Denied/i)
-  assert.equal(netrack.hasPublicJobsSignal(BLOCKED_HTML), false)
+  assert.match(netrack.VERIFIED_SURFACE_SUMMARY, /\b404\b/i)
+  assert.doesNotMatch(netrack.VERIFIED_SURFACE_SUMMARY, /Access Denied/i)
+  assert.deepEqual(netrack.INFORMATIONAL_ROUTE_URLS, [
+    'https://www.netrackindia.com/en',
+    'https://www.netrackindia.com/en/contact-0',
+    'https://www.netrackindia.com/en/about-us/about-company/team',
+  ])
+  assert.deepEqual(netrack.MISSING_ROUTE_URLS, [
+    'https://www.netrackindia.com/en/careers',
+    'https://www.netrackindia.com/careers',
+    'https://www.netrackindia.com/en/jobs',
+    'https://www.netrackindia.com/jobs',
+  ])
+  assert.equal(netrack.hasPublicJobsSignal(HOMEPAGE_HTML), false)
   assert.equal(netrack.hasPublicJobsSignal(PUBLIC_JOBS_HTML), true)
   assert.equal(
-    netrack.hasVerifiedBlockedSurface({
-      status: 403,
+    netrack.hasVerifiedInformationalSurface({
+      status: 200,
       url: netrack.HOMEPAGE_URL,
-      html: BLOCKED_HTML,
+      html: HOMEPAGE_HTML,
+    }, {
+      expectedUrl: netrack.HOMEPAGE_URL,
+      expectedTitle: netrack.VERIFIED_ROUTE_TITLES[netrack.HOMEPAGE_URL],
     }),
+    true,
+  )
+  assert.equal(
+    netrack.hasVerifiedMissingJobsRoute({
+      status: 404,
+      url: netrack.MISSING_ROUTE_URLS[0],
+      html: '',
+    }, netrack.MISSING_ROUTE_URLS[0]),
     true,
   )
 })
 
-test('Netrack returns [] only while the verified first-party routes remain blocked with no public job listings', async () => {
+test('Netrack returns [] only while the verified informational pages and missing hiring routes remain unchanged', async () => {
   const netrack = await loadModule()
   const requestedUrls = []
 
   const jobs = await netrack.createNetrackScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
-      return { status: 403, url, html: BLOCKED_HTML }
+      if (url === netrack.HOMEPAGE_URL) {
+        return { status: 200, url, html: HOMEPAGE_HTML }
+      }
+      if (url === netrack.CONTACT_URL) {
+        return { status: 200, url, html: CONTACT_HTML }
+      }
+      if (url === netrack.TEAM_URL) {
+        return { status: 200, url, html: TEAM_HTML }
+      }
+
+      return { status: 404, url, html: '' }
     },
   })
 
@@ -86,7 +143,7 @@ test('Netrack returns [] only while the verified first-party routes remain block
   assert.deepEqual(jobs, [])
 })
 
-test('Netrack fails closed when any verified blocked route stops matching the known blocked state', async () => {
+test('Netrack fails closed when the informational or missing-route sentinel drifts', async () => {
   const netrack = await loadModule()
 
   await assert.rejects(
@@ -97,17 +154,27 @@ test('Netrack fails closed when any verified blocked route stops matching the kn
         html: '<html><body>Unexpected</body></html>',
       }),
     }),
-    /blocked first-party surface changed/i,
+    /informational surface changed|missing careers route changed/i,
   )
 
   await assert.rejects(
     netrack.createNetrackScraper().run({
       fetchPage: async (url) => {
-        if (url === netrack.TEAM_URL) {
-          return { status: 403, url, html: PUBLIC_JOBS_HTML }
+        if (url === netrack.MISSING_ROUTE_URLS[0]) {
+          return { status: 404, url, html: PUBLIC_JOBS_HTML }
         }
 
-        return { status: 403, url, html: BLOCKED_HTML }
+        if (url === netrack.HOMEPAGE_URL) {
+          return { status: 200, url, html: HOMEPAGE_HTML }
+        }
+        if (url === netrack.CONTACT_URL) {
+          return { status: 200, url, html: CONTACT_HTML }
+        }
+        if (url === netrack.TEAM_URL) {
+          return { status: 200, url, html: TEAM_HTML }
+        }
+
+        return { status: 404, url, html: '' }
       },
     }),
     /now appears to expose public jobs/i,

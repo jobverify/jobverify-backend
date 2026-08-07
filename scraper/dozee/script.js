@@ -163,13 +163,16 @@ export const extractLeverBoardUrl = (html = '') => {
 export const hasOfficialLeverBoardSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
+  const hasLeverFooterBranding =
+    text.includes('jobs powered by')
+    && /alt=["']Lever logo["']|lever-logo-/i.test(page)
 
   return text.includes('dozee')
     && text.includes('location type')
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
+    && hasLeverFooterBranding
     && /https:\/\/jobs\.lever\.co\/dozee\/[a-z0-9-]+/i.test(page)
 }
 

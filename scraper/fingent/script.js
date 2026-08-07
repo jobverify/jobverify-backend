@@ -45,8 +45,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  return page.includes('Explore Our Current Openings')
-    && page.includes('Accounts Executive [Contract Role] 1 - 3 Years')
+  return /<title>\s*Career Openings\s*-\s*Fingent Careers\s*<\/title>/i.test(page)
+    && page.includes('Explore Our Current Openings')
+    && page.includes('Accounts Executive [Contract Role]')
     && page.includes('Associate Technical Lead')
 }
 

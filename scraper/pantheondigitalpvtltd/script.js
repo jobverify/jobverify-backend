@@ -135,7 +135,21 @@ export const extractCompanyPageData = (html) => {
     return queryKey[0] === 'companyPageData' && queryKey[1] === 'pantheon-digital-96-46NMdJSa'
   })
 
-  return target?.state?.data ?? null
+  const payload = target?.state?.data ?? null
+
+  if (payload?.data?.pageData) {
+    return payload.data.pageData
+  }
+
+  if (payload?.pageData) {
+    return payload.pageData
+  }
+
+  if (payload?.data && (payload.data.companyDetails || payload.data.companyJobs)) {
+    return payload.data
+  }
+
+  return payload
 }
 
 const hasVerifiedMissingRouteError = (error, url) =>
@@ -197,6 +211,8 @@ const normalizeJob = (job, scrapedAt) => {
 
 const validateOfficialCutshortContext = (data) => {
   const companyDetails = data?.companyDetails
+    || data?.company
+    || data?.companyJobs?.jobs?.[0]?.companyDetails
   const website = normalizeUrl(companyDetails?.links?.website)
   const linkedin = normalizeUrl(companyDetails?.links?.linkedin)
   const alias = normalizeWhitespace(companyDetails?.alias)

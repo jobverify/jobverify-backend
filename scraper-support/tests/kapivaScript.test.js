@@ -9,9 +9,12 @@ const homepageHtml = `
   </head>
   <body>
     <section>
-      <h2>2M+ HAPPY AYURVEDA CONSUMERS</h2>
-      <h3>FORMULATED BY EXPERTS AT KAPIVA ACADEMY OF AYURVEDA</h3>
-      <p>Why Kapiva?</p>
+      <p>Verify pincode for accurate delivery</p>
+      <p>Kapiva is a company of Adret Retail Private Limited</p>
+      <p>1800-274-2575</p>
+      <p>info@kapiva.in</p>
+      <a href="/about-us/">ABOUT US</a>
+      <a href="/contact-us/">CONTACT US</a>
     </section>
   </body>
 </html>
@@ -43,9 +46,9 @@ const contactHtml = `
     <section>
       <h1>CONTACT US</h1>
       <p>For openings and collaboration:</p>
-      <a href="mailto:careers@kapiva.in">careers@kapiva.in</a>
+      <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5c3f3d2e39392e2f1c373d2c352a3d723532">[email&#160;protected]</a>
       <p>For bulk orders and business:</p>
-      <a href="mailto:corporate.sales@kapiva.in">corporate.sales@kapiva.in</a>
+      <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="394a58555c4a79525849504f58175057">[email&#160;protected]</a>
     </section>
   </body>
 </html>
@@ -80,7 +83,7 @@ test('Kapiva pins the verified homepage, about page, and contact-page sentinel s
   assert.equal(kapiva.HOMEPAGE_URL, 'https://kapiva.in/')
   assert.equal(kapiva.ABOUT_PAGE_URL, 'https://kapiva.in/about-us/')
   assert.equal(kapiva.CONTACT_PAGE_URL, 'https://kapiva.in/contact-us/')
-  assert.equal(kapiva.VERIFIED_ON, '2026-07-16')
+  assert.equal(kapiva.VERIFIED_ON, '2026-08-02')
   assert.equal(kapiva.hasVerifiedHomepageSignal(homepageHtml), true)
   assert.equal(kapiva.hasVerifiedAboutPageSignal(aboutHtml), true)
   assert.equal(kapiva.hasVerifiedContactPageSignal(contactHtml), true)
@@ -119,8 +122,10 @@ test('Kapiva fails closed when the verified pages drift or a public jobs surface
     kapiva.createKapivaScraper().run({
       fetchText: async (url) => {
         if (url === kapiva.HOMEPAGE_URL) {
-          return homepageHtml.replace('HAPPY AYURVEDA CONSUMERS', 'HAPPY CUSTOMERS')
+          return homepageHtml.replace('Kapiva is a company of Adret Retail Private Limited', 'Kapiva wellness storefront')
         }
+        if (url === kapiva.ABOUT_PAGE_URL) return aboutHtml
+        if (url === kapiva.CONTACT_PAGE_URL) return contactHtml
         throw new Error(`Unexpected Kapiva URL: ${url}`)
       },
     }),

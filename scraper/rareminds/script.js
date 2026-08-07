@@ -5,20 +5,28 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const CAREER_PAGE_URL = 'https://rareminds.com/'
-export const TALENT_APPLY_HOST = 'airtable.com'
+export const CAREER_PAGE_URL = 'https://www.rareminds.in/'
+export const COMPANY_DOMAIN = 'rareminds.in'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-export const hasOfficialSiteSignal = (html) => /<title>\s*Rareminds\s*<\/title>|Unlisted talent\.\s*Confidential roles\.|Fixers,\s*not Recruiters/i
-  .test(String(html ?? ''))
+const PUBLIC_JOBS_SIGNAL_PATTERN =
+  /\b(job openings|open roles|current openings|careers|apply now|apply as talent|airtable|greenhouse|lever|workday|jobvite)\b/i
+
+export const hasOfficialSiteSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Rareminds\s*<\/title>/i.test(page)
+    && /<div id="root"><\/div>/i.test(page)
+    && /\/assets\/index-[^"']+\.(?:js|css)/i.test(page)
+}
 
 export const hasNoPublicListingsSignal = (html) => {
   const page = String(html ?? '')
-  return /href=["'][^"']*airtable\.com\/[^"']*["'][^>]*>\s*Apply as Talent\s*<\/a>/i.test(page)
-    && /You don[’']t need a resume\.\s*You need a reason\./i.test(page)
-    && /The most brilliant minds don[’']t apply[\s-]*they[’']re discovered\./i.test(page)
+
+  return hasOfficialSiteSignal(page)
+    && !PUBLIC_JOBS_SIGNAL_PATTERN.test(page)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

@@ -19,6 +19,32 @@ const listingHtml = `
 </html>
 `
 
+const zeroJobsListingHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Current Job Openings, Immediate Jobs Hiring in Noida | Appy Pie Career</title>
+  </head>
+  <body>
+    <h1>Your Career With Us At Appy Pie</h1>
+    <h2>Current Search</h2>
+    <div class="checkbox-container jobpostcategory">
+      <span class="noofjobs">(0)</span>
+    </div>
+    <div class="checkbox-container jobtype">
+      <span class="noofjobs">(0)</span>
+    </div>
+    <div class="checkbox-container location">
+      <span class="noofjobs">(0)</span>
+    </div>
+    <div class="jobresult">
+      <h3 class="serchBody-headind">0 Results</h3>
+      <div class="no-job-listing"><p>No jobs found.</p></div>
+    </div>
+  </body>
+</html>
+`
+
 const detailHtml = `
 <!doctype html>
 <html lang="en">
@@ -98,19 +124,19 @@ test('Appy Pie exports the verified first-party job-board contract', async () =>
     companyName: 'Appy Pie',
     officialBrandName: 'Appy Pie',
     adapter: 'script',
-    modulePath: '../../scraper/appypie/script.js',
+    modulePath: '../appypie/script.js',
     homepageUrl: 'https://www.appypie.com/',
     companyCareerPage: 'https://careers.appypie.com/careers',
     atsPlatform: 'wordpress-simple-jobs',
     countryFilter: 'India',
-    paginationStrategy: 'single-first-party-job-board-page-plus-detail-pages',
-    extractionStrategy: 'verified-first-party-job-board+detail-page-jsonld+visible-detail-metadata+india-only-filter',
+    paginationStrategy: 'single-first-party-job-board-page-plus-detail-pages-or-empty-shell',
+    extractionStrategy: 'verified-first-party-job-board+detail-page-jsonld+visible-detail-metadata+india-only-filter+zero-openings-fallback',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'careers.appypie.com',
-    verifiedOn: '2026-07-18',
+    verifiedOn: '2026-08-01',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://careers.appypie.com/careers was the live first-party Appy Pie job board, linked to public role pages such as https://careers.appypie.com/careers/driver-cum-runner, and that the detail page exposed first-party JobPosting JSON-LD plus visible metadata including Noida, Administration, Permanent, and JR407.',
+      'Verified on Saturday, August 1, 2026 that https://careers.appypie.com/careers remained the live first-party Appy Pie careers page, but the public Current Search shell currently exposed only zero-count filters and no public role detail URLs. The local scraper therefore preserves its detail-page JSON-LD mapping when public roles reappear, while returning an empty result for the verified no-openings state visible on the first-party surface today.',
     dryRunFile: 'appypie/jobs.json',
   })
 
@@ -165,4 +191,22 @@ test('Appy Pie extracts first-party detail URLs and maps India jobs from the det
       scrapedAt: '2026-07-18T00:00:00.000Z',
     },
   ])
+})
+
+test('Appy Pie returns [] for the verified zero-openings shell when the first-party board exposes no detail URLs', async () => {
+  const appyPie = await loadScriptModule()
+
+  assert.equal(appyPie.hasOfficialCareersSignal(zeroJobsListingHtml), true)
+  assert.deepEqual(appyPie.extractJobDetailUrls(zeroJobsListingHtml), [])
+  assert.equal(appyPie.hasVerifiedNoOpeningsSignal(zeroJobsListingHtml), true)
+
+  const jobs = await appyPie.run({
+    fetchText: async (url) => {
+      assert.equal(url, appyPie.CAREERS_URL)
+      return zeroJobsListingHtml
+    },
+    now: () => '2026-08-01T00:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [])
 })

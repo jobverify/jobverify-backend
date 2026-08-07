@@ -116,6 +116,94 @@ test('extractJobDetail pulls Wipro title, location, description, and public appl
   assert.equal(detail.postingDate, '6/25/26')
   assert.equal(detail.applyUrl, 'https://careers.wipro.com/talentcommunity/apply/185093/?locale=en_US&jobID=185093#tracked')
   assert.equal(detail.sourceUrl, 'https://careers.wipro.com/job/Intern-L0-1/185093-en_US/')
+  assert.equal(detail.publicExperienceChecked, true)
+  assert.equal(detail.experienceRequired, null)
+})
+
+test('extractJobDetail keeps nested Wipro description markup intact and extracts public experience from it', () => {
+  const detail = extractJobDetail(`
+    <div class="jobDisplayShell">
+      <span itemprop="title" class="rtltextaligneligible">Digital Workplace Practice Architect</span>
+      <div class="joblayouttoken displayDTM ">
+        <div class="inner">
+          <div class="row">
+            <div class="col-xs-12 fontalign-left">
+              <span class="joblayouttoken-label" role="heading" aria-level="2">Job Description:\u00a0</span>
+              <span class="rtltextaligneligible">
+                <div>
+                  <p>Solution Strategy, Architecture &amp; Integration</p>
+                  <p><span>Qualifications:</span></p>
+                  <ul>
+                    <li>A minimum of ten years of experience in pre-sales and solution designing</li>
+                    <li>Proven experience in managing digital workplace services or related IT functions</li>
+                  </ul>
+                </div>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        j2w.Apply.init({ jobID: 133747, locale: 'en_US' });
+      </script>
+    </div>
+  `, {
+    title: 'Digital Workplace Practice Architect',
+    location: 'Bengaluru, Mumbai, Pune, India',
+    city: 'Bengaluru',
+    state: 'Delhi, Karnataka, Maharashtra',
+    jobId: '133747',
+    requisitionId: '133747',
+    sourceUrl: buildDetailUrl('Digital Workplace Practice Architect', '133747'),
+    applyUrl: buildApplyUrl('133747'),
+    postingDate: '2/10/26',
+  })
+
+  assert.match(detail.jobDescription, /ten years of experience in pre-sales and solution designing/i)
+  assert.equal(detail.experienceRequired, '10+ years')
+  assert.equal(detail.publicExperienceChecked, true)
+  assert.deepEqual(detail.requiredSkills.slice(0, 2), [
+    'A minimum of ten years of experience in pre-sales and solution designing',
+    'Proven experience in managing digital workplace services or related IT functions',
+  ])
+})
+
+test('extractJobDetail marks Wipro roles as publicly checked when the detail page is present but does not specify experience', () => {
+  const detail = extractJobDetail(`
+    <div class="jobDisplayShell">
+      <span itemprop="title" class="rtltextaligneligible">Associate - Construction 1</span>
+      <div class="joblayouttoken displayDTM ">
+        <div class="inner">
+          <div class="row">
+            <div class="col-xs-12 fontalign-left">
+              <span class="joblayouttoken-label" role="heading" aria-level="2">Job Description:\u00a0</span>
+              <span class="rtltextaligneligible">
+                <div>
+                  <p>Support construction operations and project coordination across active delivery locations.</p>
+                </div>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        j2w.Apply.init({ jobID: 191066, locale: 'en_US' });
+      </script>
+    </div>
+  `, {
+    title: 'Associate - Construction 1',
+    location: 'Bengaluru, Chennai, Kolkata, Pune, India',
+    city: 'Bengaluru',
+    state: 'Karnataka, Maharashtra, Tamil Nadu, West Bengal',
+    jobId: '191066',
+    requisitionId: '191066',
+    sourceUrl: buildDetailUrl('Associate - Construction 1', '191066'),
+    applyUrl: buildApplyUrl('191066'),
+    postingDate: '7/28/26',
+  })
+
+  assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('normalizeScrapedJob composes Wipro internship and experienced job types from the extracted detail data', () => {

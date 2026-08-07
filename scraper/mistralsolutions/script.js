@@ -38,25 +38,40 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   return /Careers Job Listings - Mistral Solutions/i.test(page)
     && /class=["']career-table["']/i.test(page)
-    && /data-form=/i.test(page)
     && /JID-\d+/i.test(page)
+    && /View Details/i.test(page)
+    && (
+      /data-form=/i.test(page)
+      || /docs\.google\.com\/forms/i.test(page)
+      || /class=["'][^"']*apply-btn[^"']*["']/i.test(page)
+    )
 }
 
 export const extractJobsFromHtml = (html = '') => {
   const jobs = []
-  const rowPattern = /<tr>\s*<td>(JID-[^<]+)<\/td>\s*<td>([\s\S]*?)<\/td>\s*<td>([\s\S]*?)<\/td>\s*<td>([\s\S]*?)<\/td>\s*<td>([\s\S]*?)<\/td>\s*<td>\s*<a[^>]+href="([^"]+)"[\s\S]*?>\s*View Details\s*<\/a>\s*<\/td>\s*<td>\s*<a[^>]+data-form="([^"]+)"[\s\S]*?>\s*Apply\s*<\/a>\s*<\/td>\s*<\/tr>/gi
+  const rowPattern = /<tr>\s*<td>JID-[^<]+<\/td>[\s\S]*?<\/tr>/gi
 
-  for (const match of html.matchAll(rowPattern)) {
-    const jobId = normalizeWhitespace(match[1])
-    const title = normalizeWhitespace(match[2])
-    const experienceRequired = normalizeWhitespace(match[3]) || null
-    const rawLocation = normalizeWhitespace(match[4])
-    const jobDescription = normalizeWhitespace(match[5]) || null
-    const sourceUrl = normalizeWhitespace(match[6])
-    const applyUrl = normalizeWhitespace(match[7])
+  for (const rowMatch of html.matchAll(rowPattern)) {
+    const rowHtml = rowMatch[0]
+    const cells = [...rowHtml.matchAll(/<td>([\s\S]*?)<\/td>/gi)].map((match) => match[1])
+    if (cells.length < 7) {
+      continue
+    }
+
+    const jobId = normalizeWhitespace(cells[0])
+    const title = normalizeWhitespace(cells[1])
+    const experienceRequired = normalizeWhitespace(cells[2]) || null
+    const rawLocation = normalizeWhitespace(cells[3])
+    const jobDescription = normalizeWhitespace(cells[4]) || null
+    const sourceUrl = normalizeWhitespace(cells[5].match(/<a[^>]+href="([^"]+)"/i)?.[1] ?? null)
+    const applyUrl = normalizeWhitespace(
+      cells[6].match(/data-form="([^"]+)"/i)?.[1]
+        ?? cells[6].match(/<a[^>]+href="([^"]+)"/i)?.[1]
+        ?? null,
+    )
     const city = toCity(rawLocation)
 
-    if (!jobId || !title || !rawLocation || !sourceUrl || !applyUrl) {
+    if (!jobId || !title || !rawLocation || !sourceUrl || !applyUrl || applyUrl === '#') {
       continue
     }
 
@@ -69,8 +84,8 @@ export const extractJobsFromHtml = (html = '') => {
       country: 'India',
       jobId,
       requisitionId: jobId,
-      sourceUrl,
-      applyUrl,
+      sourceUrl: new URL(sourceUrl, CAREERS_URL).toString(),
+      applyUrl: new URL(applyUrl, CAREERS_URL).toString(),
       employmentType: null,
       experienceRequired,
       minimumQualification: null,

@@ -13,7 +13,7 @@ const officialCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Amber - Join Our Team</title>
+    <title data-react-helmet="true">Careers at Amber - Join Our Team</title>
   </head>
   <body>
     <main>
@@ -23,7 +23,7 @@ const officialCareersHtml = `
         <button type="button">Find Roles</button>
       </section>
       <footer>
-        <p>Amberstudent</p>
+        <p>Amber</p>
       </footer>
     </main>
   </body>
@@ -179,7 +179,7 @@ test('Amberstudent pins the verified first-party careers page, SmartRecruiters b
 
   assert.equal(amberstudent.SOURCE, 'amberstudent')
   assert.equal(amberstudent.COMPANY, 'Amberstudent')
-  assert.equal(amberstudent.VERIFIED_ON, '2026-07-30')
+  assert.equal(amberstudent.VERIFIED_ON, '2026-08-01')
   assert.equal(amberstudent.CAREERS_URL, 'https://amberstudent.com/career')
   assert.equal(
     amberstudent.SMARTRECRUITERS_BOARD_URL,

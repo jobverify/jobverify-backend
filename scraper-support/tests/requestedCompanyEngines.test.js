@@ -181,6 +181,54 @@ test('PTC scraper discovers every India Workday location facet and paginates', a
   assert.equal(jobs[0].sourceUrl, 'https://ptc.wd1.myworkdayjobs.com/PTC/job/Pune-India/Principal-Product-Security-Engineer_JR111911')
 })
 
+test('PTC scraper enriches India Workday listings with public detail-page experience', async () => {
+  const { createPtcScraper } = await import('../../scraper/ptc/script.js')
+  const facets = {
+    total: 1,
+    facets: [{ facetParameter: 'locationMainGroup', values: [{
+      facetParameter: 'locations',
+      values: [{ descriptor: 'Pune, India', id: 'pune' }],
+    }] }],
+  }
+  const jobs = await createPtcScraper({
+    pageSize: 1,
+    now: () => '2026-07-23T00:00:00.000Z',
+  }).run({
+    fetchJobsPage: async (request) => Object.keys(request.appliedFacets).length === 0
+      ? facets
+      : {
+          total: 1,
+          jobPostings: [{
+            title: 'Principal Product Security Engineer',
+            externalPath: '/job/Pune-India/Principal-Product-Security-Engineer_JR111911',
+            locationsText: 'Pune, India',
+            bulletFields: ['JR111911'],
+            postedOn: 'Posted Today',
+          }],
+        },
+    fetchPage: async (url) => ({
+      status: 200,
+      url,
+      html: `
+        <html>
+          <body>
+            <section data-automation-id="jobPostingDescription">
+              <div>
+                <p>Required Skills & Experience</p>
+                <p>5+ years of hands-on experience in product security engineering and secure SDLC practices.</p>
+              </div>
+            </section>
+          </body>
+        </html>
+      `,
+    }),
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].experienceRequired, '5+ years')
+  assert.match(jobs[0].jobDescription || '', /product security engineering/i)
+})
+
 test('PTC scraper rejects malformed or silently truncated Workday pagination', async () => {
   const { createPtcScraper } = await import('../../scraper/ptc/script.js')
   const facets = {

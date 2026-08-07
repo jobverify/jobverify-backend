@@ -127,13 +127,13 @@ test('Filo validates the verified careers shell and extracts the public roles fr
 
   assert.equal(filo.SOURCE, 'filo')
   assert.equal(filo.COMPANY, 'Filo')
-  assert.equal(filo.VERIFIED_ON, '2026-07-25')
+  assert.equal(filo.VERIFIED_ON, '2026-08-02')
   assert.equal(filo.CAREERS_URL, 'https://askfilo.com/careers')
   assert.equal(
     filo.DISPOSITION,
     'verified-first-party-careers-page-plus-public-google-doc-role-descriptions',
   )
-  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /Sunday, August 2, 2026/)
   assert.match(filo.VERIFIED_SURFACE_SUMMARY, /https:\/\/askfilo\.com\/careers/i)
   assert.match(filo.VERIFIED_SURFACE_SUMMARY, /Senior Backend Developer/i)
   assert.match(filo.VERIFIED_SURFACE_SUMMARY, /Senior Product Designer/i)
@@ -208,7 +208,7 @@ test('Filo run returns the verified public roles from the careers page and publi
     department: 'Analytics',
     location: null,
     city: null,
-    country: null,
+    country: 'India',
     jobId: 'business-analyst',
     requisitionId: 'business-analyst',
     sourceUrl: 'https://docs.google.com/document/d/e/2PACX-1vQ1ZORwPdib8TbiQLbMT0oB9-cYCJSOk99RG9GWbaz4GGoeBbCZt7hvkFLm-fnSR_wwUIo89UiP6--C/pub',

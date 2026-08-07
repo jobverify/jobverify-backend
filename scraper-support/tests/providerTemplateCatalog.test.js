@@ -6,23 +6,52 @@ import { getScraperCatalog } from '../providers/index.js'
 
 test('expandApiPortalProviderTemplate hydrates lever providers from a compact template definition', () => {
   const provider = expandApiPortalProviderTemplate({
-    source: 'atlassian',
-    companyName: 'Atlassian',
-    companyCareerPage: 'https://www.atlassian.com/company/careers/all-jobs',
+    source: 'bazaarvoice',
+    companyName: 'Bazaarvoice',
+    companyCareerPage: 'https://www.bazaarvoice.com/company/careers/',
     atsPlatform: 'lever',
     template: 'lever',
     templateOptions: {
-      boardToken: 'atlassian',
-      locationPattern: 'india|bengaluru|bangalore|pune',
+      boardToken: 'bazaarvoice',
+      locationPattern: 'india|bengaluru|bangalore|hyderabad',
     },
   })
 
   assert.equal(provider.template, 'lever')
-  assert.equal(provider.config.discovery.listingApiUrl, 'https://api.lever.co/v0/postings/atlassian')
+  assert.equal(provider.config.discovery.listingApiUrl, 'https://api.lever.co/v0/postings/bazaarvoice')
   assert.equal(provider.config.request.query.mode, 'json')
   assert.equal(provider.config.mapping.title, 'text')
   assert.equal(provider.config.mapping.location, 'categories.location')
-  assert.equal(provider.config.resultFilter.include[0].pattern, 'india|bengaluru|bangalore|pune')
+  assert.equal(provider.config.resultFilter.include[0].pattern, 'india|bengaluru|bangalore|hyderabad')
+})
+
+test('expandApiPortalProviderTemplate hydrates Atlassian providers from the first-party careers listings feed', () => {
+  const provider = expandApiPortalProviderTemplate({
+    source: 'atlassian',
+    companyName: 'Atlassian',
+    companyCareerPage: 'https://www.atlassian.com/company/careers/all-jobs',
+    atsPlatform: 'icims',
+    template: 'atlassian',
+    templateOptions: {
+      locationPattern: 'india|bengaluru|bangalore|pune|hyderabad|remote - india',
+    },
+  })
+
+  assert.equal(provider.template, 'atlassian')
+  assert.equal(provider.config.discovery.listingApiUrl, 'https://www.atlassian.com/endpoint/careers/listings')
+  assert.equal(provider.config.request.method, 'GET')
+  assert.equal(provider.config.request.headers.Accept, 'application/json, text/plain, */*')
+  assert.equal(provider.config.mapping.title, 'title')
+  assert.equal(provider.config.mapping.location, 'locations.0')
+  assert.equal(provider.config.mapping.applyUrl, 'applyUrl')
+  assert.equal(
+    provider.config.mapping.sourceUrl.template,
+    'https://www.atlassian.com/company/careers/details/{{jobId}}',
+  )
+  assert.equal(
+    provider.config.resultFilter.include[0].pattern,
+    'india|bengaluru|bangalore|pune|hyderabad|remote - india',
+  )
 })
 
 test('expandApiPortalProviderTemplate hydrates eightfold providers from a compact template definition', () => {
@@ -110,10 +139,10 @@ test('getScraperCatalog includes compact template-backed apiPortal providers', (
 
   assert.ok(atlassian)
   assert.equal(atlassian.adapter, 'apiPortal')
-  assert.equal(atlassian.atsPlatform, 'lever')
+  assert.equal(atlassian.atsPlatform, 'icims')
   assert.match(atlassian.companyCareerPage, /atlassian\.com\/company\/careers\/all-jobs/i)
   assert.equal(atlassian.companyDomain, 'atlassian.com')
-  assert.match(atlassian.config.discovery.listingApiUrl, /api\.lever\.co\/v0\/postings\/atlassian/i)
+  assert.match(atlassian.config.discovery.listingApiUrl, /atlassian\.com\/endpoint\/careers\/listings/i)
 
   assert.ok(paypal)
   assert.equal(paypal.adapter, 'apiPortal')

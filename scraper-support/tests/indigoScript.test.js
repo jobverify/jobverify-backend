@@ -130,6 +130,32 @@ const indigoJobsPayload = {
   ],
 }
 
+const createHtmlResponse = (url, html) => ({
+  ok: true,
+  status: 200,
+  url,
+  headers: {
+    get: (name) => (/content-type/i.test(String(name)) ? 'text/html; charset=utf-8' : null),
+  },
+  text: async () => html,
+})
+
+const createJsonResponse = (url, body) => ({
+  ok: true,
+  status: 200,
+  url,
+  headers: {
+    get: (name) => (/content-type/i.test(String(name)) ? 'application/json; charset=utf-8' : null),
+  },
+  json: async () => body,
+})
+
+const createSocketClosedError = () => {
+  const error = new TypeError('fetch failed')
+  error.cause = { code: 'UND_ERR_SOCKET' }
+  return error
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/indigo/script.js')
@@ -198,6 +224,7 @@ test('Indigo maps public SuccessFactors API jobs into shared scraper fields', as
       postingDate: '2026-07-01T00:00:00.000Z',
       closingDate: '2026-08-01T00:00:00.000Z',
       jobDescription: 'Qualifying Criteria: Valid DGCA issued ATPL.',
+      publicExperienceChecked: true,
       remoteStatus: 'On-site',
       scrapedAt: '2026-07-19T00:00:00.000Z',
     },
@@ -239,6 +266,51 @@ test('Indigo run validates the first-party shell and fetches the public API with
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'A320 Captain - Non Type Rated')
   assert.equal(jobs[0].source, 'indigo')
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
+})
+
+test('Indigo default fetchers retry transient socket closures on the public pages and jobs API', async () => {
+  const indigo = await loadModule()
+  const originalFetch = globalThis.fetch
+  const attempts = new Map()
+
+  globalThis.fetch = async (url, options = {}) => {
+    const urlString = String(url)
+    const nextAttempt = (attempts.get(urlString) || 0) + 1
+    attempts.set(urlString, nextAttempt)
+
+    if (urlString === indigo.CAREERS_PAGE_URL) {
+      if (nextAttempt === 1) throw createSocketClosedError()
+      return createHtmlResponse(urlString, careersLandingHtml)
+    }
+
+    if (urlString === indigo.JOB_SEARCH_URL) {
+      if (nextAttempt === 1) throw createSocketClosedError()
+      return createHtmlResponse(urlString, jobSearchShellHtml)
+    }
+
+    if (urlString === indigo.JOB_SEARCH_API_URL) {
+      assert.equal(options.headers.user_key, indigo.CAREER_MS_USER_KEY)
+      if (nextAttempt === 1) throw createSocketClosedError()
+      return createJsonResponse(urlString, indigoJobsPayload)
+    }
+
+    throw new Error(`Unexpected Indigo fetch URL: ${urlString}`)
+  }
+
+  try {
+    const jobs = await indigo.createIndigoScraper().run({
+      now: () => '2026-07-19T00:00:00.000Z',
+    })
+
+    assert.equal(jobs.length, 1)
+    assert.equal(attempts.get(indigo.CAREERS_PAGE_URL), 2)
+    assert.equal(attempts.get(indigo.JOB_SEARCH_URL), 2)
+    assert.equal(attempts.get(indigo.JOB_SEARCH_API_URL), 2)
+    assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('Indigo fails closed when the verified page, API config, or public jobs payload drifts', async () => {

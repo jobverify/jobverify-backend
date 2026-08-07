@@ -1,23 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-15T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-01T12:00:00.000Z'
 
 const homepagePage = {
   status: 200,
-  url: 'https://desicrew.in/',
+  url: 'https://www.desicrew.in/',
   html: `
     <!doctype html>
-    <html lang="en-US">
+    <html lang="en">
       <head>
-        <title>Home - DesiCrew</title>
-        <link rel="canonical" href="https://desicrew.in/" />
+        <title>DesiCrew - Intelligence. Orchestrated for you.</title>
+        <link rel="canonical" href="https://www.desicrew.in/" />
       </head>
       <body>
-        <h2>Driving greater outcomes</h2>
-        <p>#GoBeyond and go global</p>
-        <p>Trusted by Fortune-500 companies</p>
-        <a href="https://desicrew.in/about-us/careers/">Join Us</a>
+        <p>Deployed Intelligence</p>
+        <h1>Intelligence.Orchestrated for you.</h1>
+        <a href="/careers/">Careers</a>
       </body>
     </html>
   `,
@@ -25,211 +24,204 @@ const homepagePage = {
 
 const careersPage = {
   status: 200,
-  url: 'https://desicrew.in/about-us/careers/',
+  url: 'https://www.desicrew.in/careers/',
   html: `
     <!doctype html>
-    <html lang="en-US">
+    <html lang="en">
       <head>
-        <title>Careers - DesiCrew</title>
-        <link rel="canonical" href="https://desicrew.in/about-us/careers/" />
+        <title>Careers at DesiCrew | Build a career with purpose.</title>
+        <link rel="canonical" href="https://www.desicrew.in/careers/" />
       </head>
       <body>
-        <h2>Together, we’re a force for good</h2>
-        <a href="https://desicrew.in/open-job-positions/">Open Positions</a>
-        <h3>See our open roles</h3>
-        <a href="https://desicrew.in/open-job-positions/">See All Open Positions</a>
-        <a href="https://desicrew.in/open-job-positions/">Drop Your Resume</a>
+        <a href="#apply" class="dc-mh-cta">Apply now</a>
+        <section id="roles">
+          <h2>Open roles</h2>
+          <a href="/careers/delivery-center-manager/">
+            <p class="text-h6 font-main">Delivery Center Manager</p>
+            <p class="text-body-small text-text-tertiary">Operations · Chennai</p>
+          </a>
+          <a href="/careers/finance-accounting-process-manager/">
+            <p class="text-h6 font-main">Finance &amp; Accounting Process Manager</p>
+            <p class="text-body-small text-text-tertiary">Accelerating Enterprise · Chennai</p>
+          </a>
+          <a href="/careers/qa-automation-engineer/">
+            <p class="text-h6 font-main">QA Automation Engineer</p>
+            <p class="text-body-small text-text-tertiary">Accelerating Enterprise · Chennai</p>
+          </a>
+          <a href="/careers/rlhf-quality-analyst/">
+            <p class="text-h6 font-main">RLHF Quality Analyst</p>
+            <p class="text-body-small text-text-tertiary">Enabling AI · Chennai</p>
+          </a>
+          <a href="/careers/senior-annotation-lead/">
+            <p class="text-h6 font-main">Senior Annotation Lead</p>
+            <p class="text-body-small text-text-tertiary">Enabling AI · Chennai</p>
+          </a>
+        </section>
+        <form id="apply-form" action="https://usebasin.com/f/691ecb2b732f">
+          <label>What are you applying for?</label>
+        </form>
       </body>
     </html>
   `,
 }
 
-const jobsArchivePage = {
+const buildDetailPage = ({
+  slug,
+  title,
+  summary,
+  department,
+  description,
+  location = 'Chennai',
+  state = 'Tamil Nadu',
+  datePosted = '2026-07-29T00:00:00Z',
+  employmentType = 'FULL_TIME',
+}) => ({
   status: 200,
-  url: 'https://desicrew.in/open-job-positions/',
+  url: `https://www.desicrew.in/careers/${slug}/`,
   html: `
     <!doctype html>
-    <html lang="en-US">
+    <html lang="en">
       <head>
-        <title>Open Job Positions - DesiCrew</title>
-        <link rel="canonical" href="https://desicrew.in/open-job-positions/" />
-        <link rel="alternate" type="application/rss+xml" title="DesiCrew » Open Job Positions Feed" href="https://desicrew.in/open-job-positions/?feed=rss2" />
+        <title>${title} | DesiCrew</title>
+        <link rel="canonical" href="https://www.desicrew.in/careers/${slug}/" />
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "JobPosting",
+                "title": "${title}",
+                "description": ${JSON.stringify(description)},
+                "datePosted": "${datePosted}",
+                "employmentType": "${employmentType}",
+                "url": "https://www.desicrew.in/careers/${slug}/",
+                "jobLocation": {
+                  "@type": "Place",
+                  "address": {
+                    "@type": "PostalAddress",
+                    "addressLocality": "${location}",
+                    "addressRegion": "${state}",
+                    "addressCountry": "IN"
+                  }
+                }
+              }
+            ]
+          }
+        </script>
       </head>
       <body>
-        <h2>Open Job Positions</h2>
-        <article class="post-2256 open-job-position type-open-job-position status-publish hentry dce-post dce-post-item dce-item-grid" data-dce-post-id="2256" data-dce-post-index="0" data-post-link="https://desicrew.in/open-job-position/qa-delivery-manager/">
-          <div class="dce-post-block elementor-animation-grow">
-            <div class="dce-item dce-item_title"><h3 class="dce-post-title"><a href="https://desicrew.in/open-job-position/qa-delivery-manager/">QA Delivery Manager</a></h3></div>
-            <div class="dce-item dce-item_date"><div class="dce-post-date">29/01/25</div></div>
-            <div class="dce-item dce-item_custommeta"><div class="dce-post-custommeta"><div class="dce-meta-item"><div>Kaup, Kollumangudi, and TN Palayam Centers</div></div></div></div>
-          </div>
-        </article>
-        <article class="post-2234 open-job-position type-open-job-position status-publish hentry dce-post dce-post-item dce-item-grid" data-dce-post-id="2234" data-dce-post-index="1" data-post-link="https://desicrew.in/open-job-position/avp-sales-qaoncloud/">
-          <div class="dce-post-block elementor-animation-grow">
-            <div class="dce-item dce-item_title"><h3 class="dce-post-title"><a href="https://desicrew.in/open-job-position/avp-sales-qaoncloud/">AVP – Sales (QAonCloud)</a></h3></div>
-            <div class="dce-item dce-item_date"><div class="dce-post-date">29/01/25</div></div>
-            <div class="dce-item dce-item_custommeta"><div class="dce-post-custommeta dce-post-custommeta"><div class="dce-meta-item"><div>Preferably Bangalore or remote&nbsp;</div></div></div></div>
-          </div>
-        </article>
-        <article class="post-2226 open-job-position type-open-job-position status-publish hentry dce-post dce-post-item dce-item-grid" data-dce-post-id="2226" data-dce-post-index="2" data-post-link="https://desicrew.in/open-job-position/chief-compliance-officer/">
-          <div class="dce-post-block elementor-animation-grow">
-            <div class="dce-item dce-item_title"><h3 class="dce-post-title"><a href="https://desicrew.in/open-job-position/chief-compliance-officer/">Chief Compliance Officer&nbsp;</a></h3></div>
-            <div class="dce-item dce-item_date"><div class="dce-post-date">29/01/25</div></div>
-            <div class="dce-item dce-item_custommeta"><div class="dce-post-custommeta"><div class="dce-meta-item"><div>Bangalore/ Chennai/ Delhi</div></div></div></div>
-          </div>
-        </article>
-        <h2>Drop your resume</h2>
+        <p class="dc-legal-kicker">${department} · ${location}, ${state}</p>
+        <h1>${title}</h1>
+        <p>${summary}</p>
+        <dl>
+          <dt>Location</dt><dd>${location}, ${state}</dd>
+          <dt>Type</dt><dd>Full time</dd>
+          <dt>Posted</dt><dd>29 July 2026</dd>
+        </dl>
+        <div class="dc-legal">${description}</div>
+        <a href="/careers/#apply">Apply for this role</a>
       </body>
     </html>
   `,
-}
-
-const jobsApiPayload = [
-  {
-    id: 2256,
-    date: '2025-01-29T15:08:52',
-    modified: '2025-01-29T17:54:33',
-    slug: 'qa-delivery-manager',
-    status: 'publish',
-    type: 'open-job-position',
-    link: 'https://desicrew.in/open-job-position/qa-delivery-manager/',
-    title: { rendered: 'QA Delivery Manager' },
-    content: {
-      rendered: `
-        <p><strong>Number of Positions:</strong> 1<br><strong>Mode of Work:</strong> WFO / Hybrid<br><strong>Experience:</strong> 10 to 12 years<br><strong>CTC:</strong> ₹12 to ₹15 LPA</p>
-        <h2><strong>Job Description:</strong></h2>
-        <p>We are seeking a skilled QA Delivery Manager with 10 to 12 years of experience in both manual and automated testing to lead and enhance our quality assurance processes.</p>
-        <h2><strong>Key Responsibilities:</strong></h2>
-        <ul>
-          <li>Oversee and manage end-to-end QA processes for manual and automated testing.</li>
-          <li>Develop and execute test strategies, test plans, and roadmaps for QA functions and features.</li>
-        </ul>
-        <h2><strong>Required Skills &amp; Qualifications:</strong></h2>
-        <ul>
-          <li>Bachelor’s degree in Computer Science or a related field.</li>
-          <li>Expertise in test automation tools such as Selenium, Cypress, Appium, Postman, etc.</li>
-        </ul>
-      `,
-      protected: false,
-    },
-  },
-  {
-    id: 2234,
-    date: '2025-01-29T15:07:39',
-    modified: '2025-01-29T17:52:58',
-    slug: 'avp-sales-qaoncloud',
-    status: 'publish',
-    type: 'open-job-position',
-    link: 'https://desicrew.in/open-job-position/avp-sales-qaoncloud/',
-    title: { rendered: 'AVP – Sales (QAonCloud)' },
-    content: {
-      rendered: `
-        <p><strong>Job Type:</strong> Permanent, Full-time. Involves working and taking meetings in customer local times.</p>
-        <h2><strong>Job description</strong></h2>
-        <p>We are seeking an experienced and dynamic AVP -Sales (Sales Head) to lead sales and drive business growth.</p>
-        <h2><strong>Key Responsibilities:</strong></h2>
-        <ul>
-          <li>Own and execute the sales target for the business unit</li>
-          <li>Lead and mentor the sales team to achieve and exceed sales targets.</li>
-        </ul>
-        <h2>Education and Experience:</h2>
-        <ul>
-          <li>Minimum Graduate however MBA is a plus.</li>
-          <li>Minimum of 10 years of experience in sales leadership roles in Indian or US/European Markets</li>
-        </ul>
-        <h2>Job Types:</h2>
-        <p>Full-time, Permanent</p>
-      `,
-      protected: false,
-    },
-  },
-  {
-    id: 2226,
-    date: '2025-01-29T13:34:50',
-    modified: '2025-01-29T17:53:37',
-    slug: 'chief-compliance-officer',
-    status: 'publish',
-    type: 'open-job-position',
-    link: 'https://desicrew.in/open-job-position/chief-compliance-officer/',
-    title: { rendered: 'Chief Compliance Officer&nbsp;' },
-    content: {
-      rendered: `
-        <p><strong>Position:</strong> Chief Compliance Officer (CCO)</p>
-        <p><strong>Experience:</strong> 10+ years of experience in compliance, data privacy, or a related field</p>
-        <p><strong>Industry:</strong> IT Services/Data Management/Outsourcing</p>
-        <h2>About DesiCrew</h2>
-        <p>DesiCrew is a pioneer in delivering IT-enabled solutions to global clients.</p>
-        <h2>Key Responsibilities</h2>
-        <ol>
-          <li>Policy Development &amp; Implementation</li>
-          <li>Audits &amp; Risk Assessments</li>
-        </ol>
-        <h2>Required Skills &amp; Qualifications</h2>
-        <ol>
-          <li>Bachelor's degree in law, compliance, IT, or a related field.</li>
-          <li>Strong understanding of data protection regulations, including DPDP Act 2023, GDPR, HIPAA.</li>
-        </ol>
-      `,
-      protected: false,
-    },
-  },
-]
+})
 
 const detailPages = {
-  'https://desicrew.in/open-job-position/qa-delivery-manager/': {
-    status: 200,
-    url: 'https://desicrew.in/open-job-position/qa-delivery-manager/',
-    html: `
-      <!doctype html>
-      <html lang="en-US">
-        <head>
-          <title>QA Delivery Manager - DesiCrew</title>
-          <link rel="canonical" href="https://desicrew.in/open-job-position/qa-delivery-manager/" />
-        </head>
-        <body>
-          <h4><b>Location:</b> Kaup, Kollumangudi, and TN Palayam Centers</h4>
-          <a href="#job-application-form">Apply Now</a>
-          <label>I acknowledge that I have read and agree the Terms and Conditions and Privacy Policy.</label>
-        </body>
-      </html>
+  'https://www.desicrew.in/careers/delivery-center-manager/': buildDetailPage({
+    slug: 'delivery-center-manager',
+    title: 'Delivery Center Manager',
+    summary: 'Run a DesiCrew delivery centre end to end.',
+    department: 'Operations',
+    description: `
+      <h3>About the role</h3>
+      <p>Run a DesiCrew delivery centre end to end.</p>
+      <h3>What you will do</h3>
+      <ul>
+        <li>Own delivery across every client programme running from the centre.</li>
+        <li>Lead the leadership team at the centre.</li>
+      </ul>
+      <h3>What you will bring</h3>
+      <ul>
+        <li>Substantial experience in operations or delivery management.</li>
+      </ul>
     `,
-  },
-  'https://desicrew.in/open-job-position/avp-sales-qaoncloud/': {
-    status: 200,
-    url: 'https://desicrew.in/open-job-position/avp-sales-qaoncloud/',
-    html: `
-      <!doctype html>
-      <html lang="en-US">
-        <head>
-          <title>AVP – Sales (QAonCloud) - DesiCrew</title>
-          <link rel="canonical" href="https://desicrew.in/open-job-position/avp-sales-qaoncloud/" />
-        </head>
-        <body>
-          <h4><b>Location:</b> Preferably Bangalore or remote</h4>
-          <a href="#job-application-form">Apply Now</a>
-          <label>I acknowledge that I have read and agree the Terms and Conditions and Privacy Policy.</label>
-        </body>
-      </html>
+  }),
+  'https://www.desicrew.in/careers/finance-accounting-process-manager/': buildDetailPage({
+    slug: 'finance-accounting-process-manager',
+    title: 'Finance & Accounting Process Manager',
+    summary: 'Lead finance and accounting delivery for enterprise programmes.',
+    department: 'Accelerating Enterprise',
+    description: `
+      <h3>About the role</h3>
+      <p>Lead finance and accounting delivery for enterprise programmes.</p>
+      <h3>What you will do</h3>
+      <ul>
+        <li>Run finance and accounting operations to committed service levels.</li>
+        <li>Coach teams through quality and productivity improvements.</li>
+      </ul>
+      <h3>What you will bring</h3>
+      <ul>
+        <li>8+ years in finance operations or related delivery roles.</li>
+      </ul>
     `,
-  },
-  'https://desicrew.in/open-job-position/chief-compliance-officer/': {
-    status: 200,
-    url: 'https://desicrew.in/open-job-position/chief-compliance-officer/',
-    html: `
-      <!doctype html>
-      <html lang="en-US">
-        <head>
-          <title>Chief Compliance Officer - DesiCrew</title>
-          <link rel="canonical" href="https://desicrew.in/open-job-position/chief-compliance-officer/" />
-        </head>
-        <body>
-          <h4><b>Location:</b> Bangalore/ Chennai/ Delhi</h4>
-          <a href="#job-application-form">Apply Now</a>
-          <label>I acknowledge that I have read and agree the Terms and Conditions and Privacy Policy.</label>
-        </body>
-      </html>
+  }),
+  'https://www.desicrew.in/careers/qa-automation-engineer/': buildDetailPage({
+    slug: 'qa-automation-engineer',
+    title: 'QA Automation Engineer',
+    summary: 'Build and maintain the automated regression suites behind release cycles.',
+    department: 'Accelerating Enterprise',
+    description: `
+      <h3>About the role</h3>
+      <p>Build and maintain the automated regression suites behind release cycles.</p>
+      <h3>What you will do</h3>
+      <ul>
+        <li>Write and maintain automated functional and regression tests.</li>
+        <li>Integrate test runs into CI so results reach the team on every build.</li>
+      </ul>
+      <h3>What you will bring</h3>
+      <ul>
+        <li>Hands-on experience with Playwright, Selenium, Cypress or similar.</li>
+        <li>4+ years in test automation for web applications.</li>
+      </ul>
     `,
-  },
+  }),
+  'https://www.desicrew.in/careers/rlhf-quality-analyst/': buildDetailPage({
+    slug: 'rlhf-quality-analyst',
+    title: 'RLHF Quality Analyst',
+    summary: 'Review model outputs and raise the quality bar for RLHF programmes.',
+    department: 'Enabling AI',
+    description: `
+      <h3>About the role</h3>
+      <p>Review model outputs and raise the quality bar for RLHF programmes.</p>
+      <h3>What you will do</h3>
+      <ul>
+        <li>Audit prompt-response pairs for policy, safety and quality.</li>
+        <li>Coach reviewers using clear calibration feedback.</li>
+      </ul>
+      <h3>What you will bring</h3>
+      <ul>
+        <li>Strong written English and analytical judgement.</li>
+      </ul>
+    `,
+  }),
+  'https://www.desicrew.in/careers/senior-annotation-lead/': buildDetailPage({
+    slug: 'senior-annotation-lead',
+    title: 'Senior Annotation Lead',
+    summary: 'Lead annotation teams delivering high-volume, high-accuracy datasets.',
+    department: 'Enabling AI',
+    description: `
+      <h3>About the role</h3>
+      <p>Lead annotation teams delivering high-volume, high-accuracy datasets.</p>
+      <h3>What you will do</h3>
+      <ul>
+        <li>Plan throughput, quality checks and reviewer staffing.</li>
+        <li>Own escalation handling for complex annotation queues.</li>
+      </ul>
+      <h3>What you will bring</h3>
+      <ul>
+        <li>5+ years in annotation operations or quality leadership.</li>
+      </ul>
+    `,
+  }),
 }
 
 const loadModule = async () => {
@@ -240,107 +232,116 @@ const loadModule = async () => {
   }
 }
 
-test('Desi Crew constants and extractors stay pinned to the verified first-party archive, REST feed, and detail pages', async () => {
+test('Desi Crew constants and extractors stay pinned to the August 1, 2026 first-party careers surface', async () => {
   const desiCrew = await loadModule()
 
   assert.equal(desiCrew.COMPANY_NAME, 'Desi Crew')
   assert.equal(desiCrew.SOURCE, 'desicrew')
   assert.equal(desiCrew.COUNTRY_FILTER, 'India')
-  assert.equal(desiCrew.HOMEPAGE_URL, 'https://desicrew.in/')
-  assert.equal(desiCrew.CAREERS_PAGE_URL, 'https://desicrew.in/about-us/careers/')
-  assert.equal(desiCrew.JOBS_ARCHIVE_URL, 'https://desicrew.in/open-job-positions/')
-  assert.equal(
-    desiCrew.JOBS_API_URL,
-    'https://desicrew.in/wp-json/wp/v2/open-job-position?per_page=100&_fields=id,date,modified,status,link,title,slug,content,type',
-  )
-  assert.equal(desiCrew.SAMPLE_JOB_URL, 'https://desicrew.in/open-job-position/qa-delivery-manager/')
-  assert.equal(desiCrew.VERIFIED_ON, '2026-07-15')
+  assert.equal(desiCrew.HOMEPAGE_URL, 'https://www.desicrew.in/')
+  assert.equal(desiCrew.CAREERS_PAGE_URL, 'https://www.desicrew.in/careers/')
+  assert.equal(desiCrew.JOBS_ARCHIVE_URL, 'https://www.desicrew.in/careers/')
+  assert.equal(desiCrew.JOBS_API_URL, null)
+  assert.equal(desiCrew.SAMPLE_JOB_URL, 'https://www.desicrew.in/careers/qa-automation-engineer/')
+  assert.equal(desiCrew.VERIFIED_ON, '2026-08-01')
   assert.equal(desiCrew.hasOfficialHomepageSignal(homepagePage), true)
   assert.equal(desiCrew.hasOfficialCareersPageSignal(careersPage), true)
-  assert.equal(desiCrew.hasOfficialJobsArchiveSignal(jobsArchivePage), true)
-  assert.equal(desiCrew.hasOfficialJobsApiSignal(jobsApiPayload), true)
+  assert.equal(desiCrew.hasOfficialJobsArchiveSignal(careersPage), true)
+  assert.equal(desiCrew.hasOfficialJobsApiSignal(null), true)
   assert.equal(
     desiCrew.hasOfficialJobDetailSignal(
-      detailPages['https://desicrew.in/open-job-position/qa-delivery-manager/'],
-      'https://desicrew.in/open-job-position/qa-delivery-manager/',
+      detailPages['https://www.desicrew.in/careers/qa-automation-engineer/'],
+      'https://www.desicrew.in/careers/qa-automation-engineer/',
     ),
     true,
   )
 
-  const listings = desiCrew.extractArchiveListings(jobsArchivePage.html)
+  const listings = desiCrew.extractArchiveListings(careersPage.html)
   assert.deepEqual(listings, [
     {
-      jobId: '2256',
-      title: 'QA Delivery Manager',
-      sourceUrl: 'https://desicrew.in/open-job-position/qa-delivery-manager/',
-      location: 'Kaup, Kollumangudi, and TN Palayam Centers',
-      postingDate: '2025-01-29',
+      jobId: 'delivery-center-manager',
+      title: 'Delivery Center Manager',
+      department: 'Operations',
+      sourceUrl: 'https://www.desicrew.in/careers/delivery-center-manager/',
+      summaryLocation: 'Chennai',
     },
     {
-      jobId: '2234',
-      title: 'AVP - Sales (QAonCloud)',
-      sourceUrl: 'https://desicrew.in/open-job-position/avp-sales-qaoncloud/',
-      location: 'Preferably Bangalore or remote',
-      postingDate: '2025-01-29',
+      jobId: 'finance-accounting-process-manager',
+      title: 'Finance & Accounting Process Manager',
+      department: 'Accelerating Enterprise',
+      sourceUrl: 'https://www.desicrew.in/careers/finance-accounting-process-manager/',
+      summaryLocation: 'Chennai',
     },
     {
-      jobId: '2226',
-      title: 'Chief Compliance Officer',
-      sourceUrl: 'https://desicrew.in/open-job-position/chief-compliance-officer/',
-      location: 'Bangalore/ Chennai/ Delhi',
-      postingDate: '2025-01-29',
+      jobId: 'qa-automation-engineer',
+      title: 'QA Automation Engineer',
+      department: 'Accelerating Enterprise',
+      sourceUrl: 'https://www.desicrew.in/careers/qa-automation-engineer/',
+      summaryLocation: 'Chennai',
+    },
+    {
+      jobId: 'rlhf-quality-analyst',
+      title: 'RLHF Quality Analyst',
+      department: 'Enabling AI',
+      sourceUrl: 'https://www.desicrew.in/careers/rlhf-quality-analyst/',
+      summaryLocation: 'Chennai',
+    },
+    {
+      jobId: 'senior-annotation-lead',
+      title: 'Senior Annotation Lead',
+      department: 'Enabling AI',
+      sourceUrl: 'https://www.desicrew.in/careers/senior-annotation-lead/',
+      summaryLocation: 'Chennai',
     },
   ])
 
-  const firstJob = desiCrew.buildJobFromListingAndApiRecord(listings[0], jobsApiPayload[0])
+  const qaPage = detailPages['https://www.desicrew.in/careers/qa-automation-engineer/']
+  const qaPosting = JSON.parse(
+    qaPage.html.match(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/i)[1],
+  )['@graph'][0]
+  const qaJob = desiCrew.buildJobFromListingAndApiRecord(listings[2], qaPosting)
+
   assert.deepEqual(
     {
-      title: firstJob.title,
-      company: firstJob.company,
-      location: firstJob.location,
-      city: firstJob.city,
-      state: firstJob.state,
-      country: firstJob.country,
-      jobId: firstJob.jobId,
-      requisitionId: firstJob.requisitionId,
-      sourceUrl: firstJob.sourceUrl,
-      applyUrl: firstJob.applyUrl,
-      employmentType: firstJob.employmentType,
-      experienceRequired: firstJob.experienceRequired,
-      postingDate: firstJob.postingDate,
-      closingDate: firstJob.closingDate,
+      title: qaJob.title,
+      company: qaJob.company,
+      department: qaJob.department,
+      location: qaJob.location,
+      city: qaJob.city,
+      state: qaJob.state,
+      country: qaJob.country,
+      jobId: qaJob.jobId,
+      requisitionId: qaJob.requisitionId,
+      sourceUrl: qaJob.sourceUrl,
+      applyUrl: qaJob.applyUrl,
+      employmentType: qaJob.employmentType,
+      experienceRequired: qaJob.experienceRequired,
+      postingDate: qaJob.postingDate,
+      closingDate: qaJob.closingDate,
     },
     {
-      title: 'QA Delivery Manager',
+      title: 'QA Automation Engineer',
       company: 'Desi Crew',
-      location: 'Kaup, Kollumangudi, and TN Palayam Centers',
-      city: null,
-      state: null,
+      department: 'Accelerating Enterprise',
+      location: 'Chennai, Tamil Nadu',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
       country: 'India',
-      jobId: '2256',
-      requisitionId: '2256',
-      sourceUrl: 'https://desicrew.in/open-job-position/qa-delivery-manager/',
-      applyUrl: 'https://desicrew.in/open-job-position/qa-delivery-manager/',
-      employmentType: null,
-      experienceRequired: '10 to 12 years',
-      postingDate: '2025-01-29',
+      jobId: 'qa-automation-engineer',
+      requisitionId: 'qa-automation-engineer',
+      sourceUrl: 'https://www.desicrew.in/careers/qa-automation-engineer/',
+      applyUrl: 'https://www.desicrew.in/careers/#apply',
+      employmentType: 'Full-time',
+      experienceRequired: '4+ years',
+      postingDate: '2026-07-29',
       closingDate: null,
     },
   )
-  assert.ok(
-    firstJob.requiredSkills.includes('Oversee and manage end-to-end QA processes for manual and automated testing.'),
-  )
-  assert.match(firstJob.jobDescription, /We are seeking a skilled QA Delivery Manager/i)
-
-  const secondJob = desiCrew.buildJobFromListingAndApiRecord(listings[1], jobsApiPayload[1])
-  assert.equal(secondJob.employmentType, 'Full-time')
-  assert.equal(secondJob.experienceRequired, '10 years')
-
-  const thirdJob = desiCrew.buildJobFromListingAndApiRecord(listings[2], jobsApiPayload[2])
-  assert.equal(thirdJob.experienceRequired, '10+ years')
+  assert.ok(qaJob.requiredSkills.includes('Write and maintain automated functional and regression tests.'))
+  assert.match(qaJob.jobDescription, /Build and maintain the automated regression suites/i)
 })
 
-test('run validates the verified Desi Crew surfaces and returns the current live first-party openings', async () => {
+test('run validates the August 1, 2026 Desi Crew careers surfaces and returns the five live first-party openings', async () => {
   const desiCrew = await loadModule()
   const requestedUrls = []
 
@@ -350,17 +351,9 @@ test('run validates the verified Desi Crew surfaces and returns the current live
 
       if (url === desiCrew.HOMEPAGE_URL) return homepagePage
       if (url === desiCrew.CAREERS_PAGE_URL) return careersPage
-      if (url === desiCrew.JOBS_ARCHIVE_URL) return jobsArchivePage
       if (detailPages[url]) return detailPages[url]
 
       throw new Error(`Unexpected Desi Crew page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === desiCrew.JOBS_API_URL) return jobsApiPayload
-
-      throw new Error(`Unexpected Desi Crew API URL: ${url}`)
     },
     now: () => FIXED_SCRAPED_AT,
   })
@@ -368,16 +361,17 @@ test('run validates the verified Desi Crew surfaces and returns the current live
   assert.deepEqual(requestedUrls, [
     desiCrew.HOMEPAGE_URL,
     desiCrew.CAREERS_PAGE_URL,
-    desiCrew.JOBS_ARCHIVE_URL,
-    desiCrew.JOBS_API_URL,
-    'https://desicrew.in/open-job-position/qa-delivery-manager/',
-    'https://desicrew.in/open-job-position/avp-sales-qaoncloud/',
-    'https://desicrew.in/open-job-position/chief-compliance-officer/',
+    'https://www.desicrew.in/careers/delivery-center-manager/',
+    'https://www.desicrew.in/careers/finance-accounting-process-manager/',
+    'https://www.desicrew.in/careers/qa-automation-engineer/',
+    'https://www.desicrew.in/careers/rlhf-quality-analyst/',
+    'https://www.desicrew.in/careers/senior-annotation-lead/',
   ])
 
   assert.deepEqual(
     jobs.map((job) => ({
       title: job.title,
+      department: job.department,
       jobId: job.jobId,
       location: job.location,
       postingDate: job.postingDate,
@@ -387,40 +381,64 @@ test('run validates the verified Desi Crew surfaces and returns the current live
     })),
     [
       {
-        title: 'QA Delivery Manager',
-        jobId: '2256',
-        location: 'Kaup, Kollumangudi, and TN Palayam Centers',
-        postingDate: '2025-01-29',
+        title: 'Delivery Center Manager',
+        department: 'Operations',
+        jobId: 'delivery-center-manager',
+        location: 'Chennai, Tamil Nadu',
+        postingDate: '2026-07-29',
         source: 'desicrew',
-        link: 'https://desicrew.in/open-job-position/qa-delivery-manager/',
+        link: 'https://www.desicrew.in/careers/#apply',
         scrapedAt: FIXED_SCRAPED_AT,
       },
       {
-        title: 'AVP - Sales (QAonCloud)',
-        jobId: '2234',
-        location: 'Preferably Bangalore or remote',
-        postingDate: '2025-01-29',
+        title: 'Finance & Accounting Process Manager',
+        department: 'Accelerating Enterprise',
+        jobId: 'finance-accounting-process-manager',
+        location: 'Chennai, Tamil Nadu',
+        postingDate: '2026-07-29',
         source: 'desicrew',
-        link: 'https://desicrew.in/open-job-position/avp-sales-qaoncloud/',
+        link: 'https://www.desicrew.in/careers/#apply',
         scrapedAt: FIXED_SCRAPED_AT,
       },
       {
-        title: 'Chief Compliance Officer',
-        jobId: '2226',
-        location: 'Bangalore/ Chennai/ Delhi',
-        postingDate: '2025-01-29',
+        title: 'QA Automation Engineer',
+        department: 'Accelerating Enterprise',
+        jobId: 'qa-automation-engineer',
+        location: 'Chennai, Tamil Nadu',
+        postingDate: '2026-07-29',
         source: 'desicrew',
-        link: 'https://desicrew.in/open-job-position/chief-compliance-officer/',
+        link: 'https://www.desicrew.in/careers/#apply',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'RLHF Quality Analyst',
+        department: 'Enabling AI',
+        jobId: 'rlhf-quality-analyst',
+        location: 'Chennai, Tamil Nadu',
+        postingDate: '2026-07-29',
+        source: 'desicrew',
+        link: 'https://www.desicrew.in/careers/#apply',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Senior Annotation Lead',
+        department: 'Enabling AI',
+        jobId: 'senior-annotation-lead',
+        location: 'Chennai, Tamil Nadu',
+        postingDate: '2026-07-29',
+        source: 'desicrew',
+        link: 'https://www.desicrew.in/careers/#apply',
         scrapedAt: FIXED_SCRAPED_AT,
       },
     ],
   )
 
-  assert.equal(jobs[1].employmentType, 'Full-time')
-  assert.equal(jobs[2].experienceRequired, '10+ years')
+  assert.equal(jobs[1].experienceRequired, '8+ years')
+  assert.equal(jobs[2].employmentType, 'Full-time')
+  assert.equal(jobs[3].experienceRequired, null)
 })
 
-test('Desi Crew scraper fails closed when the verified public-surface checkpoints drift', async () => {
+test('Desi Crew scraper fails closed when the verified August 1, 2026 public-surface checkpoints drift', async () => {
   const desiCrew = await loadModule()
 
   await assert.rejects(
@@ -429,13 +447,12 @@ test('Desi Crew scraper fails closed when the verified public-surface checkpoint
         if (url === desiCrew.HOMEPAGE_URL) {
           return {
             ...homepagePage,
-            html: homepagePage.html.replace('Join Us', 'Contact Us'),
+            html: homepagePage.html.replace('/careers/', '/contact/'),
           }
         }
 
         throw new Error(`Unexpected Desi Crew page URL: ${url}`)
       },
-      fetchJson: async () => jobsApiPayload,
     }),
     /verified homepage/i,
   )
@@ -447,13 +464,12 @@ test('Desi Crew scraper fails closed when the verified public-surface checkpoint
         if (url === desiCrew.CAREERS_PAGE_URL) {
           return {
             ...careersPage,
-            html: careersPage.html.replace('See our open roles', 'Join the journey'),
+            html: careersPage.html.replace('id="apply-form"', 'id="join-form"'),
           }
         }
 
         throw new Error(`Unexpected Desi Crew page URL: ${url}`)
       },
-      fetchJson: async () => jobsApiPayload,
     }),
     /verified careers page/i,
   )
@@ -462,19 +478,33 @@ test('Desi Crew scraper fails closed when the verified public-surface checkpoint
     desiCrew.createDesiCrewScraper().run({
       fetchPage: async (url) => {
         if (url === desiCrew.HOMEPAGE_URL) return homepagePage
-        if (url === desiCrew.CAREERS_PAGE_URL) return careersPage
-        if (url === desiCrew.JOBS_ARCHIVE_URL) {
+        if (url === desiCrew.CAREERS_PAGE_URL) {
           return {
-            ...jobsArchivePage,
-            html: '<html><title>Open Job Positions - DesiCrew</title><body>No archive cards</body></html>',
+            ...careersPage,
+            html: `
+              <!doctype html>
+              <html lang="en">
+                <head>
+                  <title>Careers at DesiCrew | Build a career with purpose.</title>
+                  <link rel="canonical" href="https://www.desicrew.in/careers/" />
+                </head>
+                <body>
+                  <a href="#apply" class="dc-mh-cta">Apply now</a>
+                  <section id="roles">
+                    <h2>Open roles</h2>
+                    <a href="/careers/placeholder-role/">Placeholder role</a>
+                  </section>
+                  <form id="apply-form" action="https://usebasin.com/f/691ecb2b732f"></form>
+                </body>
+              </html>
+            `,
           }
         }
 
         throw new Error(`Unexpected Desi Crew page URL: ${url}`)
       },
-      fetchJson: async () => jobsApiPayload,
     }),
-    /verified open job archive/i,
+    /verified careers listing/i,
   )
 
   await assert.rejects(
@@ -482,33 +512,16 @@ test('Desi Crew scraper fails closed when the verified public-surface checkpoint
       fetchPage: async (url) => {
         if (url === desiCrew.HOMEPAGE_URL) return homepagePage
         if (url === desiCrew.CAREERS_PAGE_URL) return careersPage
-        if (url === desiCrew.JOBS_ARCHIVE_URL) return jobsArchivePage
-        if (detailPages[url]) return detailPages[url]
-
-        throw new Error(`Unexpected Desi Crew page URL: ${url}`)
-      },
-      fetchJson: async () => [{ ...jobsApiPayload[0], type: 'post' }],
-    }),
-    /verified open job api/i,
-  )
-
-  await assert.rejects(
-    desiCrew.createDesiCrewScraper().run({
-      fetchPage: async (url) => {
-        if (url === desiCrew.HOMEPAGE_URL) return homepagePage
-        if (url === desiCrew.CAREERS_PAGE_URL) return careersPage
-        if (url === desiCrew.JOBS_ARCHIVE_URL) return jobsArchivePage
-        if (url === 'https://desicrew.in/open-job-position/qa-delivery-manager/') {
+        if (url === 'https://www.desicrew.in/careers/qa-automation-engineer/') {
           return {
             ...detailPages[url],
-            html: detailPages[url].html.replace('Apply Now', 'Learn More'),
+            html: detailPages[url].html.replace('Apply for this role', 'Learn more'),
           }
         }
         if (detailPages[url]) return detailPages[url]
 
         throw new Error(`Unexpected Desi Crew page URL: ${url}`)
       },
-      fetchJson: async () => jobsApiPayload,
     }),
     /verified detail page/i,
   )

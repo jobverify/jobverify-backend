@@ -81,12 +81,16 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const hasHomepageTitle = /<title[^>]*>\s*Axodian\s*\|\s*Global Trade,\s*Simplified\s*<\/title>/i.test(rawHtml)
+  const hasHomepageMetaDescription =
+    /<meta[^>]+name=["']description["'][^>]+content=["'][^"']*We simplify international Payments, automate global trade Documentation &amp; Compliance[^"']*["']/i.test(rawHtml)
 
-  return /<title>\s*Axodian\s*\|\s*Global Trade,\s*Simplified\s*<\/title>/i.test(rawHtml)
+  return hasHomepageTitle
     && /<link rel="canonical" href="https:\/\/www\.axodian\.com\/"/i.test(rawHtml)
     && normalized.includes('documentation, compliance & payments')
     && normalized.includes('all in one trade-verse.')
-    && normalized.includes('we simplify international payments, automate global trade documentation & compliance')
+    && (normalized.includes('we simplify international payments, automate global trade documentation & compliance')
+      || hasHomepageMetaDescription)
     && normalized.includes('leremitt for transparent cross-border payouts')
     && /href="\/leremitt"/i.test(rawHtml)
     && normalized.includes('backed by axilor | capital a')
@@ -96,7 +100,7 @@ export const hasOfficialProductPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return /<title>\s*LeRemitt\s*\|\s*Cross Border Payments Platform For Exporters\s*\|\s*Axodian\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*LeRemitt\s*\|\s*Cross Border Payments Platform For Exporters\s*\|\s*Axodian\s*<\/title>/i.test(rawHtml)
     && /<link rel="canonical" href="https:\/\/www\.axodian\.com\/leremitt"/i.test(rawHtml)
     && normalized.includes('seamless cross-border payments for exporters')
     && normalized.includes('leremitt enables exporters to receive international payments at zero-fx margin and economical fees ensuring transparency and ease')
@@ -123,7 +127,14 @@ export const isVerifiedMissingCareersRoute = (page = {}) => {
     return false
   }
 
-  return MISSING_ROUTE_PATTERNS.every((pattern) => pattern.test(String(page?.html ?? '')))
+  const html = String(page?.html ?? '')
+  const matches404Title = /<title[^>]*>\s*404-error\s*<\/title>/i.test(html)
+  const matches404Heading = /<h1[^>]*>\s*404-error\s*<\/h1>/i.test(html)
+
+  return (matches404Title || matches404Heading)
+    && MISSING_ROUTE_PATTERNS
+      .filter((pattern) => !String(pattern).includes('404-error'))
+      .every((pattern) => pattern.test(html))
 }
 
 export const createLeRemittScraper = () => ({

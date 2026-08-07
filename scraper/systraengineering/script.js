@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,6 +12,7 @@ export const HOMEPAGE_URL = 'https://www.systra.com/en/'
 export const CAREERS_URL = 'https://www.systra.com/en/join-us/'
 export const JOBS_LISTING_ENDPOINT = 'https://www.systra.com/wp-json/systra-jobs/v1/jobs-listing'
 export const INDIA_COUNTRY_FILTER = 'india_en'
+const DEFAULT_DETAIL_CONCURRENCY = 10
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -306,6 +308,7 @@ export const createSystraEngineeringScraper = ({
   fetchJson = defaultFetchJson,
   maxPages = 100,
   maxJobs = null,
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
@@ -365,29 +368,45 @@ export const createSystraEngineeringScraper = ({
         throw new Error('Systra Engineering first-party jobs payload no longer matches the verified public jobs surface')
       }
 
+      const freshListings = []
       for (const listing of listings) {
         if (!listing.jobId || seenJobIds.has(listing.jobId)) {
           continue
         }
 
         seenJobIds.add(listing.jobId)
-        const detailHtml = await fetchTextImpl(listing.sourceUrl)
-        const job = extractJobDetail(detailHtml, listing)
+        freshListings.push(listing)
+      }
 
-        if (!job.title || !job.applyUrl) {
-          throw new Error(`Systra Engineering detail page changed materially: ${listing.sourceUrl}`)
-        }
+      const remainingSlots = Number.isInteger(overrideMaxJobs)
+        ? Math.max(overrideMaxJobs - jobs.length, 0)
+        : freshListings.length
+      const selectedListings = Number.isInteger(overrideMaxJobs)
+        ? freshListings.slice(0, remainingSlots)
+        : freshListings
+      const pageJobs = await mapWithConcurrency(
+        selectedListings,
+        detailConcurrency,
+        async (listing) => {
+          const detailHtml = await fetchTextImpl(listing.sourceUrl)
+          const job = extractJobDetail(detailHtml, listing)
 
-        jobs.push({
-          ...job,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: nowImpl(),
-        })
+          if (!job.title || !job.applyUrl) {
+            throw new Error(`Systra Engineering detail page changed materially: ${listing.sourceUrl}`)
+          }
 
-        if (Number.isInteger(overrideMaxJobs) && jobs.length >= overrideMaxJobs) {
-          return jobs.slice(0, overrideMaxJobs)
-        }
+          return {
+            ...job,
+            source: SOURCE,
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: nowImpl(),
+          }
+        },
+      )
+
+      jobs.push(...pageJobs)
+      if (Number.isInteger(overrideMaxJobs) && jobs.length >= overrideMaxJobs) {
+        return jobs.slice(0, overrideMaxJobs)
       }
 
       if (Number(payload.stats?.cp) >= Number(payload.stats?.mp)) {

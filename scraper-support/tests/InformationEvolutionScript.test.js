@@ -33,13 +33,21 @@ const teamLeaderDetailHtml = `
   </head>
   <body>
     <h1>Team Leader</h1>
-    <p>Location: Coimbatore, Tamil Nadu, India</p>
-    <p>Type: Full Time</p>
-    <div class="job-description">
-      <p>Lead, mentor, and guide a team of data processing and scraping specialists.</p>
-      <p>Oversee the development and implementation of web scraping and data extraction processes.</p>
+    <div class="job-meta">
+      <h4>Employment Type</h4>
+      <p>Full-time</p>
+      <h4>Job Location</h4>
+      <p>Information Evolution India Private Limited Module No. 002/1 Ground Floor, TIDEL Park Coimbatore Ltd, ELCOSEZ, Coimbatore, 641 014., India</p>
     </div>
-    <a href="mailto:hr@informationevolution.com">Apply</a>
+    <section class="job-description-wrapper">
+      <h3>Description</h3>
+      <p>Key Responsibilities Lead and mentor a team of data processing and web scraping specialists.</p>
+      <p>Oversee the development and implementation of scalable web scraping and data extraction processes.</p>
+      <p>Collaborate with cross-functional teams to optimize accuracy and delivery quality.</p>
+      <h4>Hiring organization</h4>
+      <p>Information Evolution</p>
+    </section>
+    <button type="button">Apply now</button>
   </body>
 </html>
 `
@@ -77,8 +85,9 @@ test('Information Evolution local catalog captures the verified first-party jobs
     provider.extractionStrategy,
     'verified-jobs-page+coimbatore-section+first-party-detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.modulePath, modulePath)
+  assert.match(provider.dryRunFile, /informationevolution[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /Team Leader/i)
   assert.match(provider.verifiedSurfaceSummary, /Coimbatore/i)
 })
@@ -99,9 +108,15 @@ test('Information Evolution scraper extracts the current Coimbatore role from th
 
   const detail = informationEvolution.extractJobDetail(teamLeaderDetailHtml, listings[0])
   assert.equal(detail.title, 'Team Leader')
-  assert.equal(detail.location, 'Coimbatore, Tamil Nadu, India')
-  assert.equal(detail.employmentType, 'Full Time')
-  assert.match(detail.jobDescription, /scraping specialists/i)
+  assert.equal(
+    detail.location,
+    'Information Evolution India Private Limited Module No. 002/1 Ground Floor, TIDEL Park Coimbatore Ltd, ELCOSEZ, Coimbatore, 641 014., India',
+  )
+  assert.equal(detail.city, 'Coimbatore')
+  assert.equal(detail.state, null)
+  assert.equal(detail.employmentType, 'Full-time')
+  assert.equal(detail.applyUrl, null)
+  assert.match(detail.jobDescription, /web scraping specialists/i)
 })
 
 test('Information Evolution run validates the jobs page and returns first-party India roles', async () => {
@@ -115,7 +130,7 @@ test('Information Evolution run validates the jobs page and returns first-party 
       if (url === 'https://dev.informationevolution.com/job/team-leader/') return teamLeaderDetailHtml
       throw new Error(`Unexpected Information Evolution URL: ${url}`)
     },
-    now: () => '2026-07-18T00:00:00.000Z',
+    now: () => '2026-08-02T00:00:00.000Z',
   })
 
   assert.deepEqual(requestedUrls, [
@@ -126,5 +141,6 @@ test('Information Evolution run validates the jobs page and returns first-party 
   assert.equal(jobs[0].title, 'Team Leader')
   assert.equal(jobs[0].company, 'Information Evolution')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].link, 'mailto:hr@informationevolution.com')
+  assert.equal(jobs[0].city, 'Coimbatore')
+  assert.equal(jobs[0].link, 'https://dev.informationevolution.com/job/team-leader/')
 })

@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, July 17, 2026 that the official STL Tech life and careers page at https://stl.tech/life/ presented the first-party Join us section and linked candidates to the external jobs handoff URL https://stltech.ripplehire.com/candidate/?source=CAREERSITE&token=v0cOTxD3fgZqIF393gqj with the anchor text Apply for your next job here, but did not itself expose a trustworthy enumerable public jobs list or public jobs API on the first-party page. As of the verified date, there is no trustworthy enumerable public jobs surface verified from the first-party careers page, so the local provider intentionally fails closed and returns [].'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Wednesday, August 5, 2026 that the official STL Tech life and careers page at https://stl.tech/life/ still presented the first-party Join us section and now linked candidates to the public RippleHire handoff URL https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE#list. Verified that the public RippleHire board shell stayed live at https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE and that the RippleHire jobs API at https://stltech.ripplehire.com/candidate/candidatejobsearch returned 104 live listings on August 5, 2026. Sampled live locations from the public board were Indian locations including Ahmedabad, Bangalore, Bhubaneswar, Gurgaon, Mumbai, Rakholi, Silvassa, Tuticorin, Udaipur, and Waluj.'
 
 export const STERLITE_TECHNOLOGIES_CATALOG = {
   source: 'sterlitetechnologies',
@@ -12,16 +12,20 @@ export const STERLITE_TECHNOLOGIES_CATALOG = {
   adapter: 'script',
   companyCareerPage: 'https://stl.tech/life/',
   officialCareersPageUrl: 'https://stl.tech/life/',
-  linkedJobsPortalUrl: 'https://stltech.ripplehire.com/candidate/?source=CAREERSITE&token=v0cOTxD3fgZqIF393gqj',
+  linkedJobsPortalUrl: 'https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE#list',
   linkedJobsPortalHost: 'stltech.ripplehire.com',
+  portalOrigin: 'https://stltech.ripplehire.com',
+  officialCareersHandoffUrl: 'https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE#list',
+  jobBoardUrl: 'https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE',
+  jobsApiUrl: 'https://stltech.ripplehire.com/candidate/candidatejobsearch',
   companyDomain: 'stl.tech',
-  atsPlatform: 'official-company-site-no-trustworthy-public-jobs-surface',
+  atsPlatform: 'ripplehire',
   countryFilter: 'India',
-  paginationStrategy: 'first-party-careers-handoff-page',
-  extractionStrategy: 'verified-first-party-careers-page+external-ripplehire-handoff+return-empty-when-no-trustworthy-public-jobs-surface',
+  paginationStrategy: 'page-param-on-public-ripplehire-board',
+  extractionStrategy: 'official-careers-handoff+ripplehire-list-detail-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'sterlitetechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

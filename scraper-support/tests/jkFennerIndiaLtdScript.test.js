@@ -24,6 +24,9 @@ test('J.K.Fenner India Ltd validates the verified homepage and first-party caree
   const jkFenner = await loadModule()
   const homepageHtml = readFixture('homepage.html')
   const careersHtml = readFixture('career-list.html')
+  const liveLikeCareersHtml = careersHtml
+    .replace(/<link rel="canonical"[^>]+>/i, '')
+    .replaceAll('https://jkfenner.com/job-openings/', '/job-openings/')
 
   assert.equal(jkFenner.SOURCE, 'jkfennerindialtd')
   assert.equal(jkFenner.COMPANY, 'J.K.Fenner India Ltd')
@@ -32,6 +35,7 @@ test('J.K.Fenner India Ltd validates the verified homepage and first-party caree
   assert.equal(jkFenner.JOB_OPENINGS_URL, 'https://jkfenner.com/job-openings/')
   assert.equal(jkFenner.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(jkFenner.hasCareerListSignal(careersHtml), true)
+  assert.equal(jkFenner.hasCareerListSignal(liveLikeCareersHtml), true)
 
   const jobs = jkFenner.extractOpenPositions(careersHtml)
   assert.equal(jobs.length, 8)

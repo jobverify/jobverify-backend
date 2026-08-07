@@ -13,7 +13,12 @@ export const SOURCE = INGENERO_TECHNOLOGIES_CATALOG.source
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const normalizeWhitespace = (value) => String(value ?? '')
+const stripNonVisibleBlocks = (value) => String(value ?? '')
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+
+const normalizeWhitespace = (value) => stripNonVisibleBlocks(value)
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
@@ -21,10 +26,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*Careers at Ingenero\s*\|\s*Engineering, AI & Energy Consulting Jobs\s*<\/title>/i.test(page)
+  return normalized.includes('Careers at Ingenero | Engineering, AI & Energy Consulting Jobs')
     && normalized.includes('CV Submission Form')
     && normalized.includes('Upload CV')
     && normalized.includes('Ingenero Technologies (India) Pvt. Ltd.')

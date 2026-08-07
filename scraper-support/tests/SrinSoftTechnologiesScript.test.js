@@ -62,6 +62,33 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at SrinSoft | Join Our Innovative Team</title>
+  </head>
+  <body>
+    <a href="mailto:tms@srinsofttech.com">tms@srinsofttech.com</a>
+    <div class="accordion-item" data-tags="Engineering">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button">Substation Lead</button>
+      </h2>
+      <div class="accordion-collapse collapse">
+        <div class="accordion-body">
+          <p><strong style="color:#ED152F">Location:</strong> Chennai </p><br>
+          <p><strong style="color:#ED152F">Experience:</strong> 4+ Years </p><br>
+          <p><strong style="color:#ED152F">Job Description:</strong><br>
+            We are seeking a highly experienced and motivated Substation Design Lead to oversee the design and engineering of high-voltage substation projects.<br>
+            Lead the design and engineering of HV/MV substations and coordinate global project stakeholders.<br>
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/srinsofttechnologies/script.js')
@@ -141,4 +168,22 @@ test('SrinSoft Technologies run fails closed when the verified careers accordion
     }),
     /SrinSoft verified first-party careers page changed materially/i,
   )
+})
+
+test('SrinSoft Technologies still normalizes India-facing accordion roles when the shared apply form remains implied but no inline Apply Now anchor is present', async () => {
+  const srinsoft = await loadModule()
+
+  assert.equal(srinsoft.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.deepEqual(srinsoft.extractIndiaAccordionJobs(currentCareersHtml), [
+    {
+      title: 'Substation Lead',
+      department: 'Engineering',
+      location: 'Chennai',
+      experience: '4+ Years',
+      sourceUrl: 'https://www.srinsofttech.com/career.html',
+      applyUrl: 'https://www.srinsofttech.com/career.html#form_sec',
+      jobDescription:
+        'We are seeking a highly experienced and motivated Substation Design Lead to oversee the design and engineering of high-voltage substation projects. Lead the design and engineering of HV/MV substations and coordinate global project stakeholders.',
+    },
+  ])
 })

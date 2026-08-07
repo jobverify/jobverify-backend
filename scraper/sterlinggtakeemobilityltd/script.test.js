@@ -101,6 +101,38 @@ test('Sterling Gtake E-mobility Ltd default fetch is bounded by a timeout signal
   assert.equal(capturedInit.signal instanceof AbortSignal, true)
 })
 
+test('Sterling Gtake E-mobility Ltd default fetch falls back to http when the https certificate is invalid', async () => {
+  const sterling = await loadSterlingGtakeModule()
+  const requestedUrls = []
+
+  const page = await sterling.defaultFetchPage(sterling.HOMEPAGE_URL, {
+    fetchImpl: async (url, init) => {
+      requestedUrls.push(String(url))
+
+      if (String(url).startsWith('https://')) {
+        assert.equal(init.signal instanceof AbortSignal, true)
+        const error = new TypeError('fetch failed')
+        error.cause = { code: 'ERR_TLS_CERT_ALTNAME_INVALID' }
+        throw error
+      }
+
+      return {
+        status: 200,
+        url,
+        text: async () => parkedShellHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    'https://www.sterlinggtake.com/',
+    'http://www.sterlinggtake.com/',
+  ])
+  assert.equal(page.status, 200)
+  assert.equal(page.url, 'http://www.sterlinggtake.com/')
+  assert.equal(page.html, parkedShellHtml)
+})
+
 test('Sterling Gtake E-mobility Ltd fails closed when the parked shell changes or exposes jobs', async () => {
   const sterling = await loadSterlingGtakeModule()
 

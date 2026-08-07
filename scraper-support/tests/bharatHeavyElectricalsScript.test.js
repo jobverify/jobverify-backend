@@ -157,6 +157,7 @@ test('Bharat Heavy Electricals scraper constants stay pinned to the verified fir
       sourceUrl: job.sourceUrl,
       applyUrl: job.applyUrl,
       jobId: job.jobId,
+      publicExperienceChecked: job.publicExperienceChecked,
     })),
     [
       {
@@ -166,6 +167,7 @@ test('Bharat Heavy Electricals scraper constants stay pinned to the verified fir
         sourceUrl: 'https://cdn.digialm.com//EForms/configuredHtml/1258/94876/Index.html',
         applyUrl: 'https://cdn.digialm.com//EForms/configuredHtml/1258/94876/Index.html',
         jobId: 'artisan-recruitment-2025',
+        publicExperienceChecked: true,
       },
       {
         title: 'Recruitment of Engineer Trainees & Supervisor Trainees - 2025',
@@ -174,6 +176,7 @@ test('Bharat Heavy Electricals scraper constants stay pinned to the verified fir
         sourceUrl: 'https://cdn.digialm.com//EForms/configuredHtml/1258/92788/Index.html',
         applyUrl: 'https://cdn.digialm.com//EForms/configuredHtml/1258/92788/Index.html',
         jobId: 'recruitment-of-engineer-trainees-and-supervisor-trainees-2025',
+        publicExperienceChecked: true,
       },
       {
         title: 'Engagement of Senior Consultant for Kasturba Hospital at BHEL, Bhopal',
@@ -182,6 +185,7 @@ test('Bharat Heavy Electricals scraper constants stay pinned to the verified fir
         sourceUrl: 'https://careers1.bhel.in/lateral2020/jsp/et_eng_index.jsp',
         applyUrl: 'https://careers1.bhel.in/lateral2020/jsp/et_eng_index.jsp',
         jobId: 'engagement-of-senior-consultant-for-kasturba-hospital-at-bhel-bhopal',
+        publicExperienceChecked: true,
       },
       {
         title: 'Engagement of Engineers and Supervisors on Fixed Tenure Appointment (FTA) basis for SBD Bengaluru',
@@ -190,6 +194,7 @@ test('Bharat Heavy Electricals scraper constants stay pinned to the verified fir
         sourceUrl: 'https://sbdapp.bhel.in/FTARecruitment/',
         applyUrl: 'https://sbdapp.bhel.in/FTARecruitment/',
         jobId: 'engagement-of-engineers-and-supervisors-on-fixed-tenure-appointment-fta-basis-for-sbd-bengaluru',
+        publicExperienceChecked: true,
       },
       {
         title: 'Engagement of Paramedical & Technician Staff on FTA basis - HEP, Bhopal',
@@ -198,6 +203,7 @@ test('Bharat Heavy Electricals scraper constants stay pinned to the verified fir
         sourceUrl: 'https://bpl.bhel.com/bplweb_new/careers/index1.html',
         applyUrl: 'https://bpl.bhel.com/bplweb_new/careers/index1.html',
         jobId: 'engagement-of-paramedical-and-technician-staff-on-fta-basis-hep-bhopal',
+        publicExperienceChecked: true,
       },
     ],
   )

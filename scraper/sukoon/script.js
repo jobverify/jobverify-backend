@@ -1,21 +1,22 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'sukoon'
 export const COMPANY = 'Sukoon'
 export const CAREERS_URL = 'https://trysukoon.com/'
-export const DISPOSITION = 'verified-exact-name-company-surface-with-hiring-signals'
+export const DISPOSITION = 'verified-exact-name-company-surface-no-public-listings'
 export const VERIFIED_SURFACE_CONTRACT =
-  'Verified on Saturday, July 25, 2026 that https://trysukoon.com/ was the exact-name public Sukoon surface and that brand-associated hiring signals were still publicly visible there, but no stable enumerable first-party jobs inventory was verified.'
+  'Verified on Tuesday, August 4, 2026 that https://trysukoon.com/ was the exact-name public Sukoon services surface for online counselling, life coaching, and Ruqyah sessions, and that no stable enumerable first-party jobs inventory was publicly verified.'
 
 const EXACT_NAME_PATTERN = /\bSukoon\b/
 
-const HIRING_SIGNAL_PATTERNS = [
-  /\bwe(?:'|’)re hiring\b/i,
-  /\bwe are hiring\b/i,
-  /\bhiring\b/i,
-  /\bjoin us\b/i,
-  /\bjoin our team\b/i,
-  /\bcareers?\b/i,
-  /\bjobs?\b/i,
-  /\bopportunit(?:y|ies)\b/i,
+const SERVICE_SIGNAL_PATTERNS = [
+  /\bonline counselling\b/i,
+  /\blife coaching\b/i,
+  /\bruqyah sessions?\b/i,
+  /\bfind guidance,\s*clarity\s*&?\s*inner peace with sukoon\b/i,
 ]
 
 const LISTING_HEADLINE_PATTERNS = [
@@ -109,9 +110,9 @@ const assertVerifiedSurface = (html = '') => {
     )
   }
 
-  if (!HIRING_SIGNAL_PATTERNS.some((pattern) => pattern.test(text))) {
+  if (!SERVICE_SIGNAL_PATTERNS.some((pattern) => pattern.test(text))) {
     throw new Error(
-      'Sukoon page no longer exposes the verified brand-associated hiring signals.',
+      'Sukoon page no longer exposes the verified Sukoon services-marketplace signal.',
     )
   }
 }
@@ -156,3 +157,15 @@ export const createSukoonScraper = ({ careersUrl = CAREERS_URL } = {}) => ({
 })
 
 export const run = async (options = {}) => createSukoonScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

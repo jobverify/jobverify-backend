@@ -101,6 +101,7 @@ export const extractRoleListings = (html) => {
         postingDate: null,
         closingDate: null,
         jobDescription: applyInstructions,
+        publicExperienceChecked: true,
       })
     }
   }

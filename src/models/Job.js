@@ -127,6 +127,7 @@ const JobSchema = new Schema(
     minimumQualification: { type: String, trim: true, default: null },
     preferredQualification: { type: String, trim: true, default: null },
     experienceRequired: { type: String, trim: true, default: null },
+    publicExperienceChecked: { type: Boolean, default: false },
     salary: { type: String, trim: true, default: null },
     skillIds: { type: [String], default: [] },
     requiredSkillIds: { type: [String], default: [] },

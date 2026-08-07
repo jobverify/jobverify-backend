@@ -45,12 +45,18 @@ const VERIFIED_LEVER_BOARD_HTML = `
   <body>
     <section>
       <h1>AppZen, Inc.</h1>
-      <p>Job openings at AppZen, Inc.</p>
+      <span>Location type</span>
       <span>Location</span>
       <span>Team</span>
       <span>Work type</span>
+      <a href="https://jobs.lever.co/appzen/7554ff68-99c2-4619-ac4e-d6df60892244">
+        Customer success Manager
+      </a>
       <a href="https://www.appzen.com/">AppZen, Inc. Home Page</a>
-      <p>Jobs powered by Lever</p>
+      <a href="https://www.lever.co/job-seeker-support/" class="image-link">
+        <span>Powered by </span>
+        <img alt="Lever logo" src="/img/lever-logo-full.svg" />
+      </a>
     </section>
   </body>
 </html>
@@ -99,7 +105,7 @@ test('AppZen validates the verified first-party careers embed and public Lever b
 
   assert.equal(appzen.SOURCE, 'appzen')
   assert.equal(appzen.COMPANY, 'AppZen')
-  assert.equal(appzen.VERIFIED_ON, '2026-07-25')
+  assert.equal(appzen.VERIFIED_ON, '2026-08-01')
   assert.equal(appzen.CAREERS_URL, 'https://www.appzen.com/careers')
   assert.equal(appzen.LEVER_ACCOUNT, 'appzen')
   assert.equal(appzen.LEVER_BOARD_URL, 'https://jobs.lever.co/appzen')
@@ -108,7 +114,7 @@ test('AppZen validates the verified first-party careers embed and public Lever b
     appzen.DISPOSITION,
     'verified-first-party-careers-page-plus-public-lever-jobs-api',
   )
-  assert.match(appzen.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(appzen.VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/)
   assert.equal(appzen.hasOfficialCareersPageSignal(VERIFIED_CAREERS_HTML), true)
   assert.equal(appzen.extractLeverAccountName(VERIFIED_CAREERS_HTML), 'appzen')
   assert.equal(appzen.hasOfficialLeverBoardSignal(VERIFIED_LEVER_BOARD_HTML), true)
@@ -195,7 +201,7 @@ test('AppZen fails closed when the verified careers embed or public Lever board 
     appzen.createAppZenScraper().run({
       fetchText: async (url) => {
         if (url === appzen.CAREERS_URL) return VERIFIED_CAREERS_HTML
-        return VERIFIED_LEVER_BOARD_HTML.replace('Jobs powered by Lever', 'Apply now')
+        return VERIFIED_LEVER_BOARD_HTML.replace('Powered by ', 'Apply now')
       },
       fetchJson: async () => VERIFIED_LEVER_PAYLOAD,
     }),

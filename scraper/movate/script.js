@@ -14,6 +14,10 @@ const SOURCE = 'movate'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
+const stripLocationCode = (value) => String(value ?? '')
+  .replace(/\s*\([A-Z]{2}_[^)]+\)\s*$/i, '')
+  .trim()
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -33,6 +37,19 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const normalizeLocation = (value) => {
+  if (Array.isArray(value)) {
+    const locations = value
+      .map((item) => normalizeLocation(item))
+      .filter(Boolean)
+
+    return locations.length ? locations.join(' | ') : null
+  }
+
+  const normalized = normalizeWhitespace(stripLocationCode(value))
+  return normalized || null
+}
+
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '')
     .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
@@ -41,10 +58,23 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const stripTagsToLines = (value) => String(value ?? '')
+  .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
+  .replace(/<li\b[^>]*>/gi, ' ')
+  .replace(/<p\b[^>]*>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .split(/\r?\n/)
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
 const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   const match = pattern.exec(String(value ?? ''))
   return match ? transform(match) : null
 }
+
+const extractTitle = (html) => normalizeWhitespace(
+  extractFirst(/<title[^>]*>([\s\S]*?)<\/title>/i, html),
+)
 
 const toAbsoluteUrl = (value, baseUrl = JOBS_PAGE_URL) => {
   if (!value) return null
@@ -69,11 +99,30 @@ const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>(
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
+const extractDescriptionHighlights = (html) => {
+  const listItems = extractListItems(html)
+  if (listItems.length) return listItems
+
+  return stripTagsToLines(html)
+    .filter((line) => /^[\u2022·]/.test(line) || /^o\s+/i.test(line))
+    .map((line) => line.replace(/^[\u2022·]\s*/u, '').replace(/^o\s+/i, '').trim())
+    .filter(Boolean)
+}
+
 const extractCity = (location) => {
-  const normalized = normalizeWhitespace(location)
+  const normalized = normalizeLocation(location)
   if (!normalized) return null
 
-  const city = normalized.split(',')[0]?.trim() || null
+  const firstLocation = normalized.split('|')[0]?.trim() || null
+  if (!firstLocation) return null
+
+  const parts = firstLocation.split(',').map((part) => part.trim()).filter(Boolean)
+  if (!parts.length) return null
+
+  const city = parts.length >= 4 && /india/i.test(parts.at(-1) || '')
+    ? parts[1]
+    : parts[0]
+
   return /^bengaluru$/i.test(city) ? 'Bangalore' : city
 }
 
@@ -91,14 +140,19 @@ export const buildDetailUrl = (jobId) =>
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /<title>\s*Careers at Movate\s*<\/title>/i.test(page)
+  const title = extractTitle(page)?.toLowerCase() || ''
+
+  return title.includes('careers at movate')
     && /Latest Job Openings/i.test(page)
     && page.includes(JOBS_PAGE_URL)
 }
 
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
-  return /<title>\s*Latest Job Openings - Movate\s*<\/title>/i.test(page)
+  const title = extractTitle(page)?.toLowerCase() || ''
+
+  return title.includes('latest job openings')
+    && title.includes('movate')
     && /var\s+arrayList\s*=\s*\[/i.test(page)
 }
 
@@ -108,7 +162,7 @@ export const extractIndiaJobs = (records) => (Array.isArray(records) ? records :
   .filter((record) => isIndiaListing(record))
   .map((record) => {
     const title = normalizeWhitespace(record.job_title)
-    const location = normalizeWhitespace(record.location)
+    const location = normalizeLocation(record.location)
     const jobId = normalizeWhitespace(record.job_id)
 
     if (!title || !location || !jobId) return null
@@ -139,7 +193,33 @@ export const extractIndiaJobs = (records) => (Array.isArray(records) ? records :
   })
   .filter(Boolean)
 
+const extractLabeledFields = (html) => {
+  const fields = new Map()
+  const page = String(html ?? '')
+
+  const collect = (label, value) => {
+    const normalizedLabel = normalizeWhitespace(label)?.toLowerCase()
+    const normalizedValue = normalizeLocation(value) || normalizeWhitespace(value)
+
+    if (!normalizedLabel || !normalizedValue || fields.has(normalizedLabel)) return
+    fields.set(normalizedLabel, normalizedValue)
+  }
+
+  for (const match of page.matchAll(/<h6[^>]*>([\s\S]*?)<\/h6>\s*<p[^>]*class="[^"]*text-muted[^"]*"[^>]*>([\s\S]*?)<\/p>/gi)) {
+    collect(match[1], match[2])
+  }
+
+  for (const match of page.matchAll(/<p[^>]*class="[^"]*text-muted[^"]*"[^>]*>([\s\S]*?)<\/p>\s*<p[^>]*class="[^"]*(?:fw-medium|text-muted)[^"]*"[^>]*>([\s\S]*?)<\/p>/gi)) {
+    collect(match[1], match[2])
+  }
+
+  return Object.fromEntries(fields)
+}
+
+const isGenericHeading = (value) => /latest job openings/i.test(normalizeWhitespace(value) || '')
+
 export const extractJobDetail = (html, listing = {}) => {
+  const fields = extractLabeledFields(html)
   const applyUrl = toAbsoluteUrl(
     extractFirst(
       /https:\/\/movate\.darwinbox\.com\/ms\/candidate\/candidate\/login\?redirect=[^"'\\\s<]+/i,
@@ -149,28 +229,46 @@ export const extractJobDetail = (html, listing = {}) => {
     HOMEPAGE_URL,
   )
 
-  const location = normalizeWhitespace(
+  const location = normalizeLocation(fields.location) || normalizeLocation(
     extractFirst(/<div[^>]+class="job-location"[^>]*>([\s\S]*?)<\/div>/i, html),
-  ) || listing.location || null
+  ) || normalizeLocation(listing.location) || null
 
-  const department = normalizeWhitespace(
+  const department = normalizeWhitespace(fields.department) || normalizeWhitespace(
     extractFirst(/<div[^>]+class="job-department"[^>]*>([\s\S]*?)<\/div>/i, html),
   ) || listing.department || null
 
   const descriptionHtml = extractFirst(
+    /<div[^>]+class="job-detail-desc"[^>]*>([\s\S]*?)<\/div>/i,
+    html,
+  ) || extractFirst(
     /<div[^>]+class="job-description"[^>]*>([\s\S]*?)<\/div>/i,
     html,
   )
 
+  const detailTitle = normalizeWhitespace(
+    extractFirst(/<h5[^>]*>([\s\S]*?)<\/h5>/i, html),
+  ) || normalizeWhitespace(fields['job title']) || null
+
+  const fallbackTitle = normalizeWhitespace(
+    extractFirst(/<h1[^>]*>([\s\S]*?)<\/h1>/i, html),
+  )
+
+  const title = !isGenericHeading(detailTitle)
+    ? detailTitle
+    : !isGenericHeading(fallbackTitle)
+      ? fallbackTitle
+      : listing.title || null
+
   return {
     ...listing,
-    title: normalizeWhitespace(extractFirst(/<h1[^>]*>([\s\S]*?)<\/h1>/i, html)) || listing.title || null,
+    title,
     department,
     location,
     city: extractCity(location) || listing.city || null,
     applyUrl: applyUrl || listing.applyUrl || null,
     sourceUrl: listing.sourceUrl || null,
-    requiredSkills: extractListItems(descriptionHtml),
+    experienceRequired: normalizeWhitespace(fields.experience) || listing.experienceRequired || null,
+    requiredSkills: extractDescriptionHighlights(descriptionHtml),
     jobDescription: stripTags(descriptionHtml),
   }
 }

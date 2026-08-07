@@ -42,7 +42,7 @@ test('Micron Technology India local catalog captures the verified first-party In
   assert.equal(provider.companyCareerPage, 'https://in.micron.com/about/careers')
   assert.equal(
     provider.publicBoardUrl,
-    'https://careers.micron.com/careers?domain=micron.com&pid=25253497&sort_by=relevance',
+    'https://micron.eightfold.ai/careers?location=India&domain=micron.com',
   )
   assert.equal(provider.listingApiUrl, 'https://careers.micron.com/api/pcsx/search')
   assert.equal(
@@ -63,18 +63,21 @@ test('Micron Technology India local catalog captures the verified first-party In
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-india-careers-page+eightfold-search-api+detail-api+india-openings-only',
+    'verified-india-careers-page+eightfold-search-api+public-position-urls+india-openings-only',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.match(provider.dryRunFile, /microntechnologyindia[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/in\.micron\.com\/about\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.micron\.com\/careers\?domain=micron\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.micron\.com\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/micron\.eightfold\.ai\/careers\?location=India&domain=micron\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.micron\.com\/api\/pcsx\/search/i)
-  assert.match(provider.verifiedSurfaceSummary, /principal engineer- hig hbm layout/i)
+  assert.match(provider.verifiedSurfaceSummary, /290 live India openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /sr cloud data engineer, smai/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.micron\.com\/careers\/job\//i)
   assert.match(provider.verifiedSurfaceSummary, /hyderabad, telangana, india/i)
 
   assert.equal(

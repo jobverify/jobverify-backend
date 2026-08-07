@@ -11,7 +11,7 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env') })
 
-import { deleteAllJobsFromDB, saveToDB, saveToFile } from './utils/saveToDB.js'
+import { deleteAllJobsFromDB, saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
 import { filterIndiaJobs } from './utils/indiaLocationFilter.js'
 import { withRetry } from './utils/retry.js'
 import {
@@ -36,7 +36,46 @@ const isParallel = process.argv.includes('--parallel')
 const DEFAULT_SCRAPER_TIMEOUT_MS = 5 * 60 * 1000
 const DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS = 210 * 1000
 const DEFAULT_ABORT_GRACE_MS = 5 * 1000
+const DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY = 2
+const DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH = 20
 const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
+
+export const isDryRunPublicExperienceEnabled = (
+  value = process.env.SCRAPER_DISABLE_DRY_RUN_PUBLIC_EXPERIENCE,
+) => !/^(?:1|true|yes)$/i.test(String(value ?? '').trim())
+
+export const resolveDryRunMaxJobsToEnrich = (
+  value = process.env.SCRAPER_DRY_RUN_MAX_JOBS_TO_ENRICH,
+) => {
+  const normalized = String(value ?? '').trim()
+  if (!normalized) return DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH
+  if (/^(?:all|full|unlimited)$/i.test(normalized)) return null
+
+  const parsed = Number.parseInt(normalized, 10)
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed
+  }
+
+  return DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH
+}
+
+export const buildDryRunSnapshotOptions = ({
+  enrichPublicExperience = isDryRunPublicExperienceEnabled(),
+  experienceEnrichmentConcurrency = DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY,
+  maxJobsToEnrich = resolveDryRunMaxJobsToEnrich(),
+} = {}) => ({
+  enrichPublicExperience,
+  experienceEnrichmentConcurrency,
+  maxJobsToEnrich,
+})
+
+export const finalizeDirectRunnerExit = ({
+  processRef = process,
+  exit = process.exit,
+} = {}) => {
+  const exitCode = Number.isInteger(processRef?.exitCode) ? processRef.exitCode : 0
+  exit(exitCode)
+}
 
 export class ScraperSourceTimeoutError extends Error {
   constructor(scraperName, timeoutMs) {
@@ -65,6 +104,79 @@ process.on('unhandledRejection', (reason) => {
   throw reason
 })
 
+const normalizeRequestedSource = (value) => String(value || '').trim().toLowerCase()
+const normalizeLegacyAliasPart = (value) => normalizeRequestedSource(value).replace(/[^a-z0-9]/g, '')
+
+const buildLegacySourceAliases = (scraper = {}) => {
+  const source = normalizeRequestedSource(scraper.name)
+  const provider = scraper.provider || {}
+  const aliases = new Set()
+
+  if (source.endsWith('.wellfounddirectory') || provider.adapter === 'wellfoundDirectory') {
+    const sourceBase = source.replace(/\.wellfounddirectory$/, '')
+    const companyAlias = normalizeLegacyAliasPart(provider.companyName)
+    const sourceAlias = normalizeLegacyAliasPart(sourceBase)
+
+    if (companyAlias) aliases.add(`wf${companyAlias}`)
+    if (sourceAlias) aliases.add(`wf${sourceAlias}`)
+  }
+
+  if (source.endsWith('.himalayas.app') || provider.adapter === 'himalayasDirectory') {
+    const sourceBase = source.replace(/\.himalayas\.app$/, '')
+    const companyAlias = normalizeLegacyAliasPart(provider.companyName)
+    const sourceAlias = normalizeLegacyAliasPart(sourceBase)
+    const slugAlias = normalizeLegacyAliasPart(provider.himalayasCompanySlug)
+
+    if (companyAlias) aliases.add(`hm${companyAlias}`)
+    if (sourceAlias) aliases.add(`hm${sourceAlias}`)
+    if (slugAlias) aliases.add(`hm${slugAlias}`)
+  }
+
+  aliases.delete(source)
+  return [...aliases]
+}
+
+const buildScraperSourceLookup = (scrapers = []) => {
+  const bySource = new Map()
+  const byAlias = new Map()
+  const ambiguousAliases = new Set()
+
+  for (const scraper of scrapers) {
+    const source = normalizeRequestedSource(scraper.name)
+    bySource.set(source, scraper)
+
+    for (const alias of buildLegacySourceAliases(scraper)) {
+      const existing = byAlias.get(alias)
+      if (existing && normalizeRequestedSource(existing.name) !== source) {
+        byAlias.delete(alias)
+        ambiguousAliases.add(alias)
+        continue
+      }
+
+      if (!ambiguousAliases.has(alias)) {
+        byAlias.set(alias, scraper)
+      }
+    }
+  }
+
+  return { bySource, byAlias, ambiguousAliases }
+}
+
+const resolveRequestedScraper = (source, lookup) => {
+  const normalizedSource = normalizeRequestedSource(source)
+  const exact = lookup.bySource.get(normalizedSource)
+  if (exact) return { scraper: exact }
+
+  if (lookup.ambiguousAliases.has(normalizedSource)) {
+    return { ambiguous: true }
+  }
+
+  const aliasMatch = lookup.byAlias.get(normalizedSource)
+  if (aliasMatch) return { scraper: aliasMatch, viaAlias: true }
+
+  return { missing: true }
+}
+
 export const selectScrapersForRun = (
   scrapers,
   {
@@ -75,10 +187,10 @@ export const selectScrapersForRun = (
 ) => {
   const requestedSources = String(onlySources || '')
     .split(',')
-    .map((source) => source.trim().toLowerCase())
+    .map((source) => normalizeRequestedSource(source))
     .filter(Boolean)
-  const normalizedStartAt = String(startAt || '').trim().toLowerCase()
-  const normalizedStartAfter = String(startAfter || '').trim().toLowerCase()
+  const normalizedStartAt = normalizeRequestedSource(startAt)
+  const normalizedStartAfter = normalizeRequestedSource(startAfter)
 
   if (requestedSources.length && (normalizedStartAt || normalizedStartAfter)) {
     throw new Error('Use SCRAPER_ONLY by itself, without SCRAPER_START_AT or SCRAPER_START_AFTER.')
@@ -88,23 +200,38 @@ export const selectScrapersForRun = (
     throw new Error('Use only one of SCRAPER_START_AT or SCRAPER_START_AFTER.')
   }
 
+  const lookup = buildScraperSourceLookup(scrapers)
+
   if (requestedSources.length) {
-    const bySource = new Map(scrapers.map((scraper) => [scraper.name.toLowerCase(), scraper]))
     const selected = []
     const missing = []
+    const ambiguous = []
     const seen = new Set()
+    const resolvedSources = new Set()
 
     for (const source of requestedSources) {
       if (seen.has(source)) continue
       seen.add(source)
 
-      const scraper = bySource.get(source)
-      if (!scraper) {
+      const resolution = resolveRequestedScraper(source, lookup)
+      if (resolution.ambiguous) {
+        ambiguous.push(source)
+        continue
+      }
+      if (resolution.missing) {
         missing.push(source)
         continue
       }
 
+      const scraper = resolution.scraper
+      const resolvedSource = normalizeRequestedSource(scraper.name)
+      if (resolvedSources.has(resolvedSource)) continue
+      resolvedSources.add(resolvedSource)
       selected.push(scraper)
+    }
+
+    if (ambiguous.length) {
+      throw new Error(`SCRAPER_ONLY source alias(es) resolved ambiguously: ${ambiguous.join(', ')}.`)
     }
 
     if (missing.length) {
@@ -122,11 +249,17 @@ export const selectScrapersForRun = (
     return { scrapers, resumeMessage: null }
   }
 
-  const sourceIndex = scrapers.findIndex((scraper) => scraper.name.toLowerCase() === resumeSource)
-  if (sourceIndex === -1) {
+  const resumeResolution = resolveRequestedScraper(resumeSource, lookup)
+  if (resumeResolution.ambiguous) {
+    throw new Error(`Resume source "${resumeSource}" resolves ambiguously in the scraper catalog.`)
+  }
+  if (resumeResolution.missing) {
     throw new Error(`Resume source "${resumeSource}" was not found in the scraper catalog.`)
   }
 
+  const sourceIndex = scrapers.findIndex((scraper) => (
+    normalizeRequestedSource(scraper.name) === normalizeRequestedSource(resumeResolution.scraper.name)
+  ))
   const startIndex = normalizedStartAfter ? sourceIndex + 1 : sourceIndex
   const selected = scrapers.slice(startIndex)
   return {
@@ -364,7 +497,11 @@ export const runAll = async () => {
 
       let result
       if (isDryRun) {
-        saveToFile(indiaJobs, scraper.dryRunFile)
+        await saveDryRunSnapshot(
+          indiaJobs,
+          scraper.dryRunFile,
+          buildDryRunSnapshotOptions(),
+        )
         result = {
           jobs: indiaJobs.length,
           filteredNonIndia: Math.max(0, jobs.length - indiaJobs.length),
@@ -495,7 +632,11 @@ export const runScraper = async (scraper, progressStr = '') => {
 
     let result
     if (isDryRun) {
-      saveToFile(indiaJobs, scraper.dryRunFile)
+      await saveDryRunSnapshot(
+        indiaJobs,
+        scraper.dryRunFile,
+        buildDryRunSnapshotOptions(),
+      )
       result = {
         jobs: indiaJobs.length,
         filteredNonIndia: Math.max(0, jobs.length - indiaJobs.length),
@@ -702,12 +843,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const failureAbortThreshold = resolveFailureAbortThreshold()
     if (shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)) {
       console.error(`\nPipeline aborted due to too many errors (>= ${failureAbortThreshold}).`)
-      process.exit(1)
+      process.exitCode = 1
     }
-
-    process.exit(0)
   } catch (err) {
     console.error('Pipeline error:', err)
-    process.exit(1)
+    process.exitCode = 1
   }
+
+  finalizeDirectRunnerExit()
 }

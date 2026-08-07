@@ -20,6 +20,25 @@ const careersPageHtml = `
 </html>
 `
 
+const currentCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs at Kumaran Systems Pvt Ltd</title>
+  </head>
+  <body>
+    <header>
+      <a href="/careers/">Careers</a>
+      <a href="mailto:info@kumaran.com">info@kumaran.com</a>
+    </header>
+    <main>
+      <p>Founded in 1992, Kumaran Systems is a global technology partner helping enterprises modernize legacy systems.</p>
+      <a href="/careers/">Life At Kumaran's</a>
+    </main>
+  </body>
+</html>
+`
+
 const jobsApiPayload = {
   code: 'success',
   data: [
@@ -105,6 +124,7 @@ test('Kumaran Systems helpers stay pinned to the verified first-party careers pa
     'https://careers.kumaran.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
   )
   assert.equal(kumaran.hasOfficialCareersSignal(careersPageHtml), true)
+  assert.equal(kumaran.hasOfficialCareersSignal(currentCareersPageHtml), true)
   assert.equal(kumaran.hasOfficialCareersSignal('<html><body>Unexpected</body></html>'), false)
   assert.deepEqual(kumaran.extractIndiaJobs(jobsApiPayload), [
     {

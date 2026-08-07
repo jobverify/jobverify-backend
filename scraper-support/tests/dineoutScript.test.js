@@ -34,6 +34,28 @@ const redirectedBlockedRouteHtml = `
 </html>
 `
 
+const redirectedRestaurantsRouteHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Best Restaurants Near Me In 2026 | Swiggy</title>
+    <meta
+      name="description"
+      content="Find The Restaurants Serving Near Your Location. View Menus, Reviews And Ratings For The Best Restaurants Near You On Swiggy."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Best Restaurants Near Me In 2026 | Swiggy</h1>
+      <p>Restaurants Near Me</p>
+      <p>For Dining Out</p>
+      <p>Order Online</p>
+      <p>Book a table</p>
+    </main>
+  </body>
+</html>
+`
+
 const swiggyCareersHtml = `
 <!doctype html>
 <html lang="en">
@@ -57,6 +79,16 @@ const careersIntegrationScript = `
 const clientShortName = "swiggy";
 let iFrameSrc = "https://" + clientShortName + ".mynexthire.com/employer/jobs/careers";
 document.getElementById("careers-frame").src = iFrameSrc;
+`
+
+const templatedCareersIntegrationScript = `
+function mnh_ci_onreadystatechange(pageType, clientShortName) {
+  var firstSuffix = ((window.location.href + "").split("?")[1]);
+  var urlSuffix = firstSuffix ? ("?" + firstSuffix) : "";
+  urlSuffix += urlSuffix === "" ? "?src=careers&page=careers" : "&page=careers";
+  iFrameSrc = "https://" + clientShortName + ".mynexthire.com/employer/jobs/careers";
+  document.getElementById("mnhembedded").src = iFrameSrc + "#" + urlSuffix;
+}
 `
 
 const jobsBoardHtml = `
@@ -86,6 +118,42 @@ const jobBoardDetailsJson = JSON.stringify({
   },
   requisition_custom_fields: {
     custom_fields: ['company', 'business_unit', 'department', 'Team_name'],
+  },
+})
+
+const nestedJobBoardDetailsJson = JSON.stringify({
+  clientName: 'Swiggy',
+  tenantPreferencesMap: {
+    career_page_url: {
+      referral_url: [
+        {
+          url: 'https://swiggy.mynexthire.com/employer/referrals',
+          pageType: 'application',
+        },
+        {
+          url: 'https://swiggy.mynexthire.com/employer/referrals',
+          pageType: 'jd',
+        },
+        {
+          url: 'https://swiggy.mynexthire.com/employer/referrals',
+          pageType: 'list',
+        },
+      ],
+      url: [
+        {
+          url: 'https://careers.swiggy.com/#/careers/apply',
+          pageType: 'application',
+        },
+        {
+          url: 'https://careers.swiggy.com/#/careers',
+          pageType: 'jd',
+        },
+        {
+          url: 'https://careers.swiggy.com/#/careers',
+          pageType: 'list',
+        },
+      ],
+    },
   },
 })
 
@@ -155,13 +223,40 @@ test('Dineout constants and helpers stay pinned to the verified no-public-jobs c
     }),
     true,
   )
+  assert.equal(
+    dineout.hasRedirectedRestaurantsNearMeSignal(redirectedRestaurantsRouteHtml),
+    true,
+  )
+  assert.equal(
+    dineout.isVerifiedRedirectedNoTrustPublicJobRoute({
+      status: 200,
+      url: 'https://www.swiggy.com/restaurants-near-me',
+      html: redirectedRestaurantsRouteHtml,
+    }),
+    true,
+  )
   assert.equal(dineout.hasParentCareersLandingSignal(swiggyCareersHtml), true)
   assert.equal(
     dineout.extractJobsBoardUrlFromIntegrationScript(careersIntegrationScript),
     'https://swiggy.mynexthire.com/employer/jobs/careers',
   )
+  assert.equal(
+    dineout.extractJobsBoardUrlFromIntegrationScript(templatedCareersIntegrationScript),
+    'https://swiggy.mynexthire.com/employer/jobs/careers',
+  )
   assert.equal(dineout.hasJobsBoardLandingSignal(jobsBoardHtml), true)
   assert.equal(dineout.hasVerifiedJobBoardDetailsSignal(jobBoardDetailsJson), true)
+  assert.equal(dineout.hasVerifiedJobBoardDetailsSignal(nestedJobBoardDetailsJson), true)
+  assert.equal(
+    dineout.isRecoverableCertificateError({
+      message: 'fetch failed',
+      cause: {
+        code: 'CERT_HAS_EXPIRED',
+        message: 'certificate has expired',
+      },
+    }),
+    true,
+  )
   assert.equal(
     dineout.hasDineoutAttributablePublicRoles('Explore Dineout jobs and apply today'),
     true,
@@ -182,9 +277,9 @@ test('Dineout returns no jobs only while the verified Swiggy handoff stays non-a
 
       if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
         return {
-          status: 403,
+          status: 200,
           url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-          html: redirectedBlockedRouteHtml,
+          html: redirectedRestaurantsRouteHtml,
         }
       }
 
@@ -215,6 +310,80 @@ test('Dineout returns no jobs only while the verified Swiggy handoff stays non-a
     dineout.CAREERS_INTEGRATION_SCRIPT_URL,
     dineout.JOBS_BOARD_URL,
     dineout.JOBS_BOARD_DETAILS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Dineout falls back to an expired-certificate fetch for the exact-name Dineout routes and keeps validating the Swiggy surfaces', async () => {
+  const dineout = await loadModule()
+  const primaryRequests = []
+  const insecureRequests = []
+
+  const jobs = await dineout.createDineoutScraper().run({
+    fetchPage: async (url) => {
+      primaryRequests.push(url)
+
+      if (url.startsWith('https://www.dineout.co.in/')) {
+        throw Object.assign(new TypeError('fetch failed'), {
+          cause: {
+            code: 'CERT_HAS_EXPIRED',
+            message: 'certificate has expired',
+          },
+        })
+      }
+
+      if (url === dineout.CAREERS_URL) {
+        return { status: 200, url, html: swiggyCareersHtml }
+      }
+
+      if (url === dineout.CAREERS_INTEGRATION_SCRIPT_URL) {
+        return { status: 200, url, html: careersIntegrationScript }
+      }
+
+      if (url === dineout.JOBS_BOARD_URL) {
+        return { status: 200, url, html: jobsBoardHtml }
+      }
+
+      if (url === dineout.JOBS_BOARD_DETAILS_URL) {
+        return { status: 200, url, html: jobBoardDetailsJson }
+      }
+
+      throw new Error(`Unexpected Dineout URL: ${url}`)
+    },
+    fetchPageAllowingExpiredCertificate: async (url) => {
+      insecureRequests.push(url)
+
+      if (url === dineout.HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url: dineout.CANONICAL_CONSUMER_SURFACE_URL,
+          html: homepageHtml,
+        }
+      }
+
+      if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
+        return {
+          status: 200,
+          url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
+          html: redirectedRestaurantsRouteHtml,
+        }
+      }
+
+      throw new Error(`Unexpected insecure Dineout URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(primaryRequests, [
+    dineout.HOMEPAGE_URL,
+    ...dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS,
+    dineout.CAREERS_URL,
+    dineout.CAREERS_INTEGRATION_SCRIPT_URL,
+    dineout.JOBS_BOARD_URL,
+    dineout.JOBS_BOARD_DETAILS_URL,
+  ])
+  assert.deepEqual(insecureRequests, [
+    dineout.HOMEPAGE_URL,
+    ...dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])
 })
@@ -252,9 +421,9 @@ test('Dineout fails closed when the consumer surface, redirected routes, or pare
 
         if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.slice(1).includes(url)) {
           return {
-            status: 403,
+            status: 200,
             url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedBlockedRouteHtml,
+            html: redirectedRestaurantsRouteHtml,
           }
         }
 
@@ -273,9 +442,9 @@ test('Dineout fails closed when the consumer surface, redirected routes, or pare
 
         if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
           return {
-            status: 403,
+            status: 200,
             url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedBlockedRouteHtml,
+            html: redirectedRestaurantsRouteHtml,
           }
         }
 
@@ -302,9 +471,9 @@ test('Dineout fails closed when the consumer surface, redirected routes, or pare
 
         if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
           return {
-            status: 403,
+            status: 200,
             url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedBlockedRouteHtml,
+            html: redirectedRestaurantsRouteHtml,
           }
         }
 
@@ -338,9 +507,9 @@ test('Dineout fails closed when the consumer surface, redirected routes, or pare
 
         if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
           return {
-            status: 403,
+            status: 200,
             url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedBlockedRouteHtml,
+            html: redirectedRestaurantsRouteHtml,
           }
         }
 

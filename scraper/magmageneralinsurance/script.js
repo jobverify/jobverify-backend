@@ -53,7 +53,7 @@ export const hasPrimaryCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*General Insurance Company India \| Careers & Opportunities - Magma Insurance\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*General Insurance Company India \| Careers\s*&(?:amp;)?\s*Opportunities - Magma Insurance(?:\s*-\s*Magma)?\s*<\/title>/i.test(page)
     && text.includes('Careers')
     && text.includes('Be a part of the Magma family!')
     && text.includes('Apply for Job')
@@ -67,7 +67,7 @@ export const hasAlternateCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers(?: & Opportunities)? - Magma Insurance\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Career(?:s)?(?:\s*&(?:amp;)?\s*Opportunities)? - Magma Insurance(?:\s*-\s*Magma)?\s*<\/title>/i.test(page)
     && text.includes('Careers')
     && text.includes('Apply for Job')
     && text.includes('Insurance Experience')

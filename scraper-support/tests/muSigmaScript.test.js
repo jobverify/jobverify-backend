@@ -11,10 +11,10 @@ const loadMuSigmaModule = async () => {
 
 const sampleOfficialCareersHtml = `
 <html>
-  <head><title>Careers | Mu Sigma</title></head>
+  <head><title>Explore Exciting Career Opportunities | Join Mu Sigma</title></head>
   <body>
-    <h1>Build what matters at Mu Sigma</h1>
-    <a href="https://www.linkedin.com/jobs/search/?f_C=37734&geoId=102713980">Explore current openings</a>
+    <h1>Explore Exciting Career Opportunities | Join Mu Sigma</h1>
+    <a href="https://www.linkedin.com/company/mu-sigma/?viewAsMember=true">Follow Mu Sigma on LinkedIn</a>
   </body>
 </html>
 `

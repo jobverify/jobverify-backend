@@ -58,6 +58,7 @@ test('extractSearchResults parses Infosys public search payloads and keeps only 
     applyUrl: 'https://career.infosys.com/jobapply?jobReferenceCode=INFSYS-EXTERNAL-247719&sourceId=1',
     employmentType: 'Full-time',
     experienceRequired: '2 - 20 years',
+    publicExperienceChecked: true,
     minimumQualification: 'Master Of Engineering, MCA, MSc, MTech, Bachelor of Engineering, BCA, BSc, BTech',
     preferredQualification: null,
     requiredSkills: ['Sailpoint IIQ', 'Entra ID', 'RSA DLP'],
@@ -69,6 +70,7 @@ test('extractSearchResults parses Infosys public search payloads and keeps only 
 
   assert.equal(jobs[1].title, 'Graduate Java Developer')
   assert.equal(jobs[1].experienceRequired, '0 - 1 years')
+  assert.equal(jobs[1].publicExperienceChecked, true)
   assert.equal(jobs[1].location, 'Pune, India')
 })
 
@@ -90,6 +92,7 @@ test('extractJobDetail builds a richer Infosys detail record from the public job
     applyUrl: 'https://career.infosys.com/jobapply?jobReferenceCode=INFSYS-EXTERNAL-247719&sourceId=1',
     employmentType: 'Full-time',
     experienceRequired: '2 - 20 years',
+    publicExperienceChecked: true,
     minimumQualification: 'Bachelor of Engineering, BTech, BSc, BCA, Master Of Engineering, MTech, MSc, MCA',
     preferredQualification: null,
     requiredSkills: ['RSA DLP', 'Entra ID', 'Sailpoint IIQ'],

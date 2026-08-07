@@ -13,7 +13,7 @@ const careersPageHtml = `
       <p>Amazing things happen at Happay all the time.</p>
       <p>Begin your journey of excellence with Indias leading Travel, Expense and Payment Management Solution.</p>
       <img alt="Happay-MMT Logo" src="/logo.png">
-      <footer>© 2026 Makemytrip (India) Private Limited. All rights reserved</footer>
+      <footer>&#169; 2026 Makemytrip (India) Private Limited. All rights reserved</footer>
     </main>
   </body>
 </html>
@@ -22,10 +22,14 @@ const careersPageHtml = `
 const jobsPageHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Jobs - Expense Management Software | Spend Management System & Solution</title>
+  </head>
   <body>
     <main>
-      <p>Home » Jobs</p>
-      <p>[jobs per_page="12" show_filters="true"]</p>
+      <h1>Jobs</h1>
+      <p>Expense Management</p>
+      <p>Travel Management</p>
       <img alt="Happay-MMT Logo" src="/logo.png">
     </main>
   </body>
@@ -40,7 +44,7 @@ const contactPageHtml = `
       <h1>Looking to get in touch with us?</h1>
       <p>To join the Happay team</p>
       <p>careers@happay.in</p>
-      <p>MakeMyTrip India Private Limited</p>
+      <p>MakeMyTrip (India) Limited</p>
       <p>Bengaluru office address</p>
     </main>
   </body>
@@ -55,7 +59,7 @@ const loadModule = async () => {
   }
 }
 
-test('Happay helpers stay pinned to the verified first-party careers and shortcode jobs pages from Friday, July 17, 2026', async () => {
+test('Happay helpers stay pinned to the verified first-party careers and jobs pages from Sunday, August 2, 2026', async () => {
   const happay = await loadModule()
 
   assert.equal(happay.SOURCE, 'happay')
@@ -70,7 +74,7 @@ test('Happay helpers stay pinned to the verified first-party careers and shortco
   assert.equal(happay.pageExposesStructuredJobListings(jobsPageHtml), false)
 })
 
-test('Happay returns no jobs only while the verified first-party jobs page stays shortcode-only', async () => {
+test('Happay returns no jobs only while the verified first-party jobs page remains a non-listing shell', async () => {
   const happay = await loadModule()
   const requestedUrls = []
 
@@ -117,7 +121,7 @@ test('Happay fails closed when the verified careers identity changes or a struct
             <html>
               <body>
                 <main>
-                  <p>Home » Jobs</p>
+                  <h1>Jobs</h1>
                   <article class="job-card">
                     <h2>Engineering Manager</h2>
                     <a href="https://happay.com/jobs/engineering-manager">Apply now</a>

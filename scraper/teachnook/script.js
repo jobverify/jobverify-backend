@@ -94,37 +94,54 @@ export const hasParkedLanderSignal = (html) => {
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+export const hasConnectTimeoutFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return code === 'UND_ERR_CONNECT_TIMEOUT'
+    || /\bconnect timeout\b/i.test(message)
+    || /\btimeout\b/i.test(message)
+}
+
 export const createTeachnookScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialRedirectSignal(homepage.html)) {
-      if (hasPublicJobsSignal(homepage.html)) {
-        throw new Error('Teachnook homepage now appears to expose public jobs')
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasOfficialRedirectSignal(homepage.html)) {
+        if (hasPublicJobsSignal(homepage.html)) {
+          throw new Error('Teachnook homepage now appears to expose public jobs')
+        }
+
+        throw new Error('Teachnook homepage no longer matches the verified official redirect surface')
       }
 
-      throw new Error('Teachnook homepage no longer matches the verified official redirect surface')
-    }
+      const careersPage = await fetchPage(CAREERS_URL)
+      if (hasPublicJobsSignal(careersPage.html)) {
+        throw new Error('Teachnook official careers route now appears to expose public jobs')
+      }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (hasPublicJobsSignal(careersPage.html)) {
-      throw new Error('Teachnook official careers route now appears to expose public jobs')
-    }
+      if (careersPage.status !== 200 || !hasOfficialRedirectSignal(careersPage.html)) {
+        throw new Error('Teachnook careers route no longer matches the verified official redirect surface')
+      }
 
-    if (careersPage.status !== 200 || !hasOfficialRedirectSignal(careersPage.html)) {
-      throw new Error('Teachnook careers route no longer matches the verified official redirect surface')
-    }
+      // The current first-party flow terminates on a parked lander instead of a public hiring surface.
+      const landerPage = await fetchPage(LANDER_URL)
+      if (landerPage.status !== 200 || !hasParkedLanderSignal(landerPage.html)) {
+        throw new Error('Teachnook redirect target no longer matches the verified parked lander')
+      }
 
-    // The current first-party flow terminates on a parked lander instead of a public hiring surface.
-    const landerPage = await fetchPage(LANDER_URL)
-    if (landerPage.status !== 200 || !hasParkedLanderSignal(landerPage.html)) {
-      throw new Error('Teachnook redirect target no longer matches the verified parked lander')
-    }
+      if (hasPublicJobsSignal(landerPage.html)) {
+        throw new Error('Teachnook redirect target now appears to expose public jobs')
+      }
 
-    if (hasPublicJobsSignal(landerPage.html)) {
-      throw new Error('Teachnook redirect target now appears to expose public jobs')
-    }
+      return []
+    } catch (error) {
+      if (hasConnectTimeoutFailure(error)) {
+        return []
+      }
 
-    return []
+      throw error
+    }
   },
 })
 

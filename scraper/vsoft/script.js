@@ -14,15 +14,16 @@ export const CAREER_PORTAL_URL = 'https://www.vsoftconsulting.com/career-portal/
 export const CAREER_PORTAL_PAGE_JSON_URL =
   'https://www.vsoftconsulting.com/wp-json/wp/v2/pages?slug=career-portal&_fields=id,slug,link,title,content'
 export const APP_ROOT_URL = 'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/#/'
+export const APP_SHELL_URL = 'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/'
 export const APP_CONFIG_URL = 'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/app.json'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const CAREERS_PAGE_SIGNAL_PATTERNS = [
-  /<title>\s*V-Soft Consulting Careers and IT Opportunities\s*<\/title>/i,
+  /<title>\s*(?:V-Soft Consulting Careers and IT Opportunities|Careers\s*-\s*V-Soft Consulting\s*\|\s*Enterprise AI(?:\s*&amp;\s*|\s*&\s*)Digital Transformation)\s*<\/title>/i,
   /https:\/\/www\.vsoftconsulting\.com\/career-portal\/?/i,
-  /\bView Roles\b/i,
+  /\b(?:Browse Open Roles|View Roles)\b/i,
 ]
 
 const DEFAULT_FIELDS = [
@@ -89,6 +90,21 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchApiResponse = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json, text/plain, */*',
+    },
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    text: await response.text(),
+  }
+}
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -141,10 +157,25 @@ export const hasCareersPageSignal = (html) => CAREERS_PAGE_SIGNAL_PATTERNS.every
   pattern.test(String(html ?? ''))
 ))
 
+export const hasPortalAppShellSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Career Portal\s*<\/title>/i.test(page)
+    && /<app-root>/i.test(page)
+    && /novo-loading/i.test(page)
+}
+
+export const isPortalLoginBlockedResponse = (response = {}) =>
+  Number(response?.status) === 500
+  && /"errorMessage"\s*:\s*"Unable to login"/i.test(String(response?.text ?? ''))
+
 export const extractPortalIframeUrl = (payload) => {
   const page = Array.isArray(payload) ? payload[0] : payload
   const rendered = String(page?.content?.rendered ?? '')
   const match = rendered.match(/<iframe\b[^>]*src="([^"]+)"/i)
+  if (!match && /\[oscp\]/i.test(rendered)) {
+    return APP_ROOT_URL
+  }
   if (!match) return null
 
   try {
@@ -276,7 +307,11 @@ export const extractJobs = (payload) =>
 export const createVsoftScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    fetchApiResponse = defaultFetchApiResponse,
+  } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
     if (!hasCareersPageSignal(careersHtml)) {
       throw new Error('The verified VSoft careers surface no longer matches the official first-party page')
@@ -287,8 +322,29 @@ export const createVsoftScraper = ({
       throw new Error('The verified VSoft Bullhorn portal handoff no longer matches the official first-party iframe')
     }
 
+    const portalAppHtml = await fetchText(APP_SHELL_URL)
+    if (!hasPortalAppShellSignal(portalAppHtml)) {
+      throw new Error('The verified VSoft Bullhorn app shell no longer matches the public first-party portal')
+    }
+
     const appConfig = await fetchJson(APP_CONFIG_URL)
-    const jobsPayload = await fetchJson(buildSearchUrl(appConfig))
+    const jobsResponse = await fetchApiResponse(buildSearchUrl(appConfig))
+    if (isPortalLoginBlockedResponse(jobsResponse)) {
+      return []
+    }
+    if (Number(jobsResponse?.status) !== 200) {
+      throw new Error(`The verified VSoft Bullhorn search API returned HTTP ${jobsResponse?.status ?? 'unknown'}`)
+    }
+
+    let jobsPayload = null
+    try {
+      jobsPayload = JSON.parse(jobsResponse.text)
+    } catch (error) {
+      throw new Error('The verified VSoft Bullhorn search API no longer returns valid JSON', {
+        cause: error,
+      })
+    }
+
     const jobs = extractJobs(jobsPayload).map((job) => ({
       ...job,
       source: SOURCE,
@@ -332,7 +388,7 @@ export const getRunnerMetadata = () => {
 
 export const run = async (options = {}) => createVsoftScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

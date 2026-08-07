@@ -1,0 +1,424 @@
+[
+  {
+    "title": "Associate Graphic Designer",
+    "company": "E2logy Software Solutions",
+    "department": "IT Services",
+    "location": "Noida Sector 73, India",
+    "city": "Noida Sector 73",
+    "country": "India",
+    "jobId": "424443000011390001",
+    "requisitionId": "424443000011390001",
+    "sourceUrl": "https://e2logy.zohorecruit.com/jobs/Careers/424443000011390001/Associate-Graphic-Designer?source=CareerSite",
+    "applyUrl": "https://e2logy.zohorecruit.com/jobs/Careers/424443000011390001/Associate-Graphic-Designer?source=CareerSite",
+    "employmentType": "Full-time",
+    "experienceRequired": "0-2 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-08-01T14:39:13.949Z",
+    "closingDate": null,
+    "jobDescription": "Job Description We are looking for a creative and enthusiastic Associate Graphic Designer to join our Digital Marketing team. This role is ideal for graduates from design institutes who have a strong visual design sense and a passion for creating engaging digital content. The candidate should be eager to learn, adapt to emerging AI-powered design tools, and contribute to building compelling marketing creatives across digital platforms.\n\nRESPONSIBILITIES:\n​ Design creative social media posts, banners, advertisements, and other marketing materials. Develop visually appealing creatives while maintaining brand consistency. Create basic motion graphics and short promotional videos for digital campaigns. Work closely with the marketing team to understand objectives and translate ideas into impactful visuals. Incorporate feedback and deliver high-quality designs within defined timelines. Stay updated with current design trends and social media best practices. Utilize AI design tools to improve design quality and productivity. Explore new AI-based creative tools and workflows to enhance content creation. Ensure all designs align with the company’s visual identity and branding guidelines. Organize and maintain design assets for future use. Requirements Bachelor’s Degree in Graphic Design, Communication Design, Visual Communication, or a related design field. Strong understanding of design fundamentals, including typography, color theory, composition, and layout. Familiarity with AI-powered creative tools such as Magnific AI, Figma, Canva, Claude Design, or similar platforms. Basic knowledge of Adobe Photoshop, Illustrator, Premiere Pro, or After Effects is an advantage. Basic knowledge of creating graphics and short-form video content. Understanding of social media platforms and digital marketing creatives. Strong creativity, attention to detail, and willingness to learn new technologies. Candidates from recognized Design Institutes are preferred. A portfolio showcasing academic or personal design projects is mandatory. Freshers are encouraged to apply. Benefits Competitive salary and performance-based bonuses. Health insurance and other employee benefits. Support for professional certifications and career development. Opportunity to work on exciting digital marketing campaigns. Exposure to AI-powered creative workflows and modern design tools. Collaborative and supportive work environment. Excellent learning and career growth opportunities for fresh graduates. Schedule: Day shift Monday to Friday Application Process: Submit your resume, cover letter, and optionally a portfolio of academic projects or personal work to careers@e2logy.com I'm interested View all jobs Visit website Powered by {{criteria Index}} {{field}} {{captialize(condition)}} ( ) {{cx Prop Help Text}} {{cx Prop Field.consent_details.description}} {{record.Posting_Title}} {{record.Posting_Title}} {{record.Posting_Title}} {{candidate.Email}} {{top Message}} Job Details {{top Message}} previous next {{title}} {{score}}% Job Description {{unescape(sanitize HTML(description HTML))}} {{message}} Step {{cur Step In Mandatory Sec Prompt}}/{{total Num Of Steps In Mandatory Sec Prompt}} For privacy and security purposes, please go through the following points and provide consent. Accept Decline {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{cx Prop Assessment.name}} {{get I18n(\"zr.questionnaire.question.information.heading\")}} {{get I18n(\"zr.cw.autofill.head\")}} {{cx Prop Body Message}} {{get I18n(\"zr.careers.autopopulate.success\")}} {{get I18n(\"zr.cw.apply.sign\",cx Prop Company Info.name)}} {{if(cx Prop Details.apply With Seek Button,cx Prop Details.apply With Seek Button.button Label,get I18n(\"zr.quickapply.apply.toggle\",\"Seek\"))}} {{get I18n('zr.eeo.questionnaire.portal.maintitle')}} {{bot Name}} {{get I18n(\"zr.zia.sb.consent.msg1\")}}",
+    "source": "e2logysoftwaresolutions",
+    "companyDomain": "e2logy.com",
+    "atsPlatform": "official-careers-page-embedded-zoho-recruit",
+    "link": "https://e2logy.zohorecruit.com/jobs/Careers/424443000011390001/Associate-Graphic-Designer?source=CareerSite",
+    "scrapedAt": "2026-08-01T14:39:13.949Z",
+    "companyCareerPage": "https://e2logy.com/careers/",
+    "originalTitle": "Associate Graphic Designer",
+    "normalizedTitle": "Associate Graphic Designer",
+    "jobCategory": "Associate Graphic Designer",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Junior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T14:39:13.949Z",
+    "scrapedTimestamp": "2026-08-01T14:39:13.949Z",
+    "skillIds": [
+      "figma"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "figma",
+        "canonicalName": "Figma",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Figma"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0-2 years",
+      "minimumYears": 0,
+      "maximumYears": 2,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0-2 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1,
+      2
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Marketing & Communications",
+    "secondaryRoleDomains": [
+      "Design & UX"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T23:53:59.041Z",
+    "description": "Job Description We are looking for a creative and enthusiastic Associate Graphic Designer to join our Digital Marketing team. This role is ideal for graduates from design institutes who have a strong visual design sense and a passion for creating engaging digital content. The candidate should be eager to learn, adapt to emerging AI-powered design tools, and contribute to building compelling marketing creatives across digital platforms.\n\nRESPONSIBILITIES:\n​ Design creative social media posts, banners, advertisements, and other marketing materials. Develop visually appealing creatives while maintaining brand consistency. Create basic motion graphics and short promotional videos for digital campaigns. Work closely with the marketing team to understand objectives and translate ideas into impactful visuals. Incorporate feedback and deliver high-quality designs within defined timelines. Stay updated with current design trends and social media best practices. Utilize AI design tools to improve design quality and productivity. Explore new AI-based creative tools and workflows to enhance content creation. Ensure all designs align with the company’s visual identity and branding guidelines. Organize and maintain design assets for future use. Requirements Bachelor’s Degree in Graphic Design, Communication Design, Visual Communication, or a related design field. Strong understanding of design fundamentals, including typography, color theory, composition, and layout. Familiarity with AI-powered creative tools such as Magnific AI, Figma, Canva, Claude Design, or similar platforms. Basic knowledge of Adobe Photoshop, Illustrator, Premiere Pro, or After Effects is an advantage. Basic knowledge of creating graphics and short-form video content. Understanding of social media platforms and digital marketing creatives. Strong creativity, attention to detail, and willingness to learn new technologies. Candidates from recognized Design Institutes are preferred. A portfolio showcasing academic or personal design projects is mandatory. Freshers are encouraged to apply. Benefits Competitive salary and performance-based bonuses. Health insurance and other employee benefits. Support for professional certifications and career development. Opportunity to work on exciting digital marketing campaigns. Exposure to AI-powered creative workflows and modern design tools. Collaborative and supportive work environment. Excellent learning and career growth opportunities for fresh graduates. Schedule: Day shift Monday to Friday Application Process: Submit your resume, cover letter, and optionally a portfolio of academic projects or personal work to careers@e2logy.com I'm interested View all jobs Visit website Powered by {{criteria Index}} {{field}} {{captialize(condition)}} ( ) {{cx Prop Help Text}} {{cx Prop Field.consent_details.description}} {{record.Posting_Title}} {{record.Posting_Title}} {{record.Posting_Title}} {{candidate.Email}} {{top Message}} Job Details {{top Message}} previous next {{title}} {{score}}% Job Description {{unescape(sanitize HTML(description HTML))}} {{message}} Step {{cur Step In Mandatory Sec Prompt}}/{{total Num Of Steps In Mandatory Sec Prompt}} For privacy and security purposes, please go through the following points and provide consent. Accept Decline {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{cx Prop Assessment.name}} {{get I18n(\"zr.questionnaire.question.information.heading\")}} {{get I18n(\"zr.cw.autofill.head\")}} {{cx Prop Body Message}} {{get I18n(\"zr.careers.autopopulate.success\")}} {{get I18n(\"zr.cw.apply.sign\",cx Prop Company Info.name)}} {{if(cx Prop Details.apply With Seek Button,cx Prop Details.apply With Seek Button.button Label,get I18n(\"zr.quickapply.apply.toggle\",\"Seek\"))}} {{get I18n('zr.eeo.questionnaire.portal.maintitle')}} {{bot Name}} {{get I18n(\"zr.zia.sb.consent.msg1\")}}",
+    "publicExperienceChecked": true
+  },
+  {
+    "title": "Java SpringBoot Developer (ASE)",
+    "company": "E2logy Software Solutions",
+    "department": "IT Services",
+    "location": "Noida Sector 73, India",
+    "city": "Noida Sector 73",
+    "country": "India",
+    "jobId": "424443000011051040",
+    "requisitionId": "424443000011051040",
+    "sourceUrl": "https://e2logy.zohorecruit.com/jobs/Careers/424443000011051040/Java-SpringBoot-Developer-ASE?source=CareerSite",
+    "applyUrl": "https://e2logy.zohorecruit.com/jobs/Careers/424443000011051040/Java-SpringBoot-Developer-ASE?source=CareerSite",
+    "employmentType": "Full-time",
+    "experienceRequired": "0-1 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-08-01T14:39:13.949Z",
+    "closingDate": null,
+    "jobDescription": "Job Description The Associate Software Engineer will be responsible for designing, developing, and maintaining backend applications using Java 17 and Spring Boot\n3. The ideal candidate will have 0-1 years of professional experience and will play a key role in feature development, architectural improvements, performance optimization, and the maintenance and support of existing systems..\n\nRESPONSIBILITIES:\nDevelop, test, and maintain scalable backend applications using Java 17 and Spring Boot 3 Collaborate with designers, project managers, and development teams to deliver high-quality, integrated features. Participate in requirement analysis, architecture discussions, design, development, testing, deployment, and maintenance. Debug and resolve complex technical issues to ensure system reliability and performance. Optimize applications for scalability, performance, and security. Review code and enforce clean code principles, best practices, and architectural standards. Integrate RESTful APIs and third-party services, including O365 SMTP for email services and Rabbit MQ for messaging. Work with My SQL, Postgre SQL, or Mongo DB for application data storage. Follow our company’s core values: Deliver what was asked, Deliver on time, Deliver in budget, Deliver with quality, Deliver a great experience. Support CI/CD processes using tools like Bamboo and Bitbucket. Work with S3 for file storage, Cloudflare and Load Balancers for network management. Requirements Degree: BE, B.Tech, MCA, MSc IT. 0-1 years of professional software development experience. Must have knowledge of AI coding assistants (such as Codex, Claude, etc.) within the IDE editor for development tasks. Strong hands-on expertise in Java, Spring Boot 3 Good knowledge of databases like My SQL, Postgre SQL, or Mongo DB. Experience in developing and integrating RESTful APIs; familiarity with Swagger. Strong understanding of backend security, performance tuning, and coding best practices. Experience working with Git and CI/CD pipelines. Knowledge of S3 buckets, Cloudflare, and Load Balancers (LB). Excellent analytical, problem-solving, communication, and teamwork skills. Preferred Skills: Experience with cloud services such as AWS, Azure or GCP. Familiarity with micro services architecture, logging, and monitoring tools. Knowledge of Agile and Scrum methodologies. Work Environment: Collaborative team environment with opportunities to lead modules and mentor developers. May require occasional on-call or after-hours support for critical issues. Benefits Competitive salary and performance-based bonuses. Comprehensive health insurance and other employee benefits. Opportunities for professional development, leadership growth, and career advancement. Schedule: Day shift Monday to Friday Application Process: Submit your resume, cover letter, and optionally a portfolio of academic projects or personal work to careers@e2logy.com I'm interested View all jobs Visit website Powered by {{criteria Index}} {{field}} {{captialize(condition)}} ( ) {{cx Prop Help Text}} {{cx Prop Field.consent_details.description}} {{record.Posting_Title}} {{record.Posting_Title}} {{record.Posting_Title}} {{candidate.Email}} {{top Message}} Job Details {{top Message}} previous next {{title}} {{score}}% Job Description {{unescape(sanitize HTML(description HTML))}} {{message}} Step {{cur Step In Mandatory Sec Prompt}}/{{total Num Of Steps In Mandatory Sec Prompt}} For privacy and security purposes, please go through the following points and provide consent. Accept Decline {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{cx Prop Assessment.name}} {{get I18n(\"zr.questionnaire.question.information.heading\")}} {{get I18n(\"zr.cw.autofill.head\")}} {{cx Prop Body Message}} {{get I18n(\"zr.careers.autopopulate.success\")}} {{get I18n(\"zr.cw.apply.sign\",cx Prop Company Info.name)}} {{if(cx Prop Details.apply With Seek Button,cx Prop Details.apply With Seek Button.button Label,get I18n(\"zr.quickapply.apply.toggle\",\"Seek\"))}} {{get I18n('zr.eeo.questionnaire.portal.maintitle')}} {{bot Name}} {{get I18n(\"zr.zia.sb.consent.msg1\")}}",
+    "source": "e2logysoftwaresolutions",
+    "companyDomain": "e2logy.com",
+    "atsPlatform": "official-careers-page-embedded-zoho-recruit",
+    "link": "https://e2logy.zohorecruit.com/jobs/Careers/424443000011051040/Java-SpringBoot-Developer-ASE?source=CareerSite",
+    "scrapedAt": "2026-08-01T14:39:13.949Z",
+    "companyCareerPage": "https://e2logy.com/careers/",
+    "originalTitle": "Java SpringBoot Developer (ASE)",
+    "normalizedTitle": "Java SpringBoot Developer (ASE)",
+    "jobCategory": "Java SpringBoot Developer (ASE)",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T14:39:13.949Z",
+    "scrapedTimestamp": "2026-08-01T14:39:13.949Z",
+    "skillIds": [
+      "java",
+      "spring-boot",
+      "sql",
+      "postgresql",
+      "mongodb",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "SpringBoot"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Postgre SQL"
+      },
+      {
+        "skillId": "mongodb",
+        "canonicalName": "MongoDB",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Mongo DB"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0-1 years",
+      "minimumYears": 0,
+      "maximumYears": 1,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0-1 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Backend Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T23:53:59.047Z",
+    "description": "Job Description The Associate Software Engineer will be responsible for designing, developing, and maintaining backend applications using Java 17 and Spring Boot\n3. The ideal candidate will have 0-1 years of professional experience and will play a key role in feature development, architectural improvements, performance optimization, and the maintenance and support of existing systems..\n\nRESPONSIBILITIES:\nDevelop, test, and maintain scalable backend applications using Java 17 and Spring Boot 3 Collaborate with designers, project managers, and development teams to deliver high-quality, integrated features. Participate in requirement analysis, architecture discussions, design, development, testing, deployment, and maintenance. Debug and resolve complex technical issues to ensure system reliability and performance. Optimize applications for scalability, performance, and security. Review code and enforce clean code principles, best practices, and architectural standards. Integrate RESTful APIs and third-party services, including O365 SMTP for email services and Rabbit MQ for messaging. Work with My SQL, Postgre SQL, or Mongo DB for application data storage. Follow our company’s core values: Deliver what was asked, Deliver on time, Deliver in budget, Deliver with quality, Deliver a great experience. Support CI/CD processes using tools like Bamboo and Bitbucket. Work with S3 for file storage, Cloudflare and Load Balancers for network management. Requirements Degree: BE, B.Tech, MCA, MSc IT. 0-1 years of professional software development experience. Must have knowledge of AI coding assistants (such as Codex, Claude, etc.) within the IDE editor for development tasks. Strong hands-on expertise in Java, Spring Boot 3 Good knowledge of databases like My SQL, Postgre SQL, or Mongo DB. Experience in developing and integrating RESTful APIs; familiarity with Swagger. Strong understanding of backend security, performance tuning, and coding best practices. Experience working with Git and CI/CD pipelines. Knowledge of S3 buckets, Cloudflare, and Load Balancers (LB). Excellent analytical, problem-solving, communication, and teamwork skills. Preferred Skills: Experience with cloud services such as AWS, Azure or GCP. Familiarity with micro services architecture, logging, and monitoring tools. Knowledge of Agile and Scrum methodologies. Work Environment: Collaborative team environment with opportunities to lead modules and mentor developers. May require occasional on-call or after-hours support for critical issues. Benefits Competitive salary and performance-based bonuses. Comprehensive health insurance and other employee benefits. Opportunities for professional development, leadership growth, and career advancement. Schedule: Day shift Monday to Friday Application Process: Submit your resume, cover letter, and optionally a portfolio of academic projects or personal work to careers@e2logy.com I'm interested View all jobs Visit website Powered by {{criteria Index}} {{field}} {{captialize(condition)}} ( ) {{cx Prop Help Text}} {{cx Prop Field.consent_details.description}} {{record.Posting_Title}} {{record.Posting_Title}} {{record.Posting_Title}} {{candidate.Email}} {{top Message}} Job Details {{top Message}} previous next {{title}} {{score}}% Job Description {{unescape(sanitize HTML(description HTML))}} {{message}} Step {{cur Step In Mandatory Sec Prompt}}/{{total Num Of Steps In Mandatory Sec Prompt}} For privacy and security purposes, please go through the following points and provide consent. Accept Decline {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{cx Prop Assessment.name}} {{get I18n(\"zr.questionnaire.question.information.heading\")}} {{get I18n(\"zr.cw.autofill.head\")}} {{cx Prop Body Message}} {{get I18n(\"zr.careers.autopopulate.success\")}} {{get I18n(\"zr.cw.apply.sign\",cx Prop Company Info.name)}} {{if(cx Prop Details.apply With Seek Button,cx Prop Details.apply With Seek Button.button Label,get I18n(\"zr.quickapply.apply.toggle\",\"Seek\"))}} {{get I18n('zr.eeo.questionnaire.portal.maintitle')}} {{bot Name}} {{get I18n(\"zr.zia.sb.consent.msg1\")}}",
+    "publicExperienceChecked": true
+  },
+  {
+    "title": "Java SpringBoot Developer (ASE)",
+    "company": "E2logy Software Solutions",
+    "department": "IT Services",
+    "location": "Ahmedabad, India",
+    "city": "Ahmedabad",
+    "country": "India",
+    "jobId": "424443000010977039",
+    "requisitionId": "424443000010977039",
+    "sourceUrl": "https://e2logy.zohorecruit.com/jobs/Careers/424443000010977039/Java-SpringBoot-Developer-ASE?source=CareerSite",
+    "applyUrl": "https://e2logy.zohorecruit.com/jobs/Careers/424443000010977039/Java-SpringBoot-Developer-ASE?source=CareerSite",
+    "employmentType": "Full-time",
+    "experienceRequired": "0-1 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-08-01T14:39:13.949Z",
+    "closingDate": null,
+    "jobDescription": "Job Description The Associate Software Engineer will be responsible for designing, developing, and maintaining backend applications using Java 17 and Spring Boot\n3. The ideal candidate will have 0-1 years of professional experience and will play a key role in feature development, architectural improvements, performance optimization, and the maintenance and support of existing systems..\n\nRESPONSIBILITIES:\nDevelop, test, and maintain scalable backend applications using Java 17 and Spring Boot 3 Collaborate with designers, project managers, and development teams to deliver high-quality, integrated features. Participate in requirement analysis, architecture discussions, design, development, testing, deployment, and maintenance. Debug and resolve complex technical issues to ensure system reliability and performance. Optimize applications for scalability, performance, and security. Review code and enforce clean code principles, best practices, and architectural standards. Integrate RESTful APIs and third-party services, including O365 SMTP for email services and Rabbit MQ for messaging. Work with My SQL, Postgre SQL, or Mongo DB for application data storage. Follow our company’s core values: Deliver what was asked, Deliver on time, Deliver in budget, Deliver with quality, Deliver a great experience. Support CI/CD processes using tools like Bamboo and Bitbucket. Work with S3 for file storage, Cloudflare and Load Balancers for network management. Requirements Degree: BE, B.Tech, MCA, MSc IT. 0-1 years of professional software development experience. Must have knowledge of AI coding assistants (such as Codex, Claude, etc.) within the IDE editor for development tasks. Strong hands-on expertise in Java, Spring Boot 3 Good knowledge of databases like My SQL, Postgre SQL, or Mongo DB. Experience in developing and integrating RESTful APIs; familiarity with Swagger. Strong understanding of backend security, performance tuning, and coding best practices. Experience working with Git and CI/CD pipelines. Knowledge of S3 buckets, Cloudflare, and Load Balancers (LB). Excellent analytical, problem-solving, communication, and teamwork skills. Preferred Skills: Experience with cloud services such as AWS, Azure or GCP. Familiarity with micro services architecture, logging, and monitoring tools. Knowledge of Agile and Scrum methodologies. Work Environment: Collaborative team environment with opportunities to lead modules and mentor developers. May require occasional on-call or after-hours support for critical issues. Benefits Competitive salary and performance-based bonuses. Comprehensive health insurance and other employee benefits. Opportunities for professional development, leadership growth, and career advancement. Schedule: Day shift Monday to Friday Application Process: Submit your resume, cover letter, and optionally a portfolio of academic projects or personal work to careers@e2logy.com I'm interested View all jobs Visit website Powered by {{criteria Index}} {{field}} {{captialize(condition)}} ( ) {{cx Prop Help Text}} {{cx Prop Field.consent_details.description}} {{record.Posting_Title}} {{record.Posting_Title}} {{record.Posting_Title}} {{candidate.Email}} {{top Message}} Job Details {{top Message}} previous next {{title}} {{score}}% Job Description {{unescape(sanitize HTML(description HTML))}} {{message}} Step {{cur Step In Mandatory Sec Prompt}}/{{total Num Of Steps In Mandatory Sec Prompt}} For privacy and security purposes, please go through the following points and provide consent. Accept Decline {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{cx Prop Assessment.name}} {{get I18n(\"zr.questionnaire.question.information.heading\")}} {{get I18n(\"zr.cw.autofill.head\")}} {{cx Prop Body Message}} {{get I18n(\"zr.careers.autopopulate.success\")}} {{get I18n(\"zr.cw.apply.sign\",cx Prop Company Info.name)}} {{if(cx Prop Details.apply With Seek Button,cx Prop Details.apply With Seek Button.button Label,get I18n(\"zr.quickapply.apply.toggle\",\"Seek\"))}} {{get I18n('zr.eeo.questionnaire.portal.maintitle')}} {{bot Name}} {{get I18n(\"zr.zia.sb.consent.msg1\")}}",
+    "source": "e2logysoftwaresolutions",
+    "companyDomain": "e2logy.com",
+    "atsPlatform": "official-careers-page-embedded-zoho-recruit",
+    "link": "https://e2logy.zohorecruit.com/jobs/Careers/424443000010977039/Java-SpringBoot-Developer-ASE?source=CareerSite",
+    "scrapedAt": "2026-08-01T14:39:13.949Z",
+    "companyCareerPage": "https://e2logy.com/careers/",
+    "originalTitle": "Java SpringBoot Developer (ASE)",
+    "normalizedTitle": "Java SpringBoot Developer (ASE)",
+    "jobCategory": "Java SpringBoot Developer (ASE)",
+    "engineeringDomain": "Software Engineering",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-01T14:39:13.949Z",
+    "scrapedTimestamp": "2026-08-01T14:39:13.949Z",
+    "skillIds": [
+      "java",
+      "spring-boot",
+      "sql",
+      "postgresql",
+      "mongodb",
+      "aws",
+      "azure",
+      "gcp"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "spring-boot",
+        "canonicalName": "Spring Boot",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "SpringBoot"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Postgre SQL"
+      },
+      {
+        "skillId": "mongodb",
+        "canonicalName": "MongoDB",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Mongo DB"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0-1 years",
+      "minimumYears": 0,
+      "maximumYears": 1,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0-1 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Backend Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T23:53:59.054Z",
+    "description": "Job Description The Associate Software Engineer will be responsible for designing, developing, and maintaining backend applications using Java 17 and Spring Boot\n3. The ideal candidate will have 0-1 years of professional experience and will play a key role in feature development, architectural improvements, performance optimization, and the maintenance and support of existing systems..\n\nRESPONSIBILITIES:\nDevelop, test, and maintain scalable backend applications using Java 17 and Spring Boot 3 Collaborate with designers, project managers, and development teams to deliver high-quality, integrated features. Participate in requirement analysis, architecture discussions, design, development, testing, deployment, and maintenance. Debug and resolve complex technical issues to ensure system reliability and performance. Optimize applications for scalability, performance, and security. Review code and enforce clean code principles, best practices, and architectural standards. Integrate RESTful APIs and third-party services, including O365 SMTP for email services and Rabbit MQ for messaging. Work with My SQL, Postgre SQL, or Mongo DB for application data storage. Follow our company’s core values: Deliver what was asked, Deliver on time, Deliver in budget, Deliver with quality, Deliver a great experience. Support CI/CD processes using tools like Bamboo and Bitbucket. Work with S3 for file storage, Cloudflare and Load Balancers for network management. Requirements Degree: BE, B.Tech, MCA, MSc IT. 0-1 years of professional software development experience. Must have knowledge of AI coding assistants (such as Codex, Claude, etc.) within the IDE editor for development tasks. Strong hands-on expertise in Java, Spring Boot 3 Good knowledge of databases like My SQL, Postgre SQL, or Mongo DB. Experience in developing and integrating RESTful APIs; familiarity with Swagger. Strong understanding of backend security, performance tuning, and coding best practices. Experience working with Git and CI/CD pipelines. Knowledge of S3 buckets, Cloudflare, and Load Balancers (LB). Excellent analytical, problem-solving, communication, and teamwork skills. Preferred Skills: Experience with cloud services such as AWS, Azure or GCP. Familiarity with micro services architecture, logging, and monitoring tools. Knowledge of Agile and Scrum methodologies. Work Environment: Collaborative team environment with opportunities to lead modules and mentor developers. May require occasional on-call or after-hours support for critical issues. Benefits Competitive salary and performance-based bonuses. Comprehensive health insurance and other employee benefits. Opportunities for professional development, leadership growth, and career advancement. Schedule: Day shift Monday to Friday Application Process: Submit your resume, cover letter, and optionally a portfolio of academic projects or personal work to careers@e2logy.com I'm interested View all jobs Visit website Powered by {{criteria Index}} {{field}} {{captialize(condition)}} ( ) {{cx Prop Help Text}} {{cx Prop Field.consent_details.description}} {{record.Posting_Title}} {{record.Posting_Title}} {{record.Posting_Title}} {{candidate.Email}} {{top Message}} Job Details {{top Message}} previous next {{title}} {{score}}% Job Description {{unescape(sanitize HTML(description HTML))}} {{message}} Step {{cur Step In Mandatory Sec Prompt}}/{{total Num Of Steps In Mandatory Sec Prompt}} For privacy and security purposes, please go through the following points and provide consent. Accept Decline {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{get I18n(\"zr.careers.publicpage.meta.joblisting\")}} {{cx Prop Assessment.name}} {{get I18n(\"zr.questionnaire.question.information.heading\")}} {{get I18n(\"zr.cw.autofill.head\")}} {{cx Prop Body Message}} {{get I18n(\"zr.careers.autopopulate.success\")}} {{get I18n(\"zr.cw.apply.sign\",cx Prop Company Info.name)}} {{if(cx Prop Details.apply With Seek Button,cx Prop Details.apply With Seek Button.button Label,get I18n(\"zr.quickapply.apply.toggle\",\"Seek\"))}} {{get I18n('zr.eeo.questionnaire.portal.maintitle')}} {{bot Name}} {{get I18n(\"zr.zia.sb.consent.msg1\")}}",
+    "publicExperienceChecked": true
+  }
+]

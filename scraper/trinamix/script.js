@@ -34,12 +34,24 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialCareersShellSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
-  return normalized.includes('Innovate with Us')
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+  const hasLegacySearchShell = (
+    normalized.includes('Innovate with Us')
     && normalized.includes('Current Openings')
     && normalized.includes('Search')
     && normalized.includes('Reset')
     && normalized.includes('Submit Your Resume')
+  )
+  const hasMinimalJavaScriptShell = (
+    /<title>\s*Careers - Trinamix\s*<\/title>/i.test(rawHtml)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Trinamix Careers["']/i.test(rawHtml)
+    && /<base[^>]+href=["']\/trinamix\/["']/i.test(rawHtml)
+    && /<noscript/i.test(rawHtml)
+    && /<script[^>]+src=/i.test(rawHtml)
+  )
+
+  return hasLegacySearchShell || hasMinimalJavaScriptShell
 }
 
 export const hasServerRenderedRoleInventory = (html = '') =>
@@ -62,7 +74,7 @@ export const createTrinamixScraper = () => ({
 
 export const run = async (options = {}) => createTrinamixScraper(options).run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

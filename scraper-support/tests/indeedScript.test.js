@@ -67,6 +67,22 @@ const challengeHtml = `
 </html>
 `
 
+const justAMomentChallengeHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <main>
+      <h1>Additional Verification Required</h1>
+      <p>Verification successful. Waiting for in.indeed.com to respond</p>
+      <p>Cloudflare Ray ID: 1234567890abcdef</p>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/indeed/script.js')
@@ -83,11 +99,12 @@ test('Indeed helpers stay pinned to the verified careers handoff, India jobs boa
   assert.equal(indeed.CAREERS_URL, 'https://www.indeed.com/careers')
   assert.equal(indeed.INDIA_CAREERS_URL, 'https://in.indeed.com/careers')
   assert.equal(indeed.INDIA_JOBS_URL, 'https://in.indeed.com/cmp/Indeed/jobs')
-  assert.equal(indeed.VERIFIED_ON, '2026-07-16')
+  assert.equal(indeed.VERIFIED_ON, '2026-08-02')
   assert.equal(indeed.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(indeed.extractIndiaCareersUrl(careersHtml), indeed.INDIA_CAREERS_URL)
   assert.equal(indeed.hasIndiaJobsSignal(indiaJobsHtml), true)
   assert.equal(indeed.pageIndicatesCloudflareChallenge(challengeHtml), true)
+  assert.equal(indeed.pageIndicatesCloudflareChallenge(justAMomentChallengeHtml), true)
   assert.equal(indeed.pageIndicatesCloudflareChallenge(indiaJobsHtml), false)
 })
 
@@ -174,28 +191,38 @@ test('Indeed extracts public India jobs from the verified first-party company jo
   ])
 })
 
-test('Indeed follows the official careers handoff and fails closed on the live Cloudflare challenge', async () => {
+test('Indeed follows the official careers handoff and returns [] when the verified jobs page is challenge-gated', async () => {
   const indeed = await loadModule()
   const requestedUrls = []
 
-  await assert.rejects(
-    indeed.createIndeedScraper().run({
-      fetchText: async (url) => {
-        requestedUrls.push(url)
-        if (url === indeed.CAREERS_URL) return careersHtml
-        if (url === indeed.INDIA_CAREERS_URL) return careersHtml.replace(/https:\/\/in\.indeed\.com\/careers/g, 'https://in.indeed.com/cmp/Indeed/jobs')
-        if (url === indeed.INDIA_JOBS_URL) return challengeHtml
-        throw new Error(`Unexpected Indeed URL: ${url}`)
-      },
-    }),
-    /cloudflare security check/i,
-  )
+  const jobs = await indeed.createIndeedScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === indeed.CAREERS_URL) return careersHtml
+      if (url === indeed.INDIA_CAREERS_URL) {
+        return careersHtml.replace(/https:\/\/in\.indeed\.com\/careers/g, 'https://in.indeed.com/cmp/Indeed/jobs')
+      }
+      if (url === indeed.INDIA_JOBS_URL) return challengeHtml
+      throw new Error(`Unexpected Indeed URL: ${url}`)
+    },
+  })
 
   assert.deepEqual(requestedUrls, [
     indeed.CAREERS_URL,
     indeed.INDIA_CAREERS_URL,
     indeed.INDIA_JOBS_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Indeed returns [] when all verified first-party routes serve the current Just a moment challenge', async () => {
+  const indeed = await loadModule()
+
+  const jobs = await indeed.createIndeedScraper().run({
+    fetchText: async () => justAMomentChallengeHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Indeed fails closed when the verified careers handoff or jobs page contract drifts', async () => {

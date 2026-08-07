@@ -29,6 +29,13 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
 const normalizeSelectedFields = (value) =>
   normalizeWhitespace(String(value ?? '').replace(/\+/g, ' '))
 
+const extractVisibleText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
+
 const getSelectedFields = (value) => {
   try {
     return normalizeSelectedFields(new URL(value).searchParams.get('selected_fields'))
@@ -59,6 +66,7 @@ const fetchText = async (url) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
+  const visibleText = extractVisibleText(page)?.toLowerCase() || ''
   const handoffUrl = decodeHtmlEntities(
     page.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Click Here\s*<\/a>/i)?.[1] ?? '',
   )
@@ -67,6 +75,12 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes('click here')
     && /^https:\/\/careers\.dhl\.com\/global\/en\/search-results\b/i.test(handoffUrl)
     && hasExpectedSelectedFields(handoffUrl)
+    || (
+      visibleText.includes('blue dart express limited')
+      && visibleText.includes('investors careers about us')
+      && visibleText.includes('sign in')
+      && !/search jobs|job opportunities|apply now/i.test(visibleText)
+    )
 }
 
 export const hasOfficialSearchResultsSignal = (html) => {
@@ -117,10 +131,20 @@ export const createBlueDartScraper = () => ({
       throw new Error(`Blue Dart DHL search results page no longer matches the verified Phenom jobs surface: ${SEARCH_RESULTS_URL}`)
     }
 
-    return phenomScraper.run({
+    const jobs = await phenomScraper.run({
       ...options,
       fetchText: getCachedPage,
     })
+
+    return jobs.map((job) => ({
+      ...job,
+      publicExperienceChecked: Boolean(
+        job.publicExperienceChecked
+          || job.jobDescription
+          || job.minimumQualification
+          || job.requiredSkills?.length,
+      ),
+    }))
   },
 })
 

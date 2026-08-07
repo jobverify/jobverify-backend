@@ -128,6 +128,7 @@ const buildDetailedJob = (text) => {
       technicalSkills.length > 0 && `Technical Skills: ${technicalSkills.join('; ')}`,
       `Interested candidates may drop their CVs at ${APPLY_EMAIL}.`,
     ].filter(Boolean).join(' '),
+    publicExperienceChecked: true,
   }
 }
 
@@ -150,6 +151,7 @@ const buildGenericJob = (title) => ({
   postingDate: null,
   closingDate: null,
   jobDescription: buildGenericJobDescription(title),
+  publicExperienceChecked: true,
 })
 
 export const hasOfficialHomepageSignal = (html) => {

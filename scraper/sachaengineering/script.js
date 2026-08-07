@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,6 +12,7 @@ export const HOMEPAGE_URL = 'https://sacha.group/'
 export const CAREERS_URL = 'https://sacha.group/careers/'
 export const BELL_COMPANY_URL = 'https://bell.careers/company/sacha'
 export const BELL_JOBS_URL = 'https://bell.careers/company/sacha?tab=jobs'
+export const BELL_COMPANY_API_URL = 'https://api.bell.careers/api/company/companies/sacha/'
 
 const ATS_PLATFORM = 'bell-careers-via-first-party-company-handoff'
 const USER_AGENT =
@@ -208,6 +209,98 @@ const extractDescriptionMap = (chunks, jobs) => {
   return descriptions
 }
 
+const normalizeBellJobDescription = (description, descriptions = null) => {
+  const descriptionKey = normalizeWhitespace(description)?.replace(/^\$/, '').toLowerCase()
+  if (descriptionKey && descriptions?.has(descriptionKey)) {
+    return descriptions.get(descriptionKey) || null
+  }
+
+  return normalizeWhitespace(description)
+}
+
+const normalizeBellJobPosts = (jobPosts, { descriptions = null } = {}) => {
+  const normalizedJobs = jobPosts.map((job) => {
+    const title = normalizeWhitespace(job?.job_post_title)
+    const postId = normalizeWhitespace(job?.post_id)
+    const location = parseBellLocation(job?.location, job?.currency)
+    const jobDescription = normalizeBellJobDescription(job?.description, descriptions)
+
+    if (!title || !postId) {
+      return null
+    }
+
+    return {
+      jobId: `${SOURCE}-${postId}`,
+      requisitionId: String(postId),
+      title,
+      company: COMPANY,
+      department: null,
+      location: location.location,
+      city: location.city,
+      country: location.country,
+      sourceUrl: BELL_JOBS_URL,
+      applyUrl: BELL_JOBS_URL,
+      employmentType: normalizeEmploymentType(job?.job_type),
+      experienceRequired: normalizeExperience(job?.experience_level),
+      minimumQualification: normalizeWhitespace(job?.qualifications),
+      preferredQualification: null,
+      requiredSkills: splitSkills(job?.skills),
+      postingDate: normalizeDate(job?.published_date || job?.date),
+      closingDate: null,
+      jobDescription,
+      remoteStatus: inferRemoteStatus(jobDescription),
+    }
+  }).filter(Boolean)
+
+  if (jobPosts.length > 0 && normalizedJobs.length === 0) {
+    throw new Error('SACHA Engineering verified Bell company jobs payload no longer produces normalized openings')
+  }
+
+  return normalizedJobs
+}
+
+const parseBellCompanyApiPage = (payloadValue) => {
+  let payload = payloadValue
+  if (typeof payloadValue === 'string') {
+    try {
+      payload = JSON.parse(payloadValue)
+    } catch {
+      throw new Error('SACHA Engineering Bell company API payload is no longer valid JSON')
+    }
+  }
+
+  if (payload?.results?.name !== COMPANY || !Array.isArray(payload?.results?.job_posts)) {
+    throw new Error('SACHA Engineering Bell company API payload no longer matches the expected company identity')
+  }
+
+  return payload
+}
+
+const fetchBellCompanyApiJobPosts = async (fetchBellCompanyApiPage, initialUrl = BELL_COMPANY_API_URL) => {
+  const allJobPosts = []
+  const seenPostIds = new Set()
+  let nextUrl = initialUrl
+
+  while (nextUrl) {
+    const payloadValue = await fetchBellCompanyApiPage(nextUrl)
+    const payload = parseBellCompanyApiPage(payloadValue)
+
+    for (const jobPost of payload.results.job_posts) {
+      const postId = normalizeWhitespace(jobPost?.post_id)
+      if (!postId || seenPostIds.has(postId)) {
+        continue
+      }
+
+      seenPostIds.add(postId)
+      allJobPosts.push(jobPost)
+    }
+
+    nextUrl = payload.next ? new URL(payload.next, BELL_COMPANY_API_URL).toString() : null
+  }
+
+  return allJobPosts
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
@@ -258,46 +351,7 @@ export const extractBellJobPosts = (html) => {
   const chunks = extractFlightChunks(html)
   const payload = extractBellPayload(chunks)
   const descriptions = extractDescriptionMap(chunks, payload.job_posts)
-
-  const jobs = payload.job_posts.map((job) => {
-    const title = normalizeWhitespace(job?.job_post_title)
-    const postId = normalizeWhitespace(job?.post_id)
-    const location = parseBellLocation(job?.location, job?.currency)
-    const descriptionKey = normalizeWhitespace(job?.description)?.replace(/^\$/, '').toLowerCase()
-    const jobDescription = descriptionKey ? descriptions.get(descriptionKey) || null : null
-
-    if (!title || !postId) {
-      return null
-    }
-
-    return {
-      jobId: `${SOURCE}-${postId}`,
-      requisitionId: String(postId),
-      title,
-      company: COMPANY,
-      department: null,
-      location: location.location,
-      city: location.city,
-      country: location.country,
-      sourceUrl: BELL_JOBS_URL,
-      applyUrl: BELL_JOBS_URL,
-      employmentType: normalizeEmploymentType(job?.job_type),
-      experienceRequired: normalizeExperience(job?.experience_level),
-      minimumQualification: normalizeWhitespace(job?.qualifications),
-      preferredQualification: null,
-      requiredSkills: splitSkills(job?.skills),
-      postingDate: normalizeDate(job?.published_date || job?.date),
-      closingDate: null,
-      jobDescription,
-      remoteStatus: inferRemoteStatus(jobDescription),
-    }
-  }).filter(Boolean)
-
-  if (payload.job_posts.length > 0 && jobs.length === 0) {
-    throw new Error('SACHA Engineering verified Bell company jobs payload no longer produces normalized openings')
-  }
-
-  return jobs
+  return normalizeBellJobPosts(payload.job_posts, { descriptions })
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -309,12 +363,23 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchBellCompanyApiPage = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
+  },
+  label: `${SOURCE}-bell-api`,
+  timeoutMs: 15000,
+})
+
 export const createSachaEngineeringScraper = ({
   fetchText = defaultFetchText,
+  fetchBellCompanyApiPage = defaultFetchBellCompanyApiPage,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  run: async ({ fetchText: overrideFetchText, now: overrideNow } = {}) => {
+  run: async ({ fetchText: overrideFetchText, fetchBellCompanyApiPage: overrideFetchBellCompanyApiPage, now: overrideNow } = {}) => {
     const fetchImpl = overrideFetchText || fetchText
+    const fetchBellApiPageImpl = overrideFetchBellCompanyApiPage || overrideFetchText || fetchBellCompanyApiPage
 
     const homepageHtml = await fetchImpl(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
@@ -329,7 +394,13 @@ export const createSachaEngineeringScraper = ({
     const bellJobsHtml = await fetchImpl(BELL_JOBS_URL)
     const scrapedAt = (overrideNow || now)()
 
-    return extractBellJobPosts(bellJobsHtml).map((job) => ({
+    if (!hasVerifiedBellJobsSignal(bellJobsHtml)) {
+      throw new Error('SACHA Engineering verified Bell company jobs payload no longer matches the known public surface')
+    }
+
+    const bellApiJobPosts = await fetchBellCompanyApiJobPosts(fetchBellApiPageImpl)
+
+    return normalizeBellJobPosts(bellApiJobPosts).map((job) => ({
       ...job,
       source: SOURCE,
       companyCareerPage: CAREERS_URL,

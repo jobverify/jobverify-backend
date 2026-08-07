@@ -93,10 +93,10 @@ test('Bajaj Finance scraper keeps the verified PeopleStrong handoff explicit and
   )
   assert.equal(bajajFinance.PORTAL_ORIGIN, 'https://bflcareers.peoplestrong.com')
   assert.equal(bajajFinance.JOB_LISTINGS_URL, 'https://bflcareers.peoplestrong.com/')
-  assert.equal(bajajFinance.DEFAULT_PAGE_SIZE, 20)
+  assert.equal(bajajFinance.DEFAULT_PAGE_SIZE, 99)
   assert.equal(
     bajajFinance.buildApiUrl(),
-    'https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20',
+    'https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=99',
   )
   assert.equal(
     bajajFinance.buildApiUrl({ offset: 20, limit: 10 }),
@@ -134,6 +134,7 @@ test('extractSearchResults maps public Bajaj Finance PeopleStrong listing fields
     applyUrl: 'https://bflcareers.peoplestrong.com/job/detail/JR00000001',
     employmentType: 'Full Time',
     experienceRequired: '3-5 years',
+    publicExperienceChecked: true,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: ['Node.js', 'AWS'],
@@ -193,6 +194,7 @@ test('run verifies the known Bajaj Finance handoff before replaying the public P
       applyUrl: 'https://bflcareers.peoplestrong.com/job/detail/JR00000001',
       employmentType: 'Full Time',
       experienceRequired: '3-5 years',
+      publicExperienceChecked: true,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: ['Node.js', 'AWS'],

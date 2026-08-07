@@ -25,10 +25,12 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasApplicationOnlyCareerSignal = (html) => {
   const page = String(html ?? '')
+  const text = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+
   return /Careers Enquiry/i.test(page)
-    && /Step 1:\s*Download Employment Form/i.test(page)
-    && /Step 2:\s*Fill in your details/i.test(page)
-    && /Step 3:\s*Upload Employment Form/i.test(page)
+    && /Step 1:\s*Download Employment Form/i.test(text)
+    && /Step 2:\s*Fill in your details/i.test(text)
+    && /Step 3:\s*Upload Employment Form/i.test(text)
     && /employment_form\.pdf/i.test(page)
 }
 

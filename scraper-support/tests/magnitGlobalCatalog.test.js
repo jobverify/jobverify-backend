@@ -15,8 +15,8 @@ test('Magnit Global local catalog captures the verified first-party Dayforce han
   assert.equal(defaultCatalog, MAGNIT_GLOBAL_CATALOG)
   assert.equal(provider.source, 'magnitglobal')
   assert.equal(provider.companyName, 'Magnit Global')
-  assert.equal(provider.companyCareerPage, 'https://magnitglobal.com/us/en/company/careers.html')
-  assert.equal(provider.dayforceBaseUrl, 'https://jobs.dayforcehcm.com/en-US/prounlimited/CANDIDATEPORTAL')
+  assert.equal(provider.companyCareerPage, 'https://magnitglobal.com/about/careers')
+  assert.equal(provider.dayforceBaseUrl, 'https://jobs.dayforcehcm.com/prounlimited/CANDIDATEPORTAL')
   assert.equal(provider.atsPlatform, 'dayforce')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
@@ -24,6 +24,7 @@ test('Magnit Global local catalog captures the verified first-party Dayforce han
     'official-careers-handoff-plus-dayforce-jobposting-search',
   )
   assert.equal(provider.modulePath, modulePath)
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /about\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /Analyst, Accounts Payable/i)
 })

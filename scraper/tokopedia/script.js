@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
+
 import TOKOPEDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -43,7 +45,7 @@ const matchesExpectedUrl = (value, expected) => {
   try {
     const actualUrl = new URL(String(value ?? ''))
     const expectedUrl = new URL(expected)
-    const normalizePath = (pathname) => pathname === '/' ? '/' : pathname.replace(/\/+$/, '')
+    const normalizePath = (pathname) => (pathname === '/' ? '/' : pathname.replace(/\/+$/, ''))
 
     return actualUrl.hostname.toLowerCase() === expectedUrl.hostname.toLowerCase()
       && normalizePath(actualUrl.pathname) === normalizePath(expectedUrl.pathname)
@@ -53,21 +55,14 @@ const matchesExpectedUrl = (value, expected) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
-}
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 20000,
+})
 
 export const pageExposesPublicJobListings = (html = '') =>
   PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -88,21 +83,33 @@ export const extractTokopediaDarwinboxUrl = (html = '') => {
   return match ? match[0] : null
 }
 
-export const hasAuthorizedTokopediaReferenceSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+export const hasOpaqueTokopediaDarwinboxShellSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
-  return normalized.includes('CAUTION: GoTo Group | Fake Job listings - What you should be aware of')
-    && normalized.includes('All authentic job postings from any of GoTo’s operating companies would be listed on the respective company’s official websites or their official LinkedIn pages.')
-    && normalized.includes('Career Sites')
-    && normalized.includes('Tokopedia Career')
-    && normalized.includes('Tokopedia: john.doe@tokopedia.com')
-    && extractTokopediaDarwinboxUrl(html) === OFFICIAL_CAREERS_HANDOFF_URL
+  return normalized === '-'
+    || (
+      /<base\s+href=["']\/ms\/candidate\/["']/i.test(page)
+      && normalized.includes('Please enable Javascript!')
+    )
+}
+
+export const hasAuthorizedTokopediaReferenceSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page).toLowerCase()
+
+  return normalized.includes('caution: goto group | fake job listings - what you should be aware of')
+    && normalized.includes('all authentic job postings from any of goto')
+    && normalized.includes('official websites or their official linkedin pages')
+    && normalized.includes('career sites')
+    && normalized.includes('tokopedia career')
+    && extractTokopediaDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
 export const matchesVerifiedOpaqueDarwinboxState = ({ status, url, html } = {}) => (
   Number(status) === 200
   && matchesExpectedUrl(url, OFFICIAL_CAREERS_HANDOFF_URL)
-  && normalizeWhitespace(html) === '-'
+  && hasOpaqueTokopediaDarwinboxShellSignal(html)
   && !pageExposesPublicJobListings(html)
 )
 
@@ -148,7 +155,7 @@ export const createTokopediaScraper = () => ({
 
 export const run = async (options = {}) => createTokopediaScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

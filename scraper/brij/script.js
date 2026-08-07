@@ -7,7 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'brij'
 export const COMPANY = 'Brij'
-export const VERIFIED_ON = '2026-07-30'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://brij.ai/careers'
 export const BOARD_URL = 'https://brij.applytojob.com/apply'
 
@@ -145,7 +145,10 @@ export const hasVerifiedBoardSignal = (html = '') => {
   return extractTitle(page) === 'Brij - Career Page'
     && /\bCurrent Openings\b/i.test(text)
     && /\bView Our Website\b/i.test(text)
-    && /\bPowered by JazzHR\b/i.test(text)
+    && (
+      /\bPowered by JazzHR\b/i.test(text)
+      || /Please review our open positions and apply to the positions that match your qualifications\.?/i.test(text)
+    )
 }
 
 export const extractBoardJobs = (html = '') => {
@@ -193,10 +196,15 @@ export const extractBoardJobs = (html = '') => {
 export const hasVerifiedJobDetailSignal = (html = '', listing = {}) => {
   const text = normalizeText(html)
   const title = normalizeWhitespace(listing?.title)
+  const pageTitle = extractTitle(html)
 
   return /\bBrij\b/i.test(text)
     && /\bApply for this position\b/i.test(text)
-    && /\bPowered by JazzHR\b/i.test(text)
+    && (
+      /\bPowered by JazzHR\b/i.test(text)
+      || /\bCareer Page\b/i.test(pageTitle || '')
+      || /Please review our open positions and apply to the positions that match your qualifications\.?/i.test(text)
+    )
     && (!title || new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(text))
 }
 
@@ -224,6 +232,7 @@ export const extractJobDetail = (html = '', listing = {}) => {
     && !/\bexperienced\b/i.test(line)
     && !/\bApply for this position\b/i.test(line)
     && !/\bPowered by JazzHR\b/i.test(line)
+    && !/\bCareer Page\b/i.test(line)
     && !/\bOpen to WFH\/Remote OR Hybrid NYC\b/i.test(line)
   )
   const jobDescription = normalizeWhitespace(jobDescriptionCandidates.join(' ')) || null

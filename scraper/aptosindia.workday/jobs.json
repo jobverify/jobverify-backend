@@ -1,0 +1,1023 @@
+[
+  {
+    "jobId": "JR100070",
+    "title": "Mgr. Software Development",
+    "company": "Aptos India",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "IN Bangalore Office"
+    ],
+    "link": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Mgr-Software-Development_JR100070",
+    "source": "aptosindia",
+    "postedAt": "2026-08-01T14:24:11.696Z",
+    "closingDate": null,
+    "jobDescription": "Responsibilities Team Leadership & Development Lead, mentor, and develop a team of software engineers, fostering a culture of collaboration, innovation, and continuous improvement Conduct regular 1:1s, performance reviews, and career development planning for team members Build and maintain a high-performing engineering team through effective hiring, onboarding, and retention practices Promote knowledge sharing and best practices across the team Technical Delivery Oversee the design, development, and delivery of scalable, cloud-ready retail software solutions Partner with Product Management, Architecture, and other stakeholders to translate business requirements into technical solutions Ensure code quality, maintainability, and adherence to engineering standards through code reviews and technical guidance Drive continuous improvement in development processes, tools, and methodologies Manage technical debt and ensure long-term platform sustainability Project & Process Management Plan and execute on project roadmaps, ensuring timely delivery of features and releases Facilitate agile ceremonies and promote agile best practices within the team Identify and mitigate technical risks and project dependencies Provide regular status updates to senior leadership on project progress, team health, and key metrics Collaboration & Communication Work closely with cross-functional teams including Product, QA, Dev Ops, and Implementation Services Communicate technical concepts effectively to both technical and non-technical audiences Collaborate with other engineering managers to align on standards, practices, and platform initiatives Required Qualifications Bachelor's degree in Computer Science, Software Engineering, or related field (or equivalent experience) 7+ years of software development experience 2+ years of people management experience leading software development teams Strong technical background in modern software development practices and technologies Experience with cloud platforms (AWS, Azure, or GCP) and cloud-native architectures Proficiency in one or more programming languages such as Java, C#, Python, or Java Script Deep understanding of software development lifecycle, agile methodologies, and Dev Ops practices Proven track record of delivering complex software projects on time and with quality Excellent communication, leadership, and interpersonal skills Strong problem-solving abilities and technical decision-making skills We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "7+ years",
+    "requisitionId": "JR100070",
+    "scrapedAt": "2026-08-01T14:24:11.696Z",
+    "country": "India",
+    "companyCareerPage": "https://www.aptos.com/careers",
+    "companyDomain": "aptos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Mgr-Software-Development_JR100070",
+    "sourceUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Mgr-Software-Development_JR100070",
+    "originalTitle": "Mgr. Software Development",
+    "normalizedTitle": "Mgr. Software Development",
+    "jobCategory": "Mgr. Software Development",
+    "engineeringDomain": "Cloud",
+    "employmentType": "Full-time",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-08-01T14:24:11.696Z",
+    "scrapedTimestamp": "2026-08-01T14:24:11.696Z",
+    "skillIds": [
+      "aws",
+      "azure",
+      "gcp",
+      "java",
+      "python",
+      "javascript"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "7+ years",
+      "minimumYears": 7,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "7+ years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:25:48.903Z",
+    "description": "Responsibilities Team Leadership & Development Lead, mentor, and develop a team of software engineers, fostering a culture of collaboration, innovation, and continuous improvement Conduct regular 1:1s, performance reviews, and career development planning for team members Build and maintain a high-performing engineering team through effective hiring, onboarding, and retention practices Promote knowledge sharing and best practices across the team Technical Delivery Oversee the design, development, and delivery of scalable, cloud-ready retail software solutions Partner with Product Management, Architecture, and other stakeholders to translate business requirements into technical solutions Ensure code quality, maintainability, and adherence to engineering standards through code reviews and technical guidance Drive continuous improvement in development processes, tools, and methodologies Manage technical debt and ensure long-term platform sustainability Project & Process Management Plan and execute on project roadmaps, ensuring timely delivery of features and releases Facilitate agile ceremonies and promote agile best practices within the team Identify and mitigate technical risks and project dependencies Provide regular status updates to senior leadership on project progress, team health, and key metrics Collaboration & Communication Work closely with cross-functional teams including Product, QA, Dev Ops, and Implementation Services Communicate technical concepts effectively to both technical and non-technical audiences Collaborate with other engineering managers to align on standards, practices, and platform initiatives Required Qualifications Bachelor's degree in Computer Science, Software Engineering, or related field (or equivalent experience) 7+ years of software development experience 2+ years of people management experience leading software development teams Strong technical background in modern software development practices and technologies Experience with cloud platforms (AWS, Azure, or GCP) and cloud-native architectures Proficiency in one or more programming languages such as Java, C#, Python, or Java Script Deep understanding of software development lifecycle, agile methodologies, and Dev Ops practices Proven track record of delivering complex software projects on time and with quality Excellent communication, leadership, and interpersonal skills Strong problem-solving abilities and technical decision-making skills We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "publicExperienceChecked": true
+  },
+  {
+    "jobId": "JR100143",
+    "title": "QA Automation Engineer L1",
+    "company": "Aptos India",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "IN Bangalore Office"
+    ],
+    "link": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/QA-Automation-Engineer-L1_JR100143",
+    "source": "aptosindia",
+    "postedAt": "2026-08-01T14:24:11.696Z",
+    "closingDate": null,
+    "jobDescription": "Job Description: We are looking for an enthusiastic Entry-Level Automation Test Engineer to join our QA team. This is a great opportunity for recent graduates or those with up to one year of experience to build a career in automation testing for mobile applications, web applications, and APIs. You will work closely with experienced QA engineers and developers, learning best practices in test automation and quality assurance. Key\n\nRESPONSIBILITIES:\nAssist in designing, developing, and maintaining automated test scripts for mobile, web, and API testing using Type Script. Learn and utilise Appium for mobile automation (Android and i OS) and Webdriver IO for web automation. Support the implementation of Behaviour Driven Development (BDD) practices using Cucumber. Help build and maintain reusable and scalable test frameworks. Participate in integrating automated tests into CI/CD pipelines. Collaborate with development and QA teams to understand requirements and identify test scenarios. Analyse test results, document defects, and support the resolution process. Document test cases, execution results, and contribute to process improvements. Stay updated with the latest trends and best practices in automation testing. Required Skills and\n\nQUALIFICATIONS:\nBachelor’s degree in Computer Science, Information Technology, or a related field (or equivalent practical experience). 0–1 year of experience in automation testing for mobile, web, or APIs (internship or academic project experience is acceptable). Basic programming knowledge in Type Script or Java Script. Exposure to Appium and/or Webdriver IO is a plus. Familiarity with BDD concepts and Cucumber is a plus. Understanding of software QA methodologies, tools, and processes. Willingness to learn new tools and technologies. Good analytical and problem-solving skills. Effective communication and collaboration skills.\n\nPREFERRED\n\nQUALIFICATIONS:\n\nExperience with API testing tools (e.g., Postman) Exposure to CI/CD tools (e.g., Harness) is a plus. Knowledge of version control systems (e.g., Git) is a plus. Exposure to Agile/Scrum methodologies. Tools & Technologies: Type Script, Java Script Appium (preferred) Webdriver IO (preferred) Cucumber (BDD) API testing tools (Postman, REST Assured, etc.) CI/CD tools We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "0-1 years",
+    "requisitionId": "JR100143",
+    "scrapedAt": "2026-08-01T14:24:11.696Z",
+    "country": "India",
+    "companyCareerPage": "https://www.aptos.com/careers",
+    "companyDomain": "aptos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/QA-Automation-Engineer-L1_JR100143",
+    "sourceUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/QA-Automation-Engineer-L1_JR100143",
+    "originalTitle": "QA Automation Engineer L1",
+    "normalizedTitle": "Automation Engineer",
+    "jobCategory": "Automation Engineer",
+    "engineeringDomain": "Automation",
+    "employmentType": "Full-time",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-08-01T14:24:11.696Z",
+    "scrapedTimestamp": "2026-08-01T14:24:11.696Z",
+    "skillIds": [
+      "typescript",
+      "java",
+      "javascript"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Type Script"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0-1 years",
+      "minimumYears": 0,
+      "maximumYears": 1,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0-1 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Quality Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:25:48.909Z",
+    "description": "Job Description: We are looking for an enthusiastic Entry-Level Automation Test Engineer to join our QA team. This is a great opportunity for recent graduates or those with up to one year of experience to build a career in automation testing for mobile applications, web applications, and APIs. You will work closely with experienced QA engineers and developers, learning best practices in test automation and quality assurance. Key\n\nRESPONSIBILITIES:\nAssist in designing, developing, and maintaining automated test scripts for mobile, web, and API testing using Type Script. Learn and utilise Appium for mobile automation (Android and i OS) and Webdriver IO for web automation. Support the implementation of Behaviour Driven Development (BDD) practices using Cucumber. Help build and maintain reusable and scalable test frameworks. Participate in integrating automated tests into CI/CD pipelines. Collaborate with development and QA teams to understand requirements and identify test scenarios. Analyse test results, document defects, and support the resolution process. Document test cases, execution results, and contribute to process improvements. Stay updated with the latest trends and best practices in automation testing. Required Skills and\n\nQUALIFICATIONS:\nBachelor’s degree in Computer Science, Information Technology, or a related field (or equivalent practical experience). 0–1 year of experience in automation testing for mobile, web, or APIs (internship or academic project experience is acceptable). Basic programming knowledge in Type Script or Java Script. Exposure to Appium and/or Webdriver IO is a plus. Familiarity with BDD concepts and Cucumber is a plus. Understanding of software QA methodologies, tools, and processes. Willingness to learn new tools and technologies. Good analytical and problem-solving skills. Effective communication and collaboration skills.\n\nPREFERRED\n\nQUALIFICATIONS:\n\nExperience with API testing tools (e.g., Postman) Exposure to CI/CD tools (e.g., Harness) is a plus. Knowledge of version control systems (e.g., Git) is a plus. Exposure to Agile/Scrum methodologies. Tools & Technologies: Type Script, Java Script Appium (preferred) Webdriver IO (preferred) Cucumber (BDD) API testing tools (Postman, REST Assured, etc.) CI/CD tools We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "publicExperienceChecked": true
+  },
+  {
+    "jobId": "JR100050",
+    "title": "Senior Technical Consultant",
+    "company": "Aptos India",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "IN Bangalore Office"
+    ],
+    "link": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Senior-Technical-Consultant_JR100050-1",
+    "source": "aptosindia",
+    "postedAt": "2026-08-01T14:24:11.696Z",
+    "closingDate": null,
+    "jobDescription": "RESPONSIBILITIES:\nLead the design, creation, and maintenance of robust upgrade scripts and processes for CORE and STORE platforms. Collaborate with Product Development to transform and migrate upgrade processes to Docker containerization and other modern deployment methods. Execute complex implementations and upgrades, ensuring minimal disruption to client operations. Maintain, troubleshoot, and optimize automation scripts using Power Shell and Python for deployment and configuration. Install, configure, and manage Saa S product releases, including using DSC for deployments. Provide L2/L3 technical support, including root cause analysis (RCA) and resolution for escalated issues related to upgrades and hotfixes. Create and maintain comprehensive documentation for system configurations, procedures, processes, and troubleshooting guides. Work closely with development and support teams to facilitate smooth upgrades and resolve technical issues. Mentor junior engineers and provide guidance on best practices. Willingness to work in shifts as required to support global operations or critical project timelines.\n\nQUALIFICATIONS:\n5–8 years of relevant experience in software upgrades, deployment automation, and process transformation. Bachelor’s degree in Computer Science, Information Technology, or related field, or equivalent work experience. Strong expertise in scripting languages (Power Shell, Python), automation frameworks, and containerization (Docker). Proven ability in advanced troubleshooting, RCA, and implementing solutions for complex technical issues. Prior experience in retail environments is a plus. Experience with virtualization technologies such as VMware and Hyper-V is an added advantage. Excellent verbal and written communication skills, able to articulate complex technical concepts to both technical and non-technical audiences. Experience mentoring and training junior staff. Strong leadership, collaboration, and project management skills. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "5-8 years",
+    "requisitionId": "JR100050",
+    "scrapedAt": "2026-08-01T14:24:11.696Z",
+    "country": "India",
+    "companyCareerPage": "https://www.aptos.com/careers",
+    "companyDomain": "aptos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Senior-Technical-Consultant_JR100050-1",
+    "sourceUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Senior-Technical-Consultant_JR100050-1",
+    "originalTitle": "Senior Technical Consultant",
+    "normalizedTitle": "Senior Technical Consultant",
+    "jobCategory": "Senior Technical Consultant",
+    "engineeringDomain": "Cloud",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-08-01T14:24:11.696Z",
+    "scrapedTimestamp": "2026-08-01T14:24:11.696Z",
+    "skillIds": [
+      "docker",
+      "python"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5-8 years",
+      "minimumYears": 5,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5-8 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:25:48.916Z",
+    "description": "RESPONSIBILITIES:\nLead the design, creation, and maintenance of robust upgrade scripts and processes for CORE and STORE platforms. Collaborate with Product Development to transform and migrate upgrade processes to Docker containerization and other modern deployment methods. Execute complex implementations and upgrades, ensuring minimal disruption to client operations. Maintain, troubleshoot, and optimize automation scripts using Power Shell and Python for deployment and configuration. Install, configure, and manage Saa S product releases, including using DSC for deployments. Provide L2/L3 technical support, including root cause analysis (RCA) and resolution for escalated issues related to upgrades and hotfixes. Create and maintain comprehensive documentation for system configurations, procedures, processes, and troubleshooting guides. Work closely with development and support teams to facilitate smooth upgrades and resolve technical issues. Mentor junior engineers and provide guidance on best practices. Willingness to work in shifts as required to support global operations or critical project timelines.\n\nQUALIFICATIONS:\n5–8 years of relevant experience in software upgrades, deployment automation, and process transformation. Bachelor’s degree in Computer Science, Information Technology, or related field, or equivalent work experience. Strong expertise in scripting languages (Power Shell, Python), automation frameworks, and containerization (Docker). Proven ability in advanced troubleshooting, RCA, and implementing solutions for complex technical issues. Prior experience in retail environments is a plus. Experience with virtualization technologies such as VMware and Hyper-V is an added advantage. Excellent verbal and written communication skills, able to articulate complex technical concepts to both technical and non-technical audiences. Experience mentoring and training junior staff. Strong leadership, collaboration, and project management skills. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "publicExperienceChecked": true
+  },
+  {
+    "jobId": "JR100157",
+    "title": "Software Developer L1",
+    "company": "Aptos India",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "IN Bangalore Office"
+    ],
+    "link": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100157",
+    "source": "aptosindia",
+    "postedAt": "2026-08-01T14:24:11.696Z",
+    "closingDate": null,
+    "jobDescription": "Responsibilities Experience 1 to 3 years Develop and maintain Node.js-based backend services for features like inventory, stock tracking, and order workflows Contribute to mobile app development using React Native Work with APIs and help integrate services using REST and basic event-driven patterns Write clean, maintainable, and testable code Learn from and collaborate with senior engineers and contribute to design discussions Required Technical Skills Backend Hands-on experience with Node.js (Java Script/Type Script) Understanding of REST APIs and backend fundamentals Basic knowledge of microservices architecture Familiarity with asynchronous programming and APIs Frontend Experience with React.js (preferably with Type Script) Understanding of state management (Redux or similar tools) Basic knowledge of building responsive and performant UI Exposure to React Native or willingness to learn Understanding of mobile app basics (navigation, API calls, UI components) Cloud & Tools Basic experience with AWS services (Lambda, API Gateway, S3, etc.) Understanding of CI/CD concepts Familiarity with Git and version control workflows We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "1-3 years",
+    "requisitionId": "JR100157",
+    "scrapedAt": "2026-08-01T14:24:11.696Z",
+    "country": "India",
+    "companyCareerPage": "https://www.aptos.com/careers",
+    "companyDomain": "aptos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100157",
+    "sourceUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100157",
+    "originalTitle": "Software Developer L1",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-08-01T14:24:11.696Z",
+    "scrapedTimestamp": "2026-08-01T14:24:11.696Z",
+    "skillIds": [
+      "node-js",
+      "react",
+      "java",
+      "javascript",
+      "typescript",
+      "aws"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "node-js",
+        "canonicalName": "Node.js",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Node.js"
+      },
+      {
+        "skillId": "react",
+        "canonicalName": "React",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "React"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "javascript",
+        "canonicalName": "JavaScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java Script"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Type Script"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "1-3 years",
+      "minimumYears": 1,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "1-3 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      1,
+      2,
+      3
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:25:48.921Z",
+    "description": "Responsibilities Experience 1 to 3 years Develop and maintain Node.js-based backend services for features like inventory, stock tracking, and order workflows Contribute to mobile app development using React Native Work with APIs and help integrate services using REST and basic event-driven patterns Write clean, maintainable, and testable code Learn from and collaborate with senior engineers and contribute to design discussions Required Technical Skills Backend Hands-on experience with Node.js (Java Script/Type Script) Understanding of REST APIs and backend fundamentals Basic knowledge of microservices architecture Familiarity with asynchronous programming and APIs Frontend Experience with React.js (preferably with Type Script) Understanding of state management (Redux or similar tools) Basic knowledge of building responsive and performant UI Exposure to React Native or willingness to learn Understanding of mobile app basics (navigation, API calls, UI components) Cloud & Tools Basic experience with AWS services (Lambda, API Gateway, S3, etc.) Understanding of CI/CD concepts Familiarity with Git and version control workflows We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "publicExperienceChecked": true
+  },
+  {
+    "jobId": "JR100154",
+    "title": "Software Developer L1",
+    "company": "Aptos India",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "IN Bangalore Office"
+    ],
+    "link": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100154-1",
+    "source": "aptosindia",
+    "postedAt": "2026-08-01T14:24:11.696Z",
+    "closingDate": null,
+    "jobDescription": "Responsibilities Implement MCP tools that wrap Aptos domain APIs — inventory, orders, customer, store operations — with typed Pydantic schemas, tests, and clear LLM-facing descriptions. Contribute features to Foundry's catalog, testing, and deployment workflows, and to Concierge agent capabilities under guidance from senior engineers. Write well-tested Python (pytest, high coverage expected) against Fast API services, and keep code passing lint/type gates (ruff, mypy). Package services in Docker, deploy via Helm and Harness/Git Hub Actions pipelines, and fix issues surfaced by the security gate (bandit, trivy, pip-audit). Add tracing and metrics to your code (Open Telemetry, Prometheus) and use Langfuse traces to understand and debug agent behavior. Participate in code reviews, design discussions, and on-call rotation as you grow; document what you build. Required Qualifications 1 to 3 years of professional software engineering experience (or strong internship/project record) with solid Python fundamentals. Experience building and testing web APIs (Fast API, Flask, or Django) and working with relational or analytical databases. Familiarity with Docker and Git-based CI workflows; willingness to learn Kubernetes, Helm, and AWS. Genuine interest in LLM applications — coursework, side projects, or professional exposure to prompting, agents, or model APIs. Strong testing habits and receptiveness to code review feedback. Preferred Qualifications Exposure to Lang Chain/Lang Graph, MCP, or LLM provider SDKs (Anthropic, Open AI, Bedrock). Basic Kubernetes experience or AWS familiarity (EKS, IAM, S3). Experience with Kafka, Snowflake, or Postgres. Interest in AI safety topics: guardrails, PII handling, tool authorization. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "1-3 years",
+    "requisitionId": "JR100154",
+    "scrapedAt": "2026-08-01T14:24:11.696Z",
+    "country": "India",
+    "companyCareerPage": "https://www.aptos.com/careers",
+    "companyDomain": "aptos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100154-1",
+    "sourceUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100154-1",
+    "originalTitle": "Software Developer L1",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-08-01T14:24:11.696Z",
+    "scrapedTimestamp": "2026-08-01T14:24:11.696Z",
+    "skillIds": [
+      "python",
+      "docker",
+      "flask",
+      "django",
+      "kubernetes",
+      "aws",
+      "kafka",
+      "snowflake",
+      "postgresql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "flask",
+        "canonicalName": "Flask",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Flask"
+      },
+      {
+        "skillId": "django",
+        "canonicalName": "Django",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Django"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kafka"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Postgres"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "1-3 years",
+      "minimumYears": 1,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "1-3 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      1,
+      2,
+      3
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:25:48.925Z",
+    "description": "Responsibilities Implement MCP tools that wrap Aptos domain APIs — inventory, orders, customer, store operations — with typed Pydantic schemas, tests, and clear LLM-facing descriptions. Contribute features to Foundry's catalog, testing, and deployment workflows, and to Concierge agent capabilities under guidance from senior engineers. Write well-tested Python (pytest, high coverage expected) against Fast API services, and keep code passing lint/type gates (ruff, mypy). Package services in Docker, deploy via Helm and Harness/Git Hub Actions pipelines, and fix issues surfaced by the security gate (bandit, trivy, pip-audit). Add tracing and metrics to your code (Open Telemetry, Prometheus) and use Langfuse traces to understand and debug agent behavior. Participate in code reviews, design discussions, and on-call rotation as you grow; document what you build. Required Qualifications 1 to 3 years of professional software engineering experience (or strong internship/project record) with solid Python fundamentals. Experience building and testing web APIs (Fast API, Flask, or Django) and working with relational or analytical databases. Familiarity with Docker and Git-based CI workflows; willingness to learn Kubernetes, Helm, and AWS. Genuine interest in LLM applications — coursework, side projects, or professional exposure to prompting, agents, or model APIs. Strong testing habits and receptiveness to code review feedback. Preferred Qualifications Exposure to Lang Chain/Lang Graph, MCP, or LLM provider SDKs (Anthropic, Open AI, Bedrock). Basic Kubernetes experience or AWS familiarity (EKS, IAM, S3). Experience with Kafka, Snowflake, or Postgres. Interest in AI safety topics: guardrails, PII handling, tool authorization. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "publicExperienceChecked": true
+  },
+  {
+    "jobId": "JR100153",
+    "title": "Software Developer L1",
+    "company": "Aptos India",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "IN Bangalore Office"
+    ],
+    "link": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100153",
+    "source": "aptosindia",
+    "postedAt": "2026-08-01T14:24:11.696Z",
+    "closingDate": null,
+    "jobDescription": "Responsibilities Implement MCP tools that wrap Aptos domain APIs — inventory, orders, customer, store operations — with typed Pydantic schemas, tests, and clear LLM-facing descriptions. Contribute features to Foundry's catalog, testing, and deployment workflows, and to Concierge agent capabilities under guidance from senior engineers. Write well-tested Python (pytest, high coverage expected) against Fast API services, and keep code passing lint/type gates (ruff, mypy). Add tracing and metrics to your code (Open Telemetry, Prometheus) and use Langfuse traces to understand and debug agent behavior. Participate in code reviews, design discussions, and on-call rotation as you grow; document what you build. Required Qualifications 1 to 3 years of professional software engineering experience (or strong internship/project record) with solid Python fundamentals. Experience building and testing web APIs (Fast API, Flask, or Django) and working with relational or analytical databases. Familiarity with Docker and Git-based CI workflows; willingness to learn Kubernetes, Helm, and AWS. Genuine interest in LLM applications — coursework, side projects, or professional exposure to prompting, agents, or model APIs. Strong testing habits and receptiveness to code review feedback. Preferred Qualifications Exposure to Lang Chain/Lang Graph, MCP, or LLM provider SDKs (Anthropic, Open AI, Bedrock). Basic Kubernetes experience or AWS familiarity (EKS, IAM, S3). Experience with Kafka, Snowflake, or Postgres. Interest in AI safety topics: guardrails, PII handling, tool authorization. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "1-3 years",
+    "requisitionId": "JR100153",
+    "scrapedAt": "2026-08-01T14:24:11.696Z",
+    "country": "India",
+    "companyCareerPage": "https://www.aptos.com/careers",
+    "companyDomain": "aptos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100153",
+    "sourceUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Software-Developer-L1_JR100153",
+    "originalTitle": "Software Developer L1",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-08-01T14:24:11.696Z",
+    "scrapedTimestamp": "2026-08-01T14:24:11.696Z",
+    "skillIds": [
+      "python",
+      "flask",
+      "django",
+      "docker",
+      "kubernetes",
+      "aws",
+      "kafka",
+      "snowflake",
+      "postgresql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "flask",
+        "canonicalName": "Flask",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Flask"
+      },
+      {
+        "skillId": "django",
+        "canonicalName": "Django",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Django"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kafka"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      },
+      {
+        "skillId": "postgresql",
+        "canonicalName": "PostgreSQL",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Postgres"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "1-3 years",
+      "minimumYears": 1,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "1-3 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      1,
+      2,
+      3
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:25:48.930Z",
+    "description": "Responsibilities Implement MCP tools that wrap Aptos domain APIs — inventory, orders, customer, store operations — with typed Pydantic schemas, tests, and clear LLM-facing descriptions. Contribute features to Foundry's catalog, testing, and deployment workflows, and to Concierge agent capabilities under guidance from senior engineers. Write well-tested Python (pytest, high coverage expected) against Fast API services, and keep code passing lint/type gates (ruff, mypy). Add tracing and metrics to your code (Open Telemetry, Prometheus) and use Langfuse traces to understand and debug agent behavior. Participate in code reviews, design discussions, and on-call rotation as you grow; document what you build. Required Qualifications 1 to 3 years of professional software engineering experience (or strong internship/project record) with solid Python fundamentals. Experience building and testing web APIs (Fast API, Flask, or Django) and working with relational or analytical databases. Familiarity with Docker and Git-based CI workflows; willingness to learn Kubernetes, Helm, and AWS. Genuine interest in LLM applications — coursework, side projects, or professional exposure to prompting, agents, or model APIs. Strong testing habits and receptiveness to code review feedback. Preferred Qualifications Exposure to Lang Chain/Lang Graph, MCP, or LLM provider SDKs (Anthropic, Open AI, Bedrock). Basic Kubernetes experience or AWS familiarity (EKS, IAM, S3). Experience with Kafka, Snowflake, or Postgres. Interest in AI safety topics: guardrails, PII handling, tool authorization. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "publicExperienceChecked": true
+  },
+  {
+    "jobId": "JR100144",
+    "title": "Sr. Architect L3",
+    "company": "Aptos India",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "IN Bangalore Office"
+    ],
+    "link": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Sr-Architect-L3_JR100144",
+    "source": "aptosindia",
+    "postedAt": "2026-08-01T14:24:11.696Z",
+    "closingDate": null,
+    "jobDescription": "Responsibilities Architecture & Technical Leadership Support and execute solution architecture for assigned product areas and cross-platform capabilities (e.g., pricing/promotions, inventory availability, order orchestration, customer/loyalty, POS integrations). Apply and uphold architecture standards: layering, service boundaries, domain models, API guidelines, eventing patterns, and coding practices as established by senior architects. Participate in and contribute to technical design reviews, author architecture decision records (ADRs), and support technical risk assessments for assigned features. Drive modernization initiatives (cloud readiness, decomposition, re-platforming, dependency rationalization, observability). Collaborate with Professional Services on reference architectures for implementations, upgrades, and complex customer integrations. Non-Functional Excellence Ensure systems meet SLAs for performance, availability, resiliency, scalability, and security. Define patterns for caching, data consistency, idempotency, retries, rate limiting, and disaster recovery. Champion observability: logging, metrics, tracing, alerting, and operational runbooks. Engineering Enablement & Mentorship Collaborate with senior engineers and tech leads; actively contribute to raising engineering standards within the team. Partner with QA and Dev Ops to embed quality and automation into the delivery lifecycle (shift-left testing, CI/CD controls). Contribute hands-on where needed (prototypes, spikes, performance investigations, complex fixes). Must-Have Requirements 6–10 years of software engineering experience, including at least 1–2 years in an architecture or technical lead capacity. Proficiency in C# / .NET — strong command of the language, async patterns, dependency injection, and writing testable, clean code. Working knowledge of React — ability to review, guide, and contribute to front-end architecture decisions; familiarity with component design, hooks, and state management (Redux/Context). Practical and hands-on AWS experience covering core services: EC2, ECS/EKS, Lambda, S3, RDS, SQS/SNS, API Gateway, Cloud Watch, and IAM. Solid understanding of distributed systems and service-oriented architectures (microservices and/or modular monoliths). Demonstrated ability to translate high-level architectural designs into detailed, implementation-ready technical specifications. Experience with REST API design, security (OAuth2/OIDC), versioning, and integration patterns (sync/async). Familiarity with CI/CD pipelines, Docker/Kubernetes, and infrastructure-as-code concepts. Good communication skills to articulate architecture choices to engineering peers and participate in cross-team discussions. Strong understanding of: API design, security, and versioning Data modelling and persistence (SQL/No SQL) and integration patterns Performance engineering and troubleshooting in production systems Secure coding and threat modelling fundamentals Good to Have Retail domain experience: POS, OMS, pricing/promotions, inventory, returns, loyalty, taxation. Exposure to LLM integration patterns and MCP server contracts. AI tool exposure. Experience with event-driven architecture (e.g., Kafka), CQRS patterns, and workflow/orchestration concepts. Experience building platform capabilities for multi-tenant enterprise Saa S. Exposure to AI-assisted engineering practices (code quality, test generation, operational insights). Tech Stack : Backend: Java/.NET (as applicable), REST APIs, integration services Data: SQL + caching; eventing/streaming (where applicable) Cloud/Dev Ops: Docker, Kubernetes, CI/CD pipelines, observability tools Security: OAuth2/OIDC, secrets management, secure SDLC AWS Services including RDS. Success Measures. Architecture standards adopted and measurable reduction in defects/rewrites. Improved service performance/reliability and clearer operational posture (dashboards, alerts, runbooks). Faster, safer delivery through reference architectures and reusable patterns. Stronger alignment across product, engineering, QA, and PS on implementation-ready designs. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "6-10 years",
+    "requisitionId": "JR100144",
+    "scrapedAt": "2026-08-01T14:24:11.696Z",
+    "country": "India",
+    "companyCareerPage": "https://www.aptos.com/careers",
+    "companyDomain": "aptos.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Sr-Architect-L3_JR100144",
+    "sourceUrl": "https://aptos.wd108.myworkdayjobs.com/Aptos/job/IN-Bangalore-Office/Sr-Architect-L3_JR100144",
+    "originalTitle": "Sr. Architect L3",
+    "normalizedTitle": "Sr. Architect L3",
+    "jobCategory": "Sr. Architect L3",
+    "engineeringDomain": "Machine Learning",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-08-01T14:24:11.696Z",
+    "scrapedTimestamp": "2026-08-01T14:24:11.696Z",
+    "skillIds": [
+      "aws",
+      "docker",
+      "kubernetes",
+      "sql",
+      "kafka",
+      "java"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kafka"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "6-10 years",
+      "minimumYears": 1,
+      "maximumYears": 2,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "1-2 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      1,
+      2
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [
+      "Backend Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T21:25:48.937Z",
+    "description": "Responsibilities Architecture & Technical Leadership Support and execute solution architecture for assigned product areas and cross-platform capabilities (e.g., pricing/promotions, inventory availability, order orchestration, customer/loyalty, POS integrations). Apply and uphold architecture standards: layering, service boundaries, domain models, API guidelines, eventing patterns, and coding practices as established by senior architects. Participate in and contribute to technical design reviews, author architecture decision records (ADRs), and support technical risk assessments for assigned features. Drive modernization initiatives (cloud readiness, decomposition, re-platforming, dependency rationalization, observability). Collaborate with Professional Services on reference architectures for implementations, upgrades, and complex customer integrations. Non-Functional Excellence Ensure systems meet SLAs for performance, availability, resiliency, scalability, and security. Define patterns for caching, data consistency, idempotency, retries, rate limiting, and disaster recovery. Champion observability: logging, metrics, tracing, alerting, and operational runbooks. Engineering Enablement & Mentorship Collaborate with senior engineers and tech leads; actively contribute to raising engineering standards within the team. Partner with QA and Dev Ops to embed quality and automation into the delivery lifecycle (shift-left testing, CI/CD controls). Contribute hands-on where needed (prototypes, spikes, performance investigations, complex fixes). Must-Have Requirements 6–10 years of software engineering experience, including at least 1–2 years in an architecture or technical lead capacity. Proficiency in C# / .NET — strong command of the language, async patterns, dependency injection, and writing testable, clean code. Working knowledge of React — ability to review, guide, and contribute to front-end architecture decisions; familiarity with component design, hooks, and state management (Redux/Context). Practical and hands-on AWS experience covering core services: EC2, ECS/EKS, Lambda, S3, RDS, SQS/SNS, API Gateway, Cloud Watch, and IAM. Solid understanding of distributed systems and service-oriented architectures (microservices and/or modular monoliths). Demonstrated ability to translate high-level architectural designs into detailed, implementation-ready technical specifications. Experience with REST API design, security (OAuth2/OIDC), versioning, and integration patterns (sync/async). Familiarity with CI/CD pipelines, Docker/Kubernetes, and infrastructure-as-code concepts. Good communication skills to articulate architecture choices to engineering peers and participate in cross-team discussions. Strong understanding of: API design, security, and versioning Data modelling and persistence (SQL/No SQL) and integration patterns Performance engineering and troubleshooting in production systems Secure coding and threat modelling fundamentals Good to Have Retail domain experience: POS, OMS, pricing/promotions, inventory, returns, loyalty, taxation. Exposure to LLM integration patterns and MCP server contracts. AI tool exposure. Experience with event-driven architecture (e.g., Kafka), CQRS patterns, and workflow/orchestration concepts. Experience building platform capabilities for multi-tenant enterprise Saa S. Exposure to AI-assisted engineering practices (code quality, test generation, operational insights). Tech Stack : Backend: Java/.NET (as applicable), REST APIs, integration services Data: SQL + caching; eventing/streaming (where applicable) Cloud/Dev Ops: Docker, Kubernetes, CI/CD pipelines, observability tools Security: OAuth2/OIDC, secrets management, secure SDLC AWS Services including RDS. Success Measures. Architecture standards adopted and measurable reduction in defects/rewrites. Improved service performance/reliability and clearer operational posture (dashboards, alerts, runbooks). Faster, safer delivery through reference architectures and reusable patterns. Stronger alignment across product, engineering, QA, and PS on implementation-ready designs. We offer a competitive total rewards package including a base salary determined based on the role, experience, skill set, and location. For those in eligible roles, discretionary incentive compensation may be awarded in recognition of individual achievements and contributions. We also offer a range of benefits and programs to meet employee needs, based on eligibility. We are an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, or status as a protected veteran. By submitting an application for this job, you acknowledge that any personal data or personally identifiable information that you provide to us will be processed in accordance with our Candidate Privacy Notice. Submit your resume today! Learn about Aptos' Global Culture Aptos is the global leader in unified commerce solutions for retailers. Hundreds of leading retail brands around the world trust our modern, cloud-native POS and advanced enterprise solutions to power innovative shoppinfg experiences that inspire loyalty, maximize revenue and reduce costs. Be part of the technology future of one of the world's largest industries. Introduce yourself to our recruiters and we'll get in touch if there's a role that seems like a good match. For more than 40 years, Aptos has been 100% focused on the future of retailing—while simultaneously helping to build great futures for our colleagues. We’re constantly investing in innovative technologies to ensure our solutions are fully capable of keeping pace with the ever-evolving expectations of the modern consumer. We are a global organization supporting a global client base located in more than 70 countries. Check out the list below of our open positions around the world. If this sounds like your kind of opportunity, and if you have what it takes to excel with the industry’s best, we invite you to join the ride."
+  }
+]

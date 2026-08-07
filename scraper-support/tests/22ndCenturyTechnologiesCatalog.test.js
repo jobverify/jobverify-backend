@@ -34,9 +34,9 @@ test('22nd Century Technologies local catalog captures the verified first-party 
     provider.extractionStrategy,
     'verified-first-party-current-openings-contract-page+region-job-table+first-party-apply-links',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Basic Clerical/i)
   assert.match(provider.verifiedSurfaceSummary, /Accounting Assistant/i)
 })

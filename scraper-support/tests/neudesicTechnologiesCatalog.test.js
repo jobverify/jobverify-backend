@@ -34,10 +34,12 @@ test('Neudesic Technologies local catalog captures the first-party careers shell
     provider.extractionStrategy,
     'verified-first-party-careers-shell+linkedin-region-links+no-first-party-job-listings',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Search India Openings by Region/i)
   assert.match(provider.verifiedSurfaceSummary, /LinkedIn/i)
+  assert.match(provider.verifiedSurfaceSummary, /phishing-scams/i)
+  assert.match(provider.verifiedSurfaceSummary, /lca-notices/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /neudesictechnologies[\\/]jobs\.json$/i)
 })

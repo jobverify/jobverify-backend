@@ -66,6 +66,14 @@ const stripTagsToLines = (value) => decodeHtmlEntities(String(value ?? ''))
   .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
+const stripTagsToText = (value) => normalizeWhitespace(
+  decodeHtmlEntities(String(value ?? ''))
+    .replace(/\r/g, '')
+    .replace(/<(br|\/p|\/div|\/li|\/section|\/article|\/main|\/nav|\/h[1-6]|\/a|\/ul|\/ol)\b[^>]*>/gi, ' ')
+    .replace(/<(p|div|li|section|article|main|nav|h[1-6]|a|ul|ol)\b[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
+
 const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   if (!value) return null
 
@@ -146,19 +154,42 @@ const extractExperienceRequired = (value) => {
     || null
 }
 
-const extractPostingMetadata = (lines) => {
-  for (const line of lines) {
+const extractPostingMetadata = (html, lines) => {
+  for (const match of String(html ?? '').matchAll(
+    /<div\b[^>]*class=["'][^"']*\bentry-meta\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+  )) {
+    const entryMetaHtml = match[1]
+    const rawDate = stripTagsToText(
+      entryMetaHtml.match(/<span\b[^>]*class=["'][^"']*\bpublished\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1],
+    )?.match(DATE_PATTERN)?.[1] ?? null
+    const location = normalizeLocation(stripTagsToText(
+      entryMetaHtml.match(/<span\b[^>]*class=["'][^"']*\bblog-label\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1],
+    ))
+
+    if (rawDate || location) {
+      return {
+        rawDate,
+        postingDate: toIsoDate(rawDate),
+        location,
+      }
+    }
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]
     const dateMatch = line.match(DATE_PATTERN)
     if (!dateMatch) continue
 
     const rawDate = normalizeWhitespace(dateMatch[1])
     const remainder = normalizeWhitespace(line.replace(DATE_PATTERN, ''))
-    if (!rawDate || !remainder) continue
+    const nextLine = normalizeWhitespace(lines[index + 1])
+    const location = normalizeLocation(remainder || nextLine)
+    if (!rawDate || !location) continue
 
     return {
       rawDate,
       postingDate: toIsoDate(rawDate),
-      location: normalizeLocation(remainder),
+      location,
     }
   }
 
@@ -170,7 +201,7 @@ const extractPostingMetadata = (lines) => {
 }
 
 const extractDescription = (lines) => {
-  const startIndex = lines.findIndex((line) => /^(About Simplify Healthcare|Role Overview)$/i.test(line))
+  const startIndex = lines.findIndex((line) => /^(About Simplify Healthcare|Role Overview|Role:?)$/i.test(line))
   if (startIndex === -1) return null
 
   const descriptionLines = []
@@ -267,7 +298,7 @@ export const extractJobFromDetailHtml = ({ url, html }) => {
   const title = normalizeWhitespace(String(html ?? '').match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
     || lines.find((line) => !/^(Home Careers|Current Openings|India)$/i.test(line))
     || null
-  const metadata = extractPostingMetadata(lines)
+  const metadata = extractPostingMetadata(html, lines)
   const jobDescription = extractDescription(lines)
   const slug = getJobSlugFromUrl(url)
 

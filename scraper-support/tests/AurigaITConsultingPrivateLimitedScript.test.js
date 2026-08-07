@@ -19,6 +19,17 @@ const kekaShellHtml = `
 <html lang="en">
   <body>
     <script>
+      fetch('/ats/documents/portal/careerportal/auriga-careers.html')
+    </script>
+  </body>
+</html>
+`
+
+const kekaPortalHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <script>
       window.khConfig = {
         identifier: 'auriga-identifier',
         domain: 'https://aurigait.keka.com/careers',
@@ -75,7 +86,11 @@ test('Auriga IT Consulting Private Limited helpers stay pinned to the verified f
   assert.equal(auriga.KEKA_CAREERS_URL, 'https://aurigait.keka.com/careers')
   assert.equal(auriga.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.equal(auriga.extractKekaHandoffUrl(officialCareersHtml), 'https://aurigait.keka.com/careers')
-  assert.deepEqual(auriga.extractCareerConfig(kekaShellHtml), {
+  assert.equal(
+    auriga.extractBootstrapDocumentUrl(kekaShellHtml),
+    'https://aurigait.keka.com/ats/documents/portal/careerportal/auriga-careers.html',
+  )
+  assert.deepEqual(auriga.extractCareerConfig(kekaPortalHtml), {
     identifier: 'auriga-identifier',
     domain: 'https://aurigait.keka.com/careers/',
     portalName: 'default',
@@ -93,6 +108,7 @@ test('Auriga IT Consulting Private Limited run validates the first-party shell a
       requestedTextUrls.push(url)
       if (url === auriga.CAREERS_URL) return officialCareersHtml
       if (url === auriga.KEKA_CAREERS_URL) return kekaShellHtml
+      if (url === 'https://aurigait.keka.com/ats/documents/portal/careerportal/auriga-careers.html') return kekaPortalHtml
       throw new Error(`Unexpected Auriga text URL: ${url}`)
     },
     fetchJson: async (url) => {
@@ -101,7 +117,11 @@ test('Auriga IT Consulting Private Limited run validates the first-party shell a
     },
   })
 
-  assert.deepEqual(requestedTextUrls, [auriga.CAREERS_URL, auriga.KEKA_CAREERS_URL])
+  assert.deepEqual(requestedTextUrls, [
+    auriga.CAREERS_URL,
+    auriga.KEKA_CAREERS_URL,
+    'https://aurigait.keka.com/ats/documents/portal/careerportal/auriga-careers.html',
+  ])
   assert.deepEqual(requestedJsonUrls, [
     'https://aurigait.keka.com/careers/api/embedjobs/default/active/auriga-identifier',
   ])

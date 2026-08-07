@@ -147,3 +147,52 @@ test('Tech Firefly sentinel fails closed when the placeholder surface drifts int
     /surface now appears to expose public jobs/i,
   )
 })
+
+test('Tech Firefly returns [] when the verified careers page times out in the current runtime', async () => {
+  const techFirefly = await loadScriptModule()
+
+  const jobs = await techFirefly.createTechFireflyScraper().run({
+    fetchText: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'UND_ERR_CONNECT_TIMEOUT',
+        message: 'Connect Timeout Error (attempted address: www.techfirefly.com:443, timeout: 10000ms)',
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Tech Firefly returns [] when the verified careers host times out', async () => {
+  const techFirefly = await loadScriptModule()
+
+  const jobs = await techFirefly.createTechFireflyScraper().run({
+    fetchText: async () => {
+      throw new Error(`Connect Timeout Error for ${techFirefly.CAREERS_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Tech Firefly default fetch stops after a single connect-timeout pass', async () => {
+  const techFirefly = await loadScriptModule()
+  const originalFetch = globalThis.fetch
+  const fetchCalls = []
+
+  globalThis.fetch = async (url) => {
+    fetchCalls.push(String(url))
+    throw new Error(`Connect Timeout Error for ${url}`)
+  }
+
+  try {
+    const jobs = await techFirefly.createTechFireflyScraper().run()
+
+    assert.deepEqual(jobs, [])
+    assert.deepEqual(fetchCalls, [techFirefly.CAREERS_URL])
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})

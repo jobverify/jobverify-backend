@@ -260,6 +260,7 @@ const buildNormalizedJob = ({ listing, detailPayload, context }) => {
       responsibilities: detail.responsibilities,
       requirements: detail.requirements,
     }),
+    publicExperienceChecked: true,
     companyCareerPage: context === 'doctor' ? DOCTOR_CAREERS_URL : CAREERS_URL,
   }
 }

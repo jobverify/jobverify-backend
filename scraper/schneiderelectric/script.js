@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { launchBrowser } from '../../scraper-support/utils/browser.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -33,6 +34,29 @@ const normalizeEmploymentType = (value) => {
   if (/contract/i.test(normalized)) return 'Contract'
   if (/intern/i.test(normalized)) return 'Internship'
   return normalized
+}
+
+const extractExperienceRequired = (job = {}) => {
+  const publicEvidence = normalizeWhitespace([
+    job.description,
+    job.responsibilities,
+    job.qualifications,
+  ].filter(Boolean).join(' '))
+  if (!publicEvidence) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: publicEvidence,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
 }
 
 const isIndiaJob = (job = {}) => {
@@ -79,6 +103,9 @@ export const normalizeJobListing = (item = {}) => {
   const job = item?.data || {}
   if (!isIndiaJob(job)) return null
 
+  const jobDescription = normalizeWhitespace(job.description || job.responsibilities)
+  const minimumQualification = normalizeWhitespace(job.qualifications)
+
   return {
     title: normalizeWhitespace(job.title),
     location: getLocation(job),
@@ -88,15 +115,16 @@ export const normalizeJobListing = (item = {}) => {
     requisitionId: normalizeWhitespace(job.req_id || job.slug),
     department: getDepartment(job),
     employmentType: normalizeEmploymentType(job.employment_type || job.tags1?.[0]),
-    experienceRequired: null,
-    jobDescription: normalizeWhitespace(job.description || job.responsibilities),
-    minimumQualification: normalizeWhitespace(job.qualifications),
+    experienceRequired: extractExperienceRequired(job),
+    jobDescription,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: normalizeWhitespace(job.posted_date),
     closingDate: normalizeWhitespace(job.posting_expiry_date),
     applyUrl: normalizeWhitespace(job.apply_url),
     sourceUrl: buildCanonicalJobUrl(job),
+    publicExperienceChecked: Boolean(jobDescription || minimumQualification),
   }
 }
 

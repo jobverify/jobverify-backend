@@ -29,18 +29,24 @@ test('AIG Business Solution local catalog captures the verified first-party open
   assert.equal(provider.homepageUrl, 'https://aighealthcare.in/careers')
   assert.equal(provider.companyCareerPage, 'https://aighealthcare.in/openings')
   assert.equal(provider.companyDomain, 'aighealthcare.in')
-  assert.equal(provider.atsPlatform, 'first-party-openings-page-with-same-domain-job-assets')
+  assert.equal(provider.officialJobsHandoffUrl, 'https://eiyi.fa.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001')
+  assert.equal(provider.oracleCandidateExperienceUrl, 'https://eiyi.fa.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001')
+  assert.equal(provider.workspaceDomain, 'eiyi.fa.ap1.oraclecloud.com')
+  assert.equal(provider.listingApiBaseUrl, 'https://eiyi.fa.ap1.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions')
+  assert.equal(provider.publicJobsBaseUrl, 'https://eiyi.fa.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001/job/')
+  assert.equal(provider.siteNumber, 'CX_3001')
+  assert.equal(provider.atsPlatform, 'oracle-cloud')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-openings-page')
+  assert.equal(provider.paginationStrategy, 'oracle-finder-api-offset-query')
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-shell+verified-openings-page+same-domain-opening-links',
+    'verified-careers-shell+verified-openings-page+oracle-candidate-experience+finder-api',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Join the rightful revolution/i)
+  assert.match(provider.verifiedSurfaceSummary, /Oracle Candidate Experience/i)
   assert.match(provider.verifiedSurfaceSummary, /IKS Health/i)
-  assert.match(provider.verifiedSurfaceSummary, /Customer Service Representative/i)
+  assert.match(provider.verifiedSurfaceSummary, /Business Analyst/i)
 })
 
 test('AIG Business Solution exact backlog row resolves from the local catalog contract', async () => {

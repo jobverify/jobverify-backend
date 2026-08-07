@@ -1,0 +1,147 @@
+[
+  {
+    "jobId": "968",
+    "postedOn": "11 Feb 2026",
+    "sourceUrl": "https://www.thedigitalgroup.com/job-details/ai-mlengineer/274/968",
+    "title": "AI/MLEngineer",
+    "location": "Pune, India",
+    "applyUrl": "https://www.thedigitalgroup.com/apply-job/ai-mlengineer/274/968",
+    "company": "The Digital Group Infotech",
+    "department": null,
+    "country": "India",
+    "city": "Pune",
+    "requisitionId": "thedigitalgroupinfotech-968",
+    "employmentType": "Full-time",
+    "experienceRequired": "3-5 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-02-10T18:30:00.000Z",
+    "closingDate": null,
+    "jobDescription": "requirements to automating business processes. Learn More » Healthcare Specialized research, publication, information and content management solutions for the healthcare industry. Learn More » Careers Careers Job Details APPLY NOW --> APPLY NOW AI/MLEngineer Years of Experience: 3-5 Years Skills Stack: Generative AI, Azure or AWS Shift Timings: 05:30 am\n- 05:30 am () Role and Responsibility Details: Job Description: About the Role We are seeking a highly skilled and motivated Generative AI Engineer with hands-on experience in building and deploying multimodal AI solutions (text, audio, and video) on Azure or AWS AI platforms . The ideal candidate will have deep knowledge of generative AI models (LLMs, diffusion models, etc.), and be capable of designing, developing, and scaling AI/ML solutions using cloud-native tools and services. Key Responsibilities Design, develop, and deploy multimodal AI models (text, audio, video) using AWS or Azure AI services. Integrate LLMs (e.g., Open AI, Anthropic, Cohere) with proprietary or third-party models to build custom applications. Utilize Azure Open AI, AWS Bedrock, Sage Maker, or similar services for training and inference workflows. Develop pipelines for preprocessing, training, evaluation, and fine-tuning of multimodal models. Collaborate with product and engineering teams to define use cases and translate them into scalable Gen AI solutions. Evaluate and optimize models for latency, accuracy, cost, and ethical considerations . Implement prompt engineering, RAG (retrieval-augmented generation), vector search , and other advanced techniques. Stay current with Gen AI research trends and contribute to internal knowledge sharing. Required Skills & Qualifications 5+ years of experience in AI/ML , with 1\u00132 years specifically in generative AI / multimodal AI . Strong proficiency with at least one cloud platform: Azure AI (Azure Open AI, Cognitive Services, ML Studio) or AWS AI (Bedrock, Sage Maker, Transcribe, Rekognition, Polly, etc.) . Hands-on experience with multimodal data processing (e.g., NLP, audio signal processing, video analysis). Experience with LLMs , transformer architectures , and model fine-tuning (e.g., Lo RA, PEFT, adapters). Proficiency in Python , and libraries such as Py Torch, Tensor Flow, Transformers (Hugging Face) . Experience with vector databases (e.g., FAISS, Pinecone, Weaviate) and embedding generation . Strong understanding of MLOps , CI/CD for ML , and deployment strategies for Gen AI models.\n\nQUALIFICATIONS:\nB.E Locations: Pune Contact: Recruitment Team Email: tdg-recruitment@thedigitalgroup.com Quick Contact Select Purpose Sales General Jobs To apply for job Click Here . How did you hear about us? Google search Facebook/Twitter/Linked In/Google+ Email Referred by colleague Other --> Newsletter --> By submitting this form, you acknowledge and consent to the processing of your information in accordance with our Privacy Policy , which adheres to ethical standards and complies with ISO 27701 and ISO 42001 for data privacy, security, and organizational resilience. Submit Industries Law & Regulatory Compliance STM Publishing Digital Media & Technologies Mortgage Banking Ecommerce Education Manufacturing E-Governance Health Services Software Development Services Software Testing Services Managed Infrastructure Services Managed Support Services Business Process Outsourcing Process Consulting Corporate Training Services The Digital Group The Digital Group of Companies Inc 121 Village Boulevard Princeton Forrestal Village Princeton NJ 08540 USA Phone: +1.609.524.2441 Fax: +1.609.228.4844 info@thedigitalgroup.com --> Email: info@thedigitalgroup.com global presence USA | CANADA | INDIA | FIJI | VIETNAM --> --> &copy; T/DG\n2026. All rights reserved. Site Map Contact Disclaimer Privacy Policy Po SH Compliance Feedback --> Integrated Quality Policy LOOKING FOR SOMETHING YOU CAN'T FIND? We can help you! Name* Email* Phone Number* Purpose* Select Purpose Sales General Jobs To apply for job Click Here . I agree to the Privacy Policy and consent to sharing my information. To know more refer to our Privacy Policy . Request Callback Go To Careers --> Don't worry. Your information is safe with us. Read our Privacy policy to know more. &times; Submit Your Feedback Thank you so much Name* Email* What category would you like to give website feedback on? Choose a category Site Navigation (finding what you want) Site Content Language Quality Site Design Other Rate your level of satisfaction with this webpage today Very Satisfied Somewhat Satisfied Somewhat Dissatisfied Very Dissatisfied Feedback/Suggestions * Attach File Submit Your feedback is highly appreciated and will certainly help us to provide the best website experience possible Close Sending mail Please wait... &times; Thank you! Note: We respect your privacy. Your information is safe with us and will not be shared.",
+    "source": "thedigitalgroupinfotech",
+    "link": "https://www.thedigitalgroup.com/apply-job/ai-mlengineer/274/968",
+    "scrapedAt": "2026-08-01T15:32:43.668Z",
+    "jobSlug": "ai-mlengineer-968",
+    "companyCareerPage": "https://www.thedigitalgroup.com/careers?page=1",
+    "companyDomain": "thedigitalgroup.com",
+    "atsPlatform": "official-company-careers-table",
+    "originalTitle": "AI/MLEngineer",
+    "normalizedTitle": "AI/MLEngineer",
+    "jobCategory": "AI/MLEngineer",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-02-10T18:30:00.000Z",
+    "scrapedTimestamp": "2026-08-01T15:32:43.668Z",
+    "skillIds": [
+      "generative-ai",
+      "azure",
+      "aws",
+      "python",
+      "pytorch",
+      "mlops"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Generative AI"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "pytorch",
+        "canonicalName": "PyTorch",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Py Torch"
+      },
+      {
+        "skillId": "mlops",
+        "canonicalName": "MLOps",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "MLOps"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-5 years",
+      "minimumYears": 3,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-5 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T22:09:07.934Z",
+    "description": "requirements to automating business processes. Learn More » Healthcare Specialized research, publication, information and content management solutions for the healthcare industry. Learn More » Careers Careers Job Details APPLY NOW --> APPLY NOW AI/MLEngineer Years of Experience: 3-5 Years Skills Stack: Generative AI, Azure or AWS Shift Timings: 05:30 am\n- 05:30 am () Role and Responsibility Details: Job Description: About the Role We are seeking a highly skilled and motivated Generative AI Engineer with hands-on experience in building and deploying multimodal AI solutions (text, audio, and video) on Azure or AWS AI platforms . The ideal candidate will have deep knowledge of generative AI models (LLMs, diffusion models, etc.), and be capable of designing, developing, and scaling AI/ML solutions using cloud-native tools and services. Key Responsibilities Design, develop, and deploy multimodal AI models (text, audio, video) using AWS or Azure AI services. Integrate LLMs (e.g., Open AI, Anthropic, Cohere) with proprietary or third-party models to build custom applications. Utilize Azure Open AI, AWS Bedrock, Sage Maker, or similar services for training and inference workflows. Develop pipelines for preprocessing, training, evaluation, and fine-tuning of multimodal models. Collaborate with product and engineering teams to define use cases and translate them into scalable Gen AI solutions. Evaluate and optimize models for latency, accuracy, cost, and ethical considerations . Implement prompt engineering, RAG (retrieval-augmented generation), vector search , and other advanced techniques. Stay current with Gen AI research trends and contribute to internal knowledge sharing. Required Skills & Qualifications 5+ years of experience in AI/ML , with 1\u00132 years specifically in generative AI / multimodal AI . Strong proficiency with at least one cloud platform: Azure AI (Azure Open AI, Cognitive Services, ML Studio) or AWS AI (Bedrock, Sage Maker, Transcribe, Rekognition, Polly, etc.) . Hands-on experience with multimodal data processing (e.g., NLP, audio signal processing, video analysis). Experience with LLMs , transformer architectures , and model fine-tuning (e.g., Lo RA, PEFT, adapters). Proficiency in Python , and libraries such as Py Torch, Tensor Flow, Transformers (Hugging Face) . Experience with vector databases (e.g., FAISS, Pinecone, Weaviate) and embedding generation . Strong understanding of MLOps , CI/CD for ML , and deployment strategies for Gen AI models.\n\nQUALIFICATIONS:\nB.E Locations: Pune Contact: Recruitment Team Email: tdg-recruitment@thedigitalgroup.com Quick Contact Select Purpose Sales General Jobs To apply for job Click Here . How did you hear about us? Google search Facebook/Twitter/Linked In/Google+ Email Referred by colleague Other --> Newsletter --> By submitting this form, you acknowledge and consent to the processing of your information in accordance with our Privacy Policy , which adheres to ethical standards and complies with ISO 27701 and ISO 42001 for data privacy, security, and organizational resilience. Submit Industries Law & Regulatory Compliance STM Publishing Digital Media & Technologies Mortgage Banking Ecommerce Education Manufacturing E-Governance Health Services Software Development Services Software Testing Services Managed Infrastructure Services Managed Support Services Business Process Outsourcing Process Consulting Corporate Training Services The Digital Group The Digital Group of Companies Inc 121 Village Boulevard Princeton Forrestal Village Princeton NJ 08540 USA Phone: +1.609.524.2441 Fax: +1.609.228.4844 info@thedigitalgroup.com --> Email: info@thedigitalgroup.com global presence USA | CANADA | INDIA | FIJI | VIETNAM --> --> &copy; T/DG\n2026. All rights reserved. Site Map Contact Disclaimer Privacy Policy Po SH Compliance Feedback --> Integrated Quality Policy LOOKING FOR SOMETHING YOU CAN'T FIND? We can help you! Name* Email* Phone Number* Purpose* Select Purpose Sales General Jobs To apply for job Click Here . I agree to the Privacy Policy and consent to sharing my information. To know more refer to our Privacy Policy . Request Callback Go To Careers --> Don't worry. Your information is safe with us. Read our Privacy policy to know more. &times; Submit Your Feedback Thank you so much Name* Email* What category would you like to give website feedback on? Choose a category Site Navigation (finding what you want) Site Content Language Quality Site Design Other Rate your level of satisfaction with this webpage today Very Satisfied Somewhat Satisfied Somewhat Dissatisfied Very Dissatisfied Feedback/Suggestions * Attach File Submit Your feedback is highly appreciated and will certainly help us to provide the best website experience possible Close Sending mail Please wait... &times; Thank you! Note: We respect your privacy. Your information is safe with us and will not be shared.",
+    "publicExperienceChecked": true
+  }
+]

@@ -56,31 +56,64 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('Link to Apply')
   }
 
+const extractRegionRows = (sectionHtml = '', region = '') => {
+  const jobs = []
+
+  for (const row of String(sectionHtml ?? '').matchAll(
+    /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*(?:Apply Now|Apply)\s*<\/a>\s*<\/td>\s*<\/tr>/gi,
+  )) {
+    const title = normalizeWhitespace(row[1])
+    const applyUrl = toAbsoluteUrl(row[2])
+    const department = `State of Illinois - ${region}`
+
+    if (!title || !applyUrl) continue
+
+    jobs.push({
+      title,
+      department,
+      location: 'Illinois, United States',
+      city: 'Illinois',
+      applyUrl,
+      jobId: slugify(`${department} ${title}`),
+    })
+  }
+
+  return jobs
+}
+
 export const extractJobCards = (html = '') => {
   const rawHtml = String(html ?? '')
-  const sections = rawHtml.split(/<h2[^>]*>/i).slice(1)
   const jobs = []
+  const seen = new Set()
+
+  const pushUniqueJobs = (items = []) => {
+    for (const job of items) {
+      const key = `${job.department}__${job.title}__${job.applyUrl}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      jobs.push(job)
+    }
+  }
+
+  const fieldsetMatches = [...rawHtml.matchAll(/<fieldset\b[^>]*>([\s\S]*?)<\/fieldset>/gi)]
+  for (const match of fieldsetMatches) {
+    const section = match[1]
+    const region = normalizeWhitespace(section.match(/<legend[^>]*>([\s\S]*?)<\/legend>/i)?.[1])
+    if (!region) continue
+    pushUniqueJobs(extractRegionRows(section, region))
+  }
+
+  if (jobs.length > 0) {
+    return jobs
+  }
+
+  const sections = rawHtml.split(/<h2[^>]*>/i).slice(1)
 
   for (const section of sections) {
     const region = normalizeWhitespace(section.match(/^([\s\S]*?)<\/h2>/i)?.[1])
     if (!region) continue
 
-    for (const row of section.matchAll(/<tr>\s*<td>([^<]+)<\/td>\s*<td><a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a><\/td>\s*<\/tr>/gi)) {
-      const title = normalizeWhitespace(row[1])
-      const applyUrl = toAbsoluteUrl(row[2])
-      const department = `State of Illinois - ${region}`
-
-      if (!title || !applyUrl) continue
-
-      jobs.push({
-        title,
-        department,
-        location: 'Illinois, United States',
-        city: 'Illinois',
-        applyUrl,
-        jobId: slugify(`${department} ${title}`),
-      })
-    }
+    pushUniqueJobs(extractRegionRows(section, region))
   }
 
   return jobs

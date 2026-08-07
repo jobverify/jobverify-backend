@@ -252,21 +252,106 @@ const competentCareersHtml = `
 </html>
 `
 
-const vserveHomepageHtml = `
+const vserveCareersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Current Job Openings and Opportunities in Vserve Ebusiness Solutions</title>
+  </head>
   <body>
-    <h1>Ecommerce Solution Providers</h1>
-    <p>Vserve is one of the leading providers of Supply Chain Management and E-Commerce solutions.</p>
-    <p>Whether you're optimizing operations, scaling ecommerce performance, or exploring new opportunities with AI, our teams are ready to help.</p>
-    <h2>Contact Us</h2>
-    <p>99 Wall Street #625, NY-10005, USA</p>
-    <p>info@vservesolution.com</p>
-    <p>USA: +1 332 223 8085</p>
-    <p>INDIA: +91 80654 21788</p>
-    <p>For job inquiries:</p>
-    <p>jobopenings@vservesolution.com</p>
-    <p>© 2026 Vserve eBusiness Solutions. All Rights Reserved.</p>
+    <h1>Careers</h1>
+    <p>If you are passionate enough to work towards one common goal, click on the 'APPLY NOW' button under your interesting position.</p>
+    <iframe data-lazy-src="https://recruit.zoho.com/recruit/Portal.na?iframe=false&#038;digest=test-digest"></iframe>
+  </body>
+</html>
+`
+
+const vserveZohoPortalHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers</title>
+  </head>
+  <body>
+    <div id="zr-joblist-container-561596000000290237">
+      <div class="jobListContainer">
+        <table cellpadding="5" cellspacing="0" width="100%" class="jobListTable" id="zr-joblist-container">
+          <tbody>
+            <tr id="zr-joblist-header" class="jobHeaderRow" data-wid="561596000000290237">
+              <th>Posting Title</th>
+              <th>Job Type</th>
+              <th>Date Opened</th>
+              <th>City</th>
+            </tr>
+            <tr id="zr-joblist-detail_561596000068496005" class="jobDetailRow" data-rowid="561596000068496005" data-wid="561596000000290237">
+              <td><a class='jobdetail' href='/recruit/PortalDetail.na?iframe=true&amp;digest=test-digest&amp;jobid=561596000068496005&amp;widgetid=561596000000290237&amp;embedsource=CareerSite'>Senior Full Stack Developer</a></td>
+              <td>Full time</td>
+              <td>07/20/2026</td>
+              <td>Coimbatore</td>
+            </tr>
+            <tr id="zr-joblist-detail_561596000068137073" class="jobDetailRow" data-rowid="561596000068137073" data-wid="561596000000290237">
+              <td><a class='jobdetail' href='/recruit/PortalDetail.na?iframe=true&amp;digest=test-digest&amp;jobid=561596000068137073&amp;widgetid=561596000000290237&amp;embedsource=CareerSite'>Technical Project Manager</a></td>
+              <td>Full time</td>
+              <td>06/26/2026</td>
+              <td>Coimbatore</td>
+            </tr>
+            <tr id="zr-joblist-detail_561596000068474016" class="jobDetailRow" data-rowid="561596000068474016" data-wid="561596000000290237">
+              <td><a class='jobdetail' href='/recruit/PortalDetail.na?iframe=true&amp;digest=test-digest&amp;jobid=561596000068474016&amp;widgetid=561596000000290237&amp;embedsource=CareerSite'>Business Insights Analyst</a></td>
+              <td>Full time</td>
+              <td>07/23/2026</td>
+              <td>Pasig</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
+const vserveSeniorFullStackDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Senior Full Stack Developer</title>
+    <meta name="description" content="Senior Full Stack Developer PHP | WordPress | BigCommerce | Shopify | Magento 2 Experience 5 - 6 Years Job Type Full-Time Location Coimbatore - WFO Department Engineering / Web Development Reports To Team Lead Job Summary We are looking for an experienced full stack developer." />
+  </head>
+  <body>
+    <script>
+      data={"country":"India","jobTitle":"Senior Full Stack Developer","jobDescriptionDetails":[{"richText":{"fieldLabel":"Job Description","uitype":5501,"value":"<html><body><div>Senior Full Stack Developer<br></div><div>Experience<br></div><div>5 - 6 Years<br></div><div>Job Type<br></div><div>Full-Time<br></div><div>Location<br></div><div>Coimbatore - WFO<br></div><div>Department<br></div><div>Engineering / Web Development<br></div><div>Reports To<br></div><div>Team Lead<br></div><div>Job Summary<br></div><div>We are looking for an experienced Full Stack Developer with PHP, WordPress, BigCommerce, Shopify, and Magento 2 expertise.<br></div><div>Key Responsibilities<br></div><div>Build scalable ecommerce applications.<br></div><div>Required Skills &amp; Qualifications<br></div><div>PHP, WordPress, BigCommerce, Shopify, Magento 2<br></div></body></html>"}}],"jobType":"Full time","jobOtherDetails":[{"fieldLabel":"City","uitype":1,"value":"Coimbatore"},{"fieldLabel":"State/Province","uitype":1,"value":"Tamil Nadu"}],"headerName":"Senior Full Stack Developer","jobId":"561596000068496005","location":"Coimbatore"};
+      var compiledTemplate = true;
+    </script>
+  </body>
+</html>
+`
+
+const vserveTechnicalProjectManagerDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Technical Project Manager</title>
+    <meta name="description" content="Technical Project Manager Location Coimbatore Department Project Management Job Summary Lead technical project delivery for ecommerce operations." />
+  </head>
+  <body>
+    <script>
+      data={"country":"India","jobTitle":"Technical Project Manager","jobDescriptionDetails":[{"richText":{"fieldLabel":"Job Description","uitype":5501,"value":"<html><body><div>Technical Project Manager<br></div><div>Location<br></div><div>Coimbatore<br></div><div>Department<br></div><div>Project Management<br></div><div>Job Summary<br></div><div>Lead technical project delivery for ecommerce operations.<br></div></body></html>"}}],"jobType":"Full time","jobOtherDetails":[{"fieldLabel":"City","uitype":1,"value":"Coimbatore"},{"fieldLabel":"State/Province","uitype":1,"value":"Tamil Nadu"}],"headerName":"Technical Project Manager","jobId":"561596000068137073","location":"Coimbatore"};
+      var compiledTemplate = true;
+    </script>
+  </body>
+</html>
+`
+
+const vserveBusinessInsightsAnalystDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Business Insights Analyst</title>
+  </head>
+  <body>
+    <script>
+      data={"country":"Philippines","jobTitle":"Business Insights Analyst","jobDescriptionDetails":[{"richText":{"fieldLabel":"Job Description","uitype":5501,"value":"<html><body><div>Business Insights Analyst<br></div><div>Location<br></div><div>Pasig<br></div><div>Department<br></div><div>Analytics<br></div><div>Job Summary<br></div><div>Support reporting and collections operations for the Pasig office.<br></div></body></html>"}}],"jobType":"Full time","jobOtherDetails":[{"fieldLabel":"City","uitype":1,"value":"Pasig"},{"fieldLabel":"State/Province","uitype":1,"value":"Metro Manila"}],"headerName":"Business Insights Analyst","jobId":"561596000068474016","location":"Pasig"};
+      var compiledTemplate = true;
+    </script>
   </body>
 </html>
 `
@@ -378,18 +463,51 @@ test('Competent Software sentinel validates the official careers no-open-positio
   assert.deepEqual(jobs, [])
 })
 
-test('Vserve Ebusiness Solutions sentinel validates the homepage contract and returns [] while no public openings are exposed', async () => {
+test('Vserve Ebusiness Solutions run validates the first-party careers page, extracts the embedded Zoho portal, and keeps only India-scoped jobs', async () => {
   const vserve = await loadModule('../../scraper/vserveebusinesssolutions/script.js')
+  const requestedUrls = []
 
-  assert.equal(vserve.hasTrustedHomepageSignal(vserveHomepageHtml), true)
-  assert.equal(vserve.exposesPublicOpeningsSurface(vserveHomepageHtml), false)
+  assert.equal(vserve.hasOfficialCareersSignal(vserveCareersHtml), true)
+  assert.equal(
+    vserve.extractEmbeddedZohoPortalUrl(vserveCareersHtml),
+    'https://recruit.zoho.com/recruit/Portal.na?iframe=false&digest=test-digest',
+  )
+  assert.equal(vserve.hasZohoJobPortalSignal(vserveZohoPortalHtml), true)
+  assert.equal(
+    vserve.extractPortalListings(
+      vserveZohoPortalHtml,
+      'https://recruit.zoho.com/recruit/Portal.na?iframe=false&digest=test-digest',
+    ).length,
+    3,
+  )
 
-  const jobs = await vserve.createVserveEbusinessSolutionsScraper().run({
+  const jobs = await vserve.createVserveEbusinessSolutionsScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
     fetchText: async (url) => {
-      assert.equal(url, vserve.HOMEPAGE_URL)
-      return vserveHomepageHtml
+      requestedUrls.push(url)
+      if (url === vserve.CAREERS_URL) return vserveCareersHtml
+      if (url === 'https://recruit.zoho.com/recruit/Portal.na?iframe=false&digest=test-digest') return vserveZohoPortalHtml
+      if (url === 'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068496005&widgetid=561596000000290237&embedsource=CareerSite') return vserveSeniorFullStackDetailHtml
+      if (url === 'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068137073&widgetid=561596000000290237&embedsource=CareerSite') return vserveTechnicalProjectManagerDetailHtml
+      if (url === 'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068474016&widgetid=561596000000290237&embedsource=CareerSite') return vserveBusinessInsightsAnalystDetailHtml
+      throw new Error(`Unexpected Vserve URL: ${url}`)
     },
   })
 
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [
+    vserve.CAREERS_URL,
+    'https://recruit.zoho.com/recruit/Portal.na?iframe=false&digest=test-digest',
+    'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068496005&widgetid=561596000000290237&embedsource=CareerSite',
+    'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068137073&widgetid=561596000000290237&embedsource=CareerSite',
+    'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068474016&widgetid=561596000000290237&embedsource=CareerSite',
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].title, 'Senior Full Stack Developer')
+  assert.equal(jobs[0].location, 'Coimbatore, Tamil Nadu, India')
+  assert.equal(jobs[0].department, 'Engineering / Web Development')
+  assert.match(jobs[0].jobDescription, /Magento 2/i)
+  assert.equal(jobs[1].title, 'Technical Project Manager')
+  assert.equal(jobs[1].location, 'Coimbatore, Tamil Nadu, India')
+  assert.equal(jobs[1].department, 'Project Management')
 })

@@ -35,6 +35,36 @@ const careerPageHtml = `
 </html>
 `
 
+const homepageHtmlWithTitleAttributes = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title data-next-head="">Find the Best Restaurants with Great Deals | Eazydiner</title>
+    <link rel="canonical" href="https://www.eazydiner.com/">
+  </head>
+  <body>
+    <a href="https://www.eazydiner.com/contact-us">Contact Us</a>
+    <a href="https://www.eazydiner.com/food-trends">Blogs</a>
+    <a href="https://www.eazydiner.com/career">Career</a>
+  </body>
+</html>
+`
+
+const careerPageHtmlWithTitleAttributes = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title data-next-head="">Explore Career Opportunities at EazyDiner | Apply Now</title>
+    <link rel="canonical" href="https://www.eazydiner.com/career">
+  </head>
+  <body>
+    <div>Career | EazyDiner</div>
+    <div>Want to join the dining ride? write us at:</div>
+    <a href="mailto:career@eazydiner.com">career@eazydiner.com</a>
+  </body>
+</html>
+`
+
 const robotsTxt = `
 User-agent: *
 Allow: /
@@ -112,6 +142,8 @@ test('EazyDiner pins the verified homepage, career page, robots contract, and si
   ])
   assert.equal(eazyDiner.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(eazyDiner.hasResumeDropCareersSignal(careerPageHtml), true)
+  assert.equal(eazyDiner.hasOfficialHomepageSignal(homepageHtmlWithTitleAttributes), true)
+  assert.equal(eazyDiner.hasResumeDropCareersSignal(careerPageHtmlWithTitleAttributes), true)
   assert.equal(eazyDiner.hasPublicJobListingSignal(careerPageHtml), false)
   assert.equal(eazyDiner.hasPublicJobListingSignal(publicJobsHtml), true)
   assert.equal(

@@ -1,14 +1,14 @@
 export const SOURCE = 'aventior'
 export const COMPANY = 'Aventior'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://www.aventior.com/careers'
 export const LINKEDIN_COMPANY_PAGE_URL = 'https://www.linkedin.com/company/aventior/'
 export const LINKEDIN_COMPANY_JOBS_URL =
   'https://www.linkedin.com/jobs/aventior-jobs-worldwide?f_C=27234995'
 export const DISPOSITION =
-  'verified-first-party-careers-page-plus-linkedin-company-handoff-and-public-jobs-search'
+  'verified-first-party-careers-page-plus-linkedin-company-validation-and-public-jobs-search'
 export const VERIFIED_SURFACE_SUMMARY =
-  "Verified on Saturday, July 25, 2026 that https://www.aventior.com/careers was the live Aventior careers page, that its Follow Us link handed applicants to the public LinkedIn company page at https://www.linkedin.com/company/aventior/, and that the LinkedIn company page's See jobs button resolved to the public jobs search at https://www.linkedin.com/jobs/aventior-jobs-worldwide?f_C=27234995, which exposed current India roles including Technical Project Manager and R Shiny Engineer / R Developer. This scraper validates those verified surfaces and returns India jobs only from the public LinkedIn jobs search."
+  "Verified on Saturday, August 1, 2026 that https://www.aventior.com/careers was the live Aventior careers page, that its Follow Us link still handed applicants to the public LinkedIn company page at https://www.linkedin.com/company/aventior/, and that the public LinkedIn jobs search at https://www.linkedin.com/jobs/aventior-jobs-worldwide?f_C=27234995 remained the matching company search surface even though the company page no longer rendered the older See jobs button. The current public jobs search returned 0 Aventior jobs in Worldwide, so this scraper validates those verified surfaces and writes an empty result set when no India jobs are publicly exposed."
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
 
@@ -293,22 +293,27 @@ export const extractCompanyJobsUrl = (html = '', pageUrl = LINKEDIN_COMPANY_PAGE
 export const hasVerifiedLinkedInJobsPageSignal = (html = '') => {
   const page = String(html)
   const text = normalizePageText(page) || ''
+  const hasZeroJobsTitle = /\b0\s+Aventior jobs in Worldwide\b/i.test(page)
+    || /\b0\s+Aventior jobs in Worldwide\b/i.test(text)
 
   return (
     /\baventior jobs\b/i.test(text)
     || /\baventior jobs in worldwide\b/i.test(text)
+    || hasZeroJobsTitle
   )
     && (
       /pageKey["']?\s+content=["']d_jobs_guest_search["']/i.test(page)
       || /base-card__full-link/i.test(page)
       || /\byou've viewed all jobs for this search\b/i.test(text)
       || /\bno matching jobs found\b/i.test(text)
+      || hasZeroJobsTitle
     )
     && (
       /base-card__full-link/i.test(page)
       || /\bno matching jobs found\b/i.test(text)
       || /\bAventior\s*\(\d+\)/i.test(text)
       || /\bTechnical Project Manager\b/i.test(text)
+      || hasZeroJobsTitle
     )
 }
 
@@ -457,12 +462,12 @@ const assertVerifiedCompanyJobsHandoff = (html = '', pageUrl = LINKEDIN_COMPANY_
     jobsUrl
     && normalizeComparableUrl(jobsUrl) === normalizeComparableUrl(LINKEDIN_COMPANY_JOBS_URL)
   ) {
-    return
+    return LINKEDIN_COMPANY_JOBS_URL
   }
 
-  throw new Error(
-    'Aventior LinkedIn company page no longer exposes the verified public jobs handoff.',
-  )
+  if (pageIndicatesAventiorLinkedInCompany(html)) return LINKEDIN_COMPANY_JOBS_URL
+
+  throw new Error('Aventior LinkedIn company page no longer matches the expected public jobs contract.')
 }
 
 const defaultFetchText = async (url) => {
@@ -494,9 +499,8 @@ export const createAventiorScraper = ({ maxJobs = null } = {}) => ({
 
     const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
     assertVerifiedLinkedInCompanyPage(companyHtml)
-    assertVerifiedCompanyJobsHandoff(companyHtml, LINKEDIN_COMPANY_PAGE_URL)
-
-    const jobsHtml = await fetchText(LINKEDIN_COMPANY_JOBS_URL)
+    const jobsUrl = assertVerifiedCompanyJobsHandoff(companyHtml, LINKEDIN_COMPANY_PAGE_URL)
+    const jobsHtml = await fetchText(jobsUrl)
     if (!hasVerifiedLinkedInJobsPageSignal(jobsHtml)) {
       throw new Error(
         'Aventior LinkedIn jobs page no longer matches the verified public search shell.',

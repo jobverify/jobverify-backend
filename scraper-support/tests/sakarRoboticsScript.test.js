@@ -62,6 +62,9 @@ const apiPayload = {
       Job_Type: 'Full time',
       City: 'Pune City',
       Country: 'India',
+      Work_Experience: '2-5 Years',
+      Job_Description: 'JD – Robotics Engineer Location: Pune Experience: 2-5 Years',
+      Date_Opened: '01/24/2026',
       Publish: true,
       $url: 'https://sakarrobotics.zohorecruit.in/jobs/Careers/92525000002411134/Robotics-Engineer?source=CareerSite',
     },
@@ -73,6 +76,9 @@ const apiPayload = {
       Job_Type: 'Full time',
       City: 'Pune City',
       Country: 'India',
+      Work_Experience: '5-8 Years',
+      Job_Description: 'JD – Global Growth Partner Location: Pune Experience: 5-8 Years',
+      Date_Opened: '02/11/2026',
       Publish: true,
       $url: 'https://sakarrobotics.zohorecruit.in/jobs/Careers/92525000002325103/Global-Growth-Partner?source=CareerSite',
     },
@@ -109,7 +115,7 @@ test('Sakar Robotics constants stay pinned to the verified homepage, careers han
   assert.equal(sakarRobotics.CAREERS_PORTAL_URL, 'https://sakarrobotics.zohorecruit.in/jobs/Careers')
   assert.equal(
     sakarRobotics.CAREERS_API_URL,
-    'https://sakarrobotics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
+    'https://sakarrobotics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite&extra_fields=%5B%22Work_Experience%22,%22Job_Description%22,%22Date_Opened%22%5D',
   )
   assert.equal(sakarRobotics.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(sakarRobotics.hasOfficialCareersPageSignal(careersPageHtml), true)
@@ -134,13 +140,14 @@ test('extractIndiaJobs keeps only published India listings from the Sakar Roboti
       sourceUrl: 'https://sakarrobotics.zohorecruit.in/jobs/Careers/92525000002411134/Robotics-Engineer?source=CareerSite',
       applyUrl: 'https://sakarrobotics.zohorecruit.in/jobs/Careers/92525000002411134/Robotics-Engineer?source=CareerSite',
       employmentType: 'Full-time',
-      experienceRequired: null,
+      experienceRequired: '2-5 Years',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: null,
+      postingDate: '01/24/2026',
       closingDate: null,
-      jobDescription: null,
+      jobDescription: 'JD – Robotics Engineer Location: Pune Experience: 2-5 Years',
+      publicExperienceChecked: true,
       remoteStatus: null,
     },
     {
@@ -156,13 +163,14 @@ test('extractIndiaJobs keeps only published India listings from the Sakar Roboti
       sourceUrl: 'https://sakarrobotics.zohorecruit.in/jobs/Careers/92525000002325103/Global-Growth-Partner?source=CareerSite',
       applyUrl: 'https://sakarrobotics.zohorecruit.in/jobs/Careers/92525000002325103/Global-Growth-Partner?source=CareerSite',
       employmentType: 'Full-time',
-      experienceRequired: null,
+      experienceRequired: '5-8 Years',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: null,
+      postingDate: '02/11/2026',
       closingDate: null,
-      jobDescription: null,
+      jobDescription: 'JD – Global Growth Partner Location: Pune Experience: 5-8 Years',
+      publicExperienceChecked: true,
       remoteStatus: null,
     },
   ])
@@ -202,6 +210,8 @@ test('run validates the official Sakar Robotics homepage, careers handoff, and p
     'https://sakarrobotics.zohorecruit.in/jobs/Careers/92525000002411134/Robotics-Engineer?source=CareerSite',
   )
   assert.equal(jobs[0].scrapedAt, '2026-07-11T06:30:00.000Z')
+  assert.equal(jobs[0].experienceRequired, '2-5 Years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run fails closed when the Sakar Robotics official portal signal disappears', async () => {

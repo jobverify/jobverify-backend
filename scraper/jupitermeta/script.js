@@ -66,8 +66,18 @@ export const hasOfficialContactSignal = (html) =>
   HOMEPAGE_TITLE_PATTERN.test(String(html ?? ''))
   && CONTACT_SIGNAL_PATTERN.test(normalizeWhitespace(html).toLowerCase())
 
-export const hasMissingCareersRouteSignal = ({ status, html }) =>
-  Number(status) === 404 && normalizeWhitespace(html) === ''
+export const hasMissingCareersRouteSignal = ({ status, html }) => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return Number(status) === 404
+    && (
+      normalized === ''
+      || (
+        normalized.includes('404')
+        && normalized.includes('this page could not be found')
+      )
+    )
+}
 
 export const createJupiterMetaScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

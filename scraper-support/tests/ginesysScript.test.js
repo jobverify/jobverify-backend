@@ -13,7 +13,7 @@ const careersHtml = `
     <main>
       <h1>Believe in Yourself. We believe in you</h1>
       <h2>Open Positions</h2>
-      <a href="https://www.ginesys.in/open-positions">Explore</a>
+      <a href="/open-positions">Explore</a>
     </main>
   </body>
 </html>
@@ -42,7 +42,6 @@ const portalInfo = {
   name: 'Ginni Systems Ltd.',
   shortName: 'Ginni Systems Ltd.',
   careersPortalDomain: 'ginesysone.keka.com',
-  companyWebsite: 'https://www.ginesys.in',
 }
 
 const activeJobsPayload = [

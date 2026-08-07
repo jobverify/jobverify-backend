@@ -1,140 +1,270 @@
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { inferExperienceFromPublicPageHtml } from '../../scraper-support/utils/publicExperienceEnrichment.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'tescra'
 export const COMPANY = 'TESCRA'
 export const HOMEPAGE_URL = 'https://www.tescra.com/'
-export const LINKEDIN_COMPANY_URL = 'https://www.linkedin.com/company/tescra'
+export const CURRENT_OPENINGS_URL = 'https://www.tescra.com/current-openings/'
+export const COMPANY_DOMAIN = 'tescra.com'
+export const ATS_PLATFORM = 'official-company-careers-inline-openings'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const BROWSER_FETCH_TIMEOUT_MS = 60000
 
 const decodeHtml = (value) => String(value ?? '')
-  .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
   .replace(/&#39;|&apos;|&#x27;/gi, "'")
+  .replace(/&#8211;|&#8212;/gi, '-')
+  .replace(/\u00a0/g, ' ')
+
+const normalizeWhitespace = (value) => decodeHtml(value)
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
-const normalize = (value) => decodeHtml(value) || null
+const normalize = (value) => normalizeWhitespace(value) || null
 
-const absoluteUrl = (value) => {
+const normalizeUrl = (value) => {
+  const decoded = decodeHtml(String(value ?? '')).trim()
+  if (!decoded) return null
+
   try {
-    return new URL(value, LINKEDIN_COMPANY_URL).toString()
+    return new URL(decoded, CURRENT_OPENINGS_URL).toString()
   } catch {
     return null
   }
 }
 
-const getField = (text, pattern) => normalize(text.match(pattern)?.[1])
-
-const inferRemoteStatus = (location) => {
-  if (/hybrid/i.test(location || '')) return 'Hybrid'
-  if (/remote|work from home/i.test(location || '')) return 'Remote'
-  return 'On-site'
-}
-
-const extractCity = (location) => {
-  const normalized = normalize(location)
-  if (!normalized) return null
-
-  return normalized.split(/[/,]| - /)[0]?.trim() || null
-}
-
-const extractArticleParts = (html) => [...String(html ?? '').matchAll(
-  /<article\b[^>]*>([\s\S]*?)<\/article>/gi,
-)].map((match) => {
-  const block = match[0]
-  const links = [...block.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi)]
-    .map((link) => absoluteUrl(link[1]))
-    .filter(Boolean)
-
-  return {
-    text: decodeHtml(match[1]),
-    sourceUrl: links.find((link) => /linkedin\.com\/posts\//i.test(link)) || null,
-    applyUrl: links.find((link) => !/linkedin\.com/i.test(link)) || null,
+const getJobId = (value) => {
+  try {
+    const url = new URL(value)
+    return url.searchParams.get('uid')
+      || url.pathname.split('/').filter(Boolean).at(-1)
+      || null
+  } catch {
+    return null
   }
-})
-
-export const hasOfficialHomepageSignal = (html) => {
-  const normalized = normalize(html)?.toLowerCase() || ''
-
-  return normalized.includes('tescra')
-    && normalized.includes('engineering services')
-    && /href=["']https:\/\/www\.tescra\.com\/careers\/["']/i.test(String(html ?? ''))
 }
-
-export const pageIndicatesTescraLinkedinCompany = (html) => {
-  const normalized = normalize(html)?.toLowerCase() || ''
-
-  return normalized.includes('tescra | linkedin')
-    && normalized.includes('tescra')
-    && /href=["']https:\/\/www\.tescra\.com\/["']/i.test(String(html ?? ''))
-}
-
-export const extractJobPostings = (html) => extractArticleParts(html)
-  .filter(({ text, sourceUrl }) =>
-    sourceUrl && /\b(hiring|job opening|job opportunity|vacancy|position\s*:)\b/i.test(text),
-  )
-  .map(({ text, sourceUrl, applyUrl }) => {
-    const title = getField(text, /\bposition\s*:\s*(.+?)(?=\s+location\s*:|\s+employment type\s*:|$)/i)
-    const rawLocation = getField(text, /\blocation\s*:\s*(.+?)(?=\s+employment type\s*:|$)/i)
-    const employmentType = getField(text, /\bemployment type\s*:\s*(.+?)(?=\s+apply\b|$)/i)
-    const description = normalize(text.split(/\bposition\s*:/i)[0])
-      ?.replace(/^TESCRA(?:'s)? Post\s*/i, '') || null
-
-    if (!title) return null
-
-    return {
-      title,
-      company: COMPANY,
-      location: rawLocation ? `${rawLocation}, India` : 'India',
-      city: extractCity(rawLocation),
-      country: 'India',
-      employmentType,
-      sourceUrl,
-      applyUrl: applyUrl || sourceUrl,
-      jobDescription: description,
-      remoteStatus: inferRemoteStatus(rawLocation),
-    }
-  })
-  .filter(Boolean)
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
-    Accept: 'text/html,application/xhtml+xml',
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
 })
 
-export const createTescraScraper = () => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+const createPublicJobTextFetcher = async () => {
+  const session = await createBrowserFetchSession({
+    userAgent: USER_AGENT,
+    timeoutMs: BROWSER_FETCH_TIMEOUT_MS,
+    waitUntil: 'networkidle2',
+    settleTimeMs: 3000,
+  })
 
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('TESCRA verified official homepage no longer matches the expected company surface')
+  return {
+    fetchText: session.fetchText,
+    close: session.close,
+  }
+}
+
+export const hasOfficialHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Tescra\s*<\/title>/i.test(page)
+    && /href=["'][^"']*current-openings\/?["']/i.test(page)
+    && normalized.includes('Software Advisory Services')
+    && normalized.includes('Trusted by Fortune companies Worldwide')
+}
+
+export const hasCurrentOpeningsSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Current Openings[^<]*Tescra\s*<\/title>/i.test(page)
+    && normalized.includes('Current Openings')
+    && /Easy Apply/i.test(page)
+    && /achnet\.com/i.test(page)
+    && /linkedin\.com\/company\/tescra/i.test(page)
+}
+
+export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
+  /<h3\b[^>]*class=["'][^"']*elementor-icon-box-title[^"']*["'][^>]*>[\s\S]*?<span>\s*([^<]+?)\s*<\/span>[\s\S]*?<p\b[^>]*class=["'][^"']*elementor-icon-box-description[^"']*["'][^>]*>([\s\S]*?)<\/p>[\s\S]*?<a\b[^>]*class=["'][^"']*elementor-button-link[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?Easy Apply[\s\S]*?<\/a>/gi,
+)]
+  .map((match) => {
+    const title = normalize(match[1])
+    const description = normalize(match[2])
+    const sourceUrl = normalizeUrl(match[3])
+
+    if (!title || !description || !sourceUrl) return null
+
+    try {
+      if (new URL(sourceUrl).hostname.toLowerCase() !== 'www.achnet.com') {
+        return null
+      }
+    } catch {
+      return null
     }
 
-    const linkedinHtml = await fetchText(LINKEDIN_COMPANY_URL)
-    if (!pageIndicatesTescraLinkedinCompany(linkedinHtml)) {
-      throw new Error('TESCRA verified LinkedIn company page no longer matches the expected public organization page')
+    return {
+      title,
+      description,
+      sourceUrl,
+      applyUrl: sourceUrl,
     }
+  })
+  .filter(Boolean)
 
-    return extractJobPostings(linkedinHtml).map((job) => ({
+export const hasUnavailablePublicDetailSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+  return normalized.includes('something went wrong')
+    && normalized.includes('unexpected error')
+}
+
+const checkPublicDetailExperience = async (job, fetchPublicJobText) => {
+  if (typeof fetchPublicJobText !== 'function') {
+    return job
+  }
+
+  let publicDetailHtml
+  try {
+    publicDetailHtml = await fetchPublicJobText(job.applyUrl)
+  } catch {
+    return job
+  }
+
+  const enriched = inferExperienceFromPublicPageHtml(job, publicDetailHtml)
+  if (enriched.experienceRequired || enriched.publicExperienceChecked === true) {
+    return {
+      ...enriched,
+      publicExperienceChecked: enriched.publicExperienceChecked === true || Boolean(enriched.experienceRequired),
+    }
+  }
+
+  if (hasUnavailablePublicDetailSignal(publicDetailHtml)) {
+    return {
       ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+      publicExperienceChecked: true,
+    }
+  }
+
+  return job
+}
+
+export const createTescraScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
+  async run({
+    fetchText = defaultFetchText,
+    fetchPublicJobText = null,
+    createDetailTextFetcher = createPublicJobTextFetcher,
+  } = {}) {
+    let detailTextFetcher = null
+
+    try {
+      const homepageHtml = await fetchText(HOMEPAGE_URL)
+
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('TESCRA verified official homepage no longer matches the expected company surface')
+      }
+
+      const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
+      if (!hasCurrentOpeningsSignal(currentOpeningsHtml)) {
+        throw new Error('TESCRA verified current openings page no longer matches the expected public openings surface')
+      }
+
+      const jobs = extractJobCards(currentOpeningsHtml)
+      if (jobs.length === 0) {
+        throw new Error('TESCRA current openings page no longer exposes parseable public job cards')
+      }
+
+      const shouldCheckPublicDetails =
+        typeof fetchPublicJobText === 'function' || fetchText === defaultFetchText
+
+      if (
+        shouldCheckPublicDetails
+        && !fetchPublicJobText
+        && typeof createDetailTextFetcher === 'function'
+      ) {
+        detailTextFetcher = await createDetailTextFetcher()
+        fetchPublicJobText = detailTextFetcher?.fetchText || null
+      }
+
+      const baseJobs = jobs.map((job) => ({
+        title: job.title,
+        company: COMPANY,
+        location: 'India',
+        city: null,
+        country: 'India',
+        employmentType: null,
+        sourceUrl: job.sourceUrl,
+        applyUrl: job.applyUrl,
+        link: job.applyUrl,
+        jobId: getJobId(job.sourceUrl),
+        requisitionId: getJobId(job.sourceUrl),
+        jobDescription: job.description,
+        experienceRequired: null,
+        remoteStatus: null,
+        source: SOURCE,
+        companyCareerPage: CURRENT_OPENINGS_URL,
+        companyDomain: COMPANY_DOMAIN,
+        atsPlatform: ATS_PLATFORM,
+        scrapedAt: now(),
+        publicExperienceChecked: false,
+      }))
+
+      if (!shouldCheckPublicDetails) {
+        return baseJobs
+      }
+
+      const enrichedJobs = []
+      for (const job of baseJobs) {
+        enrichedJobs.push(await checkPublicDetailExperience(job, fetchPublicJobText))
+      }
+
+      return enrichedJobs
+    } finally {
+      if (detailTextFetcher) {
+        await detailTextFetcher.close()
+      }
+    }
   },
 })
 
-export const run = async () => createTescraScraper().run()
+export const run = async (options = {}) => createTescraScraper(options).run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const isDirectExecution = (() => {
+  if (!process.argv[1]) return false
+
+  try {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isDirectExecution) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
-  console.log(`TESCRA jobs scraped: ${jobs.length}`)
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
 }

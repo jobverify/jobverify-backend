@@ -78,7 +78,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Find the Best Restaurants with Great Deals \| Eazydiner\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Find the Best Restaurants with Great Deals \| Eazydiner\s*<\/title>/i.test(rawHtml)
     && /href=["']https:\/\/www\.eazydiner\.com\/career["']/i.test(rawHtml)
     && /contact us/i.test(normalized)
     && /blogs/i.test(normalized)
@@ -88,7 +88,7 @@ export const hasResumeDropCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Explore Career Opportunities at EazyDiner \| Apply Now\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Explore Career Opportunities at EazyDiner \| Apply Now\s*<\/title>/i.test(rawHtml)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.eazydiner\.com\/career["']/i.test(rawHtml)
     && /want to join the dining ride\?/i.test(normalized)
     && /mailto:career@eazydiner\.com/i.test(rawHtml)

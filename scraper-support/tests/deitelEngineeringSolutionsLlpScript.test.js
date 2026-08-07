@@ -105,7 +105,9 @@ test('DEITEL Engineering Solutions LLP validates the verified homepage and extra
     postingDate: null,
     closingDate: null,
     jobDescription: 'Official DEITEL Engineering Solutions LLP role area published on the first-party careers page. Apply via hr@deitel.in.',
+    publicExperienceChecked: true,
   })
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('DEITEL Engineering Solutions LLP run validates the first-party handoff and decorates the extracted roles', async () => {
@@ -149,10 +151,12 @@ test('DEITEL Engineering Solutions LLP run validates the first-party handoff and
     postingDate: null,
     closingDate: null,
     jobDescription: 'Official DEITEL Engineering Solutions LLP role area published on the first-party careers page. Apply via hr@deitel.in.',
+    publicExperienceChecked: true,
     source: 'deitelengineeringsolutionsllp',
     link: 'mailto:hr@deitel.in',
     scrapedAt: '2026-07-11T10:00:00.000Z',
   })
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('DEITEL Engineering Solutions LLP fails closed when the verified homepage, careers surface, or role list drifts', async () => {

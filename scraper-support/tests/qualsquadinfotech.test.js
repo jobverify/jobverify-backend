@@ -24,8 +24,9 @@ test('Qualsquad catalog records the unresolved first-party domain sentinel state
   assert.equal(QUALSQUAD_INFOTECH_CATALOG.companyName, 'Qualsquad Infotech')
   assert.equal(QUALSQUAD_INFOTECH_CATALOG.companyCareerPage, 'https://www.qualsquad.com/')
   assert.equal(QUALSQUAD_INFOTECH_CATALOG.atsPlatform, 'official-site-unresolved-no-public-jobs')
-  assert.equal(QUALSQUAD_INFOTECH_CATALOG.verifiedOn, '2026-07-18')
-  assert.match(QUALSQUAD_INFOTECH_CATALOG.verifiedSurfaceSummary, /could not be resolved/i)
+  assert.equal(QUALSQUAD_INFOTECH_CATALOG.verifiedOn, '2026-08-04')
+  assert.match(QUALSQUAD_INFOTECH_CATALOG.verifiedSurfaceSummary, /timed out/i)
+  assert.match(QUALSQUAD_INFOTECH_CATALOG.verifiedSurfaceSummary, /failed to resolve/i)
 })
 
 test('Qualsquad sentinel returns [] only while the candidate first-party domains stay unresolved or absent', async () => {
@@ -35,10 +36,25 @@ test('Qualsquad sentinel returns [] only while the candidate first-party domains
     qualsquad.isTrustedUnavailableFailure(new Error("getaddrinfo ENOTFOUND www.qualsquadinfotech.com")),
     true,
   )
+  assert.equal(
+    qualsquad.isTrustedUnavailableFailure(
+      new Error('fetch failed | Connect Timeout Error (attempted address: www.qualsquad.com:443, timeout: 10000ms)'),
+    ),
+    true,
+  )
+  assert.equal(
+    qualsquad.isTrustedUnavailableFailure(
+      new Error('net::ERR_CONNECTION_TIMED_OUT at https://www.qualsquad.com/'),
+    ),
+    true,
+  )
 
   const jobs = await qualsquad.run({
     fetchText: async () => {
-      throw new Error("getaddrinfo ENOTFOUND www.qualsquadinfotech.com")
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: www.qualsquad.com:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async () => {
+      assert.fail('browser fallback should not run for trusted timeout failures')
     },
   })
 

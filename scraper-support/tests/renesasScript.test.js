@@ -27,7 +27,7 @@ test('Renesas parser extracts official India job cards', async () => {
     title: 'Principal Software Engineer &amp; Test',
     location: 'Bengaluru, KA, India',
     city: 'Bengaluru',
-    description: 'Build test automation',
+    description: 'Build test automation with 10+ years of experience in embedded software validation.',
   }] }))
 
   assert.equal(job.title, 'Principal Software Engineer & Test')
@@ -37,6 +37,8 @@ test('Renesas parser extracts official India job cards', async () => {
   assert.equal(job.jobId, '5997')
   assert.equal(job.link, 'https://jobs.renesas.com/job/principal-engineer')
   assert.equal(job.department, 'Engineering')
+  assert.equal(job.experienceRequired, '10+ years')
+  assert.equal(job.publicExperienceChecked, true)
 })
 
 test('Renesas scraper paginates the official India result set and de-duplicates IDs', async () => {

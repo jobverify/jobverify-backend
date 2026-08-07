@@ -168,7 +168,8 @@ export const extractLeverBoardUrl = (html = '') => {
 }
 
 export const hasOfficialLeverBoardSignal = (html = '') => {
-  const text = normalizeText(html)
+  const page = String(html ?? '')
+  const text = normalizeText(page)
 
   return text.includes('perforce')
     && text.includes('location type')
@@ -176,9 +177,9 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
     && text.includes('team')
     && text.includes('work type')
     && text.includes('pune, maharashtra')
-    && text.includes('business development representative, delphix')
-    && text.includes('enterprise account executive, delphix')
+    && text.includes('delphix')
     && text.includes('jobs powered by')
+    && /https:\/\/jobs\.lever\.co\/perforce\/[a-z0-9-]+/i.test(page)
 }
 
 export const extractDelphixIndiaJobs = (leverJobs = []) => {

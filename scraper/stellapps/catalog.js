@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, July 17, 2026 that the official Stellapps careers landing page at https://www.stellapps.com/career/ linked to the live first-party job openings archive at https://www.stellapps.com/jobopenings/, and that the archive exposed public Stellapps detail pages including https://www.stellapps.com/jobopenings/service-engineer/ and https://www.stellapps.com/jobopenings/program-manager/ with role-specific title, location, experience, and job content on the first-party stellapps.com domain. No separate public jobs API was required because the verified first-party archive and detail pages rendered the current openings directly.'
+export const VERIFIED_SURFACE_SUMMARY = "Verified on Wednesday, August 5, 2026 that the official Stellapps jobs archive at https://www.stellapps.com/jobopenings/ still exposed live first-party opening pages including https://www.stellapps.com/jobopenings/service-engineer/ and https://www.stellapps.com/jobopenings/program-manager/ on the stellapps.com domain, but the archive also emitted a non-job 'LOG IN' link at https://www.stellapps.com/jobopenings/0# that must be ignored. The live detail pages still rendered public title, employment type, experience, location, and job content inside the jobDescriptionSection block without requiring any separate jobs API."
 
 export const STELLAPPS_CATALOG = {
   source: 'stellapps',
@@ -20,7 +20,7 @@ export const STELLAPPS_CATALOG = {
   extractionStrategy: 'verified-job-openings-archive+first-party-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'stellapps/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

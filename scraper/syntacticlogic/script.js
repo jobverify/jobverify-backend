@@ -11,6 +11,16 @@ export const CAREERS_URL = 'https://syntacticlogic.com/careers/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+export const REQUEST_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Upgrade-Insecure-Requests': '1',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+}
+
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bapply now\b/i,
   /\bview jobs\b/i,
@@ -63,10 +73,7 @@ const isFirstPartyUrl = (value) => {
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
+    headers: REQUEST_HEADERS,
   })
 
   return {
@@ -79,10 +86,14 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
+  const isRedesignedHomepage = /<title[^>]*>\s*home\s*-\s*syntacticlogic technology services\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/syntacticlogic\.com\/?["']/i.test(page)
 
-  return normalized.includes('syntacticlogic technology services')
-    && /href=["'][^"']*\/careers\/["']/i.test(page)
-    && /href=["'][^"']*\/contact-us\/["']/i.test(page)
+  return isRedesignedHomepage || (
+    normalized.includes('syntacticlogic technology services')
+      && /href=["'][^"']*\/careers\/["']/i.test(page)
+      && /href=["'][^"']*\/contact-us\/["']/i.test(page)
+  )
 }
 
 export const hasPublicJobsSignal = (html) =>

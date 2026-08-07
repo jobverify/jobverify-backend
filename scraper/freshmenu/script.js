@@ -17,6 +17,9 @@ export const PROVIDER_METADATA = FRESHMENU_CATALOG
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const HOMEPAGE_TITLE = 'Order food online. Get fresh food delivery from FreshMenu.'
+const GENERIC_APP_SHELL_TITLE = 'Fresh food online. Order Tasty food from FreshMenu.'
+
 const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bcurrent openings\b/i,
@@ -56,6 +59,8 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .replace(/\s+/g, ' ')
   .trim()
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -75,40 +80,37 @@ const defaultFetchPage = async (url) => {
 export const hasPublicJobListingSignal = (html = '') =>
   PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+const hasSharedApexShellSignal = (rawHtml, normalized) =>
+  /href=["']\/about["']/i.test(rawHtml)
+  && /href=["']\/blogs["']/i.test(rawHtml)
+  && /href=["']\/corporate["']/i.test(rawHtml)
+  && /add to cart/i.test(normalized)
+  && /corporate discount/i.test(normalized)
+  && !hasPublicJobListingSignal(rawHtml)
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Fresh Food Delivery - Bowls Beyond Borders\s*<\/title>/i.test(rawHtml)
-    && /href=["']\/about["']/i.test(rawHtml)
-    && /href=["']\/blogs["']/i.test(rawHtml)
-    && /href=["']\/corporate["']/i.test(rawHtml)
-    && /we speak fluent food/i.test(normalized)
-    && /bowls beyond borders/i.test(normalized)
-    && /order@freshmenu\.com/i.test(normalized)
-    && !/href=["'][^"']*\/careers?["']/i.test(rawHtml)
-    && !/href=["'][^"']*\/jobs["']/i.test(rawHtml)
-    && !hasPublicJobListingSignal(rawHtml)
+  return new RegExp(`<title>\\s*${escapeRegExp(HOMEPAGE_TITLE)}\\s*<\\/title>`, 'i').test(rawHtml)
+    && hasSharedApexShellSignal(rawHtml, normalized)
+    && /freshmenu cares/i.test(normalized)
+    && /freshpass/i.test(normalized)
+    && /open the link in mobile browser for better experience/i.test(normalized)
 }
 
 export const hasOfficialAboutPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Fresh Food Delivery - Bowls Beyond Borders\s*<\/title>/i.test(rawHtml)
-    && /bowls beyond borders/i.test(normalized)
-    && /this is our belief/i.test(normalized)
-    && /global cuisine doesn't belong behind velvet ropes/i.test(normalized)
-    && /order@freshmenu\.com/i.test(normalized)
-    && /grievance@freshmenu\.com/i.test(normalized)
-    && !/href=["'][^"']*\/careers?["']/i.test(rawHtml)
-    && !/href=["'][^"']*\/jobs["']/i.test(rawHtml)
-    && !hasPublicJobListingSignal(rawHtml)
+  return new RegExp(`<title>\\s*${escapeRegExp(GENERIC_APP_SHELL_TITLE)}\\s*<\\/title>`, 'i').test(rawHtml)
+    && hasSharedApexShellSignal(rawHtml, normalized)
 }
 
 export const isKnownMissingJobRoute = (page = {}, requestedUrl) =>
-  Number(page?.status) === 404
+  Number(page?.status) === 200
   && (page?.url || requestedUrl) === requestedUrl
+  && hasOfficialAboutPageSignal(page?.html)
   && !hasPublicJobListingSignal(page?.html)
 
 export const createFreshMenuScraper = () => ({

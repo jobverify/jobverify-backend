@@ -87,6 +87,42 @@ const buildCareersHtml = (roles) => `
 </html>
 `
 
+const CURRENT_EMPTY_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | insightsoftware</title>
+  </head>
+  <body>
+    <main>
+      <h1>Current Job Openings</h1>
+      <p>Learn more about our high-energy, high-performance global team.</p>
+      <div>Showing 0 of 0</div>
+      <p>No job openings available at the moment.</p>
+    </main>
+  </body>
+</html>
+`
+
+const WORKDAY_BOARD_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="canonical" href="https://magnitudesoftware.wd1.myworkdayjobs.com/External" />
+    <meta property="og:title" content="Careers" />
+    <meta
+      property="og:description"
+      content="insightsoftware is a global provider of reporting, analytics, and performance management solutions."
+    />
+    <script src="/assets/cx-jobs.min.js"></script>
+    <script>
+      window.workday = { tenant: "magnitudesoftware", siteId: "External" }
+    </script>
+  </head>
+  <body></body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/magnitudesoftware.workday/script.js')
@@ -95,7 +131,7 @@ const loadModule = async () => {
   }
 }
 
-test('Magnitude Software helpers stay pinned to the verified homepage redirect and first-party careers page from Friday, July 17, 2026', async () => {
+test('Magnitude Software helpers stay pinned to the verified homepage redirect, careers shell, and Workday board from Saturday, August 1, 2026', async () => {
   const magnitude = await loadModule()
   const careersHtml = buildCareersHtml([
     INDIA_CUSTOMER_SUCCESS_ROLE,
@@ -109,9 +145,19 @@ test('Magnitude Software helpers stay pinned to the verified homepage redirect a
   assert.equal(magnitude.REDIRECT_COMPANY_URL, 'https://insightsoftware.com/magnitude/')
   assert.equal(magnitude.CAREERS_URL, 'https://insightsoftware.com/careers/')
   assert.equal(magnitude.WORKDAY_TENANT_HOST, 'https://magnitudesoftware.wd1.myworkdayjobs.com/')
-  assert.equal(magnitude.VERIFIED_ON, '2026-07-17')
+  assert.equal(magnitude.WORKDAY_BOARD_URL, 'https://magnitudesoftware.wd1.myworkdayjobs.com/External')
+  assert.equal(magnitude.VERIFIED_ON, '2026-08-01')
   assert.equal(magnitude.hasRedirectedMagnitudePageSignal(REDIRECTED_MAGNITUDE_PAGE), true)
   assert.equal(magnitude.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(magnitude.hasOfficialCareersSignal(CURRENT_EMPTY_CAREERS_HTML), true)
+  assert.equal(magnitude.hasOfficialWorkdayBoardSignal(WORKDAY_BOARD_HTML), true)
+  assert.deepEqual(magnitude.buildScraperOptions(), {
+    company: 'Magnitude Software',
+    baseUrl: 'https://magnitudesoftware.wd1.myworkdayjobs.com/External',
+    locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+    source: 'magnitudesoftware',
+    scraperDir: magnitude.buildScraperOptions().scraperDir,
+  })
   assert.deepEqual(
     magnitude.extractIndiaJobsFromCareersHtml(careersHtml, {
       scrapedAt: FIXED_SCRAPED_AT,
@@ -175,23 +221,37 @@ test('Magnitude Software helpers stay pinned to the verified homepage redirect a
   )
 })
 
-test('Magnitude Software run validates the verified first-party redirect and returns only India jobs from the careers page', async () => {
+test('Magnitude Software run validates the verified first-party redirect and delegates to the direct public Workday board', async () => {
   const magnitude = await loadModule()
   const requestedUrls = []
-  const careersHtml = buildCareersHtml([
-    INDIA_CUSTOMER_SUCCESS_ROLE,
-    INDIA_ENGINEERING_ROLE,
-    UNITED_STATES_ROLE,
-  ])
 
   const jobs = await magnitude.createMagnitudeSoftwareScraper({
     now: () => FIXED_SCRAPED_AT,
+    workdayRunner: async (options) => [
+      {
+        title: 'HR Business Partner',
+        location: 'India - Hyderabad',
+        link: 'https://magnitudesoftware.wd1.myworkdayjobs.com/External/job/India---Hyderabad/HR-Business-Partner_REQ000983',
+        source: 'magnitudesoftware',
+        scrapedAt: FIXED_SCRAPED_AT,
+        runnerOptions: options,
+      },
+      {
+        title: 'Lead Software Engineer',
+        location: 'India - Bangalore - Remote',
+        link: 'https://magnitudesoftware.wd1.myworkdayjobs.com/External/job/India---Bangalore---Remote/Lead-Software-Engineer_REQ000848',
+        source: 'magnitudesoftware',
+        scrapedAt: FIXED_SCRAPED_AT,
+        runnerOptions: options,
+      },
+    ],
   }).run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
       if (url === magnitude.HOMEPAGE_URL) return REDIRECTED_MAGNITUDE_PAGE
-      if (url === magnitude.CAREERS_URL) return { status: 200, url, html: careersHtml }
+      if (url === magnitude.CAREERS_URL) return { status: 200, url, html: CURRENT_EMPTY_CAREERS_HTML }
+      if (url === magnitude.WORKDAY_BOARD_URL) return { status: 200, url, html: WORKDAY_BOARD_HTML }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -200,6 +260,7 @@ test('Magnitude Software run validates the verified first-party redirect and ret
   assert.deepEqual(requestedUrls, [
     magnitude.HOMEPAGE_URL,
     magnitude.CAREERS_URL,
+    magnitude.WORKDAY_BOARD_URL,
   ])
   assert.equal(jobs.length, 2)
   assert.deepEqual(
@@ -212,47 +273,65 @@ test('Magnitude Software run validates the verified first-party redirect and ret
       job.companyDomain,
       job.atsPlatform,
       job.scrapedAt,
+      job.runnerOptions,
     ]),
     [
       [
-        'Customer Success Analyst',
+        'HR Business Partner',
         'India - Hyderabad',
         'magnitudesoftware',
-        'https://magnitudesoftware.wd1.myworkdayjobs.com/en-US/External/job/India---Hyderabad/Customer-Success-Analyst_R-2001',
+        'https://magnitudesoftware.wd1.myworkdayjobs.com/External/job/India---Hyderabad/HR-Business-Partner_REQ000983',
         'https://insightsoftware.com/careers/',
         'magnitude.com',
         'workday',
         FIXED_SCRAPED_AT,
+        magnitude.buildScraperOptions(),
       ],
       [
-        'Director - Engineering',
-        'India - Hyderabad - Remote',
+        'Lead Software Engineer',
+        'India - Bangalore - Remote',
         'magnitudesoftware',
-        'https://magnitudesoftware.wd1.myworkdayjobs.com/en-US/External/job/India---Hyderabad---Remote/Director---Engineering_R-2002',
+        'https://magnitudesoftware.wd1.myworkdayjobs.com/External/job/India---Bangalore---Remote/Lead-Software-Engineer_REQ000848',
         'https://insightsoftware.com/careers/',
         'magnitude.com',
         'workday',
         FIXED_SCRAPED_AT,
+        magnitude.buildScraperOptions(),
       ],
     ],
   )
 })
 
-test('Magnitude Software returns [] when the verified first-party careers surface has no current India roles', async () => {
+test('Magnitude Software tolerates transient first-party careers outages when the direct public Workday board still verifies cleanly', async () => {
   const magnitude = await loadModule()
 
-  const jobs = await magnitude.createMagnitudeSoftwareScraper().run({
+  const jobs = await magnitude.createMagnitudeSoftwareScraper({
+    workdayRunner: async () => [{ title: 'Senior Database Administrator' }],
+  }).run({
     fetchPage: async (url) => {
       if (url === magnitude.HOMEPAGE_URL) return REDIRECTED_MAGNITUDE_PAGE
       if (url === magnitude.CAREERS_URL) {
-        return { status: 200, url, html: buildCareersHtml([UNITED_STATES_ROLE]) }
+        return {
+          status: 504,
+          url,
+          html: '<html><body><h1>ERROR: The request could not be satisfied</h1><p>504 Gateway Timeout</p></body></html>',
+        }
       }
+      if (url === magnitude.WORKDAY_BOARD_URL) return { status: 200, url, html: WORKDAY_BOARD_HTML }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(jobs, [
+    {
+      title: 'Senior Database Administrator',
+      companyCareerPage: 'https://insightsoftware.com/careers/',
+      companyDomain: 'magnitude.com',
+      atsPlatform: 'workday',
+      scrapedAt: jobs[0].scrapedAt,
+    },
+  ])
 })
 
 test('Magnitude Software fails closed when the verified redirect or first-party careers contract drifts', async () => {
@@ -283,5 +362,22 @@ test('Magnitude Software fails closed when the verified redirect or first-party 
       },
     }),
     /verified first-party careers page/i,
+  )
+
+  await assert.rejects(
+    magnitude.createMagnitudeSoftwareScraper().run({
+      fetchPage: async (url) => {
+        if (url === magnitude.HOMEPAGE_URL) return REDIRECTED_MAGNITUDE_PAGE
+        if (url === magnitude.CAREERS_URL) {
+          return { status: 200, url, html: CURRENT_EMPTY_CAREERS_HTML }
+        }
+        if (url === magnitude.WORKDAY_BOARD_URL) {
+          return { status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    }),
+    /verified public Workday board/i,
   )
 })

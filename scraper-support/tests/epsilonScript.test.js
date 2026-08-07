@@ -25,6 +25,23 @@ const officialCareersHtml = `
 </html>
 `
 
+const officialBoardErrorHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Epsilon</title>
+  </head>
+  <body>
+    <main>
+      <p>Oops</p>
+      <p>An error occurred.</p>
+      <p>General Error</p>
+      <p>Connect with us</p>
+    </main>
+  </body>
+</html>
+`
+
 const payload = {
   jobs: [
     {
@@ -75,6 +92,8 @@ test('extractSearchResults keeps only India listings from the official Epsilon J
     epsilon.buildJobsApiUrl(1),
     'https://careers.publicisgroupe.com/api/jobs?page=1&country=India&tags2=Epsilon&internal=false&separator=%7C&facetField=country%7Cstate%7Ccity%7Clocation_type',
   )
+  assert.equal(epsilon.hasOfficialPublicBoardErrorSignal(officialBoardErrorHtml), true)
+  assert.equal(epsilon.hasVisiblePublicJobLink(officialBoardErrorHtml), false)
   assert.equal(jobs.length, 1)
   assert.deepEqual(jobs[0], {
     title: 'Senior Software Engineer',
@@ -85,7 +104,7 @@ test('extractSearchResults keeps only India listings from the official Epsilon J
     country: 'India',
     jobId: '163554',
     requisitionId: '163554',
-    sourceUrl: 'https://careers.publicisgroupe.com/epsilon/jobs/163554?lang=en-us',
+    sourceUrl: 'https://careers.publicisgroupe.com/jobs/163554?lang=en-us',
     applyUrl: 'https://epsilon-publicisgroupe.icims.com/jobs/163554/login',
     employmentType: 'FULL_TIME',
     experienceRequired: 'Intermediate',
@@ -131,6 +150,38 @@ test('run verifies the official Epsilon careers handoff before reading the publi
     jobs[0].link,
     'https://epsilon-publicisgroupe.icims.com/jobs/163554/login',
   )
+})
+
+test('run returns an empty set when the official Publicis board is serving a verified first-party error state', async () => {
+  const epsilon = await loadEpsilonModule()
+  const requestedTextUrls = []
+  const requestedJsonUrls = []
+
+  const jobs = await epsilon.createEpsilonScraper({
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+
+      if (url === epsilon.CAREERS_URL) return officialCareersHtml
+      if (url === epsilon.PUBLIC_JOBS_BOARD_URL) return officialBoardErrorHtml
+      if (url === epsilon.INDIA_LOCATION_URL) return officialBoardErrorHtml
+
+      throw new Error(`Unexpected Epsilon HTML URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedJsonUrls.push(url)
+      throw new Error('HTTP 503')
+    },
+  }).run()
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedJsonUrls, [
+    epsilon.buildJobsApiUrl(1),
+  ])
+  assert.deepEqual(requestedTextUrls, [
+    epsilon.CAREERS_URL,
+    epsilon.PUBLIC_JOBS_BOARD_URL,
+    epsilon.INDIA_LOCATION_URL,
+  ])
 })
 
 test('run fails closed when the official Epsilon careers handoff changes', async () => {

@@ -34,10 +34,10 @@ test('Focus Softnet local catalog captures the verified first-party careers page
   assert.equal(provider.extractionStrategy, 'verified-first-party-careers-page-inline-role-cards')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /Join Our Global Team/i)
-  assert.match(provider.verifiedSurfaceSummary, /Content Writer - CRM\/ERP\/HCM/i)
+  assert.match(provider.verifiedSurfaceSummary, /Social Media Specialist/i)
 })
 
 test('Focus Softnet exact backlog row matches from the local catalog entry', async () => {

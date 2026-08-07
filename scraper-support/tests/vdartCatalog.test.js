@@ -26,19 +26,19 @@ test('VDart exports a fail-closed provider contract for the verified blocked job
     companyName: 'VDart',
     officialBrandName: 'VDart',
     adapter: 'script',
-    modulePath: '../../scraper/vdart/script.js',
+    modulePath: '../vdart/script.js',
     homepageUrl: 'https://www.vdart.com/',
     companyCareerPage: 'https://vdart.jobs.net/',
     atsPlatform: 'official-company-careers-blocked',
     countryFilter: 'India',
-    paginationStrategy: 'jobsnet-home-shell-plus-browser-and-cli-access-validation',
-    extractionStrategy: 'verified-jobsnet-shell+verified-talent-network-copy+live-403-blocked-surface+fail-closed-sentinel',
+    paginationStrategy: 'jobsnet-cloudflare-blocked-root-and-jobs-route-validation',
+    extractionStrategy: 'verified-jobsnet-cloudflare-block-page+verified-403-blocked-surface+fail-closed-sentinel',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'vdart.jobs.net',
-    verifiedOn: '2026-07-18',
+    verifiedOn: '2026-08-04',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://vdart.jobs.net/ was the branded VDart public jobs shell, but the surface still required JavaScript while live direct requests returned HTTP 403 even when retried with a browser user agent, so this provider remains fail-closed until a trustworthy fetchable public jobs listing is confirmed.',
+      'Verified on Tuesday, August 4, 2026 that both https://vdart.jobs.net/ and its /jobs route now resolve to the same Cloudflare block page with live HTTP 403 responses, so this provider remains fail-closed until a trustworthy fetchable public jobs listing is confirmed.',
     dryRunFile: 'vdart/jobs.json',
   })
 
@@ -53,15 +53,15 @@ test('VDart run validates the blocked shell contract and stays fail-closed', asy
   const vdart = await loadScriptModule()
 
   const shellResponse = {
-    status: 200,
+    status: 403,
     html: `
       <html>
-        <head><title>Find a Job | vdart.jobs.net</title></head>
+        <head><title>Attention Required! | Cloudflare</title></head>
         <body>
-          <h2>Careers at Vdart Technologies Pvt. Ltd.</h2>
-          <p>This site requires JavaScript to work correctly.</p>
-          <a href="/joinnetwork">Join the VDart Technologies Pvt. Ltd. Talent Network</a>
-          <a href="/jobs">View All Opportunities</a>
+          <div id="cf-wrapper"></div>
+          <p>Please enable cookies.</p>
+          <p>Sorry, you have been blocked</p>
+          <p>You are unable to access jobs.net</p>
         </body>
       </html>
     `,

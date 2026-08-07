@@ -18,55 +18,38 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const REQUEST_TIMEOUT_MS = 15000
 
-const GROUP_SURFACE_SIGNAL_PATTERNS = [
-  /<title>\s*About Us \| Our Markets \| Our Partners \| SRM Technologies\s*<\/title>/i,
-  /Founded in 1998 as part of the SRM Group/i,
-  /About SRM Group/i,
-  /A billion-dollar conglomerate with a formidable presence in the fields of education,\s*transport,\s*engineering,\s*hospitality,\s*infotainment and healthcare\./i,
-  /SRM Group is known for its integrity,\s*ethical practice and transparency/i,
-  /Hospitality &amp; Transport|Hospitality & Transport/i,
-  /Healthcare\s*\|\s*[“"]Advanced Tertiary Healthcare for a Healthier Tomorrow[”"]/i,
+const GROUP_SURFACE_SIGNALS = [
+  'Founded in 1998 as part of the SRM Group',
+  'About SRM Group',
+  'A billion-dollar conglomerate with a formidable presence in the fields of education, transport, engineering, hospitality, infotainment and healthcare.',
+  'SRM Group is known for its integrity, ethical practice and transparency',
+  'Healthier Tomorrow',
 ]
 
-const CAREERS_PAGE_SIGNAL_PATTERNS = [
-  /<title>\s*Careers \| Work Culture \| SRM Technologies\s*<\/title>/i,
-  /Become A Part Of Our Growth Journey/i,
-  /Featured Roles/i,
-  /href=["']https:\/\/careers\.srmtech\.com\/jobs\/Careers["']/i,
-  /Why SRM Tech\?/i,
-  /Join a Certified Great Place to Work!/i,
-  /View Open Positions/i,
+const CAREERS_PAGE_SIGNALS = [
+  'Become A Part Of Our Growth Journey',
+  'Featured Roles',
+  'Why SRM Tech?',
+  'Join a Certified Great Place to Work!',
+  'View Open Positions',
 ]
 
-const EXPECTED_HANDOFF_STEPS = [
-  {
-    matchesUrl: (value) => value === CAREERS_HANDOFF_URL,
-    status: 302,
-    locationPattern: /^https:\/\/careers\.srmtech\.com\/html\/portal\.html$/i,
-  },
-  {
-    matchesUrl: (value) => value === 'https://careers.srmtech.com/html/portal.html',
-    status: 302,
-    locationPattern: /^https:\/\/careers\.srmtech\.com\/recruit\/IAMSecurityError\.do\?isload=true$/i,
-  },
-  {
-    matchesUrl: (value) => value === 'https://careers.srmtech.com/recruit/IAMSecurityError.do?isload=true',
-    status: 302,
-    locationPattern: /^https:\/\/careers\.srmtech\.com\/recruit\/login\.sas\?serviceurl=%2Frecruit%2FIAMSecurityError\.do%3Fisload%3Dtrue/i,
-  },
-  {
-    matchesUrl: (value) => /^https:\/\/careers\.srmtech\.com\/recruit\/login\.sas\?serviceurl=%2Frecruit%2FIAMSecurityError\.do%3Fisload%3Dtrue/i.test(String(value ?? '')),
-    status: 302,
-    locationPattern: /^https:\/\/accounts\.zoho\.com\/signin\?servicename=ZohoRecruit\b/i,
-  },
-]
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308])
-
-const defaultHeaders = {
-  'User-Agent': USER_AGENT,
-  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-}
+const hasInputWithId = (html, id) =>
+  new RegExp(`<input\\b(?=[^>]*\\bid=["']${id}["'])[^>]*>`, 'i').test(String(html ?? ''))
 
 const withTimeoutSignal = async (operation) => {
   const controller = new AbortController()
@@ -79,64 +62,46 @@ const withTimeoutSignal = async (operation) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const responseText = await withTimeoutSignal(async (signal) => {
-    const response = await fetch(url, {
-      headers: defaultHeaders,
-      redirect: 'follow',
-      signal,
-    })
-
-    return response.text()
+const defaultFetchText = async (url) => withTimeoutSignal(async (signal) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal,
   })
 
-  return responseText
+  return response.text()
+})
+
+export const hasOfficialGroupSurfaceSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+
+  return /<title>\s*About Us\s*\|\s*Our Markets\s*\|\s*Our Partners\s*\|\s*SRM Technologies\s*<\/title>/i.test(page)
+    && GROUP_SURFACE_SIGNALS.every((signal) => text.includes(signal))
 }
 
-const defaultTraceRedirectChain = async (url) => {
-  const chain = []
-  let currentUrl = url
+export const hasOfficialCareersPageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
 
-  for (const _step of EXPECTED_HANDOFF_STEPS) {
-    const response = await withTimeoutSignal((signal) => fetch(currentUrl, {
-      headers: defaultHeaders,
-      redirect: 'manual',
-      signal,
-    }))
-
-    const location = response.headers.get('location')
-    const resolvedLocation = location ? new URL(location, currentUrl).toString() : null
-
-    chain.push({
-      url: currentUrl,
-      status: response.status,
-      location: resolvedLocation,
-    })
-
-    if (!REDIRECT_STATUS_CODES.has(response.status) || !resolvedLocation) {
-      break
-    }
-
-    currentUrl = resolvedLocation
-  }
-
-  return chain
+  return /<title>\s*Careers\s*\|\s*Work Culture\s*\|\s*SRM Technologies\s*<\/title>/i.test(page)
+    && page.includes(CAREERS_HANDOFF_URL)
+    && CAREERS_PAGE_SIGNALS.every((signal) => text.includes(signal))
 }
 
-export const hasOfficialGroupSurfaceSignal = (html) =>
-  GROUP_SURFACE_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+export const hasOfficialSrmTechnologiesBoardSignal = (html = '') => {
+  const page = String(html ?? '')
 
-export const hasOfficialCareersPageSignal = (html) =>
-  CAREERS_PAGE_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
-
-export const hasExpectedHandoffRedirectChain = (chain = []) =>
-  EXPECTED_HANDOFF_STEPS.every((expectedStep, index) => {
-    const actualStep = chain[index]
-    return Boolean(actualStep)
-      && expectedStep.matchesUrl(actualStep.url)
-      && Number(actualStep.status) === expectedStep.status
-      && expectedStep.locationPattern.test(String(actualStep.location ?? ''))
-  })
+  return /<title>\s*Careers\s*\|\s*Job Opportunities\s*\|\s*SRM Technologies\s*<\/title>/i.test(page)
+    && hasInputWithId(page, 'pageJson')
+    && hasInputWithId(page, 'moduleMeta')
+    && hasInputWithId(page, 'jobs')
+    && page.includes(CAREERS_HANDOFF_URL)
+    && /SRM Technologies/i.test(page)
+}
 
 export const getRunnerMetadata = () => ({
   name: SOURCE,
@@ -147,11 +112,11 @@ export const getRunnerMetadata = () => ({
     companyCareerPage: CAREERS_PAGE_URL,
     alternateCareerPages: [GROUP_SURFACE_URL, CAREERS_HANDOFF_URL],
     adapter: 'script',
-    atsPlatform: 'zoho-recruit-login-wall',
+    atsPlatform: 'zoho-recruit-exact-brand-mismatch',
     countryFilter: 'India',
     parser: 'custom-script',
-    paginationStrategy: 'redirect-chain-validation',
-    extractionStrategy: 'verified-srm-group-surface-plus-non-public-zoho-handoff-return-empty',
+    paginationStrategy: 'group-surface-plus-public-srm-tech-board-validation',
+    extractionStrategy: 'verified-srm-group-surface+verified-srm-tech-careers-page+public-srm-tech-board-return-empty',
     normalizationProfile: 'engineering-default',
     companyDomain: 'srmtech.com',
   },
@@ -160,7 +125,6 @@ export const getRunnerMetadata = () => ({
 export const createSrmGroupOfCompaniesScraper = () => ({
   async run({
     fetchText = defaultFetchText,
-    traceRedirectChain = defaultTraceRedirectChain,
   } = {}) {
     const groupSurfaceHtml = await fetchText(GROUP_SURFACE_URL)
     if (!hasOfficialGroupSurfaceSignal(groupSurfaceHtml)) {
@@ -172,9 +136,9 @@ export const createSrmGroupOfCompaniesScraper = () => ({
       throw new Error('SRM Group of Companies verified SRM careers page no longer matches the official first-party handoff page')
     }
 
-    const handoffRedirectChain = await traceRedirectChain(CAREERS_HANDOFF_URL)
-    if (!hasExpectedHandoffRedirectChain(handoffRedirectChain)) {
-      throw new Error('SRM Group of Companies non-public Zoho Recruit handoff changed or now exposes public jobs')
+    const handoffBoardHtml = await fetchText(CAREERS_HANDOFF_URL)
+    if (!hasOfficialSrmTechnologiesBoardSignal(handoffBoardHtml)) {
+      throw new Error('SRM Group of Companies public SRM Technologies careers board changed or no longer matches the trusted brand-mismatch surface')
     }
 
     return []

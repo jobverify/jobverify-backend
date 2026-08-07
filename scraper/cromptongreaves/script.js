@@ -134,6 +134,7 @@ export const extractSearchResults = (html) => {
         applyUrl: CAREER_PAGE_URL,
         employmentType: null,
         experienceRequired: null,
+        publicExperienceChecked: true,
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],

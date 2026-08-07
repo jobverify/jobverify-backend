@@ -40,7 +40,7 @@ test('RedBus local catalog captures the verified exact-name careers surface and 
   )
   assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.verifiedPublicJobCount, 5)
+  assert.equal(provider.verifiedPublicJobCount, 6)
   assert.equal(provider.paginationStrategy, 'official-redbus-careers-plus-shared-darwinbox-browser-session')
   assert.equal(
     provider.extractionStrategy,
@@ -49,16 +49,16 @@ test('RedBus local catalog captures the verified exact-name careers surface and 
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'gommt.darwinbox.in')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /redbus[\\/]jobs\.json$/i)
   assert.match(provider.modulePath, /redbus[\\/]script\.js$/i)
   assert.equal(provider.modulePath, redbusModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.redbus\.in\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.redbus\.in\/careers\/jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/gommt\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/allJobs/i)
   assert.match(provider.verifiedSurfaceSummary, /RB - Employee/i)
-  assert.match(provider.verifiedSurfaceSummary, /5 public RedBus jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /6 public RedBus jobs/i)
 })
 
 test('RedBus exact backlog row matches directly from the local catalog without aliases', async () => {

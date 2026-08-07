@@ -26,7 +26,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('SarvaGram local catalog captures the verified about-page handoff and public Zoho board metadata without alias churn', async () => {
+test('SarvaGram local catalog captures the verified public Zoho board metadata without alias churn', async () => {
   const { SARVAGRAM_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const sarvagram = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(SARVAGRAM_CATALOG)
@@ -37,7 +37,8 @@ test('SarvaGram local catalog captures the verified about-page handoff and publi
   assert.equal(provider.officialBrandName, 'SarvaGram')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.sarvagram.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.sarvagram.com/about-us/')
+  assert.equal(provider.aboutPageUrl, 'https://www.sarvagram.com/about-us/')
+  assert.equal(provider.companyCareerPage, 'https://sarvagram.zohorecruit.in/jobs/Careers')
   assert.equal(provider.careersPortalUrl, 'https://sarvagram.zohorecruit.in/jobs/Careers')
   assert.equal(
     provider.careersApiUrl,
@@ -47,25 +48,25 @@ test('SarvaGram local catalog captures the verified about-page handoff and publi
   assert.equal(provider.companyDomain, 'sarvagram.com')
   assert.equal(provider.atsPlatform, 'zohorecruit')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-about-page-handoff-plus-public-zoho-api')
+  assert.equal(provider.paginationStrategy, 'public-zohorecruit-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-about-page+official-careers-handoff+public-zohorecruit-api+detail-page-check',
+    'verified-zohorecruit-careers-portal+public-zohorecruit-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /sarvagram[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sarvagram\.com\/about-us\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/sarvagram\.zohorecruit\.in\/jobs\/Careers/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/sarvagram\.zohorecruit\.in\/recruit\/v2\/public\/Job_Openings/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /Platform architect - Cloud native/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Mobile Engineer - Flutter/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior System Admin/i)
+  assert.match(provider.verifiedSurfaceSummary, /Associate Product Manager/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'SarvaGram'), false)
 
   assert.equal(sarvagram.PROVIDER_METADATA.source, SARVAGRAM_CATALOG.source)
@@ -95,7 +96,7 @@ test('SarvaGram hydrated local catalog stays script-runner compatible for centra
 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'SarvaGram')
-  assert.equal(provider.companyCareerPage, 'https://www.sarvagram.com/about-us/')
+  assert.equal(provider.companyCareerPage, 'https://sarvagram.zohorecruit.in/jobs/Careers')
   assert.equal(provider.companyDomain, 'sarvagram.com')
   assert.equal(provider.atsPlatform, 'zohorecruit')
   assert.match(provider.modulePath, /sarvagram[\\/]script\.js$/i)

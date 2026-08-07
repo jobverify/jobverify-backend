@@ -11,17 +11,17 @@ test('IQnext (Synconext) is registered as a verified first-party zero-job scrape
   assert.ok(provider, 'Expected IQnext (Synconext) provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'IQnext (Synconext)')
-  assert.equal(provider.companyCareerPage, 'https://www.synconext.com/')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.companyCareerPage, 'https://www.iqnext.io/careers')
+  assert.equal(provider.atsPlatform, 'official-careers-page-wellfound-handoff')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-common-careers-route-validation')
+  assert.equal(provider.paginationStrategy, 'first-party-careers-handoff-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage-plus-missing-first-party-careers-routes-return-empty',
+    'verified-iqnext-homepage+verified-careers-wellfound-handoff+verified-challenge-gated-wellfound-board-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'synconext.com')
+  assert.equal(provider.companyDomain, 'iqnext.io')
   assert.match(provider.modulePath, /iqnextsynconext[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'IQnext (Synconext)'), false)
 })
@@ -46,6 +46,6 @@ test('IQnext (Synconext) is runnable through the scraper provider catalog', () =
   assert.ok(scraper, 'Expected buildScrapers() to return the IQnext (Synconext) scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'iqnextsynconext')
-  assert.equal(scraper.provider.companyCareerPage, 'https://www.synconext.com/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://www.iqnext.io/careers')
   assert.match(scraper.dryRunFile, /iqnextsynconext[\\/]jobs\.json$/i)
 })

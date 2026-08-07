@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -63,6 +64,26 @@ const normalizeLocation = (record = {}) => {
   return { location, city, state, country }
 }
 
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
 const hasInputWithId = (html, id) =>
   new RegExp(`<input\\b(?=[^>]*\\bid=["']${id}["'])[^>]*>`, 'i').test(String(html ?? ''))
 
@@ -99,6 +120,8 @@ export const extractIndiaJobs = (payload) =>
       const jobId = normalizeWhitespace(record.id)
       const sourceUrl = normalizeWhitespace(record.$url)
       const { location, city, state, country } = normalizeLocation(record)
+      const jobDescription = stripHtml(record.Job_Description)?.split(/\s+Requirements\s+/i)[0] || null
+      const experienceRequired = inferExperienceFromDescription(jobDescription)
 
       if (!title || !jobId || !sourceUrl || !location || !country) return null
 
@@ -115,13 +138,14 @@ export const extractIndiaJobs = (payload) =>
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeEmploymentType(record.Job_Type),
-        experienceRequired: null,
+        experienceRequired,
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
         postingDate: null,
         closingDate: null,
-        jobDescription: stripHtml(record.Job_Description)?.split(/\s+Requirements\s+/i)[0] || null,
+        jobDescription,
+        publicExperienceChecked: Boolean(jobDescription),
         remoteStatus: record.Remote_Job ? 'Remote' : 'On-site',
       }
     })

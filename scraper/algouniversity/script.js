@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -45,6 +46,26 @@ const inferRemoteStatus = (value) => {
   if (normalized.includes('hybrid')) return 'Hybrid'
   if (normalized.includes('remote')) return 'Remote'
   return 'On-site'
+}
+
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
 }
 
 const extractJsonLdJobPostings = (html) => {
@@ -149,6 +170,8 @@ export const extractSearchResults = (html) => {
       ? null
       : normalizeWhitespace(locationLocality)?.split(',')[0]?.trim() || null
     const absoluteUrl = toAbsoluteUrl(card.href)
+    const jobDescription = normalizeWhitespace(posting.description) || card.summary
+    const experienceRequired = inferExperienceFromDescription(jobDescription)
 
     return {
       title: card.title,
@@ -162,13 +185,14 @@ export const extractSearchResults = (html) => {
       sourceUrl: absoluteUrl,
       applyUrl: absoluteUrl,
       employmentType: normalizeWhitespace(posting.employmentType) || card.tags[2] || null,
-      experienceRequired: null,
+      experienceRequired,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
       postingDate: toIsoDate(posting.datePosted),
       closingDate: null,
-      jobDescription: normalizeWhitespace(posting.description) || card.summary,
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription),
       remoteStatus,
     }
   }).filter((job) => job.title && job.jobId)

@@ -85,6 +85,17 @@ export const extractCareerConfig = (html = '') => {
   return { identifier, domain, portalName }
 }
 
+export const extractBootstrapDocumentUrl = (html = '', pageUrl = KEKA_CAREERS_URL) => {
+  const relativeUrl = String(html ?? '').match(/fetch\(\s*['"]([^'"]+careerportal\/[^'"]+\.html)['"]\s*\)/i)?.[1]
+  if (!relativeUrl) return null
+
+  try {
+    return new URL(relativeUrl, pageUrl).toString()
+  } catch {
+    return null
+  }
+}
+
 export const buildActiveJobsUrl = ({ domain, identifier, portalName = 'default' } = {}) => {
   const normalizedDomain = normalizeDomain(domain)
   if (!normalizedDomain || !identifier) return null
@@ -145,7 +156,9 @@ export const createAurigaItConsultingPrivateLimitedScraper = () => ({
     }
 
     const kekaShellHtml = await fetchText(KEKA_CAREERS_URL)
-    const careerConfig = extractCareerConfig(kekaShellHtml)
+    const bootstrapDocumentUrl = extractBootstrapDocumentUrl(kekaShellHtml)
+    const kekaResolvedHtml = bootstrapDocumentUrl ? await fetchText(bootstrapDocumentUrl) : kekaShellHtml
+    const careerConfig = extractCareerConfig(kekaShellHtml) || extractCareerConfig(kekaResolvedHtml)
     if (!careerConfig) {
       throw new Error('Unable to resolve Auriga Keka embed configuration')
     }

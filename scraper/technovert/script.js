@@ -1,3 +1,5 @@
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+
 export const SOURCE = 'technovert'
 export const COMPANY = 'Technovert'
 export const CAREERS_URL = 'https://technovert.com/careers/'
@@ -191,26 +193,6 @@ const assertVerifiedContract = ({
   }
 }
 
-export const createTechnovertScraper = () => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const [careersHtml, aboutHtml, tezoCareersHtml] = await Promise.all([
-      fetchHtml(CAREERS_URL),
-      fetchHtml(TEZO_ABOUT_URL),
-      fetchHtml(TEZO_CAREERS_URL),
-    ])
-
-    assertVerifiedContract({
-      careersHtml,
-      aboutHtml,
-      tezoCareersHtml,
-    })
-
-    return []
-  },
-})
-
-export const run = async (options = {}) => createTechnovertScraper().run(options)
-
 const defaultFetchHtml = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -222,3 +204,59 @@ const defaultFetchHtml = async (url) => {
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
   return response.text()
 }
+
+const loadContract = async (fetchHtml) => {
+  const [careersHtml, aboutHtml, tezoCareersHtml] = await Promise.all([
+    fetchHtml(CAREERS_URL),
+    fetchHtml(TEZO_ABOUT_URL),
+    fetchHtml(TEZO_CAREERS_URL),
+  ])
+
+  return {
+    careersHtml,
+    aboutHtml,
+    tezoCareersHtml,
+  }
+}
+
+const defaultLoadBrowserContract = async () => {
+  const session = await createBrowserFetchSession({
+    waitUntil: 'domcontentloaded',
+    settleTimeMs: 5000,
+    timeoutMs: 90000,
+    ignoreHTTPSErrors: true,
+  })
+
+  try {
+    const loadBrowserHtml = async (url) => {
+      const page = await session.fetchPage(url)
+      if (page.status < 200 || page.status >= 400) {
+        throw new Error(`HTTP ${page.status} for ${url}`)
+      }
+
+      return page.html
+    }
+
+    return {
+      careersHtml: await loadBrowserHtml('https://www.tezo.com/careers'),
+      aboutHtml: await loadBrowserHtml(TEZO_ABOUT_URL),
+      tezoCareersHtml: await loadBrowserHtml(TEZO_CAREERS_URL),
+    }
+  } finally {
+    await session.close()
+  }
+}
+
+export const createTechnovertScraper = () => ({
+  async run({ fetchHtml = defaultFetchHtml, loadBrowserContract = defaultLoadBrowserContract } = {}) {
+    try {
+      assertVerifiedContract(await loadContract(fetchHtml))
+    } catch {
+      assertVerifiedContract(await loadBrowserContract())
+    }
+
+    return []
+  },
+})
+
+export const run = async (options = {}) => createTechnovertScraper().run(options)

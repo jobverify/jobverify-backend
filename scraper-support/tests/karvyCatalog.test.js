@@ -29,7 +29,7 @@ test('Karvy local catalog captures the verified no-trustworthy-public-jobs senti
   assert.equal(provider.companyName, 'Karvy')
   assert.equal(provider.officialBrandName, 'Karvy')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/karvy/script.js')
+  assert.match(provider.modulePath, /karvy[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /karvy[\\/]jobs\.json$/i)
   assert.equal(provider.homepageUrl, 'https://www.karvy.com/')
   assert.deepEqual(provider.parkedHomepageUrls, [
@@ -44,19 +44,20 @@ test('Karvy local catalog captures the verified no-trustworthy-public-jobs senti
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'parked-exact-domain-plus-untrustworthy-legacy-root-plus-stale-resume-page-validation',
+    'inactive-exact-domain-plus-first-party-legacy-root-handoff-plus-stale-resume-page-validation',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-exact-name-domain-for-sale+verified-legacy-root-not-trustworthy+verified-stale-resume-only-career-page-return-empty',
+    'verified-exact-name-domain-not-jobs+verified-first-party-legacy-root-handoff+verified-stale-resume-only-career-page-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.karvy\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /porkbun/i)
+  assert.match(provider.verifiedSurfaceSummary, /403/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.karvyonline\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.karvyonline\.com\/join-us\/career\//i)
+  assert.match(provider.verifiedSurfaceSummary, /join us careers handoff/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 
   assert.equal(karvy.PROVIDER_METADATA.source, provider.source)

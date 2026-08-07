@@ -155,6 +155,7 @@ test('Everest Industries helpers stay pinned to the verified homepage, careers p
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the verified Everest Industries Darwinbox handoff from the official careers page.',
+      publicExperienceChecked: true,
     },
     {
       title: 'ROOFING - JOB827 Territory Sales Officer',
@@ -175,6 +176,7 @@ test('Everest Industries helpers stay pinned to the verified homepage, careers p
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the verified Everest Industries Darwinbox handoff from the official careers page.',
+      publicExperienceChecked: true,
     },
     {
       title: 'ESBS - JOB836 Site Manager - CMG',
@@ -195,6 +197,7 @@ test('Everest Industries helpers stay pinned to the verified homepage, careers p
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the verified Everest Industries Darwinbox handoff from the official careers page.',
+      publicExperienceChecked: true,
     },
   ])
 })
@@ -272,6 +275,7 @@ test('run validates the verified first-party Everest careers surface and returns
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the verified Everest Industries Darwinbox handoff from the official careers page.',
+      publicExperienceChecked: true,
       source: 'everestindustries',
       link: 'https://oneeverest.darwinbox.in/ms/candidate/candidate/login?redirect=/ms/candidate/careers/a699eb89c55aca___apply=1',
       scrapedAt: FIXED_SCRAPED_AT,
@@ -295,6 +299,7 @@ test('run validates the verified first-party Everest careers surface and returns
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the verified Everest Industries Darwinbox handoff from the official careers page.',
+      publicExperienceChecked: true,
       source: 'everestindustries',
       link: 'https://oneeverest.darwinbox.in/ms/candidate/candidate/login?redirect=/ms/candidate/careers/a6a34e6d72f946___apply=1',
       scrapedAt: FIXED_SCRAPED_AT,

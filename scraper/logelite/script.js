@@ -23,16 +23,36 @@ export const PROVIDER_METADATA = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'logelite.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://logelite.com/career/ was the live first-party Logelite careers page, and that it publicly exposed role cards such as Human Resource Executive, Business Development Manager, and Sales & Support Executive with Lucknow location text plus Download Details and Apply Now links.',
+    'Verified on Monday, August 3, 2026 that https://logelite.com/career/ is still the live first-party Logelite careers page and that it publicly exposes role cards such as Human Resource Executive, Business Development Manager, and SEO Executive with Lucknow location text plus first-party role pages, Download Details PDFs, and Apply Now links.',
   dryRunFile: 'logelite/jobs.json',
 }
 
 const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&#038;|&amp;/gi, '&')
+  .replace(/&#039;|&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const parseLocation = (value) => {
+  const city = normalizeWhitespace(value) || null
+  if (!city) {
+    return {
+      city: null,
+      location: null,
+    }
+  }
+
+  return {
+    city,
+    location: /india/i.test(city) ? city : `${city}, India`,
+  }
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -45,69 +65,81 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  return page.includes('Open Job Positions')
-    && page.includes('Your Career Starts Here')
-    && page.includes('Human Resource Executive')
-    && page.includes('Apply Now')
+  const text = normalizeWhitespace(page)
+
+  return /<title[^>]*>\s*Join Our Dynamic Digital Marketing &(?:amp;|#038;)? Web Development Team\s*<\/title>/i.test(page)
+    && text.includes('Open Job Positions')
+    && text.includes('Your Career Starts Here')
+    && text.includes('Human Resource Executive')
+    && text.includes('Apply Now')
 }
 
-export const extractJobCards = (html = '') => {
-  const page = String(html ?? '')
-  const jobs = []
-
-  for (const match of page.matchAll(/<section>([\s\S]*?)<\/section>/gi)) {
-    const block = match[1]
-    const title = normalizeWhitespace(block.match(/<h3>([\s\S]*?)<\/h3>/i)?.[1])
-    const lines = [...block.matchAll(/<p>([\s\S]*?)<\/p>/gi)]
+export const extractJobCards = (html = '') => pageToBlocks(html)
+  .map((block) => {
+    const title = normalizeWhitespace(block.match(/<h3 class="card-title">([\s\S]*?)<\/h3>/i)?.[1])
+    const detailPageHref = block.match(/<h3 class="card-title">[\s\S]*?<a[^>]+href=["']([^"']+)["']/i)?.[1]
+    const openings = normalizeWhitespace(block.match(/<span class="card-status">([\s\S]*?)<\/span>/i)?.[1])
+    const metaLines = [...block.matchAll(/<p class="card-meta-item">([\s\S]*?)<\/p>/gi)]
       .map((item) => normalizeWhitespace(item[1]))
       .filter(Boolean)
+    const description = normalizeWhitespace(block.match(/<p class="card-disc">([\s\S]*?)<\/p>/i)?.[1])
     const links = [...block.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
       .map((item) => ({
         href: new URL(item[1], CAREERS_URL).toString(),
         label: normalizeWhitespace(item[2]),
       }))
 
-    if (!title || lines.length < 4) continue
+    const { city, location } = parseLocation(metaLines[0])
+    const sourceUrl = detailPageHref
+      ? new URL(detailPageHref, CAREERS_URL).toString()
+      : CAREERS_URL
+    const applyUrl = links.find((item) => item.label === 'Apply Now')?.href ?? null
 
-    const detailUrl = links.find((item) => item.label === 'Download Details')?.href ?? CAREERS_URL
-    const applyUrl = links.find((item) => item.label === 'Apply Now')?.href ?? CAREERS_URL
+    if (!title || !location || !applyUrl) return null
 
-    jobs.push({
+    return {
       title,
-      openings: lines[0].replace(/^Total Openings\s*/i, '').trim(),
-      location: /india/i.test(lines[1]) ? lines[1] : `${lines[1]}, India`,
-      compensation: lines[2],
-      description: lines[3],
-      sourceUrl: detailUrl,
+      city,
+      location,
+      openings: normalizeWhitespace(openings?.replace(/^Total Openings\s*/i, '')),
+      compensation: metaLines[1] || null,
+      description: description || null,
+      sourceUrl,
       applyUrl,
-    })
-  }
+    }
+  })
+  .filter(Boolean)
 
-  return jobs
-}
+const pageToBlocks = (html = '') => String(html ?? '').split(/<div class="career-page-card">/i).slice(1)
 
-export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
-  const careersHtml = await fetchText(CAREERS_URL)
-  if (!hasOfficialCareersSignal(careersHtml)) {
-    throw new Error('Logelite verified first-party careers page changed materially')
-  }
+export const createLogeliteScraper = () => ({
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Logelite verified first-party careers page changed materially')
+    }
 
-  const jobs = extractJobCards(careersHtml)
-  if (!jobs.length) {
-    throw new Error('Logelite verified first-party careers page no longer exposes public role cards')
-  }
+    const jobs = extractJobCards(careersHtml)
+    if (!jobs.length) {
+      throw new Error('Logelite verified first-party careers page no longer exposes public role cards')
+    }
 
-  return jobs.map((job) => ({
-    title: job.title,
-    location: job.location,
-    openings: job.openings,
-    compensation: job.compensation,
-    sourceUrl: job.sourceUrl,
-    applyUrl: job.applyUrl,
-    company: COMPANY,
-    country: 'India',
-    link: job.applyUrl,
-    source: SOURCE,
-    scrapedAt: now(),
-  }))
-}
+    return jobs.map((job) => ({
+      title: job.title,
+      company: COMPANY,
+      location: job.location,
+      city: job.city,
+      country: 'India',
+      openings: job.openings,
+      compensation: job.compensation,
+      sourceUrl: job.sourceUrl,
+      applyUrl: job.applyUrl,
+      jobDescription: job.description,
+      link: job.applyUrl,
+      source: SOURCE,
+      scrapedAt: now(),
+    }))
+  },
+})
+
+export const run = async (options = {}) => createLogeliteScraper().run(options)

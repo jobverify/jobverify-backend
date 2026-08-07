@@ -27,12 +27,21 @@ const hasEclipse360BrandSignal = (html) => /\bEclipse360\b/i.test(String(html ??
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return hasEclipse360BrandSignal(page)
+  const normalized = normalizeWhitespace(page)
+  const hasLegacySurface =
+    hasEclipse360BrandSignal(page)
     && (
       /microsoft dynamics 365 crm specialists/i.test(page)
       || /customer engagement and business process improvements/i.test(page)
       || /dynamics 365 solutions/i.test(page)
     )
+  const hasCurrentSurface =
+    /<title>\s*Freelance Web Development in Leeds, West Yorkshire\s*-\s*eclipse360\s*<\/title>/i.test(page)
+    && /freelance web [&&] media developer based in leeds/i.test(normalized)
+    && /freelance web design and web development business based in leeds, west yorkshire/i.test(normalized)
+    && /nick@eclipse360/i.test(normalized)
+
+  return hasLegacySurface || hasCurrentSurface
 }
 
 export const pageExposesPublicJobListings = (html) => {
@@ -96,6 +105,10 @@ export const createEclipse360Scraper = () => ({
 
       if (pageExposesPublicJobListings(page.text)) {
         throw new Error(`Eclipse360 now appears to expose public job listings at ${candidateUrl}`)
+      }
+
+      if (page.status === 404) {
+        continue
       }
 
       if (!pageLooksLikeOfficialNoJobsSurface(page.text)) {

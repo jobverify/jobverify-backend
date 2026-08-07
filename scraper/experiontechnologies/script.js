@@ -130,13 +130,12 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const text = stripTags(page) || ''
 
   return /Explore Exciting IT Career Opportunities at Experion Technologies/i.test(page)
-    && /careers at experion/i.test(text)
     && /career-jobs-container/i.test(page)
     && /career-job-row/i.test(page)
     && /career-job-title/i.test(page)
+    && /https:\/\/experionglobal\.com\/jobs\//i.test(page)
   }
 
 export const extractListings = (html) => {

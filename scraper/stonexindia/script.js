@@ -5,12 +5,14 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREER_PAGE_URL = 'https://www.stonex.com/en/about/careers/jobs/'
 export const ICIMS_HOST = 'https://english-stonex.icims.com'
+export const SEARCH_WRAPPER_URL = `${ICIMS_HOST}/jobs/search?ss=1`
+export const SEARCH_RESULTS_URL = `${ICIMS_HOST}/jobs/search?ss=1&in_iframe=1`
 
 const COMPANY_NAME = 'StoneX India'
 const SOURCE = 'stonexindia'
 const DEFAULT_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
 }
 const DETAIL_SECTION_STOP_LABELS = [
   'Overview',
@@ -73,33 +75,40 @@ const htmlToLines = (html) => decodeHtmlEntities(String(html ?? ''))
   .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
-const toAbsoluteUrl = (value, base = CAREER_PAGE_URL) => {
+const toAbsoluteUrl = (value, base = SEARCH_RESULTS_URL) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
 
   try {
-    return new URL(
-      normalized,
-      /^\/jobs\//i.test(normalized) ? ICIMS_HOST : base,
-    ).toString()
+    return new URL(normalized, base).toString()
   } catch {
     return normalized
   }
 }
 
-const normalizeCity = (value) => normalizeWhitespace(
+const normalizeIndiaLocationParts = (value) => unique(
   String(value ?? '')
-    .replace(/^IN[-,\s]+/i, '')
-    .split(/,|\(|\s-\s/)[0],
+    .split('|')
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean)
+    .map((part) => part.replace(/^IN[-,\s]*/i, ''))
+    .map((part) => part.replace(/^[A-Z]{2}[-,\s]+/, ''))
+    .map((part) => part.replace(/,\s*India\b/i, ''))
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean),
 )
 
 const buildIndiaLocation = (value) => {
-  const city = normalizeCity(value)
+  const parts = normalizeIndiaLocationParts(value)
+  const city = parts[0] || null
   return {
     city,
-    location: city ? `${city}, India` : null,
+    location: parts.length > 0 ? `${parts.join(', ')}, India` : null,
   }
 }
+
+const isIndiaLocation = (value = '') => /^IN[-,\s]/i.test(String(value ?? ''))
+  || /,\s*India\b/i.test(String(value ?? ''))
 
 const extractJobPathInfo = (value = '') => {
   const match = String(value ?? '').match(/\/jobs\/(\d+)\/([^/?#]+)\/job/i)
@@ -115,6 +124,24 @@ const extractLineAfterLabel = (lines, label) => {
   const index = lines.findIndex((line) => new RegExp(`^${escapeRegex(label)}$`, 'i').test(line))
   return index >= 0 ? normalizeWhitespace(lines[index + 1]) : null
 }
+
+const extractHeaderFieldValue = (html = '', label = '') => stripTags(
+  String(html ?? '').match(
+    new RegExp(
+      `<span[^>]*class=["'][^"']*sr-only[^"']*field-label[^"']*["'][^>]*>\\s*${escapeRegex(label)}\\s*<\\/span>\\s*<span[^>]*>\\s*([\\s\\S]*?)\\s*<\\/span>`,
+      'i',
+    ),
+  )?.[1],
+)
+
+const extractDefinitionValue = (html = '', label = '') => stripTags(
+  String(html ?? '').match(
+    new RegExp(
+      `<dt[^>]*>\\s*${escapeRegex(label)}\\s*<\\/dt>\\s*<dd[^>]*>\\s*<span[^>]*>\\s*([\\s\\S]*?)\\s*<\\/span>\\s*<\\/dd>`,
+      'i',
+    ),
+  )?.[1],
+)
 
 const extractSectionLines = (lines, label, stopLabels = []) => {
   const startIndex = lines.findIndex((line) => new RegExp(`^${escapeRegex(label)}$`, 'i').test(line))
@@ -179,50 +206,6 @@ const extractApplyUrl = (html = '', listing = {}) => {
   }
 }
 
-const buildListingRecord = (title, linkHref, blockLines) => {
-  const { jobId, slug } = extractJobPathInfo(linkHref)
-  const locationLine = blockLines.find((line) => /^IN[-,\s]/i.test(line) || /,\s*India\b/i.test(line))
-  if (!jobId || !slug || !title || !locationLine || !/^IN[-,\s]/i.test(locationLine)) return null
-
-  const requisitionLine = blockLines.find((line) => /(?:req(?:uisition)?\s*id|job id)\s*:/i.test(line))
-  const requisitionId = normalizeWhitespace(
-    requisitionLine?.replace(/^.*?(?:req(?:uisition)?\s*id|job id)\s*:\s*/i, ''),
-  )
-  const { city, location } = buildIndiaLocation(locationLine)
-
-  const filteredLines = blockLines.filter((line) => (
-    line !== title
-    && line !== locationLine
-    && line !== requisitionLine
-    && !/^(apply|share|refer|email this job)/i.test(line)
-  ))
-
-  const summaryLines = filteredLines.length >= 3 ? filteredLines.slice(0, -2) : filteredLines.slice(0, 1)
-  const department = filteredLines.length >= 2 ? filteredLines.at(-2) : null
-  const employmentType = filteredLines.length >= 2 ? filteredLines.at(-1) : null
-
-  return {
-    title,
-    company: COMPANY_NAME,
-    department: normalizeWhitespace(department),
-    location,
-    city,
-    country: 'India',
-    jobId,
-    requisitionId,
-    sourceUrl: buildDetailUrl({ jobId, slug }),
-    applyUrl: buildDetailUrl({ jobId, slug }),
-    employmentType: normalizeWhitespace(employmentType),
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: normalizeWhitespace(summaryLines.join(' ')),
-  }
-}
-
 export const defaultFetchText = async (url, {
   fetchImpl = fetch,
   timeoutMs = 15000,
@@ -240,6 +223,13 @@ export const defaultFetchText = async (url, {
 }
 
 export const buildCareerPageUrl = () => CAREER_PAGE_URL
+export const buildSearchWrapperUrl = () => SEARCH_WRAPPER_URL
+export const buildSearchResultsUrl = () => SEARCH_RESULTS_URL
+export const buildSearchPageUrl = (page = 0) => (
+  page === 0
+    ? SEARCH_RESULTS_URL
+    : `${ICIMS_HOST}/jobs/search?pr=${page}&in_iframe=1&searchRelation=keyword_all`
+)
 
 export const buildDetailUrl = ({ jobId, slug }) => {
   const normalizedJobId = normalizeWhitespace(jobId)
@@ -260,51 +250,88 @@ export const buildDetailFetchUrl = ({ jobId, slug }) => {
 
 export const hasOfficialJobsPageSignal = (html = '') => {
   const source = String(html ?? '')
-  return /\bStoneX\b/i.test(source)
-    && /\/jobs\/\d+\/[^"'?\s<>]+\/job/i.test(source)
+  return /<title>\s*Job Listings at StoneX\s*<\/title>/i.test(source)
+    && /Job Locations/i.test(source)
+    && /Requisition ID/i.test(source)
+    && /Position Type \(Portal Searching\)/i.test(source)
+    && /\/jobs\/\d+\/[^"'?\s<>]+\/job\?in_iframe=1/i.test(source)
 }
 
-export const extractJobCards = (html = '') => {
-  const source = String(html ?? '')
-  const linkPattern = /<a[^>]+href=["']([^"']*\/jobs\/\d+\/[^"'?#\s<>]+\/job(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi
-  const matches = [...source.matchAll(linkPattern)]
+export const extractNextPageUrl = (html = '') => toAbsoluteUrl(
+  decodeHtmlEntities(
+    String(html ?? '').match(/<link[^>]+rel=["']next["'][^>]+href=["']([^"']+)["']/i)?.[1],
+  ),
+  ICIMS_HOST,
+)
 
-  return matches
-    .map((match, index) => {
-      const nextIndex = matches[index + 1]?.index ?? source.length
-      const blockHtml = source.slice(match.index ?? 0, nextIndex)
-      const blockLines = htmlToLines(blockHtml)
-      return buildListingRecord(
-        stripTags(match[2]),
-        match[1],
-        blockLines,
-      )
-    })
-    .filter(Boolean)
-}
+export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
+  /<li[^>]*class=["'][^"']*iCIMS_JobCardItem[^"']*["'][^>]*>([\s\S]*?)<\/li>/gi,
+)]
+  .map((match) => match[0])
+  .map((cardHtml) => {
+    const linkHref = String(cardHtml).match(
+      /<a[^>]+href=["']([^"']*\/jobs\/\d+\/[^"'?#\s<>]+\/job(?:\?[^"']*)?)["']/i,
+    )?.[1]
+    const title = stripTags(String(cardHtml).match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+    const rawLocation = extractHeaderFieldValue(cardHtml, 'Job Locations')
+    if (!isIndiaLocation(rawLocation)) return null
+
+    const { jobId, slug } = extractJobPathInfo(linkHref)
+    if (!jobId || !slug || !title) return null
+
+    const requisitionId = extractHeaderFieldValue(cardHtml, 'Requisition ID')
+    const department = extractDefinitionValue(cardHtml, 'Category (Portal Searching)')
+    const employmentType = extractDefinitionValue(cardHtml, 'Position Type (Portal Searching)')
+    const jobDescription = stripTags(
+      String(cardHtml).match(/<div[^>]*class=["'][^"']*col-xs-12 description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
+    )
+    const { city, location } = buildIndiaLocation(rawLocation)
+
+    return {
+      title,
+      company: COMPANY_NAME,
+      department,
+      location,
+      city,
+      country: 'India',
+      jobId,
+      requisitionId,
+      sourceUrl: buildDetailUrl({ jobId, slug }),
+      applyUrl: buildDetailUrl({ jobId, slug }),
+      employmentType,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription,
+    }
+  })
+  .filter(Boolean)
 
 export const extractJobDetail = (html = '', listing = {}) => {
   const lines = htmlToLines(html)
-  const locationLine = extractLineAfterLabel(lines, 'Job Locations') || listing.location
-  const { city, location } = buildIndiaLocation(locationLine)
+  const rawLocation = extractHeaderFieldValue(html, 'Job Locations') || listing.location
+  const { city, location } = buildIndiaLocation(rawLocation)
   const { jobDescription, requiredSkills } = extractDescriptionFields(lines)
   const { jobId, slug } = extractJobPathInfo(listing.sourceUrl)
   const title = stripTags(
     String(html ?? '').match(/<h1[^>]*class=["'][^"']*iCIMS_Header[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1],
-  ) || lines[0] || listing.title || null
+  ) || listing.title || null
 
   return {
     title,
     company: listing.company || COMPANY_NAME,
-    department: extractLineAfterLabel(lines, 'Category (Portal Searching)') || listing.department || null,
-    location: listing.location || location,
-    city: listing.city || city,
+    department: extractDefinitionValue(html, 'Category (Portal Searching)') || listing.department || null,
+    location: location || listing.location || null,
+    city: city || listing.city || null,
     country: listing.country || 'India',
     jobId: listing.jobId || jobId,
-    requisitionId: extractLineAfterLabel(lines, 'Requisition ID') || listing.requisitionId || null,
+    requisitionId: extractHeaderFieldValue(html, 'Requisition ID') || listing.requisitionId || null,
     sourceUrl: listing.sourceUrl || buildDetailUrl({ jobId, slug }),
     applyUrl: extractApplyUrl(html, listing),
-    employmentType: extractLineAfterLabel(lines, 'Position Type (Portal Searching)') || listing.employmentType || null,
+    employmentType: extractDefinitionValue(html, 'Position Type (Portal Searching)') || listing.employmentType || null,
     experienceRequired: null,
     minimumQualification: null,
     preferredQualification: null,
@@ -312,6 +339,7 @@ export const extractJobDetail = (html = '', listing = {}) => {
     postingDate: null,
     closingDate: null,
     jobDescription: jobDescription || listing.jobDescription || null,
+    publicExperienceChecked: true,
   }
 }
 
@@ -323,41 +351,51 @@ export const createStoneXIndiaScraper = ({
   async run({
     fetchText: overrideFetchText,
     maxJobs: overrideMaxJobs = maxJobs,
+    maxPages: overrideMaxPages = Number.POSITIVE_INFINITY,
   } = {}) {
     const fetchTextImpl = overrideFetchText || fetchText
-    const listingHtml = await fetchTextImpl(buildCareerPageUrl())
-
-    if (!hasOfficialJobsPageSignal(listingHtml)) {
-      throw new Error('StoneX careers page no longer matches the verified official public jobs surface')
-    }
-
     const jobs = []
     const seenJobIds = new Set()
+    const seenPageUrls = new Set()
+    let nextPageUrl = buildSearchResultsUrl()
+    let pagesFetched = 0
 
-    for (const listing of extractJobCards(listingHtml)) {
-      if (!listing.jobId || seenJobIds.has(listing.jobId)) continue
-      seenJobIds.add(listing.jobId)
+    while (nextPageUrl && !seenPageUrls.has(nextPageUrl) && pagesFetched < overrideMaxPages) {
+      seenPageUrls.add(nextPageUrl)
+      const listingHtml = await fetchTextImpl(nextPageUrl)
 
-      const { jobId, slug } = extractJobPathInfo(listing.sourceUrl)
-      let job = listing
-
-      try {
-        const detailHtml = await fetchTextImpl(buildDetailFetchUrl({ jobId, slug }))
-        job = extractJobDetail(detailHtml, listing)
-      } catch {
-        job = listing
+      if (pagesFetched === 0 && !hasOfficialJobsPageSignal(listingHtml)) {
+        throw new Error('StoneX iCIMS search page no longer matches the verified public jobs surface')
       }
 
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      })
+      for (const listing of extractJobCards(listingHtml)) {
+        if (!listing.jobId || seenJobIds.has(listing.jobId)) continue
+        seenJobIds.add(listing.jobId)
 
-      if (overrideMaxJobs && jobs.length >= overrideMaxJobs) {
-        break
+        const { jobId, slug } = extractJobPathInfo(listing.sourceUrl)
+        let job = listing
+
+        try {
+          const detailHtml = await fetchTextImpl(buildDetailFetchUrl({ jobId, slug }))
+          job = extractJobDetail(detailHtml, listing)
+        } catch {
+          job = listing
+        }
+
+        jobs.push({
+          ...job,
+          source: SOURCE,
+          link: job.applyUrl || job.sourceUrl,
+          scrapedAt: now(),
+        })
+
+        if (overrideMaxJobs && jobs.length >= overrideMaxJobs) {
+          return jobs
+        }
       }
+
+      nextPageUrl = extractNextPageUrl(listingHtml)
+      pagesFetched += 1
     }
 
     return jobs

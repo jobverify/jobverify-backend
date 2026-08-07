@@ -1,3 +1,5 @@
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+
 import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 
 export const SOURCE = 'zenohealth'
@@ -163,13 +165,43 @@ const defaultFetchHtml = async (url) => {
   return response.text()
 }
 
-export const createZenoHealthScraper = () => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(CAREERS_URL)
+const defaultFetchBrowserHtml = async (url) => {
+  const session = await createBrowserFetchSession({
+    waitUntil: 'domcontentloaded',
+    settleTimeMs: 5000,
+    timeoutMs: 90000,
+    ignoreHTTPSErrors: true,
+  })
 
-    assertVerifiedPublicCareersSurface(html)
-    assertVerifiedLinkedInOpeningsHandoff(html)
-    assertNoPublicJobsSurface(html, CAREERS_URL)
+  try {
+    const page = await session.fetchPage(url)
+    if (page.status < 200 || page.status >= 400) {
+      throw new Error(`HTTP ${page.status} for ${url}`)
+    }
+
+    return page.html
+  } finally {
+    await session.close()
+  }
+}
+
+const assertVerifiedContract = (html = '') => {
+  assertVerifiedPublicCareersSurface(html)
+  assertVerifiedLinkedInOpeningsHandoff(html)
+  assertNoPublicJobsSurface(html, CAREERS_URL)
+}
+
+export const createZenoHealthScraper = () => ({
+  async run({ fetchHtml = defaultFetchHtml, fetchBrowserHtml = defaultFetchBrowserHtml } = {}) {
+    let html
+
+    try {
+      html = await fetchHtml(CAREERS_URL)
+      assertVerifiedContract(html)
+    } catch {
+      html = await fetchBrowserHtml(CAREERS_URL)
+      assertVerifiedContract(html)
+    }
 
     return createFailClosedSentinelScraper().run()
   },

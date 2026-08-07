@@ -14,12 +14,12 @@ const homepageHtml = `
   <html lang="en">
     <body>
       <main>
+        <h1>Best Data Centre Colocation Services Provider in India | STT GDC India</h1>
         <a href="https://www.sttelemediagdc.com/contact">Contact</a>
         <a href="https://www.sttelemediagdc.com/in-en/about-us/careers">Careers</a>
-        <h1>STT GDC India Inaugurates Rajasthan's First AI-Ready Data Centre</h1>
-        <p>At the Core of Highly secure</p>
-        <p>Accelerate the growth of your business</p>
-        <p>10 Data centres in India</p>
+        <p>Built for AI</p>
+        <p>Services</p>
+        <p>Locations</p>
       </main>
     </body>
   </html>
@@ -30,10 +30,11 @@ const aboutHtml = `
   <html lang="en">
     <body>
       <main>
-        <h2>The foundation of a smarter, more sustainable digital future</h2>
-        <p>As one of the world's fastest-growing data centre providers, ST Telemedia Global Data Centres' purpose is to power a sustainable digital future.</p>
-        <p>All our operations come together on the shared goal of enabling technological advancement through innovation to offer scalable and secure, world-class data centre solutions and services.</p>
-        <p>STT GDC commenced operations</p>
+        <h2>About the Company</h2>
+        <p>Why STT GDC India</p>
+        <p>Our Leadership</p>
+        <p>Diversity and Inclusion</p>
+        <p>Accreditation</p>
       </main>
     </body>
   </html>
@@ -44,10 +45,11 @@ const careersHtml = `
   <html lang="en">
     <body>
       <main>
-        <h2>Shape a better digital world</h2>
+        <h2>Grow your career with us</h2>
         <p>If you are looking to grow your career while shaping a better digital world, we want to hear from you.</p>
         <p>For job enquiries and applications, please write to us below.</p>
         <p>STT Global Data Centres India Private Limited C/o Tata Communications Ltd., Tower B, 5th Floor, Plot No. C 21 &amp; C36, G Block, Bandra Kurla Complex, Vidyanagari Post, Bandra East, Mumbai - 400098</p>
+        <p>careers@sttelemediagdc.in</p>
         <p>contact@sttelemediagdc.in (HQ): +91-22-68192192</p>
         <p>Services</p>
         <p>Colocation</p>
@@ -86,7 +88,7 @@ test('STT sentinel validates the verified India homepage, about page, careers pa
   assert.equal(stt.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(stt.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(stt.hasOfficialContactSignal(contactHtml), true)
-  assert.equal(stt.extractEmailApplyHandoff(careersHtml), 'contact@sttelemediagdc.in')
+  assert.equal(stt.extractEmailApplyHandoff(careersHtml), 'careers@sttelemediagdc.in')
   assert.equal(stt.hasPublicJobListingSignal(careersHtml), false)
 })
 

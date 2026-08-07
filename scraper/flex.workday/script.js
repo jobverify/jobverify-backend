@@ -1,5 +1,10 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const CAREER_PAGE_URL = 'https://flex.com/careers'
 export const BASE_URL = 'https://flextronics.wd1.myworkdayjobs.com/en-US/Careers'
 export const JOBS_API_URL = 'https://flextronics.wd1.myworkdayjobs.com/wday/cxs/flextronics/Careers/jobs'
@@ -10,6 +15,7 @@ const DEFAULT_HEADERS = {
   Accept: 'application/json',
   'Content-Type': 'application/json',
 }
+const DETAIL_FETCH_CONCURRENCY = 4
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -102,8 +108,56 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   label: 'flex',
 })
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': DEFAULT_HEADERS['User-Agent'],
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let firstError = null
+
+  const worker = async () => {
+    while (!firstError) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+
+      if (currentIndex >= items.length) return
+      try {
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  )
+
+  if (firstError) throw firstError
+  return results
+}
+
 export const createFlexScraper = ({ pageSize = 20 } = {}) => ({
-  async run({ fetchJson = defaultFetchJson } = {}) {
+  async run({
+    fetchJson = defaultFetchJson,
+    fetchPage = defaultFetchPage,
+  } = {}) {
     const jobs = []
     let offset = 0
     let total = Number.POSITIVE_INFINITY
@@ -129,13 +183,59 @@ export const createFlexScraper = ({ pageSize = 20 } = {}) => ({
       }
     }
 
-    return jobs.map((job) => ({
+    const mappedJobs = jobs.map((job) => ({
       ...job,
       source: 'flex',
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
     }))
+
+    return mapWithConcurrency(
+      mappedJobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.sourceUrl)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailPage.html,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            postingDate: detail.postingDate || job.postingDate,
+            requisitionId: detail.requisitionId || job.requisitionId,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 
-export const run = async () => createFlexScraper().run()
+export const run = async (options = {}) => createFlexScraper(options).run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, 'flex')
+  }
+}

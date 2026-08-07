@@ -1,12 +1,42 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'zivame'
 export const COMPANY = 'Zivame'
-export const VERIFIED_ON = '2026-07-30'
-export const CAREERS_URL = 'https://careers.zivame.com/'
+export const VERIFIED_ON = '2026-08-04'
+export const HOMEPAGE_URL = 'https://www.zivame.com/'
+export const CAREERS_URL = 'https://www.zivame.com/careers'
+export const LEGACY_CAREERS_URL = 'https://careers.zivame.com/'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
-const INDIA_LOCATION_HINTS = ['india', 'bangalore', 'bengaluru']
+const BROWSER_TIMEOUT_MS = 60000
+const BROWSER_SETTLE_DELAY_MS = 8000
+
+const PUBLIC_JOBS_SIGNAL_PATTERNS = [
+  /\bcurrent openings\b/i,
+  /\bopen roles\b/i,
+  /\bopen positions\b/i,
+  /\bjob openings\b/i,
+  /\bjob category\b/i,
+  /\bjob type\b/i,
+  /\bjob location\b/i,
+  /\bapply now\b/i,
+  /\bclick here to apply\b/i,
+  /\bview jobs\b/i,
+  /\/job-openings\//i,
+]
+
+const DNS_RESOLUTION_FAILURE_PATTERNS = [
+  /\bgetaddrinfo\s+enotfound\b/i,
+  /\benotfound\b/i,
+  /\bthe remote name could not be resolved\b/i,
+  /\bname or service not known\b/i,
+  /\bnxdomain\b/i,
+]
 
 const decodeEntities = (value = '') =>
   String(value)
@@ -44,262 +74,192 @@ const stripTags = (value = '') =>
       .replace(/<[^>]+>/g, ' '),
   )
 
-const extractTextLines = (html = '') =>
-  decodeEntities(String(html))
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<(\/?(?:div|p|span|h[1-6]|section|article|li|ul|ol|a))\b[^>]*>/gi, '\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .split(/\r?\n/)
-    .map((value) => normalizeWhitespace(value))
-    .filter(Boolean)
-
-const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
-  try {
-    return new URL(String(value ?? ''), baseUrl).toString()
-  } catch {
-    return null
-  }
-}
-
-const normalizeComparableText = (value) =>
-  normalizeWhitespace(value)?.toLowerCase().replace(/[^a-z0-9]+/g, ' ')?.trim() || ''
-
-const titlesMatch = (left, right) =>
-  Boolean(normalizeComparableText(left) && normalizeComparableText(left) === normalizeComparableText(right))
-
-const extractH1 = (html = '') =>
-  stripTags(String(html).match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '')
-
-const extractLabelValue = (html = '', label) => {
-  const normalizedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const page = String(html ?? '')
-
-  const sameLineMatch = page.match(
-    new RegExp(`<[^>]+>\\s*${normalizedLabel}\\s*:?\\s*([^<]+?)\\s*<\\/[^>]+>`, 'i'),
-  )
-  if (sameLineMatch) return normalizeWhitespace(sameLineMatch[1])
-
-  const textLines = extractTextLines(page)
-  const normalizedTarget = normalizeComparableText(label)
-  const sameLine = textLines.find((line) => normalizeComparableText(line).startsWith(normalizedTarget))
-  if (sameLine) {
-    const suffix = normalizeWhitespace(sameLine.replace(new RegExp(`^${label}\\s*:?\s*`, 'i'), ''))
-    if (suffix && normalizeComparableText(suffix) !== normalizedTarget) return suffix
-  }
-
-  const lineIndex = textLines.findIndex((line) => normalizeComparableText(line) === normalizedTarget)
-  if (lineIndex >= 0) return textLines[lineIndex + 1] || null
-
-  return null
-}
-
-const extractApplyUrl = (html = '', baseUrl) => {
-  const match = String(html ?? '').match(
-    /<a[^>]+href="([^"]+)"[^>]*>\s*Click here to apply for this role\s*<\/a>/i,
-  )
-  return toAbsoluteUrl(match?.[1], baseUrl)
-}
-
-const extractExperienceLine = (lines = []) => {
-  const matchedLine = lines.find((line) =>
-    /\b\d+\s*-\s*\d+\s+years\b/i.test(line)
-    || /\b\d+\s*-\s*\d+\s+years'? experience\b/i.test(line)
-    || /\b\d+\s*-\s*\d+\s+years of experience\b/i.test(line),
-  )
-
-  return normalizeWhitespace(matchedLine?.replace(/^Have\s+/i, '')) || null
-}
-
-const normalizeLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  if (/\bindia\b/i.test(normalized)) return normalized
-  return `${normalized}, India`
-}
-
-const isIndiaLocation = (value) => {
-  const normalized = normalizeWhitespace(value)?.toLowerCase()
-  if (!normalized) return false
-  return INDIA_LOCATION_HINTS.some((hint) => normalized.includes(hint))
-}
-
-const extractCity = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  return normalized.split(',')[0]?.trim() || null
-}
-
-const buildDescription = (detailHtml = '', title) => {
-  const detailLines = extractTextLines(detailHtml)
-  const filtered = detailLines.filter((line) => {
-    if (line === title) return false
-    if (/-\s+Zivame Careers$/i.test(line)) return false
-    if (/^Job Category:/i.test(line)) return false
-    if (/^Job Type:/i.test(line)) return false
-    if (/^Job Location:/i.test(line)) return false
-    if (/^Zivame HQ,/i.test(line)) return false
-    if (/^Click here to apply for this role$/i.test(line)) return false
-    if (/^(You MUST:|Skills:?|Skills & Experience required)$/i.test(line)) return false
-    return true
-  })
-
-  return filtered.join(' ') || 'Apply via the Zivame careers page.'
-}
-
-export const hasOfficialCareersPageSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = stripTags(page) || ''
-
-  return /<title[^>]*>\s*Zivame Careers\s*<\/title>/i.test(page)
-    && text.includes('Department Job Openings')
-    && text.includes('Life @ Zivame')
-    && text.includes('careers@zivame.com')
-    && /href="https:\/\/careers\.zivame\.com\/job-openings\/[^"/?#]+\/"/i.test(page)
-}
-
-export const hasOfficialDetailPageSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = stripTags(page) || ''
-
-  return /<title[^>]*>[\s\S]+?\s+-\s+Zivame Careers\s*<\/title>/i.test(page)
-    && /\bJob Category\b/i.test(text)
-    && /\bJob Type\b/i.test(text)
-    && /\bJob Location\b/i.test(text)
-    && /\bClick here to apply for this role\b/i.test(text)
-}
-
-export const extractListingCards = (html = '', baseUrl = CAREERS_URL) => {
+const collectErrorMessages = (error) => {
+  const messages = []
   const seen = new Set()
-  const listings = []
-  const pattern = /<a[^>]+href="([^"]*\/job-openings\/[^"/?#]+\/?)"[^>]*>([\s\S]*?)<\/a>/gi
+  let current = error
 
-  for (const match of String(html ?? '').matchAll(pattern)) {
-    const detailUrl = toAbsoluteUrl(match[1], baseUrl)
-    if (!detailUrl || seen.has(detailUrl)) continue
-
-    const detailHost = new URL(detailUrl).host
-    if (detailHost !== new URL(baseUrl).host) continue
-
-    const title = stripTags(match[2])
-    if (!title) continue
-
-    seen.add(detailUrl)
-    listings.push({
-      detailUrl,
-      slug: detailUrl.split('/').filter(Boolean).at(-1) || null,
-      title,
-    })
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    messages.push(String(current?.message ?? current ?? ''))
+    current = current?.cause
   }
 
-  return listings
+  return messages.filter(Boolean)
 }
 
-const buildMappedJob = ({
-  listing,
-  detailHtml,
-  scrapedAt,
-}) => {
-  const detailTitle = extractH1(detailHtml) || listing.title
-  if (!titlesMatch(detailTitle, listing.title)) {
-    throw new Error('Zivame verified detail page title no longer matches the listing link')
+const defaultFetchPage = async (url) => {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+    })
+
+    return {
+      status: response.status,
+      url: response.url || url,
+      html: await response.text(),
+      errorMessage: '',
+    }
+  } catch (error) {
+    return {
+      status: 'ERROR',
+      url,
+      html: '',
+      errorMessage: collectErrorMessages(error).join(' | '),
+    }
   }
+}
 
-  const department = extractLabelValue(detailHtml, 'Job Category')
-  const employmentType = extractLabelValue(detailHtml, 'Job Type')
-  const location = extractLabelValue(detailHtml, 'Job Location')
+const createRenderedPageFetcher = () => {
+  let browser = null
+  let page = null
 
-  if (!department || !employmentType || !location) {
-    throw new Error('Zivame verified detail page no longer exposes the trusted public job fields')
+  const getPage = async () => {
+    if (!browser) {
+      browser = await launchBrowser({ headless: true })
+      page = await createOptimizedPage(browser)
+      await page.setUserAgent(USER_AGENT)
+    }
+
+    return page
   }
-
-  const normalizedLocation = normalizeLocation(location)
-  if (!normalizedLocation || !isIndiaLocation(normalizedLocation)) return null
-
-  const detailLines = extractTextLines(detailHtml)
 
   return {
-    title: detailTitle,
-    company: COMPANY,
-    department,
-    location: normalizedLocation,
-    city: extractCity(normalizedLocation),
-    country: 'India',
-    link: listing.detailUrl,
-    applyUrl: extractApplyUrl(detailHtml, listing.detailUrl) || listing.detailUrl,
-    sourceUrl: listing.detailUrl,
-    source: SOURCE,
-    jobId: listing.slug,
-    requisitionId: listing.slug,
-    employmentType,
-    experienceRequired: extractExperienceLine(detailLines),
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: buildDescription(detailHtml, detailTitle),
-    remoteStatus: null,
-    scrapedAt,
+    close: async () => {
+      if (browser) {
+        await browser.close()
+      }
+    },
+    fetchPage: async (url) => {
+      const browserPage = await getPage()
+      const response = await browserPage.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: BROWSER_TIMEOUT_MS,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, BROWSER_SETTLE_DELAY_MS))
+
+      return {
+        status: response?.status?.() ?? 0,
+        url: browserPage.url(),
+        html: await browserPage.content(),
+        errorMessage: '',
+      }
+    },
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: `${SOURCE}-html`,
-  timeoutMs: 15000,
-})
+export const hasPublicJobsSignal = (html = '') =>
+  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
-export const createZivameScraper = ({ maxJobs = null } = {}) => ({
+export const hasDnsResolutionFailure = (value = '') =>
+  DNS_RESOLUTION_FAILURE_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
+
+export const hasCloudflareChallengeSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+    && /cloudflare/i.test(page)
+    && (
+      text.includes('Please enable cookies')
+      || /cdn-cgi\/challenge-platform/i.test(page)
+      || /challenges\.cloudflare\.com/i.test(page)
+    )
+}
+
+export const hasOfficialHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title[^>]*>\s*Zivame\s*<\/title>/i.test(page)
+    && text.includes('Brands on Zivame')
+    && text.includes('Track/Return Order')
+    && text.includes('Own a Franchise')
+    && text.includes('Find Your Fit')
+    && /href=["'](?:https:\/\/www\.zivame\.com)?\/careers["']/i.test(page)
+}
+
+export const isBlockedCareersRoute = (page = {}) =>
+  Number(page.status) === 403
+  && hasCloudflareChallengeSignal(page.html)
+
+export const isUnavailableLegacyCareersHost = (page = {}) =>
+  String(page.status) === 'ERROR'
+  && hasDnsResolutionFailure(page.errorMessage)
+
+export const createZivameScraper = () => ({
   async run({
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
+    fetchPage = defaultFetchPage,
+    fetchBrowserPage,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error(
-        'Zivame verified official careers page no longer matches the trusted public jobs surface',
-      )
-    }
+    let renderedPageFetcher = null
 
-    const listings = extractListingCards(careersHtml, CAREERS_URL)
-    if (listings.length === 0) {
-      throw new Error('Zivame careers page no longer exposes the verified public role links')
-    }
-
-    const jobs = []
-    const scrapedAt = now()
-
-    for (const listing of listings) {
-      if (Number.isFinite(maxJobs) && jobs.length >= maxJobs) break
-
-      const detailHtml = await fetchText(listing.detailUrl)
-      if (!hasOfficialDetailPageSignal(detailHtml)) {
-        throw new Error(
-          'Zivame verified detail page no longer matches the trusted public jobs surface',
-        )
+    const getBrowserPage = async () => {
+      if (typeof fetchBrowserPage === 'function') {
+        return fetchBrowserPage
       }
 
-      const job = buildMappedJob({
-        listing,
-        detailHtml,
-        scrapedAt,
-      })
+      if (!renderedPageFetcher) {
+        renderedPageFetcher = createRenderedPageFetcher()
+      }
 
-      if (!job) continue
-      jobs.push(job)
+      return renderedPageFetcher.fetchPage
     }
 
-    if (jobs.length === 0) {
-      throw new Error('Zivame careers page returned no public India jobs')
-    }
+    try {
+      const browserPageFetcher = await getBrowserPage()
+      const homepage = await browserPageFetcher(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Zivame official homepage no longer matches the verified public surface')
+      }
 
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+      if (hasPublicJobsSignal(homepage.html)) {
+        throw new Error('Zivame homepage now appears to expose public jobs')
+      }
+
+      const careersPage = await fetchPage(CAREERS_URL)
+      if (!isBlockedCareersRoute(careersPage)) {
+        if (Number(careersPage.status) === 200 && hasPublicJobsSignal(careersPage.html)) {
+          throw new Error('Zivame official careers route now appears to expose public jobs')
+        }
+
+        throw new Error('Zivame official careers route no longer matches the verified blocked first-party state')
+      }
+
+      const legacyCareersPage = await fetchPage(LEGACY_CAREERS_URL)
+      if (!isUnavailableLegacyCareersHost(legacyCareersPage)) {
+        if (Number(legacyCareersPage.status) === 200 && hasPublicJobsSignal(legacyCareersPage.html)) {
+          throw new Error('Zivame legacy careers host now appears to expose public jobs')
+        }
+
+        throw new Error('Zivame legacy careers host no longer matches the verified unavailable state')
+      }
+
+      return []
+    } finally {
+      if (renderedPageFetcher) {
+        await renderedPageFetcher.close()
+      }
+    }
   },
 })
 
-export const run = async (options = {}) => createZivameScraper(options).run(options)
+export const run = async (options = {}) => createZivameScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

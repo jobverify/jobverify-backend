@@ -32,6 +32,11 @@ const SAME_ORIGIN_JOB_PATH_PATTERNS = [
   /^\/jobpost\/[^/?#]+/i,
 ]
 
+const SAME_ORIGIN_FRAMEWORK_ASSET_PATH_PATTERNS = [
+  /(?:^|\/)_payload\.(?:json|js)$/i,
+  /(?:^|\/)_nuxt(?:\/|$)/i,
+]
+
 const normalizeText = (value = '') =>
   String(value)
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -77,6 +82,11 @@ const hasJobPostingMarkup = (html = '') => {
   return false
 }
 
+const isSameOriginFrameworkAssetUrl = (url) =>
+  SAME_ORIGIN_FRAMEWORK_ASSET_PATH_PATTERNS.some((pattern) =>
+    pattern.test(normalizePathname(url.pathname)),
+  )
+
 const assertNoTrustedListingsSurface = (html = '', careersUrl = CAREERS_URL) => {
   if (hasJobPostingMarkup(html)) {
     throw new Error(
@@ -102,6 +112,7 @@ const assertNoTrustedListingsSurface = (html = '', careersUrl = CAREERS_URL) => 
 
     const pathname = normalizePathname(url.pathname)
     if (pathname === careersPath) return false
+    if (isSameOriginFrameworkAssetUrl(url)) return false
 
     return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
   })

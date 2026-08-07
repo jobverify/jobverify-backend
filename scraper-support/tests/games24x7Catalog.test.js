@@ -55,12 +55,13 @@ test('Games24x7 local catalog captures the verified first-party Darwinbox-backed
   )
   assert.equal(GAMES24X7_CATALOG.parser, 'custom-script')
   assert.equal(GAMES24X7_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(GAMES24X7_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(GAMES24X7_CATALOG.verifiedOn, '2026-08-01')
   assert.equal(GAMES24X7_CATALOG.dryRunFile, 'games24x7/jobs.json')
   assert.equal(GAMES24X7_CATALOG.modulePath, games24x7ModulePath)
   assert.match(GAMES24X7_CATALOG.verifiedSurfaceSummary, /https:\/\/games24x7\.com\//i)
   assert.match(GAMES24X7_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.games24x7\.com\//i)
   assert.match(GAMES24X7_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.games24x7\.com\/life/i)
+  assert.match(GAMES24X7_CATALOG.verifiedSurfaceSummary, /120 million \+/i)
   assert.match(
     GAMES24X7_CATALOG.verifiedSurfaceSummary,
     /https:\/\/games24x7\.darwinbox\.in\/ms\/candidate\/a6150564417204\/careers/i,
@@ -73,7 +74,7 @@ test('Games24x7 local catalog captures the verified first-party Darwinbox-backed
     GAMES24X7_CATALOG.verifiedSurfaceSummary,
     /https:\/\/games24x7\.darwinbox\.in\/ms\/candidateapi\/job\/alljobs\?companyId=a6150564417204/i,
   )
-  assert.match(GAMES24X7_CATALOG.verifiedSurfaceSummary, /timed out/i)
+  assert.match(GAMES24X7_CATALOG.verifiedSurfaceSummary, /re-confirmed/i)
   assert.match(GAMES24X7_CATALOG.verifiedSurfaceSummary, /browser-session Darwinbox pagination pattern/i)
 
   assert.equal(games24x7.PROVIDER_METADATA.source, GAMES24X7_CATALOG.source)

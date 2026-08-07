@@ -27,10 +27,10 @@ test('RNF Technologies local catalog captures the verified current openings tabl
   assert.equal(provider.companyName, 'RNF Technologies')
   assert.equal(provider.officialBrandName, 'RNF Technologies')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://www.rnftechnologies.com/join-our-team')
+  assert.equal(provider.homepageUrl, 'https://rnftechnologies.com/join-our-team')
   assert.equal(
     provider.companyCareerPage,
-    'https://www.rnftechnologies.com/join-our-team/current-openings',
+    'https://rnftechnologies.com/join-our-team/current-openings',
   )
   assert.equal(provider.companyDomain, 'rnftechnologies.com')
   assert.equal(provider.atsPlatform, 'official-first-party-job-table-plus-detail-pages')
@@ -39,10 +39,10 @@ test('RNF Technologies local catalog captures the verified current openings tabl
   assert.equal(provider.extractionStrategy, 'job-table+detail-pages')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /rnftechnologies[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Current Job Openings/i)
   assert.match(provider.verifiedSurfaceSummary, /React Native Developer/i)
   assert.match(provider.verifiedSurfaceSummary, /React Developer/i)
@@ -72,7 +72,7 @@ test('RNF Technologies hydrated local catalog stays script-runner compatible for
   assert.equal(provider.adapter, 'script')
   assert.equal(
     provider.companyCareerPage,
-    'https://www.rnftechnologies.com/join-our-team/current-openings',
+    'https://rnftechnologies.com/join-our-team/current-openings',
   )
   assert.equal(provider.companyDomain, 'rnftechnologies.com')
   assert.match(provider.modulePath, /rnftechnologies[\\/]script\.js$/i)

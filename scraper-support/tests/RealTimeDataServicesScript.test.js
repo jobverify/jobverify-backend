@@ -9,7 +9,7 @@ const careersPageHtml = `
   <body>
     <h1>Career at RTDS</h1>
     <a href="https://myrealdata.in/careers/apply-online/">Apply Now</a>
-    <div class="col opportunities" data-positions="[{&quot;name&quot;:&quot;Senior Software Engineer&quot;,&quot;description&quot;:&quot;&quot;,&quot;mode&quot;:&quot;Work From Office&quot;,&quot;posted_date&quot;:&quot;2024-08-08&quot;,&quot;location&quot;:&quot;Gurugram, Haryana&quot;,&quot;experience&quot;:&quot;2&quot;,&quot;open&quot;:&quot;1&quot;,&quot;status&quot;:&quot;active&quot;},{&quot;name&quot;:&quot;Lead Software Development Engineer(React Native)&quot;,&quot;description&quot;:&quot;&quot;,&quot;mode&quot;:&quot;Work From Office&quot;,&quot;posted_date&quot;:&quot;2024-08-08&quot;,&quot;location&quot;:&quot;Gurugram, Haryana&quot;,&quot;experience&quot;:&quot;5&quot;,&quot;open&quot;:&quot;1&quot;,&quot;status&quot;:&quot;active&quot;},{&quot;name&quot;:&quot;Software Developer II&quot;,&quot;description&quot;:&quot;&quot;,&quot;mode&quot;:&quot;Work From Office&quot;,&quot;posted_date&quot;:&quot;2024-08-08&quot;,&quot;location&quot;:&quot;Gurugram, Haryana&quot;,&quot;experience&quot;:&quot;6&quot;,&quot;open&quot;:&quot;1&quot;,&quot;status&quot;:&quot;active&quot;}]">
+    <div class="col opportunities" data-positions="[{&quot;name&quot;:&quot;Senior Software Engineer&quot;,&quot;description&quot;:&quot;&quot;,&quot;mode&quot;:&quot;Work From Office&quot;,&quot;posted_date&quot;:&quot;2024-08-08&quot;,&quot;location&quot;:&quot;Gurugram, Haryana&quot;,&quot;experience&quot;:&quot;2-4&quot;,&quot;open&quot;:&quot;1&quot;,&quot;status&quot;:&quot;active&quot;},{&quot;name&quot;:&quot;Lead Software Development Engineer(React Native)&quot;,&quot;description&quot;:&quot;&quot;,&quot;mode&quot;:&quot;Work From Office&quot;,&quot;posted_date&quot;:&quot;2024-08-08&quot;,&quot;location&quot;:&quot;Gurugram, Haryana&quot;,&quot;experience&quot;:&quot;5&quot;,&quot;open&quot;:&quot;1&quot;,&quot;status&quot;:&quot;active&quot;},{&quot;name&quot;:&quot;Software Developer II&quot;,&quot;description&quot;:&quot;&quot;,&quot;mode&quot;:&quot;Work From Office&quot;,&quot;posted_date&quot;:&quot;2024-08-08&quot;,&quot;location&quot;:&quot;Gurugram, Haryana&quot;,&quot;experience&quot;:&quot;6&quot;,&quot;open&quot;:&quot;1&quot;,&quot;status&quot;:&quot;active&quot;}]">
       <a href="https://myrealdata.in/careers/software-development/" aria-label="Software Development">Software Development</a>
       <span>3 Open Positions</span>
     </div>
@@ -47,11 +47,11 @@ test('Real Time Data Services run validates the careers page and returns normali
   })
 
   assert.deepEqual(
-    jobs.map((job) => [job.title, job.department, job.location, job.experienceRequired, job.applyUrl]),
+    jobs.map((job) => [job.title, job.department, job.location, job.experienceRequired, job.publicExperienceChecked, job.applyUrl]),
     [
-      ['Senior Software Engineer', 'Software Development', 'Gurugram, Haryana, India', '2', 'https://myrealdata.in/careers/apply-online/'],
-      ['Lead Software Development Engineer(React Native)', 'Software Development', 'Gurugram, Haryana, India', '5', 'https://myrealdata.in/careers/apply-online/'],
-      ['Software Developer II', 'Software Development', 'Gurugram, Haryana, India', '6', 'https://myrealdata.in/careers/apply-online/'],
+      ['Senior Software Engineer', 'Software Development', 'Gurugram, Haryana, India', '2-4 years', true, 'https://myrealdata.in/careers/apply-online/'],
+      ['Lead Software Development Engineer(React Native)', 'Software Development', 'Gurugram, Haryana, India', '5 years', true, 'https://myrealdata.in/careers/apply-online/'],
+      ['Software Developer II', 'Software Development', 'Gurugram, Haryana, India', '6 years', true, 'https://myrealdata.in/careers/apply-online/'],
     ],
   )
 })

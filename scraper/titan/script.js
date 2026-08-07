@@ -24,12 +24,14 @@ const normalizeWhitespace = (value) => {
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(
+    String(html ?? '').replace(/<[^>]+>/g, ' '),
+  )?.toLowerCase() || ''
 
-  return /Career Opportunities at Titan Company/i.test(page)
-    && /Current vacancies/i.test(page)
-    && /Life at Titan/i.test(page)
-    && /Working at Titan Company\s+Limited/i.test(page)
+  return normalized.includes('career opportunities at titan company')
+    && normalized.includes('current vacancies')
+    && normalized.includes('life at titan')
+    && normalized.includes('working at titan company limited')
 }
 
 export const extractCurrentVacanciesUrl = (html) => {

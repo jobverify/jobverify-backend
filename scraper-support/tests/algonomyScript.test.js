@@ -8,9 +8,10 @@ const CAREERS_HTML = `
     <title>Careers - Algonomy</title>
   </head>
   <body>
+    <p>Algonomy is now part of ADA, creating the world’s most intelligent growth platform for enterprises globally.</p>
     <h1>Search Job Openings</h1>
-    <p>We have global openings in core business and technical teams across our company.</p>
-    <script src="//recruitingbypaycor.com/career/iframe.action?clientId=8a7883c6606d030901607ae3719c71a6"></script>
+    <h2>Why Algonomy</h2>
+    <p>Working at Algonomy is more than just a job. It's a mission.</p>
   </body>
 </html>
 `
@@ -18,9 +19,7 @@ const CAREERS_HTML = `
 const PAYCOR_BOARD_HTML = `
 <!doctype html>
 <html lang="en">
-  <head>
-    <title>Job Search</title>
-  </head>
+  <head></head>
   <body>
     <script>
       homeUrl = 'https://algonomy.com/careers/';
@@ -73,6 +72,7 @@ test('Algonomy accepts the live Paycor board even when the normalized body no lo
       openingsCount: null,
       jobDescription: null,
       companyCareerPage: 'https://www.algonomy.com.br/en/careers/',
+      companyCareerPage: 'https://algonomy.com/careers/',
     },
   ])
 })

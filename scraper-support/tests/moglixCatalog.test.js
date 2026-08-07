@@ -56,7 +56,7 @@ test('Moglix local catalog captures the verified first-party careers page and en
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'moglix.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.match(provider.dryRunFile, /moglix[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.moglix\.com\/career/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/moglix\.flexiele\.com\/careers\/moglix\/jobs/i)
@@ -64,9 +64,9 @@ test('Moglix local catalog captures the verified first-party careers page and en
     provider.verifiedSurfaceSummary,
     /https:\/\/moglix-api\.flexiele\.com\/api-pub\/rec\/careerSectionConfiguration\/search/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /139 active public India vacancies/i)
-  assert.match(provider.verifiedSurfaceSummary, /AM - Finance \( Credlix \)/i)
-  assert.match(provider.verifiedSurfaceSummary, /Java Software developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /141 active public India vacancies/i)
+  assert.match(provider.verifiedSurfaceSummary, /column\.prop/i)
+  assert.match(provider.verifiedSurfaceSummary, /job_title/i)
   assert.equal(provider.modulePath, moglixModulePath)
 
   assert.equal(moglix.PROVIDER_METADATA.source, MOGLIX_CATALOG.source)

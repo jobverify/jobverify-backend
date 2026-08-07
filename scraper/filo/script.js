@@ -1,14 +1,19 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'filo'
 export const COMPANY = 'Filo'
 export const OFFICIAL_BRAND = 'Filo'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-02'
 export const CAREERS_URL = 'https://askfilo.com/careers'
 export const DISPOSITION =
   'verified-first-party-careers-page-plus-public-google-doc-role-descriptions'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://askfilo.com/careers was the live first-party Filo careers page, that its public __NEXT_DATA__ payload enumerated current openings across departments including Analytics, Engineering, and Design, and that each reviewed opening linked to a public published Google Docs role description. The reviewed public contract exposed roles including Business Analyst, Senior Backend Developer, and Senior Product Designer, but it did not disclose per-role location or dedicated application handoffs, so this scraper validates that exact careers-page-plus-Google-Docs contract and returns listing-plus-role-description data conservatively from the public documents.'
+  'Verified on Sunday, August 2, 2026 that https://askfilo.com/careers was the live first-party Filo careers page, that its public __NEXT_DATA__ payload enumerated 10 current openings across departments including Analytics, Engineering, Growth, Product, Creative, and Design, and that each reviewed opening still linked to a public published Google Docs role description. The live public document URLs now include both direct /document/d/e/.../pub and account-scoped /document/u/3/d/e/.../pub variants, and reviewed roles included Business Analyst, Senior Backend Developer, and Senior Product Designer. The public contract still does not disclose per-role city detail or dedicated application handoffs, so this scraper preserves the exact-name India provider scope with null city detail and returns listing-plus-role-description data conservatively from the public documents.'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
@@ -22,7 +27,7 @@ const REQUIRED_CAREERS_PAGE_PATTERNS = [
 ]
 
 const TRUSTED_GOOGLE_DOC_URL_PATTERN =
-  /^https:\/\/docs\.google\.com\/document\/d\/e\/[^/?#]+\/pub(?:[?#].*)?$/i
+  /^https:\/\/docs\.google\.com\/document\/(?:u\/\d+\/)?d\/e\/[^/?#]+\/pub(?:[?#].*)?$/i
 
 const DOC_PUBLISH_SIGNAL_PATTERN = /\bPublished using Google Docs\b/i
 
@@ -120,6 +125,64 @@ const extractDocTitle = (html = '') =>
     || String(html).match(/<div id="title">([\s\S]*?)<\/div>/i)?.[1],
   )
 
+const normalizeRoleComparisonText = (value = '') =>
+  normalizeWhitespace(value)
+    ?.toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+  || null
+
+const singularizeToken = (token = '') => {
+  if (token.endsWith('ies') && token.length > 3) {
+    return `${token.slice(0, -3)}y`
+  }
+
+  if (token.endsWith('s') && !token.endsWith('ss') && token.length > 4) {
+    return token.slice(0, -1)
+  }
+
+  return token
+}
+
+const tokenizeRoleTitle = (value = '') => [
+  ...new Set(
+    (normalizeRoleComparisonText(value) || '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((token) => singularizeToken(token)),
+  ),
+]
+
+const isTokenSubset = (candidateTokens = [], referenceTokens = []) =>
+  candidateTokens.length > 0
+  && candidateTokens.every((token) => referenceTokens.includes(token))
+
+export const hasMatchingRoleTitle = (documentTitle = '', listingTitle = '') => {
+  const normalizedDocumentTitle = normalizeRoleComparisonText(documentTitle)
+  const normalizedListingTitle = normalizeRoleComparisonText(listingTitle)
+
+  if (!normalizedDocumentTitle || !normalizedListingTitle) {
+    return false
+  }
+
+  if (normalizedDocumentTitle === normalizedListingTitle) {
+    return true
+  }
+
+  if (
+    normalizedDocumentTitle.includes(normalizedListingTitle)
+    || normalizedListingTitle.includes(normalizedDocumentTitle)
+  ) {
+    return true
+  }
+
+  const documentTokens = tokenizeRoleTitle(normalizedDocumentTitle)
+  const listingTokens = tokenizeRoleTitle(normalizedListingTitle)
+
+  return isTokenSubset(documentTokens, listingTokens)
+    || isTokenSubset(listingTokens, documentTokens)
+}
+
 const extractExperienceRequired = (text = '') => {
   const normalized = normalizeWhitespace(text) || ''
   const scoped = extractSection(normalized, 'Experience:', [
@@ -189,7 +252,7 @@ export const extractPublishedRoleDetails = (html = '', listing = {}) => {
   }
 
   const title = extractDocTitle(html)
-  if (!title || title !== normalizeWhitespace(listing?.title)) {
+  if (!title || !hasMatchingRoleTitle(title, normalizeWhitespace(listing?.title))) {
     throw new Error('Filo published Google Doc detail page changed materially')
   }
 
@@ -231,7 +294,9 @@ const buildJob = (listing = {}, detail = {}, scrapedAt = new Date().toISOString(
     department: listing.department,
     location: null,
     city: null,
-    country: null,
+    // The public Filo careers surface omits per-role city labels, but these
+    // roles are verified from the exact-name India provider's first-party page.
+    country: 'India',
     jobId,
     requisitionId: jobId,
     sourceUrl: listing.documentUrl,
@@ -283,3 +348,15 @@ export const createFiloScraper = ({ maxJobs = null } = {}) => ({
 })
 
 export const run = async (options = {}) => createFiloScraper(options).run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

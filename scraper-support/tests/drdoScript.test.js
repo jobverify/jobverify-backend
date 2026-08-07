@@ -47,6 +47,7 @@ test('extractVacancies maps official DRDO vacancy cards to normalized job record
     postingDate: '2026-07-03',
     closingDate: '2026-07-15',
     jobDescription: 'Official DRDO vacancy announcement. Review the official posting for eligibility and application details.',
+    publicExperienceChecked: true,
   }])
   assert.deepEqual(drdo.extractPageUrls(vacanciesPageHtml), [
     'https://drdo.gov.in/drdo/en/offerings/vacancies?page=1',
@@ -70,5 +71,6 @@ test('run follows official DRDO vacancy pagination and decorates extracted jobs'
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'drdo')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.ok(Date.parse(jobs[0].scrapedAt))
 })

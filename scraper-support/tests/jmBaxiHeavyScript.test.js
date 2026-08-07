@@ -22,6 +22,13 @@ const loadModule = async () => {
 
 test('JM Baxi Heavy keeps the verified first-party careers surface constants pinned', async () => {
   const jmBaxiHeavy = await loadModule()
+  const liveLikeHomepageHtml = homepageHtml
+    .replace(/J M Baxi Group, founded in 1916/gi, 'Welcome to J M Baxi Group Founded in 1916')
+    .replace(/Here['’]s to creating opportunities!?/gi, "India's maritime and trade landscape")
+  const liveLikeJobSearchHtml = jobSearchHtml
+    .replace(/Select Department Engineering/gi, 'Select Department Operations')
+    .replace(/Select Location Navi Mumbai/gi, 'Find your dream job')
+  const liveLikeJobListHtml = jobListHtml.replace(/<title>\s*Job Search \| J M Baxi\s*<\/title>/i, '<title>Job List | J M Baxi</title>')
 
   assert.equal(jmBaxiHeavy.SOURCE, 'jmbaxiheavy')
   assert.equal(jmBaxiHeavy.COMPANY, 'JM Baxi Heavy')
@@ -41,9 +48,12 @@ test('JM Baxi Heavy keeps the verified first-party careers surface constants pin
     'https://jmbone.darwinbox.in/ms/candidate/careers/others?apply=1',
   )
   assert.equal(jmBaxiHeavy.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(jmBaxiHeavy.hasOfficialHomepageSignal(liveLikeHomepageHtml), true)
   assert.equal(jmBaxiHeavy.hasCareersPageSignal(careersHtml), true)
   assert.equal(jmBaxiHeavy.hasJobSearchPageSignal(jobSearchHtml), true)
+  assert.equal(jmBaxiHeavy.hasJobSearchPageSignal(liveLikeJobSearchHtml), true)
   assert.equal(jmBaxiHeavy.hasJobListShellSignal(jobListHtml), true)
+  assert.equal(jmBaxiHeavy.hasJobListShellSignal(liveLikeJobListHtml), true)
   assert.equal(jmBaxiHeavy.isVerifiedNoJobsResponse(jobListResponse), true)
 })
 

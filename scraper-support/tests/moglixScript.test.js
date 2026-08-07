@@ -41,12 +41,12 @@ const gridSchema = {
   label: 'Jobs',
   formCode: 'FRM0001379',
   columns: [
-    { field: 'job_title' },
-    { field: 'date_posted' },
-    { field: 'location' },
-    { field: 'department' },
-    { field: 'functional_area' },
-    { field: 'business_unit_name' },
+    { prop: 'job_title' },
+    { prop: 'date_posted' },
+    { prop: 'location' },
+    { prop: 'department' },
+    { prop: 'functional_area' },
+    { prop: 'business_unit_name' },
   ],
 }
 

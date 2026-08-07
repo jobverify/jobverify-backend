@@ -7,17 +7,27 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 export const hasOfficialCareersSignal = (html) =>
-  /Careers(?:\s|&amp;)+Jobs Opportunities \|\s*Work with Finolex Pipes/i.test(html || '')
+  /<title>\s*Careers\s*&(?:amp;)?\s*Jobs Opportunities \|\s*Work with Finolex Pipes\s*<\/title>/i.test(html || '')
   && /Job Openings/i.test(html || '')
   && /Discover Your Career Path/i.test(html || '')
-  && /career@finolexind\.com/i.test(html || '')
+  && /Join Us/i.test(html || '')
+  && /Managing Director,\s*Finolex Industries Ltd\./i.test(html || '')
+
+export const extractDepartmentOptions = (html) => [...(html || '').matchAll(
+  /<div\s+class=["']option["']\s+data-value=["']([^"']*)["'][^>]*>([\s\S]*?)<\/div>/gi,
+)]
+  .map(([, value, label]) => ({
+    value: value.trim(),
+    label: label.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+  }))
+  .filter(({ value, label }) => value && label && !/select department/i.test(label))
 
 export const hasEmptyOpeningsSignal = (html) =>
-  /There are currently no open positions matching your search criteria\./i.test(html || '')
-  && /Apply via Mail/i.test(html || '')
-  && /Apply via Whatsapp/i.test(html || '')
+  /id=["']selDepart["'][^>]*>\s*-Select Department-\s*</i.test(html || '')
+  && /id=["']cityDropdown["'][^>]*>\s*<\/select>/i.test(html || '')
+  && extractDepartmentOptions(html).length === 0
 
-const defaultFetchText = async (url) => {
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -25,23 +35,34 @@ const defaultFetchText = async (url) => {
     },
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
   }
-
-  return response.text()
 }
 
 export const createFinolexIndustriesLimitedScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREER_PAGE_URL)
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const page = await fetchPage(CAREER_PAGE_URL)
+    const { html, status } = page
 
     if (!hasOfficialCareersSignal(html)) {
       throw new Error('Finolex careers page no longer matches the verified official public surface')
     }
 
+    const departmentOptions = extractDepartmentOptions(html)
+
+    if (departmentOptions.length > 0) {
+      throw new Error('Finolex careers page now exposes public department options; scraper needs job parsing support')
+    }
+
     if (!hasEmptyOpeningsSignal(html)) {
       throw new Error('Finolex careers page no longer matches the verified no-open-positions surface')
+    }
+
+    if (status >= 400 && !/500 Internal Server Error/i.test(html)) {
+      throw new Error(`HTTP ${status} for ${CAREER_PAGE_URL}`)
     }
 
     return []

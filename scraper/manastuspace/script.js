@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -56,7 +57,7 @@ export const hasOfficialCareersSignal = (html) => {
 const SECTION_PATTERN = /<section\b[^>]*>([\s\S]*?)<\/section>/gi
 const HEADING_PATTERN = /<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i
 const JOB_LINK_PATTERN = /mailto:careers@manastuspace\.com/i
-const OPEN_ROLE_CARD_PATTERN = /class="heading-style-h5[^"]*">([\s\S]*?)<\/div>[\s\S]*?class="text-size-small text-weight-medium text-size">([\s\S]*?)<\/div>[\s\S]*?class="text-size-small text-weight-medium">([\s\S]*?)<\/div>[\s\S]*?href="(mailto:careers@manastuspace\.com[^"]*)"/gi
+const OPEN_ROLE_TITLE_PATTERN = /<div[^>]*class="heading-style-h5[^"]*"[^>]*>([\s\S]*?)<\/div>/gi
 
 const parseLocation = (value) => {
   const normalized = stripTags(value)
@@ -106,6 +107,9 @@ const buildJob = ({
   location,
   employmentType,
   applyUrl,
+  experienceRequired,
+  jobDescription,
+  publicExperienceChecked = false,
 }) => ({
   title,
   company: COMPANY,
@@ -116,23 +120,56 @@ const buildJob = ({
   applyUrl,
   department: null,
   employmentType,
-  experienceRequired: null,
+  experienceRequired: experienceRequired || null,
   minimumQualification: null,
   preferredQualification: null,
   requiredSkills: [],
   postingDate: null,
   closingDate: null,
-  jobDescription: null,
+  jobDescription: jobDescription || null,
+  publicExperienceChecked,
 })
+
+const extractExperienceRequired = (value) => {
+  const experienceProfile = extractJobFilterSignals({
+    description: stripTags(value),
+  })?.experienceProfile
+  const evidence = stripTags(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
 
 const extractOpenRoleCardJobs = (html) => {
   const page = String(html ?? '')
+  const titleMatches = [...page.matchAll(OPEN_ROLE_TITLE_PATTERN)]
   const jobs = []
 
-  for (const match of page.matchAll(OPEN_ROLE_CARD_PATTERN)) {
+  for (let index = 0; index < titleMatches.length; index += 1) {
+    const match = titleMatches[index]
+    const nextMatch = titleMatches[index + 1]
+    const block = page.slice(match.index, nextMatch?.index ?? page.length)
     const title = stripTags(match[1])
-    const employmentType = /full\s*time/i.test(stripTags(match[2])) ? 'Full-time' : null
-    const location = parseLocation(match[3])
+    const employmentType = /full\s*time/i.test(
+      stripTags(block.match(/class="text-size-small text-weight-medium text-size">([\s\S]*?)<\/div>/i)?.[1]),
+    )
+      ? 'Full-time'
+      : null
+    const location = parseLocation(
+      block.match(/class="text-size-small text-weight-medium">([\s\S]*?)<\/div>/i)?.[1],
+    )
+    const applyUrl = stripTags(block.match(/href="(mailto:careers@manastuspace\.com[^"]*)"/i)?.[1])
+      || `mailto:careers@manastuspace.com?subject=${encodeURIComponent(title)}`
+    const detailsHtml = block.match(/class="[^"]*w-richtext[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1] || ''
+    const jobDescription = stripTags(detailsHtml)
+    const experienceRequired = extractExperienceRequired(jobDescription)
 
     if (!title || !location.location) continue
 
@@ -140,7 +177,10 @@ const extractOpenRoleCardJobs = (html) => {
       title,
       location,
       employmentType,
-      applyUrl: `mailto:careers@manastuspace.com?subject=${encodeURIComponent(title)}`,
+      applyUrl,
+      experienceRequired,
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription) && !experienceRequired,
     }))
   }
 

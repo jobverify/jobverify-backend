@@ -26,6 +26,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/\u2019/g, "'")
 
 const stripScriptsAndStyles = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -111,7 +112,7 @@ const extractLastPathSegment = (value) => {
 
 const extractApplyUrl = (html = '', detailUrl) =>
   makeAbsoluteUrl(
-    String(html ?? '').match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:I['’]?m Interested|I'm Interested)\s*<\/a>/i)?.[1],
+    String(html ?? '').match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:I(?:'|\u2019|&#8217;|&#x27;)?m Interested)\s*<\/a>/i)?.[1],
     detailUrl,
   ) || detailUrl
 
@@ -172,10 +173,10 @@ export const extractRelevantJobCards = (html = '') => {
     const title = normalizeWhitespace(
       anchorText
         .replace(/\s*location:\s*[\s\S]*$/i, '')
-        .replace(/\s*i['’]?m interested\s*$/i, ''),
+        .replace(/\s*i(?:'|\u2019)?m interested\s*$/i, ''),
     )
     const location = normalizeWhitespace(
-      anchorText.match(/location:\s*([\s\S]*?)(?:i['’]?m interested)?$/i)?.[1],
+      anchorText.match(/location:\s*([\s\S]*?)(?:i(?:'|\u2019)?m interested)?$/i)?.[1],
     )
 
     seen.add(detailUrl)

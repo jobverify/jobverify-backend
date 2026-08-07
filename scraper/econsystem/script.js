@@ -46,9 +46,36 @@ const slugify = (value) => normalizeWhitespace(decodeHtml(value))
 
 const getSection = (html, jobId) => {
   const page = String(html ?? '')
-  for (const match of page.matchAll(/<section[^>]*class=["'][^"']*career-opening[^"']*["'][^>]*>[\s\S]*?<\/section>/gi)) {
+  const wrappedSections = [...page.matchAll(/<section[^>]*class=["'][^"']*career-opening[^"']*["'][^>]*>[\s\S]*?<\/section>/gi)]
+
+  for (const match of wrappedSections) {
     if (new RegExp(`<h2[^>]*>\\s*JOB ID:\\s*${jobId}\\s*<\\/h2>`, 'i').test(match[0])) {
       return match[0]
+    }
+  }
+
+  const headingPattern = /<h2[^>]*>\s*JOB ID:\s*([^<\s]+)\s*<\/h2>/gi
+  const headings = [...page.matchAll(headingPattern)]
+  const currentIndex = headings.findIndex((match) => normalizeWhitespace(match[1]) === jobId)
+
+  if (currentIndex === -1) return null
+
+  const startIndex = headings[currentIndex].index
+  const endIndex = headings[currentIndex + 1]?.index ?? page.length
+
+  return page.slice(startIndex, endIndex)
+}
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractMailtoSubject = (sectionHtml, jobId) => {
+  for (const match of String(sectionHtml ?? '').matchAll(/mailto:[^"']*?\?subject=([^"'&]+(?:&amp;[^"']*)?)/gi)) {
+    const subject = decodeHtml(match[1])
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    if (subject.toLowerCase().startsWith(`${jobId.toLowerCase()}:`)) {
+      return subject
     }
   }
 
@@ -100,7 +127,7 @@ const normalizeEmploymentType = (value) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /<title>\s*e-con Systems: Develops & Manufactures OEM Cameras\s*<\/title>/i.test(page)
+  return /<title>\s*e-con Systems(?:&reg;|®)?: Develops & Manufactures OEM Cameras(?:\s*\|\s*20\+\s*Years of Expertise)?\s*<\/title>/i.test(page)
     && /Since 2003, e-con Systems/i.test(page)
     && /\/careers\.asp/i.test(page)
     && /Employee Login/i.test(page)
@@ -127,6 +154,9 @@ export const extractOpenings = (html) => {
     }
 
     const title = getParagraphValue(sectionHtml, 'Position')
+      || normalizeWhitespace(
+        extractMailtoSubject(sectionHtml, jobId)?.replace(new RegExp(`^${escapeRegex(jobId)}:\\s*`, 'i'), ''),
+      )
     const department = getParagraphValue(sectionHtml, 'Geography')
     const city = getParagraphValue(sectionHtml, 'Location')
     const experienceRequired = getParagraphValue(sectionHtml, 'Experience')

@@ -5,7 +5,7 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers</title>
+    <title>.:: Welcome to Virinchi ::.</title>
   </head>
   <body>
     <h1>Careers</h1>

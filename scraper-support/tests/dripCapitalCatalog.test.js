@@ -41,15 +41,15 @@ test('Drip Capital local catalog captures the verified first-party careers shell
   assert.equal(DRIP_CAPITAL_CATALOG.usCareersPageUrl, 'https://www.dripcapital.com/en-us/careers/')
   assert.equal(
     DRIP_CAPITAL_CATALOG.legacyCareersPayloadUrl,
-    'https://assets.dripcapital.com/_nuxt/static/1783926833/careers/payload.js',
+    'https://assets.dripcapital.com/_nuxt/static/1784800988/careers/payload.js',
   )
   assert.equal(
     DRIP_CAPITAL_CATALOG.indiaCareersPayloadUrl,
-    'https://assets.dripcapital.com/_nuxt/static/1783926833/en-in/careers/payload.js',
+    'https://assets.dripcapital.com/_nuxt/static/1784800988/en-in/careers/payload.js',
   )
   assert.equal(
     DRIP_CAPITAL_CATALOG.usCareersPayloadUrl,
-    'https://assets.dripcapital.com/_nuxt/static/1783926833/en-us/careers/payload.js',
+    'https://assets.dripcapital.com/_nuxt/static/1784800988/en-us/careers/payload.js',
   )
   assert.equal(DRIP_CAPITAL_CATALOG.jobsPageUrl, 'https://www.dripcapital.com/jobs')
   assert.equal(DRIP_CAPITAL_CATALOG.robotsTxtUrl, 'https://www.dripcapital.com/robots.txt')
@@ -67,7 +67,7 @@ test('Drip Capital local catalog captures the verified first-party careers shell
   )
   assert.equal(DRIP_CAPITAL_CATALOG.parser, 'custom-script')
   assert.equal(DRIP_CAPITAL_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DRIP_CAPITAL_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(DRIP_CAPITAL_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(DRIP_CAPITAL_CATALOG.dryRunFile, 'dripcapital/jobs.json')
   assert.match(DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.dripcapital\.com\//i)
   assert.match(DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.dripcapital\.com\/careers\//i)
@@ -75,10 +75,11 @@ test('Drip Capital local catalog captures the verified first-party careers shell
   assert.match(DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.dripcapital\.com\/en-us\/careers\//i)
   assert.match(
     DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/assets\.dripcapital\.com\/_nuxt\/static\/1783926833\/en-in\/careers\/payload\.js/i,
+    /https:\/\/assets\.dripcapital\.com\/_nuxt\/static\/1784800988\/en-in\/careers\/payload\.js/i,
   )
   assert.match(DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.dripcapital\.com\/jobs/i)
   assert.match(DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.dripcapital\.com\/sitemap\.xml/i)
+  assert.match(DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
   assert.match(DRIP_CAPITAL_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(DRIP_CAPITAL_CATALOG.modulePath, dripCapitalModulePath)
 

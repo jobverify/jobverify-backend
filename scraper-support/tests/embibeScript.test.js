@@ -6,7 +6,7 @@ const rootShellHtml = `
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta name="build-version" content="2026-07-14-19:36:42">
+    <meta name="build-version" content="2026-07-21-11:48:12">
     <title>EMBIBE - The most powerful AI-powered learning platform</title>
     <meta
       name="description"
@@ -59,10 +59,13 @@ const joinUsPageHtml = `
     <meta name="robots" content="noindex, nofollow">
     <title>Join Us - EMBIBE - The most powerful AI-powered learning platform</title>
     <meta property="og:url" content="https://www.embibe.com/in-en/joinus/">
+    <meta
+      property="og:description"
+      content="EMBIBE is the world’s first edtech company that truly delivers learning and life outcomes."
+    >
   </head>
   <body>
     <h1>Join Us</h1>
-    <p>EMBIBE is the world’s first edtech company that truly delivers learning and life outcomes.</p>
     <p>If your heart beats for education and you want to be part of a revolution, you probably have a place here.</p>
     <a href="https://embibe.darwinbox.in/ms/candidate/careers">Explore openings</a>
     <a href="https://www.embibe.com/in-en/joinus/discovery-brief/">Discovery Brief</a>
@@ -104,24 +107,6 @@ const pageSitemapXml = `
 </urlset>
 `
 
-const emptyDarwinboxShellHtml = `
-<!doctype html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8">
-    <title>Indiavidual Learning Limited (Embibe)</title>
-    <meta property="og:title" content="Indiavidual Learning Limited (Embibe) ">
-    <meta
-      property="og:image"
-      content="https://s3.ap-south-1.amazonaws.com/darwinbox-data-prod-mum/INSTANCE4_609aaf5abf6f4_222/logo/a75101209645361b299f2a__tenant-avatar-222_674078522.png"
-    >
-  </head>
-  <body>
-    Indiavidual Learning Limited (Embibe) -
-  </body>
-</html>
-`
-
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en-US">
@@ -138,6 +123,31 @@ const publicJobsHtml = `
 </html>
 `
 
+const darwinboxJobs = [
+  {
+    title: 'ML Engineer',
+    company: 'Embibe',
+    department: 'Engineering',
+    location: 'Bengaluru, India',
+    city: 'Bengaluru',
+    jobId: 'a123',
+    requisitionId: null,
+    sourceUrl: 'https://embibe.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a123',
+    applyUrl: 'https://embibe.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a123',
+    employmentType: 'Full-time',
+    experienceRequired: '3+ years',
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-08-01',
+    closingDate: null,
+    jobDescription: 'Build learning experiences.',
+    source: 'embibe',
+    link: 'https://embibe.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a123',
+    scrapedAt: '2026-08-02T00:00:00.000Z',
+  },
+]
+
 const loadEmbibeModule = async () => {
   try {
     return await import('../../scraper/embibe/script.js')
@@ -146,13 +156,13 @@ const loadEmbibeModule = async () => {
   }
 }
 
-test('Embibe scraper helpers stay pinned to the verified first-party join-us page and empty Darwinbox shell', async () => {
+test('Embibe scraper helpers stay pinned to the verified first-party join-us surface and Darwinbox handoff', async () => {
   const embibe = await loadEmbibeModule()
 
   assert.equal(embibe.SOURCE, 'embibe')
   assert.equal(embibe.COMPANY, 'Embibe')
   assert.equal(embibe.OFFICIAL_BRAND_NAME, 'Indiavidual Learning Limited (Embibe)')
-  assert.equal(embibe.VERIFIED_ON, '2026-07-15')
+  assert.equal(embibe.VERIFIED_ON, '2026-08-02')
   assert.equal(embibe.ROOT_URL, 'https://www.embibe.com/')
   assert.equal(embibe.ROOT_CAREERS_URL, 'https://www.embibe.com/careers')
   assert.equal(embibe.HOMEPAGE_URL, 'https://www.embibe.com/in-en/home/')
@@ -161,11 +171,10 @@ test('Embibe scraper helpers stay pinned to the verified first-party join-us pag
   assert.equal(embibe.JOIN_US_API_URL, 'https://www.embibe.com/in-en/wp-json/wp/v2/pages/483')
   assert.equal(embibe.SITEMAP_INDEX_URL, 'https://www.embibe.com/in-en/sitemap_index.xml')
   assert.equal(embibe.PAGE_SITEMAP_URL, 'https://www.embibe.com/in-en/page-sitemap.xml')
-  assert.deepEqual(embibe.DARWINBOX_EMPTY_ROUTE_URLS, [
-    'https://embibe.darwinbox.in/ms/candidate/careers',
-    'https://embibe.darwinbox.in/ms/candidate/careers/jobs',
-    'https://embibe.darwinbox.in/ms/candidate/careers/allJobs',
-  ])
+  assert.equal(embibe.DARWINBOX_HANDOFF_URL, 'https://embibe.darwinbox.in/ms/candidate/careers')
+  assert.equal(embibe.DARWINBOX_ORIGIN, 'https://embibe.darwinbox.in')
+  assert.equal(embibe.DARWINBOX_COMPANY_ID, 'main')
+  assert.equal(embibe.PUBLIC_ALL_JOBS_URL, 'https://embibe.darwinbox.in/ms/candidatev2/main/careers/allJobs')
   assert.equal(embibe.hasRootSiteShellSignal(rootShellHtml), true)
   assert.equal(embibe.hasOfficialMarketingHomepageSignal(marketingHomepageHtml), true)
   assert.equal(embibe.hasOfficialContactPageSignal(contactPageHtml), true)
@@ -177,22 +186,36 @@ test('Embibe scraper helpers stay pinned to the verified first-party join-us pag
   assert.equal(embibe.hasExpectedSitemapIndexSignal(sitemapIndexXml), true)
   assert.equal(embibe.hasExpectedPageSitemapSignal(pageSitemapXml), true)
   assert.deepEqual(embibe.extractCareerLikeUrlsFromPageSitemap(pageSitemapXml), [])
-  assert.equal(embibe.hasEmptyDarwinboxShellSignal(emptyDarwinboxShellHtml), true)
-  assert.equal(embibe.hasPublicJobsSignal(emptyDarwinboxShellHtml), false)
+  assert.equal(embibe.hasPublicJobsSignal(joinUsPageHtml), false)
   assert.equal(embibe.hasPublicJobsSignal(publicJobsHtml), true)
 })
 
-test('Embibe returns [] only while the verified first-party join-us page and Darwinbox handoff remain empty shells', async () => {
+test('Embibe verifies first-party pages and delegates job extraction to the shared Darwinbox scraper', async () => {
   const embibe = await loadEmbibeModule()
   const requestedPages = []
   const requestedJson = []
+  const darwinboxCalls = []
 
-  const jobs = await embibe.createEmbibeScraper().run({
+  const jobs = await embibe.createEmbibeScraper({
+    maxJobs: 5,
+    now: () => '2026-08-02T12:00:00.000Z',
+    darwinboxScraper: {
+      run: async (options) => {
+        darwinboxCalls.push(options)
+        return darwinboxJobs
+      },
+    },
+  }).run({
+    maxPages: 3,
     fetchPage: async (url) => {
       requestedPages.push(url)
 
-      if (url === embibe.ROOT_URL || url === embibe.ROOT_CAREERS_URL) {
+      if (url === embibe.ROOT_URL) {
         return { status: 200, url, html: rootShellHtml }
+      }
+
+      if (url === embibe.ROOT_CAREERS_URL) {
+        return { status: 404, url, html: rootShellHtml }
       }
 
       if (url === embibe.HOMEPAGE_URL) {
@@ -213,10 +236,6 @@ test('Embibe returns [] only while the verified first-party join-us page and Dar
 
       if (url === embibe.PAGE_SITEMAP_URL) {
         return { status: 200, url, html: pageSitemapXml }
-      }
-
-      if (embibe.DARWINBOX_EMPTY_ROUTE_URLS.includes(url)) {
-        return { status: 200, url, html: emptyDarwinboxShellHtml }
       }
 
       throw new Error(`Unexpected Embibe page URL: ${url}`)
@@ -240,13 +259,19 @@ test('Embibe returns [] only while the verified first-party join-us page and Dar
     embibe.JOIN_US_PAGE_URL,
     embibe.SITEMAP_INDEX_URL,
     embibe.PAGE_SITEMAP_URL,
-    ...embibe.DARWINBOX_EMPTY_ROUTE_URLS,
   ])
   assert.deepEqual(requestedJson, [embibe.JOIN_US_API_URL])
-  assert.deepEqual(jobs, [])
+  assert.equal(darwinboxCalls.length, 1)
+  assert.equal(darwinboxCalls[0].maxPages, 3)
+  assert.equal(darwinboxCalls[0].maxJobs, 5)
+  assert.equal(darwinboxCalls[0].fetchListingPage, undefined)
+  assert.deepEqual(jobs, [{
+    ...darwinboxJobs[0],
+    scrapedAt: '2026-08-02T12:00:00.000Z',
+  }])
 })
 
-test('Embibe fails closed when the verified root shell, join-us page, sitemap, or Darwinbox handoff starts exposing public jobs', async () => {
+test('Embibe fails closed when the verified root shell, join-us page, page sitemap, or Darwinbox fetch materially changes', async () => {
   const embibe = await loadEmbibeModule()
 
   await assert.rejects(
@@ -264,9 +289,14 @@ test('Embibe fails closed when the verified root shell, join-us page, sitemap, o
 
   await assert.rejects(
     embibe.createEmbibeScraper().run({
+      darwinboxScraper: { run: async () => [] },
       fetchPage: async (url) => {
-        if (url === embibe.ROOT_URL || url === embibe.ROOT_CAREERS_URL) {
+        if (url === embibe.ROOT_URL) {
           return { status: 200, url, html: rootShellHtml }
+        }
+
+        if (url === embibe.ROOT_CAREERS_URL) {
+          return { status: 404, url, html: rootShellHtml }
         }
 
         if (url === embibe.HOMEPAGE_URL) {
@@ -289,10 +319,16 @@ test('Embibe fails closed when the verified root shell, join-us page, sitemap, o
   )
 
   await assert.rejects(
-    embibe.createEmbibeScraper().run({
+    embibe.createEmbibeScraper({
+      darwinboxScraper: { run: async () => [] },
+    }).run({
       fetchPage: async (url) => {
-        if (url === embibe.ROOT_URL || url === embibe.ROOT_CAREERS_URL) {
+        if (url === embibe.ROOT_URL) {
           return { status: 200, url, html: rootShellHtml }
+        }
+
+        if (url === embibe.ROOT_CAREERS_URL) {
+          return { status: 404, url, html: rootShellHtml }
         }
 
         if (url === embibe.HOMEPAGE_URL) {
@@ -327,10 +363,20 @@ test('Embibe fails closed when the verified root shell, join-us page, sitemap, o
   )
 
   await assert.rejects(
-    embibe.createEmbibeScraper().run({
+    embibe.createEmbibeScraper({
+      darwinboxScraper: {
+        run: async () => {
+          throw new Error('Darwinbox listing fetch failed')
+        },
+      },
+    }).run({
       fetchPage: async (url) => {
-        if (url === embibe.ROOT_URL || url === embibe.ROOT_CAREERS_URL) {
+        if (url === embibe.ROOT_URL) {
           return { status: 200, url, html: rootShellHtml }
+        }
+
+        if (url === embibe.ROOT_CAREERS_URL) {
+          return { status: 404, url, html: rootShellHtml }
         }
 
         if (url === embibe.HOMEPAGE_URL) {
@@ -353,18 +399,10 @@ test('Embibe fails closed when the verified root shell, join-us page, sitemap, o
           return { status: 200, url, html: pageSitemapXml }
         }
 
-        if (url === embibe.DARWINBOX_EMPTY_ROUTE_URLS[0]) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        if (embibe.DARWINBOX_EMPTY_ROUTE_URLS.slice(1).includes(url)) {
-          return { status: 200, url, html: emptyDarwinboxShellHtml }
-        }
-
         throw new Error(`Unexpected Embibe page URL: ${url}`)
       },
       fetchJson: async () => joinUsApiPayload,
     }),
-    /darwinbox shell changed/i,
+    /Darwinbox listing fetch failed/i,
   )
 })

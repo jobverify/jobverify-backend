@@ -10,9 +10,25 @@ const careersPageHtml = `
     <title>Careers - Dedalus Global</title>
   </head>
   <body>
-    <h1>Our Job Offers</h1>
+    <h1>CAREERS</h1>
     <p>Join Dedalus and become part of a pioneering industry leader!</p>
-    <a href="https://dedalus.wd3.myworkdayjobs.com/External">Go to open positions</a>
+    <a href="https://www.dedalus.com/global/en/working-at-dedalus/our-job-offers/">Our Job Offers</a>
+    <a href="https://www.dedalus.com/global/en/careers/why-dedalus/">WHY DEDALUS</a>
+    <a href="https://www.dedalus.com/global/en/careers/career-path/">CAREER PATH</a>
+  </body>
+</html>
+`
+
+const jobOffersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Our Job Offers - Dedalus Global</title>
+  </head>
+  <body>
+    <h1>Our Job Offers</h1>
+    <p>Join the Dedalus adventure</p>
+    <a href="https://dedalus.wd3.myworkdayjobs.com/en-US/External">Go to open positions</a>
   </body>
 </html>
 `
@@ -82,6 +98,37 @@ const filteredIndiaPayload = {
   ],
 }
 
+const noIndiaFacetPayload = {
+  total: 65,
+  jobPostings: [
+    {
+      title: 'Kodierfachkraft',
+      externalPath: '/job/DEU---Bonn/Kodierfachkraft_JR108805',
+      locationsText: '2 Locations',
+      postedOn: 'Posted Today',
+      bulletFields: ['JR108805'],
+    },
+  ],
+  facets: [
+    {
+      facetParameter: 'locationMainGroup',
+      values: [
+        {
+          facetParameter: 'locationCountry',
+          descriptor: 'Location Country',
+          values: [
+            {
+              descriptor: 'Austria',
+              id: 'd004c0d1a6c84511ab048669fcdf9fd7',
+              count: 22,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
 const integrationDetailHtml = `
 <!doctype html>
 <html lang="en-US">
@@ -144,6 +191,18 @@ const solutionArchitectDetailHtml = `
 </html>
 `
 
+const blankIndiaDetailHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title></title>
+    <meta name="title" property="og:title">
+    <meta name="description" property="og:description">
+  </head>
+  <body></body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/dedalus.workday/script.js')
@@ -158,6 +217,7 @@ test('Dedalus helpers stay pinned to the verified first-party careers handoff an
   assert.equal(dedalus.SOURCE, 'dedalus')
   assert.equal(dedalus.COMPANY, 'Dedalus')
   assert.equal(dedalus.CAREERS_URL, 'https://www.dedalus.com/global/en/careers/')
+  assert.equal(dedalus.JOB_OFFERS_URL, 'https://www.dedalus.com/global/en/working-at-dedalus/our-job-offers/')
   assert.equal(
     dedalus.WORKDAY_BOARD_URL,
     'https://dedalus.wd3.myworkdayjobs.com/External',
@@ -166,10 +226,11 @@ test('Dedalus helpers stay pinned to the verified first-party careers handoff an
     dedalus.JOBS_API_URL,
     'https://dedalus.wd3.myworkdayjobs.com/wday/cxs/dedalus/External/jobs',
   )
-  assert.equal(dedalus.VERIFIED_ON, '2026-07-17')
+  assert.equal(dedalus.VERIFIED_ON, '2026-08-04')
   assert.equal(dedalus.hasOfficialCareersSignal(careersPageHtml), true)
+  assert.equal(dedalus.hasOfficialJobOffersPageSignal(jobOffersPageHtml), true)
   assert.equal(
-    dedalus.extractVerifiedWorkdayBoardUrl(careersPageHtml),
+    dedalus.extractVerifiedWorkdayBoardUrl(jobOffersPageHtml),
     'https://dedalus.wd3.myworkdayjobs.com/External',
   )
   assert.equal(dedalus.hasOfficialWorkdayBoardSignal(workdayBoardHtml), true)
@@ -177,6 +238,8 @@ test('Dedalus helpers stay pinned to the verified first-party careers handoff an
     dedalus.extractIndiaCountryFacetId(unfilteredPayload),
     'c4f78be1a8f14da0ab49ce1162348a5e',
   )
+  assert.equal(dedalus.extractIndiaCountryFacetId(noIndiaFacetPayload), null)
+  assert.equal(dedalus.hasVerifiedStaleIndiaDetailShell(blankIndiaDetailHtml), true)
   assert.deepEqual(
     JSON.parse(dedalus.buildUnfilteredJobsRequestBody({ offset: 0 })),
     {
@@ -256,6 +319,10 @@ test('Dedalus run validates the verified Workday handoff and extracts India jobs
         return { status: 200, url, html: careersPageHtml }
       }
 
+      if (url === dedalus.JOB_OFFERS_URL) {
+        return { status: 200, url, html: jobOffersPageHtml }
+      }
+
       if (url === dedalus.WORKDAY_BOARD_URL) {
         return { status: 200, url, html: workdayBoardHtml }
       }
@@ -283,6 +350,7 @@ test('Dedalus run validates the verified Workday handoff and extracts India jobs
 
   assert.deepEqual(requestedPages, [
     dedalus.CAREERS_URL,
+    dedalus.JOB_OFFERS_URL,
     dedalus.WORKDAY_BOARD_URL,
     'https://dedalus.wd3.myworkdayjobs.com/External/job/IND---Chennai/PAS-Integration-Engineer_JR108480',
     'https://dedalus.wd3.myworkdayjobs.com/External/job/IND---Chennai/Solution-Architect_JR108318',
@@ -362,6 +430,39 @@ test('Dedalus run validates the verified Workday handoff and extracts India jobs
   ])
 })
 
+test('Dedalus returns [] when the public Workday board no longer exposes an India facet and the old India detail URLs are blank shells', async () => {
+  const dedalus = await loadModule()
+  const requestedPages = []
+
+  const jobs = await dedalus.createDedalusScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+
+      if (url === dedalus.CAREERS_URL) return { status: 200, url, html: careersPageHtml }
+      if (url === dedalus.JOB_OFFERS_URL) return { status: 200, url, html: jobOffersPageHtml }
+      if (url === dedalus.WORKDAY_BOARD_URL) return { status: 200, url, html: workdayBoardHtml }
+      if (dedalus.VERIFIED_INDIA_JOB_URLS.includes(url)) return { status: 200, url, html: blankIndiaDetailHtml }
+
+      throw new Error(`Unexpected Dedalus page URL: ${url}`)
+    },
+    fetchJson: async (url, body) => {
+      assert.equal(url, dedalus.JOBS_API_URL)
+      assert.deepEqual(JSON.parse(body), JSON.parse(dedalus.buildUnfilteredJobsRequestBody({ offset: 0 })))
+      return noIndiaFacetPayload
+    },
+  })
+
+  assert.deepEqual(requestedPages, [
+    dedalus.CAREERS_URL,
+    dedalus.JOB_OFFERS_URL,
+    dedalus.WORKDAY_BOARD_URL,
+    ...dedalus.VERIFIED_INDIA_JOB_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
 test('Dedalus fails closed when the verified careers handoff, country facet, or India detail pages drift', async () => {
   const dedalus = await loadModule()
 
@@ -383,11 +484,15 @@ test('Dedalus fails closed when the verified careers handoff, country facet, or 
     dedalus.createDedalusScraper().run({
       fetchPage: async (url) => {
         if (url === dedalus.CAREERS_URL) {
+          return { status: 200, url, html: careersPageHtml }
+        }
+
+        if (url === dedalus.JOB_OFFERS_URL) {
           return {
             status: 200,
             url,
-            html: careersPageHtml.replace(
-              'https://dedalus.wd3.myworkdayjobs.com/External',
+            html: jobOffersPageHtml.replace(
+              'https://dedalus.wd3.myworkdayjobs.com/en-US/External',
               'https://example.com/jobs',
             ),
           }
@@ -397,23 +502,23 @@ test('Dedalus fails closed when the verified careers handoff, country facet, or 
       },
       fetchJson: async () => filteredIndiaPayload,
     }),
-    /verified workday handoff changed/i,
+    /verified job offers handoff changed/i,
   )
 
   await assert.rejects(
     dedalus.createDedalusScraper().run({
       fetchPage: async (url) => {
         if (url === dedalus.CAREERS_URL) return { status: 200, url, html: careersPageHtml }
+        if (url === dedalus.JOB_OFFERS_URL) return { status: 200, url, html: jobOffersPageHtml }
         if (url === dedalus.WORKDAY_BOARD_URL) return { status: 200, url, html: workdayBoardHtml }
+        if (dedalus.VERIFIED_INDIA_JOB_URLS.includes(url)) {
+          return { status: 200, url, html: integrationDetailHtml }
+        }
 
         throw new Error(`Unexpected Dedalus page URL: ${url}`)
       },
-      fetchJson: async () => ({
-        total: 109,
-        jobPostings: [],
-        facets: [],
-      }),
+      fetchJson: async () => noIndiaFacetPayload,
     }),
-    /verified india country facet changed/i,
+    /verified India-empty Workday sentinel changed materially/i,
   )
 })

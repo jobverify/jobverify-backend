@@ -51,11 +51,35 @@ const stripHtml = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const extractMetaContent = (html = '', name = '') => {
+  const escapedName = String(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const page = String(html ?? '')
+  const patterns = [
+    new RegExp(
+      `<meta[^>]+property=["']${escapedName}["'][^>]+content=["']([\\s\\S]*?)["'][^>]*>`,
+      'i',
+    ),
+    new RegExp(
+      `<meta[^>]+content=["']([\\s\\S]*?)["'][^>]+property=["']${escapedName}["'][^>]*>`,
+      'i',
+    ),
+  ]
+
+  for (const pattern of patterns) {
+    const match = page.match(pattern)
+    if (match?.[1]) {
+      return normalizeWhitespace(match[1])
+    }
+  }
+
+  return null
+}
+
 const normalizeExperience = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
 
-  const rangeMatch = normalized.match(/\b(\d+)\s*[-–]\s*(\d+)\s*years?\b/i)
+  const rangeMatch = normalized.match(/\b(\d+)\s*[-â€“]\s*(\d+)\s*years?\b/i)
   if (rangeMatch) return `${rangeMatch[1]} - ${rangeMatch[2]} years`
 
   const plusMatch = normalized.match(/\b(\d+)\+\s*years?\b/i)
@@ -258,17 +282,28 @@ export const hasOfficialWorkdayBoardSignal = (page = {}) => {
     && isAcceptedWorkdayBoardUrl(finalUrl)
     && isAcceptedWorkdayBoardCanonicalUrl(canonicalUrl || finalUrl)
     && /PropertyGuru/i.test(html)
-  }
+}
 
 export const hasOfficialJobDetailSignal = (page = {}) => {
   const html = String(page?.html ?? '')
   const text = stripHtml(html) || ''
+  const metaTitle = extractMetaContent(html, 'og:title')
+  const metaDescription = extractMetaContent(html, 'og:description')
 
   return Number(page?.status) === 200
-    && /<title>\s*.+<\/title>/i.test(html)
-    && /<h1[^>]*>.+<\/h1>/i.test(html)
-    && text.includes('Requirements')
-  }
+    && (
+      (
+        /<title>\s*.+<\/title>/i.test(html)
+        && /<h1[^>]*>.+<\/h1>/i.test(html)
+        && text.includes('Requirements')
+      )
+      || (
+        Boolean(metaTitle)
+        && Boolean(metaDescription)
+        && /PropertyGuru/i.test(metaDescription)
+      )
+    )
+}
 
 export const isPropertyGuruIndiaLocationDescriptor = (value) => {
   const normalized = normalizeWhitespace(value) || ''
@@ -326,17 +361,22 @@ export const extractJobsFromPayload = (payload = {}, scrapedAt) => {
 }
 
 export const extractExperienceFromJobDetailPage = (html = '') => {
-  const text = stripHtml(html) || ''
+  const text = extractMetaContent(html, 'og:description') || stripHtml(html) || ''
   const candidate = text.match(
-    /\b(?:\d+\s*[-–]\s*\d+\s*years?|\d+\+\s*years?|\d+\s*years?)\b[^.]{0,140}\b(?:products?|experience)\b/i,
+    /\b(?:\d+\s*[-â€“]\s*\d+\s*years?|\d+\+\s*years?|\d+\s*years?)\b[^.]{0,140}\b(?:products?|experience)\b/i,
   )?.[0]
 
   return normalizeExperience(candidate)
 }
 
+export const extractJobDescriptionFromDetailPage = (html = '') =>
+  extractMetaContent(html, 'og:description') || stripHtml(html) || null
+
 export const enrichJobWithDetailPage = (job, page = {}) => ({
   ...job,
+  jobDescription: extractJobDescriptionFromDetailPage(page.html) || job.jobDescription || null,
   experienceRequired: extractExperienceFromJobDetailPage(page.html) || job.experienceRequired,
+  publicExperienceChecked: true,
 })
 
 export const enrichJobsWithDetailPages = async (jobs, fetchPage = defaultFetchPage) => Promise.all(

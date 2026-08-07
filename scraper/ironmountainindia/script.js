@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { IRON_MOUNTAIN_INDIA_CATALOG } from './catalog.js'
@@ -22,8 +22,6 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const BROWSER_TIMEOUT_MS = 60000
-
 const ACRONYM_MAP = new Map([
   ['ai', 'AI'],
   ['api', 'API'],
@@ -112,10 +110,10 @@ export const hasOfficialAboutPageCareersSignal = (html = '') => {
   const text = (normalizeWhitespace(page) || '').toLowerCase()
   const title = extractTitle(page) || ''
 
-  return /^about us\s*\|\s*iron mountain$/i.test(title)
-    && text.includes('about iron mountain')
-    && /href=["']https:\/\/ironmountain\.jobs\/?["']/i.test(page)
-    && />\s*careers\s*</i.test(page)
+  return /^(?:about us|about iron mountain|discover who we are)\s*\|\s*iron mountain(?:\s+united states)?$/i.test(title)
+    && (text.includes('about us') || text.includes('about iron mountain') || text.includes('discover who we are'))
+    && /\bironmountain\.jobs\b/i.test(page)
+    && /\bcareers\b/i.test(text)
 }
 
 export const hasOfficialJobsBoardSignal = (html = '') => {
@@ -208,28 +206,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const shouldUseBrowserFallback = (error) =>
-  /HTTP (?:403|429)\b/i.test(String(error?.message ?? ''))
-
-const createBrowserTextSession = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
-
-      return page.content()
-    },
-  }
-}
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const createIronMountainIndiaScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({
@@ -241,7 +219,11 @@ export const createIronMountainIndiaScraper = ({ now = () => new Date().toISOStr
 
     const getBrowserSession = async () => {
       if (!browserSession) {
-        browserSession = await createBrowserTextSession()
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          timeoutMs: 60000,
+          settleTimeMs: 4000,
+        })
       }
 
       return browserSession
@@ -249,7 +231,8 @@ export const createIronMountainIndiaScraper = ({ now = () => new Date().toISOStr
 
     const browserTextFetcher = fetchBrowserText || (async (url) => {
       const session = await getBrowserSession()
-      return session.fetchText(url)
+      const page = await session.fetchPage(url)
+      return page.html
     })
 
     const fetchPageText = async (url) => {
@@ -275,7 +258,7 @@ export const createIronMountainIndiaScraper = ({ now = () => new Date().toISOStr
         throw new Error('Iron Mountain India jobs board no longer matches the verified first-party NLX surface')
       }
 
-      const sitemapXml = await fetchText(JOBS_SITEMAP_URL)
+      const sitemapXml = await fetchPageText(JOBS_SITEMAP_URL)
       const entries = extractSitemapEntries(sitemapXml)
       if (entries.length === 0) {
         throw new Error('Iron Mountain India jobs sitemap no longer exposes public job URLs')

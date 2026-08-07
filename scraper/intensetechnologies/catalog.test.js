@@ -30,7 +30,7 @@ test('Intense Technologies catalog metadata captures the verified first-party Ke
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.parser, 'custom-script')
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.companyDomain, 'in10stech.com')
-  assert.equal(INTENSE_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(INTENSE_TECHNOLOGIES_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(INTENSE_TECHNOLOGIES_CATALOG.modulePath, /intensetechnologies[\\/]script\.js$/i)
 })

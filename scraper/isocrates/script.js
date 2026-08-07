@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -25,7 +26,8 @@ export const PROVIDER_METADATA = {
   dryRunFile: 'isocrates/jobs.json',
 }
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -54,24 +56,26 @@ const parseQuotedConfigValue = (block, key) => {
   return normalizeWhitespace(match?.[1] ?? null)
 }
 
+export const extractDirectKekaBoardUrl = (html) =>
+  /https:\/\/isocrates\.keka\.com\/careers\/?/i.test(String(html ?? '')) ? EXPECTED_KEKA_DOMAIN : null
+
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution™\s*<\/title>/i.test(rawHtml)
-    && /Explore Career Opportunities/i.test(normalized)
+  return /<title[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution(?:™|â„¢)\s*<\/title>/i.test(rawHtml)
     && /https:\/\/isocrates\.com\/careers\/?/i.test(rawHtml)
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const hasDirectKekaBoardHandoff = extractDirectKekaBoardUrl(rawHtml) === EXPECTED_KEKA_DOMAIN
+  const hasLegacyKekaEmbed =
+    /window\.khConfig\s*=\s*\{/i.test(rawHtml)
+    && /api\/embedjobs\/js\//i.test(rawHtml)
+    && /khembedjobs/i.test(rawHtml)
 
   return /<title[^>]*>\s*Careers \| iSOCRATES\s*<\/title>/i.test(rawHtml)
-    && /window\.khConfig\s*=\s*\{/i.test(rawHtml)
-    && /api\/embedjobs\/js\//i.test(rawHtml)
-    && /Open positions/i.test(normalized)
-    && /khembedjobs/i.test(rawHtml)
+    && (hasLegacyKekaEmbed || hasDirectKekaBoardHandoff)
 }
 
 export const extractCareerConfig = (html) => {
@@ -193,40 +197,97 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const createIsocratesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('iSOCRATES verified official homepage no longer matches the known public surface')
+  async run({
+    fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
+  } = {}) {
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText,
+      fetchJson,
+      fetchBrowserText,
+      fetchBrowserJson,
+      userAgent: USER_AGENT,
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 12000,
+        ignoreHTTPSErrors: true,
+      },
+    })
+
+    try {
+      const loadVerifiedText = async (url, verifier) => {
+        let pageHtml
+        try {
+          pageHtml = await fetchText(url)
+        } catch {
+          pageHtml = await browserFallback.fetchTextInBrowser(url)
+        }
+
+        if (!verifier(pageHtml)) {
+          pageHtml = await browserFallback.fetchTextInBrowser(url)
+        }
+
+        return pageHtml
+      }
+
+      const homepageHtml = await loadVerifiedText(HOMEPAGE_URL, hasOfficialHomepageSignal)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('iSOCRATES verified official homepage no longer matches the known public surface')
+      }
+
+      const careersHtml = await loadVerifiedText(CAREER_PAGE_URL, hasOfficialCareersPageSignal)
+      if (!hasOfficialCareersPageSignal(careersHtml)) {
+        throw new Error('iSOCRATES verified careers page no longer matches the known public Keka handoff')
+      }
+
+      let careerConfig = extractCareerConfig(careersHtml)
+      if (!careerConfig) {
+        const kekaBoardUrl = extractDirectKekaBoardUrl(careersHtml)
+        if (!kekaBoardUrl) {
+          throw new Error('iSOCRATES careers page no longer exposes the verified Keka configuration')
+        }
+
+        let kekaBoardHtml
+        try {
+          kekaBoardHtml = await fetchText(kekaBoardUrl)
+        } catch {
+          kekaBoardHtml = await browserFallback.fetchTextInBrowser(kekaBoardUrl)
+        }
+
+        if (!extractCareerConfig(kekaBoardHtml)) {
+          kekaBoardHtml = await browserFallback.fetchTextInBrowser(kekaBoardUrl)
+        }
+
+        careerConfig = extractCareerConfig(kekaBoardHtml)
+      }
+
+      if (!careerConfig) {
+        throw new Error('iSOCRATES careers page no longer exposes the verified Keka configuration')
+      }
+
+      if (careerConfig.identifier !== EXPECTED_IDENTIFIER || careerConfig.domain !== EXPECTED_KEKA_DOMAIN) {
+        throw new Error('iSOCRATES verified Keka job surface changed materially')
+      }
+
+      const activeJobsUrl = buildActiveJobsUrl(careerConfig)
+      if (!activeJobsUrl) {
+        throw new Error('Unable to build iSOCRATES active jobs URL')
+      }
+
+      const jobs = extractSearchResults(await browserFallback.fetchJson(activeJobsUrl), careerConfig)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    } finally {
+      await browserFallback.close()
     }
-
-    const careersHtml = await fetchText(CAREER_PAGE_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('iSOCRATES verified careers page no longer matches the known public Keka handoff')
-    }
-
-    const careerConfig = extractCareerConfig(careersHtml)
-    if (!careerConfig) {
-      throw new Error('iSOCRATES careers page no longer exposes the verified Keka configuration')
-    }
-
-    if (careerConfig.identifier !== EXPECTED_IDENTIFIER || careerConfig.domain !== EXPECTED_KEKA_DOMAIN) {
-      throw new Error('iSOCRATES verified Keka job surface changed materially')
-    }
-
-    const activeJobsUrl = buildActiveJobsUrl(careerConfig)
-    if (!activeJobsUrl) {
-      throw new Error('Unable to build iSOCRATES active jobs URL')
-    }
-
-    const jobs = extractSearchResults(await fetchJson(activeJobsUrl), careerConfig)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
   },
 })
 

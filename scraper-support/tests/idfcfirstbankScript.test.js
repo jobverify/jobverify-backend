@@ -46,8 +46,8 @@ const retailBankingHtml = `
   </head>
   <body>
     <main>
-      <h1>Explore jobs in Retail Banking</h1>
-      <p>Join the Retail Banking vertical at IDFC FIRST Bank.</p>
+      <h1><span>Explore jobs in&#xa0;</span><br /><span>Retail Banking</span></h1>
+      <p>Join the Retail Banking vertical at IDFC FIRST Bank and be part of our journey to becoming a world class bank.</p>
       <a href="/in/en/jointalentcommunity">Join us</a>
     </main>
   </body>

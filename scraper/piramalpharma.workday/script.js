@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import PIRAMAL_PHARMA_CATALOG from './catalog.js'
 
@@ -11,6 +13,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PAGE_SIZE = 20
+const DETAIL_FETCH_CONCURRENCY = 4
 
 export const PROVIDER_METADATA = PIRAMAL_PHARMA_CATALOG
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
@@ -275,6 +278,36 @@ export const extractJobsFromPayload = (payload = {}, scrapedAt) => {
   return postings.map((posting) => normalizePosting(posting, scrapedAt))
 }
 
+const enrichJobWithDetail = async (job, fetchPage) => {
+  if (!job?.sourceUrl) return job
+
+  try {
+    const detailPage = await fetchPage(job.sourceUrl)
+    if (Number(detailPage?.status) !== 200) return job
+
+    const detail = await extractJobDetail({
+      provider: 'workday',
+      html: detailPage.html,
+    })
+
+    return {
+      ...job,
+      department: detail.department || job.department,
+      experienceRequired: detail.experienceRequired || job.experienceRequired,
+      minimumQualification: detail.minimumQualification || job.minimumQualification,
+      preferredQualification: detail.preferredQualification || job.preferredQualification,
+      requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+        ? detail.requiredSkills
+        : job.requiredSkills,
+      postingDate: detail.postingDate || job.postingDate,
+      jobDescription: detail.jobDescription || job.jobDescription,
+      requisitionId: detail.requisitionId || job.requisitionId,
+    }
+  } catch {
+    return job
+  }
+}
+
 export const createPiramalPharmaScraper = ({
   now: defaultNow = () => new Date().toISOString(),
   maxPages = Number.POSITIVE_INFINITY,
@@ -348,7 +381,13 @@ export const createPiramalPharmaScraper = ({
       }
     }
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const detailedJobs = await mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => enrichJobWithDetail(job, fetchPage),
+    )
+
+    return maxJobs ? detailedJobs.slice(0, maxJobs) : detailedJobs
   },
 })
 

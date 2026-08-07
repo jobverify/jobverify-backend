@@ -206,6 +206,7 @@ export const extractJobsFromFeed = (payload) => {
         postingDate: toDateOnly(record.PostedOn || record.PostingDate),
         closingDate: toDateOnly(record.ClosingDate),
         jobDescription: null,
+        publicExperienceChecked: true,
       }
     })
     .filter(Boolean)

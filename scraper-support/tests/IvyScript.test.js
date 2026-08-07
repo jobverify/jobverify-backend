@@ -117,3 +117,54 @@ test('ivy can recover with browser-backed shared surface checks when direct requ
   assert.deepEqual(browserPageUrls, ivy.BLOCKED_ROUTE_URLS)
   assert.deepEqual(jobs, [])
 })
+
+test('ivy returns [] when the shared verification surface is fully inaccessible but blocked-route probes stay blocked', async () => {
+  const ivy = await loadModule()
+  const browserTextUrls = []
+  const browserPageUrls = []
+
+  const jobs = await ivy.createIvyScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed | tlsv1 alert internal error')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      throw new Error(`net::ERR_SSL_PROTOCOL_ERROR at ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      browserPageUrls.push(url)
+      return {
+        status: url.startsWith('http://') ? 403 : 403,
+        html: '<html><body>Forbidden</body></html>',
+      }
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [ivy.HOMEPAGE_URL, ivy.CONTACT_URL])
+  assert.deepEqual(browserPageUrls, ivy.BLOCKED_ROUTE_URLS)
+  assert.deepEqual(jobs, [])
+})
+
+test('ivy skips browser fallback when ivy.global is timing out at the transport layer', async () => {
+  const ivy = await loadModule()
+  const browserTextUrls = []
+  const browserPageUrls = []
+
+  const jobs = await ivy.createIvyScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed | Connect Timeout Error (attempted address: ivy.global:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      throw new Error(`Unexpected browser text fallback for ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      browserPageUrls.push(url)
+      throw new Error(`Unexpected browser page fallback for ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [])
+  assert.deepEqual(browserPageUrls, [])
+  assert.deepEqual(jobs, [])
+})

@@ -8,7 +8,7 @@ const OFFICIAL_CAREERS_HTML = `
     <main>
       <h1>Embark on a journey of Endless Possibilities - where your ambition meets our unconventional spirit</h1>
       <p>Invent. Disrupt. Repeat. Join our league of innovators!</p>
-      <a href="https://www.tanla.com/careers/jobs-listing">Explore Jobs</a>
+      <a href="/careers/jobs-listing">Explore Jobs</a>
       <footer>
         <p>Copyright 2026 Tanla. All rights reserved.</p>
       </footer>
@@ -30,7 +30,7 @@ const JOBS_LISTING_HTML = `
         <p>Hyderabad, Telangana IN</p>
         <h5>Department</h5>
         <p>Product & Engineering</p>
-        <a href="https://www.tanla.com/job-info/sr-qa-automation-engineer">Apply</a>
+        <a href="/job-info/sr-qa-automation-engineer">Apply</a>
       </section>
       <section class="job-card">
         <h3>Data Engineer</h3>
@@ -38,7 +38,7 @@ const JOBS_LISTING_HTML = `
         <p>Hyderabad, Telangana IN</p>
         <h5>Department</h5>
         <p>Product & Engineering</p>
-        <a href="https://www.tanla.com/job-info/data-engineer">Apply</a>
+        <a href="/job-info/data-engineer">Apply</a>
       </section>
       <section class="job-card">
         <h3>Data Analyst</h3>
@@ -46,7 +46,7 @@ const JOBS_LISTING_HTML = `
         <p>Hyderabad, Telangana IN</p>
         <h5>Department</h5>
         <p>Product & Engineering</p>
-        <a href="https://www.tanla.com/job-info/data-analyst">Apply</a>
+        <a href="/job-info/data-analyst">Apply</a>
       </section>
       <button>Load More</button>
     </main>
@@ -104,7 +104,7 @@ test('Tanla Platforms helpers stay pinned to the verified first-party careers, l
   assert.equal(tanla.SOURCE, 'tanlaplatforms')
   assert.equal(tanla.COMPANY_NAME, 'Tanla Platforms')
   assert.equal(tanla.OFFICIAL_BRAND_NAME, 'Tanla Platforms Limited')
-  assert.equal(tanla.VERIFIED_AT, '2026-07-17')
+  assert.equal(tanla.VERIFIED_AT, '2026-08-05')
   assert.equal(tanla.HOMEPAGE_URL, 'https://www.tanla.com/')
   assert.equal(tanla.OFFICIAL_CAREERS_URL, 'https://www.tanla.com/careers')
   assert.equal(tanla.OFFICIAL_JOBS_HANDOFF_URL, 'https://www.tanla.com/careers/jobs-listing')
@@ -152,7 +152,7 @@ test('Tanla Platforms run validates the careers handoff, listing page, and detai
 
   const jobs = await tanla.createTanlaPlatformsScraper({
     maxJobs: 1,
-    now: () => '2026-07-17T00:00:00.000Z',
+    now: () => '2026-08-05T00:00:00.000Z',
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === tanla.OFFICIAL_CAREERS_URL) return OFFICIAL_CAREERS_HTML
@@ -172,7 +172,7 @@ test('Tanla Platforms run validates the careers handoff, listing page, and detai
   assert.equal(jobs[0].company, 'Tanla Platforms')
   assert.equal(jobs[0].jobId, 'sr-qa-automation-engineer')
   assert.equal(jobs[0].link, tanla.VERIFIED_SAMPLE_JOB_URL)
-  assert.equal(jobs[0].scrapedAt, '2026-07-17T00:00:00.000Z')
+  assert.equal(jobs[0].scrapedAt, '2026-08-05T00:00:00.000Z')
 })
 
 test('Tanla Platforms fails closed when the verified careers page, listing page, or detail contract drifts materially', async () => {
@@ -214,4 +214,52 @@ test('Tanla Platforms fails closed when the verified careers page, listing page,
     }).run(),
     /verified Tanla detail page/i,
   )
+})
+
+test('Tanla Platforms returns an empty result when the live first-party host times out', async () => {
+  const tanla = await loadModule()
+
+  const jobs = await tanla.createTanlaPlatformsScraper({
+    fetchText: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'UND_ERR_CONNECT_TIMEOUT',
+        message: 'Connect Timeout Error (attempted address: www.tanla.com:443, timeout: 10000ms)',
+      }
+      throw error
+    },
+  }).run()
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Tanla Platforms keeps listing-level jobs when a detail page times out after the verified listing has loaded', async () => {
+  const tanla = await loadModule()
+
+  const jobs = await tanla.createTanlaPlatformsScraper({
+    maxJobs: 1,
+    now: () => '2026-08-05T00:00:00.000Z',
+    fetchText: async (url) => {
+      if (url === tanla.OFFICIAL_CAREERS_URL) return OFFICIAL_CAREERS_HTML
+      if (url === tanla.OFFICIAL_JOBS_HANDOFF_URL) return JOBS_LISTING_HTML
+      if (url === tanla.VERIFIED_SAMPLE_JOB_URL) {
+        const error = new TypeError('fetch failed')
+        error.cause = {
+          code: 'UND_ERR_CONNECT_TIMEOUT',
+          message: 'Connect Timeout Error (attempted address: www.tanla.com:443, timeout: 10000ms)',
+        }
+        throw error
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  }).run()
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Sr QA Automation Engineer')
+  assert.equal(jobs[0].sourceUrl, tanla.VERIFIED_SAMPLE_JOB_URL)
+  assert.equal(jobs[0].applyUrl, tanla.VERIFIED_SAMPLE_JOB_URL)
+  assert.equal(jobs[0].department, 'Product & Engineering')
+  assert.equal(jobs[0].location, 'Hyderabad, Telangana, India')
+  assert.equal(jobs[0].jobDescription, null)
+  assert.deepEqual(jobs[0].requiredSkills, [])
 })

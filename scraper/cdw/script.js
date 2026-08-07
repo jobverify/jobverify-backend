@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CDW_CATALOG } from './catalog.js'
@@ -12,6 +13,7 @@ export const PROVIDER_METADATA = CDW_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const SEARCH_URL = PROVIDER_METADATA.companyCareerPage
+export const INDIA_SEARCH_URL = new URL('/search/jobs/in/country/india', SEARCH_URL).toString()
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -53,13 +55,20 @@ const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
+const HAS_JOB_DETAIL_LINK_PATTERN = /href=["'][^"']*(?:\/jobs\/|\/search\/jobs\/)[^"']+/i
+
 export const hasOfficialSearchResultsSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   const page = String(html ?? '')
   return normalized.includes('Job Search Results')
     && /\bIndia\s*\(\d+\s*jobs?\s*\)/i.test(normalized)
-    && /(jobs-section__item|<article)/i.test(page)
-    && /href=["'][^"']*\/jobs\/[^"']+/i.test(page)
+    && Boolean(
+      extractIndiaSearchUrl(page)
+      || (
+        /(jobs-section__item|<article)/i.test(page)
+        && HAS_JOB_DETAIL_LINK_PATTERN.test(page)
+      )
+    )
 }
 
 const extractLegacyListingCards = (html = '') =>
@@ -98,6 +107,33 @@ export const extractListingCards = (html = '') => {
     : extractCurrentListingCards(html)
 
   return listings.filter((job) => job.title && job.detailUrl && /, India$/i.test(job.location || ''))
+}
+
+export const extractIndiaSearchUrl = (html = '') => {
+  const href = String(html ?? '').match(
+    /<a[^>]+href=["']([^"']*\/search\/jobs\/in\/country\/india[^"']*)["'][^>]*>/i,
+  )?.[1]
+
+  return href ? toAbsoluteUrl(href) : null
+}
+
+export const hasOfficialIndiaResultsSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+
+  return (
+    (normalized.includes('India Careers') || normalized.includes('Job Search Results'))
+    && /\bCountry\s+India\s*\(\d+\s*jobs?\s*\)/i.test(normalized)
+    && /(jobs-section__item|<article)/i.test(page)
+    && HAS_JOB_DETAIL_LINK_PATTERN.test(page)
+  )
+}
+
+const resolveIndiaSearchUrl = (searchHtml = '') => {
+  const explicitIndiaUrl = extractIndiaSearchUrl(searchHtml)
+  if (explicitIndiaUrl) return explicitIndiaUrl
+  if (extractListingCards(searchHtml).length > 0) return SEARCH_URL
+  return INDIA_SEARCH_URL
 }
 
 const extractField = (html = '', label = '') => {
@@ -160,7 +196,16 @@ export const createCdwScraper = ({
         throw new Error('CDW search results page no longer matches the verified first-party surface')
       }
 
-      const listings = extractListingCards(searchHtml)
+      const indiaSearchUrl = resolveIndiaSearchUrl(searchHtml)
+      const indiaSearchHtml = indiaSearchUrl === SEARCH_URL
+        ? searchHtml
+        : await fetchPageText(indiaSearchUrl)
+
+      if (!hasOfficialIndiaResultsSignal(indiaSearchHtml)) {
+        throw new Error('CDW India results page no longer matches the verified first-party jobs surface')
+      }
+
+      const listings = extractListingCards(indiaSearchHtml)
       if (listings.length === 0) {
         throw new Error('CDW search results no longer expose trusted India listings')
       }
@@ -169,21 +214,25 @@ export const createCdwScraper = ({
       for (const listing of listings) {
         const detailHtml = await fetchPageText(listing.detailUrl)
         const detail = extractDetail(detailHtml)
-        if (!/, India$/i.test(detail.location)) continue
+        const location = detail.location || listing.location
+        if (!/, India$/i.test(location || '')) continue
+        const title = detail.title || listing.title
+        const city = normalizeCity(location.split(',')[0]?.trim() || location)
+        const jobId = detail.jobId || toSlug(title)
 
         jobs.push({
-          title: detail.title || listing.title,
+          title,
           company: COMPANY,
-          location: detail.location,
-          city: detail.location.split(',')[0].trim(),
+          location,
+          city,
           country: 'India',
           team: detail.team || null,
           department: detail.focusArea || listing.focusArea || null,
           focusArea: detail.focusArea || listing.focusArea || null,
           remoteType: detail.remoteType || null,
           employmentType: null,
-          jobId: detail.jobId || toSlug(detail.title || listing.title),
-          requisitionId: detail.jobId || toSlug(detail.title || listing.title),
+          jobId,
+          requisitionId: jobId,
           datePosted: detail.datePosted || null,
           sourceUrl: listing.detailUrl,
           applyUrl: listing.detailUrl,

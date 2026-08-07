@@ -124,6 +124,7 @@ test('extractSearchResults filters ASSA ABLOY openings to India jobs and maps sh
     postingDate: '2026-06-29T07:58:08Z',
     closingDate: '2026-08-31T20:29:59Z',
     jobDescription: 'Category: IT. Function: Telecom & Internet. Office presence: Hybrid. Locations: Chennai, India.',
+    publicExperienceChecked: true,
   })
   assert.deepEqual(jobs[1], {
     title: 'Manager Specification (Delhi)',
@@ -144,6 +145,7 @@ test('extractSearchResults filters ASSA ABLOY openings to India jobs and maps sh
     postingDate: '2026-05-29T16:58:16Z',
     closingDate: '2026-08-31T20:29:59Z',
     jobDescription: 'Category: Sales. Function: Marketing & Product Management. Office presence: Hybrid. Locations: Bangalore, Gurgaon, India.',
+    publicExperienceChecked: true,
   })
 })
 
@@ -163,6 +165,7 @@ test('run fetches ASSA ABLOY jobs from the official job openings API and decorat
   assert.deepEqual(requestedUrls, [JOBS_API_URL])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'assaabloy')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, jobs[0].scrapedAt)
 })

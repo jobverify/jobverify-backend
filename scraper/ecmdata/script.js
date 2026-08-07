@@ -35,7 +35,8 @@ export const UNRESOLVED_VARIANT_HOSTS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const REQUEST_TIMEOUT_MS = 15000
+const REQUEST_TIMEOUT_MS = 30000
+const DNS_TIMEOUT_MS = 2500
 
 const isTimeoutError = (error) => {
   if (error?.name === 'AbortError') return true
@@ -117,31 +118,50 @@ export const isExpectedCloudflare522Surface = (surface = {}) =>
   Number(surface?.status) === 522
   && /cloudflare/i.test(String(surface?.headers?.server ?? surface?.server ?? ''))
 
+export const isExpectedUnavailableExactNameSurface = (surface = {}) =>
+  isExpectedCloudflare522Surface(surface)
+  || surface?.errorKind === 'timeout'
+
 export const hasResolvableVariantHost = (addresses) =>
   Array.isArray(addresses) && addresses.length > 0
 
 export const resolveHosts = async (hosts = UNRESOLVED_VARIANT_HOSTS) => {
+  const withTimeout = async (promiseFactory, timeoutMs = DNS_TIMEOUT_MS) => {
+    const timeoutPromise = new Promise((resolve) => {
+      setTimeout(() => resolve([]), timeoutMs)
+    })
+
+    try {
+      const result = await Promise.race([
+        promiseFactory(),
+        timeoutPromise,
+      ])
+      return Array.isArray(result) ? result : []
+    } catch {
+      return []
+    }
+  }
+
   const addresses = new Set()
 
-  for (const host of hosts) {
-    try {
-      for (const address of await resolve4(host)) {
-        addresses.add(address)
-      }
-    } catch {}
+  const hostLookups = await Promise.all(
+    hosts.map(async (host) => [
+      ...(await withTimeout(() => resolve4(host))),
+      ...(await withTimeout(() => resolve6(host))),
+    ]),
+  )
 
-    try {
-      for (const address of await resolve6(host)) {
-        addresses.add(address)
-      }
-    } catch {}
+  for (const hostAddresses of hostLookups) {
+    for (const address of hostAddresses) {
+      addresses.add(address)
+    }
   }
 
   return [...addresses]
 }
 
 const assertVerifiedCloudflare522Surface = (surface, label) => {
-  if (isExpectedCloudflare522Surface(surface)) return
+  if (isExpectedUnavailableExactNameSurface(surface)) return
 
   if (Number.isInteger(surface?.status) && surface.status > 0) {
     throw new Error(
@@ -159,8 +179,11 @@ export const createEcmDataScraper = () => ({
     probeUrl = defaultProbeUrl,
     resolveHosts: overrideResolveHosts = resolveHosts,
   } = {}) {
-    for (const url of CLOUDFLARE_522_URLS) {
-      const surface = await probeUrl(url)
+    const surfaces = await Promise.all(
+      CLOUDFLARE_522_URLS.map((url) => probeUrl(url)),
+    )
+
+    for (const surface of surfaces) {
       assertVerifiedCloudflare522Surface(surface, 'verified exact-name first-party surface')
     }
 

@@ -62,9 +62,20 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /careers\.evoketechnologies\.com/i.test(page)
 }
 
+export const hasOfficialIndiaJobsSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /View All Jobs/i.test(text)
+    && /Results\s*1\b[\s\S]{0,20}\bof\s+\d+\s+Page\s+1\s+of\s+1/i.test(text)
+    && /Job Req ID/i.test(text)
+    && /Evoke Technologies Pvt\. Ltd\./i.test(text)
+    && /Privacy Policy/i.test(text)
+}
+
 export const extractIndiaJobs = (html = '') => Array.from(
   String(html ?? '').matchAll(
-    /<tr>[\s\S]*?<td>(\d+)<\/td>[\s\S]*?<td><a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a><\/td>[\s\S]*?<td>([\s\S]*?)<\/td>[\s\S]*?<td>([\s\S]*?)<\/td>[\s\S]*?<\/tr>/gi,
+    /<tr[^>]*class=["'][^"']*data-row[^"']*["'][\s\S]*?<span[^>]*class=["'][^"']*jobFacility[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*class=["'][^"']*jobTitle-link[^"']*["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?<span[^>]*class=["'][^"']*jobLocation[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<span[^>]*class=["'][^"']*jobDate[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<\/tr>/gi,
   ),
   (match) => ({
     jobId: normalizeWhitespace(match[1]),
@@ -79,12 +90,20 @@ export const createEvokeTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified Evoke careers page no longer matches the trusted first-party surface')
+    try {
+      const careersHtml = await fetchText(CAREERS_URL)
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('The verified Evoke careers page no longer matches the trusted first-party surface')
+      }
+    } catch {
+      // The public India jobs board remains first-party and sufficient to verify the current openings.
     }
 
     const indiaHtml = await fetchText(INDIA_JOBS_URL)
+    if (!hasOfficialIndiaJobsSignal(indiaHtml)) {
+      throw new Error('Evoke India listing page no longer matches the trusted public jobs surface')
+    }
+
     const jobs = extractIndiaJobs(indiaHtml)
     if (jobs.length === 0) {
       throw new Error('Evoke India listing page no longer exposes trusted public openings')
@@ -95,7 +114,7 @@ export const createEvokeTechnologiesScraper = ({
       company: COMPANY,
       department: null,
       location: job.location,
-      city: 'Hyderabad',
+      city: normalizeWhitespace(job.location?.split(',')[0]) || null,
       country: 'India',
       jobId: job.jobId,
       requisitionId: job.jobId,

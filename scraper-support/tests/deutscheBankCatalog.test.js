@@ -54,10 +54,10 @@ test('Deutsche Bank local catalog captures the verified first-party careers surf
   )
   assert.equal(DEUTSCHE_BANK_CATALOG.verifiedIndiaCountryId, 81)
   assert.equal(DEUTSCHE_BANK_CATALOG.verifiedIndiaCountryLabel, 'India')
-  assert.equal(DEUTSCHE_BANK_CATALOG.verifiedIndiaSampleJobId, '65090')
+  assert.equal(DEUTSCHE_BANK_CATALOG.verifiedIndiaSampleJobId, '74791')
   assert.equal(
     DEUTSCHE_BANK_CATALOG.verifiedIndiaSampleApplyUrl,
-    'https://db.wd3.myworkdayjobs.com/DBWebsite/job/Mumbai-Nirlon-Know-Pk-B4-B5/Apprentice---Non-Technology_R0357981/apply',
+    'https://db.wd3.myworkdayjobs.com/DBWebsite/job/Mumbai-Capital/Salesperson---VP_R0443973/apply',
   )
   assert.equal(DEUTSCHE_BANK_CATALOG.atsPlatform, 'first-party-beesite-search-api')
   assert.equal(DEUTSCHE_BANK_CATALOG.countryFilter, 'India')
@@ -71,7 +71,7 @@ test('Deutsche Bank local catalog captures the verified first-party careers surf
   )
   assert.equal(DEUTSCHE_BANK_CATALOG.parser, 'custom-script')
   assert.equal(DEUTSCHE_BANK_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DEUTSCHE_BANK_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(DEUTSCHE_BANK_CATALOG.verifiedOn, '2026-08-01')
   assert.equal(DEUTSCHE_BANK_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/careers\.db\.com\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/careers\.db\.com\/professionals\/search-roles\//i)
@@ -85,9 +85,10 @@ test('Deutsche Bank local catalog captures the verified first-party careers surf
   )
   assert.match(
     VERIFIED_SURFACE_SUMMARY,
-    /https:\/\/api-deutschebank\.beesite\.de\/jobhtml\/65090\.json/i,
+    /https:\/\/api-deutschebank\.beesite\.de\/jobhtml\/74791\.json/i,
   )
-  assert.match(VERIFIED_SURFACE_SUMMARY, /\b272 India roles\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /\b234 India roles\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/i)
 })
 
 test('Deutsche Bank local catalog hydrates into coverage without needing an alias entry', async () => {

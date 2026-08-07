@@ -340,3 +340,21 @@ test('Workcohol fails closed when the homepage, careers page, about page, contac
     /detail/i,
   )
 })
+
+test('Workcohol returns [] while the verified first-party host is TLS-blocked', async () => {
+  const workcohol = await loadModule()
+  assert.ok(workcohol, 'Workcohol scraper module should load')
+
+  const blockedError = new Error('fetch failed')
+  blockedError.cause = new Error('certificate has expired')
+
+  assert.equal(workcohol.hasBlockedTlsFailure(blockedError), true)
+
+  const jobs = await workcohol.createWorkcoholScraper().run({
+    fetchText: async () => {
+      throw blockedError
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

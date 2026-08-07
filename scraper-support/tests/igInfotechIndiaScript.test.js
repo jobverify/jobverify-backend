@@ -59,6 +59,24 @@ const workdayListingHtml = `
 </html>
 `
 
+const liveWorkdayShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="canonical" href="https://ig.wd103.myworkdayjobs.com/EXT_IG" />
+    <meta
+      property="og:description"
+      content="Looking for a career at a company that will support you, challenge you and help you grow? IG Group can provide that."
+    />
+    <script src="/assets/cx-jobs.min.js"></script>
+    <script>
+      window.workday = { tenant: "ig", siteId: "EXT_IG" }
+    </script>
+  </head>
+  <body></body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/iginfotechindia.workday/script.js')
@@ -76,10 +94,18 @@ test('IG Infotech India helpers stay pinned to the verified careers page, Bengal
   assert.equal(ig.CONTACT_PAGE_URL, 'https://www.iggroup.com/contact-page')
   assert.equal(ig.WORKDAY_LISTING_URL, 'https://ig.wd103.myworkdayjobs.com/EXT_IG')
   assert.equal(ig.WORKDAY_TENANT_HOST, 'https://ig.wd103.myworkdayjobs.com/')
-  assert.equal(ig.VERIFIED_ON, '2026-07-17')
+  assert.equal(ig.VERIFIED_ON, '2026-08-01')
   assert.equal(ig.hasOfficialCareersSignal(careersPageHtml), true)
   assert.equal(ig.hasOfficialBengaluruEntitySignal(contactPageHtml), true)
   assert.equal(ig.hasOfficialWorkdayListingSignal(workdayListingHtml), true)
+  assert.equal(ig.hasOfficialWorkdayListingSignal(liveWorkdayShellHtml), true)
+  assert.deepEqual(ig.buildScraperOptions(), {
+    company: 'IG Infotech India',
+    baseUrl: 'https://ig.wd103.myworkdayjobs.com/EXT_IG',
+    locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+    source: 'iginfotechindia',
+    scraperDir: ig.buildScraperOptions().scraperDir,
+  })
   assert.deepEqual(
     ig.extractIndiaJobsFromWorkdayHtml(workdayListingHtml, {
       scrapedAt: FIXED_SCRAPED_AT,
@@ -167,12 +193,30 @@ test('IG Infotech India run validates the parent careers page, local entity page
 
   const jobs = await ig.createIgInfotechIndiaScraper({
     now: () => FIXED_SCRAPED_AT,
+    workdayRunner: async (options) => [
+      {
+        title: 'Lead Cyber Defence Analyst',
+        location: 'Bangalore, India',
+        link: 'https://ig.wd103.myworkdayjobs.com/EXT_IG/job/Bangalore-India/Lead-Cyber-Defence-Analyst_R_16420',
+        source: 'iginfotechindia',
+        scrapedAt: FIXED_SCRAPED_AT,
+        runnerOptions: options,
+      },
+      {
+        title: 'Content Producer',
+        location: 'Bangalore, India',
+        link: 'https://ig.wd103.myworkdayjobs.com/EXT_IG/job/Bangalore-India/Content-Producer_R_16562',
+        source: 'iginfotechindia',
+        scrapedAt: FIXED_SCRAPED_AT,
+        runnerOptions: options,
+      },
+    ],
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === ig.CAREERS_URL) return careersPageHtml
       if (url === ig.CONTACT_PAGE_URL) return contactPageHtml
-      if (url === ig.WORKDAY_LISTING_URL) return workdayListingHtml
+      if (url === ig.WORKDAY_LISTING_URL) return liveWorkdayShellHtml
       throw new Error(`Unexpected IG URL: ${url}`)
     },
   })
@@ -182,13 +226,33 @@ test('IG Infotech India run validates the parent careers page, local entity page
     ig.CONTACT_PAGE_URL,
     ig.WORKDAY_LISTING_URL,
   ])
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 2)
   assert.deepEqual(
-    jobs.map((job) => [job.title, job.location, job.companyCareerPage, job.companyDomain, job.atsPlatform]),
+    jobs.map((job) => [
+      job.title,
+      job.location,
+      job.companyCareerPage,
+      job.companyDomain,
+      job.atsPlatform,
+      job.runnerOptions,
+    ]),
     [
-      ['Head Of Workforce Management', 'Bangalore, India', 'https://www.iggroup.com/about-us/careers', 'iggroup.com', 'workday'],
-      ['Content Producer', 'Bangalore, India', 'https://www.iggroup.com/about-us/careers', 'iggroup.com', 'workday'],
-      ['Web & SEO Copywriter', 'Bangalore, India', 'https://www.iggroup.com/about-us/careers', 'iggroup.com', 'workday'],
+      [
+        'Lead Cyber Defence Analyst',
+        'Bangalore, India',
+        'https://www.iggroup.com/about-us/careers',
+        'iggroup.com',
+        'workday',
+        ig.buildScraperOptions(),
+      ],
+      [
+        'Content Producer',
+        'Bangalore, India',
+        'https://www.iggroup.com/about-us/careers',
+        'iggroup.com',
+        'workday',
+        ig.buildScraperOptions(),
+      ],
     ],
   )
 })

@@ -84,6 +84,7 @@ test('createDarwinboxScraper supports customer-hosted Darwinbox origins without 
       postingDate: '28-Jul-2025',
       closingDate: null,
       jobDescription: '<p>Back end developer with some experience in front end development</p>',
+      publicExperienceChecked: false,
     },
   ])
 })
@@ -111,8 +112,30 @@ test('extractSearchResults keeps India jobs from the Darwinbox listings payload 
     postingDate: '23-Jun-2026',
     closingDate: null,
     jobDescription: jobs[0].jobDescription,
+    publicExperienceChecked: false,
   })
   assert.match(jobs[0].jobDescription, /<p/i)
+})
+
+test('extractSearchResults marks Darwinbox API descriptions as checked when experience is absent', () => {
+  const jobs = happiestMindsHostedScraper.extractSearchResults({
+    data: [
+      {
+        id: 'a68875230db751',
+        title: 'Module Lead',
+        department_name: 'MICROSOFT',
+        locations: 'Pune, Maharashtra\r, India',
+        country: 'India',
+        emp_type_name: 'PERMANENT',
+        experience: '',
+        posted_on: '28-Jul-2025',
+        jd: '<p>Back end developer with some experience in front end development</p>',
+      },
+    ],
+  })
+
+  assert.equal(jobs[0].experienceRequired, null)
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run paginates Darwinbox listing pages through an injected page fetcher and filters non-India jobs', async () => {

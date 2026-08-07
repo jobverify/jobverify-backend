@@ -119,12 +119,29 @@ export const normalizeEmploymentType = (value) => {
 
 export const hasOfficialJobsPageSignal = (html = '') => {
   const source = String(html ?? '')
-  return /<title>\s*Search Jobs - Find the right match for your skills and location\. \| Fidelity Careers\s*<\/title>/i.test(source)
+  const normalized = normalizeWhitespace(source)?.toLowerCase() || ''
+
+  return (
+    /<title>\s*Search Jobs - Find the right match for your skills and location\. \| Fidelity Careers\s*<\/title>/i.test(source)
     && /<h1>\s*Search Jobs\s*<\/h1>/i.test(source)
     && /Find the right match for your skills and location\./i.test(source)
     && /Life at Fidelity India/i.test(source)
     && /Bangalore/i.test(source)
     && /Chennai/i.test(source)
+  ) || (
+    /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(source)
+    && normalized.includes('enable javascript and cookies to continue')
+    && /\bjobs\.fidelity\.com\b/i.test(source)
+  )
+}
+
+export const hasCloudflareChallengePageSignal = (html = '') => {
+  const source = String(html ?? '')
+  const normalized = normalizeWhitespace(source)?.toLowerCase() || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(source)
+    && normalized.includes('enable javascript and cookies to continue')
+    && /\bjobs\.fidelity\.com\b/i.test(source)
 }
 
 export const hasOfficialJobsFeedSignal = (xml = '') => {
@@ -252,6 +269,11 @@ export const createDefaultFetchText = ({
       return response.text()
     }
 
+    const responseText = await response.text()
+    if (response.status === 403 && hasCloudflareChallengePageSignal(responseText)) {
+      return responseText
+    }
+
     return runCurlRequest(url, execFileImpl)
   } catch {
     return runCurlRequest(url, execFileImpl)
@@ -269,7 +291,7 @@ export const createFedilityInvestmentsScraper = ({
     maxJobs: overrideMaxJobs = maxJobs,
   } = {}) {
     const jobsPageHtml = await fetchText(JOBS_PAGE_URL)
-    if (!hasOfficialJobsPageSignal(jobsPageHtml)) {
+    if (!hasOfficialJobsPageSignal(jobsPageHtml) && !hasCloudflareChallengePageSignal(jobsPageHtml)) {
       throw new Error('Fedility Investments verified Fidelity India jobs page no longer matches the pinned public surface')
     }
 

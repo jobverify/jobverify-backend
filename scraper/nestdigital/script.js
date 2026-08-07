@@ -73,8 +73,21 @@ const deriveCity = (location) => {
 }
 
 const getLatestJobsSection = (html) => String(html ?? '').match(
-  /<h2>\s*Latest Jobs\s*<\/h2>([\s\S]*?)(?=<h2>|<\/main>)/i,
+  /<h2\b[^>]*>\s*Latest Jobs\s*<\/h2>([\s\S]*?)(?=<h2\b[^>]*>|<\/main>|$)/i,
 )?.[1] || null
+
+const extractCardTitle = (cardHtml) => stripTags(
+  cardHtml.match(/<div[^>]+class=['"][^'"]*\btitle\b[^'"]*['"][^>]*>([\s\S]*?)<\/div>/i)?.[1]
+    || cardHtml.replace(/<span[\s\S]*?<\/span>/gi, ' '),
+)
+
+const extractCardLocation = (cardHtml, metadata) => stripTags(
+  cardHtml.match(/<div[^>]+class=['"][^'"]*\bjobLocation\b[^'"]*['"][^>]*>([\s\S]*?)<\/div>/i)?.[1],
+) || metadata[0] || null
+
+const extractCardEmploymentType = (cardHtml, metadata) => stripTags(
+  cardHtml.match(/<div[^>]+class=['"][^'"]*\bjobLocation\b[^'"]*['"][^>]*>[\s\S]*?<\/div>\s*<div[^>]*>([\s\S]*?)<\/div>/i)?.[1],
+) || metadata[1] || null
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
@@ -103,8 +116,9 @@ export const extractLatestJobs = (html) => {
       const metadata = [...cardHtml.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
         .map((item) => stripTags(item[1]))
         .filter(Boolean)
-      const title = stripTags(cardHtml.replace(/<span[\s\S]*?<\/span>/gi, ' '))
-      const [rawLocation, employmentType] = metadata
+      const title = extractCardTitle(cardHtml)
+      const rawLocation = extractCardLocation(cardHtml, metadata)
+      const employmentType = extractCardEmploymentType(cardHtml, metadata)
       const location = normalizeLocation(rawLocation)
 
       if (!title || !location || !employmentType || !sourceUrl) return null

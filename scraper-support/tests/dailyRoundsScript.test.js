@@ -263,6 +263,7 @@ test('Daily Rounds run validates the first-party flow, sends same-origin API con
       '- 1-2 years of hands-on experience in Python or Go',
       '- Experience building and securing REST APIs',
     ].join('\n'),
+    publicExperienceChecked: true,
     source: 'dailyrounds',
     companyCareerPage: 'https://dailyrounds.org/careers',
     companyDomain: 'dailyrounds.org',
@@ -301,6 +302,7 @@ test('Daily Rounds run validates the first-party flow, sends same-origin API con
       '- 4-6 years of hands-on performance marketing experience of direct B2C',
       '- Strong expertise in Google Ads and Meta Ads platforms',
     ].join('\n'),
+    publicExperienceChecked: true,
     source: 'dailyrounds',
     companyCareerPage: 'https://dailyrounds.org/careers',
     companyDomain: 'dailyrounds.org',
@@ -308,6 +310,8 @@ test('Daily Rounds run validates the first-party flow, sends same-origin API con
     link: 'https://short.mynexthire.io/1156-21z3LHgA3o5Q3Boc7AKS',
     scrapedAt: '2026-07-14T10:00:00.000Z',
   })
+
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('Daily Rounds fails closed when the verified homepage, careers shell, or every role detail payload drifts', async () => {

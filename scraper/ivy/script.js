@@ -1,5 +1,10 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'ivy'
 export const COMPANY = 'ivy'
@@ -43,6 +48,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: 'ivy',
   timeoutMs: 15000,
 })
@@ -60,11 +66,15 @@ const createDirectProbeUrl = (fetchText) => async (url) => {
 }
 
 const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|ssl protocol error|err_ssl_protocol_error|tlsv1 alert internal error|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
+const isTransportReachabilityError = (errorText) =>
+  /timed out|timeout|und_err_connect_timeout|err_connection_timed_out|could not connect|enotfound|eai_again|getaddrinfo/i
+    .test(String(errorText ?? ''))
+
 const isExpectedBlockedError = (errorText) =>
-  /403|429|forbidden|ssl\/tls secure channel|timed out|timeout|econnreset|unable to|fetch failed|could not connect|und_err_connect_timeout/i
+  /403|429|forbidden|ssl\/tls secure channel|ssl protocol error|err_ssl_protocol_error|tlsv1 alert internal error|timed out|timeout|econnreset|unable to|fetch failed|could not connect|und_err_connect_timeout/i
     .test(String(errorText ?? ''))
 
 export const createIvyScraper = () => ({
@@ -94,22 +104,41 @@ export const createIvyScraper = () => ({
       return session.fetchPage(url)
     })
 
-    const fetchPageText = async (url) => {
+    const fetchSharedSurfacePage = async (url) => {
       try {
-        return await fetchText(url)
+        return { ok: true, text: await fetchText(url) }
       } catch (error) {
+        const errorText = error instanceof Error ? error.message : String(error)
         if (!isBrowserFallbackError(error)) {
           throw error
         }
 
-        return browserTextFetcher(url)
+        if (isTransportReachabilityError(errorText)) {
+          return { ok: false, error: errorText }
+        }
+      }
+
+      try {
+        return { ok: true, text: await browserTextFetcher(url) }
+      } catch (error) {
+        const errorText = error instanceof Error ? error.message : String(error)
+        if (!isExpectedBlockedError(errorText)) {
+          throw error
+        }
+
+        return { ok: false, error: errorText }
       }
     }
 
     const directProbeUrl = probeUrl || createDirectProbeUrl(fetchText)
     const probeRoute = async (url) => {
       const probe = await directProbeUrl(url)
-      if (probe.ok || probeUrl || !isBrowserFallbackError(probe.error)) {
+      if (
+        probe.ok
+        || probeUrl
+        || !isBrowserFallbackError(probe.error)
+        || isTransportReachabilityError(probe.error)
+      ) {
         return probe
       }
 
@@ -130,15 +159,19 @@ export const createIvyScraper = () => ({
     }
 
     try {
-      const homepageHtml = await fetchPageText(HOMEPAGE_URL)
-      const contactHtml = await fetchPageText(CONTACT_URL)
+      const homepage = await fetchSharedSurfacePage(HOMEPAGE_URL)
+      const contact = await fetchSharedSurfacePage(CONTACT_URL)
 
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
+      if (homepage.ok && !hasOfficialHomepageSignal(homepage.text)) {
         throw new Error('ivy official homepage no longer matches the verified Ivy Comptech surface')
       }
 
-      if (!hasOfficialContactSignal(contactHtml)) {
+      if (contact.ok && !hasOfficialContactSignal(contact.text)) {
         throw new Error('ivy official contact page no longer matches the verified Ivy Comptech legal-entity surface')
+      }
+
+      if (homepage.ok !== contact.ok) {
+        throw new Error('ivy shared first-party surface is only partially reachable and needs review')
       }
 
       for (const routeUrl of BLOCKED_ROUTE_URLS) {
@@ -155,6 +188,10 @@ export const createIvyScraper = () => ({
         }
       }
 
+      if (!homepage.ok && !contact.ok) {
+        return []
+      }
+
       return []
     } finally {
       if (browserSession) {
@@ -165,3 +202,15 @@ export const createIvyScraper = () => ({
 })
 
 export const run = async (options = {}) => createIvyScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

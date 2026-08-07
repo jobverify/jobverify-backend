@@ -1,0 +1,137 @@
+[
+  {
+    "title": "Senior Golang Cloud Developer",
+    "company": "Truminds Software Systems",
+    "department": "Engineering",
+    "location": "Bangalore, Karnataka, India",
+    "city": "Bangalore",
+    "country": "India",
+    "jobId": "d461b8dc-6958-431b-b763-b8157c4b7c5b",
+    "requisitionId": "TSSPL-69222",
+    "sourceUrl": "https://truminds.turbohire.co/job/publicjobs/jWSZS1q0kUQsaifXSgQaK9zN1Gs_xGjwvQuYh0TElhduzlhPBwDT_wDTaJpxvm52",
+    "applyUrl": "https://truminds.turbohire.co/job/publicjobs/jWSZS1q0kUQsaifXSgQaK9zN1Gs_xGjwvQuYh0TElhduzlhPBwDT_wDTaJpxvm52",
+    "employmentType": "Full-time",
+    "experienceRequired": "6-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Golang",
+      "Microservices",
+      "AWS cloud services",
+      "AWS",
+      "Dockers",
+      "REST API",
+      "FastAPI",
+      "kafka",
+      "NoSQL",
+      "MQTT"
+    ],
+    "postingDate": "2026-07-17T09:42:20.237Z",
+    "closingDate": "2026-08-17T18:29:00.441Z",
+    "jobDescription": "Job Responsibilities Design and implement scalable, secure, and reliable cloud architectures on AWS, adhering to best practices and industry standards. Collaborate with cross-functional teams to understand product requirements and translate them into technical solutions. Lead the development of cloud-native applications using Golang and other relevant technologies. Implement and maintain event-driven system architectures, leveraging tools li",
+    "source": "trumindssoftwaresystems",
+    "link": "https://truminds.turbohire.co/job/publicjobs/jWSZS1q0kUQsaifXSgQaK9zN1Gs_xGjwvQuYh0TElhduzlhPBwDT_wDTaJpxvm52",
+    "scrapedAt": "2026-08-01T15:36:23.054Z",
+    "companyCareerPage": "https://www.truminds.com/en/careers",
+    "companyDomain": "truminds.com",
+    "atsPlatform": "turbohire",
+    "originalTitle": "Senior Golang Cloud Developer",
+    "normalizedTitle": "Senior Golang Cloud Developer",
+    "jobCategory": "Senior Golang Cloud Developer",
+    "engineeringDomain": "Cloud",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-07-17T09:42:20.237Z",
+    "scrapedTimestamp": "2026-08-01T15:36:23.054Z",
+    "skillIds": [
+      "go",
+      "aws",
+      "fastapi",
+      "kafka"
+    ],
+    "requiredSkillIds": [
+      "go",
+      "aws",
+      "fastapi",
+      "kafka"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "go",
+        "canonicalName": "Go",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Golang"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "fastapi",
+        "canonicalName": "FastAPI",
+        "category": "Frameworks & Libraries",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "FastAPI"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "kafka"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "rawText": "6-8 years",
+      "minimumYears": 6,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6-8 years",
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6,
+      7,
+      8
+    ],
+    "seniority": "Senior",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:36:23.056Z"
+  }
+]

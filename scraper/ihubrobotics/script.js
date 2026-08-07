@@ -153,6 +153,7 @@ export const extractJobs = (payload) => (Array.isArray(payload) ? payload : [])
       postingDate: normalizeWhitespace(record?.created_at),
       closingDate: null,
       jobDescription: normalizeWhitespace(record?.description),
+      publicExperienceChecked: true,
       remoteStatus: /remote/i.test(location) ? 'Remote' : 'On-site',
     }
   })

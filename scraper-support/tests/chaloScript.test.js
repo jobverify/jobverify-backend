@@ -79,6 +79,7 @@ test('extractPublicListings maps first-party Chalo job cards into the shared job
     postingDate: null,
     closingDate: null,
     jobDescription: 'Build reliable transport products for riders and fleets.',
+    publicExperienceChecked: true,
   })
 })
 
@@ -95,5 +96,6 @@ test('run decorates Chalo jobs with shared runner fields', async () => {
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'chalo')
   assert.equal(jobs[0].link, 'https://chalo.com/jobs')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import DREMIO_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -59,14 +59,36 @@ const stripTags = (value) =>
       .replace(/<[^>]+>/g, ' '),
   )
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: createTimeoutSignal(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   method: options.method,
@@ -132,10 +154,28 @@ export const hasOfficialJobPostingsSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*Job Postings \| Career Opportunities \| Dremio\s*<\/title>/i.test(page)
-    && /<script[^>]+src=["']https:\/\/boards\.greenhouse\.io\/embed\/job_board\/js\?for=dremio["']/i.test(page)
-    && /Job Postings/i.test(page)
-    && /gh_jid=/i.test(page)
-  }
+    && (
+      (
+        /<script[^>]+src=["']https:\/\/boards\.greenhouse\.io\/embed\/job_board\/js\?for=dremio["']/i.test(page)
+        && /gh_jid=/i.test(page)
+      )
+      || (
+        /Dremio is now part of SAP/i.test(page)
+        && /Working at Dremio/i.test(page)
+        && /Open Roles/i.test(page)
+      )
+    )
+}
+
+export const hasCloudflareBlockSignal = (page = {}) => {
+  const html = String(page?.html ?? '')
+
+  return Number(page?.status) === 403
+    && /<title>\s*Attention Required!\s*\|\s*Cloudflare\s*<\/title>/i.test(html)
+    && /Please enable cookies\./i.test(html)
+    && /Sorry,\s*you have been blocked/i.test(html)
+    && /unable to access/i.test(html)
+}
 
 export const extractJobsFromGreenhousePayload = (
   payload,
@@ -196,17 +236,17 @@ export const createDremioScraper = ({
   maxJobs = null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersLandingHtml = await fetchText(CAREERS_LANDING_URL)
-    if (!hasOfficialCareersLandingSignal(careersLandingHtml)) {
+    const careersLandingPage = await fetchPage(CAREERS_LANDING_URL)
+    if (!hasOfficialCareersLandingSignal(careersLandingPage.html) && !hasCloudflareBlockSignal(careersLandingPage)) {
       throw new Error('Dremio verified Dremio careers landing page no longer matches the official first-party surface')
     }
 
-    const jobPostingsHtml = await fetchText(JOB_POSTINGS_URL)
-    if (!hasOfficialJobPostingsSignal(jobPostingsHtml)) {
+    const jobPostingsPage = await fetchPage(JOB_POSTINGS_URL)
+    if (!hasOfficialJobPostingsSignal(jobPostingsPage.html) && !hasCloudflareBlockSignal(jobPostingsPage)) {
       throw new Error('Dremio verified Dremio job postings page no longer matches the official first-party surface')
     }
 

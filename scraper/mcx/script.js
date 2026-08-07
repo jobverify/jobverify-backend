@@ -8,10 +8,13 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'mcx'
 export const COMPANY = 'MCX'
 export const HOMEPAGE_URL = 'https://www.mcxindia.com/'
-export const CAREERS_URL = 'https://classic.mcxindia.com/careers/workwithus'
-export const APPLY_URL = 'https://classic.mcxindia.com/careers/apply-online'
-export const COMPANY_DOMAIN = 'classic.mcxindia.com'
+export const CAREERS_URL = 'https://www.mcxindia.com/careers/job-openings'
+export const JOBS_API_URL = 'https://www.mcxindia.com/careers/job-openings/GetFilteredAnnouncements'
+export const JOB_DETAIL_URL = 'https://www.mcxindia.com/careers/job-openings/job-detail'
+export const APPLY_URL = 'https://www.mcxindia.com/careers/apply-online'
+export const COMPANY_DOMAIN = 'www.mcxindia.com'
 export const ATS_PLATFORM = 'official-company-careers'
+export const VERIFIED_ON = '2026-08-03'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -23,7 +26,7 @@ const decodeHtml = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
-  .replace(/â€“|â€”/g, '-')
+  .replace(/Ã¢â‚¬â€œ|Ã¢â‚¬â€/g, '-')
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
 
@@ -43,50 +46,29 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const toLines = (value) => String(value ?? '')
-  .replace(/\r/g, '')
-  .split('\n')
-  .map((line) => normalizeWhitespace(line))
-  .filter(Boolean)
-
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || null
 
-const buildAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
+const normalizeMeaningfulText = (value) => {
   const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-
-  try {
-    return new URL(normalized, baseUrl).toString()
-  } catch {
-    return null
-  }
+  if (!normalized || normalized === '-') return null
+  return normalized
 }
 
-const extractField = (block, label) => {
-  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const match = String(block ?? '').match(
-    new RegExp(`<h[1-6][^>]*>\\s*${escapedLabel}\\s*</h[1-6]>\\s*([\\s\\S]*?)(?=<h[1-6][^>]*>\\s*(?:Role|Location|Qualification Profile|Experience|Job Responsibilities)\\s*</h[1-6]>|<a\\b[^>]*>\\s*Apply Now\\s*</a>|$)`, 'i'),
-  )
-
-  return stripTags(match?.[1] || '')
-}
-
-const extractResponsibilities = (block) => {
-  const html = String(block ?? '')
-  const sectionMatch = html.match(
-    /<h[1-6][^>]*>\s*Job Responsibilities\s*<\/h[1-6]>\s*([\s\S]*?)(?=<a\b[^>]*>\s*Apply Now\s*<\/a>|$)/i,
-  )
-  const sectionHtml = sectionMatch?.[1] || ''
-  const items = [...sectionHtml.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+const extractResponsibilities = (html = '') => {
+  const items = [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
     .map((match) => stripTags(match[1]))
     .filter(Boolean)
 
   if (items.length > 0) return items
 
-  return toLines(stripTags(sectionHtml))
+  return String(html ?? '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => stripTags(line))
+    .filter(Boolean)
 }
 
 const buildJobDescription = ({ role, location, minimumQualification, experienceRequired, responsibilities }) => [
@@ -98,97 +80,10 @@ const buildJobDescription = ({ role, location, minimumQualification, experienceR
   ...responsibilities.map((item) => `- ${item}`),
 ].filter(Boolean).join('\n')
 
-export const hasVerifiedCareersPageSignal = (html) => {
-  const page = String(html ?? '')
-
-  return /work\s+with\s+us/i.test(page)
-    && /apply\s+now/i.test(page)
-    && /careers@mcxindia\.com/i.test(page)
-    && /job\s+responsibilities/i.test(page)
-}
-
-export const extractJobsFromCareersPage = (html) => {
-  if (!hasVerifiedCareersPageSignal(html)) {
-    throw new Error('The verified MCX careers surface no longer matches the expected first-party public jobs page')
-  }
-
-  const page = String(html ?? '')
-  const jobs = []
-  const blockPattern = /<h[2-6][^>]*>\s*(?:<a\b[^>]*>)?\s*([^<]+?)\s*(?:<\/a>)?\s*<\/h[2-6]>\s*([\s\S]*?)<a\b[^>]*href="([^"]+)"[^>]*>\s*Apply Now\s*<\/a>/gi
-
-  for (const match of page.matchAll(blockPattern)) {
-    const title = normalizeWhitespace(match[1])
-    const block = match[2]
-    const applyUrl = buildAbsoluteUrl(match[3], CAREERS_URL)
-
-    if (!title || !applyUrl) continue
-    if (/^(role|location|qualification profile|experience|job responsibilities)$/i.test(title)) continue
-
-    const role = extractField(block, 'Role') || title
-    const location = extractField(block, 'Location')
-    const minimumQualification = extractField(block, 'Qualification Profile')
-    const experienceRequired = extractField(block, 'Experience')
-    const responsibilities = extractResponsibilities(block)
-    const jobDescription = buildJobDescription({
-      role,
-      location,
-      minimumQualification,
-      experienceRequired,
-      responsibilities,
-    })
-
-    jobs.push({
-      title,
-      location,
-      sourceUrl: CAREERS_URL,
-      applyUrl,
-      minimumQualification,
-      experienceRequired,
-      jobDescription,
-    })
-  }
-
-  if (jobs.length === 0) {
-    throw new Error('MCX careers page no longer exposes the verified current openings blocks')
-  }
-
-  return jobs
-}
-
-const buildJob = (job, scrapedAt) => {
-  const city = normalizeWhitespace(job.location)
-  const title = normalizeWhitespace(job.title)
-  const location = city ? `${city}, India` : 'India'
-  const identifier = slugify(`${title}-${city || 'india'}`)
-
-  return {
-    title,
-    company: COMPANY,
-    department: null,
-    location,
-    city,
-    country: 'India',
-    jobId: `${SOURCE}-${identifier}`,
-    requisitionId: `${SOURCE}-${identifier}`,
-    sourceUrl: CAREERS_URL,
-    applyUrl: job.applyUrl,
-    employmentType: null,
-    workplaceType: null,
-    experienceRequired: job.experienceRequired,
-    minimumQualification: job.minimumQualification,
-    preferredQualification: null,
-    requiredSkills: [],
-    compensation: null,
-    postingDate: null,
-    closingDate: null,
-    jobDescription: job.jobDescription,
-    source: SOURCE,
-    companyCareerPage: CAREERS_URL,
-    companyDomain: COMPANY_DOMAIN,
-    atsPlatform: ATS_PLATFORM,
-    link: job.applyUrl,
-    scrapedAt,
-  }
+const buildDetailUrl = (jobRole) => {
+  const url = new URL(JOB_DETAIL_URL)
+  url.searchParams.set('JobRole', jobRole)
+  return url.toString()
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -200,15 +95,133 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
+const defaultFetchJson = async (url) => JSON.parse(await fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    Referer: CAREERS_URL,
+    'X-Requested-With': 'XMLHttpRequest',
+  },
+  label: `${SOURCE}-json`,
+  timeoutMs: 20000,
+}))
+
+export const hasVerifiedCurrentOpeningsPageSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title[^>]*>\s*Current Openings\s*<\/title>/i.test(page)
+    && text.includes('Current Openings')
+    && page.includes('selectJobRole')
+    && page.includes('selectLocation')
+    && page.includes('/careers/apply-online')
+    && /careers@mcxindia\.com/i.test(page)
+}
+
+export const hasVerifiedApplyOnlineSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title[^>]*>\s*Apply Online\s*<\/title>/i.test(page)
+    && text.includes('Apply Online')
+    && /careers@mcxindia\.com/i.test(page)
+    && page.includes('current-opening-apply')
+    && page.includes('careerstoken')
+    && page.includes('SubmitButton1')
+}
+
+export const hasAnnouncementsPayloadSignal = (payload = {}) => {
+  const announcements = Array.isArray(payload?.Announcements) ? payload.Announcements : []
+  if (announcements.length === 0) return false
+
+  return announcements.every((item) =>
+    normalizeMeaningfulText(item?.JobRole || item?.Title)
+    && normalizeMeaningfulText(item?.Location),
+  )
+}
+
+const resolveExperience = (announcement = {}) => {
+  const direct = normalizeMeaningfulText(announcement.Experience)
+  if (direct) return direct
+
+  const min = normalizeMeaningfulText(announcement.MinimumExperience)
+  const max = normalizeMeaningfulText(announcement.MaximumExperience)
+  if (min && max) return `${min}-${max}`
+  return min || max || null
+}
+
+export const normalizeAnnouncement = (announcement = {}, scrapedAt = new Date().toISOString()) => {
+  const title = normalizeMeaningfulText(announcement.JobRole || announcement.Title)
+  const city = normalizeMeaningfulText(announcement.Location)
+  if (!title || !city) return null
+
+  const minimumQualification = normalizeMeaningfulText(
+    announcement.QualificationDisplay || announcement.Qualification,
+  )
+  const experienceRequired = resolveExperience(announcement)
+  const responsibilities = extractResponsibilities(announcement.JobResponsibility)
+  const jobDescription = buildJobDescription({
+    role: title,
+    location: city,
+    minimumQualification,
+    experienceRequired,
+    responsibilities,
+  })
+  const identifier = slugify(`${title}-${city}`)
+
+  return {
+    title,
+    company: COMPANY,
+    department: null,
+    location: `${city}, India`,
+    city,
+    country: 'India',
+    jobId: `${SOURCE}-${identifier}`,
+    requisitionId: `${SOURCE}-${identifier}`,
+    sourceUrl: buildDetailUrl(title),
+    applyUrl: APPLY_URL,
+    employmentType: null,
+    workplaceType: null,
+    experienceRequired,
+    minimumQualification,
+    preferredQualification: null,
+    requiredSkills: [],
+    compensation: null,
+    postingDate: normalizeMeaningfulText(announcement.PublishedDate),
+    closingDate: null,
+    jobDescription,
+    source: SOURCE,
+    companyCareerPage: CAREERS_URL,
+    companyDomain: COMPANY_DOMAIN,
+    atsPlatform: ATS_PLATFORM,
+    link: APPLY_URL,
+    scrapedAt,
+  }
+}
+
 export const createMcxScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    const scrapedAt = String(now())
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
+    const currentOpeningsHtml = await fetchText(CAREERS_URL)
+    if (!hasVerifiedCurrentOpeningsPageSignal(currentOpeningsHtml)) {
+      throw new Error('The verified MCX current openings page no longer matches the expected first-party public jobs page')
+    }
 
-    return extractJobsFromCareersPage(careersHtml)
-      .map((job) => buildJob(job, scrapedAt))
+    const applyOnlineHtml = await fetchText(APPLY_URL)
+    if (!hasVerifiedApplyOnlineSignal(applyOnlineHtml)) {
+      throw new Error('The verified MCX apply online page no longer matches the expected first-party application surface')
+    }
+
+    const payload = await fetchJson(JOBS_API_URL)
+    if (!hasAnnouncementsPayloadSignal(payload)) {
+      throw new Error('MCX current openings feed no longer matches the verified first-party announcements contract')
+    }
+
+    const scrapedAt = String(now())
+    return payload.Announcements
+      .map((announcement) => normalizeAnnouncement(announcement, scrapedAt))
+      .filter(Boolean)
   },
 })
 

@@ -30,14 +30,23 @@ export const hasOfficialJobsArchiveSignal = (html = '') => {
 
   return /<title>\s*Job Openings\s*-\s*Maintec\s*<\/title>/i.test(page)
     && page.includes('CICS System programmer')
-    && page.includes('Associate Engineers (Mechanical or Electrical)')
+    && page.includes('DB2 System programmer')
+    && page.includes('Mainframe DB2 DBA')
     && page.includes('India Office')
     && page.includes('Bengaluru')
-  }
+}
+
+const normalizeJobLink = (url = '') => {
+  const normalized = String(url ?? '').trim()
+  if (!normalized) return null
+  if (/\/jobs\/(?:feed|page)\/?$/i.test(normalized)) return null
+  return normalized.replace(/\/?$/, '/')
+}
 
 export const extractJobLinks = (html = '') =>
   [...String(html ?? '').matchAll(/https:\/\/maintec\.com\/jobs\/[a-z0-9-]+\/?/gi)]
-    .map((match) => match[0])
+    .map((match) => normalizeJobLink(match[0]))
+    .filter(Boolean)
     .filter((value, index, values) => values.indexOf(value) === index)
 
 const extractPrimaryDetailContent = (html = '') =>
@@ -52,12 +61,19 @@ const isExpiredDetailPage = (html = '') => {
 const hasUsHoursSignal = (html = '') => {
   const content = extractPrimaryDetailContent(html)
   return /US Eastern hours/i.test(content)
-    || /US Eastern Time Zone business hours/i.test(content)
+    || /US Eastern(?: Time Zone)? business hours/i.test(content)
 }
 
 const hasTrustworthyIndiaJobSignal = (html = '') => {
   const content = extractPrimaryDetailContent(html)
   return /Location\s*[:\-]?\s*(?:Bengaluru|Bangalore|Chennai|Mumbai|Pune|Hyderabad|Noida)[^<\n]*India/i.test(content)
+}
+
+const hasCurrentArchiveDetailShellSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /Apply for this position/i.test(page)
+    && /US Office/i.test(page)
+    && /India Office/i.test(page)
 }
 
 export const createMaintecTechnologiesScraper = ({
@@ -70,13 +86,10 @@ export const createMaintecTechnologiesScraper = ({
       throw new Error('Maintec Technologies verified first-party jobs archive no longer matches the trusted surface')
     }
 
-    const representativeLinks = extractJobLinks(archiveHtml).filter((url) =>
-      url.includes('cics-system-programmer')
-      || url.includes('associate-engineers-mechanical-or-electrical'),
-    )
+    const representativeLinks = extractJobLinks(archiveHtml)
 
-    if (representativeLinks.length < 2) {
-      throw new Error('Maintec Technologies verified representative job links changed; refusing to guess the India jobs surface')
+    if (representativeLinks.length === 0) {
+      throw new Error('Maintec Technologies archive no longer exposes trusted first-party job detail links')
     }
 
     for (const url of representativeLinks) {
@@ -86,11 +99,15 @@ export const createMaintecTechnologiesScraper = ({
         throw new Error('Maintec Technologies now exposes trustworthy India job metadata; re-verify before scraping')
       }
 
-      if (isExpiredDetailPage(detailHtml) || hasUsHoursSignal(detailHtml)) {
+      if (
+        isExpiredDetailPage(detailHtml)
+        || hasUsHoursSignal(detailHtml)
+        || hasCurrentArchiveDetailShellSignal(detailHtml)
+      ) {
         continue
       }
 
-      throw new Error('Maintec Technologies representative detail pages no longer match the verified non-India or expired pattern')
+      throw new Error('Maintec Technologies representative detail pages no longer match the verified ambiguous, non-India, or expired pattern')
     }
 
     return []

@@ -58,6 +58,33 @@ const jobsPageTwoHtml = `
 </html>
 `
 
+const detailPayloadByJobId = {
+  '85341': {
+    items: [{
+      Id: '85341',
+      ExternalDescriptionStr: '<p>Lead audio visual systems engineering for complex transport projects.</p>',
+      InternalResponsibilitiesStr: '<p>Coordinate multidisciplinary AV and ELV design reviews.</p>',
+      ExternalQualificationsStr: "<p>Bachelor's degree in Electrical Engineering.</p><p>5 - 8 years' experience in audio visual and ELV design.</p>",
+    }],
+  },
+  '85342': {
+    items: [{
+      Id: '85342',
+      ExternalDescriptionStr: '<p>Lead RAMS delivery for major mobility programmes and coordinate multidisciplinary reviews.</p>',
+      InternalResponsibilitiesStr: '<p>Support assurance workshops and system safety reviews.</p>',
+      ExternalQualificationsStr: "<p>Bachelor's degree in engineering with strong stakeholder management skills.</p>",
+    }],
+  },
+  '85343': {
+    items: [{
+      Id: '85343',
+      ExternalDescriptionStr: '<p>Support emissions inventory analysis and environmental consulting projects across India.</p>',
+      InternalResponsibilitiesStr: '<p>Prepare data-driven findings for consulting deliverables.</p>',
+      ExternalQualificationsStr: '<p>Degree in environmental engineering or a related field.</p>',
+    }],
+  },
+}
+
 test('WSP India verifies the official India site handoff and builds paginated official jobs URLs', async () => {
   const wspIndia = await loadWspIndiaModule()
 
@@ -108,17 +135,44 @@ test('extractJobsFromHtml keeps only official Oracle preview links exposed by WS
   ])
 })
 
+test('enrichJobFromDetailRecord captures public experience requirements from Oracle requisition details', async () => {
+  const wspIndia = await loadWspIndiaModule()
+
+  const enriched = wspIndia.enrichJobFromDetailRecord({
+    title: 'Principal Engineer - Audio Visual Systems',
+    company: 'WSP India',
+    location: 'Noida | Bengaluru',
+    city: 'Noida',
+    sourceUrl: 'https://emit.fa.ca3.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001/requisitions/preview/85341',
+    applyUrl: 'https://emit.fa.ca3.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001/requisitions/preview/85341',
+    jobId: '85341',
+    requisitionId: '85341',
+    jobDescription: null,
+  }, detailPayloadByJobId['85341'].items[0])
+
+  assert.equal(enriched.experienceRequired, '5-8 years')
+  assert.equal(enriched.publicExperienceChecked, true)
+  assert.match(enriched.jobDescription, /Lead audio visual systems engineering/i)
+})
+
 test('run follows the verified WSP India handoff and paginates the official jobs surface', async () => {
   const wspIndia = await loadWspIndiaModule()
   const requests = []
 
   const jobs = await wspIndia.createWspIndiaScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requests.push(url)
-      if (url === wspIndia.INDIA_SITE_URL) return indiaSiteHtml
-      if (url === wspIndia.buildJobsPageUrl({ page: 1 })) return jobsPageOneHtml
-      if (url === wspIndia.buildJobsPageUrl({ page: 2 })) return jobsPageTwoHtml
+      if (url === wspIndia.INDIA_SITE_URL) return { status: 200, url, html: indiaSiteHtml }
+      if (url === wspIndia.buildJobsPageUrl({ page: 1 })) return { status: 200, url, html: jobsPageOneHtml }
+      if (url === wspIndia.buildJobsPageUrl({ page: 2 })) return { status: 200, url, html: jobsPageTwoHtml }
       throw new Error(`Unexpected WSP India URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requests.push(url)
+      if (url === wspIndia.buildJobDetailsApiUrl('85341')) return detailPayloadByJobId['85341']
+      if (url === wspIndia.buildJobDetailsApiUrl('85342')) return detailPayloadByJobId['85342']
+      if (url === wspIndia.buildJobDetailsApiUrl('85343')) return detailPayloadByJobId['85343']
+      throw new Error(`Unexpected WSP India details URL: ${url}`)
     },
     now: () => '2026-07-10T00:00:00.000Z',
   })
@@ -126,7 +180,10 @@ test('run follows the verified WSP India handoff and paginates the official jobs
   assert.deepEqual(requests, [
     wspIndia.INDIA_SITE_URL,
     wspIndia.buildJobsPageUrl({ page: 1 }),
+    wspIndia.buildJobDetailsApiUrl('85341'),
+    wspIndia.buildJobDetailsApiUrl('85342'),
     wspIndia.buildJobsPageUrl({ page: 2 }),
+    wspIndia.buildJobDetailsApiUrl('85343'),
   ])
   assert.deepEqual(
     jobs.map((job) => ({
@@ -134,6 +191,8 @@ test('run follows the verified WSP India handoff and paginates the official jobs
       location: job.location,
       city: job.city,
       jobId: job.jobId,
+      experienceRequired: job.experienceRequired,
+      publicExperienceChecked: job.publicExperienceChecked,
       source: job.source,
       link: job.link,
       scrapedAt: job.scrapedAt,
@@ -144,6 +203,8 @@ test('run follows the verified WSP India handoff and paginates the official jobs
         location: 'Noida | Bengaluru',
         city: 'Noida',
         jobId: '85341',
+        experienceRequired: '5-8 years',
+        publicExperienceChecked: true,
         source: 'wspindia',
         link: 'https://emit.fa.ca3.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001/requisitions/preview/85341',
         scrapedAt: '2026-07-10T00:00:00.000Z',
@@ -153,6 +214,8 @@ test('run follows the verified WSP India handoff and paginates the official jobs
         location: 'Bengaluru | Noida | Mumbai',
         city: 'Bengaluru',
         jobId: '85342',
+        experienceRequired: null,
+        publicExperienceChecked: true,
         source: 'wspindia',
         link: 'https://emit.fa.ca3.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001/requisitions/preview/85342',
         scrapedAt: '2026-07-10T00:00:00.000Z',
@@ -162,6 +225,8 @@ test('run follows the verified WSP India handoff and paginates the official jobs
         location: 'Other cities in India | Mumbai | Noida',
         city: 'Other cities in India',
         jobId: '85343',
+        experienceRequired: null,
+        publicExperienceChecked: true,
         source: 'wspindia',
         link: 'https://emit.fa.ca3.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001/requisitions/preview/85343',
         scrapedAt: '2026-07-10T00:00:00.000Z',

@@ -5,11 +5,11 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Loco: Free Online Gaming, Esports Tournaments & Live Streaming</title>
+    <title>Loco: Free Online Gaming, Esports Tournaments &amp; Live Streaming</title>
   </head>
   <body>
-    <h1>Loco: Free Online Gaming, Esports Tournaments & Live Streaming</h1>
-    <p>Watch gaming streams, discover tournaments, and connect with creators.</p>
+    <link rel="preload" as="script" href="https://static.loco.gg/next-assets/_next/static/chunks/main-app.js" />
+    <h1>Loco: Free Online Gaming, Esports Tournaments &amp; Live Streaming</h1>
   </body>
 </html>
 `
@@ -54,7 +54,7 @@ test('Loco sentinel helpers stay pinned to the exact-name homepage, legacy redir
 
   assert.equal(loco.COMPANY, 'Loco')
   assert.equal(loco.OFFICIAL_BRAND_NAME, 'Loco Streaming Ltd')
-  assert.equal(loco.VERIFIED_ON, '2026-07-16')
+  assert.equal(loco.VERIFIED_ON, '2026-08-03')
   assert.equal(loco.HOMEPAGE_URL, 'https://loco.com/')
   assert.equal(loco.LEGACY_HOMEPAGE_URL, 'https://www.loco.gg/')
   assert.equal(loco.TERMS_OF_USE_URL, 'https://loco.com/legal/termsOfUse/terms-en.html')

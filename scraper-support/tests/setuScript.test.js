@@ -33,6 +33,34 @@ Payments,Build core infrastructure to enable payments to businesses.
 Data,Enable a solution for businesses to analyse financial data of customers.
 `
 
+const detailHtmlWithExperience = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta property="og:title" content="[Hiring For]: SDE I (DT_209)">
+    <meta
+      property="og:description"
+      content="Full Stack Engineer (Frontend-heavy, SDE2)Experience : 2-4 YearsAbout SetuIndia’s economic infrastructure needs a complete overhaul."
+    >
+  </head>
+  <body></body>
+</html>
+`
+
+const detailHtmlWithoutExperience = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta property="og:title" content="[Hiring For]: Manager (DT_4)">
+    <meta
+      property="og:description"
+      content="About Setu Importance of the role To know more - Click on View full description"
+    >
+  </head>
+  <body></body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/setu/script.js')
@@ -98,6 +126,30 @@ test('Setu helpers stay pinned to the verified official careers shell and CSV-ba
   ])
 })
 
+test('Setu detail enrichment recovers public experience from TurboHire metadata and marks verified missing pages as checked', async () => {
+  const setu = await loadModule()
+
+  const withExperience = setu.enrichSetuJobFromDetailPage({
+    title: 'SDE - II Fullstack Engineer',
+    jobDescription: 'Build core infrastructure to enable payments to businesses.',
+    experienceRequired: null,
+  }, detailHtmlWithExperience)
+
+  assert.equal(withExperience.experienceRequired, '2-4 years')
+  assert.equal(withExperience.publicExperienceChecked, true)
+  assert.match(withExperience.jobDescription, /2-4 Years/i)
+
+  const verifiedMissing = setu.enrichSetuJobFromDetailPage({
+    title: 'Senior Manager - Enterprise Sales',
+    jobDescription: null,
+    experienceRequired: null,
+  }, detailHtmlWithoutExperience)
+
+  assert.equal(verifiedMissing.experienceRequired, null)
+  assert.equal(verifiedMissing.publicExperienceChecked, true)
+  assert.match(verifiedMissing.jobDescription, /About Setu/i)
+})
+
 test('Setu run validates the official careers page and extracts openings from the verified CSV contract', async () => {
   const setu = await loadModule()
   const requestedTexts = []
@@ -110,6 +162,11 @@ test('Setu run validates the official careers page and extracts openings from th
       if (url === setu.CAREERS_URL) return staticCareersHtml
       if (url === setu.CURRENT_OPENINGS_CSV_URL) return currentOpeningsCsv
       if (url === setu.CATEGORY_DESCRIPTIONS_CSV_URL) return categoryDescriptionsCsv
+      if (url === 'https://pinelabsgroup.turbohire.co/get/RFZUclV') return detailHtmlWithExperience
+      if (url === 'https://pinelabsgroup.turbohire.co/get/bGFRMGN') return detailHtmlWithoutExperience
+      if (url === 'https://pinelabsgroup.turbohire.co/get/aDFnNUx') {
+        throw new Error('HTTP 404 for https://pinelabsgroup.turbohire.co/get/aDFnNUx')
+      }
       throw new Error(`Unexpected Setu URL: ${url}`)
     },
   })
@@ -118,33 +175,21 @@ test('Setu run validates the official careers page and extracts openings from th
     setu.CAREERS_URL,
     setu.CURRENT_OPENINGS_CSV_URL,
     setu.CATEGORY_DESCRIPTIONS_CSV_URL,
+    'https://pinelabsgroup.turbohire.co/get/RFZUclV',
+    'https://pinelabsgroup.turbohire.co/get/bGFRMGN',
+    'https://pinelabsgroup.turbohire.co/get/aDFnNUx',
   ])
   assert.equal(jobs.length, 3)
-  assert.deepEqual(jobs[0], {
-    title: 'SDE - II Fullstack Engineer',
-    company: 'Setu',
-    department: 'Engineering',
-    location: 'India',
-    city: null,
-    country: 'India',
-    jobId: 'RFZUclV',
-    requisitionId: null,
-    sourceUrl: 'https://pinelabsgroup.turbohire.co/get/RFZUclV',
-    applyUrl: 'https://pinelabsgroup.turbohire.co/get/RFZUclV',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'Build core infrastructure to enable payments to businesses.',
-    source: 'setu',
-    link: 'https://pinelabsgroup.turbohire.co/get/RFZUclV',
-    scrapedAt: FIXED_SCRAPED_AT,
-  })
+  assert.equal(jobs[0].title, 'SDE - II Fullstack Engineer')
+  assert.equal(jobs[0].experienceRequired, '2-4 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription, /2-4 Years/i)
   assert.equal(jobs[1].title, 'SDE - II Backend Engineer')
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[1].publicExperienceChecked, true)
   assert.equal(jobs[2].title, 'Data Engineer')
+  assert.equal(jobs[2].jobDescription, 'Enable a solution for businesses to analyse financial data of customers.')
+  assert.equal(jobs[2].publicExperienceChecked, true)
 })
 
 test('Setu fails closed when the official careers shell or verified CSV contracts drift materially', async () => {

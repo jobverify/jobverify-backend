@@ -106,6 +106,7 @@ const toSharedJobShape = (record = {}, includeClosingDate = true) => {
     applyUrl: referenceCode ? buildApplyUrl(referenceCode, sourceId || 1) : null,
     employmentType: 'Full-time',
     experienceRequired: formatExperienceRange(minExperienceLevel, maxExperienceLevel),
+    publicExperienceChecked: Boolean(formatExperienceRange(minExperienceLevel, maxExperienceLevel)),
     minimumQualification: normalizeQualification(record.educationalRequirement),
     preferredQualification: null,
     requiredSkills,

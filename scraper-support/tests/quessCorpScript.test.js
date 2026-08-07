@@ -30,21 +30,11 @@ const OFFICIAL_CANDIDATE_EXPERIENCE_HTML = `
     <meta property="og:description" content="Join Our Team" />
     <meta property="og:site_name" content="Quess Career site" />
     <title>Quess Career site</title>
-    <base href="/hcmUI/CandidateExperience/en/sites/CX_1" />
-    <script data-cx-config>
-      var CX_CONFIG = {
-        app: {
-          apiBaseUrl: 'https://fa-eumz-saasfaprod1.fa.ocs.oraclecloud.com:443',
-          siteName: 'Quess Career site',
-          siteCode: 'Quess Career site',
-          siteNumber: 'CX_1',
-          talentCommunitySignUp: {
-            title: 'Talent Community',
-            buttonLabel: 'Sign Up'
-          }
-        }
-      };
-    </script>
+    <base
+      href="/hcmUI/CandidateExperience/en/sites/CX_1"
+      data-apibaseurl="https://fa-eumz-saasfaprod1.fa.ocs.oraclecloud.com:443"
+      data-sitenumber="CX_1"
+    />
   </head>
   <body>
     <div id="jobSearchPage">Search Quess jobs</div>
@@ -322,7 +312,7 @@ test('run fails closed when the Quess first-party handoff, Oracle shell, or list
     quessCorp.createQuessCorpScraper({
       fetchText: async (url) => {
         if (url === quessCorp.OFFICIAL_CAREERS_URL) return OFFICIAL_CAREERS_HTML
-        return OFFICIAL_CANDIDATE_EXPERIENCE_HTML.replace("siteNumber: 'CX_1'", "siteNumber: 'CX_2'")
+        return OFFICIAL_CANDIDATE_EXPERIENCE_HTML.replace('data-sitenumber="CX_1"', 'data-sitenumber="CX_2"')
       },
       fetchJson: async () => LISTING_PAYLOAD,
     }).run(),

@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url'
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
+  '..',
+  'scraper',
   'cloverinfotech',
   'fixtures',
 )
@@ -39,6 +41,16 @@ test('buildJobOpeningsPageUrl keeps Clover Infotech on the verified first-party 
   assert.equal(
     clover.buildJobOpeningsPageUrl(2),
     'https://www.cloverinfotech.com/job-openings/page/2/',
+  )
+})
+
+test('Clover Infotech exports the desktop browser user agent used for blocked job pages', async () => {
+  const clover = await loadCloverModule()
+
+  assert.ok(clover, 'Expected Clover Infotech scraper module at ../../scraper/cloverinfotech/script.js')
+  assert.equal(
+    clover.DESKTOP_BROWSER_USER_AGENT,
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
   )
 })
 
@@ -133,6 +145,36 @@ test('extractJobDetail pulls Clover job detail content, first-party form metadat
   })
 })
 
+test('extractJobDetail ignores generic widget headings and keeps the specific job title', async () => {
+  const clover = await loadCloverModule()
+
+  assert.ok(clover, 'Expected Clover Infotech scraper module at ../../scraper/cloverinfotech/script.js')
+
+  const detail = clover.extractJobDetail(`
+    <html>
+      <head>
+        <title>Business Development and Relationship Manager</title>
+      </head>
+      <body>
+        <h3>Job Openings</h3>
+        <h3>Apply For Job</h3>
+        <h3>Job Features</h3>
+        <div class="job-description"></div>
+        <div class="job-features"></div>
+        <div class="jobpost-form"></div>
+      </body>
+    </html>
+  `, {
+    title: 'Business Development and Relationship Manager',
+    sourceUrl: 'https://www.cloverinfotech.com/jobs/business-development-and-relationship-manager/',
+    location: 'Mumbai',
+    city: 'Mumbai',
+    experienceRequired: '5+ Years',
+  })
+
+  assert.equal(detail.title, 'Business Development and Relationship Manager')
+})
+
 test('run paginates the Clover first-party jobs pages, fetches only India detail pages, and decorates the jobs', async () => {
   const clover = await loadCloverModule()
 
@@ -196,6 +238,47 @@ test('run paginates the Clover first-party jobs pages, fetches only India detail
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-14T00:00:00.000Z')
+})
+
+test('run falls back to browser-backed Clover pages when direct requests are blocked', async () => {
+  const clover = await loadCloverModule()
+
+  assert.ok(clover, 'Expected Clover Infotech scraper module at ../../scraper/cloverinfotech/script.js')
+
+  const browserUrls = []
+  const jobs = await clover.createCloverInfotechScraper({
+    now: () => '2026-08-01T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+
+      if (url === clover.buildJobOpeningsPageUrl(1)) return pageOneHtml
+      if (url === clover.buildJobOpeningsPageUrl(2)) return pageTwoHtml
+      if (url === 'https://www.cloverinfotech.com/jobs/oracle-fusion-erp-finance-consultant/') {
+        return oracleFusionDetailHtml
+      }
+      if (url === 'https://www.cloverinfotech.com/jobs/senior-analyst-application-support-onestream-xf/') {
+        return oneStreamDetailHtml
+      }
+      if (url === 'https://www.cloverinfotech.com/jobs/java-tech-lead-payments-domain/') {
+        return javaTechLeadDetailHtml
+      }
+
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(browserUrls, [
+    clover.buildJobOpeningsPageUrl(1),
+    'https://www.cloverinfotech.com/jobs/oracle-fusion-erp-finance-consultant/',
+    'https://www.cloverinfotech.com/jobs/senior-analyst-application-support-onestream-xf/',
+    clover.buildJobOpeningsPageUrl(2),
+    'https://www.cloverinfotech.com/jobs/java-tech-lead-payments-domain/',
+  ])
 })
 
 test('run fails closed when the verified Clover listings or job details drift away from the trusted first-party surface', async () => {

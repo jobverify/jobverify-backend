@@ -1,29 +1,41 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const archiveHtml = `
+const currentOpeningsHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Find all Current Openings - Sourcedesk</title>
+  </head>
   <body>
-    <h1>Archives: Current Opening</h1>
-    <h2><a href="https://www.sourcedeskglobal.com/job/urgent-hiring-business-development-executive-online-bidder-required/">Urgent Hiring: Business Development Executive / Online Bidder Required</a></h2>
-    <h2><a href="https://www.sourcedeskglobal.com/job/seo-strategy-manager/">SEO Strategy Manager</a></h2>
+    <nav><a href="/current-openings">Apply for Jobs</a></nav>
+    <h1>Find all Current Openings</h1>
+    <a href="/current-openings/seo-executive">View Details</a>
+    <a href="/current-openings/urgent-position-business-associate-online-bidder">View Details</a>
   </body>
 </html>
 `
 
-const detailHtml = `
+const seoDetailHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>SEO Executive</title>
+  </head>
   <body>
-    <h1>Find Your Job</h1>
-    <a href="https://www.sourcedeskglobal.com/job/">Current Opening</a>
-    <a href="#apply">Apply Now</a>
-    <h2>Urgent Hiring: Business Development Executive / Online Bidder Required</h2>
-    <p>We are seeking a talented and proactive Online Bidder / Business Development Executive (BDE) to join our dynamic team.</p>
-    <p>Experience: 2 - 7 years</p>
-    <p>Salary Range: 8 - 12 Lacs P.A.</p>
-    <p>Location: Hiring office located in Kolkata</p>
+    <p>Job Description We are seeking a results-driven SEO Executive to join our Digital Marketing team. Job Information Date Opened 30 Jul 2026 Job Type Work From Office Employment Type Full Time Work Experience 2-4 years City Kolkata Country India Department Digital Marketing Share this job SEO Executive</p>
+  </body>
+</html>
+`
+
+const bidderDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Urgent Position: Business Associate (Online Bidder)</title>
+  </head>
+  <body>
+    <p>Job Description Sourcedesk Global is seeking a skilled Online bidder to become a part of our sales and marketing team. Job Information Date Opened 30 Jul 2026 Job Type Work From Office Employment Type Full Time Work Experience 1-3 Years City Kolkata Country India Department Web Development Share this job Urgent Position: Business Associate (Online Bidder)</p>
   </body>
 </html>
 `
@@ -36,18 +48,47 @@ const loadModule = async () => {
   }
 }
 
-test('Sourcedesk Global validates the first-party archive and extracts listing URLs', async () => {
+test('Sourcedesk Global validates the first-party current-openings page and extracts live detail URLs', async () => {
   const sourcedesk = await loadModule()
 
   assert.equal(sourcedesk.SOURCE, 'sourcedeskglobal')
   assert.equal(sourcedesk.COMPANY, 'Sourcedesk Global')
-  assert.equal(sourcedesk.CAREERS_URL, 'https://www.sourcedeskglobal.com/job/')
-  assert.equal(sourcedesk.VERIFIED_ON, '2026-07-18')
-  assert.equal(sourcedesk.hasOfficialArchiveSignal(archiveHtml), true)
-  assert.deepEqual(sourcedesk.extractListingUrls(archiveHtml), [
-    'https://www.sourcedeskglobal.com/job/urgent-hiring-business-development-executive-online-bidder-required/',
-    'https://www.sourcedeskglobal.com/job/seo-strategy-manager/',
+  assert.equal(sourcedesk.CAREERS_URL, 'https://www.sourcedesk.io/current-openings')
+  assert.equal(sourcedesk.VERIFIED_ON, '2026-08-04')
+  assert.equal(sourcedesk.hasOfficialCurrentOpeningsSignal(currentOpeningsHtml), true)
+  assert.deepEqual(sourcedesk.extractListingUrls(currentOpeningsHtml), [
+    'https://www.sourcedesk.io/current-openings/seo-executive',
+    'https://www.sourcedesk.io/current-openings/urgent-position-business-associate-online-bidder',
   ])
+})
+
+test('Sourcedesk Global extracts normalized India jobs from first-party detail pages', async () => {
+  const sourcedesk = await loadModule()
+
+  assert.deepEqual(
+    sourcedesk.extractJobDetail(seoDetailHtml, 'https://www.sourcedesk.io/current-openings/seo-executive'),
+    {
+      title: 'SEO Executive',
+      company: 'Sourcedesk Global',
+      department: 'Digital Marketing',
+      location: 'Kolkata, India',
+      city: 'Kolkata',
+      country: 'India',
+      jobId: 'seo-executive',
+      requisitionId: 'seo-executive',
+      sourceUrl: 'https://www.sourcedesk.io/current-openings/seo-executive',
+      applyUrl: 'https://www.sourcedesk.io/current-openings/seo-executive',
+      employmentType: 'Full Time',
+      experienceRequired: '2-4 years',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: '30 Jul 2026',
+      closingDate: null,
+      jobDescription: 'We are seeking a results-driven SEO Executive to join our Digital Marketing team.',
+      remoteStatus: 'On-site',
+    },
+  )
 })
 
 test('Sourcedesk Global run maps first-party detail pages into normalized jobs', async () => {
@@ -55,20 +96,16 @@ test('Sourcedesk Global run maps first-party detail pages into normalized jobs',
   const requestedUrls = []
 
   const jobs = await sourcedesk.createSourcedeskGlobalScraper({
-    now: () => '2026-07-18T00:00:00.000Z',
+    now: () => '2026-08-04T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === sourcedesk.CAREERS_URL) return archiveHtml
-      if (url === 'https://www.sourcedeskglobal.com/job/urgent-hiring-business-development-executive-online-bidder-required/') {
-        return detailHtml
+      if (url === sourcedesk.CAREERS_URL) return currentOpeningsHtml
+      if (url === 'https://www.sourcedesk.io/current-openings/seo-executive') {
+        return seoDetailHtml
       }
-      if (url === 'https://www.sourcedeskglobal.com/job/seo-strategy-manager/') {
-        return detailHtml
-          .replace(/Urgent Hiring: Business Development Executive \/ Online Bidder Required/g, 'SEO Strategy Manager')
-          .replace(/Online Bidder \/ Business Development Executive \(BDE\)/g, 'SEO Strategy Manager')
-          .replace(/2 - 7 years/g, '2 - 9 years')
-          .replace(/8 - 12 Lacs P\.A\./g, '3.5-6.5 Lacs P.A.')
+      if (url === 'https://www.sourcedesk.io/current-openings/urgent-position-business-associate-online-bidder') {
+        return bidderDetailHtml
       }
       throw new Error(`Unexpected Sourcedesk URL: ${url}`)
     },
@@ -76,22 +113,23 @@ test('Sourcedesk Global run maps first-party detail pages into normalized jobs',
 
   assert.deepEqual(requestedUrls, [
     sourcedesk.CAREERS_URL,
-    'https://www.sourcedeskglobal.com/job/urgent-hiring-business-development-executive-online-bidder-required/',
-    'https://www.sourcedeskglobal.com/job/seo-strategy-manager/',
+    'https://www.sourcedesk.io/current-openings/seo-executive',
+    'https://www.sourcedesk.io/current-openings/urgent-position-business-associate-online-bidder',
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].location, 'Kolkata, India')
-  assert.equal(jobs[0].applyUrl, 'https://www.sourcedeskglobal.com/job/urgent-hiring-business-development-executive-online-bidder-required/')
-  assert.equal(jobs[1].title, 'SEO Strategy Manager')
+  assert.equal(jobs[0].applyUrl, 'https://www.sourcedesk.io/current-openings/seo-executive')
+  assert.equal(jobs[1].title, 'Urgent Position: Business Associate (Online Bidder)')
+  assert.equal(jobs[0].scrapedAt, '2026-08-04T00:00:00.000Z')
 })
 
-test('Sourcedesk Global fails closed when the archive or first-party detail contract drifts', async () => {
+test('Sourcedesk Global fails closed when the current-openings or first-party detail contract drifts', async () => {
   const sourcedesk = await loadModule()
 
   await assert.rejects(
     sourcedesk.createSourcedeskGlobalScraper().run({
       fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
     }),
-    /verified first-party current-opening archive/i,
+    /verified first-party current-openings page/i,
   )
 })

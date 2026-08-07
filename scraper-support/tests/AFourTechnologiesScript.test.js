@@ -10,42 +10,42 @@ const careersPageHtml = `
       <h3>Unlock Your Career Potential With AFour Technologies</h3>
       <p>We are hiring</p>
 
-      <section class="job-card">
-        <h2>Cobol Developer</h2>
-        <h2>4-8 Years</h2>
-        <p>Cobol, db2, java, file handling, string handling, deployment</p>
-        <a href="https://afourtech.com/contact-us/">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <h2>Senior SDET Performance</h2>
-        <h2>4-7 Years</h2>
-        <p>Performance testing</p>
-        <a href="https://afourtech.com/contact-us/">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <h2>Lead SDET</h2>
-        <h2>7-10 Years</h2>
-        <p>Slenium, python, java, ci/cd, api testing</p>
-        <a href="https://afourtech.com/contact-us/">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <h2>Sr. SDE Java</h2>
-        <h2>4-8 Years</h2>
-        <p>Java development</p>
-        <a href="https://afourtech.com/contact-us/">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <h2>Lead SDET Enterprise Analytics Testing</h2>
-        <h2>6-8 Years</h2>
-        <p>etl testing, BI Testing, Python</p>
-        <a href="https://afourtech.com/contact-us/">Apply Now</a>
-      </section>
-      <section class="job-card">
-        <h2>Sr. Python Developer</h2>
-        <h2>4-8 Years</h2>
-        <p>Python development</p>
-        <a href="https://afourtech.com/contact-us/">Apply Now</a>
-      </section>
+      <div class="elementor-column">
+        <h2 class="elementor-heading-title">Cobol Developer</h2>
+        <h2 class="elementor-heading-title">4-8 Years</h2>
+        <div class="elementor-widget-text-editor"><p>Cobol, db2, java, file handling, string handling, deployment</p></div>
+        <a class="elementor-button" href="https://afourtech.com/cobol-developer/"><span>Apply Now</span></a>
+      </div>
+      <div class="elementor-column">
+        <h2 class="elementor-heading-title">Senior SDET Performance</h2>
+        <h2 class="elementor-heading-title">4-7 Years</h2>
+        <div class="elementor-widget-text-editor"><p>Performance testing</p></div>
+        <a class="elementor-button" href="https://afourtech.com/senior-sdet-performance/"><span>Apply Now</span></a>
+      </div>
+      <div class="elementor-column">
+        <h2 class="elementor-heading-title">Lead SDET</h2>
+        <h2 class="elementor-heading-title">7-10 Years</h2>
+        <div class="elementor-widget-text-editor"><p>Slenium, python, java, ci/cd, api testing</p></div>
+        <a class="elementor-button" href="https://afourtech.com/lead-sdet/"><span>Apply Now</span></a>
+      </div>
+      <div class="elementor-column">
+        <h2 class="elementor-heading-title">Sr. SDE Java</h2>
+        <h2 class="elementor-heading-title">4-8 Years</h2>
+        <div class="elementor-widget-text-editor"><p>Java development</p></div>
+        <a class="elementor-button" href="https://afourtech.com/sr-sde-java/"><span>Apply Now</span></a>
+      </div>
+      <div class="elementor-column">
+        <h2 class="elementor-heading-title">Lead SDET Enterprise Analytics Testing</h2>
+        <h2 class="elementor-heading-title">6-8 Years</h2>
+        <div class="elementor-widget-text-editor"><p>etl testing, BI Testing, Python</p></div>
+        <a class="elementor-button" href="https://afourtech.com/lead-sdet-enterprise-analytics-testing/"><span>Apply Now</span></a>
+      </div>
+      <div class="elementor-column">
+        <h2 class="elementor-heading-title">Sr. Python Developer</h2>
+        <h2 class="elementor-heading-title">4-8 Years</h2>
+        <div class="elementor-widget-text-editor"><p>Python development</p></div>
+        <a class="elementor-button" href="https://afourtech.com/sr-python-developer/"><span>Apply Now</span></a>
+      </div>
     </main>
   </body>
 </html>
@@ -65,7 +65,7 @@ test('AFour Technologies helpers stay pinned to the verified careers page from S
   assert.equal(afour.SOURCE, 'afourtechnologies')
   assert.equal(afour.COMPANY, 'AFour Technologies')
   assert.equal(afour.CAREERS_URL, 'https://afourtech.com/careers-3/')
-  assert.equal(afour.VERIFIED_ON, '2026-07-18')
+  assert.equal(afour.VERIFIED_ON, '2026-08-01')
   assert.equal(afour.hasOfficialCareersSignal(careersPageHtml), true)
 
   const jobs = afour.extractJobs(careersPageHtml)
@@ -75,8 +75,8 @@ test('AFour Technologies helpers stay pinned to the verified careers page from S
     experience: '4-8 Years',
     description: 'Cobol, db2, java, file handling, string handling, deployment',
     location: 'India',
-    sourceUrl: 'https://afourtech.com/careers-3/',
-    applyUrl: 'https://afourtech.com/contact-us/',
+    sourceUrl: 'https://afourtech.com/cobol-developer/',
+    applyUrl: 'https://afourtech.com/cobol-developer/',
   })
 })
 

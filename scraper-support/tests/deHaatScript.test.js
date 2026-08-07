@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-15T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-01T00:00:00.000Z'
 
 const homepagePage = {
   status: 200,
@@ -34,12 +34,14 @@ const careersPage = {
     <html lang="en">
       <head>
         <title>Dehaat - Current Openings</title>
+        <meta name="description" content="DeHaat is the fastest growing AgTech startup in India and the only full stack agri platform in India.">
+        <script src="/_next/static/chunks/pages/careers-94ad4d1e6e0bef17.js" defer=""></script>
       </head>
       <body>
         <main>
-          <h1>Cultivate your potential with DeHaat's career opportunities.</h1>
+          <h1>Current Openings</h1>
           <section>
-            <h2>Our Work Culture</h2>
+            <h2>Great Work Culture</h2>
             <p>We embrace challenges and grow together.</p>
           </section>
         </main>
@@ -71,9 +73,9 @@ const workableBoardPage = {
   `,
 }
 
-const emptyJobsMarkdown = `# Dehaat - All Open Positions
+const emptyJobsMarkdown = `# Dehaat — All Open Positions
 
-> Last updated: 2026-07-14
+> Last updated: 2026-08-01
 
 | Title | Department | Location | Type | Salary | Posted | Details |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -82,9 +84,9 @@ const emptyJobsMarkdown = `# Dehaat - All Open Positions
 Powered by [Workable](https://www.workable.com)
 `
 
-const jobsMarkdownWithIndiaRole = `# Dehaat - All Open Positions
+const jobsMarkdownWithIndiaRole = `# Dehaat — All Open Positions
 
-> Last updated: 2026-07-14
+> Last updated: 2026-08-01
 
 | Title | Department | Location | Type | Salary | Posted | Details |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -123,7 +125,7 @@ test('DeHaat constants and validators stay pinned to the verified first-party an
     dehaat.WIDGET_API_URL,
     'https://apply.workable.com/api/v1/widget/accounts/agrevolution',
   )
-  assert.equal(dehaat.VERIFIED_ON, '2026-07-15')
+  assert.equal(dehaat.VERIFIED_ON, '2026-08-01')
   assert.equal(dehaat.hasOfficialHomepageSignal(homepagePage), true)
   assert.equal(dehaat.hasOfficialCareersPageSignal(careersPage), true)
   assert.equal(dehaat.hasWorkableBoardSignal(workableBoardPage), true)
@@ -227,7 +229,7 @@ test('DeHaat scraper fails closed when any verified public-surface checkpoint dr
         if (url === dehaat.CAREERS_PAGE_URL) {
           return {
             ...careersPage,
-            html: careersPage.html.replace('Cultivate your potential', 'Explore opportunities'),
+            html: careersPage.html.replace('Great Work Culture', 'People Stories'),
           }
         }
 

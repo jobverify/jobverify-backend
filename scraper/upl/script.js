@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -51,6 +52,27 @@ const toAbsoluteUrl = (value) => {
 const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   const match = pattern.exec(String(value ?? ''))
   return match ? transform(match) : null
+}
+
+const extractHighConfidenceExperience = (text) => {
+  const normalized = normalizeWhitespace(text)
+  if (!normalized) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0
+    && experienceProfile.maximumYears === 0
+  )
+    ? 'No experience required'
+    : evidence
 }
 
 const isIndiaLocation = (location) => /(?:\bIndia\b|\bIN\b)/i.test(location ?? '')
@@ -110,11 +132,11 @@ export const extractSearchResults = (html) => {
 
 export const extractJobDetail = (html, listing = {}) => {
   const descriptionHtml = extractFirst(
-    /<span itemprop="description" class="jobdescription">([\s\S]*?)<\/span>/i,
+    /<span[^>]*class="jobdescription"[^>]*>([\s\S]*?)<\/span>/i,
     html,
   )
   const applyPath = normalizeWhitespace(
-    extractFirst(/class="btn btn-primary btn-large btn-lg apply dialogApplyBtn hidden-phone"\s+href="([^"]+)"/i, html),
+    extractFirst(/<a[^>]*class="[^"]*\bapply\b[^"]*\bdialogApplyBtn\b[^"]*"[^>]*href="([^"]+)"/i, html),
   )
   const title = normalizeWhitespace(
     extractFirst(/<h1 id="job-title" itemprop="title">([\s\S]*?)<\/h1>/i, html),
@@ -125,6 +147,7 @@ export const extractJobDetail = (html, listing = {}) => {
   const jobId = normalizeWhitespace(
     extractFirst(/<input type="text" value="(\d+)" name="jobid" id="jobid"/i, html),
   ) || listing.jobId || null
+  const jobDescription = stripTags(descriptionHtml)
 
   return {
     title,
@@ -133,8 +156,8 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId,
     requisitionId: jobId,
     employmentType: 'Full-time',
-    experienceRequired: null,
-    jobDescription: stripTags(descriptionHtml),
+    experienceRequired: extractHighConfidenceExperience(jobDescription),
+    jobDescription,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
@@ -144,6 +167,7 @@ export const extractJobDetail = (html, listing = {}) => {
     closingDate: null,
     applyUrl: toAbsoluteUrl(applyPath) || (jobId ? toAbsoluteUrl(`/talentcommunity/apply/${jobId}/?locale=en_US`) : null),
     sourceUrl: listing.sourceUrl || null,
+    publicExperienceChecked: Boolean(jobDescription),
   }
 }
 
@@ -207,6 +231,7 @@ export const run = async ({
         requiredSkills: detail.requiredSkills,
         postingDate: detail.postingDate || listing.postingDate,
         closingDate: detail.closingDate,
+        publicExperienceChecked: detail.publicExperienceChecked === true,
         scrapedAt: now(),
       })
 

@@ -26,7 +26,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('SatSure local catalog captures the verified fail-closed first-party careers plus Keka handoff state', async () => {
+test('SatSure local catalog captures the verified first-party careers handoff and public Keka feed', async () => {
   const { SATSURE_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const satSure = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(SATSURE_CATALOG)
@@ -38,29 +38,38 @@ test('SatSure local catalog captures the verified fail-closed first-party career
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.satsure.co/careers/')
   assert.equal(provider.officialCareersPageUrl, 'https://www.satsure.co/careers/')
-  assert.equal(provider.companyDomain, 'satsure.co')
   assert.equal(provider.officialCareersHandoffUrl, 'https://satsure.keka.com/careers')
-  assert.equal(provider.verifiedSampleJobUrl, 'https://satsure.keka.com/careers/jobdetails/30263')
-  assert.equal(provider.atsPlatform, 'keka-handoff-unverifiable')
+  assert.equal(provider.jobsBoardUrl, 'https://satsure.keka.com/careers')
+  assert.equal(
+    provider.careerPortalInfoUrl,
+    'https://satsure.keka.com/careers/api/organization/default/careerportalinfo',
+  )
+  assert.equal(
+    provider.activeJobsUrl,
+    'https://satsure.keka.com/careers/api/embedjobs/default/active/350ad025-b87c-4c10-940f-8f95377d5133',
+  )
+  assert.equal(provider.verifiedSampleJobUrl, 'https://satsure.keka.com/careers/jobdetails/153475')
+  assert.equal(provider.companyDomain, 'satsure.co')
+  assert.equal(provider.atsPlatform, 'keka-embed-api')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'first-party-careers-page-plus-external-keka-handoff-no-verifiable-public-board',
+    'first-party-careers-page-handoff-plus-single-keka-active-jobs-endpoint',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-keka-handoff+historical-public-jobdetail+fail-closed-sentinel',
+    'verified-first-party-careers-page+verified-keka-handoff+embedded-khConfig+careerportalinfo+active-keka-embed-api+jobdetails+applyjob',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /satsure[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.satsure\.co\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/satsure\.keka\.com\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /30263/)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /25 live public openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Machine Learning Engineer - 2/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'SatSure'), false)
 
   assert.equal(satSure.PROVIDER_METADATA.source, SATSURE_CATALOG.source)
@@ -90,8 +99,9 @@ test('SatSure hydrated local catalog stays script-runner compatible for central 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'SatSure')
   assert.equal(provider.companyCareerPage, 'https://www.satsure.co/careers/')
+  assert.equal(provider.jobsBoardUrl, 'https://satsure.keka.com/careers')
   assert.equal(provider.companyDomain, 'satsure.co')
-  assert.equal(provider.atsPlatform, 'keka-handoff-unverifiable')
+  assert.equal(provider.atsPlatform, 'keka-embed-api')
   assert.match(provider.modulePath, /satsure[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /satsure[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

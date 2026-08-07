@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 import { IKYA_CATALOG } from './catalog.js'
 
@@ -17,8 +17,6 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const HOMEPAGE_PLACEHOLDER_MAX_LENGTH = 10
-
 const normalizeWhitespace = (value) =>
   String(value ?? '')
     .replace(/\u00a0/g, ' ')
@@ -26,6 +24,12 @@ const normalizeWhitespace = (value) =>
     .replace(/&amp;/gi, '&')
     .replace(/\s+/g, ' ')
     .trim()
+
+const stripTags = (value) =>
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
 
 const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   try {
@@ -35,13 +39,16 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  allowInsecureTlsHosts: [
+    'careers.smartrecruiters.com',
+  ],
 })
 
 export const extractPublicJobLinksFromBoard = (html = '') => {
@@ -69,26 +76,34 @@ export const hasVerifiedEmptyBoardSignal = (html = '') => {
 }
 
 export const hasHomepagePlaceholderSignal = (body = '') => {
-  const normalized = normalizeWhitespace(body)
+  const rawBody = String(body ?? '')
+  const normalized = normalizeWhitespace(stripTags(rawBody))
 
-  return normalized.length > 0
-    && normalized.length <= HOMEPAGE_PLACEHOLDER_MAX_LENGTH
-    && !/<html|<head|<body|<title/i.test(String(body ?? ''))
+  if (
+    normalized.length > 0
+    && normalized.length <= 10
+    && !/<html|<head|<body|<title/i.test(rawBody)
+  ) {
+    return true
+  }
+
+  return /<title>\s*www\.ikya\.com\s*-\s*Coming Soon\s*<\/title>/i.test(rawBody)
+    && /This domain is coming soon\./i.test(normalized)
 }
 
 export const createIkyaScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasVerifiedEmptyBoardSignal(careersHtml)) {
-      const publicJobLinks = extractPublicJobLinksFromBoard(careersHtml)
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (careersPage.status !== 200 || !hasVerifiedEmptyBoardSignal(careersPage.html)) {
+      const publicJobLinks = extractPublicJobLinksFromBoard(careersPage.html)
       if (publicJobLinks.length > 0) {
         throw new Error(`Ikya careers board now appears to expose a public jobs surface: ${publicJobLinks[0]}`)
       }
       throw new Error('Ikya verified empty SmartRecruiters board no longer matches the known first-party surface')
     }
 
-    const homepageBody = await fetchText(HOMEPAGE_URL)
-    if (!hasHomepagePlaceholderSignal(homepageBody)) {
+    const homepagePage = await fetchPage(HOMEPAGE_URL)
+    if (homepagePage.status !== 200 || !hasHomepagePlaceholderSignal(homepagePage.html)) {
       throw new Error('Ikya homepage surface no longer matches the verified placeholder state')
     }
 

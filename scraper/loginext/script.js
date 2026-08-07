@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { LOGINEXT_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -169,6 +170,16 @@ const extractCity = (location) => {
   return normalized.split(',')[0]?.trim() || normalized
 }
 
+const extractExperienceRequired = (jobDescription) => {
+  const { experienceProfile } = extractJobFilterSignals({
+    description: jobDescription,
+  })
+
+  return experienceProfile?.confidence === 'high'
+    ? experienceProfile.evidence || null
+    : null
+}
+
 export const mapRoleRecordToJob = (role, { scrapedAt = new Date().toISOString() } = {}) => {
   const title = normalizeField(role?.title)
   const department = normalizeField(role?.department)
@@ -176,6 +187,14 @@ export const mapRoleRecordToJob = (role, { scrapedAt = new Date().toISOString() 
   const location = normalizeField(role?.location)
   const sourceUrl = normalizeField(role?.link)
   const description = normalizeField(role?.description)
+  const jobDescription = [
+    `Team: ${department}`,
+    `Location: ${location}`,
+    '',
+    description,
+  ].join('\n')
+  const experienceRequired = extractExperienceRequired(jobDescription)
+  const hasPublicDetailEvidence = Boolean(description && description.length >= 80)
 
   if (!title || !department || !roleId || !location || !sourceUrl || !description) {
     return null
@@ -194,19 +213,15 @@ export const mapRoleRecordToJob = (role, { scrapedAt = new Date().toISOString() 
     requisitionId: roleId,
     employmentType: null,
     workplaceType: null,
-    experienceRequired: null,
+    experienceRequired,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
     compensation: null,
     postingDate: null,
     closingDate: null,
-    jobDescription: [
-      `Team: ${department}`,
-      `Location: ${location}`,
-      '',
-      description,
-    ].join('\n'),
+    jobDescription,
+    publicExperienceChecked: hasPublicDetailEvidence && !experienceRequired,
     source: SOURCE,
     companyCareerPage: JOBS_PAGE_URL,
     companyDomain: PROVIDER_METADATA.companyDomain,

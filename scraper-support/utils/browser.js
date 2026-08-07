@@ -156,7 +156,9 @@ export const isBlockedInternalUrl = async (value, resolveAddresses = resolveHost
 }
 
 // Launches a Puppeteer browser instance with memory-saving arguments.
-export const launchBrowser = async () => {
+export const launchBrowser = async ({
+  ignoreHTTPSErrors = false,
+} = {}) => {
   const puppeteer = await loadPuppeteer()
   const args = [
     '--disable-dev-shm-usage',
@@ -181,6 +183,7 @@ export const launchBrowser = async () => {
     const browser = await puppeteer.launch({
       headless: true,
       args,
+      ignoreHTTPSErrors,
       protocolTimeout: 300000,
       userDataDir,
       ...(executablePath ? { executablePath } : {}),

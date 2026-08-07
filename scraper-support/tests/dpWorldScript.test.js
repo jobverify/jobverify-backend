@@ -13,14 +13,14 @@ const officialCorporateCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>DP World Careers & Jobs | DP World Recruitment | DP World</title>
+    <title>DP World Careers &amp; Jobs | DP World Recruitment | DP World</title>
   </head>
   <body>
     <main>
       <h1>CAREERS</h1>
       <p>Join DP World and help shape the future of global trade.</p>
-      <a href="https://ehpv.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs">
-        View All Vacancies
+      <a href="https://ehpv.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs" aria-label="View All Vacancies (Opens in a new tab)" target="_blank" rel="noopener noreferrer">
+        <span>View All Vacancies</span>
       </a>
     </main>
   </body>
@@ -34,17 +34,11 @@ const officialCandidateExperienceHtml = `
     <meta property="og:title" content="DP World Careers" />
     <meta property="og:site_name" content="DP World" />
     <title>DP World</title>
-    <base href="/hcmUI/CandidateExperience/en/sites/CX_1" />
-    <script data-cx-config>
-      var CX_CONFIG = {
-        app: {
-          apiBaseUrl: 'https://ehpv.fa.em2.oraclecloud.com:443',
-          siteName: 'DP World',
-          siteCode: 'CX_1',
-          siteNumber: 'CX_1'
-        }
-      };
-    </script>
+    <base
+      href="/hcmUI/CandidateExperience/en/sites/CX_1"
+      data-apibaseurl="https://ehpv.fa.em2.oraclecloud.com:443"
+      data-sitenumber="CX_1"
+    />
   </head>
   <body>
     <div class="app" data-bind="view: 'layout'"></div>
@@ -227,6 +221,22 @@ test('extractJobDetail enriches DP World requisitions from the public Oracle det
   assert.equal(detail.closingDate, '2026-07-29')
   assert.match(detail.jobDescription, /Lead the customer onboarding journey/i)
   assert.match(detail.jobDescription, /SQL and Office tools/i)
+  assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.publicExperienceChecked, true)
+})
+
+test('extractJobDetail captures experience evidence from DP World qualifications when the Oracle detail payload states it', async () => {
+  const dpWorld = await loadDpWorldModule()
+  const listing = dpWorld.extractSearchResults(listingPayload)[0]
+  const detail = dpWorld.extractJobDetail({
+    items: [{
+      ...detailPayload.items[0],
+      ExternalQualificationsStr: '<p>8+ years of enterprise product support experience.</p>',
+    }],
+  }, listing)
+
+  assert.equal(detail.experienceRequired, '8+ years')
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('run verifies the official careers handoff before calling the public DP World Oracle APIs', async () => {
@@ -265,6 +275,7 @@ test('run verifies the official careers handoff before calling the public DP Wor
   assert.equal(jobs[0].company, 'DP World')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-15T00:00:00.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run fails closed when the verified DP World careers page or Oracle candidate experience shell drifts materially', async () => {
@@ -274,7 +285,7 @@ test('run fails closed when the verified DP World careers page or Oracle candida
     dpWorld.createDpWorldScraper({
       fetchText: async (url) => {
         if (url === dpWorld.CORPORATE_CAREERS_URL) {
-          return officialCorporateCareersHtml.replace('View All Vacancies', 'Browse Roles')
+          return officialCorporateCareersHtml.replace('<span>View All Vacancies</span>', '<span>Browse Roles</span>')
         }
         return officialCandidateExperienceHtml
       },
@@ -287,7 +298,7 @@ test('run fails closed when the verified DP World careers page or Oracle candida
     dpWorld.createDpWorldScraper({
       fetchText: async (url) => {
         if (url === dpWorld.CORPORATE_CAREERS_URL) return officialCorporateCareersHtml
-        return officialCandidateExperienceHtml.replace("siteNumber: 'CX_1'", "siteNumber: 'CX_2'")
+        return officialCandidateExperienceHtml.replace('data-sitenumber="CX_1"', 'data-sitenumber="CX_2"')
       },
       fetchJson: async () => listingPayload,
     }).run(),

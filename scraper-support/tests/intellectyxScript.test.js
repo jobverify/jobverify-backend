@@ -24,14 +24,18 @@ const loadIntellectyxModule = async () => {
 
 test('Intellectyx recognizes the verified official homepage and resume-only careers page', async () => {
   const intellectyx = await loadIntellectyxModule()
+  const liveLikeHomepageHtml = homepageHtml.replace(/Exceptional Ideas/gi, 'Upcoming Webinar')
+  const genericApplyCtaHtml = `${careersNoPublicJobsHtml}<section><a href="/contact">Apply Now</a></section>`
 
   assert.equal(intellectyx.SOURCE, 'intellectyx')
   assert.equal(intellectyx.COMPANY, 'Intellectyx')
   assert.equal(intellectyx.HOMEPAGE_URL, 'https://www.intellectyx.com/')
   assert.equal(intellectyx.CAREERS_URL, 'https://www.intellectyx.com/careers/')
   assert.equal(intellectyx.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(intellectyx.hasOfficialHomepageSignal(liveLikeHomepageHtml), true)
   assert.equal(intellectyx.hasOfficialCareersSignal(careersNoPublicJobsHtml), true)
   assert.equal(intellectyx.pageExposesPublicJobListings(careersNoPublicJobsHtml), false)
+  assert.equal(intellectyx.pageExposesPublicJobListings(genericApplyCtaHtml), false)
   assert.equal(
     intellectyx.pageExposesPublicJobListings(
       `${careersNoPublicJobsHtml}<section><h2>Current Openings</h2><a href="/jobs/data-engineer">Apply Now</a></section>`,

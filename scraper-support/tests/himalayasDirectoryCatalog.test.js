@@ -49,12 +49,13 @@ test('Himalayas generated providers expose stable source ids and workbook metada
   ))
 
   assert.ok(acvAuctions)
-  assert.equal(acvAuctions.source, 'hmacvauctions')
+  assert.equal(acvAuctions.source, 'acv-auctions.himalayas.app')
   assert.equal(acvAuctions.adapter, 'himalayasDirectory')
   assert.equal(
     acvAuctions.companyCareerPage,
     'https://himalayas.app/jobs/countries/india/software-engineering?page=2',
   )
+  assert.equal(acvAuctions.companyDomain, 'acv-auctions.himalayas.app')
   assert.equal(acvAuctions.himalayasCompanySlug, 'acv-auctions')
   assert.equal(acvAuctions.verifiedOn, '2026-07-23')
   assert.match(acvAuctions.verifiedSurfaceSummary, /Software Engineer/i)
@@ -63,10 +64,10 @@ test('Himalayas generated providers expose stable source ids and workbook metada
 
 test('buildScrapers exposes runnable Himalayas-directory scrapers', () => {
   const scrapers = buildScrapers()
-  const himalayasScraper = scrapers.find((scraper) => scraper.name === 'hmacvauctions')
+  const himalayasScraper = scrapers.find((scraper) => scraper.name === 'acv-auctions.himalayas.app')
 
   assert.ok(himalayasScraper)
   assert.equal(typeof himalayasScraper.run, 'function')
   assert.equal(himalayasScraper.provider.adapter, 'himalayasDirectory')
-  assert.match(himalayasScraper.dryRunFile, /hmacvauctions[\\/]jobs\.json$/)
+  assert.match(himalayasScraper.dryRunFile, /acv-auctions\.himalayas\.app[\\/]jobs\.json$/)
 })

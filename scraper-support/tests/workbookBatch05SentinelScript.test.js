@@ -76,6 +76,12 @@ const NON_GENERIC_PROVIDER_SOURCES = new Set([
   'wealthy',
 ])
 
+const EXPECTED_VERIFIED_ON_BY_SOURCE = {
+  sukoon: '2026-08-04',
+  suprdaily: '2026-08-04',
+  urbanpiper: '2026-08-01',
+}
+
 const batchProviders = dedicatedProviders.filter((provider) => EXPECTED_PROVIDER_SOURCES.includes(provider.source))
 
 test('workbook batch 05 provider extension registers specialized and generic fail-closed providers', () => {
@@ -90,7 +96,7 @@ test('workbook batch 05 provider extension registers specialized and generic fai
     const provider = catalog.find((item) => item.source === source)
     assert.ok(provider, `Expected ${source} in hydrated scraper catalog`)
     assert.equal(provider.adapter, 'script')
-    assert.equal(provider.verifiedOn, '2026-07-25')
+    assert.equal(provider.verifiedOn, EXPECTED_VERIFIED_ON_BY_SOURCE[source] || '2026-07-25')
     assert.equal(
       String(provider.originalModulePath || '').includes('failClosedSentinel'),
       !NON_GENERIC_PROVIDER_SOURCES.has(source),

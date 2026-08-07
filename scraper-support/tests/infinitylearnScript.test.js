@@ -44,14 +44,13 @@ const careers404Html = `
 <html lang="en">
   <head>
     <meta name="robots" content="noindex" />
-    <title>404 Page Not Found - InfinityLearn</title>
+    <title>404 Page Not Found – InfinityLearn</title>
     <meta name="description" content="Sorry, the page you are looking for cannot be found. Explore more content on Your Infinity Learn." />
     <meta property="og:site_name" content="Infinity Learn" />
   </head>
   <body>
     <h1>404</h1>
     <p>Page not found</p>
-    <a href="/">Go to home</a>
   </body>
 </html>
 `
@@ -83,6 +82,14 @@ test('Infinity Learn validates the verified official homepage, empty career shel
       status: 404,
       url: 'https://infinitylearn.com/careers',
       html: careers404Html,
+    }),
+    true,
+  )
+  assert.equal(
+    infinitylearn.isVerifiedMissingRoute({
+      status: 404,
+      url: 'https://infinitylearn.com/careers',
+      html: `${careers404Html}<a href="/">Go to home</a>`,
     }),
     true,
   )
@@ -209,4 +216,42 @@ test('Infinity Learn fails closed when the verified shell changes or public job 
     }),
     /missing careers routes changed materially or now expose public jobs/i,
   )
+})
+
+test('Infinity Learn falls back to a browser-backed page loader when Node fetch times out', async () => {
+  const infinitylearn = await loadInfinitylearnModule()
+  const requestedPrimaryUrls = []
+  const requestedBrowserUrls = []
+
+  const jobs = await infinitylearn.createInfinitylearnScraper().run({
+    fetchPage: async (url) => {
+      requestedPrimaryUrls.push(url)
+      throw new TypeError('fetch failed | Connect Timeout Error')
+    },
+    fetchBrowserPage: async (url) => {
+      requestedBrowserUrls.push(url)
+
+      if (url === infinitylearn.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === infinitylearn.CAREER_URL) {
+        return { status: 200, url, html: careerHtml }
+      }
+
+      if (infinitylearn.MISSING_ROUTE_URLS.includes(url)) {
+        return { status: 404, url, html: careers404Html }
+      }
+
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedPrimaryUrls, [
+    infinitylearn.HOMEPAGE_URL,
+    infinitylearn.CAREER_URL,
+    ...infinitylearn.MISSING_ROUTE_URLS,
+  ])
+  assert.deepEqual(requestedBrowserUrls, requestedPrimaryUrls)
+  assert.deepEqual(jobs, [])
 })

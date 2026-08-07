@@ -138,3 +138,21 @@ test('Smartshift rejects when a trusted ATS board or JobPosting markup appears',
     /public jobs surface changed materially/i,
   )
 })
+
+test('Smartshift accepts the live smartshift.com canonical handoff', () => {
+  assert.equal(
+    hasVerifiedCompanySurface(`
+      <html>
+        <head>
+          <title>SmartShift | Custom Software Solutions for Growing Businesses</title>
+          <link rel="canonical" href="https://www.smartshift.com/" />
+          <meta property="og:url" content="https://www.smartshift.com/" />
+        </head>
+        <body>
+          <h1>SmartShift</h1>
+        </body>
+      </html>
+    `),
+    true,
+  )
+})

@@ -3,7 +3,7 @@ import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/ut
 export const SOURCE = 'zluri'
 export const COMPANY = 'Zluri'
 export const OFFICIAL_BRAND = 'Zluri'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-02'
 export const CAREERS_URL = 'https://www.zluri.com/careers'
 export const KEKA_BOARD_URL = 'https://zluri.keka.com/careers/'
 export const EXPECTED_KEKA_IDENTIFIER = 'ed2b6b25-be74-43f1-9a38-c3bf27b9146c'
@@ -14,7 +14,7 @@ export const CAREER_PORTAL_INFO_URL = `${KEKA_BOARD_URL}api/organization/default
 export const ACTIVE_JOBS_URL = `${KEKA_BOARD_URL}api/embedjobs/default/active/${EXPECTED_KEKA_IDENTIFIER}`
 export const DISPOSITION = 'verified-first-party-careers-page-plus-public-keka-embedjobs-api'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.zluri.com/careers was the live Zluri first-party careers surface, that it embedded the public Keka jobs widget from https://zluri.keka.com/careers/api/embedjobs/js/ed2b6b25-be74-43f1-9a38-c3bf27b9146c, and that https://zluri.keka.com/careers/api/embedjobs/default/active/ed2b6b25-be74-43f1-9a38-c3bf27b9146c exposed a trustworthy public jobs inventory including India roles. This scraper validates those verified surfaces and returns India jobs only from the public Keka payload.'
+  'Verified on Sunday, August 2, 2026 that https://www.zluri.com/careers remained the live Zluri first-party careers surface, that it still embedded the public Keka jobs widget from https://zluri.keka.com/careers/api/embedjobs/js/ed2b6b25-be74-43f1-9a38-c3bf27b9146c, and that https://zluri.keka.com/careers/api/embedjobs/default/active/ed2b6b25-be74-43f1-9a38-c3bf27b9146c still exposed India roles including Bangalore openings. This scraper validates those verified surfaces and returns India jobs only from the public Keka payload.'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
@@ -42,32 +42,19 @@ const normalizeDomain = (value) => {
   return normalized.endsWith('/') ? normalized : `${normalized}/`
 }
 
-const toAbsoluteUrl = (value, baseUrl) => {
-  if (!value) return null
-
-  try {
-    return new URL(value, baseUrl).toString()
-  } catch {
-    return null
-  }
-}
-
 const escapeRegex = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const targetContainerId = EXPECTED_TARGET_CONTAINER.slice(1)
+  const hasCanonicalCareersLink =
+    /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.zluri\.com\/careers\/?["']/i.test(page)
+    || /<link[^>]+href=["']https:\/\/www\.zluri\.com\/careers\/?["'][^>]+rel=["']canonical["']/i.test(page)
 
   return /<title[^>]*>\s*Careers\s*\|\s*Zluri\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.zluri\.com\/careers["']/i.test(
-      page,
-    )
-    && /\bBlaze your trail at Zluri\b/i.test(normalized ?? '')
-    && /\bPut Customers First\./i.test(normalized ?? '')
-    && /\bMaintain a Bias for Action\./i.test(normalized ?? '')
-    && /\bHire and Develop the Best\./i.test(normalized ?? '')
-    && /\bOpen Roles\b/i.test(normalized ?? '')
+    && hasCanonicalCareersLink
+    && new RegExp(`id=["']${escapeRegex(targetContainerId)}["']`, 'i').test(page)
 }
 
 export const extractEmbeddedKekaConfig = (html = '') => {

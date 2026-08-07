@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://www.zebra.com/us/en/about-zebra/careers.html is the live first-party Zebra careers page and that its View Openings CTA hands off to the official public Workday board at https://zebra.wd501.myworkdayjobs.com/Zebra_careers. Official Zebra Workday job pages also exposed India openings including Application Engineer, L2 UX Researcher, and Software Engineer, Advanced (Android) in Bengaluru, India, so this local provider delegates to the shared Workday runner with India filtering.'
+  'Revalidated on Saturday, August 1, 2026 that https://www.zebra.com/us/en/about-zebra/careers.html is the live first-party Zebra careers page with the Better Every Day and Join the Herd hero sections and that it still links to the official public Workday board at https://zebra.wd501.myworkdayjobs.com/Zebra_careers. Official Zebra Workday results still exposed public India openings including Software Engineer Lead (IN/LK), Professional Senior, Senior Manager, Technical Program Management, and Technical Customer Support II-2, so this local provider delegates to the shared Workday runner with India filtering.'
 
 export const ZEBRA_TECHNOLOGIES_CATALOG = {
   source: 'zebratechnologies',
@@ -23,7 +23,7 @@ export const ZEBRA_TECHNOLOGIES_CATALOG = {
     'verified-first-party-careers-page+verified-workday-handoff+shared-workday-runner',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedIndiaCountryFacetId: 'c4f78be1a8f14da0ab49ce1162348a5e',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'zebratechnologies.workday/jobs.json',

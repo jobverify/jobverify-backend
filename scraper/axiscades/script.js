@@ -96,6 +96,8 @@ export const extractJobCards = (html) => {
       postingDate,
       closingDate: null,
       jobDescription: null,
+      companyCareerPage: JOBS_PAGE_URL,
+      atsPlatform: 'official-company-careers',
     })
   }
 

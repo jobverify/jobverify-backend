@@ -68,6 +68,28 @@ test('Cosmic Circuits returns no jobs while only the generic Cadence parent care
   assert.deepEqual(jobs, [])
 })
 
+test('Cosmic Circuits falls back to browser text when the verified parent careers page blocks plain fetches', async () => {
+  const cosmic = await loadModule()
+  const requested = []
+
+  const jobs = await cosmic.createCosmicCircuitsScraper().run({
+    fetchText: async (url) => {
+      requested.push({ type: 'text', url })
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      requested.push({ type: 'browser', url })
+      return verifiedCadenceCareersHtml
+    },
+  })
+
+  assert.deepEqual(requested, [
+    { type: 'text', url: cosmic.CAREERS_URL },
+    { type: 'browser', url: cosmic.CAREERS_URL },
+  ])
+  assert.deepEqual(jobs, [])
+})
+
 test('Cosmic Circuits fails closed when the parent careers surface drifts or becomes brand-specific', async () => {
   const cosmic = await loadModule()
 

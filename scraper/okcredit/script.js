@@ -50,9 +50,12 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Best Digital Bahi Khata & Ledger App \| OkCredit\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*Best Digital Bahi Khata & Ledger App \| OkCredit\s*<\/title>/i.test(page)
+    || /<title>\s*Free Bahi Khata Aur Udhar Ledger App \| OkCredit\s*<\/title>/i.test(page)
+  )
     && /Digital Udhar Bahi Khata/i.test(page)
-    && /Keep track of receivables and payables\. Make collections simpler and faster\./i.test(page)
+    && /(Keep track of receivables and payables\. Make collections simpler and faster\.|Simple\s*[·|&bull;]\s*Paperless\s*[·|&bull;]\s*Secure)/i.test(page)
     && /OkCredit Psi Phi Global Solutions Pvt\. Ltd\./i.test(page)
 }
 

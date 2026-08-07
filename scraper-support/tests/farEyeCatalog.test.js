@@ -56,7 +56,7 @@ test('FarEye catalog captures the verified first-party careers handoff and no-pu
   )
   assert.equal(FAREYE_CATALOG.parser, 'custom-script')
   assert.equal(FAREYE_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(FAREYE_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(FAREYE_CATALOG.verifiedOn, '2026-08-04')
   assert.equal(FAREYE_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/fareye\.com\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/fareye\.com\/about\/careers/i)

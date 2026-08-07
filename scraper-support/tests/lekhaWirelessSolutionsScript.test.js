@@ -14,6 +14,47 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedCareersHtml = readFixture('careers.html')
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Lekha Wireless Solutions Private Limited</title>
+  </head>
+  <body>
+    <nav>
+      <a href="https://www.lekhawireless.com/company/contact-us/careers/">Careers</a>
+    </nav>
+    <main>
+      <h1>The future of seamless mobile wireless connectivity</h1>
+      <p>Lekha designs and manufactures 5G, 4G and IEEE 802.16 ("dot16") RAN infrastructure for private, public and defense networks.</p>
+      <p>We are a founding member of the Bharat 6G Alliance.</p>
+    </main>
+  </body>
+</html>
+`
+
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers – Lekha Wireless Solutions Private Limited</title>
+  </head>
+  <body>
+    <h1>Careers</h1>
+    <p>Shape the Future with Lekha</p>
+    <p>Ready to make a real difference?</p>
+    <label>Upload your Resume</label>
+    <label>Years of experience</label>
+    <input type="file" name="your-attachment" />
+    <div class="elementor-accordion-item">
+      <a class="elementor-accordion-title">Hardware Design - Lead Engineer</a>
+      <div id="elementor-tab-content-100" class="elementor-tab-content">
+        <p>Job Overview</p>
+      </div>
+    </div>
+  </body>
+</html>
+`
 
 const loadLekhaWirelessSolutionsModule = async () => {
   try {
@@ -34,7 +75,9 @@ test('Lekha Wireless Solutions scraper recognizes the verified homepage and firs
     'https://www.lekhawireless.com/company/contact-us/careers/',
   )
   assert.equal(lekhaWirelessSolutions.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
+  assert.equal(lekhaWirelessSolutions.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(lekhaWirelessSolutions.hasOfficialCareersSignal(verifiedCareersHtml), true)
+  assert.equal(lekhaWirelessSolutions.hasOfficialCareersSignal(currentCareersHtml), true)
 
   const jobs = lekhaWirelessSolutions.extractPublicJobs(verifiedCareersHtml)
 

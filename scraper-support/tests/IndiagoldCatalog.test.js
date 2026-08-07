@@ -51,10 +51,11 @@ test('Indiagold local catalog captures the verified first-party Zoho Recruit con
   assert.equal(INDIAGOLD_CATALOG.parser, 'custom-script')
   assert.equal(INDIAGOLD_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INDIAGOLD_CATALOG.dryRunFile, 'indiagold/jobs.json')
-  assert.equal(INDIAGOLD_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(INDIAGOLD_CATALOG.verifiedOn, '2026-08-02')
   assert.match(INDIAGOLD_CATALOG.verifiedSurfaceSummary, /https:\/\/indiagold\.co\/join-us/i)
-  assert.match(INDIAGOLD_CATALOG.verifiedSurfaceSummary, /indiagold\.zohorecruit\.in/i)
-  assert.match(INDIAGOLD_CATALOG.verifiedSurfaceSummary, /public jobs surface/i)
+  assert.match(INDIAGOLD_CATALOG.verifiedSurfaceSummary, /Great Places to Work Certified/i)
+  assert.match(INDIAGOLD_CATALOG.verifiedSurfaceSummary, /24 current India jobs/i)
+  assert.match(INDIAGOLD_CATALOG.verifiedSurfaceSummary, /Senior DevOps Engineer/i)
   assert.equal(INDIAGOLD_CATALOG.modulePath, indiagoldModulePath)
 
   assert.equal(indiagold.PROVIDER_METADATA.source, INDIAGOLD_CATALOG.source)
@@ -89,6 +90,7 @@ test('getScraperCatalog includes Indiagold as a verified Zoho Recruit provider',
   assert.equal(provider.companyCareerPage, 'https://indiagold.co/join-us')
   assert.equal(provider.companyDomain, 'indiagold.co')
   assert.equal(provider.atsPlatform, 'zohorecruit')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.modulePath, /indiagold[\\/]script\.js$/i)
 })
 

@@ -47,8 +47,8 @@ const workWithUsHtml = `
     <p>Re-start your career - Write to us at springboard@lumaxmail.com</p>
     <p>If you're ready to embark on a rewarding career journey with us, explore our current openings and find the perfect role for you.</p>
     <form action="formvalidate_workwithus_lumax.php" method="post">
-      <label>Position Applied For</label>
-      <input type="text" name="position" />
+      <label>Upload Resume</label>
+      <input type="file" name="resume" />
     </form>
   </body>
 </html>
@@ -84,7 +84,7 @@ test('Lumax Industries sentinel stays pinned to the verified listed-company, cur
   assert.equal(lumaxIndustries.SOURCE, 'lumaxindustries')
   assert.equal(lumaxIndustries.COMPANY, 'Lumax Industries')
   assert.equal(lumaxIndustries.OFFICIAL_BRAND_NAME, 'Lumax Industries Limited')
-  assert.equal(lumaxIndustries.VERIFIED_ON, '2026-07-16')
+  assert.equal(lumaxIndustries.VERIFIED_ON, '2026-08-03')
   assert.equal(
     lumaxIndustries.OFFICIAL_COMPANY_PAGE_URL,
     'https://www.lumaxworld.in/lumaxindustries/index.html',

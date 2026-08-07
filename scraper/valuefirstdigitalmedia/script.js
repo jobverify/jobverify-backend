@@ -1,3 +1,8 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'valuefirstdigitalmedia'
 export const COMPANY = 'ValueFirst Digital Media'
 export const HOMEPAGE_URL = 'https://www.vfirst.com/'
@@ -38,7 +43,7 @@ export const extractRoleSummaries = (html = '') => {
   const page = String(html ?? '')
   const matches = [
     ...page.matchAll(
-      /Open Roles[\s\S]*?<span[^>]*>\s*([^<]+,\s*India)\s*<\/span>[\s\S]*?<span[^>]*>\s*(Full-Time)\s*<\/span>[\s\S]*?<h[1-6][^>]*>\s*([^<]+?)\s*<\/h[1-6]>[\s\S]*?<a[^>]*href=["']([^"']*\/job-opening\/[^"']+)["'][^>]*>\s*Learn More\s*<\/a>/gi,
+      /Open Roles[\s\S]*?<div[^>]*class=["'][^"']*s-paragraph[^"']*["'][^>]*>\s*([^<]+,\s*India)\s*<\/div>[\s\S]*?<div[^>]*class=["'][^"']*s-paragraph[^"']*["'][^>]*>\s*(Full-Time)\s*<\/div>[\s\S]*?<h5[^>]*>\s*([^<]+?)\s*<\/h5>[\s\S]*?<a[^>]*href=["']([^"']*\/job-opening\/[^"']+)["'][^>]*>[\s\S]*?Learn More[\s\S]*?<\/a>/gi,
     ),
   ]
 
@@ -107,4 +112,16 @@ export const run = async ({
   }
 
   return jobs
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
 }

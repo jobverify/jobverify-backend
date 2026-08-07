@@ -18,9 +18,9 @@ export const ENOAH_ISOLUTION_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'enoahisolution.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://enoahisolution.com/careers/ remained the exact first-party eNoah iSolution careers page, linked to https://enoahisolution.com/careers/jobs/, and that the public Current Job Opportunities page stated We currently have no job openings.',
+    'Verified on Sunday, August 2, 2026 that https://enoahisolution.com/careers/ remained the exact first-party eNoah iSolution careers page, linked to https://enoahisolution.com/careers/jobs/, and that the public Current Job Opportunities page still stated We currently have no job openings.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

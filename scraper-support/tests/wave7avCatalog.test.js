@@ -99,7 +99,7 @@ test('V2soft local catalog captures the verified India careers listing and first
   })
 })
 
-test('Colan Infotech local catalog captures the verified first-party single-page openings contract', async () => {
+test('Colan Infotech local catalog captures the verified first-party job-card detail-panel contract', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/colaninfotech/script.js')
   const catalogModule = await loadModule('../../scraper/colaninfotech/catalog.js', 'catalog module')
   const scriptModule = await loadModule('../../scraper/colaninfotech/script.js', 'scraper module')
@@ -118,13 +118,14 @@ test('Colan Infotech local catalog captures the verified first-party single-page
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-inline-job-summaries+verified-inline-job-description-sections+same-page-apply-cta',
+    'verified-inline-job-table-rows+verified-inline-detail-panels+same-page-apply-modal',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.match(provider.verifiedSurfaceSummary, /Android Developer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Data Scientist/i)
+  assert.match(provider.verifiedSurfaceSummary, /Data Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /job-card rows/i)
   assert.equal(provider.modulePath, modulePath)
   assert.equal(scriptModule.PROVIDER_METADATA.source, provider.source)
 
@@ -154,11 +155,11 @@ test('Customer Analytics local catalog captures the verified inline current oppo
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-inline-current-opportunities+shared-apply-cta+onsite-office-location-cue',
+    'verified-current-opportunity-cards+inline-detail-panels+onsite-office-location-cue',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.match(provider.verifiedSurfaceSummary, /MS Dynamics 365 F&O Functional Consultant/i)
   assert.match(provider.verifiedSurfaceSummary, /MS Dynamics 365 F&O Developer/i)
   assert.equal(provider.modulePath, modulePath)

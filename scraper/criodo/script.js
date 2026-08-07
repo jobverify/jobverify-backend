@@ -141,6 +141,8 @@ export const extractCareerJobs = (html) => {
       closingDate: null,
       jobDescription: null,
       remoteStatus: getRemoteStatus(rawLocation),
+      companyCareerPage: CAREERS_PAGE_URL,
+      atsPlatform: 'official-company-careers',
     })
   }
 

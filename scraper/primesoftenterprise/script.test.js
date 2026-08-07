@@ -1,38 +1,30 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const verifiedBlockedHomepageHtml = `
-<!DOCTYPE html>
-<html style="height:100%">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-<title> 403 Forbidden
-</title>
-</head>
-<body>
-<div>
-<h1>403</h1>
-<h2>Forbidden</h2>
-<p>Access to this resource on the server is denied!</p>
-</div>
-</body>
-</html>
-`
+const FIXED_SCRAPED_AT = '2026-08-04T00:00:00.000Z'
 
-const verifiedMissingCareersHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-<title>This Page Does Not Exist</title>
-</head>
-<body>
-<div class="page-not-found">
-<div class="title">This Page Does Not Exist</div>
-<div class="text">
-Sorry, the page you are looking for could not be found. It's just an accident that was not intentional.
-</div>
-</div>
-</body>
+const careersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at PrimeSoft | Shape the Future of Work with AI &amp; IT</title>
+    <link rel="canonical" href="https://primesoft.net/careers/" />
+  </head>
+  <body>
+    <main>
+      <h1>Careers at PrimeSoft</h1>
+      <section>
+        <h2>Canada</h2>
+        <a href="https://primesoft.net/jobs/sr-software-engineering/">Software Test Engineering Manager</a>
+      </section>
+      <section>
+        <h2>India</h2>
+        <h5><span>For all India open positions click the link below</span></h5>
+        <a href="https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs">View India Openings</a>
+        <p>jobs@primesoft.net (India)</p>
+      </section>
+    </main>
+  </body>
 </html>
 `
 
@@ -44,181 +36,91 @@ const loadPrimesoftEnterpriseModule = async () => {
   }
 }
 
-test('Primesoft Enterprise sentinel recognizes the verified blocked homepage and absent careers routes', async () => {
+test('Primesoft Enterprise pins the live first-party careers page and official Darwinbox handoff', async () => {
   const primesoft = await loadPrimesoftEnterpriseModule()
 
   assert.equal(primesoft.SOURCE, 'primesoftenterprise')
+  assert.equal(primesoft.COMPANY_NAME, 'Primesoft Enterprise')
   assert.equal(primesoft.COMPANY, 'Primesoft Enterprise')
-  assert.equal(primesoft.HOMEPAGE_URL, 'https://www.primesoftindia.com/')
-  assert.deepEqual(primesoft.CAREERS_ROUTE_URLS, [
-    'https://www.primesoftindia.com/careers',
-    'https://www.primesoftindia.com/careers/',
-    'https://www.primesoftindia.com/career',
-    'https://www.primesoftindia.com/career/',
-    'https://www.primesoftindia.com/jobs',
-    'https://www.primesoftindia.com/jobs/',
-    'https://www.primesoftindia.com/join-us',
-    'https://www.primesoftindia.com/join-us/',
-    'https://www.primesoftindia.com/current-openings',
-    'https://www.primesoftindia.com/current-openings/',
-  ])
-
+  assert.equal(primesoft.VERIFIED_ON, '2026-08-04')
+  assert.equal(primesoft.OFFICIAL_SITE_URL, 'https://primesoft.net/')
+  assert.equal(primesoft.OFFICIAL_CAREERS_URL, 'https://primesoft.net/careers/')
+  assert.equal(primesoft.DARWINBOX_ORIGIN, 'https://primesoft.darwinbox.in')
   assert.equal(
-    primesoft.isVerifiedBlockedHomepage({
-      status: 403,
-      url: primesoft.HOMEPAGE_URL,
-      headers: {
-        server: 'LiteSpeed',
-        platform: 'hostinger',
-        panel: 'hpanel',
-      },
-      html: verifiedBlockedHomepageHtml,
-    }),
-    true,
+    primesoft.OFFICIAL_CAREERS_HANDOFF_URL,
+    'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
-
-  assert.equal(primesoft.hasPublicJobsSignal(verifiedBlockedHomepageHtml), false)
   assert.equal(
-    primesoft.isVerifiedAbsentCareersRoute({
-      status: 404,
-      url: primesoft.CAREERS_ROUTE_URLS[0],
-      headers: {},
-      html: verifiedMissingCareersHtml,
-    }),
-    true,
+    primesoft.PUBLIC_PORTAL_URL,
+    'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
+  assert.equal(primesoft.hasOfficialPrimesoftCareersSignals(careersHtml), true)
+  assert.equal(
+    primesoft.extractOfficialDarwinboxUrl(careersHtml),
+    'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
 })
 
-test('Primesoft Enterprise sentinel returns no jobs only while the verified blocked root and absent careers routes remain unchanged', async () => {
+test('Primesoft Enterprise validates the first-party careers page before delegating to Darwinbox', async () => {
   const primesoft = await loadPrimesoftEnterpriseModule()
   const requestedUrls = []
+  const runCalls = []
+  const delegatedJobs = [
+    {
+      title: 'QA Engineer.',
+      company: 'Primesoft Enterprise',
+      location: 'Malad Mindspace, Mumbai, Maharashtra , India',
+      source: 'primesoftenterprise',
+      link: 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a6333033cc4e',
+    },
+  ]
 
-  const jobs = await primesoft.createPrimesoftEnterpriseScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === primesoft.HOMEPAGE_URL) {
-        return {
-          status: 403,
-          url,
-          headers: {
-            server: 'LiteSpeed',
-            platform: 'hostinger',
-            panel: 'hpanel',
-          },
-          html: verifiedBlockedHomepageHtml,
-        }
-      }
-
-      if (primesoft.CAREERS_ROUTE_URLS.includes(url)) {
-        return {
-          status: 404,
-          url,
-          headers: {},
-          html: verifiedMissingCareersHtml,
-        }
-      }
-
-      throw new Error(`Unexpected fixture URL: ${url}`)
+  const scraper = primesoft.createPrimesoftEnterpriseScraper({
+    maxJobs: 1,
+    now: () => FIXED_SCRAPED_AT,
+    darwinboxScraper: {
+      run: async (options) => {
+        runCalls.push(options)
+        return delegatedJobs
+      },
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    primesoft.HOMEPAGE_URL,
-    ...primesoft.CAREERS_ROUTE_URLS,
+  const jobs = await scraper.run({
+    maxPages: 2,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return careersHtml
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [primesoft.OFFICIAL_CAREERS_URL])
+  assert.deepEqual(runCalls, [{ maxPages: 2, maxJobs: 1, fetchListingPage: undefined }])
+  assert.deepEqual(jobs, [
+    {
+      ...delegatedJobs[0],
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('Primesoft Enterprise sentinel fails closed when the homepage or careers-route contract changes', async () => {
+test('Primesoft Enterprise fails closed when the first-party careers page or Darwinbox handoff changes', async () => {
   const primesoft = await loadPrimesoftEnterpriseModule()
 
   await assert.rejects(
     primesoft.createPrimesoftEnterpriseScraper().run({
-      fetchPage: async (url) => {
-        if (url === primesoft.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            headers: {},
-            html: '<html><body><h1>Unexpected homepage</h1></body></html>',
-          }
-        }
-
-        return {
-          status: 404,
-          url,
-          headers: {},
-          html: verifiedMissingCareersHtml,
-        }
-      },
+      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
     }),
-    /blocked homepage contract|verified homepage/i,
+    /verified Primesoft Enterprise careers page/i,
   )
 
   await assert.rejects(
     primesoft.createPrimesoftEnterpriseScraper().run({
-      fetchPage: async (url) => {
-        if (url === primesoft.HOMEPAGE_URL) {
-          return {
-            status: 403,
-            url,
-            headers: {
-              server: 'LiteSpeed',
-              platform: 'hostinger',
-              panel: 'hpanel',
-            },
-            html: verifiedBlockedHomepageHtml,
-          }
-        }
-
-        if (url === primesoft.CAREERS_ROUTE_URLS[0]) {
-          return {
-            status: 200,
-            url,
-            headers: {},
-            html: '<html><body><h1>Careers</h1><a href="/jobs/software-engineer">Apply now</a></body></html>',
-          }
-        }
-
-        return {
-          status: 404,
-          url,
-          headers: {},
-          html: verifiedMissingCareersHtml,
-        }
-      },
+      fetchText: async () => careersHtml.replace(
+        'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+        'https://example.com/jobs',
+      ),
     }),
-    /careers routes changed materially or now expose public jobs/i,
-  )
-
-  await assert.rejects(
-    primesoft.createPrimesoftEnterpriseScraper().run({
-      fetchPage: async (url) => {
-        if (url === primesoft.HOMEPAGE_URL) {
-          return {
-            status: 403,
-            url,
-            headers: {
-              server: 'LiteSpeed',
-              platform: 'hostinger',
-              panel: 'hpanel',
-            },
-            html: verifiedBlockedHomepageHtml.replace(
-              '</body>',
-              '<a href="https://jobs.ashbyhq.com/primesoftenterprise">Current Openings</a></body>',
-            ),
-          }
-        }
-
-        return {
-          status: 404,
-          url,
-          headers: {},
-          html: verifiedMissingCareersHtml,
-        }
-      },
-    }),
-    /public jobs surface/i,
+    /official Darwinbox handoff/i,
   )
 })

@@ -12,19 +12,24 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('PathPartner Technology local catalog captures the verified blocked first-party careers route', async () => {
+test('PathPartner Technology local catalog captures the verified no-public-careers first-party surface', async () => {
   const { PATHPARTNER_TECHNOLOGY_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(PATHPARTNER_TECHNOLOGY_CATALOG)
 
   assert.equal(defaultCatalog, PATHPARTNER_TECHNOLOGY_CATALOG)
   assert.equal(provider.source, 'pathpartnertechnology')
   assert.equal(provider.companyName, 'PathPartner Technology')
-  assert.equal(provider.companyCareerPage, 'https://www.pathpartnertech.com/career/')
+  assert.equal(provider.homepageUrl, 'https://pathpartnertech.com/')
+  assert.equal(provider.companyCareerPage, 'https://pathpartnertech.com/about/')
   assert.equal(provider.companyDomain, 'pathpartnertech.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-blocked')
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /connection-reset \/ TLS-channel error/i)
+  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /page-sitemap\.xml/i)
+  assert.match(provider.verifiedSurfaceSummary, /\/career\//i)
+  assert.match(provider.verifiedSurfaceSummary, /\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /\/jobs\//i)
+  assert.match(provider.verifiedSurfaceSummary, /no public careers|no trustworthy public jobs surface/i)
 })
 
 test('PathPartner Technology backlog row matches directly through the local catalog', async () => {

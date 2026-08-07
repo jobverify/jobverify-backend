@@ -40,7 +40,7 @@ test('Sula Vineyards local catalog captures the verified first-party careers pag
   assert.equal(provider.officialCareersPageUrl, 'https://sulavineyards.com/careers.php')
   assert.equal(
     provider.officialCareersHandoffUrl,
-    'https://app.hrone.cloud/career-portal?ccid=8Qqxv4vYEt7A1wqC_2B0Fw~~&payload=evgE4Qh6f3p6GKeiD4fJQ0LiQsj1hT4DjXVao0Cuhy3Gev16iZi3l6M7u3e72Dhi&dc=sula',
+    'https://app.hrone.cloud/career-portal?appId=MHZzWpATk5uSVkWo1EwlhxzjgIG1VZ3pIZYpNVctJxMlUQo18qUoCm-17Y6BMlv4l0Cqdw6PNgHEZKAACmWo7upw3Rwo24m2v5XmXqZ2XGYc1Q2nq54JyLnImKiiIoss&dc=sula&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=eaqzS8e-weZZc3W_dw_T1Q',
   )
   assert.equal(provider.companyDomain, 'sulavineyards.com')
   assert.equal(provider.atsPlatform, 'hrone-handoff-unverifiable')
@@ -55,13 +55,13 @@ test('Sula Vineyards local catalog captures the verified first-party careers pag
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-05')
   assert.match(provider.dryRunFile, /sulavineyards[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/sulavineyards\.com\/careers\.php/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/app\.hrone\.cloud\/career-portal\?/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sula Vineyards Limited/i)
+  assert.match(provider.verifiedSurfaceSummary, /Careers at Sula/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Sula Vineyards'), false)
 

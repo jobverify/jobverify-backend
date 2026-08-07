@@ -48,12 +48,26 @@ export const hasTelekomAffiliateSignal = (html = '') => {
     && page.includes('https://dtdl.in/')
 }
 
-export const hasExactNameHomepageShellSignal = (html = '') => {
+const hasLegacyExactNameHomepageShellSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('DTDL')
     && normalized.includes('You need to enable JavaScript to run this app.')
     && normalized.includes('Loading ...')
-  }
+}
+
+const hasModernExactNameHomepageShellSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*DTDL\s*\|\s*Deutsche Telekom Digital Labs\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Deutsche Telekom Digital Labs \|\s*We build digital products that change how the world connects, pays, shops, and unwinds\.[^"']*["']/i.test(page)
+    && normalized.includes('DTDL | Deutsche Telekom Digital Labs')
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/dtdl\.in\/?["']/i.test(page)
+}
+
+export const hasExactNameHomepageShellSignal = (html = '') =>
+  hasLegacyExactNameHomepageShellSignal(html)
+  || hasModernExactNameHomepageShellSignal(html)
 
 const PUBLIC_JOB_PATTERNS = [/\bcurrent openings\b/i, /\bapply now\b/i, /\/jobs\//i]
 

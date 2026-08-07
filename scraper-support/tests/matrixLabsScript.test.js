@@ -5,7 +5,7 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Matrix Labs - Matrix Labs Pvt Ltd</title>
+    <title>Matrix Labs &#8211; Matrix Labs Pvt Ltd</title>
   </head>
   <body>
     <nav>
@@ -27,7 +27,7 @@ const careersResumeOnlyHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>career - Matrix Labs</title>
+    <title>career &#8211; Matrix Labs</title>
   </head>
   <body>
     <nav>
@@ -48,7 +48,7 @@ const missingRouteHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>404 Not Found</title>
+    <title>Page not found &#8211; Matrix Labs</title>
   </head>
   <body>
     <h1>Not Found</h1>
@@ -80,13 +80,13 @@ const loadModule = async () => {
   }
 }
 
-test('Matrix Labs scraper constants stay pinned to the verified first-party resume-only careers surface from Thursday, July 16, 2026', async () => {
+test('Matrix Labs scraper constants stay pinned to the verified first-party resume-only careers surface from Monday, August 3, 2026', async () => {
   const matrixLabs = await loadModule()
 
   assert.equal(matrixLabs.SOURCE, 'matrixlabs')
   assert.equal(matrixLabs.COMPANY, 'Matrix Labs')
   assert.equal(matrixLabs.OFFICIAL_BRAND_NAME, 'Matrix Labs Pvt Ltd')
-  assert.equal(matrixLabs.VERIFIED_ON, '2026-07-16')
+  assert.equal(matrixLabs.VERIFIED_ON, '2026-08-03')
   assert.equal(matrixLabs.HOMEPAGE_URL, 'https://matrixlabs.co.in/')
   assert.equal(matrixLabs.CAREERS_URL, 'https://matrixlabs.co.in/career/')
   assert.equal(matrixLabs.APPLICATION_EMAIL, 'hr@matrixlabs.co.in')

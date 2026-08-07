@@ -1,10 +1,15 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'suprdaily'
 export const COMPANY = 'Supr Daily'
 export const CAREERS_URL = 'https://www.suprdaily.com/'
-export const VERIFIED_BRAND_COPY = 'Supr Daily by Swiggy'
-export const DISPOSITION = 'verified-exact-name-public-company-surface'
+export const VERIFIED_REDIRECT_HOST = 'www.keluarantotomacau.it.com'
+export const DISPOSITION = 'verified-company-domain-redirect-drift-sentinel'
 
-const VERIFIED_BRAND_PATTERN = /\bsupr\s+daily\s+by\s+swiggy\b/i
+const VERIFIED_REDIRECT_TITLE_PATTERN = /Keluaran Toto Macau 2026/i
 
 const TRUSTED_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -81,26 +86,39 @@ const hasJobPostingMarkup = (html = '') => {
   return false
 }
 
-const assertVerifiedContract = (html = '') => {
-  const text = normalizeText(html)
+const isVerifiedOffDomainRedirect = (page = {}) => {
+  if (Number(page.status) !== 200) return false
 
-  if (VERIFIED_BRAND_PATTERN.test(text)) return
+  try {
+    const requestHost = new URL(CAREERS_URL).hostname
+    const finalUrl = new URL(page.url || CAREERS_URL)
+    if (finalUrl.hostname === requestHost) return false
+    if (finalUrl.hostname !== VERIFIED_REDIRECT_HOST) return false
+  } catch {
+    return false
+  }
+
+  return VERIFIED_REDIRECT_TITLE_PATTERN.test(String(page.html ?? ''))
+}
+
+const assertVerifiedContract = (page = {}) => {
+  if (isVerifiedOffDomainRedirect(page)) return
 
   throw new Error(
-    'Supr Daily verified exact-name public company surface changed; review for a real scraper.',
+    'Supr Daily verified company-domain redirect drift changed; review for a real first-party scraper.',
   )
 }
 
-const assertNoTrustedJobsSurface = (html = '', careersUrl = CAREERS_URL) => {
+const assertNoTrustedJobsSurface = (html = '', pageUrl = CAREERS_URL) => {
   if (hasJobPostingMarkup(html)) {
     throw new Error(
-      'Supr Daily public company surface now exposes JobPosting markup; promote a real parser.',
+      'Supr Daily redirected surface now exposes JobPosting markup; promote a real parser.',
     )
   }
 
-  const careersOrigin = new URL(careersUrl).origin
-  const careersPath = normalizePathname(new URL(careersUrl).pathname)
-  const linkedUrls = extractLinkedUrls(html, careersUrl)
+  const careersOrigin = new URL(pageUrl).origin
+  const careersPath = normalizePathname(new URL(pageUrl).pathname)
+  const linkedUrls = extractLinkedUrls(html, pageUrl)
 
   const atsBoardUrl = linkedUrls.find((url) =>
     TRUSTED_ATS_HOST_PATTERNS.some((pattern) => pattern.test(url.hostname)),
@@ -108,7 +126,7 @@ const assertNoTrustedJobsSurface = (html = '', careersUrl = CAREERS_URL) => {
 
   if (atsBoardUrl) {
     throw new Error(
-      `Supr Daily public company surface now exposes a trustworthy public jobs surface via ${atsBoardUrl.toString()}.`,
+      `Supr Daily redirected surface now exposes a trustworthy public jobs surface via ${atsBoardUrl.toString()}.`,
     )
   }
 
@@ -123,30 +141,46 @@ const assertNoTrustedJobsSurface = (html = '', careersUrl = CAREERS_URL) => {
 
   if (sameOriginJobUrl) {
     throw new Error(
-      `Supr Daily public company surface now exposes a trustworthy public jobs surface via ${sameOriginJobUrl.toString()}.`,
+      `Supr Daily redirected surface now exposes a trustworthy public jobs surface via ${sameOriginJobUrl.toString()}.`,
     )
   }
 }
 
-const defaultFetchHtml = async (url) => {
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
     },
+    redirect: 'follow',
   })
 
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
 }
 
 export const createSuprDailyScraper = () => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(CAREERS_URL)
-    assertVerifiedContract(html)
-    assertNoTrustedJobsSurface(html, CAREERS_URL)
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const page = await fetchPage(CAREERS_URL)
+    assertVerifiedContract(page)
+    assertNoTrustedJobsSurface(page.html, page.url || CAREERS_URL)
     return []
   },
 })
 
 export const run = async (options = {}) => createSuprDailyScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

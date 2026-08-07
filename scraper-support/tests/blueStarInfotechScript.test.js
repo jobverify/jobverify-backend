@@ -103,3 +103,15 @@ test('Blue Star Infotech fails closed if the parked-domain redirect disappears',
     /parked-domain redirect changed/i,
   )
 })
+
+test('Blue Star Infotech accepts the current GoDaddy parked-domain redirect target', async () => {
+  const bsil = await loadBlueStarInfotechModule()
+
+  assert.equal(
+    bsil.hasParkedLanderRedirect({
+      status: 307,
+      location: 'https://forsale.godaddy.com/forsale/www.bsil.com?utm_source=TDFS_DASLNC',
+    }),
+    true,
+  )
+})

@@ -12,31 +12,31 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Sourcedesk Global catalog captures the verified first-party current-opening archive', async () => {
+test('Sourcedesk Global catalog captures the verified first-party current-openings surface', async () => {
   const { SOURCEDESKGLOBAL_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(SOURCEDESKGLOBAL_CATALOG)
 
   assert.equal(defaultCatalog, SOURCEDESKGLOBAL_CATALOG)
   assert.equal(provider.source, 'sourcedeskglobal')
   assert.equal(provider.companyName, 'Sourcedesk Global')
-  assert.equal(provider.officialBrandName, 'Sourcedesk Global')
+  assert.equal(provider.officialBrandName, 'Sourcedesk')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://www.sourcedeskglobal.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.sourcedeskglobal.com/job/')
-  assert.equal(provider.sampleJobUrl, 'https://www.sourcedeskglobal.com/job/urgent-hiring-business-development-executive-online-bidder-required/')
-  assert.equal(provider.atsPlatform, 'first-party-wordpress-job-archive')
+  assert.equal(provider.homepageUrl, 'https://www.sourcedesk.io/')
+  assert.equal(provider.companyCareerPage, 'https://www.sourcedesk.io/current-openings')
+  assert.equal(provider.sampleJobUrl, 'https://www.sourcedesk.io/current-openings/seo-executive')
+  assert.equal(provider.atsPlatform, 'first-party-nextjs-current-openings-pages')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-archive-page-plus-first-party-detail-pages')
-  assert.equal(provider.extractionStrategy, 'verified-job-archive+first-party-job-detail-pages')
+  assert.equal(provider.paginationStrategy, 'single-current-openings-page-plus-first-party-detail-pages')
+  assert.equal(provider.extractionStrategy, 'verified-current-openings-page+first-party-detail-pages')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'sourcedeskglobal.com')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.companyDomain, 'sourcedesk.io')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.modulePath, /sourcedeskglobal[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /sourcedeskglobal[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Urgent Hiring: Business Development Executive \/ Online Bidder Required/i)
-  assert.match(provider.verifiedSurfaceSummary, /SEO Strategy Manager/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sourcedeskglobal\.com\/job\/ now redirects/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sourcedesk\.io\/current-openings\/seo-executive/i)
 })
 
 test('Sourcedesk Global exact backlog row resolves from the local catalog contract', async () => {

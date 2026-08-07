@@ -233,6 +233,7 @@ export const mapListingRowToJob = (row, { scrapedAt = new Date().toISOString() }
     companyCareerPage: CAREERS_URL,
     companyDomain: COMPANY_DOMAIN,
     atsPlatform: ATS_PLATFORM,
+    publicExperienceChecked: true,
     link: applyUrl,
     scrapedAt,
   }

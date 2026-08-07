@@ -33,6 +33,41 @@ test('run posts the India country facet to Flex Workday and normalizes jobs', as
   const { JOBS_API_URL, createFlexScraper } = await loadFlexModule()
   const requests = []
   const scraper = createFlexScraper({ pageSize: 2 })
+  const detailPageHtmlByUrl = {
+    'https://flextronics.wd1.myworkdayjobs.com/en-US/Careers/job/India-Bangalore/Manager---Production_WD224562': `
+      <html>
+        <body>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>Lead production planning and execution for high-volume manufacturing programs.</p>
+            </div>
+          </section>
+        </body>
+      </html>
+    `,
+    'https://flextronics.wd1.myworkdayjobs.com/en-US/Careers/job/India-Remote/Manager---Government-Affairs_WD224329': `
+      <html>
+        <body>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>Build regional government engagement strategies and executive relationships.</p>
+            </div>
+          </section>
+        </body>
+      </html>
+    `,
+    'https://flextronics.wd1.myworkdayjobs.com/en-US/Careers/job/India-Chennai/Analyst---Procurement_WD224473': `
+      <html>
+        <body>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>One or two years of Experience in the GL or Intercompany Activity or AR or AP.</p>
+            </div>
+          </section>
+        </body>
+      </html>
+    `,
+  }
 
   const jobs = await scraper.run({
     fetchJson: async (url, options) => {
@@ -77,6 +112,11 @@ test('run posts the India country facet to Flex Workday and normalizes jobs', as
         ],
       }
     },
+    fetchPage: async (url) => ({
+      status: 200,
+      url,
+      html: detailPageHtmlByUrl[url],
+    }),
   })
 
   assert.deepEqual(requests, [
@@ -130,7 +170,8 @@ test('run posts the India country facet to Flex Workday and normalizes jobs', as
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: null,
+    jobDescription:
+      'Lead production planning and execution for high-volume manufacturing programs.',
     remoteStatus: null,
     source: 'flex',
     link:
@@ -157,13 +198,16 @@ test('run posts the India country facet to Flex Workday and normalizes jobs', as
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: null,
+    jobDescription:
+      'Build regional government engagement strategies and executive relationships.',
     remoteStatus: 'Remote',
     source: 'flex',
     link:
       'https://flextronics.wd1.myworkdayjobs.com/en-US/Careers/job/India-Remote/Manager---Government-Affairs_WD224329/apply',
   })
 
+  assert.equal(jobs[2].experienceRequired, '2 years')
+  assert.match(jobs[2].jobDescription || '', /One or two years of Experience/i)
   assert.match(scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
   assert.match(secondScrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })

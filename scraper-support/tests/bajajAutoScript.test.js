@@ -273,6 +273,7 @@ test('Bajaj Auto pins the verified first-party careers hub, search page, career 
       employmentType: 'Full time',
       workplaceType: null,
       experienceRequired: '5-8 years',
+      publicExperienceChecked: true,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
@@ -360,10 +361,12 @@ test('Bajaj Auto run verifies the first-party surfaces and returns normalized jo
   assert.equal(jobs[0].location, 'Akurdi, Maharashtra, India')
   assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
   assert.equal(jobs[0].link, jobs[0].sourceUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].scrapedAt, '2026-07-15T10:15:00.000Z')
   assert.equal(jobs[1].title, 'Engineer')
   assert.equal(jobs[1].location, 'Waluj, Maharashtra, India')
   assert.equal(jobs[1].experienceRequired, '1-3 Years')
+  assert.equal(jobs[1].publicExperienceChecked, true)
   assert.equal(jobs[1].postingDate, '2026-05-02')
 })
 

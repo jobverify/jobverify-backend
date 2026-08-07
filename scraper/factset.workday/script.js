@@ -110,7 +110,8 @@ const buildDetailUrl = (externalPath) => {
   if (!externalPath) return null
 
   try {
-    return new URL(externalPath, BASE_URL).href.split('?')[0]
+    const normalizedPath = String(externalPath).replace(/^\/+/, '')
+    return new URL(normalizedPath, `${BASE_URL.replace(/\/+$/, '')}/`).href.split('?')[0]
   } catch {
     return null
   }

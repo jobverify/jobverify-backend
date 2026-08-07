@@ -114,3 +114,15 @@ test('TCS iON returns [] for the verified multi-company marketplace and fails cl
     /verified jobs marketplace changed materially/i,
   )
 })
+
+test('TCS iON returns [] when the verified marketplace host times out', async () => {
+  const tcsIon = await loadScriptModule()
+
+  const jobs = await tcsIon.createTcsIonScraper().run({
+    fetchPage: async () => {
+      throw new Error(`Connect Timeout Error for ${tcsIon.CAREERS_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

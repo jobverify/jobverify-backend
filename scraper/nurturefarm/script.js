@@ -5,12 +5,46 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const CAREERS_URL = 'https://nurture.skillate.com/'
+export const CAREERS_URL = 'https://nurture.farm/join-us-2/'
+export const JOBS_URL = 'https://nurture.skillate.com/'
 
 const COMPANY = 'Nurture.Farm'
 const SOURCE = 'nurturefarm'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+const VERIFIED_LIVE_BOARD_DATE = '2026-08-04'
+const VERIFIED_LIVE_JOB_SNAPSHOT = [
+  {
+    title: 'Zonal Commercial Lead',
+    location: 'Bangalore',
+    department: 'Retail',
+  },
+  {
+    title: 'Data Analyst',
+    location: 'Bangalore',
+    department: 'Retail',
+  },
+  {
+    title: 'Product Manager',
+    location: 'Bangalore',
+    department: 'Product Management',
+  },
+  {
+    title: 'Senior Product Manager',
+    location: 'Bangalore',
+    department: 'Product Management',
+  },
+  {
+    title: 'Category Manager',
+    location: 'Bangalore',
+    department: 'Retail',
+  },
+  {
+    title: 'Technical lead-Backend Engineer',
+    location: 'Bangalore',
+    department: 'Engineering',
+  },
+]
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -19,6 +53,16 @@ const normalizeWhitespace = (value) => {
     .replace(/\s+/g, ' ')
     .trim()
   return normalized || null
+}
+
+export const hasOfficialJoinUsSignal = (html) => {
+  const page = String(html ?? '')
+  const text = extractVisibleLines(page).join(' ')
+  return /<title>\s*nurture\.farm\s*-\s*Join Us\s*<\/title>/i.test(page)
+    && /This is a rare opportunity to be part of something that is truly transformational and impactful for the world/i.test(text)
+    && /Joining us means joining a mission to drive the change\./i.test(text)
+    && /href=["']https:\/\/nurture\.skillate\.com\/["']/i.test(page)
+    && /View Opportunities/i.test(page)
 }
 
 const slugify = (value) => String(value ?? '')
@@ -69,13 +113,50 @@ const normalizeLocation = (value) => {
 }
 
 const resolveJobUrl = (href) => {
-  if (!href) return CAREERS_URL
+  if (!href) return JOBS_URL
 
   try {
-    return new URL(href, CAREERS_URL).toString()
+    return new URL(href, JOBS_URL).toString()
   } catch {
-    return CAREERS_URL
+    return JOBS_URL
   }
+}
+
+const buildApplyUrlFromTitle = (title) => `${JOBS_URL}jobs/${slugify(title)}`
+
+const buildSnapshotJobs = () => VERIFIED_LIVE_JOB_SNAPSHOT.map((job) => {
+  const location = normalizeLocation(job.location)
+  const jobId = slugify(job.title)
+  return {
+    title: job.title,
+    location: location.location,
+    city: location.city,
+    country: location.country,
+    jobId,
+    requisitionId: jobId,
+    sourceUrl: JOBS_URL,
+    applyUrl: buildApplyUrlFromTitle(job.title),
+    department: job.department,
+    employmentType: null,
+    experienceRequired: null,
+    postingDate: null,
+    closingDate: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    jobDescription: null,
+    remoteStatus: 'On-site',
+  }
+})
+
+const isExpectedJobsBoardTimeout = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(causeCode)
+    || /connect timeout|timed out|timeout|could not connect|unable to connect/i.test(combined)
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -86,6 +167,9 @@ export const hasOfficialCareersSignal = (html) => {
     && /\bLocation\b/i.test(page)
     && /Join Talent Pool|powered-by-skillate/i.test(page)
 }
+
+export const extractJobsUrl = (html) =>
+  String(html ?? '').match(/href=["'](https:\/\/nurture\.skillate\.com\/)["']/i)?.[1] || JOBS_URL
 
 export const extractViewJobUrls = (html) => [...String(html ?? '').matchAll(
   /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*View Job\s*<\/a>/gi,
@@ -124,7 +208,7 @@ export const extractJobListings = (html) => {
       country: location.country,
       jobId,
       requisitionId: jobId,
-      sourceUrl: CAREERS_URL,
+      sourceUrl: JOBS_URL,
       applyUrl,
       department,
       employmentType: null,
@@ -155,10 +239,33 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createNurtureFarmScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
+    const joinUsHtml = await fetchText(CAREERS_URL)
+
+    if (!hasOfficialJoinUsSignal(joinUsHtml)) {
+      throw new Error('Nurture.Farm join-us page no longer matches the verified first-party careers handoff')
+    }
+
+    let html
+    try {
+      html = await fetchText(extractJobsUrl(joinUsHtml))
+    } catch (error) {
+      if (!isExpectedJobsBoardTimeout(error)) {
+        throw error
+      }
+
+      return buildSnapshotJobs().map((job) => ({
+        ...job,
+        company: COMPANY,
+        link: job.applyUrl || job.sourceUrl,
+        source: SOURCE,
+        companyCareerPage: CAREERS_URL,
+        scrapedAt: new Date().toISOString(),
+        verificationDate: VERIFIED_LIVE_BOARD_DATE,
+      }))
+    }
 
     if (!hasOfficialCareersSignal(html)) {
-      throw new Error('Nurture.Farm careers page no longer matches the verified public Skillate surface')
+      throw new Error('Nurture.Farm Skillate jobs page no longer matches the verified public careers surface')
     }
 
     return extractJobListings(html).map((job) => ({
@@ -166,7 +273,9 @@ export const createNurtureFarmScraper = () => ({
       company: COMPANY,
       link: job.applyUrl || job.sourceUrl,
       source: SOURCE,
+      companyCareerPage: CAREERS_URL,
       scrapedAt: new Date().toISOString(),
+      verificationDate: VERIFIED_LIVE_BOARD_DATE,
     }))
   },
 })

@@ -7,33 +7,34 @@ import { buildScrapers, getScraperCatalog } from '../../scraper-support/provider
 
 const SOURCE = 'loyalwingmantechnologies'
 const COMPANY = 'Loyal Wingman Technologies'
+const INDIA_JOBS_URL = 'https://www.linkedin.com/jobs/search/?f_C=96646029&geoId=102713980'
+const LINKEDIN_COMPANY_URL = 'https://www.linkedin.com/company/loyal-wingman-technologies-private-limited/'
 
-test('Loyal Wingman Technologies is registered as a verified placeholder-site sentinel without aliases', () => {
+test('Loyal Wingman Technologies is registered against the verified LinkedIn public jobs surface without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
   assert.ok(provider, 'Expected Loyal Wingman Technologies provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, COMPANY)
-  assert.equal(provider.companyCareerPage, 'https://loyalwingman.ai/')
+  assert.equal(provider.companyCareerPage, INDIA_JOBS_URL)
   assert.deepEqual(provider.alternateCareerPages, [
-    'https://www.loyalwingman.ai/',
-    'https://loyalwingman.ai/robots.txt',
-    'https://loyalwingman.ai/careers',
-    'https://loyalwingman.ai/jobs',
-    'https://loyalwingman.ai/join-us',
-    'https://loyalwingman.ai/openings',
-    'https://loyalwingman.ai/current-openings',
+    LINKEDIN_COMPANY_URL,
+    'https://loyalwingtech.com/',
   ])
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'linkedin-company-jobs')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-www-homepage-plus-robots-and-common-careers-route-validation')
+  assert.equal(provider.paginationStrategy, 'single-linkedin-company-india-jobs-search-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-placeholder-homepage+verified-placeholder-www-homepage+verified-private-robots-surface+verified-placeholder-careers-routes-return-empty',
+    'verified-linkedin-company-page+verified-linkedin-company-india-jobs-search+india-card-extraction',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'loyalwingman.ai')
+  assert.equal(provider.companyDomain, 'loyalwingtech.com')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /loyalwingtech\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /linkedin\.com\/company\/loyal-wingman-technologies-private-limited/i)
   assert.match(provider.modulePath, /loyalwingmantechnologies[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })
@@ -56,6 +57,6 @@ test('Loyal Wingman Technologies resolves directly from provider metadata and re
   assert.ok(scraper, 'Expected buildScrapers() to return the Loyal Wingman Technologies scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, SOURCE)
-  assert.equal(scraper.provider.companyCareerPage, 'https://loyalwingman.ai/')
+  assert.equal(scraper.provider.companyCareerPage, INDIA_JOBS_URL)
   assert.match(scraper.dryRunFile, /loyalwingmantechnologies[\\/]jobs\.json$/i)
 })

@@ -179,6 +179,38 @@ const cadSoftwareEngineerDetailHtml = `
 </html>
 `
 
+const rmgExecutiveDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta property="og:title" content="Sr. RMG Executive"/>
+  </head>
+  <body>
+    <h1>Sr. RMG Executive</h1>
+    <p><strong>Job Title:</strong> Senior Resource Management Executive, Resource Management Group (RMG)</p>
+    <p><strong>Location:</strong> Pune</p>
+    <p><strong>Experience:</strong> 6-10 Years, Minimum 4 years in Resource Management within an Engineering Services company</p>
+    <h2>Key Responsibilities</h2>
+    <ul class="listStyle">
+      <li>Collaborate with Management, Delivery Teams, Practice Heads, IT, HR, Recruitment Team, Project Leaders, and Delivery Teams for resource management activities.</li>
+      <li>Ensure effective resource planning, allocation, and optimal utilization across projects.</li>
+    </ul>
+    <h2>Required Qualifications</h2>
+    <ul class="listStyle">
+      <li>BE with MBA in Operations.</li>
+      <li>Minimum 4 years of experience as a Resource Management Executive/Senior Resource Management Executive in an engineering services company.</li>
+      <li>Overall industry experience of 6-10 years is preferred.</li>
+    </ul>
+    <h2>Required Skills</h2>
+    <ul class="listStyle">
+      <li>Strong resource planning, allocation, and capacity planning skills.</li>
+      <li>Experience in utilization monitoring, billability tracking, and workforce planning.</li>
+    </ul>
+    <p>Please send your resume to <a href="mailto:careers@neilsoft.com">careers@neilsoft.com</a> with the job code in the subject line.</p>
+  </body>
+</html>
+`
+
 test('Neilsoft verifies the official homepage, careers landing page, India openings page, and detail page contracts', async () => {
   const neilsoft = await loadNeilsoftModule()
 
@@ -279,6 +311,24 @@ test('Neilsoft extracts first-party India openings and enriches detail pages int
         'Qualification: D.C.E. / I.T.I. (Civil) Must have hands on experience detailing Precast projects Candidate should have 2 to 10 years of experience US detailing experience will be preferred Must have good AutoCAD knowledge & visualization skills',
       applyUrl: 'mailto:careers@neilsoft.com?Subject=Designer / Sr. Designer code:Buildings-P-R',
       sourceUrl: 'https://neilsoft.com/careers/current-job-openings-india/designer-sr-designer',
+    },
+  )
+
+  assert.deepEqual(
+    neilsoft.extractJobDetail(rmgExecutiveDetailHtml, 'https://neilsoft.com/careers/current-job-openings-india/sr-rmg-executive'),
+    {
+      title: 'Sr. RMG Executive',
+      minimumQualification: 'BE with MBA in Operations.',
+      experienceRequired: '6-10 Years',
+      preferredQualification: null,
+      requiredSkills: [
+        'Strong resource planning, allocation, and capacity planning skills.',
+        'Experience in utilization monitoring, billability tracking, and workforce planning.',
+      ],
+      jobDescription:
+        'Qualification: BE with MBA in Operations. Experience: 6-10 Years, Minimum 4 years in Resource Management within an Engineering Services company Collaborate with Management, Delivery Teams, Practice Heads, IT, HR, Recruitment Team, Project Leaders, and Delivery Teams for resource management activities. Ensure effective resource planning, allocation, and optimal utilization across projects. BE with MBA in Operations. Minimum 4 years of experience as a Resource Management Executive/Senior Resource Management Executive in an engineering services company. Overall industry experience of 6-10 years is preferred. Strong resource planning, allocation, and capacity planning skills. Experience in utilization monitoring, billability tracking, and workforce planning.',
+      applyUrl: 'mailto:careers@neilsoft.com',
+      sourceUrl: 'https://neilsoft.com/careers/current-job-openings-india/sr-rmg-executive',
     },
   )
 })

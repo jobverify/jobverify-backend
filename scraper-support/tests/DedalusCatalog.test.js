@@ -31,7 +31,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Dedalus local catalog captures the verified first-party careers handoff and India Workday surface', async () => {
+test('Dedalus local catalog captures the verified first-party careers handoff and current India-empty Workday surface', async () => {
   const { DEDALUS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const dedalus = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(DEDALUS_CATALOG)
@@ -69,18 +69,18 @@ test('Dedalus local catalog captures the verified first-party careers handoff an
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+verified-workday-board+unfiltered-workday-jobs-api+india-country-facet+filtered-workday-jobs-api+verified-india-detail-pages',
+    'verified-careers-page+verified-workday-board+unfiltered-workday-jobs-api+india-country-facet-or-empty-india-sentinel',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /dedalus.workday[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dedalus\.com\/global\/en\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/dedalus\.wd3\.myworkdayjobs\.com\/External/i)
-  assert.match(provider.verifiedSurfaceSummary, /Integration Engineer - Healthcare/i)
-  assert.match(provider.verifiedSurfaceSummary, /Solution Architect/i)
+  assert.match(provider.verifiedSurfaceSummary, /no longer exposes an India country facet/i)
+  assert.match(provider.verifiedSurfaceSummary, /blank generic Workday shells/i)
   assert.equal(companyAliases['DH Healthcare Software Services India Private Limited'], 'dedalus')
   assert.equal(companyAliases['DH Healthcare Software Services India Pvt Ltd'], 'dedalus')
 
@@ -116,7 +116,7 @@ test('Dedalus hydrated local catalog stays script-runner compatible for later re
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Dedalus')
   assert.equal(provider.officialWorkdayBoardUrl, 'https://dedalus.wd3.myworkdayjobs.com/External')
-  assert.match(provider.modulePath, /dedalus[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /dedalus\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /dedalus.workday[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
 })

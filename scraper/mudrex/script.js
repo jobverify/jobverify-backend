@@ -266,8 +266,22 @@ export const createMudrexScraper = ({ maxJobs = null } = {}) => ({
     const jobs = []
 
     for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const job = extractJobDetail(detailHtml, listing)
+      let job = listing
+
+      try {
+        const detailHtml = await fetchText(listing.sourceUrl)
+        job = {
+          ...extractJobDetail(detailHtml, listing),
+          publicExperienceChecked: true,
+        }
+      } catch {
+        // The board listing remains authoritative even when a detail page transiently rate-limits.
+        job = {
+          ...listing,
+          publicExperienceChecked: false,
+        }
+      }
+
       jobs.push({
         ...job,
         source: SOURCE,

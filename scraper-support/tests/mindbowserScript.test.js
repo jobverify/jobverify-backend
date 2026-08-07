@@ -15,7 +15,10 @@ const officialCareersHtml = `
       <h2>Current Openings</h2>
       <p>Ready to reignite your career in an inclusive and supportive environment? Explore opportunities and apply today!</p>
       <p>Send your CVs/Portfolio at ta@mindbowser.com</p>
-      <a href="https://hr-1.in/829c17">Apply Now</a>
+      <a href="https://hr-1.in/829c17">Current Openings ↗</a>
+      <a href="https://hr-1.in/829c17">Apply Now ↗</a>
+      <a href="/careers/">Careers</a>
+      <a href="/careers/">Apply Now</a>
     </main>
   </body>
 </html>
@@ -170,7 +173,7 @@ test('Mindbowser fails closed when the careers page drifts or the HROne handoff 
 
   await assert.rejects(
     mindbowser.createMindbowserScraper().run({
-      fetchText: async () => officialCareersHtml.replace('https://hr-1.in/829c17', 'https://example.com/jobs'),
+      fetchText: async () => officialCareersHtml.replaceAll('https://hr-1.in/829c17', 'https://example.com/jobs'),
     }),
     /verified public hrone vacancies surface/i,
   )

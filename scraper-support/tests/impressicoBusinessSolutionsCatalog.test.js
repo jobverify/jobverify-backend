@@ -34,10 +34,10 @@ test('Impressico Business Solutions local catalog captures the verified first-pa
     provider.extractionStrategy,
     'verified-first-party-careers-page+career-block-cards+modal-details+same-page-apply-form',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Current Job Openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /Customer Success Manager/i)
+  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.match(provider.verifiedSurfaceSummary, /August 2, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Current Openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Pre-Sales Consultant/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /impressicobusinesssolutions[\\/]jobs\.json$/i)
 })

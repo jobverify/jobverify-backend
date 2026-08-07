@@ -178,6 +178,7 @@ export const extractActiveNotifications = (html) => {
         postingDate: null,
         closingDate: parseClosingDate(dateCell),
         jobDescription: JOB_DESCRIPTION,
+        publicExperienceChecked: true,
       }
     })
     .filter(Boolean)

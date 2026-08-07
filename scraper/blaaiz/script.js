@@ -7,16 +7,16 @@ export const CAREERS_URL = 'https://www.blaaiz.com/about-us'
 export const DISPOSITION =
   'verified-exact-name-official-public-surface-with-no-trustworthy-jobs-contract'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.blaaiz.com/about-us was the live exact-name Blaaiz official public surface reviewed for this workbook source. The reviewed Blaaiz surface exposed company and product information, support and sales contact channels, and sign-up calls to action, but no trustworthy exact-company careers page, no trustworthy enumerable public jobs contract, and no first-party handoff to a stable public ATS or company jobs board. This company-local scraper therefore stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
+  "Verified on Saturday, August 1, 2026 that https://www.blaaiz.com/about-us was the live exact-name Blaaiz official public surface reviewed for this workbook source. The reviewed surface exposed the current fraud-prevention lead copy, Global Financial Infrastructure vision and mission copy, support and sales contact channels, and sign-up calls to action, but no trustworthy exact-company careers page, no trustworthy enumerable public jobs contract, and no first-party handoff to a stable public ATS or company jobs board. This company-local scraper therefore stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified."
 
 const REQUIRED_SURFACE_PATTERNS = [
   /\bAbout Us\b/i,
-  /\bBridging Hearts,\s*Breaking Barriers\./i,
-  /\bSolving Problems Markets Won't Solve\b/i,
+  /\bFraudsters don(?:'|’|&#x27;)t sleep,\s*neither do we\./i,
+  /\bGlobal Financial Infrastructure\b/i,
+  /\bSolving Problems Markets Won(?:'|’|&#x27;)t Solve\b/i,
   /\bEnabling Mobility and Prosperity Through Cross-Border Infrastructure\b/i,
   /\bsupport@blaaiz\.com\b/i,
   /\bsales@blaaiz\.com\b/i,
-  /\bBLAAIZ INNOVATIONS TECHNOLOGY LTD\./i,
 ]
 
 const TRUSTED_ATS_HOST_PATTERNS = [

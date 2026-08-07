@@ -7,7 +7,7 @@ const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Supabase Careers</title>
+    <title>Careers | Supabase</title>
   </head>
   <body>
     <main>

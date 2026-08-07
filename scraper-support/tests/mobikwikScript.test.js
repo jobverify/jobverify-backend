@@ -3,68 +3,97 @@ import test from 'node:test'
 
 import {
   CAREERS_URL,
+  COMPANY,
+  DARWINBOX_ORIGIN,
+  OFFICIAL_CAREERS_HANDOFF_URL,
+  PUBLIC_ALL_JOBS_URL,
   createMobiKwikScraper,
+  extractDarwinboxHandoffUrl,
   hasExternalJobsHandoffSignal,
   hasOfficialCareersSignal,
 } from '../../scraper/mobikwik/script.js'
 
-const officialCareersHtml = `
-  <!doctype html>
-  <html lang="en">
-    <body>
-      <main>
-        <div>MobiKwik</div>
-        <h1>Work @ MobiKwik Benefits</h1>
-        <p>Want to empower millions of Indians with financial Independence?</p>
-        <h2>View Job Openings</h2>
-        <p>Ready To Work Together?</p>
-        <a href="https://www.linkedin.com/company/mobikwik/jobs/">View Jobs on LinkedIn</a>
-        <a href="https://www.naukri.com/mobikwik-jobs-careers-553841">View Jobs on Naukri</a>
-        <p>Email us at ta@mobikwik.com</p>
-      </main>
-      <footer>© 2026 One MobiKwik Systems Limited</footer>
-    </body>
-  </html>
-`
+const FIXED_SCRAPED_AT = '2026-08-01T00:00:00.000Z'
 
-test('MobiKwik validates the official careers surface and external jobs handoff before returning no verified listings', async () => {
+const officialCareersSurface = {
+  title: 'MobiKwik Careers: Join Our Team',
+  text: `
+    Want to empower millions of Indians with financial Independence?
+    View Job Openings
+    About Us
+    We are a publicly listed fintech company and the home to India's largest digital wallet.
+    There's a lot to love at MobiKwik.
+  `,
+  anchors: [
+    { href: OFFICIAL_CAREERS_HANDOFF_URL, text: 'View Job Openings' },
+    { href: 'https://www.linkedin.com/company/mobikwik', text: '' },
+  ],
+}
+
+test('MobiKwik validates the rendered careers surface and Darwinbox handoff before scraping jobs', async () => {
   const requestedUrls = []
+  const delegatedJobs = [
+    {
+      title: 'DBA I',
+      company: COMPANY,
+      location: 'Gurgaon, Haryana , India',
+      source: 'mobikwik',
+      link: 'https://mobikwik.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a68c3faf671c7d',
+    },
+  ]
+  const runCalls = []
 
-  assert.equal(hasOfficialCareersSignal(officialCareersHtml), true)
-  assert.equal(hasExternalJobsHandoffSignal(officialCareersHtml), true)
+  assert.equal(DARWINBOX_ORIGIN, 'https://mobikwik.darwinbox.in')
+  assert.equal(PUBLIC_ALL_JOBS_URL, 'https://mobikwik.darwinbox.in/ms/candidatev2/main/careers/allJobs')
+  assert.equal(hasOfficialCareersSignal(officialCareersSurface), true)
+  assert.equal(hasExternalJobsHandoffSignal(officialCareersSurface), true)
+  assert.equal(extractDarwinboxHandoffUrl(officialCareersSurface), OFFICIAL_CAREERS_HANDOFF_URL)
 
-  const jobs = await createMobiKwikScraper().run({
-    fetchText: async (url) => {
+  const jobs = await createMobiKwikScraper({
+    now: () => FIXED_SCRAPED_AT,
+    darwinboxScraper: {
+      run: async (options) => {
+        runCalls.push(options)
+        return delegatedJobs
+      },
+    },
+  }).run({
+    maxPages: 1,
+    maxJobs: 1,
+    loadRenderedCareersSurface: async (url) => {
       requestedUrls.push(url)
-      return officialCareersHtml
+      return officialCareersSurface
     },
   })
 
   assert.deepEqual(requestedUrls, [CAREERS_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(runCalls, [{ maxPages: 1, maxJobs: 1 }])
+  assert.deepEqual(jobs, [
+    {
+      ...delegatedJobs[0],
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
+  ])
 })
 
-test('MobiKwik fails closed when the official careers surface changes', async () => {
+test('MobiKwik fails closed when the rendered careers surface changes', async () => {
   await assert.rejects(
     createMobiKwikScraper().run({
-      fetchText: async () => '<html><title>Unexpected</title></html>',
+      loadRenderedCareersSurface: async () => ({
+        title: 'Unexpected',
+        text: 'No career details here.',
+        anchors: [],
+      }),
     }),
     /MobiKwik official careers surface changed/i,
   )
 
   await assert.rejects(
     createMobiKwikScraper().run({
-      fetchText: async () => `
-        <html>
-          <body>
-            <div>MobiKwik</div>
-            <h1>Work @ MobiKwik Benefits</h1>
-            <p>View Job Openings</p>
-            <p>Ready To Work Together?</p>
-            <p>No external handoff links available.</p>
-          </body>
-        </html>
-      `,
+      loadRenderedCareersSurface: async () => ({
+        ...officialCareersSurface,
+        anchors: [{ href: 'https://example.com/jobs', text: 'View Job Openings' }],
+      }),
     }),
     /MobiKwik careers handoff changed/i,
   )

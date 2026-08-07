@@ -25,14 +25,29 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = String(html).replace(/\s+/g, ' ')
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-  return normalized.includes('Careers - Engineering, Marketing, & Technology - Bridgenext')
-    && normalized.includes('Careers')
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1])
+}
+
+export const hasOfficialCareersSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html)
+
+  return extractTitle(html) === 'Careers - Engineering, Marketing, & Technology - Bridgenext'
     && normalized.includes('Dream Bigger. Join our Bridgenext team!')
     && normalized.includes('India Openings')
-    && normalized.includes('Copyright © 2026 Bridgenext. All rights reserved.')
 }
 
 export const hasExternalIcimsHandoff = (html = '') =>

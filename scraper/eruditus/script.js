@@ -50,6 +50,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;|&#160;/gi, ' ')
   .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&#x27;|&#8217;|&rsquo;|’/gi, "'")
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -86,16 +87,16 @@ export const hasPublicAtsOrCareersLink = (html = '') =>
 
 export const hasHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
 
   return extractTitle(rawHtml) === 'Eruditus Executive Education'
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/eruditus\.com\/?["']/i.test(rawHtml)
     && /<meta[^>]+name=["']description["'][^>]+content=["']Eruditus Executive Education offers the best executive education programmes[\s\S]*?["']/i
       .test(rawHtml)
-    && rawHtml.includes('https://eruditus.com/about-us/')
-    && rawHtml.includes('https://eruditus.com/newsroom/')
-    && rawHtml.includes('https://enterprise.eruditus.com/')
-    && rawHtml.includes('https://emeritus.org/in/')
-    && rawHtml.includes('https://eruditus.com/contact-us/')
+    && /about-us/i.test(rawHtml)
+    && /newsroom/i.test(rawHtml)
+    && normalized.includes("Learn. From the world's best.")
+    && normalized.includes('Eruditus was founded in 2010')
     && !hasPublicAtsOrCareersLink(rawHtml)
 }
 
@@ -115,8 +116,9 @@ export const pageSitemapListsCareersRoute = (xml = '') => (
 export const hasExpectedNotFoundSurface = (page = {}) => {
   const rawHtml = String(page?.html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const status = Number(page?.status)
 
-  return Number(page?.status) === 404
+  const hasExpected404Page = status === 404
     && extractTitle(rawHtml) === 'Page not found - Eruditus Executive Education'
     && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex,\s*follow["']/i.test(rawHtml)
     && /Eruditus\s+All\s+Rights\s+Reserved\./i.test(normalized)
@@ -124,6 +126,14 @@ export const hasExpectedNotFoundSurface = (page = {}) => {
     && rawHtml.includes('https://eruditus.com/newsroom/')
     && rawHtml.includes('https://eruditus.com/contact-us/')
     && !hasPublicAtsOrCareersLink(rawHtml)
+
+  const hasExpected403BlockPage = status === 403
+    && extractTitle(rawHtml) === '403 Forbidden'
+    && /<h1>\s*403 Forbidden\s*<\/h1>/i.test(rawHtml)
+    && /<center>\s*nginx\s*<\/center>/i.test(rawHtml)
+    && !hasPublicAtsOrCareersLink(rawHtml)
+
+  return hasExpected404Page || hasExpected403BlockPage
 }
 
 export const createEruditusScraper = () => ({

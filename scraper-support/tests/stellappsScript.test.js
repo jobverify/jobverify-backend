@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-05T00:00:00.000Z'
 const PROGRAM_MANAGER_URL = 'https://www.stellapps.com/jobopenings/program-manager/'
 const SERVICE_ENGINEER_URL = 'https://www.stellapps.com/jobopenings/service-engineer/'
 
@@ -16,6 +16,11 @@ const JOB_OPENINGS_ARCHIVE_HTML = `
       <h1>Archives: Job Openings</h1>
       <p>Job Openings</p>
     </section>
+    <article class="post">
+      <h2 class="entry-title">
+        <a href="https://www.stellapps.com/jobopenings/0#">LOG IN</a>
+      </h2>
+    </article>
     <article class="post">
       <h2 class="entry-title">
         <a href="${PROGRAM_MANAGER_URL}">Program Manager</a>
@@ -43,18 +48,52 @@ const PROGRAM_MANAGER_DETAIL_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Program Manager - Stellapps</title>
+    <title>Stellapps</title>
+    <title>Program Manager &#8211; Stellapps</title>
   </head>
   <body>
-    <article class="job-opening">
-      <h4>Part time</h4>
-      <h3>3+ Years</h3>
-      <h3>Bangalore</h3>
-      <a href="#apply">APPLY</a>
-      <h2>Program Manager</h2>
-      <p>Test-2</p>
-      <h4>About Stellapps</h4>
-    </article>
+    <header>
+      <h4>Cattle Monitoring</h4>
+      <h3>mooOn</h3>
+      <p>Already a User?</p>
+    </header>
+    <section class="jobDescriptionSection secPaddingtop">
+      <div class="jobDescriptionHolder stickyHolder">
+        <div class="jobDescriptionLeft sticky">
+          <div class="jobDescriptionLeftBox">
+            <h4>Part time</h4>
+            <ul class="jobYearPlace">
+              <li><h3 class="h3">3+ Years</h3></li>
+              <li><h3 class="h3">Bangalore</h3></li>
+            </ul>
+            <div class="jdSocailMediaBottom">
+              <div class="jdSocailMediaBottomLeft">
+                <p>Share this opening with friends</p>
+              </div>
+              <div class="jdSocailMediaBottomRight">
+                <a href="#applyBtn" class="clickmask h4 primary-button applyBtn">APPLY</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jobDescriptionRight">
+          <div class="jobDescriptionRightBox">
+            <div class="jobDescriptionRightBoxData">
+              <h2 class="h2">Program Manager</h2>
+              <p class="h3">Test-2</p>
+            </div>
+          </div>
+          <div class="jobDescriptionDetails"></div>
+        </div>
+      </div>
+      <div class="jobDescriptionHolder jobDescriptionFormHolder" id="applyBtn">
+        <div class="jobDescriptionLeftBox">
+          <h4>Part time</h4>
+          <h2 class="h2">Program Manager</h2>
+        </div>
+      </div>
+    </section>
+    <footer><h4>About Stellapps</h4></footer>
   </body>
 </html>
 `
@@ -63,56 +102,109 @@ const SERVICE_ENGINEER_DETAIL_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Service Engineer - Stellapps</title>
+    <title>Stellapps</title>
+    <title>Service Engineer &#8211; Stellapps</title>
   </head>
   <body>
-    <article class="job-opening">
-      <h4>Full Time</h4>
-      <h3>2-3 years</h3>
-      <h3>Palamaner</h3>
-      <a href="#apply">APPLY</a>
-      <h2>Service Engineer</h2>
-      <p>2+years of experience in PCB Analyzing and repair and Hands-on experience in soldering & de-soldering of all types of components</p>
-      <h2>Qualification</h2>
-      <h3>Diploma E&amp;C or B.E E&amp;C</h3>
-      <h2>Job Description</h2>
-      <ul>
-        <li>PCB Analyzing and repair.</li>
-        <li>Hands-on experience in soldering &amp; de-soldering of all types of components.</li>
-        <li>Able to understand electronic schematic &amp; data sheets.</li>
-        <li>Analyzing the cause of failure and repairing the faulty parts.</li>
-        <li>Testing and troubleshooting electronic circuits.</li>
-        <li>Testing and troubleshooting of rectifiers, amplifiers &amp; sensors.</li>
-        <li>Familiar with basic test equipments like CRO, function generators, DVM &amp; tools.</li>
-        <li>Knowldge in ADC, UART, Wifi, Bluetooth, GSM AT commands and Zigbee.</li>
-        <li>Porting/flashing of software, Basic knowldge in programing and linux commands</li>
-        <li>Good communication skill.</li>
-        <li>Travel 40-50%</li>
-      </ul>
-      <h2>Knowledge</h2>
-      <ul>
-        <li>Indepth knowldge in electronic components</li>
-        <li>Linux OS</li>
-        <li>C Programming</li>
-        <li>MS Office / Libro Office</li>
-      </ul>
-      <h2>Roles and Responsibilities</h2>
-      <ul>
-        <li>The candidate’s primary responsibility will be servicing the faulty materials within SLA.</li>
-        <li>Service Report preparation.</li>
-        <li>Daily status Report and Monthly service reports preparation.</li>
-        <li>Repeated failure analysis report preparation.</li>
-        <li>The candidate shall be ready to travel on a requirement basis.</li>
-        <li>The responsibility will also be considered not to share or disclose any of the confidential data such as circuit diagrams, software etc.</li>
-        <li>The candidate shall be responsible for the entire service equipment and tools.</li>
-      </ul>
-      <h4>About Stellapps</h4>
-    </article>
+    <header>
+      <h4>Cattle Monitoring</h4>
+      <h3>mooOn</h3>
+      <h3>smartAMCU</h3>
+    </header>
+    <section class="jobDescriptionSection secPaddingtop">
+      <div class="jobDescriptionHolder stickyHolder">
+        <div class="jobDescriptionLeft sticky">
+          <div class="jobDescriptionLeftBox">
+            <h4>Full Time</h4>
+            <ul class="jobYearPlace">
+              <li><h3 class="h3">2-3 years</h3></li>
+              <li><h3 class="h3">Palamaner</h3></li>
+            </ul>
+            <div class="jdSocailMediaBottom">
+              <div class="jdSocailMediaBottomLeft">
+                <p>Share this opening with friends</p>
+              </div>
+              <div class="jdSocailMediaBottomRight">
+                <a href="#applyBtn" class="clickmask h4 primary-button applyBtn">APPLY</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jobDescriptionRight">
+          <div class="jobDescriptionRightBox">
+            <div class="jobDescriptionRightBoxData">
+              <h2 class="h2">Service Engineer</h2>
+              <p class="h3">2+years of experience in PCB Analyzing and repair and Hands-on experience in soldering &amp; de-soldering of all types of components</p>
+            </div>
+          </div>
+          <div class="jobDescriptionDetails">
+            <h2 class="h2">Qualification</h2>
+            <div class="jobDescriptionDetailsTab">
+              <h3 class="h3">Diploma E&amp;C or B.E E&amp;C</h3>
+              <div class="h4"></div>
+            </div>
+            <h2 class="h2">Job Description</h2>
+            <div class="jobDescriptionDetailsTab">
+              <h3 class="h3"></h3>
+              <div class="h4">
+                <ul>
+                  <li>PCB Analyzing and repair.</li>
+                  <li>Hands-on experience in soldering &amp; de-soldering of all types of components.</li>
+                  <li>Able to understand electronic schematic &amp; data sheets.</li>
+                  <li>Analyzing the cause of failure and repairing the faulty parts.</li>
+                  <li>Testing and troubleshooting electronic circuits.</li>
+                  <li>Testing and troubleshooting of rectifiers, amplifiers &amp; sensors.</li>
+                  <li>Familiar with basic test equipments like CRO, function generators, DVM &amp; tools.</li>
+                  <li>Knowldge in ADC, UART, Wifi, Bluetooth, GSM AT commands and Zigbee.</li>
+                  <li>Porting/flashing of software, Basic knowldge in programing and linux commands</li>
+                  <li>Good communication skill.</li>
+                  <li>Travel 40-50%</li>
+                </ul>
+              </div>
+            </div>
+            <h2 class="h2">Knowledge</h2>
+            <div class="jobDescriptionDetailsTab">
+              <h3 class="h3"></h3>
+              <div class="h4">
+                <ul>
+                  <li>Indepth knowldge in electronic components</li>
+                  <li>Linux OS</li>
+                  <li>C Programming</li>
+                  <li>MS Office / Libro Office</li>
+                </ul>
+              </div>
+            </div>
+            <h2 class="h2">Roles and Responsibilities</h2>
+            <div class="jobDescriptionDetailsTab">
+              <h3 class="h3"></h3>
+              <div class="h4">
+                <ul>
+                  <li>The candidate&#8217;s primary responsibility will be servicing the faulty materials within SLA.</li>
+                  <li>Service Report preparation.</li>
+                  <li>Daily status Report and Monthly service reports preparation.</li>
+                  <li>Repeated failure analysis report preparation.</li>
+                  <li>The candidate shall be ready to travel on a requirement basis.</li>
+                  <li>The responsibility will also be considered not to share or disclose any of the confidential data such as circuit diagrams, software etc.</li>
+                  <li>The candidate shall be responsible for the entire service equipment and tools.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jobDescriptionHolder jobDescriptionFormHolder" id="applyBtn">
+        <div class="jobDescriptionLeftBox">
+          <h4>Full Time</h4>
+          <h2 class="h2">Service Engineer</h2>
+        </div>
+      </div>
+    </section>
+    <footer><h4>About Stellapps</h4></footer>
   </body>
 </html>
 `
 
-const SERVICE_ENGINEER_DESCRIPTION = '2+years of experience in PCB Analyzing and repair and Hands-on experience in soldering & de-soldering of all types of components Qualification: Diploma E&C or B.E E&C Job Description: PCB Analyzing and repair. Hands-on experience in soldering & de-soldering of all types of components. Able to understand electronic schematic & data sheets. Analyzing the cause of failure and repairing the faulty parts. Testing and troubleshooting electronic circuits. Testing and troubleshooting of rectifiers, amplifiers & sensors. Familiar with basic test equipments like CRO, function generators, DVM & tools. Knowldge in ADC, UART, Wifi, Bluetooth, GSM AT commands and Zigbee. Porting/flashing of software, Basic knowldge in programing and linux commands Good communication skill. Travel 40-50% Knowledge: Indepth knowldge in electronic components Linux OS C Programming MS Office / Libro Office Roles and Responsibilities: The candidate’s primary responsibility will be servicing the faulty materials within SLA. Service Report preparation. Daily status Report and Monthly service reports preparation. Repeated failure analysis report preparation. The candidate shall be ready to travel on a requirement basis. The responsibility will also be considered not to share or disclose any of the confidential data such as circuit diagrams, software etc. The candidate shall be responsible for the entire service equipment and tools.'
+const SERVICE_ENGINEER_DESCRIPTION = "2+years of experience in PCB Analyzing and repair and Hands-on experience in soldering & de-soldering of all types of components Qualification: Diploma E&C or B.E E&C Job Description: PCB Analyzing and repair. Hands-on experience in soldering & de-soldering of all types of components. Able to understand electronic schematic & data sheets. Analyzing the cause of failure and repairing the faulty parts. Testing and troubleshooting electronic circuits. Testing and troubleshooting of rectifiers, amplifiers & sensors. Familiar with basic test equipments like CRO, function generators, DVM & tools. Knowldge in ADC, UART, Wifi, Bluetooth, GSM AT commands and Zigbee. Porting/flashing of software, Basic knowldge in programing and linux commands Good communication skill. Travel 40-50% Knowledge: Indepth knowldge in electronic components Linux OS C Programming MS Office / Libro Office Roles and Responsibilities: The candidate\u2019s primary responsibility will be servicing the faulty materials within SLA. Service Report preparation. Daily status Report and Monthly service reports preparation. Repeated failure analysis report preparation. The candidate shall be ready to travel on a requirement basis. The responsibility will also be considered not to share or disclose any of the confidential data such as circuit diagrams, software etc. The candidate shall be responsible for the entire service equipment and tools."
 
 const loadModule = async () => {
   try {
@@ -122,13 +214,13 @@ const loadModule = async () => {
   }
 }
 
-test('Stellapps helpers stay pinned to the verified archive and first-party detail page structure', async () => {
+test('Stellapps helpers stay pinned to the verified archive and current first-party detail page structure', async () => {
   const stellapps = await loadModule()
 
   assert.equal(stellapps.SOURCE, 'stellapps')
   assert.equal(stellapps.COMPANY_NAME, 'Stellapps')
   assert.equal(stellapps.OFFICIAL_BRAND_NAME, 'Stellapps')
-  assert.equal(stellapps.VERIFIED_ON, '2026-07-17')
+  assert.equal(stellapps.VERIFIED_ON, '2026-08-05')
   assert.equal(stellapps.CAREERS_LANDING_URL, 'https://www.stellapps.com/career/')
   assert.equal(stellapps.JOB_OPENINGS_URL, 'https://www.stellapps.com/jobopenings/')
   assert.equal(stellapps.hasOfficialJobOpeningsSignal(JOB_OPENINGS_ARCHIVE_HTML), true)
@@ -260,7 +352,7 @@ test('Stellapps fails closed when the verified archive or detail page contract d
   await assert.rejects(
     stellapps.createStellappsScraper().run({
       fetchText: async () => JOB_OPENINGS_ARCHIVE_HTML.replace(
-        /<article class="post">[\s\S]*?<\/article>\s*<article class="post">[\s\S]*?<\/article>/,
+        /<article class="post">[\s\S]*?<\/article>\s*<article class="post">[\s\S]*?<\/article>\s*<article class="post">[\s\S]*?<\/article>/,
         '',
       ),
     }),
@@ -271,8 +363,8 @@ test('Stellapps fails closed when the verified archive or detail page contract d
     stellapps.createStellappsScraper().run({
       fetchText: async (url) => {
         if (url === stellapps.JOB_OPENINGS_URL) return JOB_OPENINGS_ARCHIVE_HTML
-        if (url === PROGRAM_MANAGER_URL) return PROGRAM_MANAGER_DETAIL_HTML
-        if (url === SERVICE_ENGINEER_URL) return '<html><body><h2>Service Engineer</h2></body></html>'
+        if (url === PROGRAM_MANAGER_URL) return PROGRAM_MANAGER_DETAIL_HTML.replace('Share this opening with friends', 'Unexpected content')
+        if (url === SERVICE_ENGINEER_URL) return SERVICE_ENGINEER_DETAIL_HTML
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),

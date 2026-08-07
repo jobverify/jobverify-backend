@@ -84,7 +84,7 @@ test('Junglee Games helpers stay pinned to the verified empty-index first-party 
     'https://www.jungleegames.com/grow-inner-page.php?id=56613313BB',
   )
   assert.equal(jungleeGames.COMPANY_DOMAIN, 'jungleegames.com')
-  assert.equal(jungleeGames.VERIFIED_ON, '2026-07-16')
+  assert.equal(jungleeGames.VERIFIED_ON, '2026-08-02')
   assert.equal(jungleeGames.extractGrowPageUrl(HOMEPAGE_HTML), jungleeGames.GROW_PAGE_URL)
   assert.equal(jungleeGames.hasVerifiedHomepageSignals(HOMEPAGE_HTML), true)
   assert.equal(jungleeGames.hasVerifiedGrowPageSignals(GROW_PAGE_HTML), true)
@@ -129,4 +129,23 @@ test('Junglee Games fails closed when the verified grow surface starts exposing 
     }),
     /public jobs surface/i,
   )
+})
+
+test('Junglee Games returns [] when the exact-name grow surface is fully unreachable by transport timeout', async () => {
+  const jungleeGames = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await jungleeGames.run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      throw new TypeError(`fetch failed | Connect Timeout Error (attempted address: www.jungleegames.com:443, timeout: 10000ms) for ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    jungleeGames.HOMEPAGE_URL,
+    jungleeGames.GROW_PAGE_URL,
+    jungleeGames.VERIFIED_EMPTY_DEPARTMENT_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })

@@ -5,7 +5,7 @@ const homepageHtml = `
 <!DOCTYPE html>
 <html lang="en-US">
   <head>
-    <title>India's Leading Edtech Company Offering New-Age Programs in New-Age Domains</title>
+    <title>India&#039;s Leading Edtech Company Offering New-Age Programs in New-Age Domains</title>
     <meta
       name="description"
       content="iNurture is a pioneering edtech company making waves in the higher education space by offering new-age programs for tomorrow's industries."
@@ -16,7 +16,7 @@ const homepageHtml = `
     <h1>India's Leading Edtech Company Offering New-Age Programs in New-Age Domains</h1>
     <p>iNurture is a pioneering edtech company making waves in the higher education space by offering new-age programs for tomorrow's industries.</p>
     <nav>
-      <a href="https://inurture.co.in/careers-inurture/">Careers @ iNurture</a>
+      <a href="https://www.inurture.co.in/careers-inurture/">Careers @ iNurture</a>
     </nav>
   </body>
 </html>

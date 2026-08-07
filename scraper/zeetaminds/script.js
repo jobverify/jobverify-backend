@@ -87,10 +87,8 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return page.includes('https://static.zeetaminds.com/explore/icons/zeetaminds.png')
     && page.includes('https://static.zeetaminds.com/explore/icons/zeetaminds-touch-icon.png')
-    && page.includes('https://static.zeetaminds.com/explore/_app/immutable/entry/start.qRGzsdih.js')
-    && page.includes('https://static.zeetaminds.com/explore/_app/immutable/entry/app.BMmuMGWG.js')
-    && normalized.includes('base: "/explore"')
-    && normalized.includes('assets: "https://static.zeetaminds.com/explore"')
+    && /https:\/\/static\.zeetaminds\.com\/explore\/_app\/immutable\/entry\/start\.[^"']+\.js/.test(page)
+    && /https:\/\/static\.zeetaminds\.com\/explore\/_app\/immutable\/entry\/app\.[^"']+\.js/.test(page)
     && page.includes('data-sveltekit-preload-data="hover"')
 }
 
@@ -118,7 +116,7 @@ export const hasOfficialNotFoundSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('Not Found')
-    && normalized.includes('The requested URL was not found on this server.')
+    && normalized.includes("For request 'GET /")
     && normalized.includes("Monaco, 'Lucida Console', monospace")
 }
 
@@ -144,7 +142,8 @@ export const createZeetamindsScraper = () => ({
 
     for (const url of [CAREERS_URL, JOBS_URL]) {
       const route = await fetchPage(url)
-      if (route.status !== 404 || !hasOfficialNotFoundSignal(route.html) || hasPublicJobsSignal(route.html)) {
+      const routeLooksLikeJobsSurface = hasPublicJobsSignal(route.html) && !hasOfficialNotFoundSignal(route.html)
+      if (route.status !== 404 || !hasOfficialNotFoundSignal(route.html) || routeLooksLikeJobsSurface) {
         throw new Error('Zeetaminds verified first-party empty careers routes no longer match the trusted non-listing surface')
       }
     }
@@ -155,7 +154,7 @@ export const createZeetamindsScraper = () => ({
 
 export const run = async (options = {}) => createZeetamindsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

@@ -21,13 +21,17 @@ const OFFICIAL_CAREERS_HTML = `
 const OPEN_POSITIONS_SHELL_HTML = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Open Positions at Suki | Healthcare AI Jobs</title>
+  </head>
   <body>
     <main>
       <h1>Current Openings</h1>
       <footer>
-        <p>About Us</p>
+        <p>Company</p>
         <p>Careers</p>
-        <p>Suki AI, Inc.</p>
+        <p>Policies</p>
+        <p>Trust Portal</p>
       </footer>
     </main>
   </body>

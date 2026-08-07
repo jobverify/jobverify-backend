@@ -65,14 +65,14 @@ test('Everest local catalog captures the verified first-party careers handoff an
   )
   assert.equal(EVEREST_CATALOG.parser, 'custom-script')
   assert.equal(EVEREST_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(EVEREST_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(EVEREST_CATALOG.verifiedOn, '2026-08-01')
   assert.equal(EVEREST_CATALOG.dryRunFile, 'everest.workday/jobs.json')
   assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.everestglobal\.com\//i)
   assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.everestglobal\.com\/careers\//i)
   assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /https:\/\/wd5\.myworkdaysite\.com\/recruiting\/everestre\/careers/i)
   assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /https:\/\/wd5\.myworkdaysite\.com\/wday\/cxs\/everestre\/careers\/jobs/i)
-  assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /78 public postings/i)
-  assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /0 India/i)
+  assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /View Job Openings/i)
+  assert.match(EVEREST_CATALOG.verifiedSurfaceSummary, /trusted source for live openings/i)
   assert.equal(EVEREST_CATALOG.modulePath, everestModulePath)
 
   assert.equal(everest.PROVIDER_METADATA.source, EVEREST_CATALOG.source)
@@ -87,7 +87,7 @@ test('Everest backlog row hydrates locally without needing an alias entry', asyn
 
   assert.equal(provider.companyName, 'Everest')
   assert.equal(provider.companyDomain, 'everestglobal.com')
-  assert.match(provider.modulePath, /everest[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /everest\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /everest.workday[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Everest'), false)
 

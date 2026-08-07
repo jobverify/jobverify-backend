@@ -55,20 +55,15 @@ const normalizeWhitespace = (value) => {
 export const hasVerifiedNetcoreCareersSignal = (html = '') => {
   const text = (normalizeWhitespace(html) || '').toLowerCase()
 
-  return text.includes("we've got big plans - and you can join us on our journey")
-    && text.includes('a great place to work for 6 years in a row')
-    && text.includes('view job openings')
-    && text.includes('sales')
-    && text.includes('engineering')
-    && text.includes('customer success')
+  return text.includes('careers - netcore')
+    && text.includes('join the community shaping the future of agentic marketing here')
+    && text.includes('please wait while you are redirected to the right page')
 }
 
 export const hasVerifiedNetcoreRedirectShellSignal = (html = '') => {
   const text = (normalizeWhitespace(html) || '').toLowerCase()
 
-  return text.includes('careers list - netcore cloud')
-    && text.includes('compliance and recognition accolades')
-    && text.includes('netcore cloud pvt. ltd.')
+  return text.includes('careers list - netcore')
     && text.includes('please wait while you are redirected to the right page')
 }
 

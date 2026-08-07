@@ -158,3 +158,15 @@ test('Teachnook fails closed when the redirect target stops matching the parked 
     /redirect target no longer matches the verified parked lander/i,
   )
 })
+
+test('Teachnook returns [] when the verified first-party host times out', async () => {
+  const teachnook = await loadTeachnookModule()
+
+  const jobs = await teachnook.createTeachnookScraper().run({
+    fetchPage: async () => {
+      throw new Error(`Connect Timeout Error for ${teachnook.HOMEPAGE_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

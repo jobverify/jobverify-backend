@@ -18,7 +18,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Edelweiss local catalog captures the verified first-party careers page and blocked direct-fetch contract', async () => {
+test('Edelweiss local catalog captures the verified readable first-party careers page and no-public-job route contract', async () => {
   const {
     EDELWEISS_CATALOG,
     VERIFIED_SURFACE_SUMMARY,
@@ -48,21 +48,21 @@ test('Edelweiss local catalog captures the verified first-party careers page and
   assert.equal(EDELWEISS_CATALOG.countryFilter, 'India')
   assert.equal(
     EDELWEISS_CATALOG.paginationStrategy,
-    'verified-homepage-plus-browser-verified-careers-page-plus-akamai-blocked-direct-fetch-routes',
+    'verified-homepage-plus-informational-careers-page-plus-legacy-no-public-job-routes',
   )
   assert.equal(
     EDELWEISS_CATALOG.extractionStrategy,
-    'verified-first-party-homepage+verified-browser-careers-page-email-resume-handoff-without-public-listings+verified-akamai-blocked-direct-fetch-routes-return-empty',
+    'verified-first-party-homepage+verified-informational-careers-page-email-resume-handoff-without-public-listings+verified-legacy-no-public-job-routes-return-empty',
   )
   assert.equal(EDELWEISS_CATALOG.parser, 'custom-script')
   assert.equal(EDELWEISS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(EDELWEISS_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(EDELWEISS_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(EDELWEISS_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.edelweissfin\.com\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.edelweissfin\.com\/edelweisscareers/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /GroupTalent\.Acquisition@edelweissfin\.com/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Akamai/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Access Denied|403/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /robots\.txt/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /sitemap_index\.xml/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
 })
 

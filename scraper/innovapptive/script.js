@@ -21,6 +21,29 @@ const USER_AGENT =
 const INDIA_LOCATION_PATTERN =
   /\b(?:india|hyderabad|telangana|bangalore|bengaluru|pune|mumbai|chennai|gurugram|gurgaon|noida|delhi)\b/i
 
+const INDIA_BOARD_OR_REMOTE_PATTERN = /^(?:remote\b|.*\bindia\b.*)$/i
+
+const DETAIL_DESCRIPTION_STARTERS = [
+  'The Role',
+  'The Opportunity',
+  'Job Description',
+  'Why This Role Exists',
+  'About Us',
+  'About Innovapptive',
+]
+
+const DETAIL_DESCRIPTION_ENDERS = [
+  'How You Will Make',
+  'Impact You’ll Make',
+  'What You Bring',
+  'You Must Have',
+  'Nice to Have',
+  'Success Metrics',
+  'What Success Looks Like',
+  'What We Offer',
+  'Apply for this position',
+]
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<br\s*\/?>/gi, '\n')
   .replace(/<[^>]+>/g, ' ')
@@ -73,7 +96,6 @@ const extractJobId = (url) => {
 const normalizeLocation = (value) => {
   const location = normalizeWhitespace(value)
   if (!location) return null
-  if (/^remote$/i.test(location)) return 'Remote, India'
   return location
 }
 
@@ -82,7 +104,46 @@ const getCity = (location) => {
   return normalizeWhitespace(location.split(',')[0])
 }
 
-const isIndiaOrRemote = (location) => /^remote\b/i.test(location || '') || INDIA_LOCATION_PATTERN.test(location || '')
+const isIndiaLocation = (location) => INDIA_LOCATION_PATTERN.test(location || '')
+
+const isBoardCandidateLocation = (location) => INDIA_BOARD_OR_REMOTE_PATTERN.test(location || '')
+
+const getCountry = (location) => (isIndiaLocation(location) ? 'India' : null)
+
+const getRemoteStatus = (location) => {
+  if (!location) return null
+  return /^remote\b/i.test(location) ? 'Remote' : 'On-site'
+}
+
+const extractFieldValue = (lines, prefix) => {
+  const line = lines.find((value) => value.toLowerCase().startsWith(prefix.toLowerCase()))
+  return normalizeWhitespace(line?.slice(prefix.length).trim() || null)
+}
+
+const extractJobDescriptionFromLines = (lines) => {
+  const startIndex = lines.findIndex((line) => DETAIL_DESCRIPTION_STARTERS.some((prefix) => line.startsWith(prefix)))
+  if (startIndex < 0) return null
+
+  const descriptionLines = []
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index]
+    if (!line) continue
+    if (DETAIL_DESCRIPTION_ENDERS.some((prefix) => line.startsWith(prefix))) break
+    descriptionLines.push(line)
+  }
+
+  return normalizeWhitespace(descriptionLines.join(' ')) || null
+}
+
+export const extractJobDetailFields = (html = '') => {
+  const lines = stripToLines(html)
+
+  return {
+    location: normalizeLocation(extractFieldValue(lines, 'Location:')),
+    employmentType: normalizeWhitespace(extractFieldValue(lines, 'Employment Type:')) || null,
+    jobDescription: extractJobDescriptionFromLines(lines),
+  }
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -96,10 +157,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const title = extractTitle(page)
 
-  return extractTitle(page) === 'Careers at Innovapptive'
-    && normalized.includes('Build the future of connected frontline operations')
-    && page.includes(BOARD_URL)
+  return /^career$/i.test(title)
+    && normalized.includes('Experience a workplace where Innovation meets Passion!')
+    && normalized.includes('Innovapptive is a pioneer in connected worker solutions')
+    && normalized.includes('info@innovapptive.com')
+    && normalized.includes('All Rights Reserved')
 }
 
 export const hasVerifiedBoardSignal = (html = '') => {
@@ -109,7 +173,10 @@ export const hasVerifiedBoardSignal = (html = '') => {
   return extractTitle(page) === 'Innovapptive - Career Page'
     && normalized.includes('Current Openings')
     && normalized.includes('View Our Website')
-    && page.includes('https://www.innovapptive.com')
+    && (
+      page.includes('https://www.innovapptive.com')
+      || /content=["']Explore open job opportunities at Innovapptive\./i.test(page)
+    )
 }
 
 export const extractBoardJobs = (html = '') => {
@@ -126,7 +193,7 @@ export const extractBoardJobs = (html = '') => {
     const department = normalizeWhitespace(lines[1])
     const jobId = applyUrl ? extractJobId(applyUrl) : null
 
-    if (!applyUrl || !title || !location || !jobId || seen.has(applyUrl) || !isIndiaOrRemote(location)) {
+    if (!applyUrl || !title || !location || !jobId || seen.has(applyUrl) || !isBoardCandidateLocation(location)) {
       continue
     }
 
@@ -137,7 +204,7 @@ export const extractBoardJobs = (html = '') => {
       department: department || null,
       location,
       city: getCity(location),
-      country: 'India',
+      country: getCountry(location),
       jobId,
       requisitionId: jobId,
       sourceUrl: applyUrl,
@@ -150,7 +217,7 @@ export const extractBoardJobs = (html = '') => {
       postingDate: null,
       closingDate: null,
       jobDescription: null,
-      remoteStatus: /^remote\b/i.test(location) ? 'Remote' : 'On-site',
+      remoteStatus: getRemoteStatus(location),
     })
   }
 
@@ -173,15 +240,43 @@ export const createInnovapptiveScraper = ({
       throw new Error('The verified Innovapptive ApplyToJob board no longer matches the trusted public surface')
     }
 
-    const jobs = extractBoardJobs(boardHtml)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const jobs = []
+    for (const listing of extractBoardJobs(boardHtml)) {
+      let detailFields = { location: null, employmentType: null, jobDescription: null }
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+      try {
+        const detailHtml = await fetchText(listing.sourceUrl)
+        detailFields = extractJobDetailFields(detailHtml)
+      } catch {
+        if (!isIndiaLocation(listing.location)) {
+          continue
+        }
+      }
+
+      const location = normalizeLocation(detailFields.location || listing.location)
+      if (!isIndiaLocation(location)) {
+        continue
+      }
+
+      jobs.push({
+        ...listing,
+        location,
+        city: getCity(location),
+        country: 'India',
+        employmentType: detailFields.employmentType || listing.employmentType || null,
+        jobDescription: detailFields.jobDescription || listing.jobDescription || null,
+        remoteStatus: getRemoteStatus(location),
+        source: SOURCE,
+        link: listing.applyUrl || listing.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      })
+
+      if (maxJobs && jobs.length >= maxJobs) {
+        return jobs
+      }
+    }
+
+    return jobs
   },
 })
 

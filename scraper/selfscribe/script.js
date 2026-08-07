@@ -10,7 +10,7 @@ const REQUIRED_BRAND_PATTERN = /\bselfscribe(?:\s+ai|ai)?\b/i
 const TITLE_BRAND_PATTERN =
   /<title[^>]*>[\s\S]*?\bselfscribe(?:\s+ai|ai)?\b[\s\S]*?<\/title>/i
 const CANONICAL_SURFACE_PATTERN =
-  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/www\.selfscribeai\.com\/?["'][^>]*>/i
+  /<(?:link|meta)\b[^>]+(?:href|content)=["']https:\/\/(?:www\.)?selfscribeai\.com\/?["'][^>]*>/i
 
 const LISTING_COPY_PATTERNS = [
   /\bcurrent openings\b/i,

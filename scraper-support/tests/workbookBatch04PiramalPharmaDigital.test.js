@@ -53,6 +53,7 @@ const CAREERS_SURFACE_HTML = `
     <body>
       <main>
         <h1>Piramal Pharma Limited Careers</h1>
+        <a href="#WhyJoinUs">Why Join Us</a>
         <h2>Explore Opportunities</h2>
         <a href="https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS">Apply Now</a>
         <a href="https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS">I am a student</a>
@@ -127,7 +128,7 @@ test('Piramal Pharma Digital stays fail-closed on the verified Piramal Pharma pu
     'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS',
   )
   assert.equal(DISPOSITION, 'verified-piramal-pharma-workday-handoff-fail-closed')
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Tuesday, August 4, 2026/)
   assert.match(VERIFIED_SURFACE_SUMMARY, /exact workbook entity Piramal Pharma Digital/i)
   assert.equal(typeof createPiramalPharmaDigitalScraper, 'function')
   assert.equal(hasVerifiedPublicSurface(PUBLIC_SURFACE_HTML), true)

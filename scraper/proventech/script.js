@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 import { PROVENTECH_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -13,104 +11,87 @@ const USER_AGENT =
 export const PROVIDER_METADATA = PROVENTECH_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
-export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
-export const APPLY_URL = PROVIDER_METADATA.applyUrl
-export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
+export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
+export const CAREERS_ROUTE_URLS = [
+  'https://hr.proventech.in/careers',
+  'https://hr.proventech.in/jobs',
+]
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const PUBLIC_JOBS_SIGNAL_PATTERNS = [
+  /\bcurrent openings\b/i,
+  /\bopen positions\b/i,
+  /\bjob openings\b/i,
+  /\bapply now\b/i,
+  /boards\.greenhouse\.io/i,
+  /jobs\.lever\.co/i,
+  /myworkdayjobs/i,
+  /darwinbox/i,
+]
 
 const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
-  .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
-const splitHtmlLines = (value) => String(value ?? '')
-  .replace(/<br\s*\/?>/gi, '\n')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/\u00a0/g, ' ')
-  .split('\n')
-  .map((line) => line.replace(/\s+/g, ' ').trim())
-  .filter(Boolean)
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
 
-const slugify = (value) => normalizeWhitespace(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-
-export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html ?? '')
-  return /<title>\s*ProvenTech\s*<\/title>/i.test(page)
-    && /Careers at ProvenTech/i.test(page)
-    && /SAP UI5\/Fiori Consultant/i.test(page)
-    && /SAP ABAP Developer/i.test(page)
-    && /Documentum D2 Administrator/i.test(page)
-}
-
-export const extractJobs = (html = '') => {
-  const jobs = []
-
-  for (const match of String(html ?? '').matchAll(
-    /<div class="address(?: mt-4)?">\s*<h3>\s*([\s\S]*?)\s*<\/h3>\s*<div[^>]*><p[^>]*class="mb-0">([\s\S]*?)<\/p>/gi,
-  )) {
-    const title = normalizeWhitespace(match[1])
-    const details = splitHtmlLines(match[2])
-    const department = details[0] || null
-    const employmentType = details[1] || null
-    const location = details[2] || null
-    const jobId = slugify(title)
-
-    if (!title || !location || !jobId || !/hyderabad/i.test(location)) continue
-
-    jobs.push({
-      title,
-      company: COMPANY,
-      department,
-      location: 'Hyderabad, Telangana, India',
-      city: 'Hyderabad',
-      country: 'India',
-      jobId,
-      requisitionId: jobId,
-      sourceUrl: CAREERS_URL,
-      applyUrl: APPLY_URL,
-      employmentType,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    })
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
   }
-
-  return jobs
 }
 
-export const createProventechScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified Proventech careers surface no longer matches the trusted first-party page')
+export const hasPublicJobsSignal = (html = '') =>
+  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+export const hasVerifiedLoginShellSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*ProvenTech\s*<\/title>/i.test(page)
+    && normalized.includes('Powered by ProvenTech')
+    && normalized.includes('ProvenTech Human Resource Management System allows employees to access HR-related information.')
+    && normalized.includes('Login')
+    && normalized.includes('Forgot Password?')
+}
+
+export const isExpectedMissingCareerRoute = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return Number(page?.status) === 404
+    && /<title>\s*Page not found at \/(careers|jobs)\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('Page not found')
+    && !hasPublicJobsSignal(rawHtml)
+}
+
+export const createProventechScraper = () => ({
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (Number(homepage.status) !== 200 || !hasVerifiedLoginShellSignal(homepage.html) || hasPublicJobsSignal(homepage.html)) {
+      throw new Error('The verified Proventech HRMS login shell changed materially')
     }
 
-    const jobs = extractJobs(careersHtml)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    for (const routeUrl of CAREERS_ROUTE_URLS) {
+      const routePage = await fetchPage(routeUrl)
+      if (!isExpectedMissingCareerRoute(routePage)) {
+        throw new Error(`The verified Proventech no-public-careers route changed materially: ${routeUrl}`)
+      }
+    }
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    return []
   },
 })
 

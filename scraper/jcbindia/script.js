@@ -87,10 +87,20 @@ const parseDateToIso = (value) => {
   return new Date(Date.UTC(year, monthIndex, day)).toISOString().slice(0, 10)
 }
 
-const normalizeCountry = (value) => {
+const normalizeLocation = (value) => {
   const normalized = normalizeOptionalValue(value)
   if (!normalized) return null
   if (normalized.toUpperCase() === 'IN') return 'India'
+  if (/,\s*IN$/i.test(normalized)) return normalized.replace(/,\s*IN$/i, ', India')
+  return normalized
+}
+
+const normalizeCountry = (value) => {
+  const normalized = normalizeLocation(value)
+  if (!normalized) return null
+  if (/,\s*India$/i.test(normalized)) return 'India'
+  if (normalized.toUpperCase() === 'IN') return 'India'
+  if (normalized.toLowerCase() === 'india') return 'India'
   return normalized
 }
 
@@ -178,7 +188,7 @@ export const extractJobCards = (html) => {
     cards.push({
       title,
       detailUrl,
-      location: normalizeCountry(locationValue),
+      location: normalizeLocation(locationValue),
       country: normalizeCountry(locationValue),
       postingDate,
       jobId: extractJobId(detailUrl),
@@ -195,19 +205,18 @@ export const extractJobCards = (html) => {
 export const extractJobDetail = (detailHtml, listing) => {
   const html = String(detailHtml ?? '')
   const title = normalizeOptionalValue(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
-  const applyUrl = toAbsoluteUrl(
-    html.match(/<a[^>]+href=["']([^"']*\/job\/[^"']+\/apply)["'][^>]*>\s*Apply now/i)?.[1],
+  const explicitApplyUrl = toAbsoluteUrl(
+    html.match(/<a[^>]+href=["']([^"']*\/job\/[^"']+\/apply(?:\/)?[^"']*)["'][^>]*>\s*Apply now/i)?.[1],
     BASE_URL,
   )
-  const locationLabel = normalizeOptionalValue(
-    html.match(/Location:\s*<\/?[^>]*>\s*([^<]+)/i)?.[1]
-      || html.match(/Location:\s*([A-Z]{2,})/i)?.[1],
-  )
+  const locationLabel = normalizeLocation(html.match(/Location:\s*([^<\r\n]+)/i)?.[1])
   const jobSegmentText = normalizeOptionalValue(
     [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
       .map((match) => stripTags(match[1]))
       .find((paragraph) => /^Job Segment:/i.test(paragraph)),
   )
+
+  const applyUrl = explicitApplyUrl || listing.detailUrl
 
   if (!title || title !== listing.title || !applyUrl) {
     throw new Error('Expected verified JCB India detail page with matching title and apply URL')
@@ -230,7 +239,7 @@ export const extractJobDetail = (detailHtml, listing) => {
     title: listing.title,
     company: COMPANY,
     department: null,
-    location: normalizeCountry(locationLabel) || listing.location,
+    location: locationLabel || listing.location,
     city: null,
     state: null,
     country: listing.country,

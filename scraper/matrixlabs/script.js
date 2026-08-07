@@ -85,7 +85,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /career\s*[–-]\s*Matrix Labs/i.test(rawHtml)
+  return /<title[^>]*>\s*career\s*(?:&#8211;|&ndash;|–|-)\s*Matrix Labs\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Career Opportunities at Matrix Labs Pvt Ltd - Innovators in IVD Solutions')
     && normalized.includes('Share your resume with us at')
     && normalized.includes(APPLICATION_EMAIL)

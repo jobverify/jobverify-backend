@@ -15,6 +15,10 @@ test('getScraperCatalog includes SunTec as a first-party script provider with of
   assert.equal(provider.companyName, 'SunTec')
   assert.equal(provider.companyCareerPage, 'https://www.suntecgroup.com/career/')
   assert.equal(provider.companyDomain, 'suntecgroup.com')
+  assert.equal(provider.extractionStrategy, 'first-party-inline-openings+best-effort-detail-pages+careers-page-fallback')
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Analyst/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 404/i)
   assert.match(provider.modulePath, /suntec[\\/]script\.js$/i)
 })
 

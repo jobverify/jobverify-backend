@@ -202,6 +202,7 @@ export const mapJobRecordToJob = (record = {}, { scrapedAt = new Date().toISOStr
     || normalizeWhitespace(record.location)
     || null
   const location = buildLocationParts(city, record.State, country).join(', ') || country
+  const experienceRequired = normalizeExperience(record)
 
   if (!title || !requisitionId || !sourceUrl) {
     return null
@@ -220,7 +221,8 @@ export const mapJobRecordToJob = (record = {}, { scrapedAt = new Date().toISOStr
     requisitionId,
     employmentType: normalizeWhitespace(record.jobType),
     workplaceType: null,
-    experienceRequired: normalizeExperience(record),
+    experienceRequired,
+    publicExperienceChecked: Boolean(experienceRequired),
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],

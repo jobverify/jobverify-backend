@@ -43,8 +43,10 @@ test('Virinchi Technologies local catalog captures the verified profile-signup-o
     'verified-careers-page+profile-signup-link+resume-email-no-public-role-list',
   )
   assert.equal(provider.companyDomain, 'virinchi.com')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-06')
   assert.equal(provider.modulePath, modulePath)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 6, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /\.:: Welcome to Virinchi ::\./i)
 })
 
 test('Virinchi Technologies exact backlog row resolves from the local catalog without aliases', async () => {

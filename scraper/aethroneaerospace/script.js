@@ -109,7 +109,7 @@ const extractInternshipJob = (bundle) => {
     sourceUrl: CAREER_PAGE_URL,
     applyUrl: CONTACT_PAGE_URL,
     employmentType: 'Internship',
-    experienceRequired: duration,
+    experienceRequired: null,
     minimumQualification: normalizedQualification,
     preferredQualification: null,
     requiredSkills: [],

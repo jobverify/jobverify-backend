@@ -39,9 +39,10 @@ const careersPage = {
         <link rel="canonical" href="https://www.everestglobal.com/us-en/career-opportunities/overview" />
       </head>
       <body>
-        <h1>Careers</h1>
+        <h1>Your opportunity <span>starts here</span></h1>
+        <a href="https://wd5.myworkdaysite.com/recruiting/everestre/careers" target="_blank">View Job Openings</a>
         <p>Ready to take your next step?</p>
-        <a href="https://wd5.myworkdaysite.com/recruiting/everestre/careers" target="_blank">Search Jobs</a>
+        <h2>Where could your career take you?</h2>
       </body>
     </html>
   `,
@@ -211,7 +212,7 @@ test('Everest helpers stay pinned to the verified careers handoff and official W
   assert.equal(everest.SOURCE, 'everest')
   assert.equal(everest.COMPANY, 'Everest')
   assert.equal(everest.OFFICIAL_BRAND_NAME, 'Everest')
-  assert.equal(everest.VERIFIED_ON, '2026-07-15')
+  assert.equal(everest.VERIFIED_ON, '2026-08-01')
   assert.equal(everest.HOMEPAGE_URL, 'https://www.everestglobal.com/')
   assert.equal(everest.CAREERS_PAGE_URL, 'https://www.everestglobal.com/careers/')
   assert.equal(

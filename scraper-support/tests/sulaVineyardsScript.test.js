@@ -7,9 +7,10 @@ const OFFICIAL_CAREERS_HTML = `
   <body>
     <main>
       <h1>Careers at Sula</h1>
-      <p>At Sula, our goal is to continue the Indian Wine Revolution.</p>
-      <p>Our people are our biggest assets.</p>
-      <a href="https://app.hrone.cloud/career-portal?ccid=8Qqxv4vYEt7A1wqC_2B0Fw~~&payload=evgE4Qh6f3p6GKeiD4fJQ0LiQsj1hT4DjXVao0Cuhy3Gev16iZi3l6M7u3e72Dhi&dc=sula">View Open Positions</a>
+      <p>As pioneers and leaders in the Indian wine industry, we're committed to creating great memories that start with a bottle of Sula!</p>
+      <p>At Sula, we believe in a supportive, open-door culture and place a strong emphasis on Learning and Development opportunities for our teams to grow at every level of their professional journey.</p>
+      <p>We have both full-time as well as internship positions available across all our departments.</p>
+      <a href="https://app.hrone.cloud/career-portal?appId=MHZzWpATk5uSVkWo1EwlhxzjgIG1VZ3pIZYpNVctJxMlUQo18qUoCm-17Y6BMlv4l0Cqdw6PNgHEZKAACmWo7upw3Rwo24m2v5XmXqZ2XGYc1Q2nq54JyLnImKiiIoss&dc=sula&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=eaqzS8e-weZZc3W_dw_T1Q">View Open Positions</a>
       <footer>
         <p>Sula Vineyards Limited. All rights reserved.</p>
       </footer>
@@ -52,17 +53,17 @@ test('Sula Vineyards sentinel helpers stay pinned to the verified careers page a
   assert.equal(sula.SOURCE, 'sulavineyards')
   assert.equal(sula.COMPANY, 'Sula Vineyards')
   assert.equal(sula.OFFICIAL_BRAND_NAME, 'Sula Vineyards Limited')
-  assert.equal(sula.VERIFIED_ON, '2026-07-17')
+  assert.equal(sula.VERIFIED_ON, '2026-08-05')
   assert.equal(sula.CAREERS_PAGE_URL, 'https://sulavineyards.com/careers.php')
   assert.equal(
     sula.OFFICIAL_CAREERS_HANDOFF_URL,
-    'https://app.hrone.cloud/career-portal?ccid=8Qqxv4vYEt7A1wqC_2B0Fw~~&payload=evgE4Qh6f3p6GKeiD4fJQ0LiQsj1hT4DjXVao0Cuhy3Gev16iZi3l6M7u3e72Dhi&dc=sula',
+    'https://app.hrone.cloud/career-portal?appId=MHZzWpATk5uSVkWo1EwlhxzjgIG1VZ3pIZYpNVctJxMlUQo18qUoCm-17Y6BMlv4l0Cqdw6PNgHEZKAACmWo7upw3Rwo24m2v5XmXqZ2XGYc1Q2nq54JyLnImKiiIoss&dc=sula&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=eaqzS8e-weZZc3W_dw_T1Q',
   )
   assert.match(sula.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
   assert.equal(sula.hasOfficialCareersSignal(OFFICIAL_CAREERS_HTML), true)
   assert.equal(
     sula.extractOfficialHROneHandoffUrl(OFFICIAL_CAREERS_HTML),
-    'https://app.hrone.cloud/career-portal?ccid=8Qqxv4vYEt7A1wqC_2B0Fw~~&payload=evgE4Qh6f3p6GKeiD4fJQ0LiQsj1hT4DjXVao0Cuhy3Gev16iZi3l6M7u3e72Dhi&dc=sula',
+    'https://app.hrone.cloud/career-portal?appId=MHZzWpATk5uSVkWo1EwlhxzjgIG1VZ3pIZYpNVctJxMlUQo18qUoCm-17Y6BMlv4l0Cqdw6PNgHEZKAACmWo7upw3Rwo24m2v5XmXqZ2XGYc1Q2nq54JyLnImKiiIoss&dc=sula&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=eaqzS8e-weZZc3W_dw_T1Q',
   )
   assert.equal(sula.pageExposesPublicJobListings(OFFICIAL_CAREERS_HTML), false)
   assert.equal(sula.pageExposesPublicJobListings(HRONE_JS_STUB_HTML), false)

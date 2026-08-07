@@ -46,6 +46,22 @@ const careersHtml = `
   </html>
 `
 
+const redesignedHomepageHtml = `
+  <!doctype html>
+  <html lang="en-US">
+    <head>
+      <title>Home - Syntacticlogic Technology Services</title>
+      <link rel="canonical" href="https://syntacticlogic.com/" />
+    </head>
+    <body>
+      <main>
+        <h1>Reinventing the Future through Technology.</h1>
+        <p>We help disruptive companies change the world.</p>
+      </main>
+    </body>
+  </html>
+`
+
 test('Syntacticlogic validates the official homepage and email-only careers shell', async () => {
   const syntacticlogic = await loadModule()
   assert.ok(syntacticlogic, 'Syntacticlogic scraper module should load')
@@ -54,7 +70,10 @@ test('Syntacticlogic validates the official homepage and email-only careers shel
   assert.equal(syntacticlogic.COMPANY, 'Syntacticlogic Technology')
   assert.equal(syntacticlogic.HOMEPAGE_URL, 'https://syntacticlogic.com/')
   assert.equal(syntacticlogic.CAREERS_URL, 'https://syntacticlogic.com/careers/')
+  assert.equal(syntacticlogic.REQUEST_HEADERS['Accept-Language'], 'en-US,en;q=0.9')
+  assert.equal(syntacticlogic.REQUEST_HEADERS['Sec-Fetch-Mode'], 'navigate')
   assert.equal(syntacticlogic.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(syntacticlogic.hasOfficialHomepageSignal(redesignedHomepageHtml), true)
   assert.equal(syntacticlogic.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(syntacticlogic.hasPublicJobsSignal(careersHtml), false)
   assert.equal(syntacticlogic.hasFirstPartyJobListingLink(careersHtml), false)

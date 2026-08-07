@@ -10,9 +10,12 @@ const genericCareersHtml = `
   <body>
     <section>
       <h2>About HealthKart</h2>
-      <p>HealthKart.com is India's largest online health & fitness store for men and women.</p>
       <a href="/careers">Careers</a>
     </section>
+    <nav>
+      <a href="/brand-directory">Brand Directory</a>
+      <a href="/sell-on-healthkart">Sell On HealthKart</a>
+    </nav>
     <footer>
       <p>Copyright © 2026, healthkart.com</p>
     </footer>

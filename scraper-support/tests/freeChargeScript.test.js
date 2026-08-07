@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-15T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-02T00:00:00.000Z'
 
 const homepageHtml = `
 <!doctype html>
@@ -12,7 +12,7 @@ const homepageHtml = `
   <body>
     <main>
       <h1>Freecharge</h1>
-      <a href="https://careers.freecharge.in/">Career</a>
+      <a href="https://careers.freecharge.in">Career</a>
       <footer>© Freecharge Payment Technologies Pvt. Ltd. All Rights Reserved</footer>
     </main>
   </body>
@@ -29,7 +29,7 @@ const careersPageHtml = `
     <main>
       <h1>#ChangeYourFuture</h1>
       <p>Grow Your Career While We Revolutionize Payments</p>
-      <a href="https://freecharge.ripplehire.com/candidate/?source=CAREERSITE&amp;token=IoV5vvUSMKLwmaa1Suou">
+      <a href="https://freecharge.ripplehire.com/candidate/?token=IoV5vvUSMKLwmaa1Suou&amp;source=CAREERSITE#list">
         Explore Opportunities
       </a>
     </main>
@@ -144,17 +144,17 @@ test('FreeCharge scraper constants and verified-surface helpers stay pinned to t
   assert.equal(freeCharge.SOURCE, 'freecharge')
   assert.equal(freeCharge.COMPANY, 'FreeCharge')
   assert.equal(freeCharge.OFFICIAL_BRAND_NAME, 'Freecharge')
-  assert.equal(freeCharge.VERIFIED_ON, '2026-07-15')
+  assert.equal(freeCharge.VERIFIED_ON, '2026-08-02')
   assert.equal(freeCharge.HOMEPAGE_URL, 'https://www.freecharge.in/')
   assert.equal(freeCharge.COMPANY_CAREER_PAGE_URL, 'https://careers.freecharge.in/')
   assert.equal(freeCharge.PORTAL_ORIGIN, 'https://freecharge.ripplehire.com')
   assert.equal(
     freeCharge.OFFICIAL_CAREERS_HANDOFF_URL,
-    'https://freecharge.ripplehire.com/candidate/?source=CAREERSITE&token=IoV5vvUSMKLwmaa1Suou',
+    'https://freecharge.ripplehire.com/candidate/?token=IoV5vvUSMKLwmaa1Suou&source=CAREERSITE#list',
   )
   assert.equal(
     freeCharge.JOB_BOARD_URL,
-    'https://freecharge.ripplehire.com/candidate/?source=CAREERSITE&token=IoV5vvUSMKLwmaa1Suou',
+    'https://freecharge.ripplehire.com/candidate/?token=IoV5vvUSMKLwmaa1Suou&source=CAREERSITE#list',
   )
   assert.equal(
     freeCharge.JOB_SEARCH_API_URL,
@@ -295,7 +295,7 @@ test('FreeCharge scraper fails closed when the verified homepage, careers page, 
             status: 200,
             url,
             html: careersPageHtml.replace(
-              'https://freecharge.ripplehire.com/candidate/?source=CAREERSITE&amp;token=IoV5vvUSMKLwmaa1Suou',
+              'https://freecharge.ripplehire.com/candidate/?token=IoV5vvUSMKLwmaa1Suou&amp;source=CAREERSITE#list',
               'https://example.com/jobs',
             ),
           }

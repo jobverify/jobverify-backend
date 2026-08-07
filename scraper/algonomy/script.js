@@ -87,16 +87,18 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('Search Job Openings')
-    && normalized.includes('We have global openings in core business and technical teams across our company.')
-    && normalizeComparableUrl(extractPaycorScriptUrl(html)) === normalizeComparableUrl(PAYCOR_SCRIPT_URL)
+    && normalized.includes('Why Algonomy')
+    && /Working at Algonomy is more than just a job\.\s*(?:It's|It’s)\s*a mission\./i.test(normalized)
+    && normalized.includes('Algonomy is now part of ADA')
 }
 
 export const hasOfficialPaycorBoardSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
 
-  return normalized.includes('Job Search')
-    && normalized.includes("homeUrl = 'https://algonomy.com/careers/'")
-    && GROUP_HEADER_PATTERN.test(String(html ?? ''))
+  return /homeUrl\s*=\s*'https:\/\/algonomy\.com\/careers\/'/i.test(page)
+    && GROUP_HEADER_PATTERN.test(page)
+    && /gnewtonCareerGroupRowClass/i.test(page)
+    && /JobIntroduction\.action\?clientId=8a7883c6606d030901607ae3719c71a6/i.test(page)
 }
 
 export const extractJobsFromPaycorBoard = (html = '') => {
@@ -167,7 +169,11 @@ export const createAlgonomyScraper = ({ now = () => new Date().toISOString() } =
       throw new Error('Algonomy verified first-party careers page changed materially')
     }
 
-    if (normalizeComparableUrl(extractPaycorScriptUrl(careersHtml)) !== normalizeComparableUrl(PAYCOR_SCRIPT_URL)) {
+    const embeddedPaycorScriptUrl = extractPaycorScriptUrl(careersHtml)
+    if (
+      embeddedPaycorScriptUrl
+      && normalizeComparableUrl(embeddedPaycorScriptUrl) !== normalizeComparableUrl(PAYCOR_SCRIPT_URL)
+    ) {
       throw new Error('Algonomy verified Paycor handoff changed materially')
     }
 

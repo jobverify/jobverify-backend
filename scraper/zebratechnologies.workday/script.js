@@ -36,12 +36,18 @@ export const buildScraperOptions = () => ({
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasHeroSignals =
+    normalized.includes('Welcome to Zebra, where we make the world Better Every Day')
+    && normalized.includes('Join the Herd and increase our impact')
+  const hasCareerAreaSignals =
+    normalized.includes('Search AI, Engineering & Technology Solutions Jobs')
+    || normalized.includes('Search Corporate Jobs')
 
   return /<title>\s*Careers\s*\|\s*Zebra\s*<\/title>/i.test(page)
-    && /<meta[^>]+name="description"[^>]+Explore careers at Zebra/i.test(page)
-    && normalized.includes('Join the Herd and increase our impact')
-    && normalized.includes('Search AI, Engineering & Technology Solutions Jobs')
-    && normalized.includes('View Openings')
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Explore careers at Zebra/i.test(page)
+    && hasHeroSignals
+    && hasCareerAreaSignals
+    && page.includes(WORKDAY_BASE_URL)
 }
 
 const isVerifiedWorkdayHandoffUrl = (value) => {

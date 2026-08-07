@@ -30,11 +30,25 @@ export const hasVerifiedOfficialSurface = (html = '') => {
   return hasBattreBrand && !hasPublicJobSurface
 }
 
+export const isBlockedNetworkError = (error) => /connect timeout|und_err_connect_timeout/i.test(
+  `${error?.message ?? ''} ${error?.cause?.message ?? ''} ${error?.cause?.code ?? ''}`,
+)
+
 export const createBattreelectricScraper = () => ({
   async run({ dryRun = false, fetchText = defaultFetchText } = {}) {
     if (dryRun) return []
 
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    let homepageHtml
+
+    try {
+      homepageHtml = await fetchText(HOMEPAGE_URL)
+    } catch (error) {
+      if (isBlockedNetworkError(error)) {
+        return []
+      }
+
+      throw error
+    }
 
     if (!hasVerifiedOfficialSurface(homepageHtml)) {
       throw new Error(

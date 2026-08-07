@@ -46,6 +46,40 @@ const jobsBundleJs = `
   async()=>{let e=await a.default.get("https://api.lever.co/v0/postings/fampay?group=team&mode=json").catch(()=>{f([])});
 `
 
+const blankTitleCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+  </head>
+  <body>
+    <main>
+      <p>#JoinTheFam</p>
+      <h1>Be a part of the team setting the bar for <span>new-world</span> work culture</h1>
+      <h2>So like, what does Fam do?</h2>
+      <p>FamApp by Trio (formerly FamPay) focuses on financial inclusion of the next generation.</p>
+      <script src="/_next/static/chunks/a57fc16ab57e4e2c.js"></script>
+    </main>
+  </body>
+</html>
+`
+
+const blankTitleJobsPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+  </head>
+  <body>
+    <div id="__next"></div>
+    <script src="/_next/static/chunks/46b0e91d4324e433.js"></script>
+    <script id="__NEXT_DATA__" type="application/json">
+      {"page":"/jobs"}
+    </script>
+  </body>
+</html>
+`
+
 const leverBoardHtml = `
 <!doctype html>
 <html lang="en">
@@ -63,6 +97,25 @@ const leverBoardHtml = `
     <a href="https://jobs.lever.co/fampay/ed0b7a4f-112a-4768-b4f9-d2e8368e5ad8">Product Analyst Intern</a>
     <a href="https://www.famapp.in/">Fam Home Page</a>
     <p>Jobs powered by Lever</p>
+  </body>
+</html>
+`
+
+const leverBoardHtmlWithoutPoweredByLever = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Fam</title>
+    <meta name="twitter:title" content="Fam">
+    <meta name="twitter:description" content="Job openings at Fam">
+  </head>
+  <body>
+    <section>Location type</section>
+    <section>Location</section>
+    <section>Team</section>
+    <section>Work type</section>
+    <a href="https://jobs.lever.co/fampay/7c59fd4b-508e-4a91-9d73-164bc7d9abba">Architect (10+ Years)</a>
+    <a href="https://www.famapp.in/">Fam Home Page</a>
   </body>
 </html>
 `
@@ -164,6 +217,16 @@ test('Fampay helpers stay pinned to the verified Fam careers shell, jobs shell, 
     fampay.buildPublicJobUrl('7c59fd4b-508e-4a91-9d73-164bc7d9abba'),
     'https://jobs.lever.co/fampay/7c59fd4b-508e-4a91-9d73-164bc7d9abba',
   )
+})
+
+test('Fampay accepts the current blank-title server-rendered careers and jobs shells', async () => {
+  const fampay = await loadModule()
+
+  assert.equal(fampay.hasOfficialCareersSignal(blankTitleCareersPageHtml), true)
+  assert.equal(fampay.hasVerifiedCareersBundleReference(blankTitleCareersPageHtml), true)
+  assert.equal(fampay.hasOfficialJobsShellSignal(blankTitleJobsPageHtml), true)
+  assert.equal(fampay.hasVerifiedJobsBundleReference(blankTitleJobsPageHtml), true)
+  assert.equal(fampay.hasOfficialLeverBoardSignal(leverBoardHtmlWithoutPoweredByLever), true)
 })
 
 test('Fampay extracts only India roles from the grouped Lever postings payload shape', async () => {

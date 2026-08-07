@@ -14,19 +14,24 @@ export const ROOT_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const APPLICATION_EMAIL = PROVIDER_METADATA.applicationEmail
 export const APPLICATION_URL = PROVIDER_METADATA.applicationUrl
+export const SITEMAP_URL = 'https://www.edelweissfin.com/sitemap.xml'
+export const SITEMAP_INDEX_URL = 'https://www.edelweissfin.com/sitemap_index.xml'
+export const ROBOTS_URL = 'https://www.edelweissfin.com/robots.txt'
 export { VERIFIED_SURFACE_SUMMARY }
 
-export const BLOCKED_ROUTE_URLS = [
+export const VERIFIED_ROUTE_URLS = [
   ROOT_URL,
   CAREERS_URL,
-  'https://www.edelweissfin.com/robots.txt',
-  'https://www.edelweissfin.com/sitemap.xml',
+  ROBOTS_URL,
+  SITEMAP_URL,
   'https://www.edelweissfin.com/careers',
   'https://www.edelweissfin.com/career',
   'https://www.edelweissfin.com/jobs',
   'https://www.edelweissfin.com/join-us',
   'https://www.edelweissfin.com/work-with-us',
 ]
+
+export const BLOCKED_ROUTE_URLS = VERIFIED_ROUTE_URLS
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -87,8 +92,27 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const isFirstPartyUrl = (value) => {
+  try {
+    const parsed = new URL(value)
+    return parsed.hostname === 'www.edelweissfin.com'
+  } catch {
+    return false
+  }
+}
+
 export const hasPublicJobListingSignal = (html = '') =>
   PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+export const hasOfficialHomepageSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return extractTitle(rawHtml) === 'Top Finance Company in Mumbai, India | Best in Investment & Advisory Services - Edelweiss Finance'
+    && /href=["']\/edelweisscareers["'][^>]*>\s*Careers\s*<\/a>/i.test(rawHtml)
+    && normalized.includes('Top Finance Company in Mumbai, India')
+    && !hasPublicJobListingSignal(rawHtml)
+}
 
 export const hasVerifiedInformationalCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
@@ -102,30 +126,61 @@ export const hasVerifiedInformationalCareersSignal = (html = '') => {
     && !hasPublicJobListingSignal(rawHtml)
 }
 
-export const isVerifiedBlockedDirectFetchSurface = (page = {}, requestedUrl) => {
-  const rawHtml = String(page?.html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+export const hasMissingRobotsSignal = (page = {}) =>
+  Number(page?.status) === 404
+  && extractTitle(page?.html) === '404 Not Found'
+  && !hasPublicJobListingSignal(page?.html)
 
-  return Number(page?.status) === 403
-    && (page?.url || requestedUrl) === requestedUrl
-    && extractTitle(rawHtml) === 'Access Denied'
-    && /Access Denied/i.test(normalized)
-    && /You don't have permission to access/i.test(normalized)
-    && /errors\.edgesuite\.net/i.test(normalized)
+export const hasVerifiedSitemapSignal = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+
+  return Number(page?.status) === 200
+    && page?.url === SITEMAP_INDEX_URL
+    && /https:\/\/www\.edelweissfin\.com\/post-sitemap\.xml/i.test(rawHtml)
+    && /https:\/\/www\.edelweissfin\.com\/page-sitemap\.xml/i.test(rawHtml)
     && !hasPublicJobListingSignal(rawHtml)
 }
 
+export const isKnownLegacyNoPublicJobRoute = (page = {}) =>
+  Number(page?.status) === 200
+  && isFirstPartyUrl(page?.url)
+  && !hasPublicJobListingSignal(page?.html)
+  && (
+    hasOfficialHomepageSignal(page?.html)
+    || /join us for a session/i.test(extractTitle(page?.html))
+  )
+
 export const createEdelweissScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    for (const url of BLOCKED_ROUTE_URLS) {
+    const homepage = await fetchPage(ROOT_URL)
+    if (homepage.status !== 200 || homepage.url !== ROOT_URL || !hasOfficialHomepageSignal(homepage.html)) {
+      throw new Error('Edelweiss verified homepage no longer matches the trusted first-party surface')
+    }
+
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (
+      careersPage.status !== 200
+      || careersPage.url !== CAREERS_URL
+      || !hasVerifiedInformationalCareersSignal(careersPage.html)
+    ) {
+      throw new Error('Edelweiss verified informational careers page no longer matches the trusted first-party surface')
+    }
+
+    const robotsPage = await fetchPage(ROBOTS_URL)
+    if (!hasMissingRobotsSignal(robotsPage)) {
+      throw new Error('Edelweiss verified robots.txt route no longer matches the trusted first-party no-public-jobs surface')
+    }
+
+    const sitemapPage = await fetchPage(SITEMAP_URL)
+    if (!hasVerifiedSitemapSignal(sitemapPage)) {
+      throw new Error('Edelweiss verified sitemap route no longer matches the trusted first-party no-public-jobs surface')
+    }
+
+    for (const url of VERIFIED_ROUTE_URLS.slice(4)) {
       const page = await fetchPage(url)
 
-      if (hasPublicJobListingSignal(page?.html)) {
-        throw new Error(`Edelweiss blocked direct-fetch route now appears to expose public jobs: ${url}`)
-      }
-
-      if (!isVerifiedBlockedDirectFetchSurface(page, url)) {
-        throw new Error(`Edelweiss verified blocked direct-fetch surface changed: ${url}`)
+      if (!isKnownLegacyNoPublicJobRoute(page)) {
+        throw new Error(`Edelweiss legacy career-like route changed materially: ${url}`)
       }
     }
 

@@ -22,10 +22,11 @@ const USER_AGENT =
 const CAREERS_SIGNAL_PATTERN = /\b(career|careers|job|jobs|opening|openings|vacancy|vacancies|join us|work with us)\b/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/\u2014/g, '-')
+  .replace(/[\u2013\u2014]/g, '-')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
@@ -49,13 +50,15 @@ const defaultFetchPage = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return /FlintLab Sirius - Device Infrastructure PaaS/i.test(normalized)
-    && /Begin Your Journey Towards Precision Testing/i.test(normalized)
-    && /FlintLab powers efficient, collaborative testing across devices\./i.test(normalized)
-    && /Ask Flint Nexus Pioneers/i.test(normalized)
-    && /mailto:engage@flintlab\.io/i.test(rawHtml)
+  return normalized.includes('flintlab sirius')
+    && normalized.includes('device infrastructure paas')
+    && normalized.includes('request a demo')
+    && normalized.includes('begin your journey towards precision testing')
+    && normalized.includes('login to continue')
+    && normalized.includes('flintlab powers efficient, collaborative testing across devices')
+    && normalized.includes("what's new")
     && /linkedin\.com\/company\/flintlab-inc/i.test(rawHtml)
 }
 

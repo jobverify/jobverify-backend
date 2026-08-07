@@ -27,6 +27,23 @@ const homepageShellHtml = `
 </html>
 `
 
+const modernHomepageShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>DTDL | Deutsche Telekom Digital Labs</title>
+    <meta
+      name="description"
+      content="Deutsche Telekom Digital Labs | We build digital products that change how the world connects, pays, shops, and unwinds."
+    >
+    <link rel="canonical" href="https://dtdl.in/">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+`
+
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -60,6 +77,7 @@ test('Deutsche Telekom Digital Labs sentinel helpers stay pinned to the verified
   ])
   assert.equal(dtdl.hasTelekomAffiliateSignal(worldwideHtml), true)
   assert.equal(dtdl.hasExactNameHomepageShellSignal(homepageShellHtml), true)
+  assert.equal(dtdl.hasExactNameHomepageShellSignal(modernHomepageShellHtml), true)
   assert.equal(dtdl.hasPublicJobSignals(homepageShellHtml), false)
   assert.equal(dtdl.hasPublicJobSignals(publicJobsHtml), true)
 })
@@ -77,11 +95,11 @@ test('Deutsche Telekom Digital Labs sentinel returns [] only while the verified 
       }
 
       if (url === dtdl.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageShellHtml }
+        return { status: 200, url, html: modernHomepageShellHtml }
       }
 
       if (dtdl.CHECKED_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: '<html><body>Not Found</body></html>' }
+        return { status: 200, url, html: modernHomepageShellHtml }
       }
 
       throw new Error(`Unexpected DTDL URL: ${url}`)

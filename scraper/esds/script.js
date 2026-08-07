@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
@@ -16,10 +17,21 @@ export const OFFICIAL_BRAND_NAME = ESDS_CATALOG.officialBrandName
 export const VERIFIED_ON = ESDS_CATALOG.verifiedOn
 export const HOMEPAGE_URL = ESDS_CATALOG.officialHomepageUrl
 export const CAREERS_URL = ESDS_CATALOG.officialCareersLandingUrl
+export const OFFICIAL_CAREERS_HANDOFF_URL = ESDS_CATALOG.officialCareersHandoffUrl
+export const DARWINBOX_ORIGIN = ESDS_CATALOG.darwinboxOrigin
+export const DARWINBOX_COMPANY_ID = ESDS_CATALOG.darwinboxCompanyId
+export const PUBLIC_PORTAL_URL = ESDS_CATALOG.publicAllJobsUrl
 export const PROVIDER_METADATA = ESDS_CATALOG
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const darwinboxScraper = createDarwinboxScraper({
+  companyName: COMPANY,
+  source: SOURCE,
+  companyId: DARWINBOX_COMPANY_ID,
+  origin: DARWINBOX_ORIGIN,
+})
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -142,6 +154,18 @@ const isIndiaJob = (job = {}) => {
   return /india/i.test(normalizeWhitespace(job.location) || '')
 }
 
+const normalizeJobId = (value) => normalizeWhitespace(value)
+
+const filterToVerifiedPublicJobs = (firstPartyListings = [], darwinboxJobs = []) => {
+  const verifiedJobIds = new Set(
+    firstPartyListings
+      .map((listing) => normalizeJobId(listing.jobId))
+      .filter(Boolean),
+  )
+
+  return darwinboxJobs.filter((job) => verifiedJobIds.has(normalizeJobId(job.jobId)))
+}
+
 export const buildDetailUrl = (jobId) =>
   `https://www.esds.co.in/career-details/${normalizeWhitespace(jobId) || ''}`
 
@@ -150,7 +174,6 @@ export const hasOfficialCareersSignal = (html) => {
 
   return /<title>\s*Careers at ESDS \| IT and Cloud Job Opportunities\s*<\/title>/i.test(page)
     && /Life at ESDS/i.test(page)
-    && /Find your Next Job/i.test(page)
     && /Jobs of the day/i.test(page)
     && /career-details\//i.test(page)
 }
@@ -167,6 +190,15 @@ export const hasOfficialJobDetailSignal = (html) => {
     && /Country/i.test(page)
     && /Apply Now/i.test(page)
     && /https:\/\/esds\.darwinbox\.in\/ms\/candidate\/candidate\/login\?redirect=/i.test(page)
+}
+
+export const hasDarwinboxShellFallbackSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*<\/title>/i.test(page)
+    && /<base href="\/ms\/candidatev2\/">/i.test(page)
+    && /db-components(?:\.esm)?\.js/i.test(page)
+    && /\/ms\/formbuilder\/assets\/db-form\/db-form\.js/i.test(page)
 }
 
 export const extractDarwinboxApplyUrl = (html) => toAbsoluteUrl(
@@ -271,7 +303,9 @@ export const createEsdsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
+    maxPages = config.maxPages,
     fetchText = defaultFetchText,
+    fetchListingPage,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
@@ -279,41 +313,34 @@ export const createEsdsScraper = ({
       throw new Error('ESDS verified official careers surface no longer matches the first-party contract')
     }
 
-    const listings = extractJobCards(careersHtml)
-    if (listings.length === 0) {
+    const firstPartyListings = extractJobCards(careersHtml)
+    if (firstPartyListings.length === 0) {
       throw new Error('ESDS verified official careers surface no longer exposes the expected job cards')
     }
 
-    const jobs = []
+    const darwinboxJobs = await darwinboxScraper.run({
+      maxPages,
+      maxJobs,
+      fetchListingPage,
+    })
+    const verifiedPublicJobs = filterToVerifiedPublicJobs(firstPartyListings, darwinboxJobs)
 
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-
-      if (!hasOfficialJobDetailSignal(detailHtml)) {
-        throw new Error('ESDS verified public detail/apply surface no longer matches the first-party contract')
-      }
-
-      const detail = extractJobDetail(detailHtml, listing)
-
-      if (!detail.sourceUrl || !detail.applyUrl) {
-        throw new Error('ESDS verified public detail/apply surface no longer exposes the first-party job detail or Darwinbox apply handoff')
-      }
-
-      if (!isIndiaJob(detail)) continue
-
-      jobs.push({
-        ...detail,
-        source: SOURCE,
-        link: detail.applyUrl || detail.sourceUrl,
-        scrapedAt: now(),
-      })
-
-      if (maxJobs && jobs.length >= maxJobs) {
-        break
-      }
+    if (verifiedPublicJobs.length === 0) {
+      throw new Error('ESDS verified first-party careers surface no longer lines up with the live Darwinbox public jobs portal')
     }
 
-    return jobs
+    const scrapedAt = now()
+    const selectedJobs = Number.isInteger(maxJobs)
+      ? verifiedPublicJobs.slice(0, maxJobs)
+      : verifiedPublicJobs
+
+    return selectedJobs
+      .filter((job) => isIndiaJob(job))
+      .map((job) => ({
+        ...job,
+        country: normalizeWhitespace(job.country) || 'India',
+        scrapedAt,
+      }))
   },
 })
 

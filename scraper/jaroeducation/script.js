@@ -40,6 +40,14 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+const toDisplayTitle = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  if (normalized !== normalized.toLowerCase()) return normalized
+
+  return normalized.replace(/\b[a-z]/g, (character) => character.toUpperCase())
+}
+
 const absoluteUrl = (value) => {
   if (!value) return null
 
@@ -55,7 +63,7 @@ const hasQualificationSignal = (value) =>
     normalizeWhitespace(value),
   )
 
-const extractFirstHeading = (html) => normalizeWhitespace(
+const extractFirstHeading = (html) => toDisplayTitle(
   stripTags(html.match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1]),
 )
 
@@ -119,37 +127,58 @@ const splitQualificationsAndSkills = (items = []) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const text = stripTags(page)
 
-  return /<title>\s*Most trusted Online Higher Education Company\s*\|\s*Jaro Education\s*<\/title>/i.test(page)
-    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Jaro Education["']/i.test(page)
-    && /<a[^>]+href=["'](?:https?:\/\/www\.jaroeducation\.com)?\/careers["'][^>]*>\s*Career at Jaro Education\s*<\/a>/i.test(page)
-    && /Career Transformed/i.test(page)
+  return /<title[^>]*>\s*Most trusted Online Higher Education Company\s*\|\s*Jaro Education\s*<\/title>/i.test(page)
+    && (
+      /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Jaro Education["']/i.test(page)
+      || /<meta[^>]+name=["']author["'][^>]+content=["']Jaro Education["']/i.test(page)
+      || /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.jaroeducation\.com\/["']/i.test(page)
+    )
+    && text.includes('Career Transformed')
+    && text.includes('Jaro Education')
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page).toLowerCase()
 
-  return /<title>\s*Career at Jaro Education\s*\|\s*Jaro Education\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Career at Jaro Education\s*\|\s*Jaro Education\s*<\/title>/i.test(page)
     && text.includes('why join jaro education?')
     && text.includes('explore current opportunities')
     && text.includes('find jobs')
-    && text.includes('jaro education awards & achievements')
     && /apply now/i.test(page)
     && /view details/i.test(page)
 }
+
+const extractAccordionBlocks = (html) => {
+  const page = String(html ?? '')
+  const marker = /<div class="accordion-item">/gi
+  const matches = [...page.matchAll(marker)]
+  if (matches.length === 0) return []
+
+  return matches.map((match, index) => {
+    const start = match.index ?? 0
+    const end = matches[index + 1]?.index ?? page.length
+    return page.slice(start, end)
+  })
+}
+
+const extractLegacyJobBlocks = (html) => [...String(html ?? '').matchAll(
+  /<(article|section|div)\b[^>]*class=["'][^"']*\bjob-opening\b[^"']*["'][^>]*>([\s\S]*?)<\/\1>/gi,
+)].map((match) => match[2])
 
 export const extractPublicListings = (html) => {
   if (!hasOfficialCareersSignal(html)) {
     throw new Error('Jaro Education verified official careers surface changed or disappeared')
   }
 
-  const jobs = [...String(html ?? '').matchAll(
-    /<(article|section|div)\b[^>]*class=["'][^"']*\bjob-opening\b[^"']*["'][^>]*>([\s\S]*?)<\/\1>/gi,
-  )].map((match) => {
-    const blockHtml = match[2]
+  const blockHtmlList = extractLegacyJobBlocks(html)
+  const blocks = blockHtmlList.length > 0 ? blockHtmlList : extractAccordionBlocks(html)
+
+  const jobs = blocks.map((blockHtml) => {
     const title = extractFirstHeading(blockHtml)
-    const applyUrl = absoluteUrl(
+    const explicitApplyUrl = absoluteUrl(
       blockHtml.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1],
     )
 
@@ -199,6 +228,8 @@ export const extractPublicListings = (html) => {
       title,
       location: locationItems.join('-') || locationInfo.city || locationInfo.location,
     })
+    const defaultJobUrl = `${CAREERS_URL}#${jobId}`
+    const applyUrl = explicitApplyUrl || defaultJobUrl
 
     if (!title || !applyUrl || !locationInfo.location) {
       throw new Error('Jaro Education verified careers surface changed or disappeared')
@@ -213,7 +244,7 @@ export const extractPublicListings = (html) => {
       country: 'India',
       jobId,
       requisitionId: jobId,
-      sourceUrl: `${CAREERS_URL}#${jobId}`,
+      sourceUrl: defaultJobUrl,
       applyUrl,
       employmentType: null,
       experienceRequired,

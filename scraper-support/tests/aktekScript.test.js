@@ -20,6 +20,11 @@ const homepageHtml = `
 </html>
 `
 
+const homepageHtmlWithDeploymentCanonical = homepageHtml.replace(
+  '<link rel="canonical" href="https://www.aktek.io/">',
+  '<link rel="canonical" href="https://3.11.131.178/es/">',
+)
+
 const robotsTxt = `
 # START YOAST BLOCK
 # ---------------------------
@@ -177,6 +182,40 @@ test('Aktek returns no jobs only while the verified first-party site exposes no 
     aktek.PAGE_SITEMAP_URL,
     ...aktek.CAREERS_ROUTE_URLS,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Aktek accepts the current homepage deployment canonical while the trusted first-party navigation stays intact', async () => {
+  const aktek = await loadAktekModule()
+
+  assert.equal(aktek.hasOfficialHomepageSignal(homepageHtmlWithDeploymentCanonical), true)
+
+  const jobs = await aktek.createAktekScraper().run({
+    fetchPage: async (url) => {
+      if (url === aktek.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtmlWithDeploymentCanonical }
+      }
+
+      if (url === aktek.ROBOTS_TXT_URL) {
+        return { status: 200, url, html: robotsTxt }
+      }
+
+      if (url === aktek.SITEMAP_INDEX_URL) {
+        return { status: 200, url: 'https://aktek.io/sitemap_index.xml', html: sitemapIndexXml }
+      }
+
+      if (url === aktek.PAGE_SITEMAP_URL) {
+        return { status: 200, url, html: pageSitemapXml }
+      }
+
+      if (aktek.CAREERS_ROUTE_URLS.includes(url)) {
+        return { status: 404, url, html: notFoundHtml }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

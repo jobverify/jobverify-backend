@@ -65,6 +65,43 @@ const indiaJobsPageTwo = {
   ],
 }
 
+const detailPageHtmlByUrl = {
+  'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Security-Analyst_REQ0526_0037213-1': `
+    <html>
+      <body>
+        <section data-automation-id="jobPostingDescription">
+          <div>
+            <p>What will you contribute?</p>
+            <p>Should have more than 1 years of Software Development and lifecycle experience with a strong focus on security operations and automation.</p>
+          </div>
+        </section>
+      </body>
+    </html>
+  `,
+  'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Report-UX-Developer--Power-BI-_REQ0526_0037350': `
+    <html>
+      <body>
+        <section data-automation-id="jobPostingDescription">
+          <div>
+            <p>Build reporting workflows and user experiences for enterprise analytics programs.</p>
+          </div>
+        </section>
+      </body>
+    </html>
+  `,
+  'https://finastra.wd3.myworkdayjobs.com/FINC/job/Pune/Senior-QA-Engineer_REQ0326_0036569': `
+    <html>
+      <body>
+        <section data-automation-id="jobPostingDescription">
+          <div>
+            <p>Required Experience: 5-8 years of proven experience in designing automation strategies for banking products.</p>
+          </div>
+        </section>
+      </body>
+    </html>
+  `,
+}
+
 test('extractIndiaLocationFacetIds keeps the official India location ids from Finastra Workday facets', async () => {
   const finastra = await loadFinastraModule()
 
@@ -109,6 +146,11 @@ test('run queries the official Finastra Workday jobs API for India listings and 
 
       throw new Error(`Unexpected request body: ${options.body}`)
     },
+    fetchPage: async (url) => ({
+      status: 200,
+      url,
+      html: detailPageHtmlByUrl[url],
+    }),
   })
 
   assert.equal(requests.length, 3)
@@ -127,13 +169,13 @@ test('run queries the official Finastra Workday jobs API for India listings and 
     sourceUrl: 'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Security-Analyst_REQ0526_0037213-1',
     applyUrl: 'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Security-Analyst_REQ0526_0037213-1',
     employmentType: null,
-    experienceRequired: null,
+    experienceRequired: '1+ years',
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: 'Posted Today',
     closingDate: null,
-    jobDescription: null,
+    jobDescription: 'What will you contribute?\nShould have more than 1 years of Software Development and lifecycle experience with a strong focus on security operations and automation.',
     source: 'finastra',
     link: 'https://finastra.wd3.myworkdayjobs.com/FINC/job/Bengaluru/Security-Analyst_REQ0526_0037213-1',
   })
@@ -141,7 +183,9 @@ test('run queries the official Finastra Workday jobs API for India listings and 
   assert.equal(jobs[1].location, 'Bengaluru, India')
   assert.equal(jobs[1].city, 'Bengaluru')
   assert.equal(jobs[1].jobId, 'REQ0526_0037350')
+  assert.match(jobs[1].jobDescription || '', /enterprise analytics programs/i)
   assert.equal(jobs[2].location, 'Pune, India')
   assert.equal(jobs[2].city, 'Pune')
   assert.equal(jobs[2].jobId, 'REQ0326_0036569')
+  assert.equal(jobs[2].experienceRequired, '5-8 years')
 })

@@ -77,6 +77,84 @@ const openingsPageHtml = `
 </html>
 `
 
+const buildDetailPageHtml = ({
+  jobTitle,
+  experience = null,
+  location = 'C139/E84 sector-63, Noida. India',
+  bodyHtml,
+}) => `
+<!doctype html>
+<html>
+  <head>
+    <title>${jobTitle} - Cavisson</title>
+  </head>
+  <body>
+    <article>
+      <div class="entry-content">
+        ${bodyHtml}
+        <h4>Job Title: <span>${jobTitle}</span></h4>
+        ${experience ? `<h4>Experience: <span>${experience}</span></h4>` : ''}
+        <h5>Job location: Cavisson Systems, <span class="add">${location}</span></h5>
+        <h5>Contact: Cavisson Systems, Inc. <span class="name">Attn: Kajol Gupta</span></h5>
+        <h5>Kindly send your resume to <a href="mailto:hiring@cavisson.com">hiring@cavisson.com</a></h5>
+      </div>
+    </article>
+  </body>
+</html>
+`
+
+const detailPageHtmlByUrl = {
+  'https://www.cavisson.com/sr-software-engineer-for-cavisson-systems-inc/': buildDetailPageHtml({
+    jobTitle: 'Sr. Software Engineer',
+    experience: '3-7 Years',
+    bodyHtml: `
+      <h4>Responsibilities:</h4>
+      <ul>
+        <li>Write clean, stable and safe code in short time frames.</li>
+        <li>Collaborate with engineering teams across multiple functions.</li>
+      </ul>
+    `,
+  }),
+  'https://www.cavisson.com/product-management-professional-for-cavisson-systems-inc/': buildDetailPageHtml({
+    jobTitle: 'Product Manager',
+    experience: '5-12 Years',
+    bodyHtml: `
+      <h4>Responsibilities:</h4>
+      <ul>
+        <li>Set product strategy and roadmap.</li>
+        <li>Align engineering, sales and support teams.</li>
+      </ul>
+    `,
+  }),
+  'https://www.cavisson.com/devops-engineer-for-cavisson-systems-inc/': buildDetailPageHtml({
+    jobTitle: 'DevOps Engineer',
+    bodyHtml: `
+      <h4>Responsibilities:</h4>
+      <ul>
+        <li>Implement and monitor clustered log monitoring solutions.</li>
+      </ul>
+    `,
+  }),
+  'https://www.cavisson.com/unix-c-developer-for-cavisson-systems-inc/': buildDetailPageHtml({
+    jobTitle: 'Unix C Developer',
+    bodyHtml: `
+      <h4>Responsibilities:</h4>
+      <ul>
+        <li>Develop Linux system software using C and shell scripting.</li>
+      </ul>
+    `,
+  }),
+  'https://www.cavisson.com/java-developer-for-cavisson-systems-inc/': buildDetailPageHtml({
+    jobTitle: 'Java Developer',
+    bodyHtml: `
+      <h4>Responsibilities:</h4>
+      <ul>
+        <li>Create scalable and high-performance Java applications.</li>
+      </ul>
+    `,
+  }),
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/cavissonsystems/script.js')
@@ -103,25 +181,46 @@ test('Cavisson Systems helpers stay pinned to the verified careers page and Indi
 
 test('Cavisson Systems run validates the verified pages and returns normalized jobs', async () => {
   const cavisson = await loadModule()
+  const requestedUrls = []
   const jobs = await cavisson.createCavissonSystemsScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
     fetchText: async (url) => {
+      requestedUrls.push(url)
       if (url === cavisson.CAREERS_URL) return careersPageHtml
       if (url === cavisson.OPENINGS_URL) return openingsPageHtml
+      if (detailPageHtmlByUrl[url]) return detailPageHtmlByUrl[url]
       throw new Error(`Unexpected Cavisson URL: ${url}`)
     },
   })
 
+  assert.deepEqual(requestedUrls, [
+    cavisson.CAREERS_URL,
+    cavisson.OPENINGS_URL,
+    'https://www.cavisson.com/sr-software-engineer-for-cavisson-systems-inc/',
+    'https://www.cavisson.com/product-management-professional-for-cavisson-systems-inc/',
+    'https://www.cavisson.com/devops-engineer-for-cavisson-systems-inc/',
+    'https://www.cavisson.com/unix-c-developer-for-cavisson-systems-inc/',
+    'https://www.cavisson.com/java-developer-for-cavisson-systems-inc/',
+  ])
   assert.equal(jobs.length, 5)
   assert.deepEqual(
-    jobs.map((job) => [job.title, job.location, job.country, job.applyUrl]),
+    jobs.map((job) => [
+      job.title,
+      job.experienceRequired,
+      job.publicExperienceChecked,
+      job.location,
+      job.city,
+      job.country,
+      job.sourceUrl,
+      job.applyUrl,
+    ]),
     [
-      ['Sr. Software Engineer FOR CAVISSON SYSTEMS, INC', 'India', 'India', 'https://www.cavisson.com/sr-software-engineer-for-cavisson-systems-inc/'],
-      ['Product Management Professional FOR CAVISSON SYSTEMS, INC', 'India', 'India', 'https://www.cavisson.com/product-management-professional-for-cavisson-systems-inc/'],
-      ['DevOps Engineer FOR CAVISSON SYSTEMS, INC', 'India', 'India', 'https://www.cavisson.com/devops-engineer-for-cavisson-systems-inc/'],
-      ['Unix C DEVELOPER FOR CAVISSON SYSTEMS, INC.', 'India', 'India', 'https://www.cavisson.com/unix-c-developer-for-cavisson-systems-inc/'],
-      ['JAVA DEVELOPER FOR CAVISSON SYSTEMS, INC', 'India', 'India', 'https://www.cavisson.com/java-developer-for-cavisson-systems-inc/'],
+      ['Sr. Software Engineer FOR CAVISSON SYSTEMS, INC', '3-7 years', true, 'Noida, India', 'Noida', 'India', 'https://www.cavisson.com/sr-software-engineer-for-cavisson-systems-inc/', 'https://www.cavisson.com/sr-software-engineer-for-cavisson-systems-inc/'],
+      ['Product Management Professional FOR CAVISSON SYSTEMS, INC', '5-12 years', true, 'Noida, India', 'Noida', 'India', 'https://www.cavisson.com/product-management-professional-for-cavisson-systems-inc/', 'https://www.cavisson.com/product-management-professional-for-cavisson-systems-inc/'],
+      ['DevOps Engineer FOR CAVISSON SYSTEMS, INC', null, true, 'Noida, India', 'Noida', 'India', 'https://www.cavisson.com/devops-engineer-for-cavisson-systems-inc/', 'https://www.cavisson.com/devops-engineer-for-cavisson-systems-inc/'],
+      ['Unix C DEVELOPER FOR CAVISSON SYSTEMS, INC.', null, true, 'Noida, India', 'Noida', 'India', 'https://www.cavisson.com/unix-c-developer-for-cavisson-systems-inc/', 'https://www.cavisson.com/unix-c-developer-for-cavisson-systems-inc/'],
+      ['JAVA DEVELOPER FOR CAVISSON SYSTEMS, INC', null, true, 'Noida, India', 'Noida', 'India', 'https://www.cavisson.com/java-developer-for-cavisson-systems-inc/', 'https://www.cavisson.com/java-developer-for-cavisson-systems-inc/'],
     ],
   )
 })

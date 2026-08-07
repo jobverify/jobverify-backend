@@ -39,7 +39,7 @@ test('Azuga Telematics exports a fail-closed local provider for the official car
   assert.equal(providerModule.provider.companyCareerPage, 'https://www.azuga.com/careers')
   assert.equal(providerModule.provider.atsPlatform, 'official-company-site-no-open-roles')
   assert.equal(providerModule.provider.countryFilter, 'India')
-  assert.equal(providerModule.provider.verifiedOn, '2026-07-18')
+  assert.equal(providerModule.provider.verifiedOn, '2026-08-01')
   assert.match(providerModule.provider.verifiedSurfaceSummary, /No items found\./i)
   assert.match(providerModule.provider.verifiedSurfaceSummary, /bebridgestone\.com/i)
   assert.deepEqual(scriptModule.PROVIDER_METADATA, providerModule.provider)

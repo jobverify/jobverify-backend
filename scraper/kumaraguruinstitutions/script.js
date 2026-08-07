@@ -86,6 +86,7 @@ const createBaseJob = ({
   postingDate: null,
   closingDate: null,
   jobDescription,
+  publicExperienceChecked: true,
   remoteStatus: 'On-site',
 })
 

@@ -1,0 +1,89 @@
+[
+  {
+    "title": "Current remote openings at Ivanti",
+    "company": "Ivanti",
+    "location": "India",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "source": "ivanti.himalayas.app",
+    "jobId": "ivanti.himalayas.app-current-openings",
+    "requisitionId": "ivanti.himalayas.app-current-openings",
+    "department": null,
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "postingDate": "2026-08-02T23:13:17.255Z",
+    "expiresAt": null,
+    "jobDescription": "Ivanti had current Himalayas hiring evidence for Senior Software Engineer\n- Java. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T23:13:17.255Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/software-engineering?page=2",
+    "companyDomain": "ivanti.himalayas.app",
+    "originalTitle": "Current remote openings at Ivanti",
+    "normalizedTitle": "Current remote openings at Ivanti",
+    "jobCategory": "Current remote openings at Ivanti",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "2026-08-02T23:13:17.255Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T23:13:17.255Z",
+    "skillIds": [
+      "java"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Ivanti had current Himalayas hiring evidence for Senior Software Engineer - Java. Location evidence: India. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Backend Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T23:13:27.429Z",
+    "publicExperienceChecked": true
+  }
+]

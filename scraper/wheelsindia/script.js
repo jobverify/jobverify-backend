@@ -37,6 +37,10 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || null
 
+const toTitleCase = (value) => normalizeWhitespace(value)
+  ?.toLowerCase()
+  .replace(/\b[a-z]/g, (char) => char.toUpperCase()) || null
+
 const normalizeLocation = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -90,7 +94,7 @@ export const hasOpeningsPageSignal = (html) => {
 
   return /Career Opportunities/i.test(page)
     && /Location/i.test(page)
-    && /Date Posted/i.test(page)
+    && (/Date Posted/i.test(page) || /Posted on/i.test(page))
     && applyCount >= 1
 }
 
@@ -100,20 +104,26 @@ export const extractOpenings = (html) => {
   }
 
   const page = String(html ?? '')
-  const sections = [...page.matchAll(
-    /<article\b[^>]*class=["'][^"']*\bjob-opening\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi,
+  const cards = [...page.matchAll(
+    /<div class="dealers">[\s\S]*?<span class="elementor-button-text">([\s\S]*?)<\/span>[\s\S]*?<span data-toggle="premium-modal" data-target="#(premium-modal-\d+)" class="premium-modal-trigger-text">\s*<h6 class="job-title">([\s\S]*?)<\/h6>[\s\S]*?<p class="job-exp">\s*<b>([\s\S]*?)<\/b><br>\s*Posted on\s*([\s\S]*?)<\/p>/gi,
   )]
 
-  if (sections.length === 0) {
+  if (cards.length === 0) {
     throw new Error('Expected verified Wheels India openings page with first-party role cards')
   }
 
-  return sections.map((match) => {
-    const sectionHtml = match[1]
-    const title = stripTags(sectionHtml.match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
-    const rawLocation = extractFieldValue(sectionHtml, 'Location')
-    const postingDate = extractFieldValue(sectionHtml, 'Date Posted')
-    const applyUrl = absoluteUrl(sectionHtml.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1])
+  return cards.map((match) => {
+    const rawLocation = toTitleCase(match[1])
+    const modalId = normalizeWhitespace(match[2])
+    const title = stripTags(match[3])
+    const experienceRequired = stripTags(match[4])
+    const postingDate = normalizeWhitespace(match[5])
+    const modalStart = modalId ? page.indexOf(`id="${modalId}"`) : -1
+    const modalHtml = modalStart >= 0 ? page.slice(modalStart, modalStart + 8000) : ''
+    const applyUrl = absoluteUrl(modalHtml.match(/<div class="applynow"><a href="([^"]+)"/i)?.[1])
+    const description = stripTags(
+      modalHtml.match(/<p class="job-heading"><b>Job Description<\/b><\/p>\s*<p>([\s\S]*?)<\/p>/i)?.[1],
+    ) || buildDescription({ location: rawLocation, postingDate })
     const location = normalizeLocation(rawLocation)
     const city = normalizeCity(normalizeWhitespace(rawLocation)?.split(',')[0] || null)
     const slug = slugify(`${title}-${rawLocation}-${postingDate}`)
@@ -136,13 +146,13 @@ export const extractOpenings = (html) => {
       sourceUrl: `${OPENINGS_URL}#${jobId}`,
       applyUrl,
       employmentType: null,
-      experienceRequired: null,
+      experienceRequired: experienceRequired || null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
       postingDate,
       closingDate: null,
-      jobDescription: buildDescription({ location: rawLocation, postingDate }),
+      jobDescription: description,
     }
   }).sort((left, right) => (
     left.title.localeCompare(right.title)
@@ -185,7 +195,7 @@ export const createWheelsIndiaScraper = ({ now = () => new Date().toISOString() 
 
 export const run = async (options = {}) => createWheelsIndiaScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

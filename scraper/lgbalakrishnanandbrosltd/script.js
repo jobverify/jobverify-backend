@@ -212,12 +212,39 @@ const enrichJobWithDetail = (job, detail) => ({
   jobDescription: detail.jobDescription || job.jobDescription,
 })
 
-export const enrichPublicJobs = async (jobs, fetchText = defaultFetchText) => Promise.all(
-  jobs.map(async (job) => {
-    const detail = extractPublicJobDetail(await fetchText(job.applyUrl))
-    return enrichJobWithDetail(job, detail)
-  }),
-)
+const resolveHttpStatus = (error) => {
+  const directStatus = Number(error?.status)
+  if (Number.isFinite(directStatus)) return directStatus
+
+  const causeStatus = Number(error?.cause?.status)
+  if (Number.isFinite(causeStatus)) return causeStatus
+
+  return null
+}
+
+const isUnavailableJobDetailError = (error) => {
+  const status = resolveHttpStatus(error)
+  return status === 400 || status === 404
+}
+
+export const enrichPublicJobs = async (jobs, fetchText = defaultFetchText) => {
+  const enrichedJobs = await Promise.all(
+    jobs.map(async (job) => {
+      try {
+        const detail = extractPublicJobDetail(await fetchText(job.applyUrl))
+        return enrichJobWithDetail(job, detail)
+      } catch (error) {
+        if (isUnavailableJobDetailError(error)) {
+          return null
+        }
+
+        throw error
+      }
+    }),
+  )
+
+  return enrichedJobs.filter(Boolean)
+}
 
 export const createLgbalakrishnanAndBrosLtdScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
@@ -228,6 +255,9 @@ export const createLgbalakrishnanAndBrosLtdScraper = ({ now = () => new Date().t
 
     const careersHtml = await fetchText(CAREERS_URL)
     const jobs = await enrichPublicJobs(extractPublicJobs(careersHtml), fetchText)
+    if (jobs.length === 0) {
+      throw new Error('L.G.Balakrishnan & Bros Ltd careers portal no longer exposes any live public job apply pages')
+    }
 
     return jobs.map((job) => ({
       ...job,

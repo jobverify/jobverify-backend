@@ -1,3 +1,6 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREER_PAGE_URL = 'https://cummins.jobs/jobs/'
@@ -12,6 +15,7 @@ export const REQUEST_HEADERS = {
 
 const COMPANY = 'Cummins India'
 const SOURCE = 'cumminsindia'
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const slugifySegment = (value) => String(value || '')
   .toLowerCase()
@@ -38,6 +42,7 @@ export const mapCumminsJob = (job) => {
   if (!sourceUrl) return null
 
   const location = String(job.location_exact || '').trim() || null
+  const jobDescription = job.description || null
 
   return {
     title: String(job.title_exact || '').trim() || null,
@@ -57,7 +62,8 @@ export const mapCumminsJob = (job) => {
     requiredSkills: [],
     postingDate: job.date_new || job.date_updated || null,
     closingDate: null,
-    jobDescription: job.description || null,
+    jobDescription,
+    publicExperienceChecked: Boolean(jobDescription),
     remoteStatus: getRemoteStatus(job),
   }
 }
@@ -94,3 +100,15 @@ export const createCumminsIndiaScraper = () => ({
 })
 
 export const run = async () => createCumminsIndiaScraper().run()
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

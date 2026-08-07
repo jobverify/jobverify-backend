@@ -4,19 +4,27 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Renault Group is registered as a verified first-party non-listing careers sentinel', () => {
+test('Renault Group is registered as a verified Workday-backed provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'renaultgroup')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Renault Group')
-  assert.equal(provider.companyCareerPage, 'https://www.renaultgroup.com/en/careers/our-international-vacancies/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-nonlisting')
-  assert.equal(provider.countryFilter, 'Global')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-and-offers-validation')
+  assert.equal(provider.companyCareerPage, 'https://www.renaultgroup.com/en/careers/')
+  assert.equal(
+    provider.officialWorkdayBoardUrl,
+    'https://alliancewd.wd3.myworkdayjobs.com/en-US/renault-group-careers',
+  )
+  assert.equal(
+    provider.jobsApiUrl,
+    'https://alliancewd.wd3.myworkdayjobs.com/wday/cxs/alliancewd/renault-group-careers/jobs',
+  )
+  assert.equal(provider.atsPlatform, 'workday-jobs-api')
+  assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.paginationStrategy, 'verified-careers-overview-plus-workday-jobs-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-page+verified-offers-page-without-public-job-records-return-empty',
+    'verified-homepage+verified-careers-overview+verified-workday-board+inferred-workday-jobs-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'renaultgroup.com')
@@ -41,6 +49,6 @@ test('Renault Group resolves through company coverage to the exact-name sentinel
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'renaultgroup')
-  assert.equal(scraper.provider.companyCareerPage, 'https://www.renaultgroup.com/en/careers/our-international-vacancies/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://www.renaultgroup.com/en/careers/')
   assert.match(scraper.dryRunFile, /renaultgroup[\\/]jobs\.json$/i)
 })

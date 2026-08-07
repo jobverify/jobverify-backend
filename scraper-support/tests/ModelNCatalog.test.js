@@ -15,10 +15,11 @@ const careersHtml = `
     </head>
     <body>
       <section>
-        <h2>Great Place to Work Certified in India</h2>
+        <a>View Positions</a>
         <h2>Open Positions</h2>
         <div>Filter by location</div>
         <div>Filter by department</div>
+        <div>Filter by team</div>
         <div>Filter by work type</div>
         <div>Clear all</div>
         <div>No results</div>
@@ -79,9 +80,10 @@ test('Model N local catalog captures the verified empty first-party careers stat
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Filter by location/i)
   assert.match(provider.verifiedSurfaceSummary, /No results/i)
 })
 

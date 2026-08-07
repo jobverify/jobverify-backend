@@ -3,13 +3,13 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 export const SOURCE = 'chippercashindia'
 export const COMPANY = 'Chipper Cash India'
 export const OFFICIAL_BRAND = 'Chipper Cash'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-01'
 export const CAREERS_URL = 'https://www.chippercash.com/careers'
 export const CURRENT_OPENINGS_URL = 'https://www.chippercash.com/career-current-openings'
 export const DISPOSITION =
   'verified-first-party-careers-pages-with-stale-same-origin-openings-fail-closed'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.chippercash.com/careers was the live first-party Chipper Cash careers surface, that https://www.chippercash.com/career-current-openings still exposed same-origin opening links, and that the linked public role pages for Growth Analyst, Nigeria; Software Engineer I - Risk & Compliance; Data Engineer, Risk Intelligence; Software Engineer I - Risk Intelligence & Automations; and RISK AND COMPLIANCE OFFICER/ASSOCIATE RWANDA all carried application deadlines that were already in the past on Saturday, July 25, 2026. Because the reviewed first-party openings inventory was stale and all verified public roles were located in Nigeria or Rwanda rather than India, no trustworthy current public jobs contract was verified for Chipper Cash India, so this company-local scraper stays fail-closed and returns no jobs until a stable current openings flow is verified.'
+  'Verified on Saturday, August 1, 2026 that https://www.chippercash.com/careers was the live first-party Chipper Cash careers surface, that https://www.chippercash.com/career-current-openings still exposed only one same-origin role link for RISK AND COMPLIANCE OFFICER/ASSOCIATE RWANDA, and that the linked public role page still carried an application deadline of February 24, 2026, which was already in the past on Saturday, August 1, 2026. Because the reviewed first-party openings inventory remained stale and non-India, no trustworthy current public jobs contract was verified for Chipper Cash India, so this company-local scraper stays fail-closed and returns no jobs until a stable current openings flow is verified.'
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
@@ -24,9 +24,12 @@ const REQUIRED_CAREERS_PATTERNS = [
 const REQUIRED_OPENINGS_PATTERNS = [
   /\bYour Finest Hours Await\b/i,
   /\bOpenings Available\b/i,
-  /\bAll Location Ghana South Africa Zambia Zimbabwe Rwanda Nigeria UK\b/i,
-  /\bAll Department Business & Customer Operations Engineering Finance Legal, Risk and Compliance\b/i,
-  /\bNo items found\./i,
+  /\bAll Location\b/i,
+  /\bAll Departments?\b/i,
+  /\bBusiness\s*&\s*Customer Operations\s+No items found\./i,
+  /\bEngineering\s+No items found\./i,
+  /\bLegal,\s*Risk and Compliance\b/i,
+  /\bRISK AND COMPLIANCE OFFICER\/ASSOCIATE RWANDA\b/i,
 ]
 
 const TRUSTED_JOBS_HOST_PATTERNS = [
@@ -58,47 +61,13 @@ const LINKEDIN_PUBLIC_JOBS_PATTERNS = [
 
 export const VERIFIED_PUBLIC_JOBS = Object.freeze([
   {
-    title: 'Growth Analyst, Nigeria',
-    detailUrl: 'https://www.chippercash.com/career/growth-analyst-nigeria',
-    department: 'Business & Customer Operations',
-    country: 'Nigeria',
-    applyBy: '17th November 2025',
-    detailPattern: /\bIdentify Growth Opportunities\b/i,
-  },
-  {
-    title: 'Software Engineer I - Risk & Compliance',
-    detailUrl: 'https://www.chippercash.com/career/software-engineer-i---risk-compliance',
-    department: 'Engineering',
-    country: 'Nigeria',
-    applyBy: '7th November 2025',
-    detailPattern:
-      /\bThis is a 3-month provisional contract-based role, with a goal of conversion to a long-term position\b/i,
-  },
-  {
-    title: 'Data Engineer, Risk Intelligence',
-    detailUrl: 'https://www.chippercash.com/career/data-engineer--risk-intelligence',
-    department: 'Engineering',
-    country: 'Nigeria',
-    applyBy: '7th November 2025',
-    detailPattern:
-      /\bBuild, evaluate, and deploy intelligent risk models that replace manual reviews\b/i,
-  },
-  {
-    title: 'Software Engineer I - Risk Intelligence & Automations',
-    detailUrl: 'https://www.chippercash.com/career/software-engineer-i-risk-intelligence-automations',
-    department: 'Engineering',
-    country: 'Nigeria',
-    applyBy: '7th November 2025',
-    detailPattern:
-      /\bThe Risk Intelligence & Automations team sits at the core of Chipper Cash(?:'|’)s mission\b/i,
-  },
-  {
     title: 'RISK AND COMPLIANCE OFFICER/ASSOCIATE RWANDA',
     detailUrl: 'https://www.chippercash.com/career/risk-and-compliance-officer-associate-rwanda',
     department: 'Legal, Risk and Compliance',
     country: 'Rwanda',
     applyBy: '24th February 2026',
-    detailPattern: /\bAML\/CFT\/CPF\b/i,
+    detailPattern:
+      /\bimplementation and day-to-day execution of Chipper(?:'|’|â€™)s Risk and Compliance Framework in Rwanda\b/i,
   },
 ])
 
@@ -157,7 +126,7 @@ const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
 }
 
 const uniqueSorted = (values = []) => [...new Set(values)].sort()
-const VERIFIED_ON_CUTOFF_ISO = '2026-07-25T00:00:00.000Z'
+const VERIFIED_ON_CUTOFF_ISO = '2026-08-01T00:00:00.000Z'
 
 const parseHumanDateToIso = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -233,8 +202,15 @@ export const assertVerifiedListingContract = (html = '') => {
 const extractDetailTitle = (html = '') =>
   normalizeWhitespace(String(html).match(/<h1[^>]*>\s*([\s\S]*?)\s*<\/h1>/i)?.[1] || '')
 
-const extractRoleCountry = (html = '') => {
+const extractRoleCountry = (html = '', expectedTitle = '') => {
   const text = normalizeWhitespace(html)
+  const escapedTitle = normalizeWhitespace(expectedTitle)?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (escapedTitle) {
+    const currentMatch = text.match(new RegExp(`${escapedTitle}\\s+([A-Za-z ]+?)\\s+About the Role\\b`, 'i'))
+    const currentCountry = normalizeWhitespace(currentMatch?.[1] || '')
+    if (currentCountry) return currentCountry
+  }
+
   const match = text.match(
     /\bLocation:\s*This role is based in ([A-Za-z ]+?) and follows a hybrid work arrangement\./i,
   )
@@ -254,7 +230,7 @@ const extractApplyBy = (html = '') => {
 export const extractVerifiedJobDetail = (html = '', expectedJob) => {
   const text = normalizeWhitespace(html)
   const title = extractDetailTitle(html)
-  const country = extractRoleCountry(html)
+  const country = extractRoleCountry(html, expectedJob.title)
   const applyBy = extractApplyBy(html)
 
   if (title !== expectedJob.title) {
@@ -275,7 +251,7 @@ export const extractVerifiedJobDetail = (html = '', expectedJob) => {
     )
   }
 
-  if (!/\bWho we are\b/i.test(text) || !/\bNext Steps\b/i.test(text) || !/\bcareers@chippercash\.com\b/i.test(text)) {
+  if (!/\bAbout the Role\b/i.test(text) || !/\bcareers@chippercash\.com\b/i.test(text)) {
     throw new Error(
       `Chipper Cash India detail page changed materially for ${expectedJob.detailUrl}.`,
     )

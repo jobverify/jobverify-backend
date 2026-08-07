@@ -50,8 +50,9 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title[^>]*>\s*Current Openings\s*\|\s*Harbinger Group\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Current(?:\s+Job)?\s+Openings(?:\s*(?:\||at)\s*)Harbinger Group\s*<\/title>/i.test(page)
     && normalized.includes('Current Openings')
+    && normalized.includes('Grow With Us')
     && page.includes(DARWINBOX_HANDOFF_URL)
 }
 

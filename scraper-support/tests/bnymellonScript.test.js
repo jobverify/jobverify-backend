@@ -20,6 +20,17 @@ const fixturesDir = path.join(
 
 const readJsonFixture = (name) => JSON.parse(readFileSync(path.join(fixturesDir, name), 'utf8'))
 
+const sampleDetailPayload = {
+  Id: '74699',
+  Title: 'Senior Specialist, Full-Stack Engineer',
+  JobSchedule: 'Full time',
+  PostedDate: '2026-06-29',
+  PrimaryLocation: 'Pune, MH, India',
+  PrimaryLocationCountry: 'IN',
+  ExternalDescriptionStr: '<p>Build and support full-stack platforms for enterprise workflows.</p>',
+  ExternalQualificationsStr: '<ul><li>2-6 years of software engineering experience</li><li>Bachelor degree in computer science</li></ul>',
+}
+
 test('buildSearchUrl keeps BNY searches on the public Oracle Cloud careers finder with India scoping', async () => {
   const bny = await loadBnyModule()
   assert.ok(bny)
@@ -41,6 +52,16 @@ test('buildJobDetailUrl keeps BNY detail links on the public Oracle Cloud site',
   assert.equal(
     bny.buildJobDetailUrl('74699'),
     'https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/BNY-Careers/job/74699/',
+  )
+})
+
+test('buildJobDetailApiUrl uses the official BNY Oracle detail endpoint', async () => {
+  const bny = await loadBnyModule()
+  assert.ok(bny)
+
+  assert.equal(
+    bny.buildJobDetailApiUrl('74699'),
+    'https://eofe.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails/74699?expand=all',
   )
 })
 
@@ -76,7 +97,35 @@ test('extractSearchResults normalizes BNY Oracle Cloud requisitions and keeps on
   assert.equal(jobs[1].city, 'Pune')
 })
 
-test('run paginates BNY Oracle Cloud pages and decorates shared runner fields', async () => {
+test('extractJobDetail derives experience from BNY Oracle detail qualifications', async () => {
+  const bny = await loadBnyModule()
+  assert.ok(bny)
+
+  const listing = bny.extractSearchResults(readJsonFixture('search-results.json'))[0]
+  const detail = bny.extractJobDetail(sampleDetailPayload, listing)
+
+  assert.deepEqual(detail, {
+    title: 'Senior Specialist, Full-Stack Engineer',
+    company: 'BNY Mellon',
+    department: null,
+    location: 'Pune, Mh, India',
+    city: 'Pune',
+    jobId: '74699',
+    requisitionId: '74699',
+    sourceUrl: 'https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/BNY-Careers/job/74699/',
+    applyUrl: 'https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/BNY-Careers/job/74699/',
+    employmentType: 'Full time',
+    experienceRequired: '2-6 years',
+    minimumQualification: '2-6 years of software engineering experience Bachelor degree in computer science',
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-06-29',
+    closingDate: null,
+    jobDescription: 'Build and support full-stack platforms for enterprise workflows. 2-6 years of software engineering experience Bachelor degree in computer science',
+  })
+})
+
+test('run paginates BNY Oracle Cloud pages, hydrates detail, and decorates shared runner fields', async () => {
   const bny = await loadBnyModule()
   assert.ok(bny)
 
@@ -86,18 +135,31 @@ test('run paginates BNY Oracle Cloud pages and decorates shared runner fields', 
     maxJobs: 1,
     fetchImpl: async (url) => {
       requests.push(url)
-      return {
-        ok: true,
-        json: async () => readJsonFixture('search-results.json'),
+      if (url === bny.buildSearchUrl()) {
+        return {
+          ok: true,
+          json: async () => readJsonFixture('search-results.json'),
+        }
       }
+      if (url === bny.buildJobDetailApiUrl('74699')) {
+        return {
+          ok: true,
+          json: async () => sampleDetailPayload,
+        }
+      }
+      assert.fail(`Unexpected BNY fetch URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requests, [bny.buildSearchUrl()])
+  assert.deepEqual(requests, [
+    bny.buildSearchUrl(),
+    bny.buildJobDetailApiUrl('74699'),
+  ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'bnymellon')
   assert.equal(jobs[0].company, 'BNY Mellon')
   assert.equal(jobs[0].jobId, '74699')
+  assert.equal(jobs[0].experienceRequired, '2-6 years')
   assert.equal(
     jobs[0].applyUrl,
     'https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/BNY-Careers/job/74699/',

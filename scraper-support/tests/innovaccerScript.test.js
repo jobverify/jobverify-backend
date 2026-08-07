@@ -11,9 +11,10 @@ const careersPage = {
     <title>Careers | Innovaccer</title>
   </head>
   <body>
-    <h1>Let's build the future of healthcare, together.</h1>
-    <a href="/careers/jobs">View open roles</a>
-    <p>Life at Innovaccer</p>
+    <h1>Transforming healthcare together for a better future.</h1>
+    <a href="/careers/jobs" target="_blank">View open positions</a>
+    <h2>Our Locations at a Glance</h2>
+    <p>Stay in the loop, join our Talent Community!</p>
   </body>
 </html>
 `,
@@ -59,13 +60,15 @@ const widgetPayload = {
       code: '4348',
       url: 'https://apply.workable.com/innovaccer-analytics/j/48AE13A8DE',
       application_url: 'https://apply.workable.com/innovaccer-analytics/j/48AE13A8DE/apply',
-      location: { city: 'Noida', region: 'Uttar Pradesh', country: 'India' },
+      city: 'Noida',
+      state: 'Uttar Pradesh',
       country: 'India',
       department: 'Engineering And Analytics',
       employment_type: 'Full-time',
       workplace: 'on_site',
-      published: '2026-07-06T00:00:00.000Z',
-      description: 'Build backend platform capabilities for Innovaccer healthcare products.',
+      published_on: '2026-07-06T00:00:00.000Z',
+      experience: 'Mid-Senior level',
+      education: "Bachelor's Degree",
     },
     {
       shortcode: '4297ABCDEF',
@@ -73,13 +76,15 @@ const widgetPayload = {
       code: '4297',
       url: 'https://apply.workable.com/innovaccer-analytics/j/4297ABCDEF',
       application_url: 'https://apply.workable.com/innovaccer-analytics/j/4297ABCDEF/apply',
-      location: { city: 'Noida', region: 'Uttar Pradesh', country: 'India' },
+      city: 'Noida',
+      state: 'Uttar Pradesh',
       country: 'India',
       department: 'Product',
       employment_type: '',
       workplace: 'hybrid',
-      published: '2026-07-04T00:00:00.000Z',
-      description: 'Drive AI roadmap delivery for care-quality workflows.',
+      published_on: '2026-07-04T00:00:00.000Z',
+      experience: 'Associate',
+      education: '',
     },
     {
       shortcode: 'USROLE1234',
@@ -87,13 +92,14 @@ const widgetPayload = {
       code: '9800',
       url: 'https://apply.workable.com/innovaccer-analytics/j/USROLE1234',
       application_url: 'https://apply.workable.com/innovaccer-analytics/j/USROLE1234/apply',
-      location: { city: 'San Francisco', region: 'California', country: 'United States' },
+      city: 'San Francisco',
+      state: 'California',
       country: 'United States',
       department: 'Engineering And Analytics',
       employment_type: 'Full-time',
       workplace: 'remote',
-      published: '2026-07-03T00:00:00.000Z',
-      description: 'US-only role that should be filtered out.',
+      published_on: '2026-07-03T00:00:00.000Z',
+      experience: 'Director',
     },
   ],
 }
@@ -138,13 +144,13 @@ test('Innovaccer extracts India jobs from the public Workable widget payload', a
       sourceUrl: 'https://apply.workable.com/innovaccer-analytics/j/4297ABCDEF',
       applyUrl: 'https://apply.workable.com/innovaccer-analytics/j/4297ABCDEF/apply',
       employmentType: null,
-      experienceRequired: null,
+      experienceRequired: 'Associate',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
       postingDate: '2026-07-04',
       closingDate: null,
-      jobDescription: 'Drive AI roadmap delivery for care-quality workflows.',
+      jobDescription: null,
       remoteStatus: 'Hybrid',
     },
     {
@@ -160,13 +166,13 @@ test('Innovaccer extracts India jobs from the public Workable widget payload', a
       sourceUrl: 'https://apply.workable.com/innovaccer-analytics/j/48AE13A8DE',
       applyUrl: 'https://apply.workable.com/innovaccer-analytics/j/48AE13A8DE/apply',
       employmentType: 'Full-time',
-      experienceRequired: null,
-      minimumQualification: null,
+      experienceRequired: 'Mid-Senior level',
+      minimumQualification: "Bachelor's Degree",
       preferredQualification: null,
       requiredSkills: [],
       postingDate: '2026-07-06',
       closingDate: null,
-      jobDescription: 'Build backend platform capabilities for Innovaccer healthcare products.',
+      jobDescription: null,
       remoteStatus: 'On-site',
     },
   ])

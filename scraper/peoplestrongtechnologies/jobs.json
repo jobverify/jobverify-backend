@@ -1,0 +1,315 @@
+[
+  {
+    "title": "QA Lead",
+    "company": "PeopleStrong Technologies",
+    "department": "Tech Common",
+    "location": "Gurgaon Infocity, Gurgaon, Haryana, India",
+    "city": "Gurgaon",
+    "country": "India",
+    "jobId": "PST/SDE/1744365",
+    "requisitionId": "PST/SDE/1744365",
+    "sourceUrl": "https://careers.peoplestrong.com/job/detail/PST_SDE_1744365",
+    "applyUrl": "https://careers.peoplestrong.com/job/detail/PST_SDE_1744365",
+    "employmentType": "Full-time",
+    "experienceRequired": "5-10 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Product Design & Problem solving",
+      "Programming Excellence",
+      "Code Quality",
+      "Project Management",
+      "Java",
+      "Data Structures",
+      "Design Patterns",
+      "Ability to solve the problem in full - HLD and LLD"
+    ],
+    "postingDate": "2026-07-27T00:00:00.000Z",
+    "closingDate": "2026-08-31T00:00:00.000Z",
+    "jobDescription": "Organization: People Strong Saa S>Technology>Technology>Tech Common>Tech Common>Tech Common Location hierarchy: India>North Region>Haryana>Gurgaon>Gurgaon Infocity Experience: 5-10 years Skills: Product Design & Problem solving, Programming Excellence, Code Quality, Project Management, Java, Data Structures, Design Patterns, Ability to solve the problem in full\n- HLD and LLD",
+    "remoteStatus": "On-site",
+    "source": "peoplestrongtechnologies",
+    "companyCareerPage": "https://careers.peoplestrong.com",
+    "companyDomain": "careers.peoplestrong.com",
+    "atsPlatform": "official-company-careers-no-public-jobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "QA Lead",
+    "normalizedTitle": "QA Lead",
+    "jobCategory": "QA Lead",
+    "engineeringDomain": "Verification",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "salary": null,
+    "postedAt": "2026-07-27T00:00:00.000Z",
+    "scrapedAt": "2026-08-04T00:31:44.479Z",
+    "scrapedTimestamp": "2026-08-04T00:31:44.479Z",
+    "skillIds": [
+      "java"
+    ],
+    "requiredSkillIds": [
+      "java"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "Java"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "5-10 years",
+      "minimumYears": 5,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5
+    ],
+    "seniority": "Lead",
+    "primaryRoleDomain": "Quality Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:31:44.481Z"
+  },
+  {
+    "title": "Quality Analyst Engineer - 2",
+    "company": "PeopleStrong Technologies",
+    "department": "Technology",
+    "location": "Gurgaon Infocity, Gurgaon, Haryana, India",
+    "city": "Gurgaon",
+    "country": "India",
+    "jobId": "PST/STE/1766536",
+    "requisitionId": "PST/STE/1766536",
+    "sourceUrl": "https://careers.peoplestrong.com/job/detail/PST_STE_1766536",
+    "applyUrl": "https://careers.peoplestrong.com/job/detail/PST_STE_1766536",
+    "employmentType": "Full-time",
+    "experienceRequired": "3-6 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Manual Testing",
+      "Testing",
+      "Test Planning",
+      "Regression Testing",
+      "Test Management",
+      "System Testing",
+      "SDLC",
+      "User Acceptance Testing",
+      "Software Quality",
+      "SQL"
+    ],
+    "postingDate": "2026-07-06T00:00:00.000Z",
+    "closingDate": "2026-09-30T00:00:00.000Z",
+    "jobDescription": "Organization: People Strong>Technology>PG1>Technology>Testing>Payroll Engine Location hierarchy: India>North Region>Haryana>Gurgaon>Gurgaon Infocity Experience: 3-6 years Skills: Manual Testing, Testing, Test Planning, Regression Testing, Test Management, System Testing, SDLC, User Acceptance Testing, Software Quality, SQL",
+    "remoteStatus": "On-site",
+    "source": "peoplestrongtechnologies",
+    "companyCareerPage": "https://careers.peoplestrong.com",
+    "companyDomain": "careers.peoplestrong.com",
+    "atsPlatform": "official-company-careers-no-public-jobs",
+    "publicExperienceChecked": true,
+    "originalTitle": "Quality Analyst Engineer - 2",
+    "normalizedTitle": "Quality Analyst Engineer - 2",
+    "jobCategory": "Quality Analyst Engineer - 2",
+    "engineeringDomain": "Verification",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "salary": null,
+    "postedAt": "2026-07-06T00:00:00.000Z",
+    "scrapedAt": "2026-08-04T00:31:44.481Z",
+    "scrapedTimestamp": "2026-08-04T00:31:44.481Z",
+    "skillIds": [
+      "sql"
+    ],
+    "requiredSkillIds": [
+      "sql"
+    ],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": true,
+        "preferred": false,
+        "confidence": "high",
+        "extractionSource": "structured",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3-6 years",
+      "minimumYears": 3,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Quality Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:31:44.483Z"
+  },
+  {
+    "title": "Software Development Engineer - 2",
+    "company": "PeopleStrong Technologies",
+    "department": "Technology",
+    "location": "Gurgaon Infocity, Gurgaon, Haryana, India",
+    "city": "Gurgaon",
+    "country": "India",
+    "jobId": "PST/SDE/1612371",
+    "requisitionId": "PST/SDE/1612371",
+    "sourceUrl": "https://careers.peoplestrong.com/job/detail/PST_SDE_1612371",
+    "applyUrl": "https://careers.peoplestrong.com/job/detail/PST_SDE_1612371",
+    "employmentType": "Full-time",
+    "experienceRequired": "4-8 years",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "postingDate": "2026-07-06T00:00:00.000Z",
+    "closingDate": "2026-09-30T00:00:00.000Z",
+    "jobDescription": "Organization: People Strong>Technology>PG2>Technology>Development>Jinie Location hierarchy: India>North Region>Haryana>Gurgaon>Gurgaon Infocity Experience: 4-8 years Organization: People Strong>Technology>PG2>Technology>Development>Jinie Location hierarchy: India>North Region>Haryana>Gurgaon>Gurgaon Infocity Experience: 4-8 years Safe Value must use [property]=binding: <p><strong>JD</strong><br><br><strong>\n\nROLE:\nSDE-3 (AI)</strong></p><p>As an SDE-3 (AI), you will build and scale the core AI capabilities that power <strong>People Strong AI Studio</strong>&#8212;a governed, enterprise-grade agentic platform, not a chatbot. This role exists to translate AI intent into <strong>reliable, secure, and production-ready systems</strong> that operate on trusted HR data. You will own the design and delivery of <strong>production-grade AI services and agent capabilities</strong> with clear reliability, security, and performance guarantees. You will build and evolve <strong>agent runtimes, orchestration flows, MCP-backed tools, and AI service APIs</strong>, influencing platform standards used across all future agents. You will work closely with <strong>Principals, Senior Research Engineers, PMs, and Platform/Backend teams</strong> within the Production and Prototype pods.<br><br><strong>Experience: 4\n- 8 Years</strong><br><br><strong>Educational\n\nQUALIFICATIONS:\nB.E/B.Tech/MCA from Tier I College</strong><br><br><span><strong>Must-Have Skills</strong></span><br>- Strong backend engineering skills in Python and/or Java with production ownership experience<br>- Hands-on experience building AI/ML-powered services (LLMs, embeddings, classifiers, or hybrid systems)<br>- <span>Solid understanding of REST/async APIs, data pipelines, and stateful services</span><br><span>-&#160;</span><span>Experience shipping systems with auth, RBAC, audit logging, and observability</span><br><span>-&#160;</span><span>Ability to debug and optimize latency, cost, and reliability in AI-augmented workflows</span></p><p><strong>Good-to-Have Skills</strong><br>- Experience with agentic workflows, orchestration frameworks, or tool-calling architectures<br>- Familiarity with vector databases, retrieval systems, or search infrastructure<br>- Exposure to MLOps, eval frameworks, or model monitoring in production<br>- Experience working in Saa S platforms with multi-tenant constraints<br>&#160;- Prior work in HR tech, fintech, or compliance-heavy domains</p><p><strong>Ideal Candidate</strong><br>- Has built production AI features, not just prototypes or notebooks<br>- Comfortable operating at the boundary of AI logic and core backend systems<br>- Experience scaling systems used by hundreds or thousands of enterprise customers<br>- Understands that AI systems require guardrails, fallbacks, and governance<br>- Thrives in environments where platform reuse > one-off solutions</p><p><br></p> (see https://angular.dev/best-practices/security#preventing-cross-site-scripting-xss) Qualifications\n- Engineering CERTIFICATION No data available Working Language English Job Description JD\n\nROLE:\nSDE-3 (AI)\nAs an SDE-3 (AI), you will build and scale the core AI capabilities that power People Strong AI Studio —a governed, enterprise-grade agentic platform, not a chatbot. This role exists to translate AI intent into reliable, secure, and production-ready systems that operate on trusted HR data. You will own the design and delivery of production-grade AI services and agent capabilities with clear reliability, security, and performance guarantees. You will build and evolve agent runtimes, orchestration flows, MCP-backed tools, and AI service APIs , influencing platform standards used across all future agents. You will work closely with Principals, Senior Research Engineers, PMs, and Platform/Backend teams within the Production and Prototype pods. Experience: 4\n- 8 Years Educational\n\nQUALIFICATIONS:\nB.E/B.Tech/MCA from Tier I College Must-Have Skills\n- Strong backend engineering skills in Python and/or Java with production ownership experience\n- Hands-on experience building AI/ML-powered services (LLMs, embeddings, classifiers, or hybrid systems)\n- Solid understanding of REST/async APIs, data pipelines, and stateful services\n- Experience shipping systems with auth, RBAC, audit logging, and observability\n- Ability to debug and optimize latency, cost, and reliability in AI-augmented workflows Good-to-Have Skills\n- Experience with agentic workflows, orchestration frameworks, or tool-calling architectures\n- Familiarity with vector databases, retrieval systems, or search infrastructure\n- Exposure to MLOps, eval frameworks, or model monitoring in production\n- Experience working in Saa S platforms with multi-tenant constraints\n- Prior work in HR tech, fintech, or compliance-heavy domains Ideal Candidate\n- Has built production AI features, not just prototypes or notebooks\n- Comfortable operating at the boundary of AI logic and core backend systems\n- Experience scaling systems used by hundreds or thousands of enterprise customers\n- Understands that AI systems require guardrails, fallbacks, and governance\n- Thrives in environments where platform reuse > one-off solutions expand_less",
+    "remoteStatus": "On-site",
+    "source": "peoplestrongtechnologies",
+    "companyCareerPage": "https://careers.peoplestrong.com",
+    "companyDomain": "careers.peoplestrong.com",
+    "atsPlatform": "official-company-careers-no-public-jobs",
+    "description": "Organization: People Strong>Technology>PG2>Technology>Development>Jinie Location hierarchy: India>North Region>Haryana>Gurgaon>Gurgaon Infocity Experience: 4-8 years Organization: People Strong>Technology>PG2>Technology>Development>Jinie Location hierarchy: India>North Region>Haryana>Gurgaon>Gurgaon Infocity Experience: 4-8 years Safe Value must use [property]=binding: <p><strong>JD</strong><br><br><strong>\n\nROLE:\nSDE-3 (AI)</strong></p><p>As an SDE-3 (AI), you will build and scale the core AI capabilities that power <strong>People Strong AI Studio</strong>&#8212;a governed, enterprise-grade agentic platform, not a chatbot. This role exists to translate AI intent into <strong>reliable, secure, and production-ready systems</strong> that operate on trusted HR data. You will own the design and delivery of <strong>production-grade AI services and agent capabilities</strong> with clear reliability, security, and performance guarantees. You will build and evolve <strong>agent runtimes, orchestration flows, MCP-backed tools, and AI service APIs</strong>, influencing platform standards used across all future agents. You will work closely with <strong>Principals, Senior Research Engineers, PMs, and Platform/Backend teams</strong> within the Production and Prototype pods.<br><br><strong>Experience: 4\n- 8 Years</strong><br><br><strong>Educational\n\nQUALIFICATIONS:\nB.E/B.Tech/MCA from Tier I College</strong><br><br><span><strong>Must-Have Skills</strong></span><br>- Strong backend engineering skills in Python and/or Java with production ownership experience<br>- Hands-on experience building AI/ML-powered services (LLMs, embeddings, classifiers, or hybrid systems)<br>- <span>Solid understanding of REST/async APIs, data pipelines, and stateful services</span><br><span>-&#160;</span><span>Experience shipping systems with auth, RBAC, audit logging, and observability</span><br><span>-&#160;</span><span>Ability to debug and optimize latency, cost, and reliability in AI-augmented workflows</span></p><p><strong>Good-to-Have Skills</strong><br>- Experience with agentic workflows, orchestration frameworks, or tool-calling architectures<br>- Familiarity with vector databases, retrieval systems, or search infrastructure<br>- Exposure to MLOps, eval frameworks, or model monitoring in production<br>- Experience working in Saa S platforms with multi-tenant constraints<br>&#160;- Prior work in HR tech, fintech, or compliance-heavy domains</p><p><strong>Ideal Candidate</strong><br>- Has built production AI features, not just prototypes or notebooks<br>- Comfortable operating at the boundary of AI logic and core backend systems<br>- Experience scaling systems used by hundreds or thousands of enterprise customers<br>- Understands that AI systems require guardrails, fallbacks, and governance<br>- Thrives in environments where platform reuse > one-off solutions</p><p><br></p> (see https://angular.dev/best-practices/security#preventing-cross-site-scripting-xss) Qualifications\n- Engineering CERTIFICATION No data available Working Language English Job Description JD\n\nROLE:\nSDE-3 (AI)\nAs an SDE-3 (AI), you will build and scale the core AI capabilities that power People Strong AI Studio —a governed, enterprise-grade agentic platform, not a chatbot. This role exists to translate AI intent into reliable, secure, and production-ready systems that operate on trusted HR data. You will own the design and delivery of production-grade AI services and agent capabilities with clear reliability, security, and performance guarantees. You will build and evolve agent runtimes, orchestration flows, MCP-backed tools, and AI service APIs , influencing platform standards used across all future agents. You will work closely with Principals, Senior Research Engineers, PMs, and Platform/Backend teams within the Production and Prototype pods. Experience: 4\n- 8 Years Educational\n\nQUALIFICATIONS:\nB.E/B.Tech/MCA from Tier I College Must-Have Skills\n- Strong backend engineering skills in Python and/or Java with production ownership experience\n- Hands-on experience building AI/ML-powered services (LLMs, embeddings, classifiers, or hybrid systems)\n- Solid understanding of REST/async APIs, data pipelines, and stateful services\n- Experience shipping systems with auth, RBAC, audit logging, and observability\n- Ability to debug and optimize latency, cost, and reliability in AI-augmented workflows Good-to-Have Skills\n- Experience with agentic workflows, orchestration frameworks, or tool-calling architectures\n- Familiarity with vector databases, retrieval systems, or search infrastructure\n- Exposure to MLOps, eval frameworks, or model monitoring in production\n- Experience working in Saa S platforms with multi-tenant constraints\n- Prior work in HR tech, fintech, or compliance-heavy domains Ideal Candidate\n- Has built production AI features, not just prototypes or notebooks\n- Comfortable operating at the boundary of AI logic and core backend systems\n- Experience scaling systems used by hundreds or thousands of enterprise customers\n- Understands that AI systems require guardrails, fallbacks, and governance\n- Thrives in environments where platform reuse > one-off solutions expand_less",
+    "publicExperienceChecked": true,
+    "originalTitle": "Software Development Engineer - 2",
+    "normalizedTitle": "Software Development Engineer - 2",
+    "jobCategory": "Software Development Engineer - 2",
+    "engineeringDomain": "Machine Learning",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "salary": null,
+    "postedAt": "2026-07-06T00:00:00.000Z",
+    "scrapedAt": "2026-08-04T00:31:44.484Z",
+    "scrapedTimestamp": "2026-08-04T00:31:44.484Z",
+    "skillIds": [
+      "python",
+      "java",
+      "mlops",
+      "angular"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "mlops",
+        "canonicalName": "MLOps",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "MLOps"
+      },
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "angular"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "4-8 years",
+      "minimumYears": 4,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4 years",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Backend Engineering",
+    "secondaryRoleDomains": [
+      "Data Science & AI",
+      "Software Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T00:31:44.489Z"
+  }
+]

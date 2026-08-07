@@ -10,7 +10,7 @@ export const HOMEPAGE_URL = 'https://www.sakarrobotics.com/'
 export const CAREERS_PAGE_URL = 'https://www.sakarrobotics.com/careers'
 export const CAREERS_PORTAL_URL = 'https://sakarrobotics.zohorecruit.in/jobs/Careers'
 export const CAREERS_API_URL =
-  'https://sakarrobotics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite'
+  'https://sakarrobotics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite&extra_fields=%5B%22Work_Experience%22,%22Job_Description%22,%22Date_Opened%22%5D'
 
 const COMPANY = 'Sakar Robotics'
 const SOURCE = 'sakarrobotics'
@@ -122,13 +122,16 @@ export const extractIndiaJobs = (payload) =>
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeEmploymentType(record.Job_Type),
-        experienceRequired: null,
+        experienceRequired: normalizeWhitespace(record.Work_Experience),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
         postingDate: normalizeWhitespace(record.Date_Opened),
         closingDate: null,
         jobDescription: normalizeWhitespace(record.Job_Description),
+        publicExperienceChecked: Boolean(
+          normalizeWhitespace(record.Work_Experience) || normalizeWhitespace(record.Job_Description),
+        ),
         remoteStatus: normalizeRemoteStatus(record.Remote_Job),
       }
     })

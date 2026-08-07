@@ -1,0 +1,82 @@
+[
+  {
+    "title": "Agile Project Manager",
+    "company": "Kreeti Technologies",
+    "department": null,
+    "location": null,
+    "city": null,
+    "country": "India",
+    "jobId": "48",
+    "requisitionId": "48",
+    "sourceUrl": "https://careers.kreeti.com/jobs/48",
+    "applyUrl": "https://careers.kreeti.com/candidates/new?job_id=48",
+    "employmentType": "Full-time",
+    "experienceRequired": "3 - 8 yrs",
+    "minimumQualification": "Master of Business Administration (M.B.A.)",
+    "preferredQualification": null,
+    "requiredSkills": [
+      "Agile Project Management",
+      "Proven working experience on Agile Project Management .",
+      "Experience in Onshore/Offshore software project delivery model",
+      "Expertise in any Agile Project Management Tool like Jira , Pivotal Tracker etc."
+    ],
+    "postingDate": "2026-08-01T14:57:23.830Z",
+    "closingDate": null,
+    "jobDescription": "Role Description : Develop and execute activities related to end-to-end project management, including project plans and estimates, scoping and requirements through implementation and deployment. Proactively Business Requirement Gathering from client ,monitor, manage and report on execution of deliverables Qualifications and Experience: MBA / PGDM 3 years to 8 years experience in IT leadership role Development /QA/Business Analyst backgrounds is welcome Must Have Skills : Proven working experience on Agile Project Management . Experience in Onshore/Offshore software project delivery model Expertise in any Agile Project Management Tool like Jira , Pivotal Tracker etc. * Key\n\nRESPONSIBILITIES:\n* Manages technical components of moderately complex IT projects Working closely with Clients , Higher management and Delivery team Gathering the requirements from Client ,delegates the work to the delivery team and accepts the delivery from them. Plan , monitor , manage and report on deliverable Identifies scope and impact of project risks and issues; raises and resolves issues Applies good understanding of concepts and procedures within his/her own IT project leadership area to resolve issues and contribute to achieving business goals Exposure to Dev-Ops Excellent client facing and internal communication skills Excellent written and verbal communication skills Must be able to produce clear and concise documentation. including requirements documents, design specs, status reports, system documentation and emails Must have a proven track record of technical leadership roles, delivering solutions within defined time frames MBA / PGDM 3 years to 8 years experience in IT leadership role Development /QA/Business Analyst backgrounds is welcome Proven working experience on Agile Project Management . Experience in Onshore/Offshore software project delivery model Expertise in any Agile Project Management Tool like Jira , Pivotal Tracker etc. Manages technical components of moderately complex IT projects Working closely with Clients , Higher management and Delivery team Gathering the requirements from Client ,delegates the work to the delivery team and accepts the delivery from them. Plan , monitor , manage and report on deliverable Identifies scope and impact of project risks and issues; raises and resolves issues Applies good understanding of concepts and procedures within his/her own IT project leadership area to resolve issues and contribute to achieving business goals Exposure to Dev-Ops Excellent client facing and internal communication skills Excellent written and verbal communication skills Must be able to produce clear and concise documentation. including requirements documents, design specs, status reports, system documentation and emails Must have a proven track record of technical leadership roles, delivering solutions within defined time frames",
+    "source": "kreetitechnologies",
+    "companyCareerPage": "https://careers.kreeti.com/candidates",
+    "atsPlatform": "official-company-careers",
+    "scrapedAt": "2026-08-01T14:57:23.830Z",
+    "originalTitle": "Agile Project Manager",
+    "normalizedTitle": "Agile Project Manager",
+    "jobCategory": "Agile Project Manager",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": null,
+    "salary": null,
+    "postedAt": "2026-08-01T14:57:23.830Z",
+    "companyDomain": "kreeti.com",
+    "scrapedTimestamp": "2026-08-01T14:57:23.830Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "rawText": "3 - 8 yrs Master of Business Administration (M.B.A.)",
+      "minimumYears": 3,
+      "maximumYears": 8,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3 - 8 yrs",
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Product & Program Management",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Not specified",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "low"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-01T15:31:11.428Z"
+  }
+]

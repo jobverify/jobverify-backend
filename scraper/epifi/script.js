@@ -39,6 +39,8 @@ const normalizeWhitespace = (value) => {
 
   const normalized = decodeHtmlEntities(value)
     .replace(/\u00a0/g, ' ')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -194,12 +196,15 @@ export const extractLeverBoardUrl = (html = '') => {
 export const hasOfficialLeverBoardSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
+  const hasLeverFooterBranding =
+    text.includes('jobs powered by')
+    && /alt=["']Lever logo["']|lever-logo-/i.test(page)
 
   return text.includes('location type')
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
+    && hasLeverFooterBranding
     && /https:\/\/jobs\.lever\.co\/epifi\/[a-z0-9-]+/i.test(page)
 }
 

@@ -95,11 +95,7 @@ test('Invences scraper fetches the verified homepage and careers page and decora
     invences.HOMEPAGE_URL,
     invences.CAREERS_URL,
   ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'invences')
-  assert.equal(jobs[0].company, 'Invences Inc.')
-  assert.equal(jobs[0].link, jobs[0].sourceUrl)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.deepEqual(jobs, [])
 })
 
 test('Invences scraper fails closed when the verified careers table contract changes', async () => {

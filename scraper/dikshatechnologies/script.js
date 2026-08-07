@@ -98,6 +98,7 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
       .map((value) => value.trim())
       .filter(Boolean)
     const [postingDate = null, location = null, workplaceType = null, experienceRequired = null] = metaParts
+    const jobDescription = metaParts.join(' | ') || title
 
     return {
       title,
@@ -117,7 +118,8 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
       requiredSkills: [],
       postingDate,
       closingDate: null,
-      jobDescription: metaParts.join(' | ') || title,
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription),
     }
   })
   .filter(Boolean)

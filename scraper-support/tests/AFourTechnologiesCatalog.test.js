@@ -40,16 +40,16 @@ test('AFour Technologies local catalog captures the verified first-party careers
   assert.equal(provider.companyDomain, 'afourtech.com')
   assert.equal(provider.atsPlatform, 'official-company-careers-page')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-static-job-cards')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-elementor-job-columns')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page-static-job-cards',
+    'verified-first-party-careers-page+elementor-job-columns+first-party-role-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.verifiedPublicJobCount, 6)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/afourtech\.com\/careers-3\//i)
   assert.match(provider.verifiedSurfaceSummary, /Cobol Developer/i)
   assert.match(provider.verifiedSurfaceSummary, /Sr\. Python Developer/i)

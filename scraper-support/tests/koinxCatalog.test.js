@@ -10,7 +10,7 @@ test('KoinX is registered as a fail-closed custom script provider', () => {
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'KoinX')
   assert.equal(provider.companyCareerPage, 'https://wellfound.com/company/koinx/jobs')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.modulePath, /koinx[\\/]script\.js$/i)
 })
 

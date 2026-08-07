@@ -7,23 +7,23 @@ export const FRESHMENU_CATALOG = {
   source: 'freshmenu',
   companyName: 'FreshMenu',
   adapter: 'script',
-  homepageUrl: 'https://www.freshmenu.com/',
-  aboutPageUrl: 'https://www.freshmenu.com/about',
+  homepageUrl: 'https://freshmenu.com/',
+  aboutPageUrl: 'https://freshmenu.com/about',
   checkedMissingRouteUrls: [
-    'https://www.freshmenu.com/careers',
-    'https://www.freshmenu.com/jobs',
+    'https://freshmenu.com/careers',
+    'https://freshmenu.com/jobs',
   ],
   companyDomain: 'freshmenu.com',
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
   paginationStrategy: 'verified-homepage-plus-about-page-plus-missing-career-routes',
   extractionStrategy:
-    'verified-homepage-no-careers-link+verified-about-page-no-careers-link+verified-missing-career-routes-return-empty',
+    'verified-apex-homepage-no-public-jobs+verified-generic-app-shell-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that the live FreshMenu homepage at https://www.freshmenu.com/ exposes ordering, product, and About links but no careers handoff, and that the first-party About page at https://www.freshmenu.com/about describes the brand and publishes the support contacts order@freshmenu.com and grievance@freshmenu.com without exposing a public jobs board. Verified that the obvious public career routes https://www.freshmenu.com/careers and https://www.freshmenu.com/jobs are not live public careers pages on the verified date. No trustworthy public jobs surface is currently available.',
+    'Verified on August 2, 2026 that the working FreshMenu first-party apex host is https://freshmenu.com/. The homepage at https://freshmenu.com/ still exposes the consumer ordering shell and no trustworthy public careers handoff, while https://freshmenu.com/about, https://freshmenu.com/careers, and https://freshmenu.com/jobs all resolve to the same generic consumer app shell without JobPosting markup or public job-listing signals. No trustworthy public jobs surface is currently available.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

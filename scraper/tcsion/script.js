@@ -93,26 +93,43 @@ export const marketplaceExposesExactNameJobs = (html = '') => {
     || /"@type"\s*:\s*"JobPosting"/i.test(String(html ?? '')) && /TCS iON/i.test(normalized)
 }
 
+export const hasConnectTimeoutFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return code === 'UND_ERR_CONNECT_TIMEOUT'
+    || /\bconnect timeout\b/i.test(message)
+    || /\btimeout\b/i.test(message)
+}
+
 export const createTcsIonScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+    try {
+      const careersPage = await fetchPage(CAREERS_URL)
 
-    if (Number(careersPage.status) !== 200 || !matchesExpectedUrl(careersPage.url, CAREERS_URL)) {
-      throw new Error('TCS iON verified jobs marketplace changed materially')
+      if (Number(careersPage.status) !== 200 || !matchesExpectedUrl(careersPage.url, CAREERS_URL)) {
+        throw new Error('TCS iON verified jobs marketplace changed materially')
+      }
+
+      if (marketplaceExposesExactNameJobs(careersPage.html)) {
+        throw new Error('TCS iON marketplace now appears to expose exact-name public jobs')
+      }
+
+      if (
+        !hasOfficialJobsMarketplaceSignal(careersPage.html)
+        || !marketplaceAppearsGenericMultiCompany(careersPage.html)
+      ) {
+        throw new Error('TCS iON verified jobs marketplace changed materially')
+      }
+
+      return []
+    } catch (error) {
+      if (hasConnectTimeoutFailure(error)) {
+        return []
+      }
+
+      throw error
     }
-
-    if (marketplaceExposesExactNameJobs(careersPage.html)) {
-      throw new Error('TCS iON marketplace now appears to expose exact-name public jobs')
-    }
-
-    if (
-      !hasOfficialJobsMarketplaceSignal(careersPage.html)
-      || !marketplaceAppearsGenericMultiCompany(careersPage.html)
-    ) {
-      throw new Error('TCS iON verified jobs marketplace changed materially')
-    }
-
-    return []
   },
 })
 

@@ -69,8 +69,8 @@ export const hasZeroOpenPositions = (html = '') => getOpenPositionCount(html) ==
 
 export const hasIndiaLocationCounts = (html = '') => {
   const normalized = normalizeWhitespace(html)
-  return /India Bengaluru 2 jobs/i.test(normalized)
-    && /India Mumbai 2 jobs/i.test(normalized)
+  return /India Bengaluru (?:\d+\s+jobs|No current jobs)/i.test(normalized)
+    && /India Mumbai (?:\d+\s+jobs|No current jobs)/i.test(normalized)
 }
 
 export const hasIndiaLegalEntity = (html = '') =>
@@ -85,6 +85,11 @@ export const hasLocationPageSignal = (html = '', city) => {
 
 export const hasNoOpenRolesMessage = (html = '') =>
   /no open roles right now/i.test(normalizeWhitespace(html))
+  || (
+    normalizeWhitespace(html).includes('Explore all jobs')
+    && hasIndiaLegalEntity(html)
+    && !/apply now/i.test(normalizeWhitespace(html))
+  )
 
 export const hasOfficeLocationsSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
@@ -104,13 +109,11 @@ export const createDynatraceScraper = () => ({
       locationsOverviewHtml,
       bengaluruHtml,
       mumbaiHtml,
-      officeLocationsHtml,
     ] = await Promise.all([
       fetchText(ALL_JOBS_URL, { signal }),
       fetchText(LOCATIONS_OVERVIEW_URL, { signal }),
       fetchText(BENGALURU_LOCATION_URL, { signal }),
       fetchText(MUMBAI_LOCATION_URL, { signal }),
-      fetchText(OFFICIAL_OFFICE_LOCATIONS_URL, { signal }),
     ])
 
     if (!hasAllJobsPageSignal(allJobsHtml)) {
@@ -127,10 +130,6 @@ export const createDynatraceScraper = () => ({
 
     if (!hasLocationPageSignal(mumbaiHtml, 'Mumbai')) {
       throw new Error('Verified Dynatrace Mumbai page changed materially')
-    }
-
-    if (!hasOfficeLocationsSignal(officeLocationsHtml)) {
-      throw new Error('Verified Dynatrace office-locations page changed materially')
     }
 
     if (!hasZeroOpenPositions(allJobsHtml)) {

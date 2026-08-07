@@ -1,15 +1,23 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import {
   fetchWorkdayJobsApiPage,
 } from '../../scraper-support/myworkday/engine.js'
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const SOURCE = 'ptc'
 const COMPANY = 'PTC'
 const CAREERS_URL = 'https://www.ptc.com/en/careers'
 const BOARD_URL = 'https://ptc.wd1.myworkdayjobs.com/PTC'
 const JOBS_API_URL = 'https://ptc.wd1.myworkdayjobs.com/wday/cxs/ptc/PTC/jobs'
 const PAGE_SIZE = 20
+const DETAIL_FETCH_CONCURRENCY = 4
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const INDIA_CITY_ALIASES = Object.keys(CANONICAL_CITIES)
   .filter((value) => !/^(?:remote|none)$/i.test(value))
 
@@ -155,12 +163,60 @@ const buildRequest = ({ appliedFacets = {}, offset = 0, limit = PAGE_SIZE } = {}
   source: SOURCE,
 })
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let firstError = null
+
+  const worker = async () => {
+    while (!firstError) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+
+      if (currentIndex >= items.length) return
+      try {
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  )
+
+  if (firstError) throw firstError
+  return results
+}
+
 export const createPtcScraper = ({
   pageSize = PAGE_SIZE,
   maxPages = 100,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchJobsPage = fetchWorkdayJobsApiPage } = {}) {
+  async run({
+    fetchJobsPage = fetchWorkdayJobsApiPage,
+    fetchPage = defaultFetchPage,
+  } = {}) {
     if (!Number.isInteger(pageSize) || pageSize <= 0) {
       throw new Error('[ptc] pageSize must be a positive integer')
     }
@@ -253,8 +309,54 @@ export const createPtcScraper = ({
       }
     }
 
-    return jobs.sort((left, right) => left.title.localeCompare(right.title))
+    const enrichedJobs = await mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.sourceUrl)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailPage.html,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            postingDate: detail.postingDate || job.postingDate,
+            requisitionId: detail.requisitionId || job.requisitionId,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
+
+    return enrichedJobs.sort((left, right) => left.title.localeCompare(right.title))
   },
 })
 
 export const run = (options = {}) => createPtcScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

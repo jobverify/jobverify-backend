@@ -127,6 +127,10 @@ test('Estee Lauder India scraper helpers stay pinned to the verified empty first
     city: 'Chennai',
   })
   assert.equal(esteeLauderIndia.hasVerifiedCareersHubSignal(careersHubHtml), true)
+  assert.equal(
+    esteeLauderIndia.hasVerifiedCareersHubSignal(careersHubHtml.replace('Chennai', 'Kallakurichi')),
+    true,
+  )
   assert.equal(esteeLauderIndia.hasVerifiedEmptyCategoryPageSignal(brandJobsHtml, 'Brands'), true)
   assert.equal(esteeLauderIndia.hasVerifiedEmptyCategoryPageSignal(corporateJobsHtml, 'Corporate'), true)
   assert.equal(esteeLauderIndia.hasVerifiedEmptyCategoryPageSignal(retailJobsHtml, 'Retail'), true)

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   buildIndiaSearchUrl,
+  createLtimindtreeScraper,
   extractJobDetail,
   extractResultsSummary,
   extractSearchResults,
@@ -90,4 +91,32 @@ test('extractJobDetail pulls LTIMindtree apply URL, req id, description, and job
     applyUrl: 'https://careers.ltimindtree.com/talentcommunity/apply/679605001/?locale=en_US',
     sourceUrl: 'https://careers.ltimindtree.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
   })
+})
+
+test('LTIMindtree run decorates listing and detail pages into shared job records', async () => {
+  const searchHtml = readFixture('india-search.html')
+  const jobs = await createLtimindtreeScraper().run({
+    fetchPage: async (url) => {
+      if (url === buildIndiaSearchUrl()) {
+        return { status: 200, url, html: searchHtml }
+      }
+
+      if (/679605001/.test(url)) {
+        return { status: 200, url, html: readFixture('job-detail-679605001.html') }
+      }
+
+      if (/870365101/.test(url)) {
+        return { status: 200, url, html: readFixture('job-detail-870365101.html') }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].company, 'LTIMindtree')
+  assert.equal(jobs[0].source, 'ltimindtree')
+  assert.equal(jobs[0].jobId, '536167')
+  assert.equal(jobs[1].title, 'Specialist - Software Engineering')
+  assert.equal(jobs[1].link, jobs[1].applyUrl)
 })

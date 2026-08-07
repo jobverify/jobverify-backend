@@ -32,8 +32,7 @@ export const hasRedirectedHomepageSignal = (html = '') => {
 
   return normalized.includes('Your Trusted IT Solutions and Digital Transformation Company')
     && normalized.includes('Innova Solutions')
-    && normalized.includes('trusted digital transformation solutions company')
-  }
+}
 
 export const pageExposesGgkJobListings = (html = '') =>
   /ggk/i.test(String(html ?? '')) && /careers|jobs|software engineer|developer/i.test(String(html ?? ''))

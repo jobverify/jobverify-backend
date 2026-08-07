@@ -1,9 +1,24 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'sporjo'
 export const COMPANY = 'Sporjo'
 export const CAREERS_URL = 'https://www.sporjo.com/'
+export const LANDER_URL = new URL('/lander', CAREERS_URL).toString()
 export const DISPOSITION = 'verified-exact-name-public-surface-fail-closed-sentinel'
 
-const REQUIRED_TEXT_PATTERNS = [/\bsporjo\b/i]
+const ROOT_REDIRECT_PATTERNS = [
+  /window\.onload\s*=\s*function\s*\(\)\s*\{\s*window\.location\.href\s*=\s*["']\/lander["']\s*\}/i,
+]
+
+const PARKED_LANDER_PATTERNS = [
+  /window\.LANDER_SYSTEM\s*=\s*["']PW["']/i,
+  /_trfd\.push\(\{ap:["']parking["']\}\)/i,
+  /parking-lander\/static\/js\/main/i,
+  /<div id=["']root["']><\/div>/i,
+]
 
 const TRUSTED_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -80,13 +95,19 @@ const hasJobPostingMarkup = (html = '') => {
   return false
 }
 
-const assertVerifiedContract = (html = '') => {
-  const text = normalizeText(html)
-
-  if (REQUIRED_TEXT_PATTERNS.every((pattern) => pattern.test(text))) return
+const assertVerifiedRootRedirectShell = (html = '') => {
+  if (ROOT_REDIRECT_PATTERNS.every((pattern) => pattern.test(String(html)))) return
 
   throw new Error(
-    'Sporjo verified exact-name public surface changed: missing exact-name company signal.',
+    'Sporjo verified public domain shell changed: expected the root page to redirect visitors to /lander.',
+  )
+}
+
+const assertVerifiedParkedLanderShell = (html = '') => {
+  if (PARKED_LANDER_PATTERNS.every((pattern) => pattern.test(String(html)))) return
+
+  throw new Error(
+    'Sporjo verified parked-domain shell changed materially on the exact company domain.',
   )
 }
 
@@ -141,11 +162,28 @@ const defaultFetchHtml = async (url) => {
 
 export const createSporjoScraper = () => ({
   async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(CAREERS_URL)
-    assertVerifiedContract(html)
-    assertNoPublicListingsSurface(html, CAREERS_URL)
+    const rootHtml = await fetchHtml(CAREERS_URL)
+    assertVerifiedRootRedirectShell(rootHtml)
+    assertNoPublicListingsSurface(rootHtml, CAREERS_URL)
+
+    const landerHtml = await fetchHtml(LANDER_URL)
+    assertVerifiedParkedLanderShell(landerHtml)
+    assertNoPublicListingsSurface(landerHtml, LANDER_URL)
+
     return []
   },
 })
 
 export const run = async (options = {}) => createSporjoScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

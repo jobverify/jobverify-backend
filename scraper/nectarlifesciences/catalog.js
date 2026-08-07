@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Thursday, July 16, 2026 that https://www.neclife.com/ is the live official Nectar Lifesciences homepage and links Careers to https://www.neclife.com/careers. The official careers URL rendered only the site shell/navigation/footer with the title "Careers | My Site" and no trustworthy public job listings, ATS handoff, or public job detail pages.'
+  'Verified on Monday, August 3, 2026 that https://www.neclife.com/ is the live official Nectar Lifesciences homepage and links Careers to https://www.neclife.com/careers. The official careers URL still renders only the site shell/navigation/footer with the title "Careers | My Site" and no trustworthy public job listings, ATS handoff, or public job detail pages.'
 
 export const NECTAR_LIFESCIENCES_CATALOG = {
   source: 'nectarlifesciences',
@@ -21,7 +21,7 @@ export const NECTAR_LIFESCIENCES_CATALOG = {
   extractionStrategy: 'verified-homepage+verified-careers-page-without-public-listings-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

@@ -1,0 +1,79 @@
+[
+  {
+    "title": "Current remote openings at Circle Internet Services",
+    "company": "Circle Internet Services",
+    "location": "India / India-eligible remote; verify on listing",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India / India-eligible remote; verify on listing"
+    ],
+    "link": "https://www.bing.com/search?q=Circle+Internet+Services+official+careers+India+software+jobs",
+    "applyUrl": "https://www.bing.com/search?q=Circle+Internet+Services+official+careers+India+software+jobs",
+    "sourceUrl": "https://www.bing.com/search?q=Circle+Internet+Services+official+careers+India+software+jobs",
+    "source": "circle-internet-services.himalayas.app",
+    "jobId": "circle-internet-services.himalayas.app-current-openings",
+    "requisitionId": "circle-internet-services.himalayas.app-current-openings",
+    "department": null,
+    "employmentType": "Internship",
+    "experienceRequired": "No experience required",
+    "postingDate": "2026-08-02T23:12:21.043Z",
+    "expiresAt": null,
+    "jobDescription": "Circle Internet Services had current Himalayas hiring evidence for Use the live India job search link to view current openings. Location evidence: India / India-eligible remote; verify on listing. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23. Circle Internet Services had current Himalayas hiring evidence for Use the live India job search link to view current openings. Location evidence: India / India-eligible remote; verify on listing. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T23:12:21.043Z",
+    "companyCareerPage": "https://www.bing.com/search?q=Circle+Internet+Services+official+careers+India+software+jobs",
+    "companyDomain": "circle-internet-services.himalayas.app",
+    "description": "Circle Internet Services had current Himalayas hiring evidence for Use the live India job search link to view current openings. Location evidence: India / India-eligible remote; verify on listing. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23. Circle Internet Services had current Himalayas hiring evidence for Use the live India job search link to view current openings. Location evidence: India / India-eligible remote; verify on listing. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "publicExperienceChecked": true,
+    "originalTitle": "Current remote openings at Circle Internet Services",
+    "normalizedTitle": "Current remote openings at Circle Internet Services",
+    "jobCategory": "Current remote openings at Circle Internet Services",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Internship",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "2026-08-02T23:12:21.043Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T23:12:21.043Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "No experience required",
+      "minimumYears": 0,
+      "maximumYears": 0,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "No experience required",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0
+    ],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Other",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "low",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T23:12:32.670Z"
+  }
+]

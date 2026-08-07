@@ -56,27 +56,43 @@ const defaultFetchPage = async (url) => {
 }
 
 export const hasOfficialHomepageSignal = (html) => {
+  const page = String(html ?? '')
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return normalized.includes('famapp by trio')
     && normalized.includes('formerly fampay')
-    && normalized.includes('bengaluru, karnataka, india')
-    && normalized.includes('tri o tech')
-    && /href=["']https:\/\/www\.famapp\.in\/careers\/["']/i.test(String(html ?? ''))
+    && normalized.includes('want to shape finance for the next gen?')
+    && normalized.includes('hsr layout, bengaluru, karnataka 560102')
+    && /href=["'][^"']*\/careers\/?["']/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return normalized.includes('#jointhefam')
-    && normalized.includes('build the future of money for the next generation')
-    && normalized.includes('learning support')
-    && normalized.includes('team culture')
+    && normalized.includes('so like, what does fam do?')
+    && normalized.includes('challenge the status quo')
+    && normalized.includes("warning: our perks might make your friends mad")
+    && normalized.includes('free therapy with mental health professionals')
+    && normalized.includes('famapp by trio (formerly fampay)')
     && normalized.includes('view openings')
 }
 
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+export const hasKnownFirstPartyJobsHandoffSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /href=["'](?:https:\/\/www\.famapp\.in)?\/jobs\/?["']/i.test(page)
+    && /view openings/i.test(page)
+}
+
+const stripKnownFirstPartyJobsHandoff = (html) =>
+  String(html ?? '').replace(
+    /<a\b[^>]*href=["'](?:https:\/\/www\.famapp\.in)?\/jobs\/?["'][^>]*>[\s\S]*?<\/a>/gi,
+    ' ',
+  )
 
 export const createFamAppScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
@@ -90,7 +106,10 @@ export const createFamAppScraper = () => ({
       throw new Error('FamApp verified careers page no longer matches the trusted first-party surface')
     }
 
-    if (hasPublicJobsSignal(careersPage.html)) {
+    if (
+      (hasPublicJobsSignal(careersPage.html) && !hasKnownFirstPartyJobsHandoffSignal(careersPage.html))
+      || hasPublicJobsSignal(stripKnownFirstPartyJobsHandoff(careersPage.html))
+    ) {
       throw new Error('FamApp careers page now appears to expose a direct public jobs surface')
     }
 

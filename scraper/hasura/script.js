@@ -182,8 +182,8 @@ export const hasOfficialCareersSignal = (page = {}) => {
   return Number(page.status) === 200
     && normalizeUrl(page.url) === REDIRECTED_CAREERS_URL
     && normalized.includes('join us to build the future of reliable ai')
-    && normalized.includes('help developers build great products')
-    && normalized.includes('open roles')
+    && normalized.includes('see open roles')
+    && normalized.includes('life at promptql')
     && rawHtml.includes(GEM_BOARD_URL)
 }
 
@@ -195,7 +195,7 @@ export const hasOfficialGemBoardSignal = (page = {}) => {
     && normalizeUrl(page.url) === GEM_BOARD_URL
     && normalized.includes('promptql careers')
     && rawHtml.includes(GEM_BOARD_TRACKING_ID)
-    && rawHtml.includes(GEM_BOARD_BUNDLE_URL)
+    && /https:\/\/static\.gem\.com\/scripts\/jobBoards\.[^"' ]+\.v2\.min\.js/i.test(rawHtml)
 }
 
 const hasValidPosting = (posting) =>

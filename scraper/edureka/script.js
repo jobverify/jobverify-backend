@@ -76,9 +76,9 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Edureka\s*\|\s*Online Courses, PGP .* Upskilling\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.edureka\.co\/["']/i.test(page)
-    && /<a[^>]+href=["']\/careers["'][^>]*>\s*JOIN US\s*<\/a>/i.test(page)
+  return /<title>\s*Edureka\s*\|\s*Online Courses,\s*PGP\s*(?:&amp;|&)\s*Degree Programs for Upskilling\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.edureka\.co\/?["']/i.test(page)
+    && /<a[^>]+href=["'](?:https:\/\/www\.edureka\.co)?\/careers\/?["'][^>]*>\s*(?:JOIN US|Careers)\s*<\/a>/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html = '') => {

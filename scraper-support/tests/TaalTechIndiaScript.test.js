@@ -61,6 +61,29 @@ const archivePageThreeHtml = `
 </html>
 `
 
+const currentArchivePageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs Archive | TAAL Tech</title>
+  </head>
+  <body>
+    <h1>Careers</h1>
+    <h4><a href="https://www.taaltech.com/careers/civil-and-structural-designer-2/">Civil and Structural designer</a></h4>
+    <a href="https://www.taaltech.com/careers/civil-and-structural-designer-2/">Apply Now</a>
+    <p>Full Time</p>
+    <p>Bangalore</p>
+    <p>Posted 3 days ago</p>
+
+    <h4><a href="https://www.taaltech.com/careers/technical-publications-engineer-video-based-training/">Technical Publications Engineer (Video-Based Training)</a></h4>
+    <a href="https://www.taaltech.com/careers/technical-publications-engineer-video-based-training/">Apply Now</a>
+    <p>Full Time</p>
+    <p>Bangalore</p>
+    <p>Posted 1 month ago</p>
+  </body>
+</html>
+`
+
 const technicalPublicationsDetailHtml = `
 <!doctype html>
 <html lang="en">
@@ -133,6 +156,22 @@ test('TAAL Tech India helpers stay pinned to the verified first-party jobs archi
     minimumQualification: 'BE / BTech',
     experienceRequired: '5+ Years',
   })
+  assert.deepEqual(taal.extractListingCards(currentArchivePageHtml), [
+    {
+      title: 'Civil and Structural designer',
+      detailUrl: 'https://www.taaltech.com/careers/civil-and-structural-designer-2/',
+      employmentType: 'Full Time',
+      location: 'Bangalore',
+      postedLabel: 'Posted 3 days ago',
+    },
+    {
+      title: 'Technical Publications Engineer (Video-Based Training)',
+      detailUrl: 'https://www.taaltech.com/careers/technical-publications-engineer-video-based-training/',
+      employmentType: 'Full Time',
+      location: 'Bangalore',
+      postedLabel: 'Posted 1 month ago',
+    },
+  ])
 })
 
 test('TAAL Tech India run paginates the verified jobs archive, filters to India roles, and decorates detail pages', async () => {
@@ -228,4 +267,21 @@ test('TAAL Tech India fails closed when the verified jobs archive drifts materia
     }),
     /verified taal tech jobs archive/i,
   )
+})
+
+test('TAAL Tech India returns an empty result when the live archive host times out', async () => {
+  const taal = await loadModule()
+
+  const jobs = await taal.createTaalTechIndiaScraper().run({
+    fetchText: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'UND_ERR_CONNECT_TIMEOUT',
+        message: 'Connect Timeout Error (attempted addresses: 172.67.140.63:443, 104.21.27.7:443, timeout: 10000ms)',
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

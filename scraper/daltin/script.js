@@ -12,13 +12,13 @@ export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://daltinedugroup.com/careers/ was the live official Daltin Edu Group careers surface reviewed for workbook source Daltin. The reviewed page exposed company values, benefits and contact-driven hiring copy including "Who we are.", "Benefits & Perks", "Our ride so far.", and "Looking to participate in Global Education revolution? Connect with us!", but no trustworthy enumerable public jobs contract, no first-party public job inventory, and no handoff to a stable public ATS or exact-company jobs board. This company-local scraper therefore stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
 
 const REQUIRED_SURFACE_PATTERNS = [
-  /\bWho we are\./i,
+  /\bWho\s+we\s+are\b/i,
   /\bDaltin Edu Group is on a mission to empower global education\./i,
   /\bFinding simple solutions for complex problems\./i,
   /\bGrowing with pace\. Grow Daltin Group, grow yourself\./i,
   /\bBeing a team of champions, keep it fun\./i,
   /\bBenefits\s*&\s*Perks\b/i,
-  /\bOur ride so far\./i,
+  /\bOur ride so far\b/i,
   /\bLooking to participate in Global Education revolution\?\s*Connect with us!/i,
   /\binfo@daltinedugroup\.com\b/i,
 ]
@@ -65,6 +65,7 @@ const LINKEDIN_PUBLIC_JOBS_PATTERNS = [
 
 const decodeEntities = (value = '') =>
   String(value)
+    .replace(/&#0*38;|&#x0*26;/gi, '&')
     .replace(/&nbsp;|&#160;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
@@ -84,7 +85,11 @@ const normalizePathname = (value = '') => {
 }
 
 const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
-  const matches = String(html).matchAll(
+  const sanitizedHtml = String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+
+  const matches = sanitizedHtml.matchAll(
     /(?:href|src|action|data-url)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
   )
   const urls = []
@@ -158,7 +163,7 @@ export const assertNoPublicJobsSurface = (html = '', careersUrl = CAREERS_URL) =
     if (url.origin !== careersPage.origin) return false
 
     const pathname = normalizePathname(url.pathname)
-    if (pathname === careersPath && !url.search && !url.hash) return false
+    if (pathname === careersPath && !url.search) return false
 
     return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
   })

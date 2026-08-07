@@ -7,6 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'neccorporation'
 export const COMPANY = 'NEC Corporation'
+export const VERIFIED_ON = '2026-08-03'
 export const HOMEPAGE_URL = 'https://www.nec.com/'
 export const SITEMAP_URL = 'https://www.nec.com/sitemap.xml'
 export const CAREERS_URL = 'https://www.nec.com/en/global/rd/rd-recruit/index.html'
@@ -21,6 +22,7 @@ const normalizeWhitespace = (value) =>
     .replace(/&amp;/gi, '&')
     .replace(/&#39;|&apos;|&rsquo;|&#x27;|\u2019/gi, "'")
     .replace(/&quot;/gi, '"')
+    .replace(/&copy;/gi, '©')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -50,8 +52,9 @@ const CAREERS_SIGNALS = [
   'research & development',
   'nec laboratories are looking for aspiring individuals who want to improve society and make people\'s lives better.',
   'our researchers',
+  'achievements',
   'publications',
-  '© nec corporation',
+  'r&d(japanese)',
 ]
 
 const CAREER_SURFACE_PATTERN =

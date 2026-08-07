@@ -83,10 +83,16 @@ const getJobId = (applyUrl, title) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
-  return /we'?re hiring/i.test(page)
-    && /open positions/i.test(page)
-    && /ta@verteil\.com/i.test(page)
-    && /recruitcareers\.zappyhire\.com\/en\/Verteil\/apply\?job=/i.test(page)
+  return (
+    /we'?re hiring/i.test(page)
+      && /open positions/i.test(page)
+      && /ta@verteil\.com/i.test(page)
+      && /recruitcareers\.zappyhire\.com\/en\/Verteil\/apply\?job=/i.test(page)
+  ) || (
+    /<title>\s*careers\s*\|\s*verteil\s*<\/title>/i.test(page)
+      && /Join our movement to revolutionize the Airline retailing domain/i.test(page)
+      && /recruitcareers\.zappyhire\.com\/en\/Verteil\/apply\?job=/i.test(page)
+  )
 }
 
 export const extractJobCards = (html) => [...String(html ?? '').matchAll(
@@ -154,7 +160,7 @@ export const createVerteilTechnologiesScraper = () => ({
 
 export const run = async (options = {}) => createVerteilTechnologiesScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Verteil Technologies scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)

@@ -176,15 +176,15 @@ export const extractPublicApiConfig = (bundleJs = '') => {
   const rawBundle = String(bundleJs ?? '')
   const token = rawBundle.match(/this\.token\s*=\s*["']([^"']+)["']/)?.[1] ?? null
   const urlBff = rawBundle.match(/this\.url_bff\s*=\s*["']([^"']+)["']/)?.[1] ?? null
-  const publicTypes = [...rawBundle.matchAll(/new\s+Io\(["']([^"']+)["']\)/g)]
+  const publicTypes = [...rawBundle.matchAll(/new\s+[A-Za-z_$][\w$]*\(["']([^"']+)["']\)/g)]
     .map((match) => match[1])
-  const publicType = publicTypes.find((value) => value === 'external') ?? null
+  const publicType = publicTypes.find((value) => /^external$/i.test(value)) ?? null
   const sampleOfferInfoUrl =
     rawBundle.match(/https:\/\/falabella\.airavirtual\.com\/offer_info\/[^"'`\s]+/)?.[0] ?? null
   const hasListEndpoint =
     rawBundle.includes('/bff-sgdt-job-offer/api/ofertalaboral/type/${this.type}')
   const hasDetailEndpoint =
-    rawBundle.includes('/bff-sgdt-job-offer/api/ofertalaboral/${this.type}/${t}')
+    /\/bff-sgdt-job-offer\/api\/ofertalaboral\/\$\{this\.type\}\/\$\{[a-z]\}/.test(rawBundle)
 
   if (!token || !urlBff || !publicType || !hasListEndpoint || !hasDetailEndpoint) {
     return null

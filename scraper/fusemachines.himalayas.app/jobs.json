@@ -1,0 +1,89 @@
+[
+  {
+    "title": "Current remote openings at Fusemachines",
+    "company": "Fusemachines",
+    "location": "India eligible remote",
+    "city": "Remote",
+    "country": "India",
+    "locations": [
+      "India eligible remote"
+    ],
+    "link": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "applyUrl": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "sourceUrl": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "source": "fusemachines.himalayas.app",
+    "jobId": "fusemachines.himalayas.app-current-openings",
+    "requisitionId": "fusemachines.himalayas.app-current-openings",
+    "department": null,
+    "employmentType": "Full-time",
+    "experienceRequired": null,
+    "postingDate": "2026-08-02T23:06:38.800Z",
+    "expiresAt": null,
+    "jobDescription": "Fusemachines had current Himalayas hiring evidence for Data / Machine Learning Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+    "remoteStatus": "Remote",
+    "atsPlatform": "himalayas-remote-jobs-api",
+    "scrapedAt": "2026-08-02T23:06:38.800Z",
+    "companyCareerPage": "https://himalayas.app/jobs/countries/india/data-engineer",
+    "companyDomain": "fusemachines.himalayas.app",
+    "originalTitle": "Current remote openings at Fusemachines",
+    "normalizedTitle": "Current remote openings at Fusemachines",
+    "jobCategory": "Current remote openings at Fusemachines",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Mid Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "salary": null,
+    "postedAt": "2026-08-02T23:06:38.800Z",
+    "closingDate": null,
+    "scrapedTimestamp": "2026-08-02T23:06:38.800Z",
+    "skillIds": [
+      "machine-learning"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Machine Learning"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "rawText": "Fusemachines had current Himalayas hiring evidence for Data / Machine Learning Engineer. Location evidence: India eligible remote. Directory source: Himalayas India remote jobs directory. Verified on 2026-07-23.",
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "experienceBucket": "unspecified"
+    },
+    "experienceYears": [],
+    "seniority": "Mid Level",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "low",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-02T23:07:02.099Z",
+    "publicExperienceChecked": true
+  }
+]

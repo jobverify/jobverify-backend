@@ -63,10 +63,12 @@ const hasInputWithId = (html, id) => new RegExp(
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Psiog\s*\|\s*AI-Enhanced IT Services for Mid-Market Enterprises\s*<\/title>/i.test(page)
+  return /<title>\s*Psiog\s*\|\s*AI-(?:Led|Enhanced)\s+Technology Consulting\s*&(?:amp;)?\s*Services for Mid-Market Enterprises\s*<\/title>/i.test(page)
     && /meta property=["']og:url["'] content=["']https:\/\/psiog\.com\/["']/i.test(page)
+    && /meta name=["']description["'] content=["']Psiog is a pure-play IT services &(?:amp;)? consulting boutique delivering AI-enhanced digital solutions to global mid-market enterprises\.\s*Strategy-led\.\s*Business-first\./i.test(page)
     && /href=["']https:\/\/psiog\.com\/about-us\/["']/i.test(page)
     && /href=["']https:\/\/psiog\.com\/careers\/["']/i.test(page)
+    && /pure-play IT services and technology consulting boutique/i.test(page)
     && /info@psiog\.com/i.test(page)
 }
 

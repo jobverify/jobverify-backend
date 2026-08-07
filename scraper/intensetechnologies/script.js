@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { INTENSE_TECHNOLOGIES_CATALOG } from './catalog.js'
@@ -74,9 +75,12 @@ const normalizeComparableUrl = (value) => {
 export const hasVerifiedCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
+  const hasCanonicalLink =
+    /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.in10stech\.com\/careers["']/i.test(page)
+    || /<link[^>]+href=["']https:\/\/www\.in10stech\.com\/careers["'][^>]+rel=["']canonical["']/i.test(page)
 
   return /<title[^>]*>\s*careers\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.in10stech\.com\/careers["']/i.test(page)
+    && hasCanonicalLink
     && /window\.khConfig/i.test(page)
     && /https:\/\/intense\.keka\.com\/careers\/api\/embedjobs\/js\/fcf90e1b-bb0a-4d66-b896-6b0de9cf0dce/i.test(page)
     && normalized.includes('deliver impact at work and beyond')
@@ -242,42 +246,61 @@ export const createIntenseTechnologiesScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasVerifiedCareersPageSignal(careersHtml)) {
-      throw new Error('Intense Technologies verified first-party careers page no longer matches the known public shell')
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText,
+      fetchJson,
+      fetchBrowserText,
+      fetchBrowserJson,
+      userAgent: USER_AGENT,
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 12000,
+        ignoreHTTPSErrors: true,
+      },
+    })
+
+    try {
+      const careersHtml = await browserFallback.fetchText(CAREERS_URL)
+      if (!hasVerifiedCareersPageSignal(careersHtml)) {
+        throw new Error('Intense Technologies verified first-party careers page no longer matches the known public shell')
+      }
+
+      const careerConfig = extractCareerConfig(careersHtml)
+      if (
+        !careerConfig
+        || careerConfig.identifier !== EXPECTED_IDENTIFIER
+        || careerConfig.domain !== EXPECTED_KEKA_DOMAIN
+      ) {
+        throw new Error('Intense Technologies verified first-party careers page no longer matches the known public shell')
+      }
+
+      const careerPortalInfoUrl = buildCareerPortalInfoUrl(careerConfig)
+      const activeJobsUrl = buildActiveJobsUrl(careerConfig)
+      if (!careerPortalInfoUrl || !activeJobsUrl) {
+        throw new Error('Unable to build Intense Technologies Keka endpoints')
+      }
+
+      const portalInfo = await browserFallback.fetchJson(careerPortalInfoUrl)
+      if (!hasExpectedCareerPortalInfo(portalInfo)) {
+        throw new Error('Intense Technologies verified Keka portal identity no longer matches the exact company surface')
+      }
+
+      const jobs = extractSearchResults(await browserFallback.fetchJson(activeJobsUrl), careerConfig)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      await browserFallback.close()
     }
-
-    const careerConfig = extractCareerConfig(careersHtml)
-    if (
-      !careerConfig
-      || careerConfig.identifier !== EXPECTED_IDENTIFIER
-      || careerConfig.domain !== EXPECTED_KEKA_DOMAIN
-    ) {
-      throw new Error('Intense Technologies verified first-party careers page no longer matches the known public shell')
-    }
-
-    const careerPortalInfoUrl = buildCareerPortalInfoUrl(careerConfig)
-    const activeJobsUrl = buildActiveJobsUrl(careerConfig)
-    if (!careerPortalInfoUrl || !activeJobsUrl) {
-      throw new Error('Unable to build Intense Technologies Keka endpoints')
-    }
-
-    const portalInfo = await fetchJson(careerPortalInfoUrl)
-    if (!hasExpectedCareerPortalInfo(portalInfo)) {
-      throw new Error('Intense Technologies verified Keka portal identity no longer matches the exact company surface')
-    }
-
-    const jobs = extractSearchResults(await fetchJson(activeJobsUrl), careerConfig)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
   },
 })
 

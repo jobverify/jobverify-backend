@@ -13,14 +13,14 @@ export const SMART_IMS_CATALOG = {
   companyDomain: 'smartims.com',
   atsPlatform: 'first-party-careers-page-with-current-openings',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-careers-page-current-openings-section',
+  paginationStrategy: 'single-first-party-current-openings-accordion',
   extractionStrategy:
-    'first-party-html-region-links+current-job-openings-block-extraction+apply-email-detection',
+    'first-party-accordion-openings+cloudflare-email-decode+structured-field-extraction',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.smartims.com/careers/ is Smart IMS\'s live first-party careers page, that it exposes region selectors including Smart IMS India, and that the public HTML currently publishes parseable Current Job Openings blocks with role titles, experience, locations, and apply-by-email instructions.',
+    'Verified on Tuesday, August 4, 2026 that https://www.smartims.com/careers/ is Smart IMS\'s live first-party careers page and that the public HTML exposes a Current Job Openings accordion with three Hyderabad listings and Cloudflare-protected apply-by-email links that decode to Indiacareers@SmartIMS.com, including Data Engineer II, Java Backend Software Development Engineer (SDE-2), and Front End Developer.',
 }
 
 export default SMART_IMS_CATALOG

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -35,6 +36,31 @@ const field = (card, name) => stripTags(match(
   ),
 ))
 
+const extractDescription = (card) => stripTags(match(
+  card,
+  /attrax-vacancy-tile__description-value[^>]*>([\s\S]*?)(?:<\/p>|<\/div>)/i,
+))
+
+const inferExperienceFromDescription = (description) => {
+  const normalizedDescription = stripTags(description)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = stripTags(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
 export const extractRenesasJobs = (html = '') => {
   const cards = String(html).match(
     /<div\s+class=["'][^"']*\battrax-vacancy-tile\b[^"']*["'][\s\S]*?(?=<div\s+class=["'][^"']*\battrax-vacancy-tile\b|$)/gi,
@@ -50,10 +76,7 @@ export const extractRenesasJobs = (html = '') => {
       card,
       /attrax-vacancy-tile__location-freetext[\s\S]*?attrax-vacancy-tile__item-value[^>]*>([\s\S]*?)<\/p>/i,
     ))
-    const description = stripTags(match(
-      card,
-      /attrax-vacancy-tile__description-value[^>]*>([\s\S]*?)<\/p>/i,
-    ))
+    const description = extractDescription(card)
     const jobId = match(card, /data-jobid=["']([^"']+)["']/i)
 
     if (!title || !link || !location || !/\bindia\b/i.test(location)) return null
@@ -74,6 +97,8 @@ export const extractRenesasJobs = (html = '') => {
       employmentType: field(card, 'type-of-employment') || null,
       remoteStatus: field(card, 'remote') || null,
       jobDescription: description || null,
+      experienceRequired: inferExperienceFromDescription(description),
+      publicExperienceChecked: Boolean(description),
       source: SOURCE,
     }
   }).filter(Boolean)

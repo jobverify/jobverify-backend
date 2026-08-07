@@ -71,6 +71,7 @@ test('Kumaraguru College of Technology scraper pins the verified first-party hom
     closingDate: null,
     jobDescription:
       'Aerospace Materials, Defense and Space Technologies, Communication Systems, Sensors. Apply through the official KCT academic recruitment portal.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
   assert.equal(academicJobs.at(-1)?.department, 'MBA (Business School)')
@@ -97,6 +98,7 @@ test('Kumaraguru College of Technology scraper pins the verified first-party hom
     closingDate: null,
     jobDescription:
       'An ideal candidate will hold good years’ experience, including roles in Academic Leadership, Planning, and Review. Key responsibilities include coordinating between various departments (Research, Alumni, Accreditation), overseeing curriculum development and faculty programs, managing student career development, and enhancing research output. The role also involves tracking placement records, organizing seminars, and supporting social impact projects, ensuring all academic operations align with institutional goals. Apply through the official KCT careers application portal.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
   assert.equal(
@@ -124,6 +126,7 @@ test('Kumaraguru College of Technology scraper pins the verified first-party hom
     closingDate: null,
     jobDescription:
       'Kumaraguru Doctoral Fellowship - KDF (Full time & Residential) invites aspirational and meritorious candidates to pursue their research degree in the field of engineering, acquire the requisite skills and deepen the competency in the interdisciplinary research. Apply through the official KDF portal.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
 
@@ -147,6 +150,7 @@ test('Kumaraguru College of Technology scraper pins the verified first-party hom
     closingDate: null,
     jobDescription:
       'Kumaraguru Young Faculty Fellowship – KYFF (Full time & Residential) opens avenues for aspiring post graduates passionate to get into teaching profession. Institution will provide hands-on training and facilitate building attributes necessary to become competent teaching professionals, going beyond the requirements prevailing in the academic ecosystem. Apply through the official KYFF portal.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
 })
@@ -188,6 +192,7 @@ test('Kumaraguru College of Technology scraper returns normalized jobs from the 
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs.at(-1)?.title, 'Kumaraguru Young Faculty Fellowship (KYFF)')
 })
 

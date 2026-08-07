@@ -11,7 +11,7 @@ const homepageHtml = `
     <a href="https://dennetworks.com/about-us">About us</a>
     <a href="https://dennetworks.com/careers">Careers</a>
     <a href="https://dennetworks.com/news">News</a>
-    <p>DEN Networks - Top cable service provider</p>
+    <p>DEN Networks - Top Cable Service Provider</p>
     <p>© 2017 DEN Networks Ltd. - All Rights Reserved</p>
   </body>
 </html>

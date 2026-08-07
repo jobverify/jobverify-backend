@@ -60,9 +60,10 @@ test('Saama Technologies local catalog captures the verified first-party Jobvite
     provider.extractionStrategy,
     'verified-first-party-careers-page+jobvite-open-positions-board+india-detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /jv-careersite widget/i)
   assert.match(provider.verifiedSurfaceSummary, /Senior Site Reliability Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Inside Sales Associate/i)
+  assert.match(provider.verifiedSurfaceSummary, /Junior Accountant - Accounts Payable \(India\)/i)
 
   assertCatalogMatchesBacklogRow({
     provider,
@@ -85,16 +86,16 @@ test('Aeries Technology local catalog captures the verified first-party TalentRe
   assert.equal(provider.officialBrandName, 'Aeries Technology')
   assert.equal(provider.homepageUrl, 'https://aeriestechnology.com/')
   assert.equal(provider.companyCareerPage, 'https://aeriestechnology.com/careers/')
-  assert.equal(provider.jobsBoardUrl, 'https://aeriestechnology.talentrecruit.com/Default.aspx')
+  assert.equal(provider.jobsBoardUrl, 'https://aeriestechnology.talentrecruit.com/Search/')
   assert.equal(provider.atsPlatform, 'talentrecruit')
-  assert.equal(provider.paginationStrategy, 'single-talentrecruit-public-board')
+  assert.equal(provider.paginationStrategy, 'single-talentrecruit-search-service-request')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+talentrecruit-public-board+india-listings',
+    'verified-first-party-careers-page+talentrecruit-search-board+searchjobsservice-api+india-listings',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Technical Support Analyst/i)
-  assert.match(provider.verifiedSurfaceSummary, /Associate Security Analyst/i)
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.match(provider.verifiedSurfaceSummary, /Senior Executive\/Assistant Manager - Billing and Cash Application/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Cybersecurity Analyst/i)
 
   assertCatalogMatchesBacklogRow({
     provider,
@@ -124,7 +125,7 @@ test('eNoah iSolution local catalog captures the verified zero-openings first-pa
     provider.extractionStrategy,
     'verified-first-party-careers-page+zero-public-openings',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.verifiedSurfaceSummary, /Current Job Opportunities/i)
   assert.match(provider.verifiedSurfaceSummary, /no job openings/i)
 
@@ -155,8 +156,11 @@ test('MMC Infotech Services local catalog captures the verified first-party inli
     provider.extractionStrategy,
     'verified-first-party-careers-page+inline-job-openings',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Voice Operations/i)
+  assert.match(provider.verifiedSurfaceSummary, /Customer Support/i)
+  assert.match(provider.verifiedSurfaceSummary, /Data Entry/i)
   assert.match(provider.verifiedSurfaceSummary, /Backend Process/i)
 
   assertCatalogMatchesBacklogRow({
@@ -187,9 +191,10 @@ test('Nitor Infotech local catalog captures the verified first-party openings pa
     provider.extractionStrategy,
     'verified-first-party-careers-page+openings-listing+india-filtered-cards',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.match(provider.verifiedSurfaceSummary, /Engineering Manager/i)
   assert.match(provider.verifiedSurfaceSummary, /Senior Software Engineer \(Golang\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /relative link \/opening/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

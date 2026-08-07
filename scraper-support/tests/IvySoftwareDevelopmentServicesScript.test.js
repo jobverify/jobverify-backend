@@ -104,3 +104,54 @@ test('IVY SOFTWARE DEVELOPMENT SERVICES can recover with browser-backed shared s
   assert.deepEqual(browserPageUrls, ivySoftware.BLOCKED_ROUTE_URLS)
   assert.deepEqual(jobs, [])
 })
+
+test('IVY SOFTWARE DEVELOPMENT SERVICES returns [] when the shared verification surface is fully inaccessible but blocked-route probes stay blocked', async () => {
+  const ivySoftware = await loadModule()
+  const browserTextUrls = []
+  const browserPageUrls = []
+
+  const jobs = await ivySoftware.createIvySoftwareDevelopmentServicesScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed | tlsv1 alert internal error')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      throw new Error(`net::ERR_SSL_PROTOCOL_ERROR at ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      browserPageUrls.push(url)
+      return {
+        status: 403,
+        html: '<html><body>Forbidden</body></html>',
+      }
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [ivySoftware.HOMEPAGE_URL, ivySoftware.CONTACT_URL])
+  assert.deepEqual(browserPageUrls, ivySoftware.BLOCKED_ROUTE_URLS)
+  assert.deepEqual(jobs, [])
+})
+
+test('IVY SOFTWARE DEVELOPMENT SERVICES skips browser fallback when ivy.global is timing out at the transport layer', async () => {
+  const ivySoftware = await loadModule()
+  const browserTextUrls = []
+  const browserPageUrls = []
+
+  const jobs = await ivySoftware.createIvySoftwareDevelopmentServicesScraper().run({
+    fetchText: async () => {
+      throw new TypeError('fetch failed | Connect Timeout Error (attempted address: ivy.global:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      throw new Error(`Unexpected browser text fallback for ${url}`)
+    },
+    fetchBrowserPage: async (url) => {
+      browserPageUrls.push(url)
+      throw new Error(`Unexpected browser page fallback for ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserTextUrls, [])
+  assert.deepEqual(browserPageUrls, [])
+  assert.deepEqual(jobs, [])
+})

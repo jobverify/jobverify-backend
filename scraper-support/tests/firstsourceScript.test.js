@@ -108,6 +108,7 @@ test('Firstsource scraper keeps requests on the public India SuccessFactors boar
     employmentType: 'Full-Time',
     experienceRequired: 'Entry Level',
     jobDescription: 'Support customer query resolution for finance operations. - Handle customer email tickets - Coordinate with internal operations teams',
+    publicExperienceChecked: true,
     requiredSkills: [
       'Handle customer email tickets',
       'Coordinate with internal operations teams',
@@ -137,4 +138,5 @@ test('Firstsource scraper keeps requests on the public India SuccessFactors boar
     jobs[0].applyUrl,
     'https://careers.firstsource.com/talentcommunity/apply/24697744/?locale=en_US',
   )
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })

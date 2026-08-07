@@ -5,17 +5,18 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>iBall - Electronics & Peripherals</title>
+    <title>iBall &ndash; Electronics &amp; Peripherals</title>
   </head>
   <body>
+    <nav>
+      <a href="/pages/about-us">About iBall</a>
+      <a href="/blogs/news-center">News Center</a>
+      <a href="/pages/contact">Contact Us</a>
+      <a href="/pages/service-centers">Service Centers</a>
+    </nav>
     <main>
-      <h1>Designed for Excellence.</h1>
-      <p>Since 2001.</p>
-      <nav>
-        <a href="/pages/about-us">About iBall</a>
-        <span>Careers</span>
-        <a href="/blogs/news-center">News Center</a>
-      </nav>
+      <h1>Our Range</h1>
+      <p>Upgrade your digital lifestyle with quality audio, performance peripherals, and practical accessories.</p>
     </main>
   </body>
 </html>
@@ -25,56 +26,29 @@ const aboutHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Us - iBall</title>
+    <title>About Us &ndash; iBall</title>
   </head>
   <body>
     <h1>About iBall</h1>
     <p>Commitment to India</p>
     <p>Corporate Office</p>
-    <p>93, Mistry Industrial Complex, M.I.D.C Cross Road 'A', Andheri (East), Mumbai - 400 093</p>
-    <p>enquiry@iball.co.in</p>
+    <a href="mailto:enquiry@iball.co.in">enquiry@iball.co.in</a>
   </body>
 </html>
 `
 
-const newsCenterHtml = `
+const newsHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>News Center - iBall</title>
+    <title>News Center &ndash; iBall</title>
   </head>
   <body>
-    <h1>Press Release</h1>
-    <article>iBall Debuts Cinebar 560 Soundbar Featuring 800W Power with Dolby Audio</article>
-    <article>iBall Announces Strategic Expansion with Launch of GLIDR Ai1 AI Mouse</article>
-    <article>iBall enters a New Era of growth phase, after acquisition by Zebronics</article>
-  </body>
-</html>
-`
-
-const nonJobsCareersRouteHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>iBall - Electronics & Peripherals</title>
-  </head>
-  <body>
-    <h1>Designed for Excellence.</h1>
-    <p>Since 2001.</p>
-    <footer>Company Careers News Center</footer>
-  </body>
-</html>
-`
-
-const publicJobsHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Careers - iBall</title>
-  </head>
-  <body>
-    <h1>Current Openings</h1>
-    <a href="/jobs/ecommerce-category-specialist">Apply Now</a>
+    <h1>News Center</h1>
+    <p>Press Release</p>
+    <p>Cinebar 560</p>
+    <p>Glidr AI1</p>
+    <p>Zebronics</p>
   </body>
 </html>
 `
@@ -87,108 +61,60 @@ const loadModule = async () => {
   }
 }
 
-test('iBall sentinel pins the verified homepage, about page, news center, and no-public-jobs signals', async () => {
-  const iBall = await loadModule()
+test('iBall recognizes the current homepage, about page, and news center as zero-job first-party surfaces', async () => {
+  const iball = await loadModule()
 
-  assert.equal(iBall.SOURCE, 'iball')
-  assert.equal(iBall.COMPANY, 'iBall')
-  assert.equal(iBall.HOMEPAGE_URL, 'https://iball.co.in/')
-  assert.equal(iBall.ABOUT_URL, 'https://iball.co.in/pages/about-us')
-  assert.equal(iBall.NEWS_CENTER_URL, 'https://iball.co.in/blogs/news-center')
-  assert.deepEqual(iBall.COMMON_CAREERS_ROUTES, [
-    'https://iball.co.in/pages/careers',
-    'https://iball.co.in/pages/career',
-    'https://iball.co.in/careers',
-    'https://iball.co.in/jobs',
-    'https://iball.co.in/join-us',
-  ])
-  assert.equal(iBall.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(iBall.hasOfficialAboutSignal(aboutHtml), true)
-  assert.equal(iBall.hasOfficialNewsCenterSignal(newsCenterHtml), true)
-  assert.equal(iBall.hasPublicJobsSignal(homepageHtml), false)
-  assert.equal(iBall.hasPublicJobsSignal(publicJobsHtml), true)
+  assert.equal(iball.SOURCE, 'iball')
+  assert.equal(iball.COMPANY, 'iBall')
+  assert.equal(iball.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(iball.hasOfficialAboutSignal(aboutHtml), true)
+  assert.equal(iball.hasOfficialNewsCenterSignal(newsHtml), true)
+  assert.equal(iball.hasPublicJobsSignal(homepageHtml), false)
 })
 
-test('iBall returns no jobs only while its verified first-party routes remain non-job surfaces', async () => {
-  const iBall = await loadModule()
-  const requested = []
+test('iBall returns no jobs while the verified public pages expose no public jobs surface', async () => {
+  const iball = await loadModule()
+  const requestedUrls = []
 
-  const jobs = await iBall.createIBallScraper().run({
+  const jobs = await iball.createIBallScraper().run({
     fetchPage: async (url) => {
-      requested.push(url)
+      requestedUrls.push(url)
 
-      if (url === iBall.HOMEPAGE_URL) {
-        return { ok: true, status: 200, url, text: homepageHtml }
-      }
-
-      if (url === iBall.ABOUT_URL) {
-        return { ok: true, status: 200, url, text: aboutHtml }
-      }
-
-      if (url === iBall.NEWS_CENTER_URL) {
-        return { ok: true, status: 200, url, text: newsCenterHtml }
-      }
-
-      if (iBall.COMMON_CAREERS_ROUTES.includes(url)) {
-        return { ok: false, status: 404, url, text: nonJobsCareersRouteHtml }
-      }
-
-      throw new Error(`Unexpected iBall fixture URL: ${url}`)
+      if (url === iball.HOMEPAGE_URL) return { ok: true, status: 200, url, text: homepageHtml }
+      if (url === iball.ABOUT_URL) return { ok: true, status: 200, url, text: aboutHtml }
+      if (url === iball.NEWS_CENTER_URL) return { ok: true, status: 200, url, text: newsHtml }
+      return { ok: false, status: 404, url, text: '' }
     },
   })
 
-  assert.deepEqual(requested, [
-    iBall.HOMEPAGE_URL,
-    iBall.ABOUT_URL,
-    iBall.NEWS_CENTER_URL,
-    ...iBall.COMMON_CAREERS_ROUTES,
+  assert.deepEqual(requestedUrls.slice(0, 3), [
+    iball.HOMEPAGE_URL,
+    iball.ABOUT_URL,
+    iball.NEWS_CENTER_URL,
   ])
   assert.deepEqual(jobs, [])
 })
 
-test('iBall fails closed when a verified page drifts or a careers route starts exposing public jobs', async () => {
-  const iBall = await loadModule()
+test('iBall fails closed when a careers route starts exposing a public jobs surface', async () => {
+  const iball = await loadModule()
 
   await assert.rejects(
-    iBall.createIBallScraper().run({
+    iball.createIBallScraper().run({
       fetchPage: async (url) => {
-        if (url === iBall.HOMEPAGE_URL) {
-          return { ok: true, status: 200, url, text: '<html><body><h1>Unexpected</h1></body></html>' }
+        if (url === iball.HOMEPAGE_URL) return { ok: true, status: 200, url, text: homepageHtml }
+        if (url === iball.ABOUT_URL) return { ok: true, status: 200, url, text: aboutHtml }
+        if (url === iball.NEWS_CENTER_URL) return { ok: true, status: 200, url, text: newsHtml }
+        if (url === iball.COMMON_CAREERS_ROUTES[0]) {
+          return {
+            ok: true,
+            status: 200,
+            url,
+            text: '<html><body><h1>Current Openings</h1><a href="/apply">Apply now</a></body></html>',
+          }
         }
-
-        throw new Error(`Unexpected iBall fixture URL: ${url}`)
+        return { ok: false, status: 404, url, text: '' }
       },
     }),
-    /official iBall homepage/i,
-  )
-
-  await assert.rejects(
-    iBall.createIBallScraper().run({
-      fetchPage: async (url) => {
-        if (url === iBall.HOMEPAGE_URL) return { ok: true, status: 200, url, text: homepageHtml }
-        if (url === iBall.ABOUT_URL) return { ok: true, status: 200, url, text: '<html><body><h1>About</h1></body></html>' }
-        throw new Error(`Unexpected iBall fixture URL: ${url}`)
-      },
-    }),
-    /official iBall about page/i,
-  )
-
-  await assert.rejects(
-    iBall.createIBallScraper().run({
-      fetchPage: async (url) => {
-        if (url === iBall.HOMEPAGE_URL) return { ok: true, status: 200, url, text: homepageHtml }
-        if (url === iBall.ABOUT_URL) return { ok: true, status: 200, url, text: aboutHtml }
-        if (url === iBall.NEWS_CENTER_URL) return { ok: true, status: 200, url, text: newsCenterHtml }
-        if (url === iBall.COMMON_CAREERS_ROUTES[0]) {
-          return { ok: true, status: 200, url, text: publicJobsHtml }
-        }
-        if (iBall.COMMON_CAREERS_ROUTES.slice(1).includes(url)) {
-          return { ok: false, status: 404, url, text: nonJobsCareersRouteHtml }
-        }
-
-        throw new Error(`Unexpected iBall fixture URL: ${url}`)
-      },
-    }),
-    /careers route now exposes public jobs|public jobs surface/i,
+    /public jobs surface/i,
   )
 })

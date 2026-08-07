@@ -45,15 +45,10 @@ const SMARTRECRUITERS_BOARD_HTML = `
     <title>Careers at Nagarro</title>
   </head>
   <body>
+    <a href="/">Home Page</a>
+    <div>Search job openings, e.g. "manager"</div>
+    <a href="#">Clear search results</a>
     <h1>Jobs at Nagarro</h1>
-    <section>
-      <h3>Bengaluru, India</h3>
-      <span>32 jobs</span>
-    </section>
-    <section>
-      <h3>Remote, India</h3>
-      <span>342 jobs</span>
-    </section>
   </body>
 </html>
 `
@@ -171,6 +166,7 @@ test('Nagarro constants stay pinned to the verified first-party careers pages an
     nagarro.SMARTRECRUITERS_APPLY_URL,
     'https://join.smartrecruiters.com/Nagarro1/338a6454-a0d3-4121-a6c2-51696acb91a3-website-applications',
   )
+  assert.equal(nagarro.DETAIL_FETCH_CONCURRENCY, 8)
   assert.equal(nagarro.hasOfficialCareersLandingSignal(CAREERS_LANDING_HTML), true)
   assert.equal(nagarro.hasOfficialJobSearchSignal(JOB_SEARCH_HTML), true)
   assert.equal(nagarro.hasVerifiedSmartRecruitersBoardSignal(SMARTRECRUITERS_BOARD_HTML), true)
@@ -247,12 +243,280 @@ test('Nagarro validates the first-party careers surface and maps SmartRecruiters
     preferredQualification: jobs[0].preferredQualification,
     requiredSkills: [],
     remoteStatus: 'On-site',
+    publicExperienceChecked: true,
     scrapedAt: jobs[0].scrapedAt,
   })
 
   assert.match(jobs[0].jobDescription ?? '', /distributed backend services/i)
   assert.match(jobs[0].minimumQualification ?? '', /microservices/i)
   assert.match(jobs[0].preferredQualification ?? '', /distributed engineering teams/i)
+})
+
+test('Nagarro preserves sparse public detail payloads as checked without triggering downstream page refetches', async () => {
+  const nagarro = await loadModule()
+
+  const jobs = await nagarro.createNagarroScraper().run({
+    fetchText: async (url) => {
+      if (url === nagarro.CAREERS_LANDING_URL) return CAREERS_LANDING_HTML
+      if (url === nagarro.JOB_SEARCH_URL) return JOB_SEARCH_HTML
+      if (url === nagarro.SMARTRECRUITERS_BOARD_URL) return SMARTRECRUITERS_BOARD_HTML
+      throw new Error(`Unexpected Nagarro text fixture URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (
+        url
+        === 'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings?limit=100&country=in&offset=0'
+      ) {
+        return {
+          totalFound: 1,
+          content: [LISTINGS_PAYLOAD.content[0]],
+        }
+      }
+
+      if (url === 'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings/744000138066871') {
+        return {
+          ...DETAIL_PAYLOAD,
+          jobAd: {
+            sections: {
+              jobDescription: { text: '' },
+              qualifications: { text: '' },
+              additionalInformation: {
+                text:
+                  '<p><a href="https://www.nagarro.com/hubfs/NagarroWebsiteRedesign-Aug2020/Assets/Docs/Applicant%20Privacy%20Notice-EN.pdf">Click here to access the application privacy notice</a></p>',
+              },
+            },
+          },
+        }
+      }
+
+      throw new Error(`Unexpected Nagarro JSON fixture URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(
+    jobs[0].jobDescription ?? '',
+    /detail api exposed only the applicant privacy notice/i,
+  )
+  assert.match(
+    jobs[0].preferredQualification ?? '',
+    /application privacy notice|applicant%20privacy%20notice/i,
+  )
+})
+
+test('Nagarro rewrites motivational SmartRecruiters shells into checked source summaries', async () => {
+  const nagarro = await loadModule()
+
+  const jobs = await nagarro.createNagarroScraper().run({
+    fetchText: async (url) => {
+      if (url === nagarro.CAREERS_LANDING_URL) return CAREERS_LANDING_HTML
+      if (url === nagarro.JOB_SEARCH_URL) return JOB_SEARCH_HTML
+      if (url === nagarro.SMARTRECRUITERS_BOARD_URL) return SMARTRECRUITERS_BOARD_HTML
+      throw new Error(`Unexpected Nagarro text fixture URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (
+        url
+        === 'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings?limit=100&country=in&offset=0'
+      ) {
+        return {
+          totalFound: 1,
+          content: [LISTINGS_PAYLOAD.content[0]],
+        }
+      }
+
+      if (url === 'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings/744000138066871') {
+        return {
+          ...DETAIL_PAYLOAD,
+          name: 'Associate Staff Engineer',
+          postingUrl:
+            'https://jobs.smartrecruiters.com/Nagarro1/743999982757594-associate-staff-engineer',
+          applyUrl:
+            'https://jobs.smartrecruiters.com/Nagarro1/743999982757594-associate-staff-engineer?oga=true',
+          jobAd: {
+            sections: {
+              jobDescription: {
+                text: `
+                  <p>By this point in your career, it is not just about the tech you know or how well you can code.</p>
+                  <p>It is about what more you want to do with that knowledge.</p>
+                  <p>Were you given the tools to go beyond solving for X?</p>
+                  <p>Can you help your teammates proceed in the right direction?</p>
+                `,
+              },
+              qualifications: { text: '' },
+              additionalInformation: {
+                text:
+                  '<p><a href="https://www.nagarro.com/hubfs/NagarroWebsiteRedesign-Aug2020/Assets/Docs/Applicant%20Privacy%20Notice-EN.pdf">Click here to access the application privacy notice</a></p>',
+              },
+            },
+          },
+        }
+      }
+
+      throw new Error(`Unexpected Nagarro JSON fixture URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription ?? '', /official nagarro smartrecruiters posting/i)
+  assert.doesNotMatch(jobs[0].jobDescription ?? '', /by this point in your career/i)
+})
+
+test('Nagarro promotes qualification-only public detail payloads into checked descriptions', async () => {
+  const nagarro = await loadModule()
+
+  const jobs = await nagarro.createNagarroScraper().run({
+    fetchText: async (url) => {
+      if (url === nagarro.CAREERS_LANDING_URL) return CAREERS_LANDING_HTML
+      if (url === nagarro.JOB_SEARCH_URL) return JOB_SEARCH_HTML
+      if (url === nagarro.SMARTRECRUITERS_BOARD_URL) return SMARTRECRUITERS_BOARD_HTML
+      throw new Error(`Unexpected Nagarro text fixture URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (
+        url
+        === 'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings?limit=100&country=in&offset=0'
+      ) {
+        return {
+          totalFound: 1,
+          content: [LISTINGS_PAYLOAD.content[0]],
+        }
+      }
+
+      if (url === 'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings/744000138066871') {
+        return {
+          ...DETAIL_PAYLOAD,
+          name: 'Associate Principal Consultant, Business Analyst',
+          postingUrl:
+            'https://jobs.smartrecruiters.com/Nagarro1/743999982752143-associate-principal-consultant-business-analyst',
+          applyUrl:
+            'https://jobs.smartrecruiters.com/Nagarro1/743999982752143-associate-principal-consultant-business-analyst?oga=true',
+          jobAd: {
+            sections: {
+              jobDescription: { text: '' },
+              qualifications: {
+                text: `
+                  <ul>
+                    <li>8+ years of experience in business analysis, with a focus on software development projects.</li>
+                    <li>Strong expertise in software development processes, methodologies, and tools.</li>
+                  </ul>
+                `,
+              },
+              additionalInformation: {
+                text:
+                  '<p><a href="https://www.nagarro.com/hubfs/NagarroWebsiteRedesign-Aug2020/Assets/Docs/Applicant%20Privacy%20Notice-EN.pdf">Click here to access the application privacy notice</a></p>',
+              },
+            },
+          },
+        }
+      }
+
+      throw new Error(`Unexpected Nagarro JSON fixture URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.match(jobs[0].jobDescription ?? '', /8\+ years of experience in business analysis/i)
+})
+
+test('Nagarro overlaps detail API fetches so the large India job feed does not crawl serially', async () => {
+  const nagarro = await loadModule()
+  let activeDetailRequests = 0
+  let maxActiveDetailRequests = 0
+
+  const listingsPayload = {
+    totalFound: 3,
+    content: [
+      {
+        ...LISTINGS_PAYLOAD.content[0],
+        id: '744000138066871',
+        refNumber: 'REF-NAG-100',
+      },
+      {
+        ...LISTINGS_PAYLOAD.content[0],
+        id: '744000138066872',
+        refNumber: 'REF-NAG-101',
+        name: 'Lead Engineer, Java',
+      },
+      {
+        ...LISTINGS_PAYLOAD.content[0],
+        id: '744000138066873',
+        refNumber: 'REF-NAG-102',
+        name: 'Principal Engineer, Data',
+      },
+    ],
+  }
+
+  const detailPayloads = new Map([
+    [
+      'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings/744000138066871',
+      DETAIL_PAYLOAD,
+    ],
+    [
+      'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings/744000138066872',
+      {
+        ...DETAIL_PAYLOAD,
+        id: '744000138066872',
+        refNumber: 'REF-NAG-101',
+        name: 'Lead Engineer, Java',
+        postingUrl: 'https://jobs.smartrecruiters.com/Nagarro1/744000138066872-lead-engineer-java',
+        applyUrl:
+          'https://jobs.smartrecruiters.com/Nagarro1/744000138066872-lead-engineer-java?oga=true',
+      },
+    ],
+    [
+      'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings/744000138066873',
+      {
+        ...DETAIL_PAYLOAD,
+        id: '744000138066873',
+        refNumber: 'REF-NAG-102',
+        name: 'Principal Engineer, Data',
+        postingUrl:
+          'https://jobs.smartrecruiters.com/Nagarro1/744000138066873-principal-engineer-data',
+        applyUrl:
+          'https://jobs.smartrecruiters.com/Nagarro1/744000138066873-principal-engineer-data?oga=true',
+      },
+    ],
+  ])
+
+  const jobs = await nagarro.createNagarroScraper({ maxJobs: 3 }).run({
+    fetchText: async (url) => {
+      if (url === nagarro.CAREERS_LANDING_URL) return CAREERS_LANDING_HTML
+      if (url === nagarro.JOB_SEARCH_URL) return JOB_SEARCH_HTML
+      if (url === nagarro.SMARTRECRUITERS_BOARD_URL) return SMARTRECRUITERS_BOARD_HTML
+      throw new Error(`Unexpected Nagarro text fixture URL: ${url}`)
+    },
+    fetchJson: async (url, options = {}) => {
+      if (
+        url
+        === 'https://api.smartrecruiters.com/v1/companies/Nagarro1/postings?limit=100&country=in&offset=0'
+      ) {
+        assert.equal(options.method, 'GET')
+        return listingsPayload
+      }
+
+      const detailPayload = detailPayloads.get(url)
+      if (!detailPayload) {
+        throw new Error(`Unexpected Nagarro JSON fixture URL: ${url}`)
+      }
+
+      activeDetailRequests += 1
+      maxActiveDetailRequests = Math.max(maxActiveDetailRequests, activeDetailRequests)
+      await new Promise((resolve) => setTimeout(resolve, 25))
+      activeDetailRequests -= 1
+
+      return detailPayload
+    },
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.ok(
+    maxActiveDetailRequests >= 2,
+    `Expected overlapping Nagarro detail requests, saw max concurrency ${maxActiveDetailRequests}`,
+  )
 })
 
 test('Nagarro fails closed when the verified first-party careers surface or SmartRecruiters company wiring drifts', async () => {

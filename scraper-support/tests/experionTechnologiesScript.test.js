@@ -17,7 +17,7 @@ const listingsHtml = `
     <link rel="canonical" href="https://experionglobal.com/job-openings/" />
   </head>
   <body>
-    <h1>Careers at Experion</h1>
+    <h1>Job Openings</h1>
     <div class="career-jobs-ajax-wrapper">
       <div class="career-jobs-container">
         <a href="https://experionglobal.com/jobs/senior-director-delivery-services/" class="career-job-row" data-exp="18+ Years" data-loc="Kochi, Trivandrum">

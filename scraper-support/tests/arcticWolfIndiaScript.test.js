@@ -118,6 +118,27 @@ const filteredIndiaJobsPayload = {
   ],
 }
 
+const detailPageHtml = `
+<!doctype html>
+<html lang="en-US">
+  <body>
+    <section data-automation-id="jobPostingDescription">
+      <div>
+        <p>Experience and Requirements:</p>
+        <p>Minimum Qualifications BS degree in Information Technology/Computer Science or equivalent combination of education and experience.</p>
+        <p>2 years of demonstrated experience in ServiceNow development, administration, or configuration.</p>
+      </div>
+    </section>
+    <div data-automation-id="postedOn">
+      <dl>
+        <dt>posted on</dt>
+        <dd>Posted 30+ Days Ago</dd>
+      </dl>
+    </div>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/arcticwolfindia.workday/script.js')
@@ -292,6 +313,14 @@ test('run validates the verified first-party handoff and extracts Arctic Wolf In
         return officialWorkdayBoardPage
       }
 
+      if (url.startsWith('https://arcticwolf.wd1.myworkdayjobs.com/External/job/')) {
+        return {
+          status: 200,
+          url,
+          html: detailPageHtml,
+        }
+      }
+
       throw new Error(`Unexpected Arctic Wolf India page URL: ${url}`)
     },
     fetchJson: async (url, body) => {
@@ -308,6 +337,9 @@ test('run validates the verified first-party handoff and extracts Arctic Wolf In
   assert.deepEqual(requestedPages, [
     arcticWolfIndia.CAREERS_URL,
     arcticWolfIndia.WORKDAY_BOARD_URL,
+    'https://arcticwolf.wd1.myworkdayjobs.com/External/job/Bengaluru-IND/Senior-Quality-Engineer-2_R26_478',
+    'https://arcticwolf.wd1.myworkdayjobs.com/External/job/Bengaluru-IND/People-Experience-Specialist_R26_786',
+    'https://arcticwolf.wd1.myworkdayjobs.com/External/job/Remote---IND---Karnataka/Manager---Business-Applications_R26_597-2',
   ])
   assert.deepEqual(requestedJsonBodies, [
     JSON.parse(arcticWolfIndia.buildUnfilteredJobsRequestBody({ offset: 0 })),
@@ -326,6 +358,9 @@ test('run validates the verified first-party handoff and extracts Arctic Wolf In
     'https://arcticwolf.wd1.myworkdayjobs.com/External/job/Bengaluru-IND/Senior-Quality-Engineer-2_R26_478/apply',
   )
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[0].experienceRequired, '2 years')
+  assert.match(jobs[0].jobDescription, /2 years of demonstrated experience in ServiceNow development/)
+  assert.equal(jobs[0].minimumQualification, null)
 })
 
 test('Arctic Wolf India fails closed when the verified careers handoff, public Workday board, or India facet changes materially', async () => {

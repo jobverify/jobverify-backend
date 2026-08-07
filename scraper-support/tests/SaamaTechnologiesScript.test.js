@@ -7,12 +7,14 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers | Saama</title>
+    <title>Careers | Saama - #1 in AI Clinical Analytics</title>
   </head>
   <body>
     <h1>Careers</h1>
     <p>Explore our openings.</p>
-    <a href="https://jobs.jobvite.com/saama/">View Open Roles</a>
+    <script>Jobvite = { careersite: 'saama' };</script>
+    <div class="jv-careersite" data-careersite="saama" data-region=""></div>
+    <script src="https://jobs.jobvite.com/__assets__/scripts/careersite/public/iframe.js"></script>
   </body>
 </html>
 `
@@ -23,17 +25,29 @@ const boardHtml = `
   <body>
     <h2>Current Openings</h2>
     <p>Powered by Jobvite</p>
-    <section class="category">
-      <h3>Technology</h3>
-      <div class="job-row">
-        <a href="/saama/job/o0xXtfwH">Senior Site Reliability Engineer</a>
-        <span class="job-location">Chennai, India</span>
-      </div>
-      <div class="job-row">
-        <a href="/saama/job/oUS123">Solutions Consultant</a>
-        <span class="job-location">Boston, United States</span>
-      </div>
-    </section>
+    <h3 class="h2">Engineering</h3>
+    <table class="jv-job-list">
+      <tbody>
+        <tr>
+          <td class="jv-job-list-name">
+            <a href="/saama/job/o0xXtfwH">Senior Site Reliability Engineer</a>
+          </td>
+          <td class="jv-job-list-location">
+            Chennai,
+            India
+          </td>
+        </tr>
+        <tr>
+          <td class="jv-job-list-name">
+            <a href="/saama/job/oUS123">Solutions Consultant</a>
+          </td>
+          <td class="jv-job-list-location">
+            Boston,
+            United States
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </body>
 </html>
 `
@@ -47,15 +61,13 @@ const indiaDetailHtml = `
         "title": "Senior Site Reliability Engineer",
         "jobLocation": {
           "address": {
-            "addressLocality": "Chennai",
-            "addressRegion": "Tamil Nadu",
             "addressCountry": "India"
           }
         }
       }
     </script>
     <h2>Senior Site Reliability Engineer</h2>
-    <p class="job-meta">Technology Chennai, India</p>
+    <p class="job-meta">Engineering Chennai, India</p>
     <h3>Description</h3>
     <ul>
       <li>Kubernetes</li>
@@ -128,10 +140,10 @@ test('Saama Technologies validates the verified Jobvite handoff and keeps only I
     {
       title: 'Senior Site Reliability Engineer',
       company: 'Saama Technologies',
-      department: 'Technology',
-      location: 'Chennai, Tamil Nadu, India',
+      department: 'Engineering',
+      location: 'Chennai, India',
       city: 'Chennai',
-      state: 'Tamil Nadu',
+      state: null,
       country: 'India',
       jobId: 'o0xXtfwH',
       requisitionId: 'o0xXtfwH',

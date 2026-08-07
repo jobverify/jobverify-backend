@@ -5,21 +5,21 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'revgainai'
 export const COMPANY = 'RevGain AI'
-export const HOMEPAGE_URL = 'https://www.revgain.ai/'
-export const SITEMAP_URL = 'https://www.revgain.ai/sitemap.xml'
+export const HOMEPAGE_URL = 'https://revgain.ai/'
+export const SITEMAP_URL = 'https://revgain.ai/sitemap.xml'
 export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
-  'https://www.revgain.ai/careers',
-  'https://www.revgain.ai/careers/',
-  'https://www.revgain.ai/career',
-  'https://www.revgain.ai/career/',
-  'https://www.revgain.ai/jobs',
-  'https://www.revgain.ai/jobs/',
-  'https://www.revgain.ai/join-us',
-  'https://www.revgain.ai/join-us/',
-  'https://www.revgain.ai/openings',
-  'https://www.revgain.ai/openings/',
-  'https://www.revgain.ai/work-with-us',
-  'https://www.revgain.ai/work-with-us/',
+  'https://revgain.ai/careers',
+  'https://revgain.ai/careers/',
+  'https://revgain.ai/career',
+  'https://revgain.ai/career/',
+  'https://revgain.ai/jobs',
+  'https://revgain.ai/jobs/',
+  'https://revgain.ai/join-us',
+  'https://revgain.ai/join-us/',
+  'https://revgain.ai/openings',
+  'https://revgain.ai/openings/',
+  'https://revgain.ai/work-with-us',
+  'https://revgain.ai/work-with-us/',
 ]
 
 const USER_AGENT =
@@ -95,12 +95,15 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*RevGain \| Revolutionize Retention &amp; Expansion with AI-Powered Growth\s*<\/title>/i.test(page)
-    && /<meta[^>]+name=["']description["'][^>]+RevGain Revenue Platform transforms your growth flywheel by enabling higher retention(?:\s+and\s+|(?:\s|&amp;)+)expansion\./i.test(page)
-    && normalized.includes('The revenue platform that Transforms your Growth Flywheel')
-    && normalized.includes('RevGain Revenue Platform enables higher retention & expansion of your growth flywheel, with an augmented workforce of Human + AI working together.')
-    && normalized.includes('Reducing friction in the flywheel & eliminating internal silos unlocks 4-6x Revenue Growth')
-    && normalized.includes('Drive Engagement with Customer Data, Insights & Actions')
+  return /<title>\s*RevGain\s+[—-]\s+AI Revenue Engine\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+RevGain is an AI-powered revenue platform that drives retention and expansion by pairing your team with an augmented workforce of AI agents\./i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/revgain\.ai\/["']/i.test(page)
+    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']RevGain["']/i.test(page)
+    && /"@type"\s*:\s*"Organization"/i.test(page)
+    && /"name"\s*:\s*"RevGain"/i.test(page)
+    && /"email"\s*:\s*"info@revgain\.ai"/i.test(page)
+    && /<div[^>]+id=["']app["'][^>]*><\/div>/i.test(page)
+    && normalized.includes('RevGain')
 }
 
 export const sitemapHasCareerLikeUrl = (xml) => {
@@ -117,10 +120,13 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
   const raw = normalizeHtml(page?.html)
 
   return Number(page?.status) === 404
-    && raw.includes('<title>page not found | framer</title>')
-    && normalized.includes('Page Not Found')
-    && normalized.includes('The page you are looking for does not exist or may have been moved.')
-    && normalized.includes('Back to Home')
+    && (raw === ''
+      || (
+        raw.includes('<title>page not found | framer</title>')
+        && normalized.includes('Page Not Found')
+        && normalized.includes('The page you are looking for does not exist or may have been moved.')
+        && normalized.includes('Back to Home')
+      ))
     && !hasUnexpectedCareerLikeLink(page?.html)
     && !hasPublicJobsSignal(page?.html)
 }

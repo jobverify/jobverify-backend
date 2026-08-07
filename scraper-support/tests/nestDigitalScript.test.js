@@ -42,6 +42,38 @@ const careersPageHtml = `
 </html>
 `
 
+const liveShapeCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <section>
+        <h1>Give Wings to your dreams at NeST Digital!</h1>
+        <a href="https://careers.nestdigital.com/">EXPLORE NOW</a>
+      </section>
+
+      <section>
+        <h2 class="elementor-heading-title elementor-size-default">Latest Jobs</h2>
+        <a href="https://careers.nestdigital.com/apply?job=2501" class="card">
+          <div class='title'> QA Architect</div>
+          <div class="jobOtherInfo">
+            <div class='jobLocation'>Kochi Ntp-Kerala</div>
+            <div>Full Time</div>
+          </div>
+        </a>
+        <a href="https://careers.nestdigital.com/apply?job=2581" class="card">
+          <div class='title'> Senior Software Engineer-SDET</div>
+          <div class="jobOtherInfo">
+            <div class='jobLocation'>Bangalore-Karnataka</div>
+            <div>Full Time</div>
+          </div>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 test('NeST Digital scraper recognizes the verified official careers page and extracts inline latest-job cards', async () => {
   const nestDigital = await loadNestDigitalModule()
 
@@ -75,6 +107,30 @@ test('NeST Digital scraper recognizes the verified official careers page and ext
       employmentType: 'Contract',
       sourceUrl: 'https://careers.nestdigital.com/jobs/senior-systems-engineer-it',
       applyUrl: 'https://careers.nestdigital.com/jobs/senior-systems-engineer-it',
+    },
+  ])
+})
+
+test('NeST Digital scraper also parses the Monday, August 3, 2026 div-based latest-job cards', async () => {
+  const nestDigital = await loadNestDigitalModule()
+
+  assert.equal(nestDigital.hasOfficialCareersSignal(liveShapeCareersPageHtml), true)
+  assert.deepEqual(nestDigital.extractLatestJobs(liveShapeCareersPageHtml), [
+    {
+      title: 'QA Architect',
+      location: 'Kochi Ntp, Kerala, India',
+      city: 'Kochi',
+      employmentType: 'Full Time',
+      sourceUrl: 'https://careers.nestdigital.com/apply?job=2501',
+      applyUrl: 'https://careers.nestdigital.com/apply?job=2501',
+    },
+    {
+      title: 'Senior Software Engineer-SDET',
+      location: 'Bangalore, Karnataka, India',
+      city: 'Bangalore',
+      employmentType: 'Full Time',
+      sourceUrl: 'https://careers.nestdigital.com/apply?job=2581',
+      applyUrl: 'https://careers.nestdigital.com/apply?job=2581',
     },
   ])
 })

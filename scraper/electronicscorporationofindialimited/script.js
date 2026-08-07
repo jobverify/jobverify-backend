@@ -227,7 +227,12 @@ export const createElectronicsCorporationOfIndiaLimitedScraper = () => ({
     }
 
     const pageOneSummary = extractPaginationSummary(pageOneHtml)
-    if (!pageOneSummary || pageOneSummary.start !== 1 || pageOneSummary.end !== 10 || pageOneSummary.total !== 12) {
+    if (
+      !pageOneSummary
+      || pageOneSummary.start !== 1
+      || pageOneSummary.end !== 10
+      || pageOneSummary.total <= 10
+    ) {
       throw new Error('Electronics Corporation of India Limited page 1 pagination contract changed')
     }
 
@@ -241,7 +246,12 @@ export const createElectronicsCorporationOfIndiaLimitedScraper = () => ({
     }
 
     const pageTwoSummary = extractPaginationSummary(pageTwoHtml)
-    if (!pageTwoSummary || pageTwoSummary.start !== 11 || pageTwoSummary.end !== 12 || pageTwoSummary.total !== 12) {
+    if (
+      !pageTwoSummary
+      || pageTwoSummary.start !== 11
+      || pageTwoSummary.end < 12
+      || pageTwoSummary.total !== pageTwoSummary.end
+    ) {
       throw new Error('Electronics Corporation of India Limited page 2 pagination contract changed')
     }
 

@@ -47,8 +47,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers - A Lifetime Opportunity to Shape Your Career \| Testbook\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/testbook\.com\/careers["']/i.test(page)
+  return text.includes('Careers - A Lifetime Opportunity to Shape Your Career | Testbook')
     && text.includes('Explore Open Positions')
     && text.includes('View open positions')
     && page.includes('https://jobs.plutuseducation.com')

@@ -17,7 +17,7 @@ const searchPage1Html = `
     <ul id="job-tile-list" data-per-page="25" data-record-returned="25">
       <li class="job-tile job-id-57744744" data-url="/ecofirst/job/Navi-Mumbai-Environment-Expert-C2-Environment-Design-Engineering-MH-400708/57744744/">
         <div class="tiletitle">
-          <a class="jobTitle-link" href="/ecofirst/job/Navi-Mumbai-Environment-Expert-C2-Environment-Design-Engineering-MH-400708/57744744/">
+          <a class="jobTitle-link fontcolordce4d35b866e67be" href="/ecofirst/job/Navi-Mumbai-Environment-Expert-C2-Environment-Design-Engineering-MH-400708/57744744/">
             Environment Expert-C2-Environment-Design Engineering
           </a>
         </div>
@@ -36,7 +36,7 @@ const searchPage1Html = `
       </li>
       <li class="job-tile job-id-57523844" data-url="/job/Pune-Construction-Engineer-E4-Safety-Construction-Engineering-MH-411021/57523844/">
         <div class="tiletitle">
-          <a class="jobTitle-link" href="/job/Pune-Construction-Engineer-E4-Safety-Construction-Engineering-MH-411021/57523844/">
+          <a class="jobTitle-link fontcolordce4d35b866e67be" href="/job/Pune-Construction-Engineer-E4-Safety-Construction-Engineering-MH-411021/57523844/">
             Construction Engineer-E4-Safety-Construction Engineering
           </a>
         </div>
@@ -72,7 +72,7 @@ const searchPage2Html = `
     <ul id="job-tile-list" data-per-page="25" data-record-returned="22">
       <li class="job-tile job-id-57070944" data-url="/job/Pune-Site-Manager-Mechanical-MH-411021/57070944/">
         <div class="tiletitle">
-          <a class="jobTitle-link" href="/job/Pune-Site-Manager-Mechanical-MH-411021/57070944/">
+          <a class="jobTitle-link fontcolordce4d35b866e67be" href="/job/Pune-Site-Manager-Mechanical-MH-411021/57070944/">
             Site Manager-Mechanical
           </a>
         </div>
@@ -166,7 +166,10 @@ test('buildSearchUrl keeps Tata Consulting Engineers on the official public Succ
 })
 
 test('extractSearchResults keeps Tata Consulting Engineers jobs and filters the separate EcoFirst route', async () => {
-  const { extractSearchResults } = await loadTceModule()
+  const { extractSearchResults, hasOfficialSearchResultsSignal } = await loadTceModule()
+
+  assert.equal(hasOfficialSearchResultsSignal(searchPage1Html), true)
+
   const jobs = extractSearchResults(searchPage1Html)
 
   assert.equal(jobs.length, 1)

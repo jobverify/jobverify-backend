@@ -32,7 +32,7 @@ const assertHydratedCatalogLoadsScript = async (provider) => {
   assert.equal(typeof module.run, 'function')
 }
 
-test('Lloyds Technology Centre catalog captures the verified exact-name careers handoff plus current Workday maintenance state', async () => {
+test('Lloyds Technology Centre catalog captures the verified exact-name careers handoff and Workday jobs API', async () => {
   const { LLOYDS_TECHNOLOGY_CENTRE_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(LLOYDS_TECHNOLOGY_CENTRE_CATALOG)
 
@@ -44,18 +44,19 @@ test('Lloyds Technology Centre catalog captures the verified exact-name careers 
   assert.equal(provider.homepageUrl, 'https://lloydstechnologycentre.com/')
   assert.equal(provider.companyCareerPage, 'https://lloydstechnologycentre.com/')
   assert.equal(provider.officialWorkdayBoardUrl, 'https://lbg.wd3.myworkdayjobs.com/Lloyds_Technology_Centre')
-  assert.equal(provider.atsPlatform, 'official-careers-handoff-workday-maintenance')
-  assert.equal(provider.paginationStrategy, 'first-party-handoff-plus-live-maintenance-check')
+  assert.equal(provider.jobsApiUrl, 'https://lbg.wd3.myworkdayjobs.com/wday/cxs/lbg/Lloyds_Technology_Centre/jobs')
+  assert.equal(provider.atsPlatform, 'official-careers-handoff-workday')
+  assert.equal(provider.paginationStrategy, 'Workday jobs API offset pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-workday-handoff+verified-workday-maintenance-page+return-empty',
+    'verified-first-party-careers-page+verified-workday-handoff+verified-workday-shell+paginated-workday-jobs-api',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-03')
   assert.equal(provider.companyDomain, 'lloydstechnologycentre.com')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /Search and apply/i)
-  assert.match(provider.verifiedSurfaceSummary, /Workday is currently unavailable/i)
-  assert.match(provider.verifiedSurfaceSummary, /planned maintenance/i)
+  assert.match(provider.verifiedSurfaceSummary, /recovered Workday shell/i)
+  assert.match(provider.verifiedSurfaceSummary, /paginated jobs API/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

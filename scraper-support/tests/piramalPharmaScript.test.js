@@ -124,6 +124,65 @@ const FILTERED_INDIA_JOBS_PAYLOAD = {
   ],
 }
 
+const DETAIL_PAGE_BY_URL = {
+  'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/MahadMH/Executive---Production_R00000427': {
+    status: 200,
+    url: 'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/MahadMH/Executive---Production_R00000427',
+    html: `
+      <html>
+        <body>
+          <div data-automation-id="postedOn">
+            <dl>
+              <dt>posted on</dt>
+              <dd>Posted Today</dd>
+            </dl>
+          </div>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>Production role for oral solid dosage manufacturing.</p>
+              <p>2 years of demonstrated experience in pharmaceutical production operations.</p>
+            </div>
+          </section>
+          <dl>
+            <dt>Requisition ID</dt>
+            <dd>R00000427</dd>
+          </dl>
+        </body>
+      </html>
+    `,
+  },
+  'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/Digwal-TS/Deputy-Manager---Utility_R00002639': {
+    status: 200,
+    url: 'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/Digwal-TS/Deputy-Manager---Utility_R00002639',
+    html: `
+      <html>
+        <body>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>Lead utility operations across plant systems.</p>
+            </div>
+          </section>
+        </body>
+      </html>
+    `,
+  },
+  'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/India/Executive_R00001421': {
+    status: 200,
+    url: 'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/India/Executive_R00001421',
+    html: `
+      <html>
+        <body>
+          <section data-automation-id="jobPostingDescription">
+            <div>
+              <p>Corporate support role across India operations.</p>
+            </div>
+          </section>
+        </body>
+      </html>
+    `,
+  },
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/piramalpharma.workday/script.js')
@@ -303,6 +362,9 @@ test('Piramal Pharma run validates the official careers handoff and returns Indi
   assert.deepEqual(requestedPages, [
     piramalPharma.CAREERS_URL,
     piramalPharma.WORKDAY_BOARD_URL,
+    'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/MahadMH/Executive---Production_R00000427',
+    'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/Digwal-TS/Deputy-Manager---Utility_R00002639',
+    'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/India/Executive_R00001421',
   ])
   assert.deepEqual(requestedJsonBodies, [
     JSON.parse(piramalPharma.buildUnfilteredJobsRequestBody({ offset: 0 })),
@@ -321,6 +383,52 @@ test('Piramal Pharma run validates the official careers handoff and returns Indi
     'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/MahadMH/Executive---Production_R00000427/apply',
   )
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})
+
+test('Piramal Pharma run enriches canonical detail pages instead of relying on /apply pages', async () => {
+  const piramalPharma = await loadModule()
+  const requestedPages = []
+
+  const jobs = await piramalPharma.createPiramalPharmaScraper({
+    now: () => FIXED_SCRAPED_AT,
+    maxPages: 1,
+  }).run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+
+      if (url === piramalPharma.CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          html: CAREERS_HTML,
+        }
+      }
+
+      if (url === piramalPharma.WORKDAY_BOARD_URL) {
+        return WORKDAY_BOARD_PAGE
+      }
+
+      if (DETAIL_PAGE_BY_URL[url]) {
+        return DETAIL_PAGE_BY_URL[url]
+      }
+
+      throw new Error(`Unexpected Piramal Pharma page URL: ${url}`)
+    },
+    fetchJson: async (_url, body) => {
+      const requestBody = JSON.parse(body)
+      if (Object.keys(requestBody.appliedFacets || {}).length === 0) {
+        return UNFILTERED_JOBS_PAYLOAD
+      }
+      return FILTERED_INDIA_JOBS_PAYLOAD
+    },
+  })
+
+  const productionJob = jobs.find((job) => job.jobId === 'R00000427')
+
+  assert.ok(requestedPages.includes(productionJob.sourceUrl))
+  assert.equal(requestedPages.some((url) => url.endsWith('/apply')), false)
+  assert.equal(productionJob.experienceRequired, '2 years')
+  assert.match(productionJob.jobDescription, /Production role for oral solid dosage manufacturing/i)
 })
 
 test('Piramal Pharma fails closed when the verified careers page, public Workday board, or India country facet changes materially', async () => {

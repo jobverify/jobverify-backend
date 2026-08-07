@@ -39,6 +39,7 @@ test('HNG validates the verified first-party current vacancies page and parses i
       requisitionId: job.requisitionId,
       sourceUrl: job.sourceUrl,
       applyUrl: job.applyUrl,
+      publicExperienceChecked: job.publicExperienceChecked,
     })),
     [
       {
@@ -47,6 +48,7 @@ test('HNG validates the verified first-party current vacancies page and parses i
         requisitionId: 'P01NDP/PCH',
         sourceUrl: 'https://www.hngil.com/p/current-vacancies-1',
         applyUrl: 'https://www.hngil.com/p/current-vacancies-1',
+        publicExperienceChecked: true,
       },
       {
         title: 'Dy.Manager/Asst.Manager',
@@ -54,6 +56,7 @@ test('HNG validates the verified first-party current vacancies page and parses i
         requisitionId: 'P02SNR/NDP/RSR',
         sourceUrl: 'https://www.hngil.com/p/current-vacancies-1',
         applyUrl: 'https://www.hngil.com/p/current-vacancies-1',
+        publicExperienceChecked: true,
       },
       {
         title: 'Shift Engineer',
@@ -61,6 +64,7 @@ test('HNG validates the verified first-party current vacancies page and parses i
         requisitionId: 'P03SNR/NDP',
         sourceUrl: 'https://www.hngil.com/p/current-vacancies-1',
         applyUrl: 'https://www.hngil.com/p/current-vacancies-1',
+        publicExperienceChecked: true,
       },
       {
         title: 'Sr. Technician/Technician/Jr. Technician',
@@ -68,6 +72,7 @@ test('HNG validates the verified first-party current vacancies page and parses i
         requisitionId: 'P03SNR/NDP/RSR/BGH',
         sourceUrl: 'https://www.hngil.com/p/current-vacancies-1',
         applyUrl: 'https://www.hngil.com/p/current-vacancies-1',
+        publicExperienceChecked: true,
       },
       {
         title: 'Dy.GM/AGM',
@@ -75,6 +80,7 @@ test('HNG validates the verified first-party current vacancies page and parses i
         requisitionId: 'Q01RSR',
         sourceUrl: 'https://www.hngil.com/p/current-vacancies-1',
         applyUrl: 'https://www.hngil.com/p/current-vacancies-1',
+        publicExperienceChecked: true,
       },
     ],
   )
@@ -102,6 +108,7 @@ test('HNG scraper returns the verified inline vacancies from the current first-p
       country: job.country,
       sourceUrl: job.sourceUrl,
       applyUrl: job.applyUrl,
+      publicExperienceChecked: job.publicExperienceChecked,
     })),
     [
       {
@@ -110,6 +117,7 @@ test('HNG scraper returns the verified inline vacancies from the current first-p
         country: 'India',
         sourceUrl: hng.CAREERS_URL,
         applyUrl: hng.CAREERS_URL,
+        publicExperienceChecked: true,
       },
       {
         title: 'Dy.Manager/Asst.Manager',
@@ -117,6 +125,7 @@ test('HNG scraper returns the verified inline vacancies from the current first-p
         country: 'India',
         sourceUrl: hng.CAREERS_URL,
         applyUrl: hng.CAREERS_URL,
+        publicExperienceChecked: true,
       },
       {
         title: 'Shift Engineer',
@@ -124,6 +133,7 @@ test('HNG scraper returns the verified inline vacancies from the current first-p
         country: 'India',
         sourceUrl: hng.CAREERS_URL,
         applyUrl: hng.CAREERS_URL,
+        publicExperienceChecked: true,
       },
       {
         title: 'Sr. Technician/Technician/Jr. Technician',
@@ -131,6 +141,7 @@ test('HNG scraper returns the verified inline vacancies from the current first-p
         country: 'India',
         sourceUrl: hng.CAREERS_URL,
         applyUrl: hng.CAREERS_URL,
+        publicExperienceChecked: true,
       },
       {
         title: 'Dy.GM/AGM',
@@ -138,9 +149,11 @@ test('HNG scraper returns the verified inline vacancies from the current first-p
         country: 'India',
         sourceUrl: hng.CAREERS_URL,
         applyUrl: hng.CAREERS_URL,
+        publicExperienceChecked: true,
       },
     ],
   )
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('HNG scraper fails closed when the verified first-party vacancies contract changes materially', async () => {

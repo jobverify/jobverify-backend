@@ -84,6 +84,18 @@ const normalizeExperienceValue = (value) => {
   return normalized.replace(/years experience$/i, 'Years').trim()
 }
 
+const normalizeIndiaLocation = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const withoutTrailingNotes = normalized.replace(/\s*\([^)]*\)\s*$/u, '').trim()
+  if (/\bindia\b/i.test(withoutTrailingNotes)) {
+    return withoutTrailingNotes
+  }
+
+  return `${withoutTrailingNotes}, India`
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -98,7 +110,10 @@ export const hasOfficialIndiaOpeningsSignal = (html = '') => {
   const normalized = normalizeWhitespace(page) || ''
 
   return /<title>\s*Careers\s*-\s*SourceFuse\s*<\/title>/i.test(page)
-    && normalized.includes('India Openings with SourceFuse.')
+    && (
+      normalized.includes('India Openings with SourceFuse.')
+      || /sf-jobs__title-text/i.test(page)
+    )
     && /sf-jobs__list-section/i.test(page)
   }
 
@@ -112,11 +127,14 @@ export const hasApplicationFormSignal = (html = '') => {
 
 export const extractJobCards = (html = '') =>
   String(html ?? '')
-    .split(/<div class="sf-jobs__item">/i)
+    .split(/<div class="sf-jobs__item\b[^>]*>/i)
     .slice(1)
     .map((segment) => {
       const title = stripTags(segment.match(/sf-jobs__title-text">([\s\S]*?)<\/span>/i)?.[1])
-      const [location, experienceFromMeta, positions] = extractMetaTexts(segment)
+      const [metaLocation, experienceFromMeta, positions] = extractMetaTexts(segment)
+      const location = normalizeIndiaLocation(
+        extractLabelValue(segment, 'Location:') || metaLocation,
+      )
       const experienceRequired = normalizeExperienceValue(
         extractLabelValue(segment, 'Work Experience:') || experienceFromMeta,
       )
@@ -140,7 +158,6 @@ export const extractJobCards = (html = '') =>
     .filter((job) => (
       job.title
       && job.location
-      && /,\s*India$/i.test(job.location)
       && job.experienceRequired
       && job.employmentType
       && job.jobDescription

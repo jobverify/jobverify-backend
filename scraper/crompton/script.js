@@ -83,6 +83,7 @@ export const extractSearchResults = (html) => extractJobCards(html)
       applyUrl: entry.applyUrl,
       employmentType: null,
       experienceRequired: null,
+      publicExperienceChecked: true,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
@@ -125,3 +126,16 @@ export const createCromptonScraper = ({
 })
 
 export const run = async () => createCromptonScraper().run()
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  console.log(`Total Crompton India jobs scraped: ${jobs.length}`)
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, 'crompton')
+  }
+}

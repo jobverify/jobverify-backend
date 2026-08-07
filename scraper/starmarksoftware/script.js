@@ -36,9 +36,10 @@ export const hasOfficialStarmarkCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /Careers\s*\|\s*Starmark Software/i.test(page)
-    && text.includes('Open Positions')
-    && text.includes('careers@starmarksoftware.com')
+  return /Careers\s*\|\s*Starmark Software\b/i.test(page)
+    && text.includes('Join Our Team')
+    && text.includes('Join 1200+ professionals')
+    && text.includes('careers@starmarksv.com')
   }
 
 export const pageExposesStructuredJobListings = (html = '') => {

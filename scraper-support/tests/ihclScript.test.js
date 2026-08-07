@@ -8,7 +8,7 @@ const searchPage1Html = `
     <span id="tile-search-results-label">Showing 1 to 25 of 27 Jobs</span>
     <ul id="job-tile-list">
       <li class="job-tile job-id-3248480" data-url="/IHCL/job/Kolkata-Housekeeping-Executive-WB-700027/3248480/">
-        <a class="jobTitle-link" href="/IHCL/job/Kolkata-Housekeeping-Executive-WB-700027/3248480/">Housekeeping Executive</a>
+        <a class="jobTitle-link fontcolor34dd8cc47ac97b84" href="/IHCL/job/Kolkata-Housekeeping-Executive-WB-700027/3248480/">Housekeeping Executive</a>
         <span class="section-label">Business Unit</span>
         <div>Taj Bengal, Kolkata</div>
         <span class="section-label">Department</span>
@@ -19,7 +19,7 @@ const searchPage1Html = `
         <div>15421</div>
       </li>
       <li class="job-tile job-id-53623980" data-url="/IHCL/job/Gongne-ka-Gurha-Duty-Manager-KA-583276/53623980/">
-        <a class="jobTitle-link" href="/IHCL/job/Gongne-ka-Gurha-Duty-Manager-KA-583276/53623980/">Duty Manager</a>
+        <a class="jobTitle-link fontcolor34dd8cc47ac97b84" href="/IHCL/job/Gongne-ka-Gurha-Duty-Manager-KA-583276/53623980/">Duty Manager</a>
         <span class="section-label">Business Unit</span>
         <div>Taj Hampi Resort &amp; Spa, Karnataka</div>
         <span class="section-label">Department</span>
@@ -47,7 +47,7 @@ const searchPage2Html = `
     <span id="tile-search-results-label">Showing 26 to 25 of 27 Jobs</span>
     <ul id="job-tile-list">
       <li class="job-tile job-id-53758980" data-url="/IHCL/job/Goa-Front-Office-Supervisor-GA-403004/53758980/">
-        <a class="jobTitle-link" href="/IHCL/job/Goa-Front-Office-Supervisor-GA-403004/53758980/">Front Office Supervisor</a>
+        <a class="jobTitle-link fontcolor34dd8cc47ac97b84" href="/IHCL/job/Goa-Front-Office-Supervisor-GA-403004/53758980/">Front Office Supervisor</a>
         <span class="section-label">Business Unit</span>
         <div>Taj Cidade de Goa Horizon, Goa</div>
         <span class="section-label">Department</span>
@@ -271,6 +271,7 @@ test('extractJobDetail reads IHCL location, requisition, country, and apply meta
       'Guest issue resolution',
       'Shift leadership',
     ],
+    publicExperienceChecked: true,
     postingDate: '2026-07-16',
     closingDate: '2026-07-17',
     applyUrl: 'https://careers.ihcltata.com/talentcommunity/apply/53623980/?locale=en_GB',
@@ -376,6 +377,9 @@ test('run validates the official IHCL search surface, paginates with startrow, a
   ])
   assert.equal(jobs[0].scrapedAt, '2026-07-16T00:00:00.000Z')
   assert.equal(jobs[2].scrapedAt, '2026-07-16T00:00:00.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[1].publicExperienceChecked, true)
+  assert.equal(jobs[2].publicExperienceChecked, true)
 })
 
 test('run fails closed when the verified IHCL public search surface disappears', async () => {

@@ -55,6 +55,10 @@ const normalizeLocation = (record = {}) => {
   return { location, city, state, country }
 }
 
+const extractTitle = (html) => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
+)
+
 const hasInputWithId = (html, id) =>
   new RegExp(`<input\\b(?=[^>]*\\bid=["']${id}["'])[^>]*>`, 'i').test(String(html ?? ''))
 
@@ -69,8 +73,11 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
+  const title = extractTitle(page)?.toLowerCase() || ''
 
-  return /<title>\s*Careers at MulticoreWare\s*\|\s*Global Technology\s*&(?:amp;)?\s*IT Jobs\s*<\/title>/i.test(page)
+  return title.includes('careers at multicoreware')
+    && title.includes('global technology')
+    && title.includes('it jobs')
     && /meta property=["']og:url["'] content=["']https:\/\/multicorewareinc\.com\/careers\/["']/i.test(page)
     && /meta property=["']og:site_name["'] content=["']MulticoreWare["']/i.test(page)
     && /page_name["']?\s*:\s*["']Careers["']/i.test(page)

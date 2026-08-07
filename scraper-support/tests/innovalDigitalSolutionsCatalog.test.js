@@ -30,11 +30,12 @@ test('Innoval Digital Solutions local catalog captures the verified first-party 
   )
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.parser, 'custom-script')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.modulePath, '../../scraper/innovaldigitalsolutions/script.js')
-  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedOn, '2026-07-17')
+  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.modulePath, '../innovaldigitalsolutions/script.js')
+  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.dryRunFile, 'innovaldigitalsolutions/jobs.json')
   assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.ivldsp\.com\/company\//i)
-  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /We're hiring across engineering/i)
+  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /Life @ IVL/i)
+  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /SAP BTP company overview/i)
 })
 
 test('Innoval Digital Solutions exact backlog row resolves directly from local provider metadata', async () => {

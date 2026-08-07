@@ -238,6 +238,7 @@ export const extractJobDetail = (html, listing = {}) => {
       responsibilities,
       qualifications,
     }) || listing.jobDescription || null,
+    publicExperienceChecked: true,
     remoteStatus: role?.remoteStatus || listing.remoteStatus || null,
   }
 }

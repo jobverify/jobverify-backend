@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import { LYBRATE_CATALOG } from './catalog.js'
 
@@ -69,6 +70,28 @@ export const isDeadEmbeddedJobsApiResponse = (payload) =>
   && payload.ok === false
   && normalizeWhitespace(payload.error) === 'Document not found'
 
+const defaultFetchPage = (url, { redirect = 'follow' } = {}) => withRetry(async () => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect,
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    location: response.headers.get('location'),
+    html: await response.text(),
+  }
+}, {
+  label: 'lybrate-official',
+  attempts: 3,
+  baseDelayMs: 2000,
+})
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -78,28 +101,63 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json, text/plain, */*',
-  },
+export const isVerifiedJobsPageRedirectLoop = (page = {}) => {
+  const status = Number(page?.status)
+  const responseUrl = String(page?.url ?? '')
+  const location = String(page?.location ?? '')
+  const body = String(page?.html ?? '').trim()
+
+  return [301, 308].includes(status)
+    && [
+      'https://www.lybrate.com/jobs',
+      'https://www.lybrate.com/jobs/',
+      'https://lybrate.com/jobs',
+      'https://lybrate.com/jobs/',
+    ].includes(responseUrl)
+    && (location === 'https://www.lybrate.com/jobs' || location === '/jobs')
+    && body === ''
+}
+
+const defaultFetchJson = (url) => withRetry(async () => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json, text/plain, */*',
+    },
+    signal: AbortSignal.timeout(15000),
+  })
+
+  // Lever's retired posting endpoint reports its authoritative empty state as JSON with HTTP 404.
+  if (!response.ok && response.status !== 404) {
+    const error = new Error(`HTTP ${response.status} for ${url}`)
+    error.status = response.status
+    throw error
+  }
+
+  return response.json()
+}, {
   label: 'lybrate-jobs-api',
-  timeoutMs: 15000,
+  attempts: 3,
+  baseDelayMs: 2000,
 })
 
 export const createLybrateScraper = () => ({
   async run({
+    fetchPage = defaultFetchPage,
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const jobsHtml = await fetchText(JOBS_PAGE_URL)
-    if (!hasOfficialJobsPageSignal(jobsHtml)) {
-      throw new Error('Lybrate verified official jobs page no longer matches the verified public surface')
-    }
-
     const aboutHtml = await fetchText(ABOUT_PAGE_URL)
     if (!hasOfficialAboutPageSignal(aboutHtml)) {
       throw new Error('Lybrate verified official about-page hiring CTA no longer matches the verified public surface')
+    }
+
+    const jobsPage = await fetchPage(JOBS_PAGE_URL, { redirect: 'manual' })
+    if (
+      !isVerifiedJobsPageRedirectLoop(jobsPage)
+      && !hasOfficialJobsPageSignal(jobsPage.html)
+    ) {
+      throw new Error('Lybrate verified official jobs page no longer matches the verified public surface')
     }
 
     const apiPayload = await fetchJson(JOBS_API_URL)

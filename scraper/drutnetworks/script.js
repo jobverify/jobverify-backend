@@ -6,13 +6,17 @@ export const CAREER_PAGE_URL = 'https://drut.com/'
 
 export const validateNoOpeningsPage = (html) => {
   const page = String(html ?? '')
+  const normalized = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 
-  return /<nav\b[\s\S]*?\bHOME\b[\s\S]*?\bABOUT\s+DRUT\b[\s\S]*?\bCONTACT\s+US\b[\s\S]*?<\/nav>/i.test(page)
-    && /\bFIND\s+A\s+DRUT\b/i.test(page)
-    && /\bRisk\s*\|\s*Automate\s*\|\s*Compliance\b/i.test(page)
-    && /\bWHAT\s+IS\s+DRUT\b/i.test(page)
-    && /robotics-based\s+automation\s+GRC\s+platform/i.test(page)
-    && /Copyright[^<]*drut[^<]*All\s+Rights\s+Reserved/i.test(page)
+  return /<title>\s*Drut\s*<\/title>/i.test(page)
+    && /\bHOME\b/i.test(normalized)
+    && /\bABOUT\s+DRUT\b/i.test(normalized)
+    && /\bCONTACT\s+US\b/i.test(normalized)
+    && /\bFIND\s+A\s+DRUT\b/i.test(normalized)
+    && /\bRisk\s*\|\s*Automate\s*\|\s*Compliance\b/i.test(normalized)
+    && /\bWHAT\s+IS\s+DRUT\b/i.test(normalized)
+    && /robotics-based\s+automation\s+GRC\s+platform/i.test(normalized)
+    && /Copyright\s*[©Â]*\s*2026\s*-\s*drut\s*\|\s*All\s+Rights\s+Reserved/i.test(normalized)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

@@ -71,7 +71,7 @@ const defaultFetchPage = async (url) => {
 
 export const extractOfficialHROneHandoffUrl = (html = '') => {
   const match = String(html ?? '').match(
-    /https:\/\/app\.hrone\.cloud\/career-portal\?ccid=8Qqxv4vYEt7A1wqC_2B0Fw~~&payload=evgE4Qh6f3p6GKeiD4fJQ0LiQsj1hT4DjXVao0Cuhy3Gev16iZi3l6M7u3e72Dhi&dc=sula/i,
+    /https:\/\/app\.hrone\.cloud\/career-portal\?[^"'`\s<>]*\bdc=sula\b[^"'`\s<>]*/i,
   )
 
   return match?.[0] ?? null
@@ -84,9 +84,10 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('Careers at Sula')
-    && normalized.includes('At Sula, our goal is to continue the Indian Wine Revolution.')
-    && normalized.includes('Our people are our biggest assets.')
-    && normalized.includes('Sula Vineyards Limited')
+    && normalized.includes('As pioneers and leaders in the Indian wine industry')
+    && normalized.includes('At Sula, we believe in a supportive, open-door culture')
+    && normalized.includes('We have both full-time as well as internship positions available across all our departments.')
+    && /\bView Open Positions\b/i.test(normalized)
     && extractOfficialHROneHandoffUrl(html) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 

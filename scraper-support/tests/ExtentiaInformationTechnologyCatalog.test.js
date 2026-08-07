@@ -11,14 +11,21 @@ const modulePath = path.resolve(currentDir, '../../scraper/extentiainformationte
 
 const sampleHtml = `
   <section>
+    <title>Exciting Career Opportunities at Extentia</title>
     <h1>Careers Opportunities</h1>
-    <h2><a href="/careers/dotnet-fullstack-developer/">.Net Fullstack Developer</a></h2>
-    <ul><li>Pune</li><li>Full Time</li></ul>
-    <a href="/careers/dotnet-fullstack-developer/">More Details</a>
-    <h2><a href="/careers/senior-salesforce-developer/">Senior Salesforce Developer</a></h2>
-    <ul><li>Bengaluru</li><li>Full Time</li></ul>
-    <a href="/careers/senior-salesforce-developer/">More Details</a>
-    <a href="https://www.extentia.com/careers/careers-opportunities/page/2/">Page 2</a>
+    <div class="elementor elementor-69271 e-loop-item post-73230 job-location-pune job-type-full-time">
+      <div class="elementor-post-info__terms-list-item">Pune</div>
+      <div class="elementor-post-info__terms-list-item">Full Time</div>
+      <h2 class="elementor-heading-title"><a href="https://www.extentia.com/job/net-fullstack-developer/">.Net Fullstack Developer</a></h2>
+      <a href="https://www.extentia.com/job/net-fullstack-developer/">More Details</a>
+    </div>
+    <div class="elementor elementor-69271 e-loop-item post-73231 job-location-bengaluru job-type-full-time">
+      <div class="elementor-post-info__terms-list-item">Bengaluru</div>
+      <div class="elementor-post-info__terms-list-item">Full Time</div>
+      <h2 class="elementor-heading-title"><a href="https://www.extentia.com/job/senior-salesforce-developer/">Senior Salesforce Developer</a></h2>
+      <a href="https://www.extentia.com/job/senior-salesforce-developer/">More Details</a>
+    </div>
+    <a href="https://www.extentia.com/careers/careers-opportunities/?e-page-0431873=2">Page 2</a>
   </section>
 `
 
@@ -37,8 +44,9 @@ test('Extentia Information Technology local catalog captures the verified first-
   assert.equal(provider.companyDomain, 'extentia.com')
   assert.equal(provider.atsPlatform, 'official-first-party-job-links')
   assert.equal(provider.modulePath, modulePath)
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.verifiedSurfaceSummary, /\.Net Fullstack Developer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Salesforce Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Legal and Compliance Manager/i)
   assert.equal(typeof module.run, 'function')
 })
 
@@ -51,7 +59,8 @@ test('Extentia Information Technology script extracts first-party role links and
   assert.equal(jobs[0].title, '.Net Fullstack Developer')
   assert.equal(jobs[0].location, 'Pune')
   assert.equal(jobs[0].employmentType, 'Full Time')
-  assert.match(jobs[0].sourceUrl, /dotnet-fullstack-developer/i)
+  assert.equal(jobs[0].jobId, 'extentiainformationtechnology-net-fullstack-developer')
+  assert.match(jobs[0].sourceUrl, /net-fullstack-developer/i)
 })
 
 test('Extentia Information Technology exact backlog row resolves from the local catalog', async () => {

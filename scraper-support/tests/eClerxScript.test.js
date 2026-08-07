@@ -12,7 +12,7 @@ const officialCareersHtml = `
     <main>
       <h1>Careers at eClerx</h1>
       <p>Explore career opportunities at eClerx across technology, analytics, digital, financial markets, customer operations and more.</p>
-      <a href="/job-portal" class="exploreMoreBTN" navigationarea="banner">Explore jobs</a>
+      <a href="/careers/job-portal" class="exploreMoreBTN" navigationarea="banner">Explore jobs</a>
     </main>
   </body>
 </html>
@@ -145,7 +145,7 @@ const detailPayload = {
       </ul>
     `,
     ShortDescriptionStr: 'Support client operations with analytics-led execution.',
-    ExternalResponsibilitiesStr: 'Coordinate across stakeholders and maintain process quality.',
+    ExternalResponsibilitiesStr: 'Coordinate across stakeholders, maintain process quality, and bring 3-5 years of experience in client operations.',
     PrimaryLocation: 'Chandigarh, India',
     PrimaryLocationCountry: 'IN',
     WorkplaceType: '',
@@ -279,11 +279,13 @@ test('extractJobDetail enriches eClerx requisitions from the public Oracle detai
   assert.equal(detail.employmentType, 'Full time')
   assert.equal(detail.minimumQualification, "Bachelor's Degree")
   assert.equal(detail.preferredQualification, null)
+  assert.equal(detail.experienceRequired, '3-5 years')
   assert.deepEqual(detail.requiredSkills, [])
   assert.equal(detail.postingDate, '2026-07-14')
   assert.equal(detail.closingDate, '2026-09-29')
   assert.match(detail.jobDescription, /Support operational workflows/i)
   assert.match(detail.jobDescription, /maintain process quality/i)
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('run verifies the first-party careers handoff before calling the public eClerx Oracle APIs', async () => {
@@ -322,8 +324,10 @@ test('run verifies the first-party careers handoff before calling the public eCl
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'eclerx')
   assert.equal(jobs[0].company, 'eClerx')
+  assert.equal(jobs[0].experienceRequired, '3-5 years')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-15T00:00:00.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('run fails closed when the verified eClerx pages or Oracle shell drift materially', async () => {

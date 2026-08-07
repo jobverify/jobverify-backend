@@ -86,10 +86,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasCareerListSignal = (html) => {
   const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
 
   return /<title>\s*Career List \| JK Fenner\s*<\/title>/i.test(rawHtml)
-    && /rel="canonical"\s+href="https:\/\/jkfenner\.com\/career-list\/"/i.test(rawHtml)
-    && /<h2>\s*Open Positions\s*<\/h2>/i.test(rawHtml)
+    && /Open Positions/i.test(normalized)
     && /<th>\s*Position\s*<\/th>/i.test(rawHtml)
     && /<th>\s*Location\s*<\/th>/i.test(rawHtml)
     && /<th>\s*Experience\s*<\/th>/i.test(rawHtml)
@@ -97,7 +97,7 @@ export const hasCareerListSignal = (html) => {
     && /<th>\s*Qualification\s*<\/th>/i.test(rawHtml)
     && /<th>\s*Job Role\s*<\/th>/i.test(rawHtml)
     && /<th>\s*Description\s*<\/th>/i.test(rawHtml)
-    && /href="https:\/\/jkfenner\.com\/job-openings\/"/i.test(rawHtml)
+    && /href=["'][^"']*\/job-openings\/?["']/i.test(rawHtml)
 }
 
 export const extractOpenPositions = (html) => {

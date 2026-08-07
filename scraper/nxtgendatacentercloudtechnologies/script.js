@@ -49,6 +49,15 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+export const isTrustedUnavailableFailure = (error) => {
+  const message = String(error?.message ?? error).toLowerCase()
+
+  return message.includes('timed out')
+    || message.includes('timeout')
+    || message.includes('timed_out')
+    || message.includes('und_err_connect_timeout')
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
@@ -108,7 +117,18 @@ export const createNxtgenDatacenterCloudTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (isTrustedUnavailableFailure(error)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Nxtgen Datacenter Cloud Technologies careers page no longer matches the trusted first-party surface')
     }

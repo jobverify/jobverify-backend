@@ -21,6 +21,7 @@ const normalizeWhitespace = (value) =>
   String(value ?? '')
     .replace(/&nbsp;|\u00a0/gi, ' ')
     .replace(/&amp;/gi, '&')
+    .replace(/&#x27;|&#39;|&apos;|&rsquo;/gi, "'")
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -59,7 +60,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Careers at Suzlon \| Join India's Wind Energy Leader\s*<\/title>/i.test(page)
+  return normalized.includes("Careers at Suzlon | Join India's Wind Energy Leader")
     && normalized.includes('Your work can move the world forward')
     && normalized.includes('We are building renewable energy systems designed for the new world.')
     && normalized.includes('Advancing people. Accelerating futures')

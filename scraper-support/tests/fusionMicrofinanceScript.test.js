@@ -27,7 +27,7 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers - Fusion Finance Limited</title>
+    <title>Fusion Finance – Microfinance Jobs, opportunities &amp; Careers</title>
     <link rel="canonical" href="https://fusionfin.com/careers/" />
   </head>
   <body>
@@ -128,7 +128,7 @@ test('Fusion Microfinance scraper constants and helpers stay pinned to the verif
   assert.equal(fusionMicrofinance.SOURCE, 'fusionmicrofinance')
   assert.equal(fusionMicrofinance.COMPANY, 'Fusion Microfinance')
   assert.equal(fusionMicrofinance.OFFICIAL_BRAND_NAME, 'Fusion Finance')
-  assert.equal(fusionMicrofinance.VERIFIED_ON, '2026-07-15')
+  assert.equal(fusionMicrofinance.VERIFIED_ON, '2026-08-04')
   assert.equal(fusionMicrofinance.HOMEPAGE_URL, 'https://fusionfin.com/')
   assert.equal(fusionMicrofinance.CAREERS_URL, 'https://fusionfin.com/careers/')
   assert.equal(fusionMicrofinance.RECRUITER_EMAIL, 'recruiter@fusionfin.com')
@@ -196,6 +196,7 @@ test('Fusion Microfinance extracts the verified first-party QA detail page into 
     closingDate: null,
     jobDescription:
       'Job Role: Automation Testing Design and execute automated test suites for digital lending systems. Collaborate with developers and product managers to triage defects. Interested applicants can reach out to us at recruiter@fusionfin.com',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
   })
 })
@@ -257,6 +258,7 @@ test('run verifies the Fusion homepage and careers surface, then returns generic
     postingDate: null,
     closingDate: null,
     jobDescription: 'Apply through the public first-party Fusion careers form.',
+    publicExperienceChecked: true,
     remoteStatus: 'On-site',
     source: 'fusionmicrofinance',
     link: 'https://fusionfin.com/careers/',
@@ -268,6 +270,7 @@ test('run verifies the Fusion homepage and careers surface, then returns generic
   assert.equal(jobs[7].city, 'Gurgaon/Gurugram')
   assert.equal(jobs[7].state, 'Haryana')
   assert.equal(jobs[7].source, 'fusionmicrofinance')
+  assert.equal(jobs[7].publicExperienceChecked, true)
   assert.equal(
     jobs[7].link,
     'https://fusionfin.com/featuredjobs/qa-engineer-sr-qa-engineer/#apply',

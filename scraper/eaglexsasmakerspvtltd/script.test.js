@@ -64,8 +64,37 @@ const buildOfficialPageHtml = ({
   </html>
 `
 
+const buildCurrentOfficialPageHtml = ({
+  body = '',
+} = {}) => `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Eagle X | We Engineer Dominance</title>
+      <link rel="canonical" href="https://www.eaglex.co.in/" />
+    </head>
+    <body>
+      <nav>
+        <a href="/work">Our Work</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/contact">Deploy Unit</a>
+      </nav>
+      <main>
+        <h1>Eagle x</h1>
+        <p>We Engineer Dominance</p>
+        <p>Forging high-performance digital infrastructure for the next generation of unicorn founders.</p>
+        <p>RAPID DEPLOYMENT</p>
+        <p>MVP in 7 Days</p>
+        <p>Deploy Unit</p>
+        ${body}
+      </main>
+    </body>
+  </html>
+`
+
 const buildMissingCareersRouteHtml = () => `
-  ${buildOfficialPageHtml({
+  ${buildCurrentOfficialPageHtml({
     body: `
       <title>404: This page could not be found.</title>
       <div>This page could not be found.</div>
@@ -91,7 +120,9 @@ test('exports the verified first-party surface metadata for Eaglex SAS Makers Pv
 
 test('distinguishes the verified marketing surface from a public jobs surface', () => {
   assert.equal(hasOfficialPageSignal(buildOfficialPageHtml()), true)
+  assert.equal(hasOfficialPageSignal(buildCurrentOfficialPageHtml()), true)
   assert.equal(hasPublicJobsSignal(buildOfficialPageHtml()), false)
+  assert.equal(hasPublicJobsSignal(buildCurrentOfficialPageHtml()), false)
   assert.equal(
     hasPublicJobsSignal(`
       <html>

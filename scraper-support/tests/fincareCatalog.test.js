@@ -45,17 +45,16 @@ test('Fincare local catalog captures the verified AU handoff and no-public-jobs 
   )
   assert.equal(namedCatalog.parser, 'custom-script')
   assert.equal(namedCatalog.normalizationProfile, 'engineering-default')
-  assert.equal(namedCatalog.verifiedOn, '2026-07-15')
+  assert.equal(namedCatalog.verifiedOn, '2026-08-02')
   assert.equal(namedCatalog.dryRunFile, 'fincare/jobs.json')
   assert.equal(namedCatalog.modulePath, modulePath)
-  assert.match(namedCatalog.verifiedSurfaceSummary, /https:\/\/www\.fincarebank\.com\//i)
   assert.match(namedCatalog.verifiedSurfaceSummary, /https:\/\/fincarebank\.in\//i)
   assert.match(namedCatalog.verifiedSurfaceSummary, /https:\/\/www\.au\.bank\.in\//i)
   assert.match(
     namedCatalog.verifiedSurfaceSummary,
     /au-small-finance-bank-and-fincare-small-finance-bank-merger/i,
   )
-  assert.match(namedCatalog.verifiedSurfaceSummary, /Fincare NetBanking/i)
+  assert.match(namedCatalog.verifiedSurfaceSummary, /Cloudflare/i)
   assert.match(namedCatalog.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 
   assert.equal(PROVIDER_METADATA.source, namedCatalog.source)

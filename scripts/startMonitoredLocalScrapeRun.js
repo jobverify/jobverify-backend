@@ -31,6 +31,8 @@ const parseArgs = (argv) => {
     parallel: true,
     dryRun: true,
     runnerArgs: [],
+    replaySourceLog: null,
+    replaySourceListFile: null,
   }
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -62,6 +64,18 @@ const parseArgs = (argv) => {
       continue
     }
 
+    if (arg === '--replay-source-log') {
+      options.replaySourceLog = argv[index + 1] || null
+      index += 1
+      continue
+    }
+
+    if (arg === '--replay-source-list-file') {
+      options.replaySourceListFile = argv[index + 1] || null
+      index += 1
+      continue
+    }
+
     if (arg === '--') {
       options.runnerArgs.push(...argv.slice(index + 1))
       break
@@ -82,10 +96,17 @@ const resolveRunDir = (requestedRunDir) => {
 }
 
 const buildRunnerArgs = (options) => {
-  const args = ['scraper-support/runner.js']
+  const replayMode = options.replaySourceLog || options.replaySourceListFile
+  const args = [
+    replayMode
+      ? 'scripts/replayLocalScrapeFromLog.js'
+      : 'scraper-support/runner.js',
+  ]
 
   if (options.parallel) args.push('--parallel')
   if (options.dryRun) args.push('--dry-run')
+  if (options.replaySourceLog) args.push('--source-log', options.replaySourceLog)
+  if (options.replaySourceListFile) args.push('--source-list-file', options.replaySourceListFile)
   args.push(...options.runnerArgs)
 
   return args
@@ -101,6 +122,9 @@ const ensureDirectory = (directoryPath) => {
 
 const main = () => {
   const options = parseArgs(process.argv.slice(2))
+  if (options.replaySourceLog && options.replaySourceListFile) {
+    throw new Error('Choose only one of --replay-source-log or --replay-source-list-file.')
+  }
   const runDir = resolveRunDir(options.runDir)
   const stdoutPath = path.join(runDir, 'stdout.log')
   const stderrPath = path.join(runDir, 'stderr.log')
@@ -142,6 +166,13 @@ const main = () => {
       SCRAPER_START_AT: env.SCRAPER_START_AT || null,
       SCRAPER_START_AFTER: env.SCRAPER_START_AFTER || null,
     },
+    replay: options.replaySourceLog
+      ? { type: 'source-log', path: options.replaySourceLog }
+      : (
+          options.replaySourceListFile
+            ? { type: 'source-list-file', path: options.replaySourceListFile }
+            : null
+        ),
   })
 
   const stopChild = () => {

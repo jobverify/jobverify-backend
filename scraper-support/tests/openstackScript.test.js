@@ -5,9 +5,10 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <body>
+    <title>Open Source Cloud Computing Infrastructure - OpenStack</title>
+    <p>An OpenInfra Foundation Project</p>
     <h1>The Most Widely Deployed Open Source Cloud Software in the World</h1>
     <p>OpenStack is developed by the community. For the community.</p>
-    <p>OpenStack is a top-level open infrastructure project supported by the OpenInfra Foundation</p>
   </body>
 </html>
 `
@@ -16,9 +17,10 @@ const JOBS_BOARD_HTML = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>OpenStack Job Board</h1>
-    <p>Join the best OpenStack-related jobs board for free!</p>
-    <h2>Check the latest job postings</h2>
+    <title>GitJobs</title>
+    <h1>Discover Open Source job opportunities</h1>
+    <p>Jobs from foundation members</p>
+    <p>OPENINFRA</p>
   </body>
 </html>
 `

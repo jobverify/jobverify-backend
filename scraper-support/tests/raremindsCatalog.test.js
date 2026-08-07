@@ -13,8 +13,8 @@ test('getScraperCatalog includes Rareminds as an official no-public-careers sent
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.companyName, 'Rareminds')
-  assert.equal(provider.companyCareerPage, 'https://rareminds.com/')
-  assert.equal(provider.companyDomain, 'rareminds.com')
+  assert.equal(provider.companyCareerPage, 'https://www.rareminds.in/')
+  assert.equal(provider.companyDomain, 'rareminds.in')
   assert.match(provider.modulePath, /rareminds[\\/]script\.js$/i)
 })
 

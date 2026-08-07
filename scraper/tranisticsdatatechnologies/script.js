@@ -106,8 +106,14 @@ const isVerifiedMissingFirstPartyRoute = (page = {}) => {
   const normalized = normalizeText(html)
 
   return page.status === 404
-    && /<title>\s*Not Found\s*<\/title>/i.test(html)
-    && normalized.includes('404')
+    && (
+      /<title>\s*Not Found\s*<\/title>/i.test(html)
+      || /<title>\s*Page not found - Tranistics Data Technologies\s*<\/title>/i.test(html)
+    )
+    && (
+      normalized.includes('404')
+      || normalized.includes('page not found')
+    )
     && !hasPublicJobsSignal(html)
 }
 
@@ -142,7 +148,7 @@ export const createTranisticsDataTechnologiesScraper = () => ({
 
 export const run = async (options = {}) => createTranisticsDataTechnologiesScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

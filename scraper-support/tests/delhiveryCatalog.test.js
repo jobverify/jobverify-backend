@@ -61,7 +61,7 @@ test('Delhivery catalog captures the verified first-party careers page and Darwi
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, delhiveryModulePath)
   assert.match(provider.dryRunFile, /delhivery[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.delhivery\.com\//i)
@@ -83,7 +83,7 @@ test('Delhivery catalog captures the verified first-party careers page and Darwi
     provider.verifiedSurfaceSummary,
     /https:\/\/delhivery\.darwinbox\.in\/ms\/candidateapi\/job\/alljobs\?companyId=main/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /\b10 open jobs\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /\bCloudflare 403\b/i)
 })
 

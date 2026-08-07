@@ -10,7 +10,7 @@ const careersPageHtml = `
   <body>
     <section>
       <h2>Attention</h2>
-      <p>All legitimate Kaseya communications come from @kaseya.com email addresses only.</p>
+      <p>All legitimate Kaseya communications come from <strong>@kaseya.com</strong> email addresses only.</p>
       <p>If you&rsquo;re unsure about any offer, please contact talentacquisition@kaseya.com to verify.</p>
     </section>
     <section>
@@ -206,7 +206,7 @@ test('Kaseya India scraper constants and helpers stay pinned to the verified fir
   assert.equal(kaseyaIndia.CAREERS_URL, 'https://www.kaseya.com/careers/jobs/')
   assert.equal(kaseyaIndia.JOBS_SITEMAP_URL, 'https://www.kaseya.com/jobs-sitemap.xml')
   assert.equal(kaseyaIndia.COMPANY_DOMAIN, 'kaseya.com')
-  assert.equal(kaseyaIndia.VERIFIED_ON, '2026-07-16')
+  assert.equal(kaseyaIndia.VERIFIED_ON, '2026-08-02')
 
   assert.equal(kaseyaIndia.hasVerifiedCareersPageSignal(careersPageHtml), true)
   assert.deepEqual(

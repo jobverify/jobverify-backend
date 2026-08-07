@@ -15,7 +15,7 @@ const loadCastrolIndiaModule = async () => {
   }
 }
 
-test('getScraperCatalog includes Castrol India as a verified careers-handoff sentinel', async () => {
+test('getScraperCatalog includes Castrol India as a verified careers handoff to the BP public search empty state', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'castrolindia')
   const castrolIndia = await loadCastrolIndiaModule()
 
@@ -24,16 +24,21 @@ test('getScraperCatalog includes Castrol India as a verified careers-handoff sen
   assert.equal(provider.companyName, 'Castrol India')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.castrol.com/en_in/india/home/about-castrol/careers.html')
+  assert.equal(provider.bpSearchApplyUrl, 'https://www.bp.com/en/global/corporate/careers/search-and-apply.html')
   assert.equal(provider.companyDomain, 'castrol.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-broken-handoff')
+  assert.equal(provider.atsPlatform, 'official-careers-handoff-to-bp-public-search-empty-state')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-pages-plus-blocked-bp-handoff-monitor')
+  assert.equal(provider.paginationStrategy, 'official-careers-pages-plus-bp-public-search-empty-state-check')
   assert.equal(
     provider.extractionStrategy,
-    'verified-castrol-careers-pages+blocked-bp-careers-handoff-return-empty',
+    'verified-castrol-careers-pages+verified-bp-public-search-empty-state-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
+  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.match(provider.verifiedSurfaceSummary, /careers\.bp\.com\/listing/i)
+  assert.match(provider.verifiedSurfaceSummary, /No matching jobs found/i)
+  assert.match(provider.verifiedSurfaceSummary, /Invalid Application-ID or API key/i)
   assert.match(provider.modulePath, /castrolindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /castrolindia[\\/]jobs\.json$/i)
 

@@ -30,7 +30,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Thryve Digital local catalog captures the verified first-party rebrand page and Darwinbox handoff', async () => {
+test('Thryve Digital local catalog captures the verified first-party enGen careers page and Darwinbox handoff', async () => {
   const { THRYVE_DIGITAL_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const thryveDigital = await loadScriptModule()
   const provider = buildCatalogReadyProvider(THRYVE_DIGITAL_CATALOG)
@@ -38,10 +38,10 @@ test('Thryve Digital local catalog captures the verified first-party rebrand pag
   assert.equal(defaultCatalog, THRYVE_DIGITAL_CATALOG)
   assert.equal(provider.source, 'thryvedigital')
   assert.equal(provider.companyName, 'Thryve Digital')
-  assert.equal(provider.officialBrandName, 'Thryve Digital')
+  assert.equal(provider.officialBrandName, 'enGen Global')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://www.thryvedigital.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.thryvedigital.com/')
+  assert.equal(provider.homepageUrl, 'https://www.goengen.in/')
+  assert.equal(provider.companyCareerPage, 'https://www.goengen.in/careers')
   assert.equal(
     provider.officialCareersHandoffUrl,
     'https://tdh.darwinbox.in/ms/candidate/careers',
@@ -53,17 +53,18 @@ test('Thryve Digital local catalog captures the verified first-party rebrand pag
   assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-rebrand-page+darwinbox-listing-api',
+    'verified-goengen-careers-page+darwinbox-listing-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'thryvedigital.com')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.companyDomain, 'goengen.in')
+  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.thryvedigital\.com\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.goengen\.in\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/tdh\.darwinbox\.in\/ms\/candidate\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /rebranding itself to "enGen Global"/i)
-  assert.match(provider.verifiedSurfaceSummary, /Click here to explore opportunities/i)
+  assert.match(provider.verifiedSurfaceSummary, /An enGenious career, rooted in India\./i)
+  assert.match(provider.verifiedSurfaceSummary, /CLICK HERE TO JOIN US/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /thryvedigital[\\/]jobs\.json$/i)
 

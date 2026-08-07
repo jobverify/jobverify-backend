@@ -114,6 +114,16 @@ const careersHtmlWithoutIndiaRoles = careersHtml.replace(
           <div class="job-content" id="bangalore">`,
 )
 
+const careersHtmlWithCurrentTitleAndHeading = careersHtml
+  .replace(
+    '<title>Aarav Solutions</title>',
+    '<title>Careers - Aarav Solutions</title>',
+  )
+  .replace(
+    '<h1>You At Aarav</h1>',
+    '<h2>Life at Aarav Solutions</h2>',
+  )
+
 test('Aarav Solutions validates the verified homepage, careers page shell, shared HubSpot form, and India roles', async () => {
   const aarav = await loadAaravSolutionsModule()
 
@@ -205,6 +215,31 @@ test('run validates the verified first-party Aarav Solutions surfaces and return
     jobs.map((job) => job.title),
     ['Lead BRM Developer', 'Graphic Designer', 'Senior Odoo Developer', 'FrontEnd Developer'],
   )
+})
+
+test('Aarav Solutions accepts the current first-party careers title and Life at Aarav heading', async () => {
+  const aarav = await loadAaravSolutionsModule()
+
+  assert.equal(aarav.hasOfficialCareersSignal(careersHtmlWithCurrentTitleAndHeading), true)
+
+  const jobs = await aarav.createAaravSolutionsScraper({
+    now: () => '2026-08-01T00:00:00.000Z',
+  }).run({
+    fetchPage: async (url) => {
+      if (url === aarav.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === aarav.CAREERS_URL) {
+        return { status: 200, url, html: careersHtmlWithCurrentTitleAndHeading }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 4)
+  assert.ok(jobs.every((job) => job.source === 'aaravsolutions'))
 })
 
 test('Aarav Solutions fails closed when the verified homepage, careers shell, HubSpot form, or India cards drift', async () => {

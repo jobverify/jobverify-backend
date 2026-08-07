@@ -30,11 +30,11 @@ test('FreeCharge catalog captures the verified first-party careers handoff surfa
   assert.equal(provider.portalOrigin, 'https://freecharge.ripplehire.com')
   assert.equal(
     provider.officialCareersHandoffUrl,
-    'https://freecharge.ripplehire.com/candidate/?source=CAREERSITE&token=IoV5vvUSMKLwmaa1Suou',
+    'https://freecharge.ripplehire.com/candidate/?token=IoV5vvUSMKLwmaa1Suou&source=CAREERSITE#list',
   )
   assert.equal(
     provider.jobBoardUrl,
-    'https://freecharge.ripplehire.com/candidate/?source=CAREERSITE&token=IoV5vvUSMKLwmaa1Suou',
+    'https://freecharge.ripplehire.com/candidate/?token=IoV5vvUSMKLwmaa1Suou&source=CAREERSITE#list',
   )
   assert.equal(
     provider.jobsApiUrl,
@@ -47,16 +47,15 @@ test('FreeCharge catalog captures the verified first-party careers handoff surfa
   assert.equal(provider.extractionStrategy, 'official-careers-handoff+ripplehire-list-detail-api')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.modulePath, freeChargeModulePath)
   assert.match(provider.dryRunFile, /freecharge[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 2, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.freecharge\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.freecharge\.in\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.freecharge\.in\/careers\//i)
   assert.match(
     provider.verifiedSurfaceSummary,
-    /https:\/\/freecharge\.ripplehire\.com\/candidate\/\?source=CAREERSITE&token=IoV5vvUSMKLwmaa1Suou/i,
+    /https:\/\/freecharge\.ripplehire\.com\/candidate\/\?token=IoV5vvUSMKLwmaa1Suou&source=CAREERSITE#list/i,
   )
   assert.match(
     provider.verifiedSurfaceSummary,

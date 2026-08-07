@@ -41,6 +41,43 @@ const aboutHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Home - Samunnati - India’s Largest Agri Enterprise</title>
+  </head>
+  <body>
+    <nav>
+      <a href="https://samunnati.darwinbox.in/ms/candidate/careers">Careers</a>
+    </nav>
+    <main>
+      <p>Work with us.</p>
+      <p>Write to us at careers@samunnati.com</p>
+    </main>
+  </body>
+</html>
+`
+
+const currentAboutHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About Us - Samunnati - India’s Largest Agri Enterprise</title>
+  </head>
+  <body>
+    <nav>
+      <a href="https://samunnati.darwinbox.in/ms/candidate/careers">Careers</a>
+    </nav>
+    <main>
+      <p>Samunnati 2.0</p>
+      <p>Join the Movement: Empowering Growth with Samunnati</p>
+      <p>Write to us at careers@samunnati.com</p>
+    </main>
+  </body>
+</html>
+`
+
 const listingPayload = {
   job_counts: 2,
   data: [
@@ -100,6 +137,8 @@ test('Samunnati scraper keeps the verified first-party Darwinbox handoff explici
   )
   assert.equal(samunnati.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(samunnati.hasOfficialAboutSignal(aboutHtml), true)
+  assert.equal(samunnati.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(samunnati.hasOfficialAboutSignal(currentAboutHtml), true)
 
   const scraper = samunnati.createSamunnatiScraper({
     now: () => FIXED_SCRAPED_AT,

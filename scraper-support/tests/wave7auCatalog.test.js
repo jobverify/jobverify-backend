@@ -54,13 +54,14 @@ test('Excelra Knowledge Solutions local catalog captures the verified first-part
   assert.equal(provider.companyCareerPage, 'https://www.excelra.com/careers/')
   assert.equal(provider.careersPortalBaseUrl, 'https://excelra.darwinbox.in/ms/candidatev2/main/careers/')
   assert.equal(provider.atsPlatform, 'first-party-careers-page-darwinbox-job-links')
-  assert.equal(provider.paginationStrategy, 'single-first-party-current-openings-page')
+  assert.equal(provider.paginationStrategy, 'single-first-party-current-openings-page-via-browser-rendered-html')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+visible-opening-cards+darwinbox-apply-links+india-location-filter',
+    'verified-first-party-careers-page+browser-rendered-opening-cards+darwinbox-apply-links+india-location-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.match(provider.verifiedSurfaceSummary, /Current openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare 403 challenge/i)
   assert.match(provider.verifiedSurfaceSummary, /excelra\.darwinbox\.in/i)
   assert.match(provider.verifiedSurfaceSummary, /Hyderabad, India/i)
 
@@ -104,7 +105,7 @@ test('Blazeclan Technologies local catalog captures the verified broken Zoho han
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Reserve Bank Information Technology local catalog captures the verified join-us page and Darwinbox job-card handoff', async () => {
+test('Reserve Bank Information Technology local catalog captures the verified careers SPA and authenticated current-openings API contract', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/reservebankinformationtechnology/catalog.js',
     'RESERVE_BANK_INFORMATION_TECHNOLOGY_CATALOG',
@@ -116,17 +117,18 @@ test('Reserve Bank Information Technology local catalog captures the verified jo
   assert.equal(provider.officialBrandName, 'ReBIT')
   assert.equal(provider.homepageUrl, 'https://rebit.org.in/')
   assert.equal(provider.companyCareerPage, 'https://rebit.org.in/careers/')
-  assert.equal(provider.careersPortalBaseUrl, 'https://rebithr.darwinbox.in/ms/candidate/careers')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-darwinbox-job-links')
-  assert.equal(provider.paginationStrategy, 'single-first-party-join-us-page')
+  assert.equal(provider.careersPortalBaseUrl, 'https://rebithr.darwinbox.in/ms/candidatev2/main/careers/')
+  assert.equal(provider.atsPlatform, 'first-party-careers-spa-authenticated-api')
+  assert.equal(provider.paginationStrategy, 'single-first-party-current-openings-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-join-us-page+visible-job-cards+darwinbox-apply-links',
+    'verified-first-party-careers-spa+authenticated-current-openings-api+darwinbox-apply-links+experience-field',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /join-us\.php/i)
+  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.match(provider.verifiedSurfaceSummary, /web\/api\/auth\/login/i)
+  assert.match(provider.verifiedSurfaceSummary, /web\/api\/current-openings/i)
   assert.match(provider.verifiedSurfaceSummary, /rebithr\.darwinbox\.in/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sr\/Lead Engineer Development- Angular/i)
+  assert.match(provider.verifiedSurfaceSummary, /Data Science Manager/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

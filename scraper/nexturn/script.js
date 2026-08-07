@@ -14,6 +14,8 @@ export const CAREERS_URL = 'https://nexturn.com/careers/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const DETAIL_SECTION_LABELS = [
   'Location',
   'Work Experience',
@@ -41,7 +43,7 @@ const NON_INDIA_LOCATION_PATTERNS = [
 const CITY_MATCHERS = Object.entries(CANONICAL_CITIES)
   .map(([raw, canonical]) => ({
     canonical,
-    pattern: new RegExp(`(^|[^a-z])${raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[^a-z]|$)`, 'i'),
+    pattern: new RegExp(`(^|[^a-z])${escapeRegExp(raw)}(?=[^a-z]|$)`, 'i'),
   }))
   .sort((left, right) => right.pattern.source.length - left.pattern.source.length)
 
@@ -69,6 +71,7 @@ const normalizeWhitespace = (value) => {
 const stripTags = (value) => normalizeWhitespace(
   decodeHtmlEntities(value)
     .replace(/<(?:br|\/p|\/div|\/section|\/article|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<h[1-6]\b[^>]*>/gi, '\n')
     .replace(/<p\b[^>]*>/gi, '\n')
     .replace(/<li\b[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' '),
@@ -77,6 +80,7 @@ const stripTags = (value) => normalizeWhitespace(
 const htmlToTextLines = (html) =>
   decodeHtmlEntities(html)
     .replace(/<(?:br|\/p|\/div|\/section|\/article|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<h[1-6]\b[^>]*>/gi, '\n')
     .replace(/<p\b[^>]*>/gi, '\n')
     .replace(/<li\b[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
@@ -86,12 +90,74 @@ const htmlToTextLines = (html) =>
 
 const extractText = (pattern, html) => stripTags((String(html ?? '').match(pattern) || [])[1])
 
+const extractAttribute = (html, attributeName) => {
+  const match = String(html ?? '').match(
+    new RegExp(`\\b${escapeRegExp(attributeName)}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'),
+  )
+
+  return normalizeWhitespace(match?.[1] || match?.[2] || match?.[3] || null)
+}
+
 const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   try {
     return new URL(value, baseUrl).href
   } catch {
     return null
   }
+}
+
+const normalizePathname = (pathname) => {
+  const normalized = String(pathname ?? '').toLowerCase()
+  if (normalized === '/') return '/'
+  return normalized.replace(/\/+$/, '')
+}
+
+const urlsMatch = (left, right, baseUrl = HOMEPAGE_URL) => {
+  try {
+    const leftUrl = new URL(left, baseUrl)
+    const rightUrl = new URL(right, baseUrl)
+    return leftUrl.hostname.replace(/^www\./i, '').toLowerCase() === rightUrl.hostname.replace(/^www\./i, '').toLowerCase()
+      && normalizePathname(leftUrl.pathname) === normalizePathname(rightUrl.pathname)
+  } catch {
+    return false
+  }
+}
+
+const extractTags = (html, tagName) => [...String(html ?? '').matchAll(new RegExp(`<${tagName}\\b[^>]*>`, 'gi'))]
+  .map((match) => match[0])
+
+const extractCanonicalUrl = (html, baseUrl = HOMEPAGE_URL) => {
+  const canonicalTag = extractTags(html, 'link').find((tag) => /^canonical$/i.test(extractAttribute(tag, 'rel') || ''))
+  return toAbsoluteUrl(extractAttribute(canonicalTag, 'href'), baseUrl)
+}
+
+const hasAnchorLinkToUrl = (html, expectedUrl, baseUrl = HOMEPAGE_URL) =>
+  extractTags(html, 'a').some((tag) => urlsMatch(extractAttribute(tag, 'href'), expectedUrl, baseUrl))
+
+const buildSectionLabelPattern = (label, { anchored = true } = {}) => {
+  const body = String(label ?? '')
+    .trim()
+    .split(/\s+/)
+    .map((part) => escapeRegExp(part))
+    .join('\\s*')
+
+  return new RegExp(`${anchored ? '^' : '\\b'}${body}\\s*:`, 'i')
+}
+
+const truncateAtNextSectionLabel = (value, currentLabel) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  let cutoff = normalized.length
+  for (const label of DETAIL_SECTION_LABELS) {
+    if (label === currentLabel) continue
+    const match = buildSectionLabelPattern(label, { anchored: false }).exec(normalized)
+    if (match && match.index < cutoff) {
+      cutoff = match.index
+    }
+  }
+
+  return normalizeWhitespace(normalized.slice(0, cutoff))
 }
 
 const isOfficialNexTurnJobUrl = (value) => {
@@ -104,18 +170,15 @@ const isOfficialNexTurnJobUrl = (value) => {
   }
 }
 
-const extractHref = (html) => {
-  const match = String(html ?? '').match(/href=(["']?)([^"'\s>]+)\1/i)
-  return toAbsoluteUrl(match?.[2] || null)
-}
+const extractHref = (html) => toAbsoluteUrl(extractAttribute(html, 'href'))
 
 const extractSection = (lines, label) => {
-  const labelPattern = new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`, 'i')
+  const labelPattern = buildSectionLabelPattern(label)
   const startIndex = lines.findIndex((line) => labelPattern.test(line))
   if (startIndex === -1) return null
 
   const values = []
-  const firstLine = lines[startIndex].replace(labelPattern, '').trim()
+  const firstLine = truncateAtNextSectionLabel(lines[startIndex].replace(labelPattern, '').trim(), label)
   if (firstLine) values.push(firstLine)
 
   for (let index = startIndex + 1; index < lines.length; index += 1) {
@@ -123,14 +186,14 @@ const extractSection = (lines, label) => {
     if (DETAIL_STOP_PATTERNS.some((pattern) => pattern.test(line))) break
     if (DETAIL_SECTION_LABELS.some((candidate) => {
       if (candidate === label) return false
-      return new RegExp(`^${candidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`, 'i').test(line)
+      return buildSectionLabelPattern(candidate).test(line)
     })) {
       break
     }
     values.push(line)
   }
 
-  return normalizeWhitespace(values.join(' '))
+  return truncateAtNextSectionLabel(values.join(' '), label)
 }
 
 const isExplicitNonIndiaLocation = (value) =>
@@ -185,10 +248,11 @@ const composeJobDescription = ({ requirements, jobDescription, jobDescriptionPre
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const canonicalUrl = extractCanonicalUrl(page, HOMEPAGE_URL)
 
-  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/nexturn\.com\/["']/i.test(page)
+  return urlsMatch(canonicalUrl, HOMEPAGE_URL)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']NexTurn["']/i.test(page)
-    && /href=["']https:\/\/nexturn\.com\/careers\/["']/i.test(page)
+    && hasAnchorLinkToUrl(page, CAREERS_URL, HOMEPAGE_URL)
     && /careers@nexturn\.com/i.test(page)
 }
 
@@ -196,18 +260,19 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*Careers at NexTurn\b/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/nexturn\.com\/careers\/["']/i.test(page)
+    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']NexTurn["']/i.test(page)
     && /Current Positions Available/i.test(page)
     && /href=["']?https:\/\/nexturn\.com\/job\/[^"'\s>]+["']?/i.test(page)
 }
 
 export const hasOfficialJobDetailSignal = (html) => {
   const page = String(html ?? '')
+  const canonicalUrl = extractCanonicalUrl(page, HOMEPAGE_URL)
 
   return /<title>[\s\S]+-\s*NexTurn<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/nexturn\.com\/job\/[^"']+\/["']/i.test(page)
+    && isOfficialNexTurnJobUrl(canonicalUrl)
     && /Location\s*:/i.test(page)
-    && /Work Experience\s*:/i.test(page)
+    && /Work\s*Experience\s*:/i.test(page)
     && /Qualifications\s*:/i.test(page)
     && /Job Description\s*:/i.test(page)
 }
@@ -241,12 +306,15 @@ export const extractJobCards = (html) => {
 }
 
 export const extractJobDetail = (html, sourceUrl) => {
+  const page = String(html ?? '')
   const allLines = htmlToTextLines(html)
   const startIndex = allLines.findIndex((line) => /back to career/i.test(line))
   const lines = startIndex >= 0 ? allLines.slice(startIndex) : allLines
+  const detailScopeStart = page.search(/back to career/i)
+  const detailScope = detailScopeStart >= 0 ? page.slice(detailScopeStart) : page
 
-  const title = extractText(/<h1[^>]*>([\s\S]*?)<\/h1>/i, html)
-    || extractText(/<title>([\s\S]*?)<\/title>/i, html)?.replace(/\s*-\s*NexTurn$/i, '')
+  const title = extractText(/<title>([\s\S]*?)<\/title>/i, page)?.replace(/\s*-\s*NexTurn$/i, '')
+    || extractText(/<h1[^>]*>([\s\S]*?)<\/h1>/i, detailScope)
   const location = extractSection(lines, 'Location')
   const experienceRequired = extractSection(lines, 'Work Experience')
   const requirements = extractSection(lines, 'Requirements')

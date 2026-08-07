@@ -1,0 +1,82 @@
+[
+  {
+    "title": "Marketing Executives",
+    "company": "Mehta Hitech Industries Ltd.",
+    "department": "Marketing",
+    "location": "Ahmedabad, Gujarat, India",
+    "city": "Ahmedabad",
+    "country": "India",
+    "jobId": "mehtahitechindustriesltd-marketing-executives",
+    "requisitionId": "mehtahitechindustriesltd-marketing-executives",
+    "sourceUrl": "https://www.mehtahitech.com/jobs.html#mehtahitechindustriesltd-marketing-executives",
+    "applyUrl": "https://www.mehtahitech.com/jobs.html",
+    "employmentType": "Full-time",
+    "experienceRequired": "0 to 3 Years",
+    "minimumQualification": "Graduation + MBA Marketing",
+    "preferredQualification": "Good Communication Skills, Management Skills, Presentation Skills\" Less, Good command over English",
+    "requiredSkills": [
+      "Good Communication Skills",
+      "Management Skills",
+      "Presentation Skills\" Less",
+      "Good command over English"
+    ],
+    "postingDate": "2026-08-04T18:53:11.769Z",
+    "closingDate": null,
+    "jobDescription": "Company: Mehta Hitech Industries Ltd. | Location: Ahmedabad | Qualification: Graduation + MBA Marketing | Year of experience: 0 to 3 Years | Notes: 25+ years experienced manufacturing company is looking for Marketing executives with following skills:",
+    "source": "mehtahitechindustriesltd",
+    "link": "https://www.mehtahitech.com/jobs.html",
+    "scrapedAt": "2026-08-04T18:53:11.769Z",
+    "companyCareerPage": "https://www.mehtahitech.com/jobs.html",
+    "companyDomain": "mehtahitech.com",
+    "atsPlatform": "official-company-careers",
+    "publicExperienceChecked": true,
+    "originalTitle": "Marketing Executives",
+    "normalizedTitle": "Marketing Executives",
+    "jobCategory": "Marketing Executives",
+    "engineeringDomain": "Unknown",
+    "experienceLevel": "Entry Level",
+    "jobType": "Full-time Fresher",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postedAt": "2026-08-04T18:53:11.769Z",
+    "scrapedTimestamp": "2026-08-04T18:53:11.769Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "rawText": "0 to 3 Years Graduation + MBA Marketing Good Communication Skills, Management Skills, Presentation Skills\" Less, Good command over English",
+      "minimumYears": 0,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0-3 years",
+      "experienceBucket": "0-1"
+    },
+    "experienceYears": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Marketing & Communications",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-08-04T18:53:11.773Z"
+  }
+]

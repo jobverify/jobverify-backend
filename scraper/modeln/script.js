@@ -48,8 +48,8 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title[^>]*>\s*Careers\s*\|\s*Model N\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Open Positions')
-    && normalized.includes('Great Place to Work Certified in India')
     && normalized.includes('Filter by location')
+    && normalized.includes('Clear all')
   }
 
 export const hasNoResultsSignal = (html = '') =>

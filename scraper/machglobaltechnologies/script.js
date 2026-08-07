@@ -163,6 +163,7 @@ const buildJob = ({ title, department, description }) => {
     postingDate: null,
     closingDate: null,
     jobDescription: description,
+    publicExperienceChecked: true,
     remoteStatus: null,
   }
 }

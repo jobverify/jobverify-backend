@@ -125,7 +125,7 @@ export const hasWorkableBoardSignal = (page) => {
 export const hasOfficialJobsFeedSignal = (markdown) => {
   const value = String(markdown ?? '')
 
-  return /^#\s*dunzo\s*-\s*All Open Positions/im.test(value)
+  return /^#\s*dunzo\s*[-\u2012\u2013\u2014\u2015]\s*All Open Positions/im.test(value)
     && /^>\s*Last updated:/im.test(value)
     && /^\|\s*Title\s*\|\s*Department\s*\|\s*Location\s*\|\s*Type\s*\|\s*Salary\s*\|\s*Posted\s*\|\s*Details\s*\|/im.test(value)
     && /Powered by\s+\[Workable\]\(https:\/\/www\.workable\.com\)/i.test(value)

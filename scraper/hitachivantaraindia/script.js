@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import HITACHI_VANTARA_INDIA_CATALOG from './catalog.js'
 
@@ -19,6 +20,7 @@ const DEFAULT_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
 }
+const BROWSER_TIMEOUT_MS = 90000
 const NULLISH_SECTION_LABELS = [
   'Apply Now',
   'Share:',
@@ -75,6 +77,11 @@ const stripTags = (value) =>
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
 
+const hasMeaningfulValue = (value) => {
+  const normalized = normalizeWhitespace(value)
+  return Boolean(normalized && normalized !== ':')
+}
+
 const toAbsoluteUrl = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -101,6 +108,17 @@ const extractLabelValue = (lines, label) => {
   const pattern = new RegExp(`^${escapeRegex(label)}\\s*:?\\s*(.+)$`, 'i')
   const line = lines.find((value) => pattern.test(value))
   return normalizeWhitespace(line?.replace(pattern, '$1'))
+}
+
+const extractContextField = (html, label) => {
+  const match = String(html ?? '').match(
+    new RegExp(
+      `<span[^>]*class=["'][^"']*hide[^"']*["'][^>]*>\\s*${escapeRegex(label)}\\s*:?\\s*<\\/span>([\\s\\S]*?)<\\/div>`,
+      'i',
+    ),
+  )
+  const value = stripTags(match?.[1])
+  return hasMeaningfulValue(value) ? value : null
 }
 
 const hasLabel = (value, label) =>
@@ -184,6 +202,43 @@ const normalizeRemoteStatus = (value, location) => {
   return null
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP 403|timed out|timeout|fetch failed|certificate|blocked/i.test(String(error?.message ?? error ?? ''))
+
+const createBrowserFetchSession = async () => {
+  const browser = await launchBrowser()
+  const page = await createOptimizedPage(browser)
+  await page.setUserAgent(DEFAULT_HEADERS['User-Agent'])
+
+  return {
+    close: async () => browser.close(),
+    fetchText: async (url) => {
+      const response = await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: BROWSER_TIMEOUT_MS,
+      })
+
+      if (!response?.ok()) {
+        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
+      }
+
+      return page.content()
+    },
+    fetchFinalUrl: async (url) => {
+      const response = await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: BROWSER_TIMEOUT_MS,
+      })
+
+      if (!response?.ok()) {
+        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
+      }
+
+      return page.url()
+    },
+  }
+}
+
 const defaultFetchText = (url) =>
   fetchTextWithRetry(url, {
     headers: DEFAULT_HEADERS,
@@ -223,11 +278,11 @@ export const extractListings = (html = '') => {
       const contextLines = htmlToLines(contextHtml)
       const sourceUrl = toAbsoluteUrl(match[1])
       const title = stripTags(match[2])
-      const location = extractLabelValue(contextLines, 'Location')
-      const company = extractLabelValue(contextLines, 'Company')
+      const location = extractContextField(contextHtml, 'Location') || extractLabelValue(contextLines, 'Location')
+      const company = extractContextField(contextHtml, 'Company') || extractLabelValue(contextLines, 'Company')
 
       if (!title || !sourceUrl || !location) return null
-      if (company !== OFFICIAL_COMPANY_LABEL) return null
+      if (hasMeaningfulValue(company) && company !== OFFICIAL_COMPANY_LABEL) return null
 
       const { city, state, country } = splitLocation(location)
 
@@ -311,20 +366,37 @@ export const normalizeApplyUrl = (value) => {
   }
 }
 
-export const resolveApplyUrl = async (applyUrl, { fetchImpl = defaultFetchImpl } = {}) => {
+export const resolveApplyUrl = async (
+  applyUrl,
+  {
+    fetchImpl = defaultFetchImpl,
+    fetchBrowserFinalUrl,
+  } = {},
+) => {
   const requestUrl = toAbsoluteUrl(applyUrl)
   if (!requestUrl) return null
 
-  const response = await fetchImpl(requestUrl, {
-    headers: DEFAULT_HEADERS,
-    redirect: 'follow',
-  })
+  let redirectedUrl
 
-  if (!response?.ok) {
-    throw new Error(`HTTP ${response?.status ?? 'unknown'} for ${requestUrl}`)
+  try {
+    const response = await fetchImpl(requestUrl, {
+      headers: DEFAULT_HEADERS,
+      redirect: 'follow',
+    })
+
+    if (!response?.ok) {
+      throw new Error(`HTTP ${response?.status ?? 'unknown'} for ${requestUrl}`)
+    }
+
+    redirectedUrl = response.url || response.headers?.get?.('location') || requestUrl
+  } catch (error) {
+    if (!fetchBrowserFinalUrl || !isBrowserFallbackError(error)) {
+      throw error
+    }
+
+    redirectedUrl = await fetchBrowserFinalUrl(requestUrl)
   }
 
-  const redirectedUrl = response.url || response.headers?.get?.('location') || requestUrl
   return normalizeApplyUrl(toAbsoluteUrl(redirectedUrl))
 }
 
@@ -335,49 +407,103 @@ export const createHitachiVantaraIndiaScraper = ({
 } = {}) => ({
   async run({
     fetchText: overrideFetchText,
+    fetchBrowserText,
+    fetchBrowserFinalUrl,
     fetchImpl: overrideFetchImpl,
     maxJobs: overrideMaxJobs = maxJobs,
     now = () => new Date().toISOString(),
   } = {}) {
     const fetchTextImpl = overrideFetchText || fetchText
     const fetchApplyImpl = overrideFetchImpl || fetchImpl
-    const listingHtml = await fetchTextImpl(buildSearchPageUrl())
+    let browserSession = null
 
-    if (!hasOfficialSearchPageSignal(listingHtml)) {
-      throw new Error(
-        'Hitachi Vantara India verified search page no longer matches the known public surface',
-      )
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession()
+      }
+
+      return browserSession
     }
 
-    const listings = extractListings(listingHtml)
-    if (listings.length === 0) {
-      throw new Error(
-        'Hitachi Vantara India verified search page no longer exposes public company-filtered listings',
-      )
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+    const browserApplyUrlFetcher = fetchBrowserFinalUrl || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchFinalUrl(url)
+    })
+
+    const fetchPageText = async (url) => {
+      const shouldPreferBrowser = !overrideFetchText && /careers\.hitachi\.com/i.test(String(url))
+
+      if (shouldPreferBrowser) {
+        try {
+          return await browserTextFetcher(url)
+        } catch (error) {
+          if (!isBrowserFallbackError(error)) {
+            throw error
+          }
+        }
+      }
+
+      try {
+        return await fetchTextImpl(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const jobs = []
+    try {
+      const listingHtml = await fetchPageText(buildSearchPageUrl())
 
-    for (const listing of listings) {
-      const detailHtml = await fetchTextImpl(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
-      const finalApplyUrl = detail.applyUrl
-        ? await resolveApplyUrl(detail.applyUrl, { fetchImpl: fetchApplyImpl })
-        : null
+      if (!hasOfficialSearchPageSignal(listingHtml)) {
+        throw new Error(
+          'Hitachi Vantara India verified search page no longer matches the known public surface',
+        )
+      }
 
-      jobs.push({
-        ...detail,
-        applyUrl: finalApplyUrl || detail.applyUrl,
-        company: COMPANY,
-        link: finalApplyUrl || detail.applyUrl || detail.sourceUrl,
-        source: SOURCE,
-        scrapedAt: now(),
-      })
+      const listings = extractListings(listingHtml)
+      if (listings.length === 0) {
+        throw new Error(
+          'Hitachi Vantara India verified search page no longer exposes public company-filtered listings',
+        )
+      }
 
-      if (overrideMaxJobs && jobs.length >= overrideMaxJobs) break
+      const jobs = []
+
+      for (const listing of listings) {
+        const detailHtml = await fetchPageText(listing.sourceUrl)
+        const detail = extractJobDetail(detailHtml, listing)
+        const finalApplyUrl = detail.applyUrl
+          ? await resolveApplyUrl(detail.applyUrl, {
+              fetchImpl: fetchApplyImpl,
+              fetchBrowserFinalUrl: browserApplyUrlFetcher,
+            })
+          : null
+
+        jobs.push({
+          ...detail,
+          applyUrl: finalApplyUrl || detail.applyUrl,
+          company: COMPANY,
+          link: finalApplyUrl || detail.applyUrl || detail.sourceUrl,
+          source: SOURCE,
+          scrapedAt: now(),
+        })
+
+        if (overrideMaxJobs && jobs.length >= overrideMaxJobs) break
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    return jobs
   },
 })
 

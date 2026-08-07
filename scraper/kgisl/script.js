@@ -198,6 +198,7 @@ export const createKgislScraper = () => ({
       company: COMPANY,
       companyCareerPage: CURRENT_OPENINGS_URL,
       atsPlatform: 'official-first-party-candidate-portal',
+      publicExperienceChecked: Boolean(job.jobDescription),
     }, {
       companyName: COMPANY,
       companyCareerPage: CURRENT_OPENINGS_URL,

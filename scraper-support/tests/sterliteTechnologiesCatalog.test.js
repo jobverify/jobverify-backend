@@ -26,7 +26,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Sterlite Technologies local catalog captures the verified first-party careers handoff sentinel surface', async () => {
+test('Sterlite Technologies local catalog captures the verified STL careers handoff and public RippleHire board surface', async () => {
   const { STERLITE_TECHNOLOGIES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const sterliteTechnologies = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(STERLITE_TECHNOLOGIES_CATALOG)
@@ -40,27 +40,37 @@ test('Sterlite Technologies local catalog captures the verified first-party care
   assert.equal(provider.officialCareersPageUrl, 'https://stl.tech/life/')
   assert.equal(
     provider.linkedJobsPortalUrl,
-    'https://stltech.ripplehire.com/candidate/?source=CAREERSITE&token=v0cOTxD3fgZqIF393gqj',
+    'https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE#list',
   )
   assert.equal(provider.linkedJobsPortalHost, 'stltech.ripplehire.com')
-  assert.equal(provider.companyDomain, 'stl.tech')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-trustworthy-public-jobs-surface')
-  assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-careers-handoff-page')
+  assert.equal(provider.portalOrigin, 'https://stltech.ripplehire.com')
   assert.equal(
-    provider.extractionStrategy,
-    'verified-first-party-careers-page+external-ripplehire-handoff+return-empty-when-no-trustworthy-public-jobs-surface',
+    provider.officialCareersHandoffUrl,
+    'https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE#list',
   )
+  assert.equal(
+    provider.jobBoardUrl,
+    'https://stltech.ripplehire.com/candidate/?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE',
+  )
+  assert.equal(
+    provider.jobsApiUrl,
+    'https://stltech.ripplehire.com/candidate/candidatejobsearch',
+  )
+  assert.equal(provider.companyDomain, 'stl.tech')
+  assert.equal(provider.atsPlatform, 'ripplehire')
+  assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.paginationStrategy, 'page-param-on-public-ripplehire-board')
+  assert.equal(provider.extractionStrategy, 'official-careers-handoff+ripplehire-list-detail-api')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-05')
   assert.match(provider.dryRunFile, /sterlitetechnologies[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/stl\.tech\/life\//i)
-  assert.match(provider.verifiedSurfaceSummary, /stltech\.ripplehire\.com/i)
-  assert.match(provider.verifiedSurfaceSummary, /Apply for your next job here/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy enumerable public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /stltech\.ripplehire\.com\/candidate\/\?token=v0cOTxD3fgZqIF393gqj&source=CAREERSITE#list/i)
+  assert.match(provider.verifiedSurfaceSummary, /candidatejobsearch/i)
+  assert.match(provider.verifiedSurfaceSummary, /104 live listings/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Sterlite Technologies'), false)
 
   assert.equal(
@@ -72,8 +82,8 @@ test('Sterlite Technologies local catalog captures the verified first-party care
     STERLITE_TECHNOLOGIES_CATALOG.companyName,
   )
   assert.equal(
-    sterliteTechnologies.PROVIDER_METADATA.linkedJobsPortalHost,
-    STERLITE_TECHNOLOGIES_CATALOG.linkedJobsPortalHost,
+    sterliteTechnologies.PROVIDER_METADATA.jobsApiUrl,
+    STERLITE_TECHNOLOGIES_CATALOG.jobsApiUrl,
   )
 })
 
@@ -101,7 +111,7 @@ test('Sterlite Technologies hydrated local catalog stays script-runner compatibl
   assert.equal(provider.companyName, 'Sterlite Technologies')
   assert.equal(provider.companyCareerPage, 'https://stl.tech/life/')
   assert.equal(provider.companyDomain, 'stl.tech')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-trustworthy-public-jobs-surface')
+  assert.equal(provider.atsPlatform, 'ripplehire')
   assert.match(provider.modulePath, /sterlitetechnologies[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /sterlitetechnologies[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

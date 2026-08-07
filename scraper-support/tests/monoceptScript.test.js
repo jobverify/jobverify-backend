@@ -5,11 +5,12 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Insurtech Careers & Jobs | Monocept</title>
+    <title>Careers | Build the Future of Insurance | Monocept</title>
   </head>
   <body>
-    <h1>Insurtech Careers & Jobs</h1>
-    <p>Build mission-critical insurance platforms in Hyderabad.</p>
+    <h1>Build the Future of Insurtech</h1>
+    <p>Join a collaborative team where you’ll solve real problems, take ownership, and shape the future of insurance through AI and innovation.</p>
+    <p>10th Floor, VSD Tech Park, Financial District, Hyderabad, India - 500032</p>
     <a href="https://monocept.turbohire.co/careerpage/0e8227c1-c352-4202-8e40-c0aa16b6ca69">Explore Opportunities</a>
   </body>
 </html>
@@ -19,12 +20,14 @@ const turboHireHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Monocept Consulting Pvt. Ltd. - Career Page</title>
+    <title>Monocept Consulting Pvt. Ltd.</title>
+    <meta property="og:title" content="Monocept Consulting Pvt. Ltd. - Career Page" />
+    <meta property="og:description" content="Explore job opportunities at Monocept Consulting Pvt. Ltd." />
   </head>
   <body>
     <div id="root"></div>
     <script src="/turbohire/app.js"></script>
-    <footer>Powered by TurboHire Career Page</footer>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
   </body>
 </html>
 `
@@ -42,7 +45,7 @@ test('Monocept scraper stays pinned to the first-party handoff plus JS-shell blo
 
   assert.equal(monocept.SOURCE, 'monocept')
   assert.equal(monocept.COMPANY, 'Monocept')
-  assert.equal(monocept.VERIFIED_ON, '2026-07-18')
+  assert.equal(monocept.VERIFIED_ON, '2026-08-03')
   assert.equal(monocept.CAREERS_URL, 'https://www.monocept.com/careers')
   assert.equal(monocept.HANDOFF_URL, 'https://monocept.turbohire.co/careerpage/0e8227c1-c352-4202-8e40-c0aa16b6ca69')
   assert.equal(monocept.hasOfficialCareersSignal(careersHtml), true)

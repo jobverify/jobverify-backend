@@ -22,20 +22,29 @@ const TOKOPEDIA_REFERENCE_HTML = `
   <body>
     <main>
       <h1>CAUTION: GoTo Group | Fake Job listings - What you should be aware of</h1>
-      <p>All authentic job postings from any of GoTo’s operating companies would be listed on the respective company’s official websites or their official LinkedIn pages.</p>
+      <p>All authentic job postings from any of GoTo's operating companies would be listed on the respective company's official websites or their official LinkedIn pages.</p>
       <h2>Career Sites</h2>
       <a href="https://career.gojek.com">Gojek Career</a>
       <a href="https://tokopedia.darwinbox.com/ms/candidate/careers">Tokopedia Career</a>
       <a href="https://gotofinancial.com">GoTo Financial Services Careers</a>
-      <h2>LinkedIn Pages</h2>
-      <p>Tokopedia</p>
-      <p>Tokopedia: john.doe@tokopedia.com</p>
     </main>
   </body>
 </html>
 `
 
-const OPAQUE_DARWINBOX_SHELL = '-'
+const OPAQUE_DARWINBOX_SHELL = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <base href="/ms/candidate/">
+  </head>
+  <body>
+    <noscript>Please enable Javascript!</noscript>
+  </body>
+</html>
+`
 
 const PUBLIC_JOBS_HTML = `
 <!doctype html>
@@ -63,7 +72,7 @@ test('Tokopedia sentinel helpers stay pinned to the verified GoTo reference and 
   assert.equal(tokopedia.SOURCE, 'tokopedia')
   assert.equal(tokopedia.COMPANY, 'Tokopedia')
   assert.equal(tokopedia.OFFICIAL_BRAND_NAME, 'Tokopedia')
-  assert.equal(tokopedia.VERIFIED_ON, '2026-07-17')
+  assert.equal(tokopedia.VERIFIED_ON, '2026-08-06')
   assert.equal(tokopedia.GOTO_CAREERS_URL, 'https://www.gotocompany.com/careers')
   assert.equal(
     tokopedia.TOKOPEDIA_REFERENCE_URL,
@@ -81,6 +90,7 @@ test('Tokopedia sentinel helpers stay pinned to the verified GoTo reference and 
     'https://tokopedia.darwinbox.com/ms/candidate/careers',
   )
   assert.equal(tokopedia.hasAuthorizedTokopediaReferenceSignal(TOKOPEDIA_REFERENCE_HTML), true)
+  assert.equal(tokopedia.hasOpaqueTokopediaDarwinboxShellSignal(OPAQUE_DARWINBOX_SHELL), true)
   assert.equal(tokopedia.pageExposesPublicJobListings(OPAQUE_DARWINBOX_SHELL), false)
   assert.equal(tokopedia.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
   assert.equal(

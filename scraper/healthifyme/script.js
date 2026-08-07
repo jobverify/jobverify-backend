@@ -23,7 +23,8 @@ export const VERIFIED_ON = HEALTHIFYME_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = HEALTHIFYME_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = HEALTHIFYME_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,

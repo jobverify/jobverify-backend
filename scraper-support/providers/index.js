@@ -81,6 +81,34 @@ const normalizeCompanyDomain = (value) => {
 const getDefaultDryRunFile = (provider = {}) =>
   path.join(scraperDir, getDefaultDryRunRelativePath(provider))
 
+const isWithinDirectory = (filePath, directoryPath) => {
+  const normalizedFilePath = path.resolve(filePath)
+  const normalizedDirectoryPath = path.resolve(directoryPath)
+  const relativePath = path.relative(normalizedDirectoryPath, normalizedFilePath)
+
+  return relativePath === ''
+    || (
+      relativePath
+      && !relativePath.startsWith('..')
+      && !path.isAbsolute(relativePath)
+    )
+}
+
+const resolveProviderDryRunFile = (provider = {}) => {
+  const defaultDryRunFile = getDefaultDryRunFile(provider)
+  if (!provider.dryRunFile) {
+    return defaultDryRunFile
+  }
+
+  if (!path.isAbsolute(provider.dryRunFile)) {
+    return path.join(scraperDir, provider.dryRunFile)
+  }
+
+  return isWithinDirectory(provider.dryRunFile, scraperDir)
+    ? provider.dryRunFile
+    : defaultDryRunFile
+}
+
 const resolveProviderModuleFilePath = (modulePath) => (
   path.isAbsolute(modulePath)
     ? modulePath
@@ -170,13 +198,7 @@ export const hydrateProviderCatalogEntry = (provider = {}) => {
   }
   const dryRunFile = isWorkdayBackedProvider(draftProvider)
     ? getDefaultDryRunFile(draftProvider)
-    : (
-        provider.dryRunFile
-          ? path.isAbsolute(provider.dryRunFile)
-            ? provider.dryRunFile
-            : path.join(scraperDir, provider.dryRunFile)
-          : getDefaultDryRunFile(draftProvider)
-      )
+    : resolveProviderDryRunFile(draftProvider)
   const sourceDirectory = resolveScraperSourceDirectory(draftProvider, { baseDir: scraperDir })
 
   return {

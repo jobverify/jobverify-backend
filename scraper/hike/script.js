@@ -1,3 +1,5 @@
+import http from 'node:http'
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -17,6 +19,9 @@ export const CAREERS_ROUTE_URLS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
+const MAX_REDIRECTS = 10
 
 const VERIFIED_OUTAGE_SIGNALS = [
   '502 server error',
@@ -68,6 +73,63 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
+export const isRecoverableCertificateError = (error) => {
+  const message = String(error?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return /CERT_HAS_EXPIRED/i.test(combined)
+    || /certificate has expired/i.test(combined)
+    || /SEC_E_CERT_EXPIRED/i.test(combined)
+}
+
+export const fetchPageAllowingExpiredCertificate = (url, redirectCount = 0) => new Promise((resolve, reject) => {
+  const targetUrl = new URL(url)
+  const transport = targetUrl.protocol === 'http:' ? http : https
+
+  const request = transport.request(targetUrl, {
+    method: 'GET',
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    rejectUnauthorized: false,
+  }, (response) => {
+    const status = response.statusCode ?? 0
+    const location = response.headers.location
+
+    if (
+      location
+      && REDIRECT_STATUSES.has(status)
+      && redirectCount < MAX_REDIRECTS
+    ) {
+      response.resume()
+      resolve(fetchPageAllowingExpiredCertificate(new URL(location, targetUrl).toString(), redirectCount + 1))
+      return
+    }
+
+    let html = ''
+    response.setEncoding('utf8')
+    response.on('data', (chunk) => {
+      html += chunk
+    })
+    response.on('end', () => {
+      resolve({
+        status,
+        url: targetUrl.toString(),
+        html,
+      })
+    })
+  })
+
+  request.setTimeout(15000, () => {
+    request.destroy(new Error(`Timed out fetching ${url}`))
+  })
+  request.on('error', reject)
+  request.end()
+})
+
 export const defaultFetchPage = async (url, {
   fetchImpl = fetch,
   timeoutMs = 15000,
@@ -100,16 +162,43 @@ export const isVerifiedOutagePage = (page = {}) =>
   && !hasPublicJobsSignal(page?.html)
   && hasVerifiedFirstPartyOutageSignal(page?.html)
 
+const fetchVerifiedPage = async (
+  url,
+  fetchPage,
+  fetchPageAllowingExpiredCertificateImpl,
+) => {
+  try {
+    return await fetchPage(url)
+  } catch (error) {
+    if (!isRecoverableCertificateError(error)) {
+      throw error
+    }
+
+    return fetchPageAllowingExpiredCertificateImpl(url)
+  }
+}
+
 export const createHikeScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({
+    fetchPage = defaultFetchPage,
+    fetchPageAllowingExpiredCertificate: fetchPageAllowingExpiredCertificateImpl = fetchPageAllowingExpiredCertificate,
+  } = {}) {
+    const homepage = await fetchVerifiedPage(
+      HOMEPAGE_URL,
+      fetchPage,
+      fetchPageAllowingExpiredCertificateImpl,
+    )
 
     if (!isVerifiedOutagePage(homepage)) {
       throw new Error('Hike verified official homepage surface changed; refusing to guess any public jobs source')
     }
 
     for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
+      const careersRoute = await fetchVerifiedPage(
+        careersRouteUrl,
+        fetchPage,
+        fetchPageAllowingExpiredCertificateImpl,
+      )
 
       if (!isVerifiedOutagePage(careersRoute)) {
         throw new Error('Hike careers routes changed materially or now expose public jobs')

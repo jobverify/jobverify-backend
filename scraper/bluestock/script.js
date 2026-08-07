@@ -8,6 +8,8 @@ const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://bluestock.in/careers/'
 export const JOBS_PAGE_URL = 'https://bluestock.in/careers/jobs/'
+export const COMPANY_DOMAIN = 'bluestock.in'
+export const ATS_PLATFORM = 'custom-careers-pages'
 
 const normalizeWhitespace = (value) =>
   String(value ?? '')
@@ -47,6 +49,10 @@ const buildJob = ({
   postingDate: null,
   closingDate: null,
   jobDescription: description,
+  publicExperienceChecked: true,
+  companyCareerPage: CAREER_PAGE_URL,
+  companyDomain: COMPANY_DOMAIN,
+  atsPlatform: ATS_PLATFORM,
 })
 
 export const extractHighlightedRoles = (html) => {

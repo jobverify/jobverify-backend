@@ -1,3 +1,5 @@
+import http from 'node:http'
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -31,6 +33,9 @@ export const NO_TRUST_PUBLIC_JOB_ROUTE_URLS = [
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
+const MAX_REDIRECTS = 10
+
 const normalizeWhitespace = (value = '') => String(value ?? '')
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
@@ -50,6 +55,63 @@ const parseJson = (value) => {
     return null
   }
 }
+
+export const isRecoverableCertificateError = (error) => {
+  const message = String(error?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return /CERT_HAS_EXPIRED/i.test(combined)
+    || /certificate has expired/i.test(combined)
+    || /SEC_E_CERT_EXPIRED/i.test(combined)
+}
+
+export const fetchPageAllowingExpiredCertificate = (url, redirectCount = 0) => new Promise((resolve, reject) => {
+  const targetUrl = new URL(url)
+  const transport = targetUrl.protocol === 'http:' ? http : https
+
+  const request = transport.request(targetUrl, {
+    method: 'GET',
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
+    },
+    rejectUnauthorized: false,
+  }, (response) => {
+    const status = response.statusCode ?? 0
+    const location = response.headers.location
+
+    if (
+      location
+      && REDIRECT_STATUSES.has(status)
+      && redirectCount < MAX_REDIRECTS
+    ) {
+      response.resume()
+      resolve(fetchPageAllowingExpiredCertificate(new URL(location, targetUrl).toString(), redirectCount + 1))
+      return
+    }
+
+    let html = ''
+    response.setEncoding('utf8')
+    response.on('data', (chunk) => {
+      html += chunk
+    })
+    response.on('end', () => {
+      resolve({
+        status,
+        url: targetUrl.toString(),
+        html,
+      })
+    })
+  })
+
+  request.setTimeout(15000, () => {
+    request.destroy(new Error(`Timed out fetching ${url}`))
+  })
+  request.on('error', reject)
+  request.end()
+})
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -83,17 +145,36 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && /Swiggy Dineout/i.test(normalized)
 }
 
+export const hasRedirectedRestaurantsNearMeSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /Best Restaurants Near Me(?: In \d{4})? \| Swiggy/i.test(rawHtml)
+    && normalized.includes('Restaurants Near Me')
+    && normalized.includes('For Dining Out')
+    && normalized.includes('Order Online')
+    && /Book a table/i.test(normalized)
+}
+
 export const isVerifiedRedirectedNoTrustPublicJobRoute = (page = {}) =>
-  Number(page?.status) === 403
-  && String(page?.url ?? '') === REDIRECTED_NO_TRUST_ROUTE_URL
-  && /\b403 Forbidden\b/i.test(String(page?.html ?? ''))
+  String(page?.url ?? '') === REDIRECTED_NO_TRUST_ROUTE_URL
+  && (
+    (
+      Number(page?.status) === 403
+      && /\b403 Forbidden\b/i.test(String(page?.html ?? ''))
+    )
+    || (
+      Number(page?.status) === 200
+      && hasRedirectedRestaurantsNearMeSignal(page?.html)
+    )
+  )
 
 export const hasParentCareersLandingSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
   return /<title>\s*Swiggy Careers\s*<\/title>/i.test(rawHtml)
-    && /<meta\s+name=["']description["']\s+content=["']Check out the exciting job opportunities at Swiggy!["']/i.test(rawHtml)
+    && /<meta\s+name=["']description["'][^>]*Check out the exciting job opportunities at Swiggy!/i.test(rawHtml)
     && /assets\/js\/careers-integration\.js/i.test(rawHtml)
     && /\bSwiggy Careers\b/i.test(normalized)
 }
@@ -108,6 +189,13 @@ export const extractJobsBoardUrlFromIntegrationScript = (scriptText = '') => {
   const shortNameMatch = /clientShortName\s*=\s*["']([^"']+)["']/i.exec(text)
   if (shortNameMatch && /mynexthire\.com\/employer\/jobs\/careers/i.test(text)) {
     return `https://${shortNameMatch[1]}.mynexthire.com/employer/jobs/careers`
+  }
+
+  if (
+    /iFrameSrc\s*=\s*["']https:\/\/["']\s*\+\s*clientShortName\s*\+\s*["']\.mynexthire\.com\/employer\/jobs\/careers["']/i.test(text)
+    && /page=careers/i.test(text)
+  ) {
+    return JOBS_BOARD_URL
   }
 
   return null
@@ -125,30 +213,93 @@ export const hasDineoutAttributablePublicRoles = (value = '') => {
     && /\b(job|jobs|career|careers|role|roles|opening|openings|position|positions|hiring|apply)\b/i.test(text)
 }
 
+const toTypedUrlMap = (value) => {
+  if (Array.isArray(value)) {
+    return value.reduce((accumulator, entry) => {
+      const pageType = String(entry?.pageType ?? '')
+      const url = String(entry?.url ?? '')
+      if (pageType && url) {
+        accumulator[pageType] = url
+      }
+      return accumulator
+    }, {})
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value).reduce((accumulator, [pageType, entry]) => {
+      const url = typeof entry === 'string'
+        ? entry
+        : String(entry?.url ?? '')
+      if (url) {
+        accumulator[pageType] = url
+      }
+      return accumulator
+    }, {})
+  }
+
+  return {}
+}
+
 export const hasVerifiedJobBoardDetailsSignal = (jsonText = '') => {
   const payload = parseJson(jsonText)
   if (!payload || typeof payload !== 'object') {
     return false
   }
 
+  const careerPageUrl = payload.career_page_url
+    || payload.tenantPreferencesMap?.career_page_url
+    || null
+  const typedCareerUrls = toTypedUrlMap(careerPageUrl?.url)
+  const typedReferralUrls = toTypedUrlMap(careerPageUrl?.referral_url)
+
   return payload.clientName === 'Swiggy'
-    && payload.career_page_url?.url?.list === 'https://careers.swiggy.com/#/careers'
-    && payload.career_page_url?.url?.jd === 'https://careers.swiggy.com/#/careers'
-    && payload.career_page_url?.url?.application === 'https://careers.swiggy.com/#/careers/apply'
-    && payload.career_page_url?.referral_url?.list === JOBS_BOARD_URL
+    && typedCareerUrls.list === 'https://careers.swiggy.com/#/careers'
+    && typedCareerUrls.jd === 'https://careers.swiggy.com/#/careers'
+    && typedCareerUrls.application === 'https://careers.swiggy.com/#/careers/apply'
+    && (
+      typedReferralUrls.list === JOBS_BOARD_URL
+      || typedReferralUrls.list === 'https://swiggy.mynexthire.com/employer/referrals'
+    )
     && !hasDineoutAttributablePublicRoles(jsonText)
 }
 
+const fetchVerifiedPage = async (
+  url,
+  fetchPage,
+  fetchPageAllowingExpiredCertificateImpl,
+) => {
+  try {
+    return await fetchPage(url)
+  } catch (error) {
+    if (!isRecoverableCertificateError(error)) {
+      throw error
+    }
+
+    return fetchPageAllowingExpiredCertificateImpl(url)
+  }
+}
+
 export const createDineoutScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({
+    fetchPage = defaultFetchPage,
+    fetchPageAllowingExpiredCertificate: fetchPageAllowingExpiredCertificateImpl = fetchPageAllowingExpiredCertificate,
+  } = {}) {
+    const homepage = await fetchVerifiedPage(
+      HOMEPAGE_URL,
+      fetchPage,
+      fetchPageAllowingExpiredCertificateImpl,
+    )
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Dineout verified official consumer homepage no longer matches the known public surface')
     }
 
     for (const routeUrl of NO_TRUST_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routePage = await fetchVerifiedPage(
+        routeUrl,
+        fetchPage,
+        fetchPageAllowingExpiredCertificateImpl,
+      )
 
       if (!isVerifiedRedirectedNoTrustPublicJobRoute(routePage)) {
         throw new Error(`Dineout verified no-trust Dineout job route changed: ${routePage.url || routeUrl}`)
