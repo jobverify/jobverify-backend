@@ -236,3 +236,66 @@ test('run enriches recent Amazon jobs with official detail page experience', asy
   assert.equal(jobs[0].title, 'Software Dev Engineer II')
   assert.equal(jobs[0].experienceRequired, '3+ years')
 })
+
+test('run still enriches Amazon jobs within the default 30-day detail retention window', async () => {
+  const {
+    buildSearchApiUrl,
+    createAmazonScraper,
+  } = await loadAmazonModule()
+
+  const scraper = createAmazonScraper({ pageSize: 1, maxPages: 1, maxJobs: 1 })
+  const requests = []
+  const payload = {
+    error: null,
+    hits: 1,
+    jobs: [
+      {
+        id: 'req-20-days',
+        id_icims: '2805116',
+        title: 'Amazon.jobs',
+        job_category: 'Software Development',
+        job_schedule_type: 'full-time',
+        job_path: '/en/jobs/2805116/software-dev-engineer-ii',
+        location: 'IN, KA, Bengaluru',
+        normalized_location: 'Bengaluru, Karnataka, IND',
+        city: 'Bengaluru',
+        country_code: 'IND',
+        posted_date: 'July 10, 2026',
+        description: 'Build next-generation tools for Alexa.',
+        url_next_step: 'https://account.amazon.jobs/jobs/2805116/apply',
+      },
+    ],
+  }
+
+  const jobs = await scraper.run({
+    now: '2026-07-30T12:00:00.000Z',
+    fetchJson: async (url) => {
+      requests.push(url)
+      if (url === buildSearchApiUrl({ offset: 0, resultLimit: 1 })) return payload
+      throw new Error(`Unexpected Amazon URL: ${url}`)
+    },
+    fetchText: async (url) => {
+      requests.push(url)
+      assert.equal(url, 'https://www.amazon.jobs/en/jobs/2805116/software-dev-engineer-ii')
+      return `
+        <html>
+          <head>
+            <meta property="og:title" content="Software Dev Engineer II" />
+          </head>
+          <body>
+            <div class="section"><h2>Description</h2><p>Build next-generation tools for Alexa.</p></div>
+            <div class="section"><h2>Basic Qualifications</h2><p>- 3+ years of non-internship professional software development experience</p></div>
+          </body>
+        </html>
+      `
+    },
+  })
+
+  assert.deepEqual(requests, [
+    buildSearchApiUrl({ offset: 0, resultLimit: 1 }),
+    'https://www.amazon.jobs/en/jobs/2805116/software-dev-engineer-ii',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Software Dev Engineer II')
+  assert.equal(jobs[0].experienceRequired, '3+ years')
+})

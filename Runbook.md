@@ -264,7 +264,7 @@ $env:NODE_OPTIONS = "--use-system-ca"
 $runStamp = Get-Date -Format "yyyyMMddTHHmmss"
 $logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
-npm run scrape:parallel 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
+npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
 ```
 
 Equivalent direct commands:

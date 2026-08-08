@@ -603,17 +603,6 @@
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.rockwellautomation.com/en-us/careers.html was the live first-party Rockwell Automation careers page and that its View Jobs handoff resolved to the public Workday board at https://rockwellautomation.wd1.myworkdayjobs.com/en-US/External_Rockwell_Automation. Verified on the same date that the live Workday surface exposed India openings including Software Development Engineer in Bangalore, India, SAP SCM Consultant across Bengaluru, India, Pune, India, and India New Delhi (Noida), and AI Transformation Lead across Bangalore, India, Pune, India, and Noida, India."
   },
   {
-    "name": "johnsonandjohnson",
-    "company": "Johnson & Johnson",
-    "baseUrl": "https://jj.wd5.myworkdayjobs.com/JJ?locations=a453930323781001ccb3f86614f60000&locations=248d949319841001cb07b39577950000&locations=396b78684e421001cb04df00caaf0000&locations=385f2db984b61001ccc07c5e77f10000&locations=83c5c57cda9d1001cb05f96847b80000&locations=248d949319841001ccb53c53d7c20000&locations=3f2a08fac1611001cb181c39ac4c0000&locations=9ab785410a571001ccc0c42979e70000&locations=1e521e0fea0a1001ccb80bb5cbef0000&locations=40baa0b21fa41001ccb9d496368a0000&locations=fcb1a7f88ead1001ccb89493526e0000&locations=b7ec5694ba561001ccb7b4bc503d0000&locations=22c0964533ff1001cb0f399634750000&locations=fcb1a7f88ead1001ccb8e2b351010000&locations=a453930323781001cb123acf67210000&locations=4b4e8ca78d381001cb0fcc4d038b0000&locations=4a6c44a463ba1001cb13010f78530000&locations=ab23c390dc351001cb0f8834ee5a0000",
-    "companyCareerPage": "https://www.careers.jnj.com/en/jobs",
-    "locationCountry": null,
-    "officialWorkdayBoardUrl": "https://jj.wd5.myworkdayjobs.com/JJ",
-    "jobsApiUrl": "https://jj.wd5.myworkdayjobs.com/wday/cxs/jj/JJ/jobs",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.careers.jnj.com/en/jobs was the live first-party Johnson & Johnson jobs surface and that current India roles, including Management Trainee in Bangalore with requisition R-088812, were exposed through the public Workday board at https://jj.wd5.myworkdayjobs.com/JJ. The public Workday jobs API at https://jj.wd5.myworkdayjobs.com/wday/cxs/jj/JJ/jobs returned current J&J postings and India location facets for the scraper's location filter."
-  },
-  {
     "name": "analogdevicesindia",
     "company": "Analog Devices India",
     "officialBrandName": "Analog Devices",

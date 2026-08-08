@@ -40,8 +40,8 @@ test('resolveJobPostedAt uses the scrape date when the posting date is missing o
 
 test('job lifecycle configuration rejects unsafe or invalid values', () => {
   assert.equal(resolveJobRetentionDays('14'), 14)
-  assert.equal(resolveJobRetentionDays('0'), 10)
-  assert.equal(resolveJobRetentionDays('invalid'), 10)
+  assert.equal(resolveJobRetentionDays('0'), 30)
+  assert.equal(resolveJobRetentionDays('invalid'), 30)
   assert.equal(resolveJobMissesBeforeExpiry('3'), 3)
   assert.equal(resolveJobMissesBeforeExpiry('1'), 2)
   assert.equal(resolveJobMissesBeforeExpiry('invalid'), 2)
@@ -52,7 +52,7 @@ test('job lifecycle boundaries use UTC days and keep the exact cutoff day', () =
 
   assert.equal(startOfUtcDay(now).toISOString(), '2026-07-25T00:00:00.000Z')
   assert.equal(
-    buildJobPostedAtCutoff(now, 10).toISOString(),
-    '2026-07-15T00:00:00.000Z',
+    buildJobPostedAtCutoff(now, 30).toISOString(),
+    '2026-06-25T00:00:00.000Z',
   )
 })

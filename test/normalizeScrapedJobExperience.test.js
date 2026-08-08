@@ -497,12 +497,12 @@ test('normalizes experience ranges when the year unit is hyphenated onto the upp
   assert.equal(normalized.experienceRequired, '3-5 years')
 })
 
-test('normalizes IHCL work-experience phrasing when the year unit trails the experience label', () => {
+test('normalizes work-experience phrasing when the year unit trails the experience label', () => {
   const normalized = normalizeScrapedJob({
     title: 'Assistant Restaurant Manager',
-    company: 'IHCL',
+    company: 'Example Hospitality',
     location: 'Mumbai, India',
-    sourceUrl: 'https://careers.ihcltata.com/IHCL/job/Mumbai-Assistant-Restaurant-Manager-MH-400001/53818080/',
+    sourceUrl: 'https://careers.example.com/jobs/assistant-restaurant-manager',
     description: 'Required Qualifications 10 + 2 or Apprenticeship Certification Diploma/Graduation certification Work Experience 3 - 4 experience years. Different establishments from 4 stars to 5 stars',
     experienceRequired: null,
   })

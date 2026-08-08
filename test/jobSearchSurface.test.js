@@ -78,6 +78,17 @@ test("buildJobSearchKeys makes a normalized city from an office address searchab
   );
 });
 
+test("buildJobSearchKeys keeps Sanand distinct from Anand", () => {
+  assert.deepEqual(
+    buildJobSearchKeys({
+      company: "Example Manufacturing",
+      city: "Sanand, Gujarat, India",
+      location: "Sanand, Gujarat, India",
+    }).locationKeys,
+    ["sanand, gujarat, india", "sanand"],
+  );
+});
+
 test("buildJobDerivedFields materializes the public scope flag and stable sort date", () => {
   const postedAt = new Date("2026-07-20T00:00:00.000Z");
 
@@ -93,6 +104,24 @@ test("buildJobDerivedFields materializes the public scope flag and stable sort d
       sortDate: postedAt,
       isPublicIndia: true,
       publicCityKey: "noida",
+    },
+  );
+});
+
+test("buildJobDerivedFields preserves Sanand as the public city key", () => {
+  assert.deepEqual(
+    buildJobDerivedFields({
+      city: "Sanand, Gujarat, India",
+      location: "Sanand, Gujarat, India",
+      country: "India",
+      postedAt: new Date("2026-07-20T00:00:00.000Z"),
+      createdAt: new Date("2026-07-18T00:00:00.000Z"),
+      scrapedAt: new Date("2026-07-17T00:00:00.000Z"),
+    }),
+    {
+      sortDate: new Date("2026-07-20T00:00:00.000Z"),
+      isPublicIndia: true,
+      publicCityKey: "sanand",
     },
   );
 });

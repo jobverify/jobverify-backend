@@ -1,4 +1,4 @@
-export const DEFAULT_JOB_RETENTION_DAYS = 10;
+export const DEFAULT_JOB_RETENTION_DAYS = 30;
 export const DEFAULT_JOB_MISSES_BEFORE_EXPIRY = 2;
 
 const parseIntegerAtLeast = (value, fallback, minimum) => {

@@ -615,6 +615,38 @@ test('upsertScraperStatus records partial scrape details without overwriting las
   }
 })
 
+test('upsertScraperStatus defaults lifecycle retention tracking to 30 days when omitted', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
+
+  let capturedUpdate = null
+
+  ScraperStatus.findOneAndUpdate = async (_filter, update) => {
+    capturedUpdate = update
+    return {}
+  }
+
+  try {
+    await upsertScraperStatus('example-source', {
+      success: true,
+      jobs: 2,
+      eligibleJobs: 2,
+      inserted: 1,
+      updated: 1,
+      deleted: 0,
+      filteredOld: 0,
+      missed: 0,
+      expired: 0,
+      durationMs: 500,
+    })
+
+    assert.equal(capturedUpdate.$set.lastRetentionDays, 30)
+  } finally {
+    ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
+    restoreReadyState()
+  }
+})
+
 test('upsertScraperStatus records soft failures without incrementing hard failure alerts', async () => {
   const restoreReadyState = setReadyState(1)
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate

@@ -5,6 +5,12 @@
 
 import { CANONICAL_CITIES } from './cities.js';
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const matchesCanonicalAlias = (value, alias) => (
+  new RegExp(`(^|[^a-z0-9])${escapeRegex(alias)}([^a-z0-9]|$)`).test(value)
+);
+
 // Returns the canonical city name for a raw string; falls back to the trimmed original.
 export const normalizeCity = (raw) => {
   if (!raw) return null;
@@ -19,7 +25,7 @@ export const normalizeCity = (raw) => {
     return null;
   }
 
-  // Strip common noisy prefixes/suffixes that break substring matching
+  // Strip common noisy prefixes/suffixes before exact and boundary-aware alias matching.
   const cleanLower = lower
     .replace(/^dgs india\s*-\s*/, '')
     .replace(/^ind\s*-\s*/, '')
@@ -31,7 +37,7 @@ export const normalizeCity = (raw) => {
     return CANONICAL_CITIES[cleanLower];
   }
   for (const key of Object.keys(CANONICAL_CITIES)) {
-    if (cleanLower.includes(key)) {
+    if (matchesCanonicalAlias(cleanLower, key)) {
       return CANONICAL_CITIES[key];
     }
   }

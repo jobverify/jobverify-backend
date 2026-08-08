@@ -41,17 +41,17 @@ test('prioritizeBackfillTargets preserves explicit requested source order for ta
   const targets = [
     { source: 'railtel', missingBefore: 245 },
     { source: 'cmscomputers', missingBefore: 227 },
-    { source: 'quesscorp', missingBefore: 227 },
+    { source: 'questglobal', missingBefore: 227 },
   ]
 
   const prioritized = prioritizeBackfillTargets(
     targets,
-    ['cmscomputers', 'quesscorp', 'railtel'],
+    ['cmscomputers', 'questglobal', 'railtel'],
   )
 
   assert.deepEqual(
     prioritized.map((target) => target.source),
-    ['cmscomputers', 'quesscorp', 'railtel'],
+    ['cmscomputers', 'questglobal', 'railtel'],
   )
 })
 

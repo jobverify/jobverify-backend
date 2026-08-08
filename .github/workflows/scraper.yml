@@ -39,7 +39,6 @@ jobs:
           NODE_ENV: production
           NODE_OPTIONS: '--use-system-ca'
           MONGO_URI: ${{ secrets.MONGO_URI }}
-          PUPPETEER_DISABLE_SANDBOX: ${{secrets.PUPPETEER_DISABLE_SANDBOX}}
           SCRAPER_CONCURRENCY: ${{secrets.SCRAPER_CONCURRENCY}}
           SCRAPER_FAILURE_ABORT_THRESHOLD: '1000'
           SCRAPER_JOB_POSTED_WITHIN_DAYS: ${{secrets.SCRAPER_JOB_POSTED_WITHIN_DAYS}}

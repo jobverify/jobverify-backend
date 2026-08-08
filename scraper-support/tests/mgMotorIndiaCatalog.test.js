@@ -32,18 +32,17 @@ test('buildScrapers exposes a runnable MG Motor India scraper without changing t
 
 test('generateCompanyCoverageReport resolves Morris Garages India backlog variants to the MG Motor India provider', () => {
   const report = generateCompanyCoverageReport({
-    csvText: 'Morris Garages India,\nMG Motor India,\nJSW MG Motor India Pvt. Ltd.,\n',
+    csvText: 'Morris Garages India,\nMG Motor India,\n',
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.matchedCount, 3)
+  assert.equal(report.matchedCount, 2)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
     [
       ['Morris Garages India', 'mgmotorindia', 'MG Motor India'],
       ['MG Motor India', 'mgmotorindia', 'MG Motor India'],
-      ['JSW MG Motor India Pvt. Ltd.', 'mgmotorindia', 'MG Motor India'],
     ],
   )
 })

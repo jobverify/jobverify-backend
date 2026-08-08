@@ -443,18 +443,18 @@ test('inferExperienceFromPublicPageHtml does not treat invalid-url shells as ver
 test('inferExperienceFromPublicPageHtml does not treat empty section-heading templates as verified job-detail evidence', () => {
   const enriched = inferExperienceFromPublicPageHtml({
     title: 'Housekeeping Attendant',
-    company: 'IHCL',
-    applyUrl: 'https://careers.ihcltata.com/IHCL/job/Mumbai-Housekeeping-Attendant-MH-400001/53690680/',
-    sourceUrl: 'https://careers.ihcltata.com/IHCL/job/Mumbai-Housekeeping-Attendant-MH-400001/53690680/',
+    company: 'Example Hospitality',
+    applyUrl: 'https://careers.example.com/jobs/housekeeping-attendant',
+    sourceUrl: 'https://careers.example.com/jobs/housekeeping-attendant',
     experienceRequired: null,
   }, `
     <html>
       <body>
         <h1>Housekeeping Attendant</h1>
         <section>
-          <h2>About IHCL</h2>
-          <p>Indian Hotels Company Limited (IHCL) is a part of the Tata Group and is one of South Asia's largest and most iconic hospitality companies with a legacy of over 120 years.</p>
-          <p>Careers at IHCL foster innovation, collaboration, and personal growth.</p>
+          <h2>About Example Hospitality</h2>
+          <p>Example Hospitality is a long-running hotel group with a broad portfolio across India.</p>
+          <p>Careers at Example Hospitality foster innovation, collaboration, and personal growth.</p>
         </section>
         <section>
           <h2>Job Objective</h2>
@@ -466,7 +466,7 @@ test('inferExperienceFromPublicPageHtml does not treat empty section-heading tem
           <h2>Key Interfaces- External</h2>
           <h2>Key Interfaces- Internal</h2>
           <h2>Behavioural Competencies</h2>
-          <h2>Equal Opportunities Employment at IHCL</h2>
+          <h2>Equal Opportunities Employment at Example Hospitality</h2>
         </section>
         <a href="/apply">Apply now</a>
       </body>
@@ -1459,17 +1459,17 @@ test('enrichJobWithPublicExperience refetches stale Oracle shell descriptions ev
 test('enrichJobWithPublicExperience refetches stale section-heading templates even when they were previously marked checked', async () => {
   const job = {
     title: 'Housekeeping Attendant',
-    company: 'IHCL',
-    applyUrl: 'https://careers.ihcltata.com/talentcommunity/apply/53690680/?locale=en_GB',
-    sourceUrl: 'https://careers.ihcltata.com/IHCL/job/Mumbai-Housekeeping-Attendant-MH-400001/53690680/',
+    company: 'Example Hospitality',
+    applyUrl: 'https://careers.example.com/apply/housekeeping-attendant',
+    sourceUrl: 'https://careers.example.com/jobs/housekeeping-attendant',
     experienceRequired: null,
     publicExperienceChecked: true,
     jobDescription: `
-      About IHCL Indian Hotels Company Limited (IHCL) is a part of the Tata Group with a legacy of over 120 years.
-      Careers at IHCL foster innovation and collaboration.
+      About Example Hospitality Example Hospitality is a long-running hotel group with a broad portfolio across India.
+      Careers at Example Hospitality foster innovation and collaboration.
       Job Objective Essential Job Tasks Areas of Responsibility Required Qualifications
       Work Experience Languages Needed in Position Key Interfaces- External Key Interfaces- Internal
-      Behavioural Competencies Equal Opportunities Employment at IHCL Apply now
+      Behavioural Competencies Equal Opportunities Employment at Example Hospitality Apply now
     `,
   }
   let rawFetchCount = 0
@@ -1483,8 +1483,8 @@ test('enrichJobWithPublicExperience refetches stale section-heading templates ev
           <body>
             <h1>Housekeeping Attendant</h1>
             <section>
-              <h2>About IHCL</h2>
-              <p>Indian Hotels Company Limited (IHCL) is a part of the Tata Group and is one of South Asia's largest and most iconic hospitality companies with a legacy of over 120 years.</p>
+              <h2>About Example Hospitality</h2>
+              <p>Example Hospitality is a long-running hotel group with a broad portfolio across India.</p>
             </section>
             <section>
               <h2>Job Objective</h2>
@@ -1510,23 +1510,23 @@ test('enrichJobWithPublicExperience refetches stale section-heading templates ev
   assert.equal(enriched.publicExperienceChecked, false)
 })
 
-test('enrichJobWithPublicExperience refetches duplicated IHCL template shells with competency values and equal-opportunity copy', async () => {
+test('enrichJobWithPublicExperience refetches duplicated section-heading shells with competency values and equal-opportunity copy', async () => {
   const job = {
     title: 'Housekeeping Attendant',
-    company: 'IHCL',
-    applyUrl: 'https://careers.ihcltata.com/talentcommunity/apply/53690680/?locale=en_GB',
-    sourceUrl: 'https://careers.ihcltata.com/IHCL/job/Mumbai-Housekeeping-Attendant-MH-400001/53690680/',
+    company: 'Example Hospitality',
+    applyUrl: 'https://careers.example.com/apply/housekeeping-attendant',
+    sourceUrl: 'https://careers.example.com/jobs/housekeeping-attendant',
     experienceRequired: null,
     publicExperienceChecked: true,
     jobDescription: `
-      About IHCL Indian Hotels Company Limited (IHCL) is a part of the Tata Group and is one of South Asia's largest and most iconic hospitality companies.
-      Careers at IHCL foster innovation, collaboration, and personal growth.
+      About Example Hospitality Example Hospitality is a long-running hotel group with a broad portfolio across India.
+      Careers at Example Hospitality foster innovation, collaboration, and personal growth.
       Job Objective Essential Job Tasks Areas of Responsibility Required Qualifications Work Experience Languages Needed in Position
       Key Interfaces- External Key Interfaces- Internal Behavioural Competencies Effective Communication Resilience Accountability Teamwork
-      Judgement & Analysis Learning Agility Equal Opportunities Employment at IHCL At IHCL, we celebrate diversity and are committed to creating
+      Judgement & Analysis Learning Agility Equal Opportunities Employment at Example Hospitality At Example Hospitality, we celebrate diversity and are committed to creating
       an inclusive environment for all employees. Qualifications Work Experience Languages Needed in Position Key Interfaces- External
       Key Interfaces- Internal Behavioural Competencies Effective Communication Resilience Accountability Teamwork Judgement & Analysis
-      Learning Agility Equal Opportunities Employment at IHCL Apply now Find similar jobs: Housekeeping
+      Learning Agility Equal Opportunities Employment at Example Hospitality Apply now Find similar jobs: Housekeeping
     `,
   }
   let rawFetchCount = 0
@@ -1540,9 +1540,9 @@ test('enrichJobWithPublicExperience refetches duplicated IHCL template shells wi
           <body>
             <h1>Housekeeping Attendant</h1>
             <section>
-              <h2>About IHCL</h2>
-              <p>Indian Hotels Company Limited (IHCL) is a part of the Tata Group and is one of South Asia's largest and most iconic hospitality companies.</p>
-              <p>Careers at IHCL foster innovation, collaboration, and personal growth.</p>
+              <h2>About Example Hospitality</h2>
+              <p>Example Hospitality is a long-running hotel group with a broad portfolio across India.</p>
+              <p>Careers at Example Hospitality foster innovation, collaboration, and personal growth.</p>
               <p>Join us in creating memorable experiences and shaping the future of hospitality.</p>
             </section>
             <section>
@@ -1556,8 +1556,8 @@ test('enrichJobWithPublicExperience refetches duplicated IHCL template shells wi
               <h2>Key Interfaces- Internal</h2>
               <h2>Behavioural Competencies</h2>
               <p>Effective Communication Resilience Accountability Teamwork Judgement & Analysis Learning Agility</p>
-              <h2>Equal Opportunities Employment at IHCL</h2>
-              <p>At IHCL, we celebrate diversity and are committed to creating an inclusive environment for all employees.</p>
+              <h2>Equal Opportunities Employment at Example Hospitality</h2>
+              <p>At Example Hospitality, we celebrate diversity and are committed to creating an inclusive environment for all employees.</p>
               <p>We encourage all qualified individuals to apply and join our team, where every voice is valued and respected.</p>
               <h2>Qualifications</h2>
               <h2>Work Experience</h2>
@@ -1566,8 +1566,8 @@ test('enrichJobWithPublicExperience refetches duplicated IHCL template shells wi
               <h2>Key Interfaces- Internal</h2>
               <h2>Behavioural Competencies</h2>
               <p>Effective Communication Resilience Accountability Teamwork Judgement & Analysis Learning Agility</p>
-              <h2>Equal Opportunities Employment at IHCL</h2>
-              <p>At IHCL, we celebrate diversity and are committed to creating an inclusive environment for all employees.</p>
+              <h2>Equal Opportunities Employment at Example Hospitality</h2>
+              <p>At Example Hospitality, we celebrate diversity and are committed to creating an inclusive environment for all employees.</p>
             </section>
             <a href="/apply">Apply now</a>
             <p>Find similar jobs: Housekeeping</p>

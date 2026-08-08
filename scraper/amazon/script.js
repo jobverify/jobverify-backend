@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -9,7 +10,7 @@ const config = loadConfig(currentDir)
 export const BASE_URL = 'https://www.amazon.jobs'
 export const SEARCH_COUNTRY_CODE = 'IND'
 export const DEFAULT_PAGE_SIZE = 10
-export const DEFAULT_DETAIL_FETCH_RETENTION_DAYS = 10
+export const DEFAULT_DETAIL_FETCH_RETENTION_DAYS = DEFAULT_JOB_RETENTION_DAYS
 
 const MONTH_INDEX = {
   january: '01',

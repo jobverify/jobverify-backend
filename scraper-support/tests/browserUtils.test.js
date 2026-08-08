@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
-  createBrowserLaunchLimiter,
   createBrowserUserDataDir,
   launchBrowser,
   resolveBrowserExecutablePath,
@@ -60,28 +59,6 @@ test('createBrowserUserDataDir allocates a unique temp profile prefix for each b
 
   assert.equal(receivedPrefix, 'C:\\Temp\\jobify-puppeteer-profile-')
   assert.equal(userDataDir, 'C:\\Temp\\jobify-puppeteer-profile-abc123')
-})
-
-test('browser launch limiter queues a third session until an active browser is released', async () => {
-  const limiter = createBrowserLaunchLimiter(2)
-  const releaseFirst = await limiter.acquire()
-  const releaseSecond = await limiter.acquire()
-  let thirdSessionStarted = false
-
-  const thirdSession = limiter.acquire().then((release) => {
-    thirdSessionStarted = true
-    return release
-  })
-
-  await new Promise((resolve) => setImmediate(resolve))
-  assert.equal(thirdSessionStarted, false)
-
-  releaseFirst()
-  const releaseThird = await thirdSession
-  assert.equal(thirdSessionStarted, true)
-
-  releaseSecond()
-  releaseThird()
 })
 
 test('launchBrowser rejects a requesting source with an API-only migration error', async () => {

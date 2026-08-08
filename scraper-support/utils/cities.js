@@ -46,6 +46,7 @@ export const CANONICAL_CITIES = {
   'indore':         'Indore',
   'nashik':         'Nashik',
   'nasik':          'Nashik',
+  'sanand':         'Sanand',
   'silvassa':       'Silvassa',
   'aurangabad':     'Aurangabad',
   'kota':           'Kota',

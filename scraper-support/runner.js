@@ -28,6 +28,7 @@ import {
   resolveRecommendedLocalDryRunConcurrency,
 } from './utils/parallelConcurrency.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
+import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
 import { buildScrapers } from './providers/index.js'
 
@@ -438,7 +439,7 @@ const formatPersistenceSummary = (result) => {
   const staleCheck = result.staleCheckSkipped
     ? ` | stale cleanup skipped: ${result.staleCheckReason || 'previous source jobs preserved'}`
     : ''
-  return `${base}${updated}${nonIndia}${closed}${lifecycle}${expired} | ${result.filteredOld || 0} older than ${result.retentionDays || 10}d removed${staleCheck}`
+  return `${base}${updated}${nonIndia}${closed}${lifecycle}${expired} | ${result.filteredOld || 0} older than ${result.retentionDays || DEFAULT_JOB_RETENTION_DAYS}d removed${staleCheck}`
 }
 
 export const isFailureCountedForAbort = (result = {}) => (

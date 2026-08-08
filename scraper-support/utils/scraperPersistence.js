@@ -4,6 +4,7 @@
  */
 
 import mongoose from "mongoose";
+import { DEFAULT_JOB_RETENTION_DAYS } from "../../src/utils/jobLifecycle.js";
 
 // Lazy-load models to prevent circular dependency issues
 let ScraperStatus;
@@ -23,7 +24,7 @@ const PIPELINE_STATUS_DEFAULTS = {
   lastMissed: 0,
   lastPartialAt: null,
   lastPartialReason: null,
-  lastRetentionDays: 10,
+  lastRetentionDays: DEFAULT_JOB_RETENTION_DAYS,
 };
 
 // Lazy-loads the ScraperStatus mongoose model.
@@ -77,7 +78,7 @@ export const upsertScraperStatus = async (source, result) => {
           lastPartialReason: isPartial
             ? (result.staleCheckReason || "Stale cleanup skipped after an empty eligible scrape result.")
             : null,
-          lastRetentionDays: result.retentionDays || 10,
+          lastRetentionDays: result.retentionDays || DEFAULT_JOB_RETENTION_DAYS,
         };
 
         if (!isPartial) {
@@ -152,7 +153,7 @@ export const writeScraperRun = async (ranAt, summary) => {
       expired: sourceSummary.expired || 0,
       staleCheckSkipped: sourceSummary.staleCheckSkipped === true,
       staleCheckReason: sourceSummary.staleCheckReason || null,
-      retentionDays: sourceSummary.retentionDays || 10,
+      retentionDays: sourceSummary.retentionDays || DEFAULT_JOB_RETENTION_DAYS,
       durationMs: sourceSummary.durationMs || 0,
       error: sourceSummary.error || null,
     };

@@ -11,52 +11,6 @@ import os from 'node:os'
 import path from 'node:path'
 
 const dnsCache = new Map()
-const DEFAULT_BROWSER_CONCURRENCY = 2
-
-const parsePositiveConcurrency = (value, fallback) => {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
-
-export const resolveBrowserConcurrency = (
-  value = process.env.SCRAPER_BROWSER_CONCURRENCY,
-) => parsePositiveConcurrency(value, DEFAULT_BROWSER_CONCURRENCY)
-
-export const createBrowserLaunchLimiter = (concurrency) => {
-  const limit = parsePositiveConcurrency(concurrency, DEFAULT_BROWSER_CONCURRENCY)
-  let active = 0
-  const waiters = []
-
-  const grantNext = () => {
-    const start = waiters.shift()
-    if (start) {
-      start()
-    } else {
-      active--
-    }
-  }
-
-  return {
-    acquire: () => new Promise((resolve) => {
-      const start = () => {
-        active++
-        let released = false
-        resolve(() => {
-          if (released) return
-          released = true
-          grantNext()
-        })
-      }
-
-      if (active < limit) {
-        start()
-      } else {
-        waiters.push(start)
-      }
-    }),
-  }
-}
-
 export const isPrivateIPv4 = (hostname) => {
   const parts = hostname.split('.').map((part) => Number.parseInt(part, 10))
   if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
