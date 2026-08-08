@@ -30,6 +30,21 @@ const jobsBoardHomeHtml = `
 </html>
 `
 
+const maintenanceBoardHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="https://stf.bstatics.com/update/JS/control.js"></script>
+    <div class="beisen"></div>
+    <div class="word1">系统升级维护中<span class="word1-en">System Upgrade Maintenance</span></div>
+    <div class="word2">将于 08月08日08点00分 恢复正常使用</div>
+  </body>
+</html>
+`
+
 const firstListingPageHtml = `
 <!DOCTYPE html>
 <html>
@@ -141,7 +156,7 @@ test('Akulaku helpers stay pinned to the verified first-party careers shell, off
   assert.equal(akulaku.SOURCE, 'akulaku')
   assert.equal(akulaku.COMPANY, 'Akulaku')
   assert.equal(akulaku.OFFICIAL_BRAND_NAME, 'Akulaku')
-  assert.equal(akulaku.VERIFIED_ON, '2026-07-15')
+  assert.equal(akulaku.VERIFIED_ON, '2026-08-07')
   assert.equal(akulaku.FIRST_PARTY_CAREERS_URL, 'https://www.akulaku.com/staff-life')
   assert.equal(akulaku.OFFICIAL_JOBS_BOARD_URL, 'https://akulaku.zhiye.com/')
   assert.equal(akulaku.JOB_LISTINGS_URL, 'https://akulaku.zhiye.com/alljob/?o=1')
@@ -151,6 +166,7 @@ test('Akulaku helpers stay pinned to the verified first-party careers shell, off
     'https://akulaku.zhiye.com/',
   )
   assert.equal(akulaku.hasOfficialJobsBoardSignal(jobsBoardHomeHtml), true)
+  assert.equal(akulaku.hasMaintenanceBoardSignal(maintenanceBoardHtml), true)
   assert.equal(akulaku.hasJobListingsPageSignal(firstListingPageHtml), true)
   assert.deepEqual(
     akulaku.extractJobCards(firstListingPageHtml),
@@ -197,6 +213,26 @@ test('Akulaku helpers stay pinned to the verified first-party careers shell, off
     akulaku.extractJobDescription(indiaGrowthDetailHtml),
     '工作职责：Own the Akulaku India growth roadmap. 任职资格：7+ years in growth and fintech.',
   )
+})
+
+test('Akulaku returns [] when the official Beisen board is in the verified maintenance state', async () => {
+  const akulaku = await loadAkulakuModule()
+
+  const jobs = await akulaku.createAkulakuScraper().run({
+    fetchPage: async (url) => {
+      if (url === akulaku.FIRST_PARTY_CAREERS_URL) {
+        return { status: 200, url, html: firstPartyCareersHtml }
+      }
+
+      if (url === akulaku.OFFICIAL_JOBS_BOARD_URL || url === akulaku.JOB_LISTINGS_URL) {
+        return { status: 200, url, html: maintenanceBoardHtml }
+      }
+
+      throw new Error(`Unexpected Akulaku URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Akulaku follows the verified first-party handoff and returns only India jobs from the official board', async () => {

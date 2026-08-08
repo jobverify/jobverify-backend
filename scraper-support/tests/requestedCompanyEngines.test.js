@@ -544,53 +544,24 @@ test('GoDaddy scraper extracts current India result cards', async () => {
   assert.equal(indiaWide[0].city, null)
 })
 
-test('GoDaddy scraper uses a bounded browser fallback for an AWS WAF challenge', async () => {
+test('GoDaddy scraper reports an API-only migration error for an AWS WAF challenge', async () => {
   const { createGoDaddyScraper } = await import('../../scraper/godaddy/script.js')
-  const calls = []
-  const browserHtml = `
-    <article class="job-search-results-card">
-      <a href="/jobs/fullstack-senior-software-development-engineer-pune-india">
-        <h2>FullStack Senior Software Development Engineer</h2>
-      </a>
-      <span class="job-id">R023388</span>
-      <span class="location">Pune, Maharashtra, India</span>
-      <span class="department">Engineering</span>
-    </article>`
 
-  const jobs = await createGoDaddyScraper().run({
-    fetchText: async () => '<html><head><script src="https://edge.sdk.awswaf.com/challenge.js"></script></head></html>',
-    renderSearchPage: async (url) => {
-      calls.push(url)
-      return browserHtml
-    },
-  })
+  await assert.rejects(
+    createGoDaddyScraper().run({
+      fetchText: async () => '<html><head><script src="https://edge.sdk.awswaf.com/challenge.js"></script></head></html>',
+      renderSearchPage: async () => assert.fail('GoDaddy must not launch a browser'),
+    }),
+    /\[godaddy\] API-only migration/i,
+  )
 
-  assert.deepEqual(calls, ['https://careers.godaddy/jobs/search/india'])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].jobId, 'R023388')
-  assert.equal(jobs[0].city, 'Pune')
-
-  calls.length = 0
-  const recoveredFromHttpError = await createGoDaddyScraper().run({
-    fetchText: async () => { throw new Error('HTTP 403') },
-    renderSearchPage: async (url) => {
-      calls.push(url)
-      return browserHtml
-    },
-  })
-  assert.equal(recoveredFromHttpError.length, 1)
-  assert.deepEqual(calls, ['https://careers.godaddy/jobs/search/india'])
-
-  calls.length = 0
-  const recoveredFromParserDrift = await createGoDaddyScraper().run({
-    fetchText: async () => '<main>Displaying 10 jobs</main>',
-    renderSearchPage: async (url) => {
-      calls.push(url)
-      return browserHtml
-    },
-  })
-  assert.equal(recoveredFromParserDrift.length, 1)
-  assert.deepEqual(calls, ['https://careers.godaddy/jobs/search/india'])
+  await assert.rejects(
+    createGoDaddyScraper().run({
+      fetchText: async () => { throw new Error('HTTP 403') },
+      renderSearchPage: async () => assert.fail('GoDaddy must not launch a browser'),
+    }),
+    /\[godaddy\] API-only migration.*HTTP 403/i,
+  )
 })
 
 test('Globant scraper paginates the current API and retains the requested legacy opening', async () => {

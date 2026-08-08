@@ -61,6 +61,17 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('hello@bgd-limited.com')
   }
 
+export const hasForbiddenSurfaceSignal = (page = {}) => {
+  const status = Number(page?.status)
+  const html = String(page?.html ?? '')
+  const title = normalizeWhitespace(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+  const normalized = normalizeWhitespace(html)
+
+  return status === 403
+    && /^403(?:\s+Forbidden)?$/i.test(title || '')
+    && normalized.includes('Forbidden')
+}
+
 export const createBGDTechPvtLtdScraper = ({ fetchPage = defaultFetchPage } = {}) => ({
   async run({ fetchPage: overrideFetchPage, fetchBrowserPage } = {}) {
     let browserSession = null
@@ -101,6 +112,10 @@ export const createBGDTechPvtLtdScraper = ({ fetchPage = defaultFetchPage } = {}
         }
 
         throw error
+      }
+
+      if ([403, 404].includes(Number(page?.status)) || hasForbiddenSurfaceSignal(page)) {
+        return []
       }
 
       if (pageExposesPublicJobListings(page.html)) {

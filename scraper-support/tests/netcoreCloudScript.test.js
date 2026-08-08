@@ -17,6 +17,22 @@ const officialCareersHtml = `
 </html>
 `
 
+const currentOfficialCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers - Netcore</title>
+  </head>
+  <body>
+    <main>
+      <p>Netcore Cloud is now Netcore.ai</p>
+      <p>Please wait while you are redirected to the right page...</p>
+      <a href="/careers/">Careers</a>
+    </main>
+  </body>
+</html>
+`
+
 const redirectShellHtml = `
 <!doctype html>
 <html lang="en">
@@ -68,7 +84,7 @@ const loadNetcoreCloudModule = async () => {
   }
 }
 
-test('Netcore Cloud sentinel helpers stay pinned to the Monday, August 3, 2026 careers and redirect-shell contracts', async () => {
+test('Netcore Cloud sentinel helpers stay pinned to the Friday, August 7, 2026 careers and redirect-shell contracts', async () => {
   const netcoreCloud = await loadNetcoreCloudModule()
 
   assert.equal(netcoreCloud.SOURCE, 'netcorecloud')
@@ -81,7 +97,7 @@ test('Netcore Cloud sentinel helpers stay pinned to the Monday, August 3, 2026 c
     'https://netcorecloud.com/careers-list?job_category=engineering',
   )
   assert.equal(netcoreCloud.COMPANY_DOMAIN, 'netcorecloud.com')
-  assert.equal(netcoreCloud.VERIFIED_ON, '2026-08-03')
+  assert.equal(netcoreCloud.VERIFIED_ON, '2026-08-07')
   assert.equal(
     netcoreCloud.hasVerifiedNetcoreCareersSignal(officialCareersHtml),
     true,
@@ -96,6 +112,12 @@ test('Netcore Cloud sentinel helpers stay pinned to the Monday, August 3, 2026 c
   )
   assert.equal(netcoreCloud.hasPublicNetcoreJobSignals(redirectShellHtml), false)
   assert.equal(netcoreCloud.hasPublicNetcoreJobSignals(publicJobsHtml), true)
+})
+
+test('Netcore Cloud accepts the current careers redirect shell on Friday, August 7, 2026', async () => {
+  const netcoreCloud = await loadNetcoreCloudModule()
+
+  assert.equal(netcoreCloud.hasVerifiedNetcoreCareersSignal(currentOfficialCareersHtml), true)
 })
 
 test('Netcore Cloud returns [] while the first-party careers page leads only to the verified redirect shell', async () => {

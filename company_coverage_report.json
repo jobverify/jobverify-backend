@@ -1,7 +1,7 @@
 {
-  "totalRows": 4842,
-  "candidateRows": 4842,
-  "matchedCount": 4842,
+  "totalRows": 4837,
+  "candidateRows": 4837,
+  "matchedCount": 4837,
   "unmatchedCount": 0,
   "matched": [
     {
@@ -28122,33 +28122,6 @@
       }
     },
     {
-      "row": "1117",
-      "companyName": "Indeed",
-      "normalizedCompanyName": "indeed",
-      "source": "indeed",
-      "provider": {
-        "atsPlatform": "indeed-first-party-company-jobs",
-        "countryFilter": "India",
-        "paginationStrategy": "verified-global-careers-page-plus-india-company-jobs-page",
-        "extractionStrategy": "verified-global-careers-page+verified-india-company-jobs-page+public-listings-html+cloudflare-fail-closed",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "indeed",
-        "companyName": "Indeed",
-        "officialBrandName": "Indeed",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indeed\\script.js",
-        "companyCareerPage": "https://www.indeed.com/careers",
-        "indiaCareersPage": "https://in.indeed.com/careers",
-        "indiaJobsPage": "https://in.indeed.com/cmp/Indeed/jobs",
-        "companyDomain": "indeed.com",
-        "verifiedOn": "2026-07-16",
-        "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://www.indeed.com/careers is the official global Indeed careers page headed \"We help people get jobs.\" with the first-party India handoff at https://in.indeed.com/careers, and that the India company jobs surface at https://in.indeed.com/cmp/Indeed/jobs exposed 16 jobs at Indeed including Software Engineer III, Software Engineer II, and National Account Manager roles. Direct non-browser fetches from this environment currently encounter a Cloudflare security check on the India jobs page, so the scraper is challenge-aware and fails closed when that checkpoint is served instead of the public listings HTML.",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indeed\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indeed"
-      }
-    },
-    {
       "row": "1118",
       "companyName": "Indegene",
       "normalizedCompanyName": "indegene",
@@ -28680,28 +28653,6 @@
         "companyDomain": "infocepts.ai",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\infoceptsai\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\infoceptsai"
-      }
-    },
-    {
-      "row": "1139",
-      "companyName": "InfoCusp Innovations",
-      "normalizedCompanyName": "infocusp innovations",
-      "source": "infocuspinnovations",
-      "provider": {
-        "atsPlatform": "keka-embed-api",
-        "countryFilter": "India",
-        "paginationStrategy": "single-keka-active-jobs-endpoint",
-        "extractionStrategy": "official-careers-page+careers-bundle+keka-embed-api+jobdetails",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "infocuspinnovations",
-        "companyName": "InfoCusp Innovations",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\infocuspinnovations\\script.js",
-        "companyCareerPage": "https://www.infocusp.com/careers/openings/",
-        "companyDomain": "infocusp.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\infocuspinnovations\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\infocuspinnovations"
       }
     },
     {
@@ -29949,37 +29900,6 @@
       }
     },
     {
-      "row": "1190",
-      "companyName": "Iron Mountain India",
-      "normalizedCompanyName": "iron mountain",
-      "source": "ironmountainindia",
-      "provider": {
-        "atsPlatform": "nlx",
-        "countryFilter": "India",
-        "paginationStrategy": "official-careers-handoff-plus-public-jobs-sitemap",
-        "extractionStrategy": "official-about-page+official-nlx-board+public-jobs-sitemap+india-url-filter",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "ironmountainindia",
-        "companyName": "Iron Mountain India",
-        "officialBrandName": "Iron Mountain",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ironmountainindia\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ironmountainindia\\jobs.json",
-        "homepageUrl": "https://www.ironmountain.com/en-in",
-        "aboutPageUrl": "https://www.ironmountain.com/about-us",
-        "companyCareerPage": "https://ironmountain.jobs/",
-        "jobsBoardUrl": "https://ironmountain.jobs/",
-        "jobsSitemapUrl": "https://ironmountain.jobs/sitemaps/jobs_1.xml",
-        "verifiedSampleJobUrl": "https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/",
-        "companyDomain": "ironmountain.com",
-        "verifiedOn": "2026-07-16",
-        "verifiedPublicPostingCount": 25,
-        "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that https://www.ironmountain.com/about-us is the live official Iron Mountain about page and links Careers to the public board at https://ironmountain.jobs/, that the NLX-powered board is live, and that the public jobs sitemap at https://ironmountain.jobs/sitemaps/jobs_1.xml currently exposes 25 India detail URLs including https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ironmountainindia"
-      }
-    },
-    {
       "row": "1191",
       "companyName": "iSkillBox",
       "normalizedCompanyName": "iskillbox",
@@ -30219,58 +30139,6 @@
         "companyDomain": "ivhomes.in",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivhomes\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivhomes"
-      }
-    },
-    {
-      "row": "1201",
-      "companyName": "ivy",
-      "normalizedCompanyName": "ivy",
-      "source": "ivy",
-      "provider": {
-        "atsPlatform": "official-company-site-blocked-careers-surface",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-contact-plus-blocked-careers-route-validation",
-        "extractionStrategy": "verified-ivy-global-homepage+verified-contact-entities+blocked-first-party-careers-routes-return-empty",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "ivy",
-        "companyName": "ivy",
-        "officialBrandName": "Ivy Comptech",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivy\\script.js",
-        "companyCareerPage": "https://ivy.global/",
-        "contactPageUrl": "https://ivy.global/contact",
-        "companyDomain": "ivy.global",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivy\\jobs.json",
-        "verifiedOn": "2026-07-18",
-        "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://ivy.global/ still identifies the first-party Ivy Comptech surface for the backlog row ivy, and that the contact page at https://ivy.global/contact still lists Ivy Comptech Private Limited, Ivy Software Development Services Private Limited, Ivy Global Shared Services Private Limited, and Ivy Mobitech Services Private Limited. The public jobs surface remained blocked from direct verification on the same date, so this local contract returns [] and fails closed if a structured first-party careers page becomes reachable later.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivy"
-      }
-    },
-    {
-      "row": "1202",
-      "companyName": "IVY SOFTWARE DEVELOPMENT SERVICES",
-      "normalizedCompanyName": "ivy development",
-      "source": "ivysoftwaredevelopmentservices",
-      "provider": {
-        "atsPlatform": "official-company-site-blocked-careers-surface",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-contact-plus-blocked-careers-route-validation",
-        "extractionStrategy": "verified-ivy-global-homepage+verified-contact-entity+blocked-first-party-careers-routes-return-empty",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "ivysoftwaredevelopmentservices",
-        "companyName": "IVY SOFTWARE DEVELOPMENT SERVICES",
-        "officialBrandName": "Ivy Software Development Services Private Limited",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivysoftwaredevelopmentservices\\script.js",
-        "companyCareerPage": "https://ivy.global/",
-        "contactPageUrl": "https://ivy.global/contact",
-        "companyDomain": "ivy.global",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivysoftwaredevelopmentservices\\jobs.json",
-        "verifiedOn": "2026-07-18",
-        "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that the first-party Ivy Comptech contact page at https://ivy.global/contact still lists Ivy Software Development Services Private Limited alongside the other Ivy legal entities, which safely collapses this backlog row onto the shared ivy.global corporate surface shared with ivy. The public jobs surface remained blocked from direct verification on the same date, so this local contract returns [] and fails closed until a trustworthy first-party careers listing becomes reachable.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\ivysoftwaredevelopmentservices"
       }
     },
     {

@@ -154,13 +154,6 @@ export const extractJobsFromJson = (payload = [], { scrapedAt = new Date().toISO
     })
 )
 
-let browserUtilsPromise
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
-  return browserUtilsPromise
-}
-
 export const waitForPageSettle = async (page, timeoutMs = PAGE_SETTLE_MS) => {
   if (typeof page?.waitForTimeout === 'function') {
     await page.waitForTimeout(timeoutMs)
@@ -282,72 +275,32 @@ export const extractJobDetail = (html, listing) => {
   }
 }
 
-const ensureListingsExpanded = async (page) => {
-  await page.waitForSelector('button.view-jobs-btn', { timeout: NAVIGATION_TIMEOUT_MS })
-
-  const cardCount = await page.$$eval('.job-card', (cards) => cards.length).catch(() => 0)
-  if (cardCount > 0) return
-
-  await page.click('button.view-jobs-btn')
-  await page.waitForSelector('.job-card .outline-btn-grn', { timeout: NAVIGATION_TIMEOUT_MS })
-  await waitForPageSettle(page)
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, { headers: { Accept: 'text/html,application/xhtml+xml' } })
+  if (!response.ok) throw new Error(`Way.com API-only fetch returned HTTP ${response.status} for ${url}`)
+  return response.text()
 }
 
-const browseCareersSurface = async ({
-  launchBrowserImpl,
-  createOptimizedPageImpl,
-} = {}) => {
-  if (!launchBrowserImpl || !createOptimizedPageImpl) {
-    const browserUtils = await loadBrowserUtils()
-    launchBrowserImpl ||= browserUtils.launchBrowser
-    createOptimizedPageImpl ||= browserUtils.createOptimizedPage
-  }
-
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-    await page.goto(CAREERS_URL, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
-    await page.waitForSelector('body', { timeout: NAVIGATION_TIMEOUT_MS })
-    await waitForPageSettle(page)
-
-    const careersHtml = await page.content()
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Way.com official careers surface no longer matches the verified first-party shell')
-    }
-
-    const jobsJson = await page.evaluate(async (jobsJsonUrl) => {
-      const response = await fetch(jobsJsonUrl, {
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for ${jobsJsonUrl}`)
-      }
-
-      return response.json()
-    }, JOBS_JSON_URL)
-
-    return {
-      careersHtml,
-      jobsJson,
-    }
-  } finally {
-    await browser.close()
-  }
+const defaultFetchJson = async (url) => {
+  const response = await fetch(url, { headers: { Accept: 'application/json' } })
+  if (!response.ok) throw new Error(`Way.com jobs JSON API returned HTTP ${response.status}`)
+  return response.json()
 }
+
+const fetchCareersSurface = async ({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) => ({
+  careersHtml: await fetchText(CAREERS_URL),
+  jobsJson: await fetchJson(JOBS_JSON_URL),
+})
 
 export const createWayDotComIndiaScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    browseCareersSurfaceImpl = browseCareersSurface,
+    fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
   } = {}) {
-    const careersSurface = await browseCareersSurfaceImpl({ maxJobs })
+    const careersSurface = await fetchCareersSurface({ fetchText, fetchJson })
 
     if (!hasOfficialCareersSignal(careersSurface?.careersHtml)) {
       throw new Error('Way.com official careers surface no longer matches the verified first-party shell')

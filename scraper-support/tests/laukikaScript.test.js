@@ -68,6 +68,16 @@ test('Laukika scraper recognizes the verified homepage, brand hiring page, and h
   )
 })
 
+test('Laukika tolerates the current homepage hero copy while the verified first-party contract stays the same', async () => {
+  const laukika = await loadModule()
+  const currentHomepageHtml = HOMEPAGE_HTML.replaceAll(
+    'BEST DIGITAL MARKETING AGENCY IN BANGALORE & MYSURU',
+    'TURN STORIES TO MEASURABLE SUCCESS ✦ DIGITAL MARKETING AGENCY IN BANGALORE',
+  )
+
+  assert.equal(laukika.hasOfficialHomepageSignal(currentHomepageHtml), true)
+})
+
 test('Laukika returns no jobs only while the verified first-party homepage, hiring page, and homepage-redirect routes remain unchanged', async () => {
   const laukika = await loadModule()
   const requestedUrls = []

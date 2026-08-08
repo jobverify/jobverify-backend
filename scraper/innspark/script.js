@@ -269,6 +269,7 @@ export const createInnsparkScraper = () => ({
         source: SOURCE,
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: new Date().toISOString(),
+        publicExperienceChecked: true,
       }))
     } finally {
       await browserFallback.close()

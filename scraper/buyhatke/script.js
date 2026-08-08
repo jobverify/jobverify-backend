@@ -35,6 +35,19 @@ const toAbsoluteUrl = (value) => {
   }
 }
 
+const isCompanyRoleUrl = (value) => {
+  const absoluteUrl = toAbsoluteUrl(value)
+  if (!absoluteUrl) return false
+
+  try {
+    const parsed = new URL(absoluteUrl)
+    return parsed.origin === 'https://compare.buyhatke.com'
+      && /^\/company\/[^/]+\.php$/i.test(parsed.pathname)
+  } catch {
+    return false
+  }
+}
+
 const toJobId = (value) => {
   const absoluteUrl = toAbsoluteUrl(value)
   if (!absoluteUrl) return null
@@ -78,7 +91,7 @@ const buildJobDescription = (html) => [...String(html ?? '').matchAll(/<section\
 
 const buildListing = ({ title, sourceUrl }) => {
   const jobId = toJobId(sourceUrl)
-  if (!title || !sourceUrl || !jobId || EXCLUDED_ROLE_PATHS.has(jobId)) return null
+  if (!title || !sourceUrl || !jobId || !isCompanyRoleUrl(sourceUrl) || EXCLUDED_ROLE_PATHS.has(jobId)) return null
 
   return {
     title,

@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { chromium } from 'playwright'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { INFINITI_SOFTWARE_SOLUTIONS_CATALOG } from './catalog.js'
@@ -18,10 +17,6 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const INDIA_LOCATION_PATTERN = /\b(?:chennai|mumbai|india)\b/i
-const shouldUseBrowserFallback = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
-
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&amp;/gi, '&')
@@ -122,124 +117,26 @@ export const extractJobs = (html = '') => {
 }
 
 export const createInfinitiSoftwareSolutionsScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText, fetchBrowserJobs } = {}) {
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const browser = await chromium.launch({ headless: true })
-      const context = await browser.newContext({
-        ignoreHTTPSErrors: true,
-        userAgent: USER_AGENT,
-      })
-
-      try {
-        const page = await context.newPage()
-        const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 90000 })
-
-        if (!response || !response.ok()) {
-          const status = response?.status() ?? 'NO_RESPONSE'
-          throw new Error(`HTTP ${status} for ${url}`)
-        }
-
-        await page.waitForTimeout(3000)
-        return await page.content()
-      } finally {
-        await context.close().catch(() => {})
-        await browser.close().catch(() => {})
-      }
-    })
-
-    const browserJobsFetcher = fetchBrowserJobs || (async (url) => {
-      const browser = await chromium.launch({ headless: true })
-      const context = await browser.newContext({
-        ignoreHTTPSErrors: true,
-        userAgent: USER_AGENT,
-      })
-
-      try {
-        const page = await context.newPage()
-        const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 90000 })
-
-        if (!response || !response.ok()) {
-          const status = response?.status() ?? 'NO_RESPONSE'
-          throw new Error(`HTTP ${status} for ${url}`)
-        }
-
-        await page.waitForTimeout(3000)
-        return await page.evaluate(() => Array.from(
-          document.querySelectorAll('a[href*="goodfit.so/apply"], a[href*="v2.app.goodfit.so/jobs/"]'),
-        ).map((anchor) => {
-          const card = anchor.closest('[data-element_type="container"]') || anchor.closest('.e-con') || anchor.parentElement
-          const iconValues = Array.from(card?.querySelectorAll('.elementor-icon-box-title span') || [])
-            .map((element) => element.textContent?.trim())
-            .filter(Boolean)
-
-          return {
-            title: card?.querySelector('h2')?.textContent?.trim() || null,
-            jobDescription: card?.querySelector('p')?.textContent?.trim() || null,
-            experienceRequired: iconValues[0] || null,
-            city: iconValues[1] || null,
-            applyUrl: anchor.href || null,
-          }
-        }))
-      } finally {
-        await context.close().catch(() => {})
-        await browser.close().catch(() => {})
-      }
-    })
-
-    const fetchTextWithBrowserFallback = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!shouldUseBrowserFallback(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
+  async run({ fetchText = defaultFetchText } = {}) {
+    let html
+    try {
+      html = await fetchText(CAREERS_URL)
+    } catch (error) {
+      throw new Error(
+        `Infiniti Software Solutions API-only scraper could not fetch its careers page: ${error?.message ?? error}`,
+        { cause: error },
+      )
     }
 
-    const html = await fetchTextWithBrowserFallback(CAREERS_URL)
     if (!hasOfficialCareersSignal(html)) {
       throw new Error('The verified Infiniti Software Solutions careers surface no longer matches the trusted first-party page')
     }
 
-    let jobs = extractJobs(html)
+    const jobs = extractJobs(html)
     if (jobs.length === 0) {
-      const browserJobs = await browserJobsFetcher(CAREERS_URL)
-      jobs = browserJobs
-        .map((job) => {
-          const applyUrl = toAbsoluteUrl(job.applyUrl)
-          const title = normalizeWhitespace(job.title)
-          const city = normalizeWhitespace(job.city)
-          const jobId = extractJobId(applyUrl)
-
-          if (!title || !city || !applyUrl || !jobId || !INDIA_LOCATION_PATTERN.test(city)) {
-            return null
-          }
-
-          return {
-            title,
-            company: COMPANY,
-            department: null,
-            location: `${city}, India`,
-            city,
-            country: 'India',
-            jobId,
-            requisitionId: jobId,
-            sourceUrl: applyUrl,
-            applyUrl,
-            employmentType: null,
-            experienceRequired: normalizeWhitespace(job.experienceRequired),
-            minimumQualification: null,
-            preferredQualification: null,
-            requiredSkills: [],
-            postingDate: null,
-            closingDate: null,
-            jobDescription: normalizeWhitespace(job.jobDescription),
-            remoteStatus: 'On-site',
-          }
-        })
-        .filter(Boolean)
+      throw new Error(
+        'Infiniti Software Solutions API-only scraper received an unusable JavaScript-only careers shell',
+      )
     }
 
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs

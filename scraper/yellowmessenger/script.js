@@ -1,4 +1,4 @@
-import { chromium } from 'playwright'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'yellowmessenger'
 export const COMPANY = 'Yellow Messenger'
@@ -50,9 +50,6 @@ const normalizeText = (value = '') =>
       .replace(/<[^>]+>/g, ' '),
   ) || ''
 
-const buildChromiumLaunchArgs = () =>
-  process.env.PUPPETEER_DISABLE_SANDBOX ? ['--no-sandbox'] : []
-
 export const assertVerifiedOfficialRebrandSurface = (html = '') => {
   const text = normalizeText(html)
 
@@ -82,31 +79,25 @@ export const assertVerifiedEmbeddedZohoLoader = (html = '') => {
   )
 }
 
-const defaultLoadLiveCareersContract = async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: buildChromiumLaunchArgs(),
+const defaultLoadLiveCareersContract = async ({ fetchText = fetchTextWithRetry } = {}) => {
+  const careersHtml = await fetchText(CAREERS_URL, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    label: `${SOURCE}-html`,
+    timeoutMs: 60000,
   })
 
-  try {
-    const page = await browser.newPage({ userAgent: USER_AGENT })
-
-    await page.goto(CAREERS_URL, { waitUntil: 'networkidle', timeout: 60000 })
-    const careersHtml = await page.content()
-
-    return {
-      careersHtml,
-    }
-  } finally {
-    await browser.close()
-  }
+  return { careersHtml }
 }
 
 export const createYellowMessengerScraper = () => ({
   async run({
-    loadLiveCareersContract = defaultLoadLiveCareersContract,
+    loadLiveCareersContract,
+    fetchText,
   } = {}) {
-    const contract = await loadLiveCareersContract()
+    const contract = await (loadLiveCareersContract || defaultLoadLiveCareersContract)({ fetchText })
 
     assertVerifiedOfficialRebrandSurface(contract?.careersHtml || '')
     assertVerifiedEmbeddedZohoLoader(contract?.careersHtml || '')

@@ -3,14 +3,20 @@ import test from 'node:test'
 
 import {
   CAREERS_URL,
+  CAREERS_API_URL,
   COMPANY,
   HOMEPAGE_URL,
   SOURCE,
+  VERIFIED_ON,
   createCodeAptScraper,
+  extractBundleUrl,
   extractPublicJobs,
   hasOfficialCareersSignal,
   hasOfficialHomepageSignal,
+  hasOfficialShellSignal,
+  hasVerifiedApiBackedCareersSignal,
   hasVerifiedCareersLink,
+  isAuthRequiredCareersApiResponse,
 } from './script.js'
 
 const homepageHtml = `
@@ -106,14 +112,67 @@ const careersHtml = `
   </html>
 `
 
+const shellHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+      <title>CodeApt</title>
+      <script type="module" crossorigin src="/assets/index-DahbLw3O.js"></script>
+    </head>
+    <body>
+      <div id="root"></div>
+    </body>
+  </html>
+`
+
+const shellCareersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+      <title>CodeApt</title>
+      <script type="module" crossorigin src="/assets/index-DahbLw3O.js"></script>
+    </head>
+    <body>
+      <div id="root"></div>
+    </body>
+  </html>
+`
+
+const shellBundleText = `
+  const API_BASE = "https://api.codeapt.in";
+  const chunks = ["assets/CareersPage-DECQsJno.js", "assets/PostingDetailPage-0EfnNnuE.js"];
+  const services = { careers:{list:async()=>{}, get:async()=>{}, apply:async()=>{} } };
+  const applyPath = "careers/\${e}/apply";
+`
+
+const authRequiredApiResponse = {
+  status: 401,
+  url: 'https://api.codeapt.in/api/careers',
+  text: '{"error":{"message":"Authentication required","code":"UNAUTHENTICATED"}}',
+}
+
 test('CodeApt scraper recognizes the verified homepage and careers surface', () => {
   assert.equal(SOURCE, 'codeapt')
   assert.equal(COMPANY, 'CodeApt')
   assert.equal(HOMEPAGE_URL, 'https://www.codeapt.in/')
   assert.equal(CAREERS_URL, 'https://www.codeapt.in/careers/')
+  assert.equal(CAREERS_API_URL, 'https://api.codeapt.in/api/careers')
+  assert.equal(VERIFIED_ON, '2026-08-07')
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(hasVerifiedCareersLink(homepageHtml), true)
   assert.equal(hasOfficialCareersSignal(careersHtml), true)
+})
+
+test('CodeApt scraper recognizes the verified Friday, August 7, 2026 auth-required SPA shell', () => {
+  assert.equal(hasOfficialShellSignal(shellHomepageHtml), true)
+  assert.equal(hasOfficialShellSignal(shellCareersHtml), true)
+  assert.equal(extractBundleUrl(shellHomepageHtml), 'https://www.codeapt.in/assets/index-DahbLw3O.js')
+  assert.equal(hasVerifiedApiBackedCareersSignal(shellBundleText), true)
+  assert.equal(isAuthRequiredCareersApiResponse(authRequiredApiResponse), true)
 })
 
 test('CodeApt scraper extracts the current public career cards and external apply links', () => {
@@ -248,4 +307,45 @@ test('CodeApt scraper runs end to end and fails closed on homepage or card drift
     }),
     /public job-card structure/i,
   )
+})
+
+test('CodeApt returns an honest zero result when the verified public careers shell requires authentication for the careers API', async () => {
+  const requested = []
+
+  const jobs = await createCodeAptScraper().run({
+    fetchPage: async (url) => {
+      requested.push(url)
+
+      if (url === HOMEPAGE_URL) return { status: 200, url, html: shellHomepageHtml }
+      if (url === CAREERS_URL) return { status: 200, url, html: shellCareersHtml }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+    fetchText: async (url) => {
+      requested.push(url)
+
+      if (url === 'https://www.codeapt.in/assets/index-DahbLw3O.js') {
+        return shellBundleText
+      }
+
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchResource: async (url) => {
+      requested.push(url)
+
+      if (url === CAREERS_API_URL) {
+        return authRequiredApiResponse
+      }
+
+      throw new Error(`Unexpected resource URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requested, [
+    HOMEPAGE_URL,
+    'https://www.codeapt.in/assets/index-DahbLw3O.js',
+    CAREERS_URL,
+    CAREERS_API_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })

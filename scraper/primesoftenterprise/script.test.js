@@ -1,28 +1,21 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-08-04T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-07T00:00:00.000Z'
 
-const careersHtml = `
+const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at PrimeSoft | Shape the Future of Work with AI &amp; IT</title>
-    <link rel="canonical" href="https://primesoft.net/careers/" />
+    <title>PrimeSoft, Agentic AI &amp; Enterprise Transformation</title>
   </head>
   <body>
     <main>
-      <h1>Careers at PrimeSoft</h1>
-      <section>
-        <h2>Canada</h2>
-        <a href="https://primesoft.net/jobs/sr-software-engineering/">Software Test Engineering Manager</a>
-      </section>
-      <section>
-        <h2>India</h2>
-        <h5><span>For all India open positions click the link below</span></h5>
-        <a href="https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs">View India Openings</a>
-        <p>jobs@primesoft.net (India)</p>
-      </section>
+      <h1>PrimeSoft</h1>
+      <p>Agentic AI and enterprise transformation solutions.</p>
+      <nav>
+        <a href="https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs">Careers</a>
+      </nav>
     </main>
   </body>
 </html>
@@ -36,15 +29,15 @@ const loadPrimesoftEnterpriseModule = async () => {
   }
 }
 
-test('Primesoft Enterprise pins the live first-party careers page and official Darwinbox handoff', async () => {
+test('Primesoft Enterprise pins the live homepage careers handoff and official Darwinbox board', async () => {
   const primesoft = await loadPrimesoftEnterpriseModule()
 
   assert.equal(primesoft.SOURCE, 'primesoftenterprise')
   assert.equal(primesoft.COMPANY_NAME, 'Primesoft Enterprise')
   assert.equal(primesoft.COMPANY, 'Primesoft Enterprise')
-  assert.equal(primesoft.VERIFIED_ON, '2026-08-04')
+  assert.equal(primesoft.VERIFIED_ON, '2026-08-07')
   assert.equal(primesoft.OFFICIAL_SITE_URL, 'https://primesoft.net/')
-  assert.equal(primesoft.OFFICIAL_CAREERS_URL, 'https://primesoft.net/careers/')
+  assert.equal(primesoft.LEGACY_CAREERS_URL, 'https://primesoft.net/careers/')
   assert.equal(primesoft.DARWINBOX_ORIGIN, 'https://primesoft.darwinbox.in')
   assert.equal(
     primesoft.OFFICIAL_CAREERS_HANDOFF_URL,
@@ -54,14 +47,14 @@ test('Primesoft Enterprise pins the live first-party careers page and official D
     primesoft.PUBLIC_PORTAL_URL,
     'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
-  assert.equal(primesoft.hasOfficialPrimesoftCareersSignals(careersHtml), true)
+  assert.equal(primesoft.hasOfficialPrimesoftHomepageSignals(homepageHtml), true)
   assert.equal(
-    primesoft.extractOfficialDarwinboxUrl(careersHtml),
+    primesoft.extractOfficialDarwinboxUrl(homepageHtml),
     'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
 })
 
-test('Primesoft Enterprise validates the first-party careers page before delegating to Darwinbox', async () => {
+test('Primesoft Enterprise validates the homepage careers handoff before delegating to Darwinbox', async () => {
   const primesoft = await loadPrimesoftEnterpriseModule()
   const requestedUrls = []
   const runCalls = []
@@ -90,11 +83,11 @@ test('Primesoft Enterprise validates the first-party careers page before delegat
     maxPages: 2,
     fetchText: async (url) => {
       requestedUrls.push(url)
-      return careersHtml
+      return homepageHtml
     },
   })
 
-  assert.deepEqual(requestedUrls, [primesoft.OFFICIAL_CAREERS_URL])
+  assert.deepEqual(requestedUrls, [primesoft.OFFICIAL_SITE_URL])
   assert.deepEqual(runCalls, [{ maxPages: 2, maxJobs: 1, fetchListingPage: undefined }])
   assert.deepEqual(jobs, [
     {
@@ -104,23 +97,23 @@ test('Primesoft Enterprise validates the first-party careers page before delegat
   ])
 })
 
-test('Primesoft Enterprise fails closed when the first-party careers page or Darwinbox handoff changes', async () => {
+test('Primesoft Enterprise fails closed when the homepage careers handoff or Darwinbox target changes', async () => {
   const primesoft = await loadPrimesoftEnterpriseModule()
 
   await assert.rejects(
     primesoft.createPrimesoftEnterpriseScraper().run({
       fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
     }),
-    /verified Primesoft Enterprise careers page/i,
+    /verified Primesoft Enterprise homepage careers handoff/i,
   )
 
   await assert.rejects(
     primesoft.createPrimesoftEnterpriseScraper().run({
-      fetchText: async () => careersHtml.replace(
+      fetchText: async () => homepageHtml.replace(
         'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
         'https://example.com/jobs',
       ),
     }),
-    /official Darwinbox handoff/i,
+    /homepage careers handoff|official Darwinbox handoff/i,
   )
 })

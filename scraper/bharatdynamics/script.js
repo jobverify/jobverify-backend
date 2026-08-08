@@ -172,7 +172,7 @@ export const hasOfficialRecruitmentsPageSignal = (html) => {
   const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
   const text = stripTags(page) || ''
 
-  return /^Recruitments - Page \d+ \| Official Website of Bharat Dynamics Limited \(BDL\) under the Ministry of Defence, Government of India\.$/i.test(title)
+  return /^Recruitments(?: - Page \d+)? \| Official Website of Bharat Dynamics Limited \(BDL\) under the Ministry of Defence, Government of India\.$/i.test(title)
     && text.includes('Title')
     && text.includes('Issue Date')
     && text.includes('Download')

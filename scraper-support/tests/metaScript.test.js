@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   buildSearchUrl,
+  createMetaScraper,
   extractJobDetail,
   extractPaginationSummary,
   extractSearchResults,
@@ -99,4 +100,11 @@ test('extractJobDetail reads public Meta job metadata from JSON-LD', () => {
     requiredSkills: [],
     experienceRequired: '5+ years of experience working in Brand marketing and/or sales in digital first or complex and iconic brand led businesses.',
   })
+})
+
+test('Meta blocks its Puppeteer-only scraper path before a browser can launch', async () => {
+  await assert.rejects(
+    createMetaScraper().run(),
+    /meta.*api-only migration.*browser automation is disabled/i,
+  )
 })

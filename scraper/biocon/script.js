@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { BIOCON_CATALOG } from './catalog.js'
 
@@ -18,8 +18,8 @@ export const SUCCESSFACTORS_COMPANY_TOKEN = PROVIDER_METADATA.successFactorsComp
 export const DETAIL_URL_PREFIX =
   `https://career10.successfactors.com/career?career_ns=job_listing&company=${SUCCESSFACTORS_COMPANY_TOKEN}&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US`
 
-const DEFAULT_TIMEOUT_MS = 120000
-const DEFAULT_MAX_PAGES = 10
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -233,64 +233,45 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const waitForSelectorIfAvailable = async (page, selector) => {
-  if (typeof page.waitForSelector !== 'function') return
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  attempts: 3,
+  baseDelayMs: 500,
+  timeoutMs: 30000,
+  label: `${SOURCE}-html`,
+})
 
-  await page.waitForSelector(selector, { timeout: DEFAULT_TIMEOUT_MS })
-}
+export const getLiveSearchPages = async ({
+  fetchText = defaultFetchText,
+  searchUrl = SUCCESSFACTORS_SEARCH_URL,
+} = {}) => {
+  const html = await fetchText(searchUrl)
 
-const waitForSearchSurface = async (page) => {
-  if (typeof page.waitForFunction === 'function') {
-    await page.waitForFunction(
-      () => {
-        const bodyText = document.body?.innerText || ''
-        return document.querySelector('tr.jobResultItem')
-          || bodyText.includes('Jobs match the selections')
-          || bodyText.includes('Jobs matched your search')
-      },
-      { timeout: DEFAULT_TIMEOUT_MS },
+  if (hasNextPage(html)) {
+    throw new Error(
+      'Biocon API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
     )
-    return
   }
 
-  if (typeof page.waitForTimeout === 'function') {
-    await page.waitForTimeout(3000)
-  }
+  return [html]
 }
 
-const waitForPageChange = async (page, previousHtml) => {
-  if (typeof page.waitForFunction === 'function') {
-    try {
-      await page.waitForFunction(
-        (previous) => document.body && document.body.innerHTML !== previous,
-        { timeout: 30000 },
-        previousHtml,
-      )
-      return
-    } catch {
-      // Fall back to a small delay below.
-    }
-  }
-
-  if (typeof page.waitForTimeout === 'function') {
-    await page.waitForTimeout(1200)
-  }
-}
-
-const collectSummaryPages = async (page, { maxPages = DEFAULT_MAX_PAGES } = {}) => {
+const collectSummaryPages = (pages) => {
   const listings = []
   const seenRequisitionIds = new Set()
-  let html = await page.content()
 
-  if (!hasSuccessFactorsSearchPageSignal(html)) {
+  if (!Array.isArray(pages) || pages.length === 0 || !hasSuccessFactorsSearchPageSignal(pages[0])) {
     throw new Error('Biocon verified public SuccessFactors search surface no longer matches the known page')
   }
 
-  if (hasZeroResultsSignal(html) && extractSearchResults(html).length === 0) {
+  if (hasZeroResultsSignal(pages[0]) && extractSearchResults(pages[0]).length === 0) {
     return []
   }
 
-  for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+  for (const html of pages) {
     const pageJobs = extractSearchResults(html)
 
     for (const job of pageJobs) {
@@ -299,89 +280,50 @@ const collectSummaryPages = async (page, { maxPages = DEFAULT_MAX_PAGES } = {}) 
       listings.push(job)
     }
 
-    if (!hasNextPage(html)) break
-
-    const previousHtml = html
-    await page.evaluate(() => {
-      document.querySelector('a[title="Next Page"]')?.click()
-    })
-    await waitForPageChange(page, previousHtml)
-    html = await page.content()
-
-    if (!html || html === previousHtml) break
   }
 
   return listings
 }
 
 export const createBioconScraper = ({
-  launchBrowser: launchBrowserImpl = launchBrowser,
-  createOptimizedPage: createOptimizedPageImpl = createOptimizedPage,
+  fetchText = defaultFetchText,
+  getSearchPages = (options = {}) => getLiveSearchPages({ ...options, fetchText }),
   now = () => new Date().toISOString(),
-  maxPages = DEFAULT_MAX_PAGES,
 } = {}) => ({
   async run() {
-    const browser = await launchBrowserImpl()
-
-    try {
-      const page = await createOptimizedPageImpl(browser)
-
-      await page.goto(CAREERS_PAGE_URL, {
-        waitUntil: 'domcontentloaded',
-        timeout: DEFAULT_TIMEOUT_MS,
-      })
-      await waitForSelectorIfAvailable(
-        page,
-        'a[href*="career10.successfactors.com/career?company=bioconlimi"]',
-      )
-
-      const careersHtml = await page.content()
-      if (!hasOfficialCareersPageSignal(careersHtml)) {
-        throw new Error('Biocon verified official careers page no longer matches the known public surface')
-      }
-
-      const handoffUrl = extractSuccessFactorsHandoffUrl(careersHtml)
-      if (handoffUrl !== SUCCESSFACTORS_BOARD_URL) {
-        throw new Error('Biocon verified Biocon careers page no longer exposes the known SuccessFactors handoff')
-      }
-
-      await page.goto(SUCCESSFACTORS_SEARCH_URL, {
-        waitUntil: 'domcontentloaded',
-        timeout: DEFAULT_TIMEOUT_MS,
-      })
-      await waitForSearchSurface(page)
-
-      const listings = await collectSummaryPages(page, { maxPages })
-      const jobs = []
-
-      for (const listing of listings) {
-        await page.goto(listing.sourceUrl, {
-          waitUntil: 'domcontentloaded',
-          timeout: DEFAULT_TIMEOUT_MS,
-        })
-        await waitForSelectorIfAvailable(page, 'body')
-
-        const detailHtml = await page.content()
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          ...listing,
-          ...detail,
-          source: SOURCE,
-          company: COMPANY_NAME,
-          country: 'India',
-          companyCareerPage: CAREERS_PAGE_URL,
-          companyDomain: PROVIDER_METADATA.companyDomain,
-          atsPlatform: PROVIDER_METADATA.atsPlatform,
-          link: detail.applyUrl || listing.applyUrl || listing.sourceUrl,
-          scrapedAt: now(),
-        })
-      }
-
-      return jobs
-    } finally {
-      await browser.close()
+    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    if (!hasOfficialCareersPageSignal(careersHtml)) {
+      throw new Error('Biocon verified official careers page no longer matches the known public surface')
     }
+
+    const handoffUrl = extractSuccessFactorsHandoffUrl(careersHtml)
+    if (handoffUrl !== SUCCESSFACTORS_BOARD_URL) {
+      throw new Error('Biocon verified Biocon careers page no longer exposes the known SuccessFactors handoff')
+    }
+
+    const searchPages = await getSearchPages({ searchUrl: SUCCESSFACTORS_SEARCH_URL, fetchText })
+    const listings = collectSummaryPages(searchPages)
+    const jobs = []
+
+    for (const listing of listings) {
+      const detailHtml = await fetchText(listing.sourceUrl)
+      const detail = extractJobDetail(detailHtml, listing)
+
+      jobs.push({
+        ...listing,
+        ...detail,
+        source: SOURCE,
+        company: COMPANY_NAME,
+        country: 'India',
+        companyCareerPage: CAREERS_PAGE_URL,
+        companyDomain: PROVIDER_METADATA.companyDomain,
+        atsPlatform: PROVIDER_METADATA.atsPlatform,
+        link: detail.applyUrl || listing.applyUrl || listing.sourceUrl,
+        scrapedAt: now(),
+      })
+    }
+
+    return jobs
   },
 })
 

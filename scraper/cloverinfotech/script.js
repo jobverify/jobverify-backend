@@ -1,7 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -331,15 +330,16 @@ export const extractJobDetail = (html, listing = {}) => {
 }
 
 export const createCloverInfotechScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    const textFetcher = createBrowserTextFallback({
-      fetchText,
-      fetchBrowserText,
-      userAgent: DESKTOP_BROWSER_USER_AGENT,
-    })
+  async run({ fetchText = defaultFetchText } = {}) {
+    const fetchApiOnlyText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        throw new Error(`Clover Infotech API-only migration could not fetch ${url}: ${error.message}`)
+      }
+    }
 
-    try {
-      const firstPageHtml = await textFetcher.fetchText(buildJobOpeningsPageUrl(1))
+      const firstPageHtml = await fetchApiOnlyText(buildJobOpeningsPageUrl(1))
       if (!hasOfficialJobOpeningsSignal(firstPageHtml)) {
         throw new Error('Clover Infotech verified first-party job openings page no longer matches the trusted public surface')
       }
@@ -354,7 +354,7 @@ export const createCloverInfotechScraper = ({ now = () => new Date().toISOString
       for (let page = 1; page <= pagesToFetch; page += 1) {
         const html = page === 1
           ? firstPageHtml
-          : await textFetcher.fetchText(buildJobOpeningsPageUrl(page))
+          : await fetchApiOnlyText(buildJobOpeningsPageUrl(page))
 
         if (page > 1 && !hasOfficialJobOpeningsSignal(html)) {
           throw new Error('Clover Infotech verified first-party job openings page no longer matches the trusted public surface')
@@ -364,7 +364,7 @@ export const createCloverInfotechScraper = ({ now = () => new Date().toISOString
           if (seenSourceUrls.has(listing.sourceUrl)) continue
           seenSourceUrls.add(listing.sourceUrl)
 
-          const detailHtml = await textFetcher.fetchText(listing.sourceUrl)
+          const detailHtml = await fetchApiOnlyText(listing.sourceUrl)
           if (!hasOfficialJobDetailSignal(detailHtml)) {
             throw new Error('Clover Infotech verified first-party job detail page no longer matches the trusted public surface')
           }
@@ -400,9 +400,6 @@ export const createCloverInfotechScraper = ({ now = () => new Date().toISOString
       }
 
       return jobs
-    } finally {
-      await textFetcher.close()
-    }
   },
 })
 

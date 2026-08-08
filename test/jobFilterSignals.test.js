@@ -426,10 +426,43 @@ test("extractJobFilterSignals captures meaningful non-numeric experience require
   assert.equal(signals.experienceBucket, "unspecified");
 });
 
+test("extractJobFilterSignals captures preferred non-numeric experience requirements", () => {
+  const signals = extractJobFilterSignals({
+    title: "Content Writer - Tamil - Remote",
+    description: "Qualifications Prior writing experience preferred (professional, academic, or published work). Strong command of style, tone, and structure appropriate to the chosen domain.",
+  });
+
+  assert.equal(
+    signals.experienceProfile.evidence,
+    "Prior writing experience preferred (professional, academic, or published work)",
+  );
+  assert.equal(signals.experienceProfile.confidence, "medium");
+  assert.equal(signals.experienceProfile.minimumYears, null);
+  assert.equal(signals.experienceProfile.maximumYears, null);
+  assert.equal(signals.experienceBucket, "unspecified");
+});
+
 test("extractJobFilterSignals ignores non-requirement experience marketing copy", () => {
   const signals = extractJobFilterSignals({
     title: "Group Product Manager",
     description: "Our mission is to create the most delightful customer experience and help travellers experience the world. We're building toward 2x in two years and 5x in five.",
+  });
+
+  assert.equal(signals.experienceProfile.evidence, null);
+  assert.equal(signals.experienceProfile.minimumYears, null);
+  assert.equal(signals.experienceProfile.maximumYears, null);
+  assert.equal(signals.experienceBucket, "unspecified");
+});
+
+test("extractJobFilterSignals ignores bare skill experience phrases without requirement cues", () => {
+  const signals = extractJobFilterSignals({
+    title: "SAP SuccessFactors / LMS SMEs",
+    description: [
+      "Leave policies allow for 32 days of leave per year.",
+      "SAP SuccessFactors / LMS SMEs Remote Contracted Experienced Share ROLE:",
+      "Location: Remote contract (1 year).",
+      "We are looking for senior-level professionals with experience in SuccessFactors Employee Central and LMS.",
+    ].join(" "),
   });
 
   assert.equal(signals.experienceProfile.evidence, null);

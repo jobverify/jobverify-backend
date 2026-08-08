@@ -1,37 +1,7 @@
 import assert from 'node:assert/strict'
-import path from 'node:path'
 import test from 'node:test'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'autmanrobotics',
-)
-
-const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
-
-const homepageHtml = readFixture('homepage.html')
-const careersHtml = readFixture('careers.html')
-
-const currentHomepageHtml = `
-<!doctype html>
-  <html lang="en">
-  <head>
-    <title>Home | Autman Robotics</title>
-    <link href="https://www.aut-man.com" rel="canonical" />
-  </head>
-  <body>
-    <a href="https://www.aut-man.com/careers">Careers</a>
-    <h1>AUTMAN Robotics</h1>
-    <p>Welcome to AUTMAN Robotics</p>
-    <a href="mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Robotics%20Engineer"><svg></svg></a>
-  </body>
-</html>
-`
-
-const currentCareersApplyLinksHtml = `
+const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
@@ -44,15 +14,49 @@ const currentCareersApplyLinksHtml = `
     <h2>CAREER OPPORTUNITIES</h2>
     <h3>Robotics Engineer</h3>
     <p>Birmingham, UK</p>
-    <p>We are looking for a Robotics Engineer.</p>
+    <p>We are looking for a Robotics Engineer with expertise in control systems, motion planning, and industrial robot programming. Strong skills in kinematics, real-time feedback control, and sensor fusion are essential. If you excel at problem-solving and designing adaptive robotic systems, let's connect.</p>
     <a href="mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Robotics%20Engineer" aria-label="Apply Now"><span>Apply Now</span></a>
     <a href="mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Robotics%20Engineer"><svg></svg></a>
-    <h3>Neuroscientist</h3>
-    <p>Birmingham, UK</p>
-    <p>We are seeking a Neuroscientist.</p>
-    <a href="mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Neuroscientist%20" aria-label="Apply Now"><span>Apply Now</span></a>
-    <a href="mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Neuroscientist%20"><svg></svg></a>
     <p>Don't see a position that matches your skills? We welcome you to submit your CV for our review.</p>
+  </body>
+</html>
+`
+
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Autman Robotics - Physical AI for Adaptive Manufacturing</title>
+    <meta
+      name="description"
+      content="Autman Robotics builds Physical AI that makes any industrial robot adaptive. Vision, neuro-haptic sensing and RAiOS let robots handle variation without task-specific retraining."
+    />
+    <link rel="canonical" href="https://aut-man.com/" />
+    <meta property="og:title" content="Autman Robotics - Physical AI for Adaptive Manufacturing" />
+  </head>
+  <body>
+    <nav>
+      <a href="#technology">Technology</a>
+      <a href="#about">About</a>
+      <a href="#careers">Careers</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <main>
+      <h1>The future of automation doesn't follow scripts.</h1>
+      <p>Making every robot adaptable and every product limitless. One intelligence layer, any machine.</p>
+      <section id="careers">
+        <h2>Careers</h2>
+        <h3>Join the Mission</h3>
+        <p>We are always looking for exceptional innovators, roboticists, and neuroengineers ready to build the physical intelligence behind the next generation of machines.</p>
+        <article>
+          <h4>Drop Your CV</h4>
+          <p>Don't see a role matching your exact specifications? Send us your deatails, resume and a description of the foundational challenges you want to solve.</p>
+          <a href="mailto:info@aut-man.com?subject=General%20Application%20-%20Autman%20Careers">
+            Submit Application
+          </a>
+        </article>
+      </section>
+    </main>
   </body>
 </html>
 `
@@ -74,32 +78,15 @@ test('Autman Robotics sentinels recognize the verified homepage and first-party 
   assert.equal(autmanRobotics.HOMEPAGE_URL, 'https://www.aut-man.com/')
   assert.equal(autmanRobotics.CAREERS_URL, 'https://www.aut-man.com/careers')
   assert.equal(autmanRobotics.APPLY_EMAIL, 'shini@aut-man.com')
-  assert.equal(autmanRobotics.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(autmanRobotics.VERIFIED_ON, '2026-08-07')
+  assert.match(autmanRobotics.VERIFIED_SURFACE_SUMMARY, /Friday, August 7, 2026/i)
+  assert.match(autmanRobotics.VERIFIED_SURFACE_SUMMARY, /Robotics Engineer/i)
   assert.equal(autmanRobotics.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(autmanRobotics.hasOfficialCareersSignal(careersHtml), true)
   assert.deepEqual(autmanRobotics.extractApplyRoleLinks(careersHtml), [
     {
       title: 'Robotics Engineer',
       applyUrl: 'mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Robotics%20Engineer',
-    },
-    {
-      title: 'Neuroscientist',
-      applyUrl: 'mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Neuroscientist%20',
-    },
-  ])
-})
-
-test('Autman Robotics extracts both live mailto apply roles when Wix renders duplicate text and icon anchors', async () => {
-  const autmanRobotics = await loadAutmanRoboticsModule()
-
-  assert.deepEqual(autmanRobotics.extractApplyRoleLinks(currentCareersApplyLinksHtml), [
-    {
-      title: 'Robotics Engineer',
-      applyUrl: 'mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Robotics%20Engineer',
-    },
-    {
-      title: 'Neuroscientist',
-      applyUrl: 'mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Neuroscientist%20',
     },
   ])
 })
@@ -109,7 +96,7 @@ test('Autman Robotics extracts the current inline public openings from the verif
 
   const jobs = autmanRobotics.extractPublicOpenings(careersHtml)
 
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 1)
   assert.deepEqual(jobs, [
     {
       title: 'Robotics Engineer',
@@ -133,28 +120,6 @@ test('Autman Robotics extracts the current inline public openings from the verif
         "We are looking for a Robotics Engineer with expertise in control systems, motion planning, and industrial robot programming. Strong skills in kinematics, real-time feedback control, and sensor fusion are essential. If you excel at problem-solving and designing adaptive robotic systems, let's connect.",
       remoteStatus: null,
     },
-    {
-      title: 'Neuroscientist',
-      department: null,
-      location: 'Birmingham, United Kingdom',
-      city: 'Birmingham',
-      state: null,
-      country: 'United Kingdom',
-      sourceUrl: 'https://www.aut-man.com/careers',
-      applyUrl: 'mailto:shini@aut-man.com?subject=Interested%20to%20join%20Autman%20%3A%20Neuroscientist%20',
-      jobId: 'autmanrobotics-neuroscientist',
-      requisitionId: 'autmanrobotics-neuroscientist',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription:
-        "We are seeking a Neuroscientist with expertise in computational neuroscience, neural encoding, and sensory-motor integration. A strong understanding of bio-inspired control, spiking neural networks, and real-time sensory processing is essential. If you're passionate about applying neuroscience to intelligent robotics, we'd love to hear from you.",
-      remoteStatus: null,
-    },
   ])
 })
 
@@ -164,12 +129,12 @@ test('Autman Robotics run verifies the trusted first-party surfaces and decorate
 
   const jobs = await autmanRobotics.createAutmanRoboticsScraper({
     maxJobs: 1,
-    now: () => '2026-07-11T00:00:00.000Z',
+    now: () => '2026-08-07T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
-      if (url === autmanRobotics.HOMEPAGE_URL) return homepageHtml
+      if (url === autmanRobotics.HOMEPAGE_URL) return currentHomepageHtml
       if (url === autmanRobotics.CAREERS_URL) return careersHtml
 
       throw new Error(`Unexpected Autman Robotics URL: ${url}`)
@@ -208,7 +173,7 @@ test('Autman Robotics run verifies the trusted first-party surfaces and decorate
     jobDescription:
       "We are looking for a Robotics Engineer with expertise in control systems, motion planning, and industrial robot programming. Strong skills in kinematics, real-time feedback control, and sensor fusion are essential. If you excel at problem-solving and designing adaptive robotic systems, let's connect.",
     remoteStatus: null,
-    scrapedAt: '2026-07-11T00:00:00.000Z',
+    scrapedAt: '2026-08-07T00:00:00.000Z',
   })
 })
 
@@ -219,7 +184,7 @@ test('Autman Robotics fails closed when the homepage or careers page contract ch
     autmanRobotics.createAutmanRoboticsScraper().run({
       fetchText: async (url) => {
         if (url === autmanRobotics.HOMEPAGE_URL) {
-          return currentHomepageHtml.replaceAll('https://www.aut-man.com/careers', 'https://www.aut-man.com/contact-5')
+          return currentHomepageHtml.replaceAll('#careers', '#contact')
         }
 
         return careersHtml
@@ -231,7 +196,7 @@ test('Autman Robotics fails closed when the homepage or careers page contract ch
   await assert.rejects(
     autmanRobotics.createAutmanRoboticsScraper().run({
       fetchText: async (url) => {
-        if (url === autmanRobotics.HOMEPAGE_URL) return homepageHtml
+        if (url === autmanRobotics.HOMEPAGE_URL) return currentHomepageHtml
         if (url === autmanRobotics.CAREERS_URL) {
           return careersHtml.replace('CAREER OPPORTUNITIES', 'TEAM OPPORTUNITIES')
         }

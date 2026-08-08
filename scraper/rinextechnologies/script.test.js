@@ -224,11 +224,10 @@ test('Rinex Technologies extracts same-domain job details and preserves the exte
   assert.deepEqual(detail.requiredSkills, [])
 })
 
-test('Rinex Technologies falls back to rendered detail HTML when the static route serves only the JS shell', async () => {
+test('Rinex Technologies API-only scraper rejects a JavaScript-only detail page', async () => {
   const rinex = await loadModule()
-  const requestedRenderedUrls = []
 
-  const jobs = await rinex.createRinexTechnologiesScraper().run({
+  await assert.rejects(rinex.createRinexTechnologiesScraper().run({
     fetchText: async (url) => {
       if (url === rinex.HOMEPAGE_URL) return homepageHtml
       if (url === 'https://rinex.ai/static/js/main.01193449.js') return bundleText
@@ -238,30 +237,7 @@ test('Rinex Technologies falls back to rendered detail HTML when the static rout
 
       throw new Error(`Unexpected Rinex Technologies URL: ${url}`)
     },
-    fetchRenderedDetailHtml: async (url) => {
-      requestedRenderedUrls.push(url)
-
-      const page = Object.entries(detailPages).find(
-        ([title]) => url === rinex.buildJobUrl(title),
-      )?.[1]
-
-      if (!page) {
-        throw new Error(`Unexpected rendered Rinex Technologies URL: ${url}`)
-      }
-
-      return page
-    },
-    now: () => '2026-08-01T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedRenderedUrls, [
-    'https://rinex.ai/job/Inside%20sales%20Strategist',
-    'https://rinex.ai/job/Talent%20Acquisition',
-    'https://rinex.ai/job/Corporate%20Relations',
-    'https://rinex.ai/job/Operation%20Specialist',
-  ])
-  assert.equal(jobs.length, 4)
-  assert.equal(jobs[0].scrapedAt, '2026-08-01T00:00:00.000Z')
+  }), /API-only scraper received a JavaScript-only detail page/i)
 })
 
 test('Rinex Technologies run verifies the official shell and bundle, then decorates all current openings', async () => {

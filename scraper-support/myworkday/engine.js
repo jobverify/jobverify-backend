@@ -2,25 +2,12 @@
  * @file Reusable, configurable scraping engine for Workday career sites.
  * @module scraper/myworkday/engine
  */
-import { launchBrowser, createOptimizedPage } from '../utils/browser.js'
 import { loadConfig } from '../utils/loadConfig.js'
 import { normalizeCity } from '../utils/cityNormalizer.js'
 import { extractJobDetail } from '../detailExtractors/index.js'
 import { isGroupedLocationLabel } from '../../src/utils/jobLocations.js'
 import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
 import { extractWorkdayDetailLocations } from './locationDetails.js'
-
-const SELECTORS = {
-  cookieAccept: '[data-automation-id="legalNoticeAcceptButton"]',
-  jobSection: 'section[data-automation-id="jobResults"]',
-  jobList: 'ul[role="list"]',
-  jobItem: 'li',
-  jobTitle: '[data-automation-id="jobTitle"]',
-  jobLocation: '[data-automation-id="locations"] dd',
-  jobPostedOn: '[data-automation-id="postedOn"] dd',
-  jobClosingDate: '[data-automation-id="timeLeftToApply"] dd',
-  nextButton: 'button[aria-label="next"]',
-}
 
 const DEFAULT_COUNTRY_FACET_PARAMETER = 'locationCountry'
 const DEFAULT_WORKDAY_DETAIL_FETCH_CONCURRENCY = 4
@@ -380,22 +367,6 @@ const validateWorkdayJobsApiPayload = (payload, {
   return payload
 }
 
-const shouldFallbackToWorkdayDom = (error) => {
-  if (error instanceof WorkdayRequestTimeoutError) {
-    return false
-  }
-
-  const status = Number(error?.jobsApiHttpStatus)
-  return error?.workdayJobsApiFailure === true
-    && status >= 400
-    && status <= 499
-    && ![408, 425].includes(status)
-    || (
-      error?.upstreamOutage === true
-      && isTransientWorkdayError(error)
-    )
-}
-
 const isWorkdayCountryFacetKey = (key) => (
   String(key).replace(/_/g, '').toLowerCase() === WORKDAY_COUNTRY_FACET_NORMALIZED
 )
@@ -488,31 +459,6 @@ const probeWorkdaySearchPageForOutage = async (
     if (error instanceof WorkdayRequestTimeoutError) throw error
     return false
   }
-}
-
-const createWorkdayOutageTracker = (page) => {
-  const responseUrls = []
-
-  page.on('response', (response) => {
-    const url = response.url()
-    if (hasWorkdayOutageSignal({ url })) {
-      responseUrls.push(url)
-    }
-  })
-
-  return { responseUrls }
-}
-
-const pageShowsWorkdayOutage = async (page, tracker) => {
-  const title = await page.title().catch(() => '')
-  const html = await page.content().catch(() => '')
-
-  return hasWorkdayOutageSignal({
-    title,
-    html,
-    url: page.url(),
-    responseUrls: tracker?.responseUrls || [],
-  })
 }
 
 export const buildWorkdaySearchUrl = (baseUrl, locationCountry) => {
@@ -1236,54 +1182,6 @@ const fetchDetailedJobPayload = async (
   }
 }
 
-// Waits for the job list element to load or confirms a zero jobs count.
-export const isExplicitWorkdayZeroJobsText = (value) => {
-  const text = String(value ?? '').replace(/\s+/g, ' ').trim()
-  return /\b0\s+(?:open\s+)?jobs?\b/i.test(text)
-    || /\bno\s+(?:open\s+)?jobs?\b/i.test(text)
-}
-
-const waitForJobsToLoad = async (
-  page,
-  config,
-  source,
-  {
-    signal = null,
-    allowReloadRetry = true,
-  } = {},
-) => {
-  try {
-    await page.waitForSelector(
-      `${SELECTORS.jobSection} ${SELECTORS.jobTitle}`,
-      { timeout: config.jobListingTimeoutMs },
-    )
-    return true
-  } catch (waitErr) {
-    const jobFoundText = await page.evaluate(() => {
-      const el = document.querySelector('[data-automation-id="jobFoundText"]')
-      return el ? el.innerText.trim() : null
-    }).catch(() => null)
-    if (isExplicitWorkdayZeroJobsText(jobFoundText)) {
-      console.log(`  [${source}] 0 jobs found on page (found text: "${jobFoundText}").`)
-      return false
-    }
-    if (allowReloadRetry && typeof page?.goto === 'function' && typeof page?.url === 'function') {
-      const retryUrl = page.url()
-      if (retryUrl) {
-        console.warn(`  [${source}] Job results did not hydrate on first load; retrying the Workday page once.`)
-        await page.goto(retryUrl, { waitUntil: 'domcontentloaded' })
-        await new Promise((resolve) => setTimeout(resolve, config.pageLoadDelayMs || 2000))
-        throwIfAborted(signal)
-        return waitForJobsToLoad(page, config, source, {
-          signal,
-          allowReloadRetry: false,
-        })
-      }
-    }
-    throw new Error(`Job results did not load: ${waitErr.message}`)
-  }
-}
-
 const runWorkdayJobsApiScraper = async ({
   company,
   baseUrl,
@@ -1541,12 +1439,10 @@ const runWorkdayJobsApiScraper = async ({
   }
 }
 
-// Executes the Puppeteer automation pipeline for any target Workday site.
+// Executes the fetch-only public API pipeline for any target Workday site.
 export const runWorkdayScraper = async (options) => {
   const { company, baseUrl, locationCountry, source, scraperDir } = options
   const signal = options.signal || null
-  const launchBrowserImpl = options.launchBrowserImpl || launchBrowser
-  const createOptimizedPageImpl = options.createOptimizedPageImpl || createOptimizedPage
   const config = loadConfig(scraperDir)
   const envRequestTimeoutMs = Number.parseInt(process.env.WORKDAY_REQUEST_TIMEOUT_MS, 10)
   const requestTimeoutMs = [
@@ -1568,7 +1464,6 @@ export const runWorkdayScraper = async (options) => {
   const countryId = Object.prototype.hasOwnProperty.call(config, 'locationCountry')
     ? config.locationCountry
     : (locationCountry || 'c4f78be1a8f14da0ab49ce1162348a5e')
-  const currentUrl = buildWorkdaySearchUrl(baseUrl, countryId)
   const inferredApiConfig = inferWorkdayJobsApiConfig(baseUrl)
   const hasExplicitJobsApiConfig = config.listingStrategy === 'jobs-api'
 
@@ -1589,10 +1484,7 @@ export const runWorkdayScraper = async (options) => {
       })
     } catch (error) {
       throwIfAborted(signal)
-      if (!shouldFallbackToWorkdayDom(error)) {
-        throw markWorkdayTerminalFailure(error)
-      }
-      console.warn(`  [${source}] Configured Workday jobs API failed; falling back to the DOM listing.`)
+      throw markWorkdayTerminalFailure(error)
     }
   }
 
@@ -1617,256 +1509,12 @@ export const runWorkdayScraper = async (options) => {
       })
     } catch (error) {
       throwIfAborted(signal)
-      if (!shouldFallbackToWorkdayDom(error)) {
-        throw markWorkdayTerminalFailure(error)
-      }
-      console.warn(`  [${source}] Inferred Workday jobs API failed; falling back to the DOM listing.`)
+      throw markWorkdayTerminalFailure(error)
     }
   }
 
-  let browser
-  let browserClosePromise = null
-  let listingPage = null
-  let outageTracker = { responseUrls: [] }
-  const closeBrowser = () => {
-    if (!browser) return Promise.resolve()
-    if (!browserClosePromise) {
-      browserClosePromise = Promise.resolve()
-        .then(() => browser.close())
-        .catch(() => {})
-    }
-    return browserClosePromise
-  }
-  const abortBrowser = () => {
-    void closeBrowser()
-  }
-  signal?.addEventListener('abort', abortBrowser, { once: true })
+  throw markWorkdayTerminalFailure(
+    new Error(`[${source}] API-only Workday scraper could not infer a public Workday jobs API from ${baseUrl}`),
+  )
 
-  try {
-    throwIfAborted(signal)
-    browser = await launchBrowserImpl()
-    throwIfAborted(signal)
-    const page = await createOptimizedPageImpl(browser)
-    listingPage = page
-    outageTracker = createWorkdayOutageTracker(page)
-    await page.goto(currentUrl, { waitUntil: 'domcontentloaded' })
-    throwIfAborted(signal)
-    try {
-      const cookieBtn = await page.waitForSelector(SELECTORS.cookieAccept, {
-        timeout: config.cookieBannerTimeoutMs,
-      })
-      await cookieBtn.click()
-      await new Promise((r) => setTimeout(r, config.cookieBannerTimeoutMs))
-    } catch {
-      try {
-        const fallbackBtn = await page.$(SELECTORS.cookieAccept)
-        if (fallbackBtn) {
-          await fallbackBtn.click()
-          await new Promise((r) => setTimeout(r, config.cookieBannerTimeoutMs))
-          console.log(`  [${source}] Cookie banner dismissed via fallback.`)
-        } else {
-          console.log(`  [${source}] No cookie banner found; proceeding.`)
-        }
-      } catch (fallbackErr) {
-        console.error(`  [${source}] Cookie fallback failed:`, fallbackErr.message)
-      }
-    }
-    throwIfAborted(signal)
-    const hasJobs = await waitForJobsToLoad(page, config, source, { signal })
-    if (!hasJobs) return createAuthoritativeWorkdayEmptyResult()
-    const allJobs = []
-    const seenLinks = new Set()
-    let hasNextPage = true
-    let pageNum = 1
-    while (hasNextPage && pageNum <= config.maxPages) {
-      throwIfAborted(signal)
-      const pageUrl = page.url()
-      console.log(`  [${source}] Scraping page ${pageNum} — ${pageUrl}`)
-      const hasPageJobs = await waitForJobsToLoad(page, config, source, { signal })
-      if (!hasPageJobs) break
-      const jobs = await page
-        .$eval(SELECTORS.jobSection, (section, selectors) => {
-          const cardSelectors = [
-            selectors.jobItem,
-            '[role="listitem"]',
-            '[data-automation-id="jobPostingCard"]',
-            '[data-automation-id="jobPosting"]',
-          ]
-          const resolveJobCard = (titleEl) => {
-            for (const selector of cardSelectors) {
-              const candidate = titleEl.closest(selector)
-              if (!candidate || !section.contains(candidate)) continue
-              if (
-                candidate.querySelector(selectors.jobLocation)
-                || candidate.querySelector(selectors.jobPostedOn)
-                || candidate.querySelector(selectors.jobClosingDate)
-              ) {
-                return candidate
-              }
-            }
-
-            return titleEl.parentElement && section.contains(titleEl.parentElement)
-              ? titleEl.parentElement
-              : section
-          }
-
-          return Array.from(section.querySelectorAll(selectors.jobTitle))
-            .map((titleEl) => {
-              const item = resolveJobCard(titleEl)
-              const locationEl = item.querySelector(selectors.jobLocation)
-              const postedOnEl = item.querySelector(selectors.jobPostedOn)
-              const closingDateEl = item.querySelector(selectors.jobClosingDate)
-              if (!titleEl) return null
-              return {
-                title: titleEl.innerText.trim(),
-                link: titleEl.href,
-                location: locationEl ? locationEl.innerText.trim() : 'Unknown',
-                postedOnRaw: postedOnEl ? postedOnEl.innerText.trim() : null,
-                closingDateRaw: closingDateEl ? closingDateEl.innerText.trim() : null,
-              }
-            })
-            .filter((job) => job !== null)
-        }, SELECTORS)
-      if (jobs.length === 0) {
-        throw new Error('Job listings loaded but no cards could be extracted from the Workday results section')
-      }
-      console.log(`  [${source}] Page ${pageNum}: ${jobs.length} India jobs`)
-      const pageCandidates = []
-      for (const job of jobs) {
-        const canonicalLink = getSafeWorkdayUrl(job.link, baseUrl)
-        if (canonicalLink && !seenLinks.has(canonicalLink)) {
-          if (!shouldFetchWorkdayJobDetail({ location: job.location }, config.locationPattern)) {
-            continue
-          }
-
-          seenLinks.add(canonicalLink)
-          pageCandidates.push({ job, canonicalLink })
-        }
-      }
-      const detailedPageJobs = await mapWithConcurrency(
-        pageCandidates,
-        resolveWorkdayDetailFetchConcurrency(
-          process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY,
-          config.detailFetchConcurrency,
-        ),
-        async ({ job, canonicalLink }) => {
-          throwIfAborted(signal)
-          const detailPayload = detailEnrichmentState.disabled
-            ? createFallbackDetailPayload()
-            : await fetchDetailedJobPayload(
-                canonicalLink,
-                source,
-                null,
-                {
-                  signal,
-                  requestTimeoutMs,
-                  circuitBreaker,
-                },
-              )
-          maybeDisableWorkdayDetailEnrichment(detailPayload, detailEnrichmentState, source)
-          const detailedLocations = resolveWorkdayLocationsFromSummary(job.location, detailPayload)
-          const workdayJob = {
-            jobId: extractJobId(job.link),
-            title: job.title,
-            company,
-            department: detailPayload.department,
-            location: job.location,
-            city: detailedLocations[0] || extractCity(job.location),
-            locations: detailedLocations,
-            link: canonicalLink,
-            source,
-            postedAt: parsePostedOn(job.postedOnRaw || detailPayload.postingDate),
-            closingDate: parseClosingDate(job.closingDateRaw),
-            jobDescription: detailPayload.jobDescription,
-            minimumQualification: detailPayload.minimumQualification,
-            preferredQualification: detailPayload.preferredQualification,
-            requiredSkills: detailPayload.requiredSkills,
-            experienceRequired: detailPayload.experienceRequired,
-            publicExperienceChecked: detailPayload.publicExperienceChecked,
-            requisitionId: detailPayload.requisitionId,
-            scrapedAt: new Date().toISOString(),
-          }
-
-          if (!isWorkdayJobInPublicIndiaScope(workdayJob)) {
-            return null
-          }
-
-          if (!shouldPublishWorkdayListingFallback({
-            location: job.location,
-            detailPayload,
-            locations: detailedLocations,
-          })) {
-            return null
-          }
-
-          return matchesWorkdayLocationPattern(workdayJob, config.locationPattern)
-            ? workdayJob
-            : null
-        },
-      )
-      for (const workdayJob of detailedPageJobs) {
-        if (workdayJob) {
-          allJobs.push(workdayJob)
-        }
-      }
-      const nextBtn = await page.$(SELECTORS.nextButton)
-      if (nextBtn) {
-        const isDisabled = await page.evaluate(
-          (el) => el.disabled || el.getAttribute('aria-disabled') === 'true',
-          nextBtn,
-        )
-        if (!isDisabled) {
-          await Promise.all([
-            page.evaluate((el) => el.click(), nextBtn),
-            page.waitForNavigation({ waitUntil: 'networkidle2', timeout: config.jobListingTimeoutMs }).catch(() => { }),
-          ])
-          await new Promise((r) => setTimeout(r, config.pageLoadDelayMs || 2000))
-          throwIfAborted(signal)
-          pageNum++
-        } else {
-          console.log(`  [${source}] Next button disabled. End of results.`)
-          hasNextPage = false
-        }
-      } else {
-        console.log(`  [${source}] No next button. End of results.`)
-        hasNextPage = false
-      }
-    }
-    return allJobs
-  } catch (err) {
-    throwIfAborted(signal)
-    if (listingPage && await pageShowsWorkdayOutage(listingPage, outageTracker)) {
-      throw buildWorkdayOutageError(source, currentUrl, err)
-    }
-
-    if (!hasExplicitJobsApiConfig && inferredApiConfig) {
-      console.warn(`  [${source}] Workday DOM listing failed; retrying through the public jobs API.`)
-      try {
-        return await runWorkdayJobsApiScraper({
-          company,
-          baseUrl,
-          locationCountry: countryId,
-          source,
-          config: {
-            ...config,
-            ...inferredApiConfig,
-            listingStrategy: 'jobs-api',
-          },
-          signal,
-          requestTimeoutMs,
-          retryBaseDelayMs,
-          circuitBreaker,
-        })
-      } catch (error) {
-        throw markWorkdayTerminalFailure(error)
-      }
-    }
-
-    throw markWorkdayTerminalFailure(
-      new Error(`[${source}] Scraping failed at ${currentUrl} — ${err.message}`),
-    )
-  } finally {
-    signal?.removeEventListener('abort', abortBrowser)
-    await closeBrowser()
-  }
 }

@@ -26,6 +26,22 @@ const officialCareersHtml = `
 </html>
 `
 
+const currentOfficialCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <title>KEYENCE India – Careers</title>
+    <main>
+      <h1>KEYENCE India – Careers</h1>
+      <p>At KEYENCE, we believe that proactive actions and a customer-centric mindset are the keys to achieving the greatest added-value for our customers.</p>
+      <footer>
+        <a href="/ss/career/job.jsp">Recruitment</a>
+      </footer>
+    </main>
+  </body>
+</html>
+`
+
 const recruitmentHtml = `
 <!doctype html>
 <html lang="en">
@@ -66,6 +82,13 @@ test('Keyence scraper validates the verified official careers and apply-only rec
   assert.equal(keyence.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.equal(keyence.extractRecruitmentUrl(officialCareersHtml), 'https://www.keyence.co.in/ss/career/job.jsp')
   assert.equal(keyence.hasApplyOnlyZeroJobsSignal(recruitmentHtml), true)
+})
+
+test('Keyence scraper accepts the current careers landing handoff on Friday, August 7, 2026', async () => {
+  const keyence = await loadKeyenceModule()
+
+  assert.equal(keyence.hasOfficialCareersSignal(currentOfficialCareersHtml), true)
+  assert.equal(keyence.extractRecruitmentUrl(currentOfficialCareersHtml), 'https://www.keyence.co.in/ss/career/job.jsp')
 })
 
 test('Keyence scraper returns no jobs while the official public surface remains apply-only', async () => {

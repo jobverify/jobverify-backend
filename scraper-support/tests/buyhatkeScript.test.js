@@ -41,6 +41,7 @@ const CURRENT_LINK_LIST_CAREERS_HTML = `
       <li><a href="android-developer.php">Android Developer</a></li>
       <li><a href="backend-developer.php">Back End Developer</a></li>
       <li><a href="fed.php">Front End Engineer</a></li>
+      <li><a href="http://compare.buyhatke.com/products/siteMap.php">Price History & Tracker</a></li>
     </ul>
   </body>
 </html>
@@ -178,6 +179,15 @@ test('extractListings parses the current Buyhatke linked role list', async () =>
       ['Front End Engineer', 'fed', 'https://compare.buyhatke.com/company/fed.php'],
     ],
   )
+})
+
+test('extractListings ignores Buyhatke non-job sitemap and product links', async () => {
+  const buyhatke = await loadBuyhatkeModule()
+
+  const jobs = buyhatke.extractListings(CURRENT_LINK_LIST_CAREERS_HTML)
+
+  assert.equal(jobs.some((job) => /siteMap/i.test(job.jobId)), false)
+  assert.equal(jobs.some((job) => /Price History & Tracker/i.test(job.title)), false)
 })
 
 test('extractJobDetail lifts Buyhatke detail fields and Google Forms apply links', async () => {

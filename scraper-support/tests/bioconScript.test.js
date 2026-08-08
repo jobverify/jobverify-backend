@@ -240,7 +240,7 @@ test('extractJobDetail parses the verified Biocon SuccessFactors detail page', a
   assert.match(job.jobDescription, /regulatory authorities/i)
 })
 
-test('run verifies the Biocon careers handoff, paginates the public SuccessFactors board, and enriches detail pages', async () => {
+test('run verifies the Biocon careers handoff, consumes injected HTTP search pages, and enriches detail pages', async () => {
   const biocon = await loadModule()
 
   const requestedUrls = []
@@ -277,54 +277,17 @@ test('run verifies the Biocon careers handoff, paginates the public SuccessFacto
     }),
   }
 
-  let currentStage = 'careers'
-
-  const fakePage = {
-    goto: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === biocon.CAREERS_PAGE_URL) {
-        currentStage = 'careers'
-        return
-      }
-
-      if (url === biocon.SUCCESSFACTORS_SEARCH_URL) {
-        currentStage = 'summary-1'
-        return
-      }
-
-      if (detailPages[url]) {
-        currentStage = url
-        return
-      }
-
-      throw new Error(`Unexpected page.goto URL: ${url}`)
-    },
-    waitForSelector: async () => {},
-    waitForFunction: async () => {},
-    waitForTimeout: async () => {},
-    evaluate: async () => {
-      if (currentStage === 'summary-1') {
-        currentStage = 'summary-2'
-        return
-      }
-
-      throw new Error(`Unexpected evaluate stage: ${currentStage}`)
-    },
-    content: async () => {
-      if (currentStage === 'careers') return officialCareersHtml
-      if (currentStage === 'summary-1') return summaryPageOneHtml
-      if (currentStage === 'summary-2') return summaryPageTwoHtml
-      if (detailPages[currentStage]) return detailPages[currentStage]
-      throw new Error(`Unexpected content stage: ${currentStage}`)
-    },
-  }
-
   const jobs = await biocon.run({
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => fakePage,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === biocon.CAREERS_PAGE_URL) return officialCareersHtml
+      if (detailPages[url]) return detailPages[url]
+      throw new Error(`Unexpected Biocon URL: ${url}`)
+    },
+    getSearchPages: async ({ searchUrl }) => {
+      requestedUrls.push(searchUrl)
+      return [summaryPageOneHtml, summaryPageTwoHtml]
+    },
     now: () => '2026-07-15T12:00:00.000Z',
   })
 
@@ -353,14 +316,7 @@ test('run fails closed when the verified Biocon careers handoff or SuccessFactor
 
   await assert.rejects(
     biocon.run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        waitForSelector: async () => {},
-        waitForFunction: async () => {},
-        content: async () => `
+      fetchText: async () => `
           <html>
             <head><title>Careers at Biocon - Put your passion for science into practice</title></head>
             <body>
@@ -369,23 +325,30 @@ test('run fails closed when the verified Biocon careers handoff or SuccessFactor
             </body>
           </html>
         `,
-      }),
     }),
     /verified Biocon careers page no longer exposes the known SuccessFactors handoff/i,
   )
 
   await assert.rejects(
     biocon.run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        waitForSelector: async () => {},
-        waitForFunction: async () => {},
-        content: async () => officialCareersHtml,
-      }),
+      fetchText: async () => officialCareersHtml,
+      getSearchPages: async () => ['<html><body><h1>Career Opportunities</h1></body></html>'],
     }),
     /verified public SuccessFactors search surface/i,
+  )
+})
+
+test('API-only run stops before returning a partial board when Biocon SuccessFactors requires unverified pagination', async () => {
+  const biocon = await loadModule()
+
+  await assert.rejects(
+    biocon.run({
+      fetchText: async (url) => {
+        if (url === biocon.CAREERS_PAGE_URL) return officialCareersHtml
+        if (url === biocon.SUCCESSFACTORS_SEARCH_URL) return summaryPageOneHtml
+        throw new Error(`Unexpected Biocon URL: ${url}`)
+      },
+    }),
+    /Biocon API-only migration required.*pagination.*browser automation is disabled/i,
   )
 })

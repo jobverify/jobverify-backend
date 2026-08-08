@@ -56,7 +56,10 @@ export const hasVerifiedNetcoreCareersSignal = (html = '') => {
   const text = (normalizeWhitespace(html) || '').toLowerCase()
 
   return text.includes('careers - netcore')
-    && text.includes('join the community shaping the future of agentic marketing here')
+    && (
+      text.includes('join the community shaping the future of agentic marketing here')
+      || text.includes('netcore cloud is now netcore.ai')
+    )
     && text.includes('please wait while you are redirected to the right page')
 }
 

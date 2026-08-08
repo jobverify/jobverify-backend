@@ -14,14 +14,16 @@ test('Lakshmi Electrical Control Systems is registered as a verified first-party
   assert.equal(provider.companyCareerPage, 'https://www.lecsindia.com/')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-contact-page-validation')
+  assert.equal(provider.paginationStrategy, 'homepage-plus-contact-page-validation-with-slow-page-fallback')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-contact-page-without-careers-or-jobs-return-empty',
+    'verified-official-homepage+verified-contact-page-without-careers-or-jobs+slow-first-party-fallback-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'lecsindia.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
   assert.match(provider.modulePath, /lakshmielectricalcontrolsystems[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Lakshmi Electrical Control Systems'), false)
 })

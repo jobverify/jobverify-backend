@@ -40,6 +40,22 @@ const blockedPublicJobsPage = {
   `,
 }
 
+const currentBlockedPublicJobsPage = {
+  status: 403,
+  url: 'https://wellfound.com/company/prepinsta/jobs',
+  html: `
+    <html lang="en-US">
+      <head><title>Just a moment...</title></head>
+      <body>
+        <p>Checking if the site connection is secure</p>
+        <p>Enable JavaScript and cookies to continue</p>
+        <p>Email us at team@wellfound.com if you're facing issues.</p>
+        <p>Cloudflare Ray ID: 1234567890abcdef</p>
+      </body>
+    </html>
+  `,
+}
+
 test('PrepInsta scraper pins the verified official careers page and blocked Wellfound handoff', async () => {
   const prepinsta = await loadPrepinstaModule()
 
@@ -49,6 +65,7 @@ test('PrepInsta scraper pins the verified official careers page and blocked Well
   assert.equal(prepinsta.START_CAREER_URL, 'https://angel.co/company/prepinsta')
   assert.equal(prepinsta.PUBLIC_JOBS_URL, 'https://angel.co/company/prepinsta/jobs')
   assert.equal(prepinsta.BLOCKED_PUBLIC_JOBS_FINAL_URL, 'https://wellfound.com/company/prepinsta/jobs')
+  assert.equal(prepinsta.VERIFIED_ON, '2026-08-07')
   assert.equal(prepinsta.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.equal(
     prepinsta.extractStartCareerUrl(officialCareersHtml),
@@ -59,6 +76,7 @@ test('PrepInsta scraper pins the verified official careers page and blocked Well
     'https://angel.co/company/prepinsta/jobs',
   )
   assert.equal(prepinsta.hasBlockedPublicJobsSignal(blockedPublicJobsPage), true)
+  assert.equal(prepinsta.hasBlockedPublicJobsSignal(currentBlockedPublicJobsPage), true)
 })
 
 test('PrepInsta scraper returns no jobs while the official Wellfound board stays blocked', async () => {
@@ -79,6 +97,37 @@ test('PrepInsta scraper returns no jobs while the official Wellfound board stays
 
       if (url === prepinsta.PUBLIC_JOBS_URL) {
         return blockedPublicJobsPage
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    prepinsta.CAREERS_URL,
+    prepinsta.PUBLIC_JOBS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('PrepInsta scraper returns no jobs while the Friday, August 7, 2026 Cloudflare interstitial blocks the Wellfound board', async () => {
+  const prepinsta = await loadPrepinstaModule()
+  const requestedUrls = []
+
+  const jobs = await prepinsta.createPrepinstaScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === prepinsta.CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          html: officialCareersHtml,
+        }
+      }
+
+      if (url === prepinsta.PUBLIC_JOBS_URL) {
+        return currentBlockedPublicJobsPage
       }
 
       throw new Error(`Unexpected URL: ${url}`)

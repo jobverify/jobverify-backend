@@ -126,6 +126,25 @@ const clumioDetailHtml = `
 </html>
 `
 
+const ampersandDetailHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Senior Product Manager, AI &amp; Platform | Careers at Commvault</title>
+  </head>
+  <body>
+    <div class="job__heading">
+      <h1>Senior Product Manager, AI &amp; Platform</h1>
+    </div>
+    <div class="job__body">
+      <h2>About the Team</h2>
+      <p>Lead product strategy across AI and platform capabilities.</p>
+      <div class="content-conclusion"></div>
+    </div>
+  </body>
+</html>
+`
+
 test('Clumio pins the Commvault first-party careers route and keeps only excerpt-verified Clumio jobs', async () => {
   const clumio = await loadClumioModule()
 
@@ -215,4 +234,11 @@ test('Clumio detail parsing enriches first-party Commvault listings during run()
   assert.match(jobs[0].minimumQualification, /Kubernetes/i)
   assert.match(jobs[0].preferredQualification, /platform team/i)
   assert.equal(jobs[0].scrapedAt, '2026-07-14T13:00:00.000Z')
+})
+
+test('Clumio detail parsing decodes HTML entities in first-party job titles before title handoff validation', async () => {
+  const clumio = await loadClumioModule()
+
+  const detail = clumio.extractDetailFields(ampersandDetailHtml)
+  assert.equal(detail.title, 'Senior Product Manager, AI & Platform')
 })

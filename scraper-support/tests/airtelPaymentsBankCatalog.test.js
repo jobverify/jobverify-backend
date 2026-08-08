@@ -30,7 +30,7 @@ const loadAirtelPaymentsBankModule = async () => {
   }
 }
 
-test('Airtel Payments Bank local catalog captures the verified branded bank pages and shared Airtel careers sentinel state', async () => {
+test('Airtel Payments Bank local catalog captures the verified guarded bank pages and shared Airtel careers sentinel state', async () => {
   const { AIRTEL_PAYMENTS_BANK_CATALOG } = await loadCatalogModule()
   const airtelPaymentsBank = await loadAirtelPaymentsBankModule()
 
@@ -64,15 +64,15 @@ test('Airtel Payments Bank local catalog captures the verified branded bank page
   assert.equal(AIRTEL_PAYMENTS_BANK_CATALOG.countryFilter, 'India')
   assert.equal(
     AIRTEL_PAYMENTS_BANK_CATALOG.paginationStrategy,
-    'verified-branded-bank-pages-plus-shared-airtel-careers-shell-bundle-and-darwinbox-checks',
+    '403-guarded-bank-pages-plus-shared-airtel-careers-shell-bundle-and-darwinbox-checks',
   )
   assert.equal(
     AIRTEL_PAYMENTS_BANK_CATALOG.extractionStrategy,
-    'verified-bank-homepage+verified-bank-about-page+no-branded-careers-links+shared-airtel-careers-shell+shared-bundle-reference+shared-darwinbox-shell-return-empty',
+    '403-guarded-bank-homepage+403-guarded-bank-about-page+shared-airtel-careers-shell+shared-bundle-reference+shared-darwinbox-shell+no-distinct-bank-jobs-route-return-empty',
   )
   assert.equal(AIRTEL_PAYMENTS_BANK_CATALOG.parser, 'custom-script')
   assert.equal(AIRTEL_PAYMENTS_BANK_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AIRTEL_PAYMENTS_BANK_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AIRTEL_PAYMENTS_BANK_CATALOG.verifiedOn, '2026-08-07')
   assert.equal(AIRTEL_PAYMENTS_BANK_CATALOG.dryRunFile, 'airtelpaymentsbank/jobs.json')
   assert.match(
     AIRTEL_PAYMENTS_BANK_CATALOG.verifiedSurfaceSummary,
@@ -80,7 +80,7 @@ test('Airtel Payments Bank local catalog captures the verified branded bank page
   )
   assert.match(
     AIRTEL_PAYMENTS_BANK_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/www\.airtelpayments\.bank\.in\/static\/about-us/i,
+    /cloudflare-guarded http 403 surfaces/i,
   )
   assert.match(
     AIRTEL_PAYMENTS_BANK_CATALOG.verifiedSurfaceSummary,
@@ -96,11 +96,7 @@ test('Airtel Payments Bank local catalog captures the verified branded bank page
   )
   assert.match(
     AIRTEL_PAYMENTS_BANK_CATALOG.verifiedSurfaceSummary,
-    /no trustworthy public jobs surface/i,
-  )
-  assert.match(
-    AIRTEL_PAYMENTS_BANK_CATALOG.verifiedSurfaceSummary,
-    /no distinct Airtel Payments Bank public jobs surface/i,
+    /no distinct Airtel Payments Bank public jobs route/i,
   )
   assert.equal(AIRTEL_PAYMENTS_BANK_CATALOG.modulePath, airtelPaymentsBankModulePath)
 
@@ -160,6 +156,10 @@ test('buildScrapers and company coverage resolve Airtel Payments Bank from the s
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Airtel Payments Bank')
   assert.equal(provider.companyCareerPage, 'https://www.airtelpayments.bank.in/')
+  assert.equal(provider.paginationStrategy, '403-guarded-bank-pages-plus-shared-airtel-careers-shell-bundle-and-darwinbox-checks')
+  assert.equal(provider.extractionStrategy, '403-guarded-bank-homepage+403-guarded-bank-about-page+shared-airtel-careers-shell+shared-bundle-reference+shared-darwinbox-shell+no-distinct-bank-jobs-route-return-empty')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /cloudflare-guarded http 403 surfaces/i)
   assert.match(scraper.dryRunFile, /airtelpaymentsbank[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

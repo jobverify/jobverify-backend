@@ -100,6 +100,7 @@ test('extractJobDetail reads Artech detail metadata and HTML descriptions', () =
   assert.deepEqual(detail.requiredSkills, [])
   assert.equal(detail.postingDate, '2021-08-21')
   assert.equal(detail.closingDate, null)
+  assert.equal(detail.publicExperienceChecked, true)
   assert.equal(
     detail.applyUrl,
     'https://fa-erqf-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/4',
@@ -134,4 +135,5 @@ test('run enriches Artech listings with detail data and preserves runner contrac
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
   assert.equal(jobs[0].location, 'Noida, Uttar Pradesh, India')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })

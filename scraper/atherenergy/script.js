@@ -1,7 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { launchBrowser, createOptimizedPage } from '../../scraper-support/utils/browser.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -25,30 +24,6 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: 'atherenergy',
   timeoutMs: 15000,
 })
-
-const shouldUseBrowserFallback = (error) =>
-  /HTTP 403\b/i.test(String(error?.message || ''))
-
-const createBrowserTextFetcher = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: 30000,
-      })
-
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
-
-      return page.content()
-    },
-  }
-}
 
 export const hasCareersHomeSignal = (html) =>
   CAREERS_HOME_SIGNAL_PATTERN.test(String(html || ''))
@@ -76,46 +51,25 @@ export const createAtherEnergyScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    let browserContext = null
 
     const fetchPageText = async (url) => {
       try {
         return await fetchText(url)
       } catch (error) {
-        if (!shouldUseBrowserFallback(error)) {
-          throw error
-        }
-
-        const browserFetchText = options.fetchBrowserText || (
-          async (browserUrl) => {
-            if (!browserContext) {
-              browserContext = await createBrowserTextFetcher()
-            }
-
-            return browserContext.fetchText(browserUrl)
-          }
-        )
-
-        return browserFetchText(url)
+        throw new Error(`Ather Energy API-only migration could not fetch ${url}: ${error.message}`)
       }
     }
 
-    try {
-      const careersHomeHtml = await fetchPageText(CAREERS_HOME_URL)
+    const careersHomeHtml = await fetchPageText(CAREERS_HOME_URL)
 
-      if (!hasCareersHomeSignal(careersHomeHtml)) {
-        return []
-      }
-
-      const allJobsHtml = await fetchPageText(ALL_JOBS_URL)
-      const jobs = extractJobs(allJobsHtml)
-
-      return maxJobs ? jobs.slice(0, maxJobs) : jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+    if (!hasCareersHomeSignal(careersHomeHtml)) {
+      return []
     }
+
+    const allJobsHtml = await fetchPageText(ALL_JOBS_URL)
+    const jobs = extractJobs(allJobsHtml)
+
+    return maxJobs ? jobs.slice(0, maxJobs) : jobs
   },
 })
 

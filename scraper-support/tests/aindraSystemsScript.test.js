@@ -389,9 +389,7 @@ test('Aindra Systems stays fail-closed while trusted first-party host variants r
     },
   })
 
-  assert.deepEqual(browserUrls, [
-    'https://aindra.in/',
-  ])
+  assert.deepEqual(browserUrls, [])
   assert.deepEqual(jobs, [])
 })
 
@@ -430,4 +428,75 @@ test('Aindra Systems treats first-party browser timeouts as trusted host unavail
     'https://aindra.in/',
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Aindra Systems does not launch a browser fallback when trusted first-party hosts are unavailable', async () => {
+  const aindra = await loadModule()
+  const browserUrls = []
+
+  const jobs = await aindra.createAindraSystemsScraper().run({
+    fetchText: async (url) => {
+      if (url === 'https://www.aindra.in/') {
+        throw new Error('getaddrinfo ENOTFOUND www.aindra.in')
+      }
+
+      if (url === 'https://aindra.in/') {
+        throw new Error('unable to verify the first certificate')
+      }
+
+      throw new Error(`Unexpected Aindra Systems URL: ${url}`)
+    },
+    fetchBrowserText: async (url) => {
+      browserUrls.push(url)
+      return homepageHtml
+    },
+  })
+
+  assert.deepEqual(browserUrls, [])
+  assert.deepEqual(jobs, [])
+})
+
+test('Aindra Systems default fetch probes trusted unavailable first-party hosts only once each before failing closed', async () => {
+  const aindra = await loadModule()
+  const originalFetch = globalThis.fetch
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const originalConsoleWarn = console.warn
+  const attemptsByUrl = new Map()
+
+  globalThis.setTimeout = (callback) => {
+    callback()
+    return 0
+  }
+  globalThis.clearTimeout = () => {}
+  console.warn = () => {}
+  globalThis.fetch = async (url) => {
+    const normalizedUrl = String(url)
+    const nextAttempt = (attemptsByUrl.get(normalizedUrl) || 0) + 1
+    attemptsByUrl.set(normalizedUrl, nextAttempt)
+
+    if (normalizedUrl === 'https://www.aindra.in/') {
+      throw new Error('getaddrinfo ENOTFOUND www.aindra.in')
+    }
+
+    if (normalizedUrl === 'https://aindra.in/') {
+      throw new Error('unable to verify the first certificate')
+    }
+
+    throw new Error(`Unexpected Aindra Systems URL: ${normalizedUrl}`)
+  }
+
+  try {
+    const jobs = await aindra.createAindraSystemsScraper().run()
+    assert.deepEqual(jobs, [])
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+    console.warn = originalConsoleWarn
+  }
+
+  assert.equal(attemptsByUrl.get('https://www.aindra.in/'), 1)
+  assert.equal(attemptsByUrl.get('https://aindra.in/'), 1)
+  assert.equal(attemptsByUrl.size, 2)
 })

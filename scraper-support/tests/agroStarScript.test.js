@@ -160,9 +160,40 @@ test('run maps AgroStar Darwinbox listings into Jobify jobs and keeps only India
       postingDate: '14-Jul-2026',
       closingDate: null,
       jobDescription: '<p>Lead the Saharanpur cluster growth plan.</p>',
+      publicExperienceChecked: false,
       source: 'agrostar',
       link: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48',
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
+})
+
+test('run uses the native Darwinbox API when no listing page fetcher is injected', async () => {
+  const { createAgroStarScraper } = await loadModule()
+  const requests = []
+  const scraper = createAgroStarScraper({
+    now: () => FIXED_SCRAPED_AT,
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options })
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
+        json: async () => listingPayload,
+      }
+    },
+  })
+
+  const jobs = await scraper.run({
+    maxPages: 1,
+    fetchText: async () => officialCareersHtml,
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(requests.length, 1)
+  assert.equal(
+    requests[0].url,
+    'https://agrostar.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+  )
+  assert.equal(requests[0].options.method, 'POST')
 })

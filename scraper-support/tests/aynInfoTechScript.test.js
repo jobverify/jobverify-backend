@@ -14,15 +14,19 @@ const compromisedHomepageHtml = `
 
 const currentCompromisedHomepageHtml = `
 <!doctype html>
-<html lang="id">
+<html lang="en">
   <head>
-    <link rel="canonical" href="https://www.bigskyworldview.org/contact" />
-    <link rel="amphtml" href="https://view.bigskyworldview.org/" />
-    <title>Deposit Indosat ! Gabung Bareng Slot Pulsa Indosat Dan Platform Slot Deposit Pulsa Indosat 5000 Pasti JP Terus</title>
+    <link rel="canonical" href="https://www.bigskyworldview.org" />
+    <title>Big Sky Worldview Forum | Billings, MT</title>
+    <meta
+      name="description"
+      content="We seek to represent Christianity in the traditional, orthodox approach based upon the Bible as the inspired word of God, the supreme source of truth and the final authority for faith and life."
+    />
   </head>
   <body>
-    <p>Platform slot pulsa indosat yang menghadirkan permainan slot deposit pulsa indosat dan pulsa tri paling top pasti gacor.</p>
-    <footer>Powered by Shopify</footer>
+    <h1>Big Sky Worldview Forum | Billings, MT</h1>
+    <p>We seek to represent Christianity in the traditional, orthodox approach based upon the Bible.</p>
+    <footer>Big Sky Worldview Forum</footer>
   </body>
 </html>
 `
@@ -40,19 +44,19 @@ test('AYN InfoTech sentinel stays pinned to the verified untrusted-domain signal
 
   assert.equal(aynInfotech.SOURCE, 'ayninfotech')
   assert.equal(aynInfotech.COMPANY, 'AYN InfoTech')
-  assert.equal(aynInfotech.VERIFIED_ON, '2026-07-17')
+  assert.equal(aynInfotech.VERIFIED_ON, '2026-08-07')
   assert.equal(aynInfotech.HOMEPAGE_URL, 'https://www.ayninfotech.com/')
   assert.equal(aynInfotech.hasCompromisedHomepageSignal(compromisedHomepageHtml), true)
 })
 
-test('AYN InfoTech sentinel recognizes the current bigskyworldview compromised redirect variant', async () => {
+test('AYN InfoTech sentinel recognizes the current Friday, August 7, 2026 bigskyworldview redirect variant', async () => {
   const aynInfotech = await loadModule()
 
   assert.equal(aynInfotech.hasCompromisedHomepageSignal(currentCompromisedHomepageHtml), true)
   assert.equal(
     aynInfotech.isVerifiedUntrustedRoute({
       status: 200,
-      url: 'https://www.bigskyworldview.org/contact',
+      url: 'https://www.bigskyworldview.org/',
       html: currentCompromisedHomepageHtml,
     }),
     true,

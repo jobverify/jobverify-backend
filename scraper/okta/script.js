@@ -81,14 +81,31 @@ const toAbsoluteUrl = (value) => {
   return new URL(normalized, HOMEPAGE_URL).toString()
 }
 
-export const extractJobId = (value) => String(value ?? '').match(/-(\d+)\/?$/)?.[1] ?? null
+const extractJobPathKey = (value) => {
+  const detailUrl = toAbsoluteUrl(value)
+  if (!detailUrl) return null
+
+  const { pathname } = new URL(detailUrl)
+  const normalizedPath = pathname.replace(/^\/+|\/+$/g, '')
+  if (!normalizedPath) return null
+
+  return normalizedPath.replace(/^company\/careers\//i, '').replace(/\//g, '--') || null
+}
+
+export const extractJobId = (value) => {
+  const detailUrl = toAbsoluteUrl(value)
+  if (!detailUrl) return null
+
+  const numericJobId = new URL(detailUrl).pathname.match(/-(\d+)\/?$/)?.[1]
+  return numericJobId || extractJobPathKey(detailUrl)
+}
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
   return /Careers at Okta/i.test(page)
-    && text.includes('Open positions')
+    && /(?:Open positions|View open roles)/i.test(text)
     && new RegExp(PUBLIC_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(page)
 }
 

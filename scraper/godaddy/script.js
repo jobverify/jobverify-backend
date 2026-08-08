@@ -1,7 +1,6 @@
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const SEARCH_URL = 'https://careers.godaddy/jobs/search?query=&location=India'
-const BROWSER_SEARCH_URL = 'https://careers.godaddy/jobs/search/india'
 const BASE_URL = 'https://careers.godaddy'
 const EMPTY_RESULTS_PATTERN = /\b(?:no jobs?|no results?|0 jobs?)\b|\bdisplaying\s+all\s+0\s+entries\b/i
 
@@ -57,53 +56,6 @@ export const extractGoDaddySearchResults = (html = '') => {
 
 const isExplicitEmptyPage = (html) => EMPTY_RESULTS_PATTERN.test(stripTags(html))
 
-export const renderGoDaddySearchPage = async (url = BROWSER_SEARCH_URL) => {
-  const { launchBrowser, createOptimizedPage } = await import('../../scraper-support/utils/browser.js')
-  let browser
-  let lastError = null
-  let lastStatus = null
-
-  try {
-    browser = await launchBrowser()
-    const page = await createOptimizedPage(browser)
-
-    for (let attempt = 1; attempt <= 2; attempt += 1) {
-      try {
-        const response = await page.goto(url, {
-          waitUntil: 'networkidle2',
-          timeout: 60000,
-        })
-        lastStatus = response?.status() || null
-
-        let html = await page.content()
-        if (extractGoDaddySearchResults(html).length > 0 || isExplicitEmptyPage(html)) {
-          return html
-        }
-
-        try {
-          await page.waitForSelector('article.job-search-results-card', { timeout: 30000 })
-        } catch {
-          // The AWS WAF reload and Turbo rendering are timing-sensitive. The
-          // serialized HTML below is the authoritative success condition.
-        }
-
-        html = await page.content()
-        if (extractGoDaddySearchResults(html).length > 0 || isExplicitEmptyPage(html)) {
-          return html
-        }
-      } catch (error) {
-        lastError = error
-      }
-    }
-  } finally {
-    if (browser) await browser.close()
-  }
-
-  const status = lastStatus == null ? '' : ` (last HTTP status ${lastStatus})`
-  const reason = lastError?.message ? `: ${lastError.message}` : ''
-  throw new Error(`[godaddy] browser fallback did not return a recognizable India search page${status}${reason}`)
-}
-
 export const createGoDaddyScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({
     fetchText = (url) => fetchTextWithRetry(url, {
@@ -114,26 +66,18 @@ export const createGoDaddyScraper = ({ now = () => new Date().toISOString() } = 
       label: 'godaddy',
       timeoutMs: 25000,
     }),
-    renderSearchPage = renderGoDaddySearchPage,
   } = {}) {
     let html
-    let usedBrowserFallback = false
     try {
       html = await fetchText(SEARCH_URL)
-    } catch {
-      usedBrowserFallback = true
-      html = await renderSearchPage(BROWSER_SEARCH_URL)
+    } catch (error) {
+      throw new Error(`[godaddy] API-only migration could not fetch the India search page: ${error.message}`)
     }
 
-    let jobs = extractGoDaddySearchResults(html)
-    if (jobs.length === 0 && !isExplicitEmptyPage(html) && !usedBrowserFallback) {
-      usedBrowserFallback = true
-      html = await renderSearchPage(BROWSER_SEARCH_URL)
-      jobs = extractGoDaddySearchResults(html)
-    }
+    const jobs = extractGoDaddySearchResults(html)
 
     if (jobs.length === 0 && !isExplicitEmptyPage(html)) {
-      throw new Error('[godaddy] official search page did not contain recognizable India job cards')
+      throw new Error('[godaddy] API-only migration requires an HTTP-accessible India search page with recognizable job cards')
     }
 
     const seen = new Set()

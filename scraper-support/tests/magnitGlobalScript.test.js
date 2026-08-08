@@ -103,34 +103,13 @@ test('Magnit Global scraper returns only India jobs from the Dayforce search pay
   assert.equal(jobs[0].link, jobs[0].applyUrl)
 })
 
-test('Magnit Global browser Dayforce client works when optimized pages omit waitForTimeout', async () => {
+test('fails closed when Magnit Global has no demonstrated session-free Dayforce HTTP client', async () => {
   const magnit = await import('../../scraper/magnitglobal/script.js')
 
-  let gotoUrl = null
-  let browserClosed = false
-  const fakePage = {
-    goto: async (url) => {
-      gotoUrl = url
-    },
-    evaluate: async () => searchPayload,
-  }
-  const fakeBrowser = {
-    close: async () => {
-      browserClosed = true
-    },
-  }
-
-  const jobs = await magnit.createMagnitGlobalScraper({
-    now: () => '2026-08-03T00:00:00.000Z',
-    launchBrowserImpl: async () => fakeBrowser,
-    createOptimizedPageImpl: async () => fakePage,
-    pageSettleMs: 0,
-  }).run({
-    fetchText: async () => officialCareersHtml,
-  })
-
-  assert.equal(gotoUrl, 'https://jobs.dayforcehcm.com/prounlimited/CANDIDATEPORTAL')
-  assert.equal(browserClosed, true)
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Analyst, Accounts Payable')
+  await assert.rejects(
+    magnit.createMagnitGlobalScraper().run({
+      fetchText: async () => officialCareersHtml,
+    }),
+    /Magnit Global API-only migration incomplete: no session-free Dayforce search contract has been demonstrated/i,
+  )
 })

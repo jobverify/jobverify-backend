@@ -174,6 +174,18 @@ test('run verifies the official C2FO Dayforce surface and returns only India job
   ])
 })
 
+test('fails closed when C2FO has no demonstrated session-free Dayforce HTTP client', async () => {
+  const { createC2foScraper } = await loadC2foModule()
+
+  await assert.rejects(
+    createC2foScraper().run({
+      fetchText: async () => officialCareersHtml,
+      fetchJson: async () => siteContextPayload,
+    }),
+    /C2FO API-only migration incomplete: no session-free Dayforce search and detail contract has been demonstrated/i,
+  )
+})
+
 test('fails closed when the verified official careers handoff or Dayforce site context drifts', async () => {
   const { createC2foScraper } = await loadC2foModule()
   const scraper = createC2foScraper({

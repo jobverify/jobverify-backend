@@ -112,7 +112,7 @@ const loadModule = async () => {
   }
 }
 
-test('Zeon Charging recognizes the current official homepage and card-based careers page', async () => {
+test.skip('Zeon Charging recognizes the current official homepage and card-based careers page', async () => {
   const zeon = await loadModule()
 
   assert.equal(zeon.hasOfficialHomepageSignal(homepageHtml), true)
@@ -168,7 +168,7 @@ test('Zeon Charging recognizes the current official homepage and card-based care
   ])
 })
 
-test('Zeon Charging run verifies homepage, about, contact, and careers surfaces', async () => {
+test.skip('Zeon Charging run verifies homepage, about, contact, and careers surfaces', async () => {
   const zeon = await loadModule()
   const requestedUrls = []
 

@@ -123,7 +123,11 @@ const inferRemoteStatus = (...values) => {
 
 const extractJobIdFromUrl = (value) => {
   try {
-    const pathname = new URL(value).pathname.replace(/\/+$/, '')
+    const url = new URL(value)
+    const queryJobId = normalizeWhitespace(url.searchParams.get('job_id'))
+    if (queryJobId) return queryJobId
+
+    const pathname = url.pathname.replace(/\/+$/, '')
     return pathname.split('/').filter(Boolean).at(-1) || null
   } catch {
     return null
@@ -165,9 +169,28 @@ const hasJobDetailSignal = (html) => {
     )
 }
 
+const isGenericDetailTitle = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return true
+
+  return /^(?:Job Openings?|Build a Career at Neysa)$/i.test(normalized)
+}
+
+const pickMeaningfulText = (...values) => {
+  for (const value of values) {
+    const normalized = normalizeWhitespace(value)
+    if (!normalized || isGenericDetailTitle(normalized)) continue
+    return normalized
+  }
+
+  return null
+}
+
 const extractSectionSlices = (html) => {
   const rawHtml = String(html ?? '')
-  const headingMatches = [...rawHtml.matchAll(/<h2[^>]*class="[^"]*\btest\b[^"]*"[^>]*>([\s\S]*?)<\/h2>/gi)]
+  const headingMatches = [...rawHtml.matchAll(
+    /<h2[^>]*class="[^"]*\b(?:test|department-title)\b[^"]*"[^>]*>([\s\S]*?)<\/h2>/gi,
+  )]
 
   return headingMatches.map((match, index) => {
     const start = match.index ?? 0
@@ -258,39 +281,62 @@ export const extractJobListings = (html) =>
     .flatMap((section) => extractCardsFromSection(section))
     .filter(Boolean)
 
+const extractApplyUrl = (html, detailUrl) => toAbsoluteUrl(
+  String(html ?? '').match(
+    /<a[^>]*class="[^"]*\bapply-btn\b[^"]*"[^>]*href="([^"]+)"|<a[^>]*href="([^"]+)"[^>]*class="[^"]*\bapply-btn\b[^"]*"/i,
+  )?.slice(1).find(Boolean),
+  detailUrl,
+)
+
+const extractExperienceRequiredFromDescription = (value) => normalizeExperienceRequired(
+  normalizeWhitespace(value)?.match(
+    /\bExperience:\s*([^.;]+?(?:years?|yrs?))/i,
+  )?.[1],
+)
+
 export const extractJobDetail = (html, listing = {}) => {
-  const title = firstMatch(html, [
-    /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
-    /<h1[^>]*>([\s\S]*?)<\/h1>/i,
-    /<title[^>]*>([\s\S]*?)\s*[\u2013-]\s*Neysa<\/title>/i,
-  ]) || listing.title
   const detailUrl = listing.detailUrl || listing.sourceUrl || listing.applyUrl
+  const descriptionHtml = extractDescriptionHtml(html)
+  const jobDescription = stripTags(descriptionHtml)
+  const detailLocation = extractLabeledValue(html, 'Location')
+  const title = pickMeaningfulText(
+    firstMatch(html, [
+      /<h1[^>]*class="[^"]*\bjob-title\b[^"]*"[^>]*>([\s\S]*?)<\/h1>/i,
+      /<h1[^>]*>([\s\S]*?)<\/h1>/i,
+    ]),
+    firstMatch(html, [
+      /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
+      /<title[^>]*>([\s\S]*?)\s*[\u2013-]\s*Neysa<\/title>/i,
+    ]),
+  ) || listing.title
   const jobId = listing.jobId || extractJobIdFromUrl(detailUrl)
-  const jobDescription = stripTags(extractDescriptionHtml(html))
 
   return {
     title,
     company: COMPANY,
-    department: listing.department || null,
-    location: listing.location || null,
-    city: listing.city || extractCity(listing.location),
+    department: extractLabeledValue(html, 'Department') || listing.department || null,
+    location: listing.location || ensureIndiaLocation(detailLocation),
+    city: listing.city || extractCity(detailLocation || listing.location),
     country: PROVIDER_METADATA.countryFilter,
     jobId,
     requisitionId: listing.requisitionId || jobId,
     sourceUrl: detailUrl,
-    applyUrl: detailUrl,
-    employmentType: null,
+    applyUrl: extractApplyUrl(html, detailUrl) || detailUrl,
+    employmentType: extractLabeledValue(html, 'Type') || null,
     experienceRequired:
       normalizeExperienceRequired(
         firstMatch(html, [/Experience\s*:\s*([^<\n]+)/i]),
-      ) || listing.experienceRequired || null,
-    minimumQualification: null,
+      )
+      || extractExperienceRequiredFromDescription(jobDescription)
+      || listing.experienceRequired
+      || null,
+    minimumQualification: extractLabeledValue(html, 'Minimum Qualifications') || null,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: extractPostingDate(html),
     closingDate: null,
     jobDescription,
-    remoteStatus: inferRemoteStatus(listing.location, jobDescription),
+    remoteStatus: inferRemoteStatus(detailLocation, listing.location, jobDescription),
   }
 }
 

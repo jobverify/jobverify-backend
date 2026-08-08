@@ -188,8 +188,6 @@ export const createSpheraIndiaScraper = ({
 } = {}) => ({
   async run({
     fetchImpl = globalThis.fetch,
-    launchBrowserImpl,
-    createOptimizedPageImpl,
     requestTimeoutMs,
     retryBaseDelayMs,
   } = {}) {
@@ -215,8 +213,6 @@ export const createSpheraIndiaScraper = ({
       locationCountry,
       source,
       scraperDir,
-      launchBrowserImpl,
-      createOptimizedPageImpl,
       requestTimeoutMs,
       retryBaseDelayMs,
     }))

@@ -38,6 +38,10 @@ test('getScraperCatalog includes CyberArk India as a verified parent-handoff sen
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'cyberark.com')
   assert.equal(provider.workspaceDomain, 'jobs.paloaltonetworks.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /paloaltonetworks\.com\/idira/i)
+  assert.match(provider.verifiedSurfaceSummary, /jobs\.paloaltonetworks\.com\/en\//i)
   assert.match(provider.modulePath, /cyberarkindia[\\/]script\.js$/i)
 
   assert.equal(cyberArkIndia.SOURCE, provider.source)

@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 export const CAREER_PAGE_URL = 'https://www.finolexpipes.com/career/'
+export const VERIFIED_ON = '2026-08-07'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
@@ -23,9 +24,13 @@ export const extractDepartmentOptions = (html) => [...(html || '').matchAll(
   .filter(({ value, label }) => value && label && !/select department/i.test(label))
 
 export const hasEmptyOpeningsSignal = (html) =>
-  /id=["']selDepart["'][^>]*>\s*-Select Department-\s*</i.test(html || '')
-  && /id=["']cityDropdown["'][^>]*>\s*<\/select>/i.test(html || '')
-  && extractDepartmentOptions(html).length === 0
+  /id=["']jobListData["'][^>]*>\s*<\/div>/i.test(html || '')
+  && /id=["']jobListNoData["'][^>]*>\s*There are currently no open positions matching your search criteria\.\s*<\/div>/i.test(html || '')
+  && /id=["']jobDetailsDiv["'][^>]*>\s*<\/div>/i.test(html || '')
+  && /id=["']modalJobDetails["'][^>]*>\s*<\/div>/i.test(html || '')
+  && /Apply via Mail/i.test(html || '')
+  && /Apply via Whatsapp/i.test(html || '')
+  && /career@finolexind\.com/i.test(html || '')
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -49,12 +54,6 @@ export const createFinolexIndustriesLimitedScraper = () => ({
 
     if (!hasOfficialCareersSignal(html)) {
       throw new Error('Finolex careers page no longer matches the verified official public surface')
-    }
-
-    const departmentOptions = extractDepartmentOptions(html)
-
-    if (departmentOptions.length > 0) {
-      throw new Error('Finolex careers page now exposes public department options; scraper needs job parsing support')
     }
 
     if (!hasEmptyOpeningsSignal(html)) {

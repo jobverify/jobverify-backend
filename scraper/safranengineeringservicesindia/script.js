@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -17,7 +16,6 @@ const LISTING_QUERY_COMPANY = '636-safran-engineering-services'
 const LISTING_QUERY_COUNTRY = '1083-india'
 const SAFRAN_HOSTNAME = 'www.safran-group.com'
 const INDIA = 'India'
-const NAVIGATION_TIMEOUT_MS = Math.max(config.jobListingTimeoutMs || 0, 120000)
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -313,21 +311,12 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const createBrowserTextFetcher = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    fetchText: async (url) => {
-      await page.goto(url, {
-        waitUntil: 'networkidle2',
-        timeout: NAVIGATION_TIMEOUT_MS,
-      })
-
-      return page.content()
-    },
-    close: async () => browser.close(),
-  }
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: { Accept: 'text/html,application/xhtml+xml' },
+  })
+  if (!response.ok) throw new Error(`Safran Engineering Services API-only fetch returned HTTP ${response.status} for ${url}`)
+  return response.text()
 }
 
 export const createSafranEngineeringServicesIndiaScraper = ({
@@ -336,15 +325,10 @@ export const createSafranEngineeringServicesIndiaScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
   async run(options = {}) {
-    let browserContext = null
-    let fetchText = options.fetchText
+    const fetchText = options.fetchText || defaultFetchText
     const now = options.now || defaultNow
 
-    try {
-      if (!fetchText) {
-        browserContext = await createBrowserTextFetcher()
-        fetchText = browserContext.fetchText
-      }
+    {
 
       const companyPageHtml = await fetchText(COMPANY_PAGE_URL)
       if (!hasVerifiedCompanyPageSignal(companyPageHtml)) {
@@ -397,10 +381,6 @@ export const createSafranEngineeringServicesIndiaScraper = ({
       }
 
       return jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
     }
   },
 })

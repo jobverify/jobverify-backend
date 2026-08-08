@@ -181,3 +181,56 @@ test('run paginates Darwinbox listing pages through an injected page fetcher and
     `https://dbx.darwinbox.in/ms/candidatev2/main/careers/jobDetails/${secondIndiaJob.id}`,
   )
 })
+
+test('run posts directly to the Darwinbox candidate API when no page fetcher is injected', async () => {
+  const requests = []
+  const apiOnlyScraper = createDarwinboxScraper({
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options })
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
+        json: async () => ({
+          status: 'success',
+          job_counts: 1,
+          data: [
+            {
+              id: 'dbx-api-001',
+              title: 'Platform Engineer',
+              department_name: 'Engineering',
+              locations: 'Hyderabad, Telangana, India',
+              country: 'India',
+              emp_type_name: 'Full-time',
+              experience: '3 - 5 Years',
+              posted_on: '08-Aug-2026',
+              jd: '<p>Build the platform.</p>',
+            },
+          ],
+        }),
+      }
+    },
+  })
+
+  const jobs = await apiOnlyScraper.run({ maxPages: 1 })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'dbx-api-001')
+  assert.equal(requests.length, 1)
+  assert.equal(
+    requests[0].url,
+    'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+  )
+  assert.equal(requests[0].options.method, 'POST')
+  assert.deepEqual(JSON.parse(requests[0].options.body), {
+    companyId: 'main',
+    sort_option: 'new',
+    limit: 10,
+    page: 1,
+  })
+  assert.equal(requests[0].options.headers.Origin, 'https://dbx.darwinbox.in')
+  assert.equal(
+    requests[0].options.headers.Referer,
+    'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
+})

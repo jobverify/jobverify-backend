@@ -173,6 +173,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -225,6 +226,10 @@ export const createAindraSystemsScraper = ({
       try {
         return await fetchText(url)
       } catch (error) {
+        if (isTrustedUnavailableFailure(error)) {
+          throw error
+        }
+
         if (!isBrowserFallbackError(error)) {
           throw error
         }

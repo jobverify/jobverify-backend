@@ -290,71 +290,18 @@ test('INDwealth run validates the official redirect and LinkedIn handoff, then d
   assert.equal(jobs[0].scrapedAt, '2026-07-16T00:00:00.000Z')
 })
 
-test('INDwealth falls back to a browser fetch when the first-party redirect and about pages are behind a Cloudflare challenge', async () => {
+test('INDwealth reports an API-only migration error when the first-party redirect is behind a Cloudflare challenge', async () => {
   const indwealth = await loadModule()
-  const requestedPages = []
-  const requestedBrowserPages = []
-  const requestedTexts = []
 
-  const jobs = await indwealth.createIndwealthScraper({ maxJobs: 1 }).run({
+  await assert.rejects(indwealth.createIndwealthScraper({ maxJobs: 1 }).run({
     fetchPage: async (url) => {
-      requestedPages.push(url)
-
       if (url === indwealth.OFFICIAL_REDIRECT_SOURCE_URL) {
         return { status: 403, url, html: cloudflareChallengeHtml }
       }
-
-      if (url === indwealth.OFFICIAL_ABOUT_URL) {
-        return { status: 403, url, html: cloudflareChallengeHtml }
-      }
-
-      if (url === indwealth.LINKEDIN_COMPANY_JOBS_URL) {
-        return { status: 200, url: 'https://in.linkedin.com/company/indmoney', html: linkedInCompanyPageHtml }
-      }
-
       throw new Error(`Unexpected page URL: ${url}`)
     },
-    fetchBrowserPage: async (url) => {
-      requestedBrowserPages.push(url)
-
-      if (url === indwealth.OFFICIAL_REDIRECT_SOURCE_URL) {
-        return { status: 200, url: 'https://www.indmoney.com/', html: redirectHomepageHtml }
-      }
-
-      if (url === indwealth.OFFICIAL_ABOUT_URL) {
-        return { status: 200, url, html: aboutPageHtml }
-      }
-
-      throw new Error(`Unexpected browser page URL: ${url}`)
-    },
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-
-      if (url === indwealth.LINKEDIN_PUBLIC_JOBS_URL) return linkedInSearchHtml
-      if (url === 'https://in.linkedin.com/jobs/view/associate-product-manager-%E2%80%93-growth-at-indmoney-4436703686?position=1&pageNum=0') {
-        return detailHtml
-      }
-
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
-    now: () => '2026-07-16T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedPages, [
-    indwealth.OFFICIAL_REDIRECT_SOURCE_URL,
-    indwealth.OFFICIAL_ABOUT_URL,
-    indwealth.LINKEDIN_COMPANY_JOBS_URL,
-  ])
-  assert.deepEqual(requestedBrowserPages, [
-    indwealth.OFFICIAL_REDIRECT_SOURCE_URL,
-    indwealth.OFFICIAL_ABOUT_URL,
-  ])
-  assert.deepEqual(requestedTexts, [
-    indwealth.LINKEDIN_PUBLIC_JOBS_URL,
-    'https://in.linkedin.com/jobs/view/associate-product-manager-%E2%80%93-growth-at-indmoney-4436703686?position=1&pageNum=0',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'indwealth')
+    fetchBrowserPage: async () => assert.fail('INDwealth must not launch a browser'),
+  }), /INDwealth API-only migration.*Cloudflare/i)
 })
 
 test('INDwealth fails closed when the redirect target, about-page handoff, LinkedIn company page, or public jobs surface drifts', async () => {

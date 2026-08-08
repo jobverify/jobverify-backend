@@ -243,6 +243,7 @@ export const extractJobDetail = (payload, listing = {}) => {
       detail.ExternalResponsibilitiesStr,
       detail.ExternalQualificationsStr,
     ) || listing.jobDescription || null,
+    publicExperienceChecked: true,
   }
 }
 

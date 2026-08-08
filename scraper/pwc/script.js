@@ -1,8 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
-import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -13,9 +11,6 @@ export const CAREER_PAGE_URL = 'https://www.pwc.in/careers/experienced-jobs.html
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const DETAIL_API_CONCURRENCY = 16
-const WORKDAY_DETAIL_SESSION_LIMIT = 4
-const DARWINBOX_DETAIL_SESSION_LIMIT = 2
-const DETAIL_BROWSER_TIMEOUT_MS = 60000
 const EXPLICIT_YEARS_PATTERN = /\b(\d+(?:\.\d+)?)(\+)?(?:\s*-\s*(\d+(?:\.\d+)?))?\s*(years?|yrs?)\b/gi
 
 const decodeHtmlEntities = (value) => String(value ?? '')
@@ -278,10 +273,6 @@ const mapWithConcurrency = async (items, limit, iteratee) => {
   return results
 }
 
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
-
 const resolveJobUrl = (job = {}) => job.sourceUrl || job.applyUrl || null
 
 const isWorkdayJob = (job = {}) => /(?:my)?workdayjobs\.com/i.test(resolveJobUrl(job) || '')
@@ -406,52 +397,6 @@ const enrichJobFromDetailApiPayload = (job, detailApiRequest, rawPayload) => {
   return null
 }
 
-const createBrowserApiFetchPool = async (seedUrl, sessionCount = 1) => {
-  const browser = await launchBrowser()
-  const sessions = []
-
-  try {
-    for (let index = 0; index < Math.max(1, sessionCount); index += 1) {
-      const page = await createOptimizedPage(browser)
-      await page.setUserAgent(USER_AGENT)
-      await page.goto(seedUrl, {
-        waitUntil: 'domcontentloaded',
-        timeout: DETAIL_BROWSER_TIMEOUT_MS,
-      })
-      sessions.push({ page })
-    }
-  } catch (error) {
-    await browser.close().catch(() => {})
-    throw error
-  }
-
-  const queues = sessions.map(() => Promise.resolve())
-  let sessionCursor = 0
-
-  const fetchText = (url) => {
-    const sessionIndex = sessionCursor % sessions.length
-    sessionCursor += 1
-    const runFetch = () => sessions[sessionIndex].page.evaluate(async (targetUrl) => {
-      const response = await fetch(targetUrl, { credentials: 'include' })
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for ${targetUrl}`)
-      }
-
-      return response.text()
-    }, url)
-    const next = queues[sessionIndex].then(runFetch, runFetch)
-    queues[sessionIndex] = next.catch(() => {})
-    return next
-  }
-
-  return {
-    fetchText,
-    close: async () => {
-      await browser.close()
-    },
-  }
-}
-
 const createDetailApiFetcher = async (jobs = [], fetchDetailText = null) => {
   if (typeof fetchDetailText === 'function') {
     return {
@@ -460,44 +405,9 @@ const createDetailApiFetcher = async (jobs = [], fetchDetailText = null) => {
     }
   }
 
-  const pools = new Map()
-  const workdayJobs = jobs.filter((job) => buildWorkdayDetailApiUrl(job))
-  const darwinboxJobs = jobs.filter((job) => buildDarwinboxDetailApiUrl(job))
-
-  if (workdayJobs.length) {
-    pools.set(
-      'workday',
-      await createBrowserApiFetchPool(
-        resolveJobUrl(workdayJobs[0]),
-        Math.min(workdayJobs.length, WORKDAY_DETAIL_SESSION_LIMIT),
-      ),
-    )
-  }
-
-  if (darwinboxJobs.length) {
-    pools.set(
-      'darwinbox',
-      await createBrowserApiFetchPool(
-        resolveJobUrl(darwinboxJobs[0]),
-        Math.min(darwinboxJobs.length, DARWINBOX_DETAIL_SESSION_LIMIT),
-      ),
-    )
-  }
-
   return {
-    fetchText: async (url, request = {}) => {
-      const pool = pools.get(request.providerKind)
-      if (!pool) {
-        throw new Error(`No provider detail API fetcher is available for ${request.providerKind || url}`)
-      }
-
-      return pool.fetchText(url)
-    },
-    close: async () => {
-      await Promise.allSettled(
-        [...pools.values()].map((pool) => pool.close()),
-      )
-    },
+    fetchText: defaultFetchText,
+    close: async () => {},
   }
 }
 
@@ -521,16 +431,10 @@ export const createPwcScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const browserTextFallback = createBrowserTextFallback({
-      fetchText,
-      fetchBrowserText: options.fetchBrowserText,
-      userAgent: USER_AGENT,
-      shouldUseBrowserFallback: isBrowserFallbackError,
-    })
     let detailApiFetcher = null
 
     try {
-      const html = await browserTextFallback.fetchText(buildSearchUrl())
+      const html = await fetchText(buildSearchUrl())
       const jobs = extractSearchResults(html)
       const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
       detailApiFetcher = await createDetailApiFetcher(selectedJobs, options.fetchDetailText)
@@ -572,7 +476,6 @@ export const createPwcScraper = ({
       }))
     } finally {
       await Promise.allSettled([
-        browserTextFallback.close(),
         detailApiFetcher?.close?.(),
       ])
     }

@@ -48,7 +48,7 @@ test('dry-run snapshot options keep public experience enrichment enabled by defa
 
   assert.equal(options.enrichPublicExperience, true)
   assert.equal(options.experienceEnrichmentConcurrency, 2)
-  assert.equal(options.maxJobsToEnrich, 20)
+  assert.equal(options.maxJobsToEnrich, null)
 })
 
 test('dry-run runner snapshots recover missing experience from the official public job page', async () => {
@@ -161,7 +161,7 @@ test('dry-run runner skips public-page refetch when the scraper already returns 
   }
 })
 
-test('dry-run runner limits public-page enrichment volume for large sources by default', async () => {
+test('dry-run runner enriches every job in large sources by default', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-dry-run-limit-'))
   const dryRunFile = path.join(tempDir, 'jobs.json')
   const runner = await loadDryRunRunner()
@@ -214,12 +214,12 @@ test('dry-run runner limits public-page enrichment volume for large sources by d
     })
 
     assert.equal(result.success, true)
-    assert.equal(fetchCount, 20)
+    assert.equal(fetchCount, 25)
 
     const snapshot = JSON.parse(fs.readFileSync(dryRunFile, 'utf8'))
     assert.equal(snapshot.length, 25)
     assert.equal(snapshot[0].experienceRequired, '4 years')
-    assert.equal(snapshot[24].experienceRequired, null)
+    assert.equal(snapshot[24].experienceRequired, '4 years')
   } finally {
     globalThis.fetch = originalFetch
     fs.rmSync(tempDir, { recursive: true, force: true })

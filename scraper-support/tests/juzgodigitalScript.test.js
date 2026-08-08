@@ -53,6 +53,16 @@ test('JuzGoDigital recognizes the verified official homepage and blocked careers
   )
 })
 
+test('JuzGoDigital tolerates the wrapped live homepage title while the verified homepage contract stays the same', async () => {
+  const juzgo = await loadJuzGoDigitalModule()
+  const wrappedTitleHomepageHtml = verifiedHomepageHtml.replace(
+    'Hedge Fund Tech Solutions In Coimbatore, Blockchain Development Company India.',
+    'Hedge Fund Tech Solutions In Coimbatore,\nBlockchain Development Company India.',
+  )
+
+  assert.equal(juzgo.hasOfficialHomepageSignal(wrappedTitleHomepageHtml), true)
+})
+
 test('JuzGoDigital returns no jobs only while the verified homepage and blocked careers routes remain unchanged', async () => {
   const juzgo = await loadJuzGoDigitalModule()
   const requestedUrls = []

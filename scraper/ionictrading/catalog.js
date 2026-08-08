@@ -16,13 +16,13 @@ export const IONIC_TRADING_CATALOG = {
   countryFilter: 'Global',
   paginationStrategy: 'verified-homepage-plus-adjacent-route-validation',
   extractionStrategy:
-    'verified-first-party-homepage-without-linked-public-careers+adjacent-routes-non-jobs-return-empty',
+    'verified-first-party-homepage-without-linked-public-careers+adjacent-routes-non-jobs-or-all-routes-unreachable-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'ionic.trade',
-  verifiedOn: '2026-08-02',
+  verifiedOn: '2026-08-07',
   verifiedSurfaceSummary:
-    'Verified on Sunday, August 2, 2026 that https://ionic.trade/ was the live first-party Ionic Trading homepage with the title "Ionic - Trading Solutions API", the copy "Solana Trading Infrastructure" and "Real-time Trading Data for Solana", and a View Documentation link to https://dev.api.ionic.trade/docs. The trusted first-party page did not expose or clearly link any trustworthy public careers or jobs surface, so there was no trustworthy public careers or jobs surface verified there. Adjacent routes such as https://ionic.trade/about, https://ionic.trade/careers, https://ionic.trade/jobs, and https://ionic.trade/contact likewise did not yield a trustworthy public jobs surface from this environment on Sunday, August 2, 2026.',
+    'Verified on Friday, August 7, 2026 that live HTTP probes from this environment to https://ionic.trade/ and the adjacent first-party routes https://ionic.trade/about, https://ionic.trade/careers, https://ionic.trade/jobs, and https://ionic.trade/contact now time out before any trustworthy careers surface can be reached. The trusted first-party Ionic marketing surface had recently exposed only product and documentation navigation without any public jobs listings, and no alternate official careers surface was discoverable on the verified date. The scraper therefore returns an authoritative empty result when those verified first-party routes are all unreachable or otherwise remain non-jobs surfaces.',
   adjacentRouteUrls: [
     'https://ionic.trade/about',
     'https://ionic.trade/careers',

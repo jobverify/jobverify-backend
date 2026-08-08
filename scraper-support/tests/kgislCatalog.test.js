@@ -16,15 +16,25 @@ test('KGISL is registered as a verified first-party candidate portal scraper wit
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'homepage-plus-careers-page-plus-current-openings-page-plus-first-party-candidate-portal',
+    'homepage-plus-careers-page-plus-current-openings-page-plus-first-party-candidate-portal-with-wrapper-timeout-fallback',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-careers-page+verified-current-openings-iframe+first-party-inline-job-cards',
+    'verified-official-homepage+verified-careers-page+verified-current-openings-iframe+first-party-inline-job-cards+candidate-portal-fallback-when-kgisl-wrappers-time-out',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'kgisl.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedPublicJobCount, 17)
+  assert.equal(
+    provider.verifiedSampleJobTitle,
+    'Senior Cloud Infrastructure & Security Engineer - Solution Architect',
+  )
+  assert.match(provider.verifiedSampleJobUrl, /careerxai\.kgisl\.com\/resume\/webportal_vacancy_apply_resume/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /17 public inline job cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /wrapper pages under https:\/\/www\.kgisl\.com\/ returned upstream 500\/504 errors and timeouts/i)
   assert.match(provider.modulePath, /kgisl[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'KGISL'), false)
 })

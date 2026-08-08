@@ -48,9 +48,9 @@ test('Neysa local catalog captures the verified same-domain public job openings 
   assert.equal(provider.officialPrivacyUrl, 'https://neysa.ai/privacy-policy/')
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://neysa.ai/careers/job-openings/backend-engineer/',
+    'https://neysa.ai/careers/job-openings/?job_id=51964',
   )
-  assert.equal(provider.verifiedPublicJobCount, 12)
+  assert.equal(provider.verifiedPublicJobCount, 8)
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
@@ -63,13 +63,14 @@ test('Neysa local catalog captures the verified same-domain public job openings 
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedOn, '2026-08-07')
   assert.match(provider.dryRunFile, /neysa[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, neysaModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/neysa\.ai\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/neysa\.ai\/careers\/job-openings\//i)
-  assert.match(provider.verifiedSurfaceSummary, /12 public jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /8 public jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /\?job_id=51964/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Neysa'), false)
   assert.equal(companyAliases['Neysa Networks'], 'neysa')
   assert.equal(companyAliases['Neysa Networks Private Limited'], 'neysa')

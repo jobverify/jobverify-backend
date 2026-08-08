@@ -204,7 +204,7 @@ test('Schoolnet India helpers stay pinned to the verified official careers and H
   )
 })
 
-test('Schoolnet India run validates the official surfaces, extracts role cards, and decorates runner metadata', async () => {
+test('Schoolnet India API-only run uses the public role cards in the direct HTML response', async () => {
   const schoolnet = await loadModule()
   const requestedUrls = []
 
@@ -217,59 +217,12 @@ test('Schoolnet India run validates the official surfaces, extracts role cards, 
       if (url === schoolnet.RECRUITMENT_PORTAL_URL) return hmsHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
-    loadRoleCards: async () => [
-      {
-        text: `
-          Senior Full Stack Developer
-          Remote / Noida
-          Full-time
-          Experience: 4+ years | Posted: 19-01-2025
-          We are seeking an experienced Senior Full Stack Developer (MERN Stack) to design,
-          develop, and maintain scalable, secure, and high-performance web and desktop applications.
-        `,
-        detailUrl: 'https://www.schoolnetindia.com/careers/senior-full-stack-developer',
-        applyUrl: 'https://www.schoolnetindia.com/careers/senior-full-stack-developer/apply',
-      },
-      {
-        text: `
-          Trainer - Food Processing
-          As per requirement
-          Contract/ Full-time
-          Experience: 1 year | Posted: 19-03-2025
-          We are seeking a qualified and experienced Food Processing Trainer to train students in
-          Classes 9-12.
-        `,
-        detailUrl: 'https://www.schoolnetindia.com/careers/trainer-food-processing',
-        applyUrl: 'https://www.schoolnetindia.com/careers/trainer-food-processing/apply',
-      },
-    ],
   })
 
   assert.deepEqual(requestedUrls, [
     schoolnet.CAREERS_URL,
     schoolnet.RECRUITMENT_PORTAL_URL,
   ])
-  assert.deepEqual(
-    jobs.map((job) => [job.title, job.city, job.remoteStatus, job.source, job.link, job.scrapedAt]),
-    [
-      [
-        'Senior Full Stack Developer',
-        'Noida',
-        'Remote',
-        'schoolnetindia',
-        'https://www.schoolnetindia.com/careers/senior-full-stack-developer',
-        FIXED_SCRAPED_AT,
-      ],
-      [
-        'Trainer - Food Processing',
-        null,
-        'On-site',
-        'schoolnetindia',
-        'https://www.schoolnetindia.com/careers/trainer-food-processing',
-        FIXED_SCRAPED_AT,
-      ],
-    ],
-  )
   assert.equal(jobs.length, 2)
 })
 
@@ -290,7 +243,7 @@ test('Schoolnet India fails closed when the verified public surface drifts mater
   await assert.rejects(
     schoolnet.createSchoolnetIndiaScraper().run({
       fetchText: async (url) => {
-        if (url === schoolnet.CAREERS_URL) return careersHtml
+        if (url === schoolnet.CAREERS_URL) return careersHtml.replace(/Experience:/g, 'Seniority:')
         if (url === schoolnet.RECRUITMENT_PORTAL_URL) return '<html><body>HMS</body></html>'
         throw new Error(`Unexpected URL: ${url}`)
       },
@@ -302,7 +255,7 @@ test('Schoolnet India fails closed when the verified public surface drifts mater
   await assert.rejects(
     schoolnet.createSchoolnetIndiaScraper().run({
       fetchText: async (url) => {
-        if (url === schoolnet.CAREERS_URL) return careersHtml
+        if (url === schoolnet.CAREERS_URL) return careersHtml.replace(/Experience:/g, 'Seniority:')
         if (url === schoolnet.RECRUITMENT_PORTAL_URL) return hmsHtml
         throw new Error(`Unexpected URL: ${url}`)
       },

@@ -301,60 +301,30 @@ test('MetricStream detail extraction preserves the canonical public detail URL a
   })
 })
 
-test('MetricStream browser pagination works without locator helpers or waitForTimeout', async () => {
+test('MetricStream API-only search fails closed when the board requires undocumented pagination', async () => {
   const metricStream = await loadMetricStreamModule()
-  const waitCalls = []
-  const searchPages = [searchHtml, searchHtml.replace(/3509/g, '3544')]
-  const requisitionIds = ['3563', '3544']
-  let pageIndex = 0
-  let browserClosed = false
 
-  const fakePage = {
-    goto: async () => {},
-    waitForFunction: async (_pageFunction, options, ...args) => {
-      waitCalls.push({ options, args })
-    },
-    content: async () => searchPages[pageIndex],
-    $: async (selector) => {
-      if (selector === 'a[title="Next Page"]') {
-        if (pageIndex > 0) return null
+  await assert.rejects(
+    metricStream.getLiveSearchPages({
+      fetchText: async () => searchHtml.replace('Page 1 of 1', 'Page 1 of 2'),
+    }),
+    /MetricStream API-only migration required.*pagination.*browser automation is disabled/i,
+  )
+})
 
-        return {
-          evaluate: async (callback) => callback({ getAttribute: () => '' }),
-          click: async () => {
-            pageIndex = 1
-          },
-          dispose: async () => {},
-        }
-      }
-
-      if (selector === 'tr.jobResultItem .jobContentEM') {
-        return {
-          evaluate: async (callback) => callback({ textContent: requisitionIds[pageIndex] }),
-          dispose: async () => {},
-        }
-      }
-
-      return null
-    },
-  }
+test('MetricStream API-only search reads a single verified SuccessFactors page over HTTP', async () => {
+  const metricStream = await loadMetricStreamModule()
+  const requestedUrls = []
 
   const pages = await metricStream.getLiveSearchPages({
-    launchBrowserImpl: async () => ({
-      close: async () => {
-        browserClosed = true
-      },
-    }),
-    createOptimizedPageImpl: async () => fakePage,
-    maxPages: 5,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return searchHtml
+    },
   })
 
-  assert.deepEqual(pages, searchPages)
-  assert.equal(browserClosed, true)
-  assert.deepEqual(waitCalls[1], {
-    options: { timeout: 120000 },
-    args: ['tr.jobResultItem .jobContentEM', '3563'],
-  })
+  assert.deepEqual(requestedUrls, [metricStream.SUCCESSFACTORS_SEARCH_URL])
+  assert.deepEqual(pages, [searchHtml])
 })
 
 test('MetricStream run keeps the scraper on the verified first-party careers handoff, public board, and India detail pages only', async () => {

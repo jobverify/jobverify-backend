@@ -281,54 +281,16 @@ test('Syrma SGS extractJobCards keeps the canonical title when archive cards app
   ])
 })
 
-test('Syrma SGS run uses browser-backed first-party HTML when direct HTTP access is blocked', async () => {
+test('Syrma SGS API-only run surfaces direct HTTP failures', async () => {
   const syrmaSgs = await loadSyrmaSgsModule()
-  const attempts = []
-
-  const jobs = await syrmaSgs.createSyrmaSgsScraper().run({
+  await assert.rejects(syrmaSgs.createSyrmaSgsScraper().run({
     fetchText: async (url) => {
-      attempts.push(`http:${url}`)
       throw new Error(`Connect Timeout Error for ${url}`)
     },
-    fetchBrowserText: async (url) => {
-      attempts.push(`browser:${url}`)
-      if (url === syrmaSgs.LIFE_AT_URL) return lifeAtHtml
-      if (url === syrmaSgs.JOBS_URL) return jobsHtml
-      if (url === 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/') return npiDetailHtml
-      if (url === 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/') {
-        return maintenanceDetailHtml
-      }
-      if (url === 'https://syrmasgs.com/jobs/22188/') return powerDetailHtml
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-    now: () => '2026-07-17T05:00:00.000Z',
-  })
-
-  assert.deepEqual(attempts, [
-    `http:${syrmaSgs.LIFE_AT_URL}`,
-    `browser:${syrmaSgs.LIFE_AT_URL}`,
-    `http:${syrmaSgs.JOBS_URL}`,
-    `browser:${syrmaSgs.JOBS_URL}`,
-    'http:https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
-    'browser:https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
-    'http:https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
-    'browser:https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
-    'http:https://syrmasgs.com/jobs/22188/',
-    'browser:https://syrmasgs.com/jobs/22188/',
-  ])
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].source, 'syrmasgs')
-  assert.equal(jobs[0].company, 'Syrma SGS')
-  assert.equal(jobs[0].companyCareerPage, 'https://syrmasgs.com/job-openings/')
-  assert.equal(jobs[0].companyDomain, 'syrmasgs.com')
-  assert.equal(jobs[0].atsPlatform, 'wp-job-openings')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, '2026-07-17T05:00:00.000Z')
-  assert.equal(jobs[1].location, 'Manesar, India')
-  assert.equal(jobs[2].location, 'Chennai, India')
+  }), /Connect Timeout Error/i)
 })
 
-test('Syrma SGS default HTTP fetch falls back after a single connect-timeout pass per page', async () => {
+test('Syrma SGS default HTTP fetch surfaces a connect-timeout', async () => {
   const syrmaSgs = await loadSyrmaSgsModule()
   const fetchCalls = []
   const originalFetch = globalThis.fetch
@@ -339,28 +301,8 @@ test('Syrma SGS default HTTP fetch falls back after a single connect-timeout pas
   }
 
   try {
-    const jobs = await syrmaSgs.createSyrmaSgsScraper().run({
-      fetchBrowserText: async (url) => {
-        if (url === syrmaSgs.LIFE_AT_URL) return lifeAtHtml
-        if (url === syrmaSgs.JOBS_URL) return jobsHtml
-        if (url === 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/') return npiDetailHtml
-        if (url === 'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/') {
-          return maintenanceDetailHtml
-        }
-        if (url === 'https://syrmasgs.com/jobs/22188/') return powerDetailHtml
-        throw new Error(`Unexpected browser URL: ${url}`)
-      },
-      now: () => '2026-08-05T05:00:00.000Z',
-    })
-
-    assert.equal(jobs.length, 3)
-    assert.deepEqual(fetchCalls, [
-      syrmaSgs.LIFE_AT_URL,
-      syrmaSgs.JOBS_URL,
-      'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
-      'https://syrmasgs.com/jobs/asst-manager-senior-engineer-smt-machine-maintenance/',
-      'https://syrmasgs.com/jobs/22188/',
-    ])
+    await assert.rejects(syrmaSgs.createSyrmaSgsScraper().run(), /Connect Timeout Error/i)
+    assert.deepEqual(fetchCalls, [syrmaSgs.LIFE_AT_URL])
   } finally {
     globalThis.fetch = originalFetch
   }

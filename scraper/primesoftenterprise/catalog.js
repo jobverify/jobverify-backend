@@ -8,22 +8,23 @@ export const PRIMESOFT_ENTERPRISE_CATALOG = {
   companyName: 'Primesoft Enterprise',
   adapter: 'script',
   homepageUrl: 'https://primesoft.net/',
-  companyCareerPage: 'https://primesoft.net/careers/',
+  companyCareerPage: 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   companyDomain: 'primesoft.net',
   atsPlatform: 'darwinbox',
   countryFilter: 'India',
   paginationStrategy: 'browser-session-darwinbox-pagination',
   extractionStrategy:
-    'verified-first-party-careers-page+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter',
+    'verified-homepage-careers-handoff+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
+  legacyCareersPageUrl: 'https://primesoft.net/careers/',
   officialCareersHandoffUrl: 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   publicAllJobsUrl: 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   darwinboxOrigin: 'https://primesoft.darwinbox.in',
   darwinboxCompanyId: 'main',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-08-07',
   verifiedSurfaceSummary:
-    'Verified on Tuesday, August 4, 2026 that https://primesoft.net/careers/ was the live first-party PrimeSoft careers page, that it still linked India job seekers to the official Darwinbox board at https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs, and that the public Darwinbox portal returned 15 India openings during verification.',
+    'Verified on Friday, August 7, 2026 that the first-party PrimeSoft homepage at https://primesoft.net/ exposed a Careers link directly to the official Darwinbox board at https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs, that the legacy first-party careers route at https://primesoft.net/careers/ no longer served the verified careers page surface, and that the public Darwinbox portal returned 16 India openings during verification.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

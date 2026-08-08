@@ -140,6 +140,14 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
 export const hasEmptyLeverBoardSignal = (html = '') =>
   /No job postings currently open\.\s*Check back later!/i.test(String(html ?? ''))
 
+export const hasMissingLeverBoardSignal = ({ status, html = '', url = LEVER_BOARD_URL } = {}) => {
+  const rawHtml = String(html ?? '')
+
+  return Number(status) === 404
+    && extractTitle(rawHtml) === 'Not found - 404 error'
+    && normalizeWhitespace(url) === LEVER_BOARD_URL
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -148,6 +156,21 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: DEFAULT_JSON_HEADERS,
@@ -203,6 +226,7 @@ export const createPlivoScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchPage = defaultFetchPage,
   } = {}) {
     const jobsPageHtml = await fetchText(CAREERS_URL)
 
@@ -220,14 +244,22 @@ export const createPlivoScraper = ({
       throw new Error('Plivo jobs bundle no longer exposes the verified Lever API')
     }
 
-    const leverBoardHtml = await fetchText(LEVER_BOARD_URL)
-    if (!hasOfficialLeverBoardSignal(leverBoardHtml)) {
+    const leverBoardPage = await fetchPage(LEVER_BOARD_URL)
+    const leverBoardHtml = leverBoardPage?.html || ''
+    const hasVerifiedEmptyLeverBoard = hasOfficialLeverBoardSignal(leverBoardHtml)
+    const hasVerifiedMissingLeverBoard = hasMissingLeverBoardSignal(leverBoardPage)
+
+    if (!hasVerifiedEmptyLeverBoard && !hasVerifiedMissingLeverBoard) {
       throw new Error('Plivo verified public Lever board changed materially')
     }
 
     const leverJobs = extractLeverJobs(await fetchJson(LEVER_API_URL))
-    if (leverJobs.length === 0 && !hasEmptyLeverBoardSignal(leverBoardHtml)) {
-      throw new Error('Plivo verified public Lever board no longer matches the live empty-board state')
+    if (leverJobs.length === 0 && !hasEmptyLeverBoardSignal(leverBoardHtml) && !hasVerifiedMissingLeverBoard) {
+      throw new Error('Plivo verified public Lever board no longer matches the live no-openings state')
+    }
+
+    if (leverJobs.length > 0 && hasVerifiedMissingLeverBoard) {
+      throw new Error('Plivo Lever board is missing while the Lever API still exposes jobs')
     }
 
     const selectedJobs = maxJobs ? leverJobs.slice(0, maxJobs) : leverJobs

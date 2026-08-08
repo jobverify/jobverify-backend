@@ -8,7 +8,6 @@ import {
   fetchWorkdayJobsApiPage,
   hasWorkdayOutageSignal,
   inferWorkdayJobsApiConfig,
-  isExplicitWorkdayZeroJobsText,
   matchesWorkdayLocationPattern,
   runWorkdayScraper,
   shouldFetchWorkdayJobDetail,
@@ -914,14 +913,6 @@ test('fetchWorkdayJobsApiPage rejects malformed or internally inconsistent succe
   }
 })
 
-test('Workday zero-count text matching does not confuse 10, 20, or 100 jobs with zero', () => {
-  assert.equal(isExplicitWorkdayZeroJobsText('0 Jobs'), true)
-  assert.equal(isExplicitWorkdayZeroJobsText('No jobs found'), true)
-  assert.equal(isExplicitWorkdayZeroJobsText('10 Jobs'), false)
-  assert.equal(isExplicitWorkdayZeroJobsText('20 jobs found'), false)
-  assert.equal(isExplicitWorkdayZeroJobsText('100 open jobs'), false)
-})
-
 test('runWorkdayScraper jobs-api mode does not require Puppeteer when the first API page has no jobs', async () => {
   const originalFetch = global.fetch
   const calls = []
@@ -1144,6 +1135,96 @@ test('runWorkdayScraper prefers an inferred public jobs API before launching a D
     assert.deepEqual(jobs, [])
     assert.deepEqual(calls.map((call) => call.method), ['GET', 'POST'])
     assert.equal(browserLaunches, 0)
+  } finally {
+    global.fetch = originalFetch
+  }
+})
+
+test('runWorkdayScraper fails closed without launching a browser when no jobs API can be configured', async () => {
+  let browserLaunches = 0
+
+  await assert.rejects(
+    runWorkdayScraper({
+      company: 'Example',
+      baseUrl: 'https://careers.example.com/jobs',
+      locationCountry: null,
+      source: 'example-api-only',
+      scraperDir: path.join(testsDir, '../myworkday'),
+      launchBrowserImpl: async () => {
+        browserLaunches += 1
+        throw new Error('browser launch must remain unreachable')
+      },
+    }),
+    (error) => {
+      assert.equal(error.abortRetries, true)
+      assert.match(error.message, /could not infer a public Workday jobs API/i)
+      return true
+    },
+  )
+
+  assert.equal(browserLaunches, 0)
+})
+
+test('runWorkdayScraper fails closed without launching a browser for Workday API HTTP errors', async (t) => {
+  const originalFetch = global.fetch
+
+  try {
+    for (const status of [400, 403, 404, 429, 503]) {
+      await t.test(`HTTP ${status}`, async () => {
+        let browserLaunches = 0
+
+        global.fetch = async (url, options = {}) => {
+          if ((options.method || 'GET') === 'GET') {
+            return {
+              ok: true,
+              status: 200,
+              url,
+              headers: {
+                getSetCookie: () => [],
+                get: () => 'text/html; charset=UTF-8',
+              },
+              text: async () => '<html><body>Workday shell</body></html>',
+            }
+          }
+
+          return {
+            ok: false,
+            status,
+            url,
+            headers: { get: () => 'application/json;charset=UTF-8' },
+            text: async () => JSON.stringify({
+              errorCode: `HTTP_${status}`,
+              httpStatus: status,
+            }),
+          }
+        }
+
+        await assert.rejects(
+          runWorkdayScraper({
+            company: 'API Failure Test',
+            baseUrl: 'https://api-failure-test.wd5.myworkdayjobs.com/External',
+            locationCountry: 'india-id',
+            source: `api-failure-${status}`,
+            scraperDir: path.join(testsDir, '../myworkday'),
+            retryBaseDelayMs: 0,
+            circuitBreaker: new WorkdayHostCircuitBreaker({ failureThreshold: 10 }),
+            detailCircuitBreaker: new WorkdayHostCircuitBreaker({ failureThreshold: 10 }),
+            launchBrowserImpl: async () => {
+              browserLaunches += 1
+              throw new Error('browser launch must remain unreachable')
+            },
+          }),
+          (error) => {
+            assert.equal(error.name, 'WorkdayJobsApiError')
+            assert.equal(error.jobsApiHttpStatus, status)
+            assert.equal(error.abortRetries, true)
+            return true
+          },
+        )
+
+        assert.equal(browserLaunches, 0)
+      })
+    }
   } finally {
     global.fetch = originalFetch
   }
@@ -1790,9 +1871,10 @@ test('runWorkdayScraper jobs-api mode overlaps detail fetches within a page to r
   }
 })
 
-test('runWorkdayScraper falls back from a missing DOM list to the inferred API and preserves structured outages', async () => {
+test('runWorkdayScraper preserves structured API outages without launching a browser', async () => {
   const originalFetch = global.fetch
   const calls = []
+  let browserLaunches = 0
   const circuitBreaker = new WorkdayHostCircuitBreaker({
     failureThreshold: 10,
     cooldownMs: 60_000,
@@ -1856,7 +1938,10 @@ test('runWorkdayScraper falls back from a missing DOM list to the inferred API a
         locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
         source: 'att',
         scraperDir: path.join(testsDir, '../../scraper/att.workday'),
-        launchBrowserImpl: async () => ({ close: async () => {} }),
+        launchBrowserImpl: async () => {
+          browserLaunches += 1
+          throw new Error('browser launch must remain unreachable')
+        },
         createOptimizedPageImpl: async () => page,
         circuitBreaker,
       }),
@@ -1869,14 +1954,15 @@ test('runWorkdayScraper falls back from a missing DOM list to the inferred API a
     )
     assert.deepEqual(
       calls.map((call) => call.method),
-      ['GET', 'POST', 'GET', 'POST'],
+      ['GET', 'POST'],
     )
+    assert.equal(browserLaunches, 0)
   } finally {
     global.fetch = originalFetch
   }
 })
 
-test('runWorkdayScraper falls back to the DOM listing when an inferred jobs API returns HTTP 400', async () => {
+test('runWorkdayScraper fails closed on inferred jobs API HTTP 400 without a browser fallback', async () => {
   const originalFetch = global.fetch
   const listingSection = new FakeDomElement({
     tagName: 'section',
@@ -1937,6 +2023,7 @@ test('runWorkdayScraper falls back to the DOM listing when an inferred jobs API 
 
   const pageQueue = [listingPage]
   let fetchCall = 0
+  let browserLaunches = 0
   global.fetch = async (url, options = {}) => {
     fetchCall += 1
 
@@ -1994,22 +2081,28 @@ test('runWorkdayScraper falls back to the DOM listing when an inferred jobs API 
   }
 
   try {
-    const jobs = await runWorkdayScraper({
-      company: 'AT&T',
-      baseUrl: 'https://att.wd1.myworkdayjobs.com/ATTSpecialInvite',
-      locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
-      source: 'att',
-      scraperDir: path.join(testsDir, '../../scraper/att.workday'),
-      launchBrowserImpl: async () => ({
-        close: async () => {},
+    await assert.rejects(
+      runWorkdayScraper({
+        company: 'AT&T',
+        baseUrl: 'https://att.wd1.myworkdayjobs.com/ATTSpecialInvite',
+        locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+        source: 'att',
+        scraperDir: path.join(testsDir, '../../scraper/att.workday'),
+        launchBrowserImpl: async () => {
+          browserLaunches += 1
+          throw new Error('browser launch must remain unreachable')
+        },
+        createOptimizedPageImpl: async () => pageQueue.shift(),
       }),
-      createOptimizedPageImpl: async () => pageQueue.shift(),
-    })
+      (error) => {
+        assert.equal(error.name, 'WorkdayJobsApiError')
+        assert.equal(error.jobsApiHttpStatus, 400)
+        assert.equal(error.abortRetries, true)
+        return true
+      },
+    )
 
-    assert.equal(jobs.length, 1)
-    assert.equal(jobs[0].title, 'Engineer')
-    assert.equal(jobs[0].location, 'Bangalore, India')
-    assert.equal(fetchCall, 5)
+    assert.equal(browserLaunches, 0)
   } finally {
     global.fetch = originalFetch
   }
@@ -2284,7 +2377,7 @@ test('runWorkdayScraper preserves a prefiltered Location_Country facet before re
   }
 })
 
-test('runWorkdayScraper falls back to the DOM listing when an explicit jobs API returns HTTP 429', async () => {
+test('runWorkdayScraper fails closed on explicit jobs API HTTP 429 without a browser fallback', async () => {
   const originalFetch = global.fetch
   const listingSection = new FakeDomElement({
     tagName: 'section',
@@ -2345,6 +2438,7 @@ test('runWorkdayScraper falls back to the DOM listing when an explicit jobs API 
 
   const pageQueue = [listingPage]
   let fetchCall = 0
+  let browserLaunches = 0
   global.fetch = async (url, options = {}) => {
     fetchCall += 1
 
@@ -2402,30 +2496,37 @@ test('runWorkdayScraper falls back to the DOM listing when an explicit jobs API 
   }
 
   try {
-    const jobs = await runWorkdayScraper({
-      company: 'Airbus',
-      baseUrl: 'https://ag.wd3.myworkdayjobs.com/en-US/Airbus',
-      locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
-      source: 'airbus',
-      scraperDir: path.join(testsDir, '../../scraper/airbus.workday'),
-      circuitBreaker: new WorkdayHostCircuitBreaker(),
-      detailCircuitBreaker: new WorkdayHostCircuitBreaker(),
-      launchBrowserImpl: async () => ({
-        close: async () => {},
+    await assert.rejects(
+      runWorkdayScraper({
+        company: 'Airbus',
+        baseUrl: 'https://ag.wd3.myworkdayjobs.com/en-US/Airbus',
+        locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+        source: 'airbus',
+        scraperDir: path.join(testsDir, '../../scraper/airbus.workday'),
+        retryBaseDelayMs: 0,
+        circuitBreaker: new WorkdayHostCircuitBreaker({ failureThreshold: 10 }),
+        detailCircuitBreaker: new WorkdayHostCircuitBreaker(),
+        launchBrowserImpl: async () => {
+          browserLaunches += 1
+          throw new Error('browser launch must remain unreachable')
+        },
+        createOptimizedPageImpl: async () => pageQueue.shift(),
       }),
-      createOptimizedPageImpl: async () => pageQueue.shift(),
-    })
+      (error) => {
+        assert.equal(error.name, 'WorkdayJobsApiError')
+        assert.equal(error.jobsApiHttpStatus, 429)
+        assert.equal(error.abortRetries, true)
+        return true
+      },
+    )
 
-    assert.equal(jobs.length, 1)
-    assert.equal(jobs[0].title, 'Engineer')
-    assert.equal(jobs[0].location, 'Bangalore, India')
-    assert.equal(fetchCall, 3)
+    assert.equal(browserLaunches, 0)
   } finally {
     global.fetch = originalFetch
   }
 })
 
-test('runWorkdayScraper falls back to the DOM listing when the Workday jobs API transport hits a connect timeout', async () => {
+test('runWorkdayScraper fails closed without a browser fallback when the jobs API transport times out', async () => {
   const originalFetch = global.fetch
   const listingSection = new FakeDomElement({
     tagName: 'section',
@@ -2534,34 +2635,37 @@ test('runWorkdayScraper falls back to the DOM listing when the Workday jobs API 
   }
 
   try {
-    const jobs = await runWorkdayScraper({
-      company: 'Airbus',
-      baseUrl: 'https://ag.wd3.myworkdayjobs.com/en-US/Airbus',
-      locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
-      source: 'airbus',
-      scraperDir: path.join(testsDir, '../../scraper/airbus.workday'),
-      retryBaseDelayMs: 0,
-      circuitBreaker: new WorkdayHostCircuitBreaker(),
-      detailCircuitBreaker: new WorkdayHostCircuitBreaker(),
-      launchBrowserImpl: async () => {
-        browserLaunched = true
-        return {
-          close: async () => {},
-        }
+    await assert.rejects(
+      runWorkdayScraper({
+        company: 'Airbus',
+        baseUrl: 'https://ag.wd3.myworkdayjobs.com/en-US/Airbus',
+        locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+        source: 'airbus',
+        scraperDir: path.join(testsDir, '../../scraper/airbus.workday'),
+        retryBaseDelayMs: 0,
+        circuitBreaker: new WorkdayHostCircuitBreaker({ failureThreshold: 10 }),
+        detailCircuitBreaker: new WorkdayHostCircuitBreaker(),
+        launchBrowserImpl: async () => {
+          browserLaunched = true
+          throw new Error('browser launch must remain unreachable')
+        },
+        createOptimizedPageImpl: async () => pageQueue.shift(),
+      }),
+      (error) => {
+        assert.equal(error.softFailure, true)
+        assert.equal(error.abortRetries, true)
+        assert.equal(error.failureKind, 'network_or_timeout')
+        return true
       },
-      createOptimizedPageImpl: async () => pageQueue.shift(),
-    })
+    )
 
-    assert.equal(browserLaunched, true)
-    assert.equal(jobs.length, 1)
-    assert.equal(jobs[0].title, 'Engineer')
-    assert.equal(jobs[0].location, 'Bangalore, India')
+    assert.equal(browserLaunched, false)
   } finally {
     global.fetch = originalFetch
   }
 })
 
-test('runWorkdayScraper retries the Workday DOM listing once when the first job-results wait never hydrates', async () => {
+test('runWorkdayScraper never retries a failed jobs API through the DOM listing', async () => {
   const originalFetch = global.fetch
   const listingSection = new FakeDomElement({
     tagName: 'section',
@@ -2591,6 +2695,7 @@ test('runWorkdayScraper retries the Workday DOM listing once when the first job-
 
   let waitAttempts = 0
   let gotoCalls = 0
+  let browserLaunched = false
   const listingPage = {
     on() {},
     async goto() {
@@ -2668,24 +2773,32 @@ test('runWorkdayScraper retries the Workday DOM listing once when the first job-
   }
 
   try {
-    const jobs = await runWorkdayScraper({
-      company: 'Airbus',
-      baseUrl: 'https://ag.wd3.myworkdayjobs.com/en-US/Airbus',
-      locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
-      source: 'airbus',
-      scraperDir: path.join(testsDir, '../../scraper/airbus.workday'),
-      circuitBreaker: new WorkdayHostCircuitBreaker(),
-      detailCircuitBreaker: new WorkdayHostCircuitBreaker(),
-      launchBrowserImpl: async () => ({
-        close: async () => {},
+    await assert.rejects(
+      runWorkdayScraper({
+        company: 'Airbus',
+        baseUrl: 'https://ag.wd3.myworkdayjobs.com/en-US/Airbus',
+        locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+        source: 'airbus',
+        scraperDir: path.join(testsDir, '../../scraper/airbus.workday'),
+        retryBaseDelayMs: 0,
+        circuitBreaker: new WorkdayHostCircuitBreaker({ failureThreshold: 10 }),
+        detailCircuitBreaker: new WorkdayHostCircuitBreaker(),
+        launchBrowserImpl: async () => {
+          browserLaunched = true
+          throw new Error('browser launch must remain unreachable')
+        },
+        createOptimizedPageImpl: async () => listingPage,
       }),
-      createOptimizedPageImpl: async () => listingPage,
-    })
+      (error) => {
+        assert.equal(error.abortRetries, true)
+        assert.equal(error.failureKind, 'network_or_timeout')
+        return true
+      },
+    )
 
-    assert.equal(waitAttempts, 3)
-    assert.equal(gotoCalls, 2)
-    assert.equal(jobs.length, 1)
-    assert.equal(jobs[0].title, 'Engineer')
+    assert.equal(browserLaunched, false)
+    assert.equal(waitAttempts, 0)
+    assert.equal(gotoCalls, 0)
   } finally {
     global.fetch = originalFetch
   }
@@ -2749,8 +2862,9 @@ test('runWorkdayScraper does not launch DOM fallback after an API request deadli
   }
 })
 
-test('runWorkdayScraper reports DOM extraction errors instead of returning a false empty success', async () => {
+test('runWorkdayScraper rejects an uninferable non-Workday board before creating a browser page', async () => {
   const extractionError = new Error('DOM extraction exploded')
+  let browserLaunches = 0
   const page = {
     on() {},
     async goto() {},
@@ -2775,14 +2889,18 @@ test('runWorkdayScraper reports DOM extraction errors instead of returning a fal
       locationCountry: null,
       source: 'example-dom-extraction',
       scraperDir: path.join(testsDir, '../myworkday'),
-      launchBrowserImpl: async () => ({ close: async () => {} }),
+      launchBrowserImpl: async () => {
+        browserLaunches += 1
+        return { close: async () => {} }
+      },
       createOptimizedPageImpl: async () => page,
     }),
-    /DOM extraction exploded|no cards could be extracted/i,
+    /could not infer a public Workday jobs API/i,
   )
+  assert.equal(browserLaunches, 0)
 })
 
-test('runWorkdayScraper DOM fallback accepts Workday cards without the legacy ul[role=\"list\"] wrapper', async () => {
+test('runWorkdayScraper rejects API HTTP 418 without attempting DOM card extraction', async () => {
   const originalFetch = global.fetch
   const listingSection = new FakeDomElement({
     tagName: 'section',
@@ -2843,6 +2961,7 @@ test('runWorkdayScraper DOM fallback accepts Workday cards without the legacy ul
 
   const pageQueue = [listingPage]
   let fetchCall = 0
+  let browserLaunches = 0
   global.fetch = async (url, options = {}) => {
     fetchCall += 1
 
@@ -2897,28 +3016,36 @@ test('runWorkdayScraper DOM fallback accepts Workday cards without the legacy ul
   }
 
   try {
-    const jobs = await runWorkdayScraper({
-      company: 'AT&T',
-      baseUrl: 'https://att.wd1.myworkdayjobs.com/ATTSpecialInvite',
-      locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
-      source: 'att',
-      scraperDir: path.join(testsDir, '../../scraper/att.workday'),
-      launchBrowserImpl: async () => ({ close: async () => {} }),
-      createOptimizedPageImpl: async () => pageQueue.shift(),
-    })
+    await assert.rejects(
+      runWorkdayScraper({
+        company: 'AT&T',
+        baseUrl: 'https://att.wd1.myworkdayjobs.com/ATTSpecialInvite',
+        locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+        source: 'att',
+        scraperDir: path.join(testsDir, '../../scraper/att.workday'),
+        launchBrowserImpl: async () => {
+          browserLaunches += 1
+          throw new Error('browser launch must remain unreachable')
+        },
+        createOptimizedPageImpl: async () => pageQueue.shift(),
+      }),
+      (error) => {
+        assert.equal(error.name, 'WorkdayJobsApiError')
+        assert.equal(error.jobsApiHttpStatus, 418)
+        assert.equal(error.abortRetries, true)
+        return true
+      },
+    )
 
-    assert.equal(fetchCall, 4)
-    assert.equal(jobs.length, 1)
-    assert.equal(jobs[0].title, 'Engineer')
-    assert.equal(jobs[0].city, 'Bangalore')
-    assert.equal(jobs[0].requisitionId, 'R123')
+    assert.equal(browserLaunches, 0)
   } finally {
     global.fetch = originalFetch
   }
 })
 
-test('runWorkdayScraper DOM fallback overlaps detail fetches within a page to reduce fallback timeout pressure', async () => {
+test('runWorkdayScraper never starts DOM detail work for an uninferable API configuration', async () => {
   const originalFetch = global.fetch
+  let browserLaunches = 0
   const listingSection = new FakeDomElement({
     tagName: 'section',
     attributes: { 'data-automation-id': 'jobResults' },
@@ -3055,31 +3182,27 @@ test('runWorkdayScraper DOM fallback overlaps detail fetches within a page to re
   }
 
   try {
-    const jobsPromise = runWorkdayScraper({
-      company: 'Example',
-      baseUrl: 'https://careers.example.com/workday',
-      locationCountry: null,
-      source: 'example-workday-dom',
-      scraperDir: path.join(testsDir, '../myworkday'),
-      launchBrowserImpl: async () => ({ close: async () => {} }),
-      createOptimizedPageImpl: async () => (
-        listingPage
-          || detailPage
-      ),
-    })
-
-    await Promise.race([
-      detailsReleased,
-      new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Second DOM fallback detail request never started before the first one completed'))
-        }, 200)
+    await assert.rejects(
+      runWorkdayScraper({
+        company: 'Example',
+        baseUrl: 'https://careers.example.com/workday',
+        locationCountry: null,
+        source: 'example-workday-dom',
+        scraperDir: path.join(testsDir, '../myworkday'),
+        launchBrowserImpl: async () => {
+          browserLaunches += 1
+          return { close: async () => {} }
+        },
+        createOptimizedPageImpl: async () => (
+          listingPage
+            || detailPage
+        ),
       }),
-    ])
+      /could not infer a public Workday jobs API/i,
+    )
 
-    const jobs = await jobsPromise
-    assert.equal(detailStarts.length, 2)
-    assert.equal(jobs.length, 2)
+    assert.equal(browserLaunches, 0)
+    assert.equal(detailStarts.length, 0)
   } finally {
     global.fetch = originalFetch
   }

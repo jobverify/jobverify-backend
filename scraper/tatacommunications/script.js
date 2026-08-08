@@ -1,8 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { chromium } from 'playwright'
-
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -103,12 +101,6 @@ const normalizeSkill = (value) => {
   if (typeof value === 'string') return normalizeWhitespace(value)
   return normalizeWhitespace(value?.skill || value?.name)
 }
-
-const buildChromiumLaunchArgs = () =>
-  process.env.PUPPETEER_DISABLE_SANDBOX ? ['--no-sandbox'] : []
-
-const shouldUseRenderedFallback = (error) =>
-  /http 401|http 403|authorization|forbidden|missing workflowid/i.test(String(error?.message || error))
 
 const normalizeSkillsList = (value) => {
   const seenSkills = new Set()
@@ -279,33 +271,6 @@ export const extractRenderedJobs = (pageText, { nowDate = new Date() } = {}) => 
   }
 
   return jobs
-}
-
-const loadRenderedTextWithBrowser = async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: buildChromiumLaunchArgs(),
-  })
-
-  try {
-    const page = await browser.newPage({ userAgent: DEFAULT_USER_AGENT })
-    await page.goto(CAREER_PAGE_URL, {
-      waitUntil: 'domcontentloaded',
-      timeout: 90000,
-    })
-    await page.waitForTimeout(5000)
-    await page.evaluate(() => {
-      const placeholder = document.querySelector('flt-semantics-placeholder[aria-label="Enable accessibility"]')
-      if (placeholder) {
-        placeholder.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-      }
-    })
-    await page.waitForTimeout(3000)
-
-    return await page.evaluate(() => document.body?.innerText || document.body?.textContent || '')
-  } finally {
-    await browser.close()
-  }
 }
 
 const getSkills = (record = {}) => {
@@ -487,24 +452,22 @@ export const createTataCommunicationsScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchJson = options.fetchJson || defaultFetchJson
-    const fetchRenderedText = options.fetchRenderedText || loadRenderedTextWithBrowser
     const nowDate = resolveNowDate((options.now || (() => new Date()))())
 
-    try {
-      const jobs = []
-      const seenJobIds = new Set()
-      const scrapedAt = nowDate.toISOString()
+    const jobs = []
+    const seenJobIds = new Set()
+    const scrapedAt = nowDate.toISOString()
 
-      const bootstrapPayload = await fetchJson(WORKSPACE_BOOTSTRAP_URL, {
-        headers: buildBootstrapHeaders(),
-      })
-      const workflowId = extractWorkflowId(bootstrapPayload)
+    const bootstrapPayload = await fetchJson(WORKSPACE_BOOTSTRAP_URL, {
+      headers: buildBootstrapHeaders(),
+    })
+    const workflowId = extractWorkflowId(bootstrapPayload)
 
-      if (!workflowId) {
-        throw new Error('Missing workflowId in Tata Communications workspace bootstrap payload')
-      }
+    if (!workflowId) {
+      throw new Error('Missing workflowId in Tata Communications workspace bootstrap payload')
+    }
 
-      for (let page = 1; page <= maxPages; page += 1) {
+    for (let page = 1; page <= maxPages; page += 1) {
         const listingPayload = await fetchJson(buildListingApiUrl(), {
           method: 'POST',
           headers: buildRequestHeaders({ workflowId }),
@@ -539,23 +502,7 @@ export const createTataCommunicationsScraper = ({
         }
       }
 
-      return jobs
-    } catch (error) {
-      if (!shouldUseRenderedFallback(error)) {
-        throw error
-      }
-
-      const renderedJobs = extractRenderedJobs(await fetchRenderedText(), { nowDate })
-
-      return renderedJobs
-        .slice(0, maxJobs || undefined)
-        .map((job) => ({
-          ...job,
-          source: 'tatacommunications',
-          link: job.applyUrl || job.sourceUrl || HOME_URL,
-          scrapedAt: nowDate.toISOString(),
-        }))
-    }
+    return jobs
   },
 })
 

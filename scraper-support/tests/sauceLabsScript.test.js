@@ -178,42 +178,20 @@ test('Sauce Labs extracts only India jobs from the verified Greenhouse payload a
   ])
 })
 
-test('Sauce Labs run validates the official careers page in-browser and then reads the verified Greenhouse payload', async () => {
+test('Sauce Labs run reads the verified Greenhouse payload over HTTP', async () => {
   const saucelabs = await loadModule()
   const requestedJsonUrls = []
-  const events = []
-
-  const fakePage = {
-    goto: async (url, options) => {
-      events.push(['goto', url, options.waitUntil])
-    },
-    content: async () => {
-      events.push(['content'])
-      return CAREERS_HTML
-    },
-  }
 
   const jobs = await saucelabs.createSauceLabsScraper({
     now: () => FIXED_SCRAPED_AT,
     maxJobs: 1,
   }).run({
-    launchBrowser: async () => ({
-      close: async () => {
-        events.push(['close'])
-      },
-    }),
-    createOptimizedPage: async () => fakePage,
     fetchJson: async (url) => {
       requestedJsonUrls.push(url)
       return GREENHOUSE_PAYLOAD_WITH_INDIA
     },
   })
 
-  assert.deepEqual(events, [
-    ['goto', 'https://saucelabs.com/careers', 'domcontentloaded'],
-    ['content'],
-    ['close'],
-  ])
   assert.deepEqual(requestedJsonUrls, [
     'https://boards-api.greenhouse.io/v1/boards/saucelabs/jobs?content=true',
   ])
@@ -254,45 +232,17 @@ test('Sauce Labs run returns an honest empty slice when the verified live board 
   const jobs = await saucelabs.createSauceLabsScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => ({
-      goto: async () => {},
-      content: async () => CAREERS_HTML,
-    }),
     fetchJson: async () => GREENHOUSE_PAYLOAD_WITHOUT_INDIA,
   })
 
   assert.deepEqual(jobs, [])
 })
 
-test('Sauce Labs fails closed when the official careers page or Greenhouse payload drifts away from the verified contract', async () => {
+test('Sauce Labs fails closed when the Greenhouse payload drifts away from the verified contract', async () => {
   const saucelabs = await loadModule()
 
   await assert.rejects(
     saucelabs.createSauceLabsScraper().run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        content: async () => '<html><head><title>Unexpected</title></head><body>No careers contract</body></html>',
-      }),
-      fetchJson: async () => GREENHOUSE_PAYLOAD_WITH_INDIA,
-    }),
-    /official Sauce Labs careers page/i,
-  )
-
-  await assert.rejects(
-    saucelabs.createSauceLabsScraper().run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        content: async () => CAREERS_HTML,
-      }),
       fetchJson: async () => ({
         jobs: [
           {

@@ -9,6 +9,8 @@ export const HOMEPAGE_URL = 'https://manatec.in/'
 export const CAREERS_URL = 'https://manatec.in/career/'
 export const PAGE_SITEMAP_URL = 'https://manatec.in/wp-sitemap-posts-page-1.xml'
 export const MISSING_ROUTE_URL = 'https://manatec.in/join-us'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://manatec.in/ remained Manatec Electronics Private Limited\'s official homepage, that https://manatec.in/career/ remained a same-domain application-only careers form with the verified department selector and upload-resume workflow but no public job listings, that https://manatec.in/wp-sitemap-posts-page-1.xml still exposed the homepage and careers URLs, and that https://manatec.in/join-us still returned the verified first-party 404 surface.'
 export const EXPECTED_DEPARTMENTS = [
   'Commercial and Despatch',
   'CSD',
@@ -29,6 +31,7 @@ export const EXPECTED_DEPARTMENTS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+export const DEFAULT_FETCH_TIMEOUT_MS = 60000
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
@@ -99,7 +102,7 @@ const toWwwFallbackUrl = (value) => {
 
 export const fetchPageWithWwwFallback = async (url, {
   fetchImpl = fetch,
-  timeoutMs = 30000,
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
 } = {}) => {
   const fetchOnce = async (targetUrl) => {
     const response = await fetchImpl(targetUrl, {
@@ -168,10 +171,9 @@ export const hasApplicationOnlyCareersSignal = (html) => {
     && text.includes('opportunities')
     && text.includes('at manatec, we believe that our greatest asset is our people.')
     && text.includes('we are always on the lookout for passionate, innovative, and talented individuals')
-    && text.includes('application')
+    && text.includes('whether you are a seasoned professional or just starting your career')
     && text.includes('upload resume / cv')
-    && text.includes('interested in working with us?')
-    && text.includes('hrdmel@manatec.in')
+    && text.includes('message')
     && departments.length === EXPECTED_DEPARTMENTS.length
     && departments.every((department, index) => department === EXPECTED_DEPARTMENTS[index])
     && !/current openings|open positions|job id|requisition|vacancy\s*:|view details|job description|apply now/i.test(text)

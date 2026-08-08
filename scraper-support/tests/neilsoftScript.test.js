@@ -19,6 +19,24 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const CURRENT_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Engineering Services &amp; Design |Neilsoft </title>
+  </head>
+  <body>
+    <ul>
+      <li><a href="/careers" title="Careers">Careers</a></li>
+      <li><a href="/careers/why-neilsoft">Why Neilsoft</a></li>
+      <li><a href="/careers/employee-testimonials">Employee Testimonials</a></li>
+      <li><a href="/careers/current-job-openings-india">Current Job Openings-India</a></li>
+      <li><a href="/careers/current-job-openings-india/designer-sr-designer">Designer / Sr. Designer</a></li>
+    </ul>
+  </body>
+</html>
+`
+
 const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -257,6 +275,12 @@ test('Neilsoft validators accept the Monday, August 3, 2026 panel-wrapped India 
   assert.equal(neilsoft.hasOfficialJobDetailSignal(PRODUCT_SPECIALIST_DETAIL_HTML, 'Product Specialist'), true)
 })
 
+test('Neilsoft accepts the current homepage careers module on Friday, August 7, 2026', async () => {
+  const neilsoft = await loadNeilsoftModule()
+
+  assert.equal(neilsoft.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
+})
+
 test('Neilsoft extracts jobs from department paragraphs and nested panel cards', async () => {
   const neilsoft = await loadNeilsoftModule()
 
@@ -399,7 +423,7 @@ test('Neilsoft accepts first-party product-sales detail pages that use the job_p
         'Collaborate with support staff to enhance personal effectiveness.',
       ],
       jobDescription:
-        'Qualification: B.E. / B.Tech Promote and sell a range of engineering software products. Collaborate with support staff to enhance personal effectiveness.',
+        'Qualification: B.E. / B.Tech Experience: 1 to 5 years Promote and sell a range of engineering software products. Collaborate with support staff to enhance personal effectiveness.',
       applyUrl: 'mailto:job_products@neilsoft.com',
       sourceUrl: 'https://neilsoft.com/careers/current-job-openings-india/sales-executive',
     },

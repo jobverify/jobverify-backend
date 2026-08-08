@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('IndustryBuying local catalog captures the verified first-party Keka handoff without alias churn', async () => {
+test('IndustryBuying local catalog captures the verified first-party careers API without alias churn', async () => {
   const { INDUSTRY_BUYING_CATALOG } = await loadCatalogModule()
   const industryBuying = await loadScriptModule()
 
@@ -33,45 +33,47 @@ test('IndustryBuying local catalog captures the verified first-party Keka handof
   assert.equal(INDUSTRY_BUYING_CATALOG.companyName, 'IndustryBuying')
   assert.equal(INDUSTRY_BUYING_CATALOG.officialBrandName, 'IndustryBuying')
   assert.equal(INDUSTRY_BUYING_CATALOG.adapter, 'script')
-  assert.equal(INDUSTRY_BUYING_CATALOG.companyCareerPage, 'https://industrybuying.keka.com/careers/')
+  assert.equal(INDUSTRY_BUYING_CATALOG.companyCareerPage, 'https://jobs.industrybuying.com/jobs')
   assert.equal(INDUSTRY_BUYING_CATALOG.officialHomepageUrl, 'https://www.industrybuying.com/')
   assert.equal(INDUSTRY_BUYING_CATALOG.officialCareersHandoffPageUrl, 'https://www.industrybuying.com/')
-  assert.equal(INDUSTRY_BUYING_CATALOG.kekaCareerPageUrl, 'https://industrybuying.keka.com/careers/')
-  assert.equal(
-    INDUSTRY_BUYING_CATALOG.kekaCareerPortalInfoUrl,
-    'https://industrybuying.keka.com/careers/api/organization/default/careerportalinfo',
-  )
-  assert.equal(
-    INDUSTRY_BUYING_CATALOG.kekaActiveJobsUrl,
-    'https://industrybuying.keka.com/careers/api/embedjobs/default/active/e3038951-eb0d-4a7c-86f2-ae81cdef2d70',
-  )
-  assert.equal(INDUSTRY_BUYING_CATALOG.expectedKekaIdentifier, 'e3038951-eb0d-4a7c-86f2-ae81cdef2d70')
-  assert.equal(INDUSTRY_BUYING_CATALOG.expectedKekaDomain, 'https://industrybuying.keka.com/careers/')
-  assert.equal(INDUSTRY_BUYING_CATALOG.expectedPortalName, 'IndustryBuying')
-  assert.equal(INDUSTRY_BUYING_CATALOG.atsPlatform, 'keka-embed-api')
+  assert.equal(INDUSTRY_BUYING_CATALOG.officialJobsSiteUrl, 'https://jobs.industrybuying.com/')
+  assert.equal(INDUSTRY_BUYING_CATALOG.careersApiBaseUrl, 'https://careers.industrybuying.com/api/career')
+  assert.equal(INDUSTRY_BUYING_CATALOG.careersOrgsApiUrl, 'https://careers.industrybuying.com/api/career/orgs')
+  assert.equal(INDUSTRY_BUYING_CATALOG.careersJobsApiUrl, 'https://careers.industrybuying.com/api/career/jobs')
+  assert.equal(INDUSTRY_BUYING_CATALOG.expectedOrgId, 'org_1782819232623')
+  assert.equal(INDUSTRY_BUYING_CATALOG.expectedOrgSlug, 'industrybuying')
+  assert.equal(INDUSTRY_BUYING_CATALOG.atsPlatform, 'custom-first-party-next-careers-api')
   assert.equal(INDUSTRY_BUYING_CATALOG.countryFilter, 'India')
-  assert.equal(INDUSTRY_BUYING_CATALOG.paginationStrategy, 'keka-embed-active-jobs-api')
+  assert.equal(INDUSTRY_BUYING_CATALOG.paginationStrategy, 'first-party-careers-api-single-page')
   assert.equal(
     INDUSTRY_BUYING_CATALOG.extractionStrategy,
-    'verified-first-party-homepage-footer-handoff+verified-keka-bootstrap+verified-active-jobs-api',
+    'verified-first-party-homepage-handoff+verified-first-party-jobs-site+verified-careers-api-jobs-and-details',
   )
   assert.equal(INDUSTRY_BUYING_CATALOG.parser, 'custom-script')
   assert.equal(INDUSTRY_BUYING_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INDUSTRY_BUYING_CATALOG.companyDomain, 'industrybuying.com')
-  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedOn, '2026-08-07')
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedPublicJobCount, 3)
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedIndiaJobCount, 3)
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedSampleJobTitle, 'Category Group Head')
+  assert.equal(
+    INDUSTRY_BUYING_CATALOG.verifiedSampleJobUrl,
+    'https://jobs.industrybuying.com/jobs/detail?id=job_1783396889733',
+  )
   assert.match(INDUSTRY_BUYING_CATALOG.dryRunFile, /industrybuying[\\/]jobs\.json$/i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.industrybuying\.com\//i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /https:\/\/industrybuying\.keka\.com\/careers\//i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Senior Manager Finance/i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Category Owner - June/i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Category Group Head - June/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.industrybuying\.com\//i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.industrybuying\.com\/api\/career\/jobs/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Category Group Head/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Online Sales Executive/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Category Owner/i)
   assert.equal(INDUSTRY_BUYING_CATALOG.modulePath, industryBuyingModulePath)
 
   assert.equal(industryBuying.PROVIDER_METADATA.source, INDUSTRY_BUYING_CATALOG.source)
   assert.equal(industryBuying.PROVIDER_METADATA.companyName, INDUSTRY_BUYING_CATALOG.companyName)
   assert.equal(
-    industryBuying.PROVIDER_METADATA.kekaActiveJobsUrl,
-    INDUSTRY_BUYING_CATALOG.kekaActiveJobsUrl,
+    industryBuying.PROVIDER_METADATA.careersJobsApiUrl,
+    INDUSTRY_BUYING_CATALOG.careersJobsApiUrl,
   )
 })
 
@@ -90,15 +92,15 @@ test('IndustryBuying backlog row matches directly from the local catalog without
   )
 })
 
-test('getScraperCatalog includes IndustryBuying as a verified Keka provider', () => {
+test('getScraperCatalog includes IndustryBuying as a verified first-party careers API provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'industrybuying')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'IndustryBuying')
-  assert.equal(provider.companyCareerPage, 'https://industrybuying.keka.com/careers/')
+  assert.equal(provider.companyCareerPage, 'https://jobs.industrybuying.com/jobs')
   assert.equal(provider.companyDomain, 'industrybuying.com')
-  assert.equal(provider.atsPlatform, 'keka-embed-api')
+  assert.equal(provider.atsPlatform, 'custom-first-party-next-careers-api')
   assert.match(provider.modulePath, /industrybuying[\\/]script\.js$/i)
 })
 
@@ -108,6 +110,6 @@ test('buildScrapers exposes a runnable IndustryBuying scraper without changing t
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'industrybuying')
-  assert.equal(scraper.provider.atsPlatform, 'keka-embed-api')
+  assert.equal(scraper.provider.atsPlatform, 'custom-first-party-next-careers-api')
   assert.match(scraper.dryRunFile, /industrybuying[\\/]jobs\.json$/i)
 })

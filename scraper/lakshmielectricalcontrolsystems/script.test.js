@@ -46,22 +46,22 @@ test('Lakshmi Electrical Control Systems verifies the official homepage and cont
   assert.equal(hasOfficialContactSignal(CONTACT_HTML), true)
 })
 
-test('Lakshmi Electrical Control Systems falls back to browser fetch on timeout errors', async () => {
-  const requestedByBrowser = []
+test('Lakshmi Electrical Control Systems falls back to the extended-timeout fetch on timeout errors', async () => {
+  const requestedByExtendedFetch = []
 
   const scraper = createLakshmiElectricalControlSystemsScraper()
   const jobs = await scraper.run({
     fetchText: async () => {
       throw new Error('The operation was aborted due to timeout')
     },
-    fetchBrowserText: async (url) => {
-      requestedByBrowser.push(url)
+    fetchTextWithExtendedTimeout: async (url) => {
+      requestedByExtendedFetch.push(url)
       if (url === HOMEPAGE_URL) return HOMEPAGE_HTML
       if (url === CONTACT_URL) return CONTACT_HTML
-      throw new Error(`Unexpected browser fetch for ${url}`)
+      throw new Error(`Unexpected extended-timeout fetch for ${url}`)
     },
   })
 
   assert.deepEqual(jobs, [])
-  assert.deepEqual(requestedByBrowser, [HOMEPAGE_URL, CONTACT_URL])
+  assert.deepEqual(requestedByExtendedFetch, [HOMEPAGE_URL, CONTACT_URL])
 })

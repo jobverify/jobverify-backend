@@ -444,6 +444,7 @@ export const createPhenomScraper = ({
       ),
       applyUrl: normalizeWhitespace(structuredJob?.applyUrl || listing.applyUrl || sourceUrl),
       sourceUrl,
+      publicExperienceChecked: Boolean(sourceUrl && (structuredJob || jobPosting || description)),
     }
   }
 
@@ -519,6 +520,7 @@ export const createPhenomScraper = ({
           source,
           employmentType: detail.employmentType || listing.employmentType,
           experienceRequired: detail.experienceRequired || listing.experienceRequired,
+          publicExperienceChecked: detail.publicExperienceChecked === true || listing.publicExperienceChecked === true,
           jobDescription: detail.jobDescription || listing.jobDescription,
           minimumQualification: detail.minimumQualification,
           preferredQualification: detail.preferredQualification,

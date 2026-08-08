@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { launchBrowser, createOptimizedPage } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -92,64 +91,6 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: 'cardekho-official',
   timeoutMs: 15000,
 })
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-export const createBrowserListingFetcher = async ({
-  careersUrl = DARWINBOX_CAREERS_URL,
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-
-    await page.goto(careersUrl, { waitUntil: 'domcontentloaded' })
-    await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-    await delay(config.pageLoadDelayMs)
-
-    const fetchListingPage = async ({
-      page: pageNumber,
-      pageSize = PAGE_SIZE,
-      companyId = DARWINBOX_COMPANY_ID,
-    }) => page.evaluate(
-      async ({ targetCompanyId, targetPage, targetPageSize }) => {
-        const response = await fetch(`/ms/candidateapi/job/alljobs?companyId=${targetCompanyId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            companyId: targetCompanyId,
-            sort_option: 'new',
-            limit: targetPageSize,
-            page: targetPage,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        return response.json()
-      },
-      {
-        targetCompanyId: companyId,
-        targetPage: pageNumber,
-        targetPageSize: pageSize,
-      },
-    )
-
-    return {
-      fetchListingPage,
-      close: async () => browser.close(),
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
 
 export const createCarDekhoScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,

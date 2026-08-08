@@ -9,6 +9,9 @@ export const HOMEPAGE_URL = 'https://www.g10x.com/'
 export const CAREERS_URL = 'https://www.g10x.com/careers'
 export const JOBS_URL = 'https://www.g10x.com/jobs'
 export const COMPANY_DOMAIN = 'g10x.com'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Friday, August 7, 2026 that https://www.g10x.com/, https://www.g10x.com/careers, and https://www.g10x.com/jobs remained G10X\'s live first-party careers surface, and that the jobs page still exposed the verified zero-openings state with "0 job openings for you" plus no public job-detail or apply links. Also verified on Friday, August 7, 2026 that the related legacy openings routes under /career, /join-us, /current-openings, /openings, and /work-with-us still returned the standard Webflow 404 shell.'
 export const MISSING_ROUTE_URLS = [
   'https://www.g10x.com/career',
   'https://www.g10x.com/join-us',
@@ -125,7 +128,7 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*G10X\s*\|\s*End-to-end digital and AI solutions\s*<\/title>/i.test(page)
     && text.includes('end-to-end digital and ai solutions')
     && text.includes('driven by customer obsession')
-    && text.includes('copyright © 2025 g10x | all rights reserved')
+    && /copyright[^0-9]*\d{4}\s+g10x\s+\|\s+all rights reserved/i.test(normalizeVisibleText(page))
     && hasVerifiedCareersLink(page)
     && /href=["']\/who-we-are["']/i.test(page)
 }
@@ -137,7 +140,7 @@ export const hasOfficialCareersSignal = (html) => {
 
   return /<title>\s*Careers\s*<\/title>/i.test(page)
     && normalizedPage.includes('join g10x, a great place to work certified')
-    && text.includes("let's grow together")
+    && text.includes("if you're ready to grow your skills")
     && text.includes('why g10x')
     && text.includes('grow with purpose')
     && text.includes('work with global brands')

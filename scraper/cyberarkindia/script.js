@@ -9,6 +9,7 @@ export const CYBERARK_CAREERS_URL = 'https://www.cyberark.com/careers/'
 export const PALO_ALTO_JOBS_HOME_URL = 'https://jobs.paloaltonetworks.com/en/'
 export const PALO_ALTO_INDIA_URL = 'https://jobs.paloaltonetworks.com/en/india'
 export const PALO_ALTO_INDIA_SEARCH_URL = 'https://jobs.paloaltonetworks.com/en/search-jobs/?alcpm=1269750&orgIds=47263'
+export const PALO_ALTO_IDIRA_URL = 'https://www.paloaltonetworks.com/idira'
 
 export const CATALOG_METADATA = {
   source: SOURCE,
@@ -24,6 +25,8 @@ export const CATALOG_METADATA = {
   normalizationProfile: 'engineering-default',
   companyDomain: 'cyberark.com',
   workspaceDomain: 'jobs.paloaltonetworks.com',
+  verifiedOn: '2026-08-07',
+  verifiedSurfaceSummary: 'Verified on Friday, August 7, 2026 that https://www.cyberark.com/careers/ now redirects to https://www.paloaltonetworks.com/idira, whose footer still links to https://jobs.paloaltonetworks.com/en/. Verified that the shared Palo Alto Networks India location page and India-filtered search shell remain live and do not expose a CyberArk-specific public jobs board.',
 }
 
 const USER_AGENT =
@@ -73,6 +76,15 @@ export const hasCyberArkCareersHandoffSignal = (html) => {
     && rawHtml.includes(PALO_ALTO_JOBS_HOME_URL)
 }
 
+export const hasCyberArkRedirectedCareersHandoffSignal = ({ html, finalUrl }) => {
+  const rawHtml = String(html ?? '')
+
+  return String(finalUrl ?? '').replace(/\/+$/, '') === PALO_ALTO_IDIRA_URL
+    && /<title[^>]*>\s*Idira\s*\|\s*The Identity Security Platform\s*-\s*Palo Alto Networks\s*<\/title>/i.test(rawHtml)
+    && /Protect your organization with Idira/i.test(rawHtml)
+    && rawHtml.includes(PALO_ALTO_JOBS_HOME_URL)
+}
+
 export const hasExpectedIndiaSearchHandoff = (html) =>
   decodeHtmlEntities(String(html ?? '')).includes(PALO_ALTO_INDIA_SEARCH_URL)
 
@@ -112,7 +124,16 @@ export const createCyberArkIndiaScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const careersPage = await fetchPage(CYBERARK_CAREERS_URL)
 
-    if (careersPage.status !== 200 || !hasCyberArkCareersHandoffSignal(careersPage.html)) {
+    if (
+      careersPage.status !== 200
+      || (
+        !hasCyberArkCareersHandoffSignal(careersPage.html)
+        && !hasCyberArkRedirectedCareersHandoffSignal({
+          html: careersPage.html,
+          finalUrl: careersPage.url,
+        })
+      )
+    ) {
       throw new Error('CyberArk verified official CyberArk careers surface no longer matches the known Palo Alto Networks handoff')
     }
 

@@ -26,7 +26,7 @@ const publicJobsHtml = `
       <h2>Explore Job Openings</h2>
       <article>
       <h3>Manager – Loan Account Management</h3>
-        <a href="https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a2696757d426?from=all">Apply Now</a>
+        <a href="https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a7318ee583fe?from=all">Apply Now</a>
       </article>
     </main>
   </body>
@@ -47,14 +47,14 @@ test('Lendingkart pins the verified first-party pages and Darwinbox handoff', as
   assert.equal(lendingkart.SOURCE, 'lendingkart')
   assert.equal(lendingkart.COMPANY_NAME, 'Lendingkart')
   assert.equal(lendingkart.COMPANY_ID, 'main')
-  assert.equal(lendingkart.VERIFIED_ON, '2026-07-25')
+  assert.equal(lendingkart.VERIFIED_ON, '2026-08-07')
   assert.equal(lendingkart.OFFICIAL_SITE_URL, 'https://www.lendingkart.com/')
   assert.equal(lendingkart.OFFICIAL_CAREERS_URL, 'https://www.lendingkart.com/careers/')
   assert.equal(lendingkart.PUBLIC_JOBS_URL, 'https://www.lendingkart.com/job/')
   assert.equal(lendingkart.DARWINBOX_ORIGIN, 'https://hrlendingkart.darwinbox.in')
   assert.equal(
     lendingkart.VERIFIED_JOB_DETAIL_EXAMPLE_URL,
-    'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a2696757d426?from=all',
+    'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a7318ee583fe?from=all',
   )
   assert.equal(
     lendingkart.PUBLIC_ALL_JOBS_URL,
@@ -121,12 +121,22 @@ test('Lendingkart fails closed when either verified first-party page changes mat
     /verified lendingkart careers page/i,
   )
 
+  assert.equal(
+    lendingkart.hasPublicJobsPageSignal(
+      publicJobsHtml.replace(
+        'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a7318ee583fe?from=all',
+        'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a32a82d586fd?from=all',
+      ),
+    ),
+    true,
+  )
+
   await assert.rejects(
     lendingkart.createLendingkartScraper().run({
       fetchText: async (url) => {
         if (url === lendingkart.OFFICIAL_CAREERS_URL) return officialCareersHtml
         return publicJobsHtml.replace(
-          'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a2696757d426?from=all',
+          'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a7318ee583fe?from=all',
           'https://example.com/jobs',
         )
       },

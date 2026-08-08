@@ -254,7 +254,7 @@ test('extractJobDetail parses the verified Avenue Supermarts detail-page text', 
   assert.match(job.jobDescription, /Education Graduates/i)
 })
 
-test('run verifies the DMart careers page, paginates the public SuccessFactors board, and enriches detail pages', async () => {
+test('run verifies the DMart careers page, consumes injected HTTP search pages, and enriches detail pages', async () => {
   const avenueSupermarts = await loadAvenueSupermartsModule()
 
   const requestedUrls = []
@@ -297,54 +297,17 @@ test('run verifies the DMart careers page, paginates the public SuccessFactors b
     }),
   }
 
-  let currentStage = 'careers'
-
-  const fakePage = {
-    goto: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === avenueSupermarts.CAREERS_PAGE_URL) {
-        currentStage = 'careers'
-        return
-      }
-
-      if (url === avenueSupermarts.SUCCESSFACTORS_SEARCH_URL) {
-        currentStage = 'summary-1'
-        return
-      }
-
-      if (detailPages[url]) {
-        currentStage = url
-        return
-      }
-
-      throw new Error(`Unexpected page.goto URL: ${url}`)
-    },
-    waitForSelector: async () => {},
-    waitForFunction: async () => {},
-    waitForTimeout: async () => {},
-    evaluate: async () => {
-      if (currentStage === 'summary-1') {
-        currentStage = 'summary-2'
-        return
-      }
-
-      throw new Error(`Unexpected evaluate stage: ${currentStage}`)
-    },
-    content: async () => {
-      if (currentStage === 'careers') return buildOfficialCareersHtml()
-      if (currentStage === 'summary-1') return buildSummaryHtml()
-      if (currentStage === 'summary-2') return buildSummaryPageTwoHtml()
-      if (detailPages[currentStage]) return detailPages[currentStage]
-      throw new Error(`Unexpected content stage: ${currentStage}`)
-    },
-  }
-
   const jobs = await avenueSupermarts.run({
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => fakePage,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === avenueSupermarts.CAREERS_PAGE_URL) return buildOfficialCareersHtml()
+      if (detailPages[url]) return detailPages[url]
+      throw new Error(`Unexpected Avenue Supermarts URL: ${url}`)
+    },
+    getSearchPages: async ({ searchUrl }) => {
+      requestedUrls.push(searchUrl)
+      return [buildSummaryHtml(), buildSummaryPageTwoHtml()]
+    },
     now: () => '2026-07-15T12:00:00.000Z',
   })
 
@@ -370,13 +333,7 @@ test('run fails closed when the verified DMart careers handoff disappears', asyn
 
   await assert.rejects(
     avenueSupermarts.run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        waitForSelector: async () => {},
-        content: async () => `
+      fetchText: async () => `
           <html>
             <head><title>Careers | DMart</title></head>
             <body>
@@ -387,8 +344,22 @@ test('run fails closed when the verified DMart careers handoff disappears', asyn
             </body>
           </html>
         `,
-      }),
     }),
     /verified DMart careers page no longer exposes the known SuccessFactors handoff/i,
+  )
+})
+
+test('API-only run stops before returning a partial board when SuccessFactors requires unverified pagination', async () => {
+  const avenueSupermarts = await loadAvenueSupermartsModule()
+
+  await assert.rejects(
+    avenueSupermarts.run({
+      fetchText: async (url) => {
+        if (url === avenueSupermarts.CAREERS_PAGE_URL) return buildOfficialCareersHtml()
+        if (url === avenueSupermarts.SUCCESSFACTORS_SEARCH_URL) return buildSummaryHtml()
+        throw new Error(`Unexpected Avenue Supermarts URL: ${url}`)
+      },
+    }),
+    /Avenue Supermarts API-only migration required.*pagination.*browser automation is disabled/i,
   )
 })

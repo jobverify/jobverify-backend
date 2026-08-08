@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -20,7 +19,6 @@ export const OFFICIAL_DAYFORCE_URL = `${DAYFORCE_ORIGIN}/${DAYFORCE_LOCALE}/${DA
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const NAVIGATION_TIMEOUT_MS = Math.max(config.jobListingTimeoutMs || 0, 60000)
 const DEFAULT_PAGE_SIZE = 20
 
 const normalizeWhitespace = (value) => {
@@ -375,99 +373,8 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createBrowserDayforceClient = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-
-    await page.goto(OFFICIAL_DAYFORCE_URL, {
-      waitUntil: 'networkidle2',
-      timeout: NAVIGATION_TIMEOUT_MS,
-    })
-
-    return {
-      async searchJobPostings(payload = buildSearchRequestPayload()) {
-        return page.evaluate(
-          async ({ authUrl, searchUrl, requestPayload }) => {
-            const csrfResponse = await fetch(authUrl, {
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json,text/plain,*/*',
-              },
-            })
-
-            if (!csrfResponse.ok) {
-              throw new Error(`HTTP ${csrfResponse.status} for ${authUrl}`)
-            }
-
-            const csrfPayload = await csrfResponse.json()
-            const csrfToken = csrfPayload?.csrfToken
-
-            if (!csrfToken) {
-              throw new Error('Missing Dayforce CSRF token')
-            }
-
-            const response = await fetch(searchUrl, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json,text/plain,*/*',
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken,
-              },
-              body: JSON.stringify(requestPayload),
-            })
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status} for ${searchUrl}`)
-            }
-
-            return response.json()
-          },
-          {
-            authUrl: buildCsrfUrl(),
-            searchUrl: buildSearchApiUrl(),
-            requestPayload: payload,
-          },
-        )
-      },
-      async fetchJobDetail(jobPostingId) {
-        return page.evaluate(
-          async (detailUrl) => {
-            const response = await fetch(detailUrl, {
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json,text/plain,*/*',
-              },
-            })
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status} for ${detailUrl}`)
-            }
-
-            return response.json()
-          },
-          buildJobDetailApiUrl(jobPostingId),
-        )
-      },
-      async close() {
-        await browser.close()
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
-
 export const createC2foScraper = ({
   now = () => new Date().toISOString(),
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
@@ -489,86 +396,74 @@ export const createC2foScraper = ({
       throw new Error('C2FO verified Dayforce public jobs surface no longer matches the pinned C2FO site context')
     }
 
-    let browserClient = null
+    if (!searchJobPostings || !fetchJobDetail) {
+      throw new Error(
+        'C2FO API-only migration incomplete: no session-free Dayforce search and detail contract has been demonstrated',
+      )
+    }
 
-    try {
-      if (!searchJobPostings || !fetchJobDetail) {
-        browserClient = await createBrowserDayforceClient({
-          launchBrowserImpl,
-          createOptimizedPageImpl,
-        })
+    const jobs = []
+    const seenJobIds = new Set()
+    let paginationStart = 0
 
-        searchJobPostings ||= browserClient.searchJobPostings
-        fetchJobDetail ||= browserClient.fetchJobDetail
-      }
+    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+      const searchPayload = await searchJobPostings(buildSearchRequestPayload(paginationStart))
+      const postings = extractSearchPostings(searchPayload)
+      if (!postings.length) break
 
-      const jobs = []
-      const seenJobIds = new Set()
-      let paginationStart = 0
+      for (const posting of postings) {
+        const listing = normalizeSearchPosting(posting)
+        if (!listing?.jobId || seenJobIds.has(listing.jobId)) continue
+        seenJobIds.add(listing.jobId)
 
-      for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-        const searchPayload = await searchJobPostings(buildSearchRequestPayload(paginationStart))
-        const postings = extractSearchPostings(searchPayload)
-        if (!postings.length) break
-
-        for (const posting of postings) {
-          const listing = normalizeSearchPosting(posting)
-          if (!listing?.jobId || seenJobIds.has(listing.jobId)) continue
-          seenJobIds.add(listing.jobId)
-
-          let detail = listing
-          try {
-            const detailPayload = await fetchJobDetail(listing.jobId)
-            detail = {
-              ...detail,
-              ...normalizeJobDetail(detailPayload, listing),
-            }
-          } catch {
-            detail = {
-              ...listing,
-            }
+        let detail = listing
+        try {
+          const detailPayload = await fetchJobDetail(listing.jobId)
+          detail = {
+            ...detail,
+            ...normalizeJobDetail(detailPayload, listing),
           }
-
-          jobs.push({
-            title: detail.title,
-            company: COMPANY_NAME,
-            department: detail.department,
-            location: detail.location,
-            city: detail.city,
-            jobId: detail.jobId,
-            requisitionId: detail.requisitionId,
-            sourceUrl: detail.sourceUrl,
-            applyUrl: detail.applyUrl,
-            employmentType: detail.employmentType,
-            experienceRequired: detail.experienceRequired,
-            minimumQualification: detail.minimumQualification,
-            preferredQualification: detail.preferredQualification,
-            requiredSkills: detail.requiredSkills,
-            postingDate: detail.postingDate,
-            closingDate: detail.closingDate,
-            jobDescription: detail.jobDescription,
-            source: SOURCE,
-            link: detail.applyUrl || detail.sourceUrl,
-            scrapedAt: now(),
-          })
-
-          if (jobs.length >= maxJobs) return jobs
+        } catch {
+          detail = {
+            ...listing,
+          }
         }
 
-        const totalCount = getTotalCount(searchPayload)
-        const pageSize = postings.length || DEFAULT_PAGE_SIZE
-        paginationStart += pageSize
+        jobs.push({
+          title: detail.title,
+          company: COMPANY_NAME,
+          department: detail.department,
+          location: detail.location,
+          city: detail.city,
+          jobId: detail.jobId,
+          requisitionId: detail.requisitionId,
+          sourceUrl: detail.sourceUrl,
+          applyUrl: detail.applyUrl,
+          employmentType: detail.employmentType,
+          experienceRequired: detail.experienceRequired,
+          minimumQualification: detail.minimumQualification,
+          preferredQualification: detail.preferredQualification,
+          requiredSkills: detail.requiredSkills,
+          postingDate: detail.postingDate,
+          closingDate: detail.closingDate,
+          jobDescription: detail.jobDescription,
+          source: SOURCE,
+          link: detail.applyUrl || detail.sourceUrl,
+          scrapedAt: now(),
+        })
 
-        if (pageSize < DEFAULT_PAGE_SIZE) break
-        if (totalCount && paginationStart >= totalCount) break
+        if (jobs.length >= maxJobs) return jobs
       }
 
-      return jobs
-    } finally {
-      if (browserClient) {
-        await browserClient.close()
-      }
+      const totalCount = getTotalCount(searchPayload)
+      const pageSize = postings.length || DEFAULT_PAGE_SIZE
+      paginationStart += pageSize
+
+      if (pageSize < DEFAULT_PAGE_SIZE) break
+      if (totalCount && paginationStart >= totalCount) break
     }
+
+    return jobs
   },
 })
 

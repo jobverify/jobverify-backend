@@ -161,6 +161,23 @@ const verifiedAug32026HomepageHtml = `
 </html>
 `
 
+const verifiedAug72026HomepageHtml = `
+<!doctype html>
+<html lang=en-US>
+  <head>
+    <title>AI-Driven Cloud, Data &amp; Enterprise Platforms Engineering Services</title>
+    <link rel=canonical href=https://65.0.158.166/ >
+    <meta property="og:site_name" content="NexTurn">
+  </head>
+  <body>
+    <nav>
+      <a class="nav-link" href=https://nexturn.com/careers>Careers</a>
+    </nav>
+    <footer>info@nexturn.com | careers@nexturn.com | &copy;2026 NexTurn | All Rights Reserved</footer>
+  </body>
+</html>
+`
+
 const verifiedAug32026CareersHtml = `
 <!doctype html>
 <html lang=en-US>
@@ -325,6 +342,7 @@ test('NexTurn helpers validate the official homepage, careers shell, job cards, 
   assert.equal(nexturn.COMPANY, 'NexTurn')
   assert.equal(nexturn.HOMEPAGE_URL, 'https://nexturn.com/')
   assert.equal(nexturn.CAREERS_URL, 'https://nexturn.com/careers/')
+  assert.equal(nexturn.VERIFIED_ON, '2026-08-07')
   assert.equal(nexturn.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(nexturn.hasOfficialHomepageSignal('<html><title>Placeholder</title></html>'), false)
   assert.equal(nexturn.hasOfficialCareersSignal(officialCareersHtml), true)
@@ -516,16 +534,17 @@ test('NexTurn fails closed when the homepage, careers page, or job detail surfac
   )
 })
 
-test('NexTurn accepts the verified August 3, 2026 first-party surface drift', async () => {
+test('NexTurn accepts the verified Friday, August 7, 2026 homepage canonical drift', async () => {
   const nexturn = await loadNexTurnModule()
 
   assert.equal(nexturn.hasOfficialHomepageSignal(verifiedAug32026HomepageHtml), true)
+  assert.equal(nexturn.hasOfficialHomepageSignal(verifiedAug72026HomepageHtml), true)
   assert.equal(nexturn.hasOfficialCareersSignal(verifiedAug32026CareersHtml), true)
   assert.equal(nexturn.hasOfficialJobDetailSignal(verifiedAug32026DetailHtml), true)
 
   const jobs = await nexturn.createNexTurnScraper().run({
     fetchText: async (url) => {
-      if (url === nexturn.HOMEPAGE_URL) return verifiedAug32026HomepageHtml
+      if (url === nexturn.HOMEPAGE_URL) return verifiedAug72026HomepageHtml
       if (url === nexturn.CAREERS_URL) return verifiedAug32026CareersHtml
       if (url === 'https://nexturn.com/job/staff-full-stack-engineer/') {
         return verifiedAug32026DetailHtml

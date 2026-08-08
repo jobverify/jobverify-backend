@@ -9,44 +9,27 @@ const loadModule = async () => {
   }
 }
 
-test('Qlik falls back to a browser-backed loader when Node fetch times out', async () => {
+test('Qlik surfaces a 403 from the Eightfold API instead of recovering through a browser', async () => {
   const qlik = await loadModule()
+  const originalFetch = globalThis.fetch
 
-  assert.equal(typeof qlik.loadWithBrowserFallback, 'function')
-
-  const result = await qlik.loadWithBrowserFallback({
-    primaryLoad: async () => {
-      throw new TypeError('fetch failed | Connect Timeout Error')
-    },
-    fallbackLoad: async (error) => ({
-      data: { positions: [], count: 0 },
-      recoveredFrom: String(error),
-    }),
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 403,
+    headers: new Headers(),
   })
 
-  assert.deepEqual(result, {
-    data: { positions: [], count: 0 },
-    recoveredFrom: 'TypeError: fetch failed | Connect Timeout Error',
-  })
-})
-
-test('Qlik falls back to a browser-backed loader when the search API returns 403', async () => {
-  const qlik = await loadModule()
-
-  const result = await qlik.loadWithBrowserFallback({
-    primaryLoad: async () => {
-      throw new Error('HTTP 403 for https://careerhub.qlik.com/api/pcsx/search?domain=qlik.com')
-    },
-    fallbackLoad: async (error) => ({
-      data: { positions: [], count: 0 },
-      recoveredFrom: String(error),
-    }),
-  })
-
-  assert.deepEqual(result, {
-    data: { positions: [], count: 0 },
-    recoveredFrom: 'Error: HTTP 403 for https://careerhub.qlik.com/api/pcsx/search?domain=qlik.com',
-  })
+  try {
+    await assert.rejects(
+      qlik.defaultFetchJson('https://careerhub.qlik.com/api/pcsx/search?domain=qlik.com', {
+        attempts: 1,
+        baseDelayMs: 0,
+      }),
+      /HTTP 403 for https:\/\/careerhub\.qlik\.com\/api\/pcsx\/search\?domain=qlik\.com/,
+    )
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('Qlik skips malformed India-filtered positions and keeps valid jobs', async () => {

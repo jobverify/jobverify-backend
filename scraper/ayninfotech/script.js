@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'ayninfotech'
 export const COMPANY = 'AYN InfoTech'
-export const VERIFIED_ON = '2026-07-17'
+export const VERIFIED_ON = '2026-08-07'
 export const HOMEPAGE_URL = 'https://www.ayninfotech.com/'
 export const CHECKED_ROUTE_URLS = [
   'https://www.ayninfotech.com/careers',
@@ -54,8 +54,12 @@ export const hasCompromisedHomepageSignal = (html = '') => {
   const hasVerifiedCompromisedHostSignal = normalized.includes('powered by team')
     || rawHtml.includes('bigskyworldview')
     || rawHtml.includes('view.bigskyworldview.org')
+  const hasCurrentBigSkySignal = rawHtml.includes('big sky worldview forum | billings, mt')
+    && rawHtml.includes('traditional, orthodox approach based upon the bible')
+    && rawHtml.includes('https://www.bigskyworldview.org')
 
-  return hasSlotBaitCopy && hasVerifiedCompromisedHostSignal
+  return (hasSlotBaitCopy && hasVerifiedCompromisedHostSignal)
+    || hasCurrentBigSkySignal
 }
 
 const redirectsOutsideOfficialDomain = (url) => {

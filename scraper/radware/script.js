@@ -1,5 +1,3 @@
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
-
 export const CAREERS_URL = 'https://www.radware.com/careers/'
 export const RADWARE_TALEO_JOBLIST_URL = 'https://radware.taleo.net/careersection/ex/joblist.ftl'
 
@@ -149,56 +147,10 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-const getRenderedListings = async () => {
-  const browser = await launchBrowser()
-
-  try {
-    const page = await createOptimizedPage(browser)
-    await page.goto(RADWARE_TALEO_JOBLIST_URL, { waitUntil: 'networkidle2', timeout: 60000 })
-    await page.waitForSelector('[id="requisitionListInterface.listRequisition"] tbody tr.ftlrow', { timeout: 30000 })
-
-    const totalPages = await page.evaluate(() => {
-      const total = Number(document.querySelector('input[name="listRequisition.nbElements"]')?.value || '0')
-      const pageSize = Number(document.querySelector('input[name="listRequisition.size"]')?.value || '25')
-      return Math.max(1, Math.ceil(total / Math.max(pageSize, 1)))
-    })
-
-    const listings = []
-    const seenJobIds = new Set()
-
-    for (let currentPage = 1; currentPage <= totalPages; currentPage += 1) {
-      if (currentPage > 1) {
-        const pagerSelector = `a[id="requisitionListInterface.pagerDivID1822.P${currentPage}"]`
-        await page.waitForSelector(pagerSelector, { timeout: 15000 })
-        await page.click(pagerSelector)
-        await page.waitForFunction(
-          (pageNumber) => document.querySelector('input[name="rlPager.currentPage"]')?.value === String(pageNumber),
-          { timeout: 30000 },
-          currentPage,
-        )
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      }
-
-      const pageListings = extractSearchResults(await page.content())
-      for (const listing of pageListings) {
-        if (!listing.title || !listing.jobId || seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-        listings.push(listing)
-      }
-    }
-
-    return listings
-  } finally {
-    await browser.close()
-  }
-}
-
 export const createRadwareScraper = (options = {}) => ({
   async run() {
     const fetchText = options.fetchText || defaultFetchText
-    const listings = options.fetchText
-      ? extractSearchResults(await fetchText(RADWARE_TALEO_JOBLIST_URL))
-      : await getRenderedListings()
+    const listings = extractSearchResults(await fetchText(RADWARE_TALEO_JOBLIST_URL))
     const maxJobs = Number.isInteger(options.maxJobs) ? options.maxJobs : null
     const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
     const scrapedAt = (options.now || (() => new Date().toISOString()))()

@@ -7,7 +7,7 @@ import { buildScrapers, getScraperCatalog } from '../../scraper-support/provider
 
 const SOURCE = 'primesoftenterprise'
 const COMPANY = 'Primesoft Enterprise'
-const CAREERS_URL = 'https://primesoft.net/careers/'
+const CAREERS_URL = 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs'
 
 test('Primesoft Enterprise is registered as a Darwinbox-backed first-party careers scraper without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
@@ -17,6 +17,7 @@ test('Primesoft Enterprise is registered as a Darwinbox-backed first-party caree
   assert.equal(provider.companyName, COMPANY)
   assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.equal(provider.homepageUrl, 'https://primesoft.net/')
+  assert.equal(provider.legacyCareersPageUrl, 'https://primesoft.net/careers/')
   assert.equal(provider.officialCareersHandoffUrl, 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs')
   assert.equal(provider.publicAllJobsUrl, 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs')
   assert.equal(provider.darwinboxOrigin, 'https://primesoft.darwinbox.in')
@@ -26,15 +27,15 @@ test('Primesoft Enterprise is registered as a Darwinbox-backed first-party caree
   assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter',
+    'verified-homepage-careers-handoff+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'primesoft.net')
-  assert.equal(provider.verifiedOn, '2026-08-04')
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/primesoft\.net\/careers\//i)
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/primesoft\.net\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/primesoft\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/allJobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /15 India openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /16 India openings/i)
   assert.match(provider.modulePath, /primesoftenterprise[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

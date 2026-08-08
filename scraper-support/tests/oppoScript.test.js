@@ -213,6 +213,7 @@ test('Oppo extraction keeps only India-located records from both public feeds an
       postingDate: '2026-07-17',
       closingDate: null,
       jobDescription: 'Own the India partner channel.\n\nStrong India market experience.',
+      publicExperienceChecked: true,
       remoteStatus: null,
     },
   ])
@@ -238,6 +239,7 @@ test('Oppo extraction keeps only India-located records from both public feeds an
       postingDate: '2026-07-17',
       closingDate: null,
       jobDescription: 'Build partner tooling for India.\n\nStrong CS basics.',
+      publicExperienceChecked: true,
       remoteStatus: null,
     },
   ])
@@ -278,6 +280,7 @@ test('run validates the verified official Oppo shells, paginates both public fee
   assert.equal(jobs[0].source, 'oppo')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, '2026-07-17T00:00:00.000Z')
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
   assert.deepEqual(
     jobs.map((job) => job.title),
     ['India Sales Engineer', 'India Intern', 'India Graduate Engineer'],

@@ -3,161 +3,141 @@ import test from 'node:test'
 
 const loadModule = async () => import('../../scraper/industrybuying/script.js')
 
-const kekaBootstrapHtml = `
+const homepageHtml = `
 <!DOCTYPE html>
 <html>
-  <head>
-    <script>
-      window.isCareersPage = true;
-    </script>
-  </head>
   <body>
-    <script>
-      fetch('/ats/documents/e3038951-eb0d-4a7c-86f2-ae81cdef2d70/careerportal/da655cd526254c25868607ec6d7ba738.html')
-        .then(response => response.text())
-    </script>
+    <footer>
+      <a href="https://jobs.industrybuying.com/" title="Careers">Careers</a>
+    </footer>
   </body>
 </html>
 `
 
-const embeddedCareersHtml = `
+const jobsSiteHtml = `
 <!DOCTYPE html>
 <html>
   <head>
-    <script>
-      window.khConfig = {
-        identifier: 'e3038951-eb0d-4a7c-86f2-ae81cdef2d70',
-        domain: 'https://industrybuying.keka.com/careers/',
-        targetContainer: '#khembedjobs'
-      }
-    </script>
-    <script src="https://industrybuying.keka.com/careers/api/embedjobs/js/e3038951-eb0d-4a7c-86f2-ae81cdef2d70" defer></script>
+    <title>Careers at IndustryBuying</title>
+    <meta name="description" content="Build India's largest B2B marketplace with us.">
   </head>
   <body>
-    <h1>Be a part of building something great</h1>
-    <h2>Open positions</h2>
-    <a>Browse all jobs</a>
+    <a href="/jobs">View all roles</a>
   </body>
 </html>
 `
 
-const portalInfo = {
-  name: 'IndustryBuying',
-  shortName: 'IndustryBuying',
-  careersPortalDomain: 'industrybuying.keka.com',
+const orgsPayload = {
+  data: [
+    {
+      id: 'org_1782819232623',
+      name: 'industrybuying',
+      slug: 'industrybuying',
+    },
+  ],
 }
 
-test('IndustryBuying resolves the verified Keka bootstrap, embedded config, and portal identity', async () => {
+const jobsPayload = {
+  data: [
+    {
+      id: 'job_1783396889733',
+      orgId: 'org_1782819232623',
+      requisitionId: 'req_1783395887484',
+      title: 'Category Group Head',
+      department: 'Category',
+      location: 'New Delhi',
+      jobType: 'Full Time',
+      openings: 1,
+      createdAt: '2026-07-07',
+    },
+    {
+      id: 'job_other_org',
+      orgId: 'org_other',
+      title: 'Ignore Me',
+      location: 'Austin',
+    },
+  ],
+  departments: ['Category'],
+  total: 1,
+}
+
+const jobDetailPayload = {
+  data: {
+    id: 'req_1783395887484',
+    orgId: 'org_1782819232623',
+    requisitionId: 'req_1783395887484',
+    title: 'Category Group Head',
+    department: 'Category',
+    location: 'New Delhi',
+    jobType: 'Full Time',
+    status: 'Active',
+    openings: 1,
+    createdAt: '2026-07-07',
+    reqId: 'REQ-009',
+    jobDescription: '<p>Lead category growth and profitability.</p>',
+    experience: '8-15',
+    salaryMin: 17,
+    salaryMax: 22,
+    skillsRequired: ['P&L Management', 'Vendor Management'],
+  },
+}
+
+test('IndustryBuying resolves the verified first-party handoff, jobs site, and careers API identity', async () => {
   const industryBuying = await loadModule()
 
   assert.equal(industryBuying.SOURCE, 'industrybuying')
   assert.equal(industryBuying.COMPANY, 'IndustryBuying')
-  assert.equal(industryBuying.KEKA_CAREER_PAGE_URL, 'https://industrybuying.keka.com/careers/')
-  assert.equal(industryBuying.EXPECTED_IDENTIFIER, 'e3038951-eb0d-4a7c-86f2-ae81cdef2d70')
-  assert.equal(industryBuying.EXPECTED_KEKA_DOMAIN, 'https://industrybuying.keka.com/careers/')
-  assert.equal(industryBuying.EXPECTED_PORTAL_NAME, 'IndustryBuying')
-
-  assert.equal(
-    industryBuying.extractEmbeddedCareersDocumentPath(kekaBootstrapHtml),
-    '/ats/documents/e3038951-eb0d-4a7c-86f2-ae81cdef2d70/careerportal/da655cd526254c25868607ec6d7ba738.html',
-  )
-  assert.deepEqual(industryBuying.extractCareerConfig(embeddedCareersHtml), {
-    identifier: 'e3038951-eb0d-4a7c-86f2-ae81cdef2d70',
-    domain: 'https://industrybuying.keka.com/careers/',
-    portalName: 'default',
+  assert.equal(industryBuying.HOMEPAGE_URL, 'https://www.industrybuying.com/')
+  assert.equal(industryBuying.HOMEPAGE_HANDOFF_URL, 'https://www.industrybuying.com/')
+  assert.equal(industryBuying.JOBS_SITE_URL, 'https://jobs.industrybuying.com/')
+  assert.equal(industryBuying.JOBS_PAGE_URL, 'https://jobs.industrybuying.com/jobs')
+  assert.equal(industryBuying.CAREER_API_BASE_URL, 'https://careers.industrybuying.com/api/career')
+  assert.equal(industryBuying.CAREER_ORGS_API_URL, 'https://careers.industrybuying.com/api/career/orgs')
+  assert.equal(industryBuying.CAREER_JOBS_API_URL, 'https://careers.industrybuying.com/api/career/jobs')
+  assert.equal(industryBuying.EXPECTED_ORG_ID, 'org_1782819232623')
+  assert.equal(industryBuying.EXPECTED_ORG_SLUG, 'industrybuying')
+  assert.equal(industryBuying.VERIFIED_ON, '2026-08-07')
+  assert.equal(industryBuying.extractCareersLink(homepageHtml), 'https://jobs.industrybuying.com/')
+  assert.equal(industryBuying.hasOfficialJobsSiteSignal(jobsSiteHtml), true)
+  assert.deepEqual(industryBuying.extractExpectedOrg(orgsPayload), {
+    id: 'org_1782819232623',
+    name: 'industrybuying',
+    slug: 'industrybuying',
   })
-  assert.equal(
-    industryBuying.buildCareerPortalInfoUrl(industryBuying.extractCareerConfig(embeddedCareersHtml)),
-    'https://industrybuying.keka.com/careers/api/organization/default/careerportalinfo',
-  )
-  assert.equal(
-    industryBuying.buildActiveJobsUrl(industryBuying.extractCareerConfig(embeddedCareersHtml)),
-    'https://industrybuying.keka.com/careers/api/embedjobs/default/active/e3038951-eb0d-4a7c-86f2-ae81cdef2d70',
-  )
-  assert.equal(industryBuying.hasExpectedPortalIdentity(portalInfo), true)
 })
 
-test('IndustryBuying maps only India jobs from the verified Keka payload into the shared contract', async () => {
+test('IndustryBuying maps the verified first-party jobs summary and detail payload into the shared contract', async () => {
   const industryBuying = await loadModule()
 
-  const jobs = industryBuying.extractSearchResults(
-    [
-      {
-        id: 137282,
-        title: 'Senior Manager Finance',
-        description: '<div>Own receivables, taxation, reporting, and financial analysis.</div>',
-        departmentName: 'Finance & Accounts',
-        jobLocations: [
-          {
-            name: 'New Delhi',
-            city: 'New Delhi',
-            state: 'Delhi',
-            countryCode: 'IN',
-            countryName: 'India',
-          },
-        ],
-        jobType: 2,
-        experience: '6-8 Years',
-        publishedOn: '2026-04-28T05:15:21.413Z',
-        skillNames: [
-          'Account Reconciliation',
-          'receivable',
-          'taxation',
-          'Financial Reporting',
-          'Financial Analysis',
-        ],
-      },
-      {
-        id: 999999,
-        title: 'Global Sales Lead',
-        departmentName: 'Sales',
-        jobLocations: [
-          {
-            name: 'Austin',
-            city: 'Austin',
-            state: 'TX',
-            countryCode: 'US',
-            countryName: 'United States',
-          },
-        ],
-        jobType: 2,
-      },
-    ],
-    {
-      domain: 'https://industrybuying.keka.com/careers/',
-    },
-  )
+  const summaries = industryBuying.extractJobSummaries(jobsPayload, { orgId: 'org_1782819232623' })
+  assert.equal(summaries.length, 1)
 
-  assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
-    title: 'Senior Manager Finance',
+  const detail = industryBuying.extractJobDetail(jobDetailPayload)
+  const job = industryBuying.mapJob({ summary: summaries[0], detail })
+
+  assert.deepEqual(job, {
+    title: 'Category Group Head',
     company: 'IndustryBuying',
-    department: 'Finance & Accounts',
-    location: 'New Delhi, Delhi, India',
+    department: 'Category',
+    location: 'New Delhi, India',
     city: 'New Delhi',
     country: 'India',
-    jobId: '137282',
-    requisitionId: '137282',
-    sourceUrl: 'https://industrybuying.keka.com/careers/jobdetails/137282',
-    applyUrl: 'https://industrybuying.keka.com/careers/applyjob/137282',
+    jobId: 'job_1783396889733',
+    requisitionId: 'req_1783395887484',
+    sourceUrl: 'https://jobs.industrybuying.com/jobs/detail?id=job_1783396889733',
+    applyUrl: 'https://jobs.industrybuying.com/jobs/apply?id=job_1783396889733',
     employmentType: 'Full Time',
-    experienceRequired: '6-8 Years',
+    experienceRequired: '8-15',
     minimumQualification: null,
     preferredQualification: null,
-    requiredSkills: [
-      'Account Reconciliation',
-      'receivable',
-      'taxation',
-      'Financial Reporting',
-      'Financial Analysis',
-    ],
-    postingDate: '2026-04-28',
+    requiredSkills: ['P&L Management', 'Vendor Management'],
+    postingDate: '2026-07-07',
     closingDate: null,
-    jobDescription: 'Own receivables, taxation, reporting, and financial analysis.',
+    jobDescription: 'Lead category growth and profitability.',
   })
 })
 
-test('IndustryBuying run validates the pinned Keka surface and decorates jobs', async () => {
+test('IndustryBuying run validates the pinned first-party careers surface and decorates jobs', async () => {
   const industryBuying = await loadModule()
 
   const requestedTexts = []
@@ -167,107 +147,77 @@ test('IndustryBuying run validates the pinned Keka surface and decorates jobs', 
   const jobs = await scraper.run({
     fetchText: async (url) => {
       requestedTexts.push(url)
-      if (url === industryBuying.KEKA_CAREER_PAGE_URL) return kekaBootstrapHtml
-      if (url === 'https://industrybuying.keka.com/ats/documents/e3038951-eb0d-4a7c-86f2-ae81cdef2d70/careerportal/da655cd526254c25868607ec6d7ba738.html') {
-        return embeddedCareersHtml
-      }
-
+      if (url === industryBuying.HOMEPAGE_HANDOFF_URL) return homepageHtml
+      if (url === industryBuying.JOBS_SITE_URL) return jobsSiteHtml
       throw new Error(`Unexpected text URL: ${url}`)
     },
     fetchJson: async (url) => {
       requestedJson.push(url)
-      if (url === 'https://industrybuying.keka.com/careers/api/organization/default/careerportalinfo') {
-        return portalInfo
+      if (url === industryBuying.CAREER_ORGS_API_URL) return orgsPayload
+      if (url === `${industryBuying.CAREER_JOBS_API_URL}?orgId=${industryBuying.EXPECTED_ORG_ID}`) {
+        return jobsPayload
       }
-      if (url === 'https://industrybuying.keka.com/careers/api/embedjobs/default/active/e3038951-eb0d-4a7c-86f2-ae81cdef2d70') {
-        return [
-          {
-            id: 71810,
-            title: 'Category Group Head - June',
-            description: '<div>Lead category strategy and margin growth.</div>',
-            departmentName: 'Category',
-            jobLocations: [
-              {
-                name: 'New Delhi',
-                city: 'New Delhi',
-                state: 'Delhi',
-                countryCode: 'IN',
-                countryName: 'India',
-              },
-            ],
-            jobType: 2,
-            experience: '8-15 years',
-            publishedOn: '2026-06-15T13:20:24.880Z',
-            skillNames: ['Category Management'],
-          },
-        ]
+      if (url === `${industryBuying.CAREER_JOBS_API_URL}?id=job_1783396889733`) {
+        return jobDetailPayload
       }
-
       throw new Error(`Unexpected JSON URL: ${url}`)
     },
   })
 
   assert.deepEqual(requestedTexts, [
-    industryBuying.KEKA_CAREER_PAGE_URL,
-    'https://industrybuying.keka.com/ats/documents/e3038951-eb0d-4a7c-86f2-ae81cdef2d70/careerportal/da655cd526254c25868607ec6d7ba738.html',
+    industryBuying.HOMEPAGE_HANDOFF_URL,
+    industryBuying.JOBS_SITE_URL,
   ])
   assert.deepEqual(requestedJson, [
-    'https://industrybuying.keka.com/careers/api/organization/default/careerportalinfo',
-    'https://industrybuying.keka.com/careers/api/embedjobs/default/active/e3038951-eb0d-4a7c-86f2-ae81cdef2d70',
+    industryBuying.CAREER_ORGS_API_URL,
+    `${industryBuying.CAREER_JOBS_API_URL}?orgId=${industryBuying.EXPECTED_ORG_ID}`,
+    `${industryBuying.CAREER_JOBS_API_URL}?id=job_1783396889733`,
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'industrybuying')
   assert.equal(jobs[0].company, 'IndustryBuying')
-  assert.equal(jobs[0].link, 'https://industrybuying.keka.com/careers/applyjob/71810')
+  assert.equal(jobs[0].link, 'https://jobs.industrybuying.com/jobs/apply?id=job_1783396889733')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })
 
-test('IndustryBuying fails closed when the verified Keka bootstrap, config, or portal identity changes', async () => {
+test('IndustryBuying fails closed when the verified handoff, jobs site, or careers API identity changes', async () => {
   const industryBuying = await loadModule()
 
   await assert.rejects(
     industryBuying.createIndustryBuyingScraper().run({
       fetchText: async (url) => {
-        if (url === industryBuying.KEKA_CAREER_PAGE_URL) return '<html><body>No embedded careers doc</body></html>'
-        return embeddedCareersHtml
+        if (url === industryBuying.HOMEPAGE_HANDOFF_URL) return '<html><body>No careers link</body></html>'
+        return jobsSiteHtml
       },
-      fetchJson: async () => portalInfo,
+      fetchJson: async () => orgsPayload,
     }),
-    /embedded careers document/i,
+    /careers handoff/i,
   )
 
   await assert.rejects(
     industryBuying.createIndustryBuyingScraper().run({
       fetchText: async (url) => {
-        if (url === industryBuying.KEKA_CAREER_PAGE_URL) return kekaBootstrapHtml
-        return embeddedCareersHtml.replace(
-          'e3038951-eb0d-4a7c-86f2-ae81cdef2d70',
-          '11111111-2222-3333-4444-555555555555',
-        )
+        if (url === industryBuying.HOMEPAGE_HANDOFF_URL) return homepageHtml
+        return '<html><title>Unexpected</title></html>'
       },
-      fetchJson: async (url) => {
-        if (url === 'https://industrybuying.keka.com/careers/api/organization/default/careerportalinfo') {
-          return portalInfo
-        }
-        return []
-      },
+      fetchJson: async () => orgsPayload,
     }),
-    /verified Keka job surface changed materially/i,
+    /careers site no longer matches/i,
   )
 
   await assert.rejects(
     industryBuying.createIndustryBuyingScraper().run({
       fetchText: async (url) => {
-        if (url === industryBuying.KEKA_CAREER_PAGE_URL) return kekaBootstrapHtml
-        return embeddedCareersHtml
+        if (url === industryBuying.HOMEPAGE_HANDOFF_URL) return homepageHtml
+        return jobsSiteHtml
       },
       fetchJson: async (url) => {
-        if (url === 'https://industrybuying.keka.com/careers/api/organization/default/careerportalinfo') {
-          return { ...portalInfo, name: 'Different Company' }
+        if (url === industryBuying.CAREER_ORGS_API_URL) {
+          return { data: [{ id: 'org_other', name: 'different', slug: 'different' }] }
         }
-        return []
+        return jobsPayload
       },
     }),
-    /exact company identity/i,
+    /org identity/i,
   )
 })

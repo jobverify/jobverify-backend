@@ -10,6 +10,8 @@ export const HOMEPAGE_URL = 'https://www.aut-man.com/'
 export const CAREERS_URL = 'https://www.aut-man.com/careers'
 export const APPLY_EMAIL = 'shini@aut-man.com'
 export const ATS_PLATFORM = 'official-company-careers'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://www.aut-man.com/ was Autman Robotics\' live first-party homepage titled "Autman Robotics — Physical AI for Adaptive Manufacturing" and that its current marketing shell still exposed a Careers section on the homepage. Also verified on Friday, August 7, 2026 that https://www.aut-man.com/careers remained the public first-party careers page with the CAREER OPPORTUNITIES heading and a publicly visible Robotics Engineer role in Birmingham, UK exposing a mailto apply link to shini@aut-man.com. The scraper therefore keeps trusting the live first-party careers route for public openings while using the rebuilt homepage only as the official brand and careers-surface handoff.'
 
 const APPLY_MAILTO_PATTERN =
   /<a\b[^>]*href=["'](mailto:shini@aut-man\.com\?subject=[^"']+)["'][^>]*>[\s\S]*?Apply Now[\s\S]*?<\/a>/gi
@@ -37,6 +39,7 @@ const normalizeWhitespace = (value) => {
   const normalized = decodeHtml(value)
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2014|\u2013/g, '-')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -129,18 +132,22 @@ const decodeSubjectTitle = (applyUrl) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(stripTagsToLines(page).join(' ')) || ''
-  const hasCareersLink = /href=["'](?:https:\/\/www\.aut-man\.com)?\/careers["']/i.test(page)
-  const hasApplyMailtoLink = /href=["']mailto:shini@aut-man\.com\?subject=[^"']+["']/i.test(page)
+  const text = normalizeWhitespace(stripTagsToLines(page).join(' '))?.toLowerCase() || ''
+  const hasCareersLink = /href=["']#careers["']/i.test(page)
+    || /href=["'](?:https:\/\/www\.aut-man\.com)?\/careers["']/i.test(page)
   const hasCanonicalHomepageUrl =
-    /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.aut-man\.com\/?["'][^>]*>/i.test(page)
-    || /<link[^>]+href=["']https:\/\/www\.aut-man\.com\/?["'][^>]+rel=["']canonical["'][^>]*>/i.test(page)
+    /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/aut-man\.com\/?["'][^>]*>/i.test(page)
+    || /<link[^>]+href=["']https:\/\/aut-man\.com\/?["'][^>]+rel=["']canonical["'][^>]*>/i.test(page)
 
-  return /<title>\s*Home\s*\|\s*Autman Robotics\s*<\/title>/i.test(page)
+  return /<title>\s*Autman Robotics\s*[—-]\s*Physical AI for Adaptive Manufacturing\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+content=["'][^"']*Autman Robotics builds Physical AI that makes any industrial robot adaptive/i.test(page)
+    && /<meta[^>]+property=["']og:title["'][^>]+content=["']Autman Robotics\s*[—-]\s*Physical AI for Adaptive Manufacturing["']/i.test(page)
     && hasCanonicalHomepageUrl
     && hasCareersLink
-    && /AUTMAN Robotics/i.test(text)
-    && hasApplyMailtoLink
+    && text.includes("the future of automation doesn't follow scripts.")
+    && text.includes('making every robot adaptable and every product limitless.')
+    && text.includes('join the mission')
+    && text.includes('drop your cv')
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -159,7 +166,7 @@ export const hasOfficialCareersSignal = (html) => {
 export const extractApplyRoleLinks = (html) => {
   const seen = new Set()
 
-  return [...String(html ?? '').matchAll(/href=["'](mailto:shini@aut-man\.com\?subject=[^"']+)["']/gi)]
+  return [...String(html ?? '').matchAll(APPLY_MAILTO_PATTERN)]
     .map((match) => {
       const applyUrl = normalizeWhitespace(match[1])
       const title = decodeSubjectTitle(applyUrl)

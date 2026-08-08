@@ -2,16 +2,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-const SURFACE_TIMEOUT_MS = 120000
-let browserUtilsPromise = null
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
-  return browserUtilsPromise
-}
+const SURFACE_TIMEOUT_MS = 30000
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
 export const CAREERS_URL = 'https://www.mobikwik.com/careers'
 export const SOURCE = 'mobikwik'
@@ -90,64 +86,75 @@ export const hasDarwinboxHandoffSignal = (surface = {}) =>
 export const hasExternalJobsHandoffSignal = (surface = {}) =>
   hasDarwinboxHandoffSignal(surface)
 
-const defaultLoadRenderedCareersSurface = async (targetUrl = CAREERS_URL) => {
-  const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-  const browser = await launchBrowser()
+const parseCareersSurface = (html = '') => ({
+  title: normalizeWhitespace(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]),
+  text: normalizeWhitespace(html),
+  anchors: [...String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+    .map((match) => ({
+      href: normalizeWhitespace(match[1]),
+      text: normalizeWhitespace(match[2]),
+    })),
+})
 
-  try {
-    const page = await createOptimizedPage(browser)
-    await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: SURFACE_TIMEOUT_MS })
-    const title = await page.title()
-    const text = await page.evaluate(() => document.body?.innerText || '')
-    const anchors = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('a')).map((anchor) => ({
-        href: anchor.href,
-        text: (anchor.textContent || '').trim(),
-      })),
-    )
+const createNativeCareersSurfaceLoader = (fetchImpl) => async (targetUrl = CAREERS_URL) => {
+  const html = await fetchTextWithRetry(targetUrl, {
+    fetchImpl,
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
+    },
+    label: 'mobikwik-official-careers',
+    timeoutMs: SURFACE_TIMEOUT_MS,
+  })
 
-    return { title, text, anchors }
-  } finally {
-    await browser.close()
-  }
+  return parseCareersSurface(html)
 }
 
-const createConfiguredDarwinboxScraper = () => createDarwinboxScraper({
+const createConfiguredDarwinboxScraper = (fetchImpl) => createDarwinboxScraper({
   companyName: COMPANY_NAME,
   source: SOURCE,
   companyId: COMPANY_ID,
   origin: DARWINBOX_ORIGIN,
+  fetchImpl,
 })
 
 export const createMobiKwikScraper = ({
   now = () => new Date().toISOString(),
-  loadRenderedCareersSurface = defaultLoadRenderedCareersSurface,
-  darwinboxScraper = createConfiguredDarwinboxScraper(),
-} = {}) => ({
-  ...darwinboxScraper,
-  async run({
-    loadRenderedCareersSurface: overrideLoadRenderedCareersSurface = loadRenderedCareersSurface,
-    ...darwinboxOptions
-  } = {}) {
-    const careersSurface = await overrideLoadRenderedCareersSurface(CAREERS_URL)
+  fetchImpl = fetch,
+  loadRenderedCareersSurface,
+  darwinboxScraper,
+} = {}) => {
+  const careersSurfaceLoader = loadRenderedCareersSurface
+    || createNativeCareersSurfaceLoader(fetchImpl)
+  const configuredDarwinboxScraper = darwinboxScraper
+    || createConfiguredDarwinboxScraper(fetchImpl)
 
-    if (!hasOfficialCareersSignal(careersSurface)) {
-      throw new Error('MobiKwik official careers surface changed; refusing to assume the verified Darwinbox jobs surface still applies')
-    }
+  return {
+    ...configuredDarwinboxScraper,
+    async run({
+      loadRenderedCareersSurface: overrideLoadRenderedCareersSurface = careersSurfaceLoader,
+      ...darwinboxOptions
+    } = {}) {
+      const careersSurface = await overrideLoadRenderedCareersSurface(CAREERS_URL)
 
-    if (!sameUrl(extractDarwinboxHandoffUrl(careersSurface), OFFICIAL_CAREERS_HANDOFF_URL)) {
-      throw new Error('MobiKwik careers handoff changed; refusing to assume the verified Darwinbox jobs routes still apply')
-    }
+      if (!hasOfficialCareersSignal(careersSurface)) {
+        throw new Error('MobiKwik official careers surface changed; refusing to assume the verified Darwinbox jobs surface still applies')
+      }
 
-    const jobs = await darwinboxScraper.run(darwinboxOptions)
-    const scrapedAt = now()
+      if (!sameUrl(extractDarwinboxHandoffUrl(careersSurface), OFFICIAL_CAREERS_HANDOFF_URL)) {
+        throw new Error('MobiKwik careers handoff changed; refusing to assume the verified Darwinbox jobs routes still apply')
+      }
 
-    return jobs.map((job) => ({
-      ...job,
-      scrapedAt,
-    }))
-  },
-})
+      const jobs = await configuredDarwinboxScraper.run(darwinboxOptions)
+      const scrapedAt = now()
+
+      return jobs.map((job) => ({
+        ...job,
+        scrapedAt,
+      }))
+    },
+  }
+}
 
 export const run = async (options = {}) => createMobiKwikScraper().run(options)
 

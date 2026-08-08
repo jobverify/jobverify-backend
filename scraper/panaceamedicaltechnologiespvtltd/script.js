@@ -7,9 +7,11 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'panaceamedicaltechnologiespvtltd'
 export const COMPANY = 'Panacea Medical Technologies Pvt. Ltd.'
+export const VERIFIED_ON = '2026-08-07'
 export const HOMEPAGE_URL = 'https://www.panaceamedical.in/'
-export const CAREERS_URL = 'https://www.panaceamedical.in/join-us/'
-export const APPLY_URL = 'mailto:careers@panaceamedical.com'
+export const JOIN_US_URL = 'https://www.panaceamedical.in/join-us/'
+export const CAREERS_URL = 'https://www.panaceamedical.in/careers/'
+export const APPLY_BASE_URL = 'https://www.panaceamedical.in/apply/'
 export const COMPANY_DOMAIN = 'panaceamedical.in'
 
 const USER_AGENT =
@@ -17,20 +19,22 @@ const USER_AGENT =
 
 const HOMEPAGE_ERROR =
   'Panacea Medical Technologies official homepage no longer matches the verified first-party surface'
+const JOIN_US_ERROR =
+  'Panacea Medical Technologies Join Us page no longer matches the verified first-party careers handoff'
 const CAREERS_ERROR =
-  'Panacea Medical Technologies Join Us page no longer matches the verified first-party job cards surface'
+  'Panacea Medical Technologies careers board no longer matches the verified first-party job board surface'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
+  .replace(/&amp;|&#038;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
   .replace(/&ndash;|&#8211;|&#x2013;/gi, '-')
   .replace(/&mdash;|&#8212;|&#x2014;/gi, '-')
-  .replace(/[â€“â€”âˆ’]/g, '-')
-  .replace(/[Ã¢â‚¬â€œÃ¢â‚¬â€]/g, '-')
+  .replace(/ÔÇô|â€“/g, '-')
+  .replace(/â€™/g, "'")
 
 const normalizeWhitespace = (value) => {
   const normalized = decodeHtmlEntities(String(value ?? ''))
@@ -50,77 +54,122 @@ const stripTags = (value) => normalizeWhitespace(
 
 const htmlToLines = (html) => decodeHtmlEntities(
   String(html ?? '')
-    .replace(/<li[^>]*>/gi, '\n')
-    .replace(/<\/li>/gi, '\n')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|section|h[1-6]|a|span|strong|em|ul|ol)>/gi, '\n')
-    .replace(/<(p|div|section|h[1-6]|a|span|strong|em|ul|ol)\b[^>]*>/gi, '\n')
+    .replace(/<\/(p|div|section|article|li|h[1-6]|a|span|strong|em|ul|ol)>/gi, '\n')
+    .replace(/<(p|div|section|article|li|h[1-6]|a|span|strong|em|ul|ol)\b[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' '),
 )
   .replace(/\r/g, '')
   .split('\n')
-  .map((line) => line.replace(/\s+/g, ' ').trim())
+  .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
-const slugify = (value) => normalizeWhitespace(value)
-  ?.toLowerCase()
-  .replace(/['"]/g, '')
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '') || null
+const dedupeLines = (lines = []) => {
+  const unique = []
 
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  for (const line of lines) {
+    if (line && unique[unique.length - 1] !== line) {
+      unique.push(line)
+    }
+  }
 
-const extractField = (lines, label) => {
-  const pattern = new RegExp(`^${escapeRegex(label)}\\s*:\\s*(.+)$`, 'i')
-  const line = lines.find((entry) => pattern.test(entry))
-  return line ? normalizeWhitespace(line.replace(pattern, '$1')) : null
+  return unique
 }
 
-const extractTitleParts = (value) => {
-  const normalized = normalizeWhitespace(value)
-  const match = normalized?.match(/^([A-Z0-9_-]+)\s*:\s*(.+)$/i)
+const toTitleKey = (value) => normalizeWhitespace(value)
+  ?.toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim() || null
 
-  return {
-    code: normalizeWhitespace(match?.[1] || null),
-    title: normalizeWhitespace(match?.[2] || normalized),
+const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  try {
+    return new URL(normalized, baseUrl).toString()
+  } catch {
+    return null
   }
+}
+
+const extractHrefFromTag = (tag = '', baseUrl = CAREERS_URL) =>
+  toAbsoluteUrl(tag.match(/\bhref=["']([^"']+)["']/i)?.[1] || null, baseUrl)
+
+const extractMetaContent = (html, itemprop) =>
+  normalizeWhitespace(
+    String(html ?? '').match(
+      new RegExp(`<meta\\b[^>]*itemprop=["']${itemprop}["'][^>]*content=["']([^"']+)["']`, 'i'),
+    )?.[1] || null,
+  )
+
+const extractApplyJobId = (url) => {
+  try {
+    return normalizeWhitespace(new URL(url).searchParams.get('job_id'))
+  } catch {
+    return null
+  }
+}
+
+const extractSectionLines = (lines, startPattern, endPatterns) => {
+  const startIndex = lines.findIndex((line) => startPattern.test(line))
+  if (startIndex === -1) return []
+
+  let endIndex = lines.length
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    if (endPatterns.some((pattern) => pattern.test(lines[index]))) {
+      endIndex = index
+      break
+    }
+  }
+
+  return dedupeLines(lines.slice(startIndex + 1, endIndex))
 }
 
 const parseLocation = (value) => {
   const location = normalizeWhitespace(value)
   if (!location) {
-    return { location: null, city: null, state: null }
+    return { location: 'India', city: null, state: null, locations: ['India'] }
   }
 
-  if (/all over india/i.test(location) || /\/|,/.test(location)) {
-    return { location, city: null, state: null }
+  if (
+    /^(?:all(?:\s+over)?\s+india|north location)$/i.test(location)
+    || /^\d+\s*(?:-|to)\s*\d+\s*years?$/i.test(location)
+  ) {
+    return { location: 'India', city: null, state: null, locations: ['India', location] }
+  }
+
+  if (/\/|,/.test(location)) {
+    return { location, city: null, state: null, locations: [location] }
   }
 
   if (/\bMalur\b/i.test(location)) {
-    return { location, city: 'Malur', state: null }
+    return { location, city: 'Malur', state: 'Karnataka', locations: [location] }
   }
 
-  if (/\bPune\b/i.test(location)) {
-    return { location, city: 'Pune', state: null }
+  if (/\bBengaluru\b/i.test(location)) {
+    return { location, city: 'Bengaluru', state: 'Karnataka', locations: [location] }
   }
 
   if (/\bBangalore\b/i.test(location)) {
-    return { location, city: 'Bangalore', state: null }
+    return { location, city: 'Bangalore', state: 'Karnataka', locations: [location] }
   }
 
-  return { location, city: null, state: null }
-}
+  if (/\bHyderabad\b/i.test(location)) {
+    return { location, city: 'Hyderabad', state: 'Telangana', locations: [location] }
+  }
 
-const extractDescriptionLines = (lines) => {
-  const startIndex = lines.findIndex((line) =>
-    /^Job Function,\s*Key Responsibilities and Duties\s*:?$/i.test(line),
-  )
-  if (startIndex === -1) return []
-  return lines.slice(startIndex + 1).map(normalizeWhitespace).filter(Boolean)
-}
+  if (/\bJaipur\b/i.test(location)) {
+    return { location, city: 'Jaipur', state: 'Rajasthan', locations: [location] }
+  }
 
-const ACCORDION_SECTION_PATTERN =
-  /<div class="eael-accordion-list">\s*<div\b([^>]*)class="[^"]*\beael-accordion-header\b[^"]*"[^>]*>[\s\S]*?<span class="eael-accordion-tab-title">\s*([^<]+?)\s*<\/span>[\s\S]*?<\/div>\s*<div\b[^>]*class="[^"]*\beael-accordion-content\b[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/gi
+  if (/\bPune\b/i.test(location)) {
+    return { location, city: 'Pune', state: 'Maharashtra', locations: [location] }
+  }
+
+  return { location, city: null, state: null, locations: [location] }
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -137,70 +186,166 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /Panacea Medical Technologies Pvt\. Ltd\./i.test(text)
     && /Defeating Cancer/i.test(text)
-    && /Life at PMT/i.test(text)
+    && /Join Us/i.test(text)
     && /href=["']https:\/\/www\.panaceamedical\.in\/join-us\/["']/i.test(page)
     && /All Rights Reserved/i.test(text)
 }
 
-export const hasOfficialCareersSignal = (html) => {
+export const hasOfficialJoinUsSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Join Us\s*(?:&#8211;|-)\s*Panacea\s*<\/title>/i.test(page)
-    && /Kindly send an email mentioning your Name, Contact Number, Job Position along with your resume attached to/i.test(text)
-    && /mailto:careers@panaceamedical\.com/i.test(page)
-    && /eael-accordion-list/i.test(page)
-    && /PMT_\d{4}-\d{2}-\d{3}\s*:/i.test(text)
+  return /<title>\s*Join Us[^<]*Panacea Medical Technologies Careers\s*<\/title>/i.test(page)
+    && /Engineering Medicine\./i.test(text)
+    && /Changing Lives\./i.test(text)
+    && /Browse All Open Positions/i.test(text)
+    && /href=["']https:\/\/www\.panaceamedical\.in\/careers\/["']/i.test(page)
 }
 
-export const extractPublicJobs = (html) => {
-  if (!hasOfficialCareersSignal(html)) {
-    throw new Error(CAREERS_ERROR)
+export const hasOfficialJobsBoardSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripTags(page)
+
+  return /<title>\s*Jobs[^<]*Panacea Careers\s*<\/title>/i.test(page)
+    && /\bopen positions found\b/i.test(text)
+    && /Sort by:/i.test(text)
+    && /pmt-job-card/i.test(page)
+}
+
+export const extractJobsListPageUrls = (html) => {
+  const urls = new Set([CAREERS_URL])
+
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']*\/careers\/page\/\d+\/)["']/gi)) {
+    const url = toAbsoluteUrl(match[1], CAREERS_URL)
+    if (url) {
+      urls.add(url)
+    }
   }
 
-  const jobs = [...String(html ?? '').matchAll(ACCORDION_SECTION_PATTERN)].map((match) => {
-    const anchorId = normalizeWhitespace(
-      match[1]?.match(/\bid=["']([^"']+)["']/i)?.[1] || null,
-    ) || slugify(match[2])
-    const titleParts = extractTitleParts(match[2])
-    const lines = htmlToLines(match[3])
-    const contentJobCode = extractField(lines, 'Job Code')
-    const jobId = titleParts.code || contentJobCode
-    const locationFields = parseLocation(extractField(lines, 'Location'))
-    const descriptionLines = extractDescriptionLines(lines)
+  return [...urls]
+}
 
-    if (!titleParts.title || !jobId) {
-      throw new Error(CAREERS_ERROR)
-    }
+export const extractJobSummaries = (html) => {
+  const cards = [...String(html ?? '').matchAll(
+    /<article\b[^>]*class=["'][^"']*pmt-job-card[^"']*["'][^>]*>[\s\S]*?<\/article>/gi,
+  )]
+
+  return cards.map((match) => {
+    const card = match[0]
+    const titleMatch = card.match(
+      /<a\b([^>]*)class=["'][^"']*\bpmt-job-card__title\b[^"']*["']([^>]*)>([\s\S]*?)<\/a>/i,
+    )
+    const titleTag = titleMatch ? `${titleMatch[0]}` : ''
+    const applyMatch = card.match(
+      /<a\b([^>]*)aria-label=["'][^"']*Apply for[^"']*["']([^>]*)>([\s\S]*?)<\/a>/i,
+    )
+    const applyTag = applyMatch ? `${applyMatch[0]}` : ''
+    const badgeMatches = [...card.matchAll(
+      /<span\b[^>]*class=["'][^"']*pmt-badge[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi,
+    )]
+    const metaMatches = [...card.matchAll(
+      /<span\b[^>]*class=["'][^"']*pmt-job-card__meta-item[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi,
+    )]
 
     return {
-      title: titleParts.title,
-      company: COMPANY,
-      department: null,
-      location: locationFields.location,
-      city: locationFields.city,
-      state: locationFields.state,
-      country: 'India',
-      jobId,
-      requisitionId: jobId,
-      sourceUrl: anchorId ? `${CAREERS_URL}#${anchorId}` : CAREERS_URL,
-      applyUrl: APPLY_URL,
-      employmentType: null,
-      experienceRequired: extractField(lines, 'Experience'),
-      minimumQualification: extractField(lines, 'Qualification'),
-      preferredQualification: null,
-      requiredSkills: descriptionLines,
-      postingDate: null,
-      closingDate: null,
-      jobDescription: normalizeWhitespace(descriptionLines.join(' ')),
+      listingJobId: normalizeWhitespace(card.match(/\bid=["']job-(\d+)["']/i)?.[1] || null),
+      title: stripTags(titleMatch?.[3] || ''),
+      detailUrl: extractHrefFromTag(titleTag, CAREERS_URL),
+      applyUrl: extractHrefFromTag(applyTag, CAREERS_URL),
+      employmentType: stripTags(badgeMatches[0]?.[1] || '')
+        || normalizeWhitespace(extractMetaContent(card, 'employmentType')?.replace(/_/g, ' ')),
+      workMode: stripTags(badgeMatches[1]?.[1] || ''),
+      location: stripTags(metaMatches[0]?.[1] || ''),
+      department: stripTags(metaMatches[1]?.[1] || ''),
+      experienceRequired: stripTags(metaMatches[2]?.[1] || ''),
+      postingRelative: stripTags(
+        card.match(/<span\b[^>]*class=["'][^"']*pmt-job-card__days[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] || '',
+      ),
+      postingDate: extractMetaContent(card, 'datePosted'),
+      closingDate: extractMetaContent(card, 'validThrough'),
     }
-  })
+  }).filter((job) => job.title && job.detailUrl && job.applyUrl)
+}
 
-  if (jobs.length === 0) {
-    throw new Error(CAREERS_ERROR)
+export const extractJobDetail = (html) => {
+  const lines = htmlToLines(html)
+  if (!lines.includes('Job Overview')) {
+    return {}
   }
 
-  return jobs
+  const detailTitle = normalizeWhitespace(
+    String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || null,
+  )?.replace(/\s*[-]\s*Panacea Careers\s*$/i, '')
+
+  const aboutLines = extractSectionLines(lines, /^About the Role$/i, [
+    /^Key Responsibilities$/i,
+    /^Qualifications & Requirements$/i,
+    /^Benefits & Perks$/i,
+    /^Share This Job$/i,
+    /^Ready to Apply\?$/i,
+    /^Job Overview$/i,
+  ])
+  const responsibilityLines = extractSectionLines(lines, /^Key Responsibilities$/i, [
+    /^Qualifications & Requirements$/i,
+    /^Benefits & Perks$/i,
+    /^Share This Job$/i,
+    /^Ready to Apply\?$/i,
+    /^Job Overview$/i,
+  ])
+  const qualificationLines = extractSectionLines(lines, /^Qualifications & Requirements$/i, [
+    /^Benefits & Perks$/i,
+    /^Share This Job$/i,
+    /^Ready to Apply\?$/i,
+    /^Job Overview$/i,
+  ])
+
+  const overviewStart = lines.indexOf('Job Overview')
+  const overviewEnd = lines.findIndex((line, index) =>
+    index > overviewStart && /^Need Help\?$|^Similar Positions$|^Fraud Alert$|^Connect with Panacea$/i.test(line))
+  const overviewLines = overviewStart === -1
+    ? []
+    : lines.slice(overviewStart + 1, overviewEnd === -1 ? lines.length : overviewEnd)
+
+  const fields = {}
+  const labels = new Set([
+    'Job Code / Ref',
+    'Open Positions',
+    'Posted',
+    'Deadline',
+    'Employment Type',
+    'Department',
+    'Location',
+    'Experience',
+    'Education',
+    'Work Mode',
+  ])
+
+  for (let index = 0; index < overviewLines.length - 1; index += 1) {
+    const label = overviewLines[index]
+    if (!labels.has(label)) continue
+    fields[label] = overviewLines[index + 1]
+    index += 1
+  }
+
+  return {
+    detailTitle,
+    jobId: normalizeWhitespace(fields['Job Code / Ref']),
+    openPositions: normalizeWhitespace(fields['Open Positions']),
+    postingRelative: normalizeWhitespace(fields.Posted),
+    closingStatus: normalizeWhitespace(fields.Deadline),
+    employmentType: normalizeWhitespace(fields['Employment Type']),
+    department: normalizeWhitespace(fields.Department),
+    location: normalizeWhitespace(fields.Location),
+    experienceRequired: normalizeWhitespace(fields.Experience),
+    minimumQualification: normalizeWhitespace(fields.Education) || qualificationLines[0] || null,
+    workMode: normalizeWhitespace(fields['Work Mode']),
+    requiredSkills: qualificationLines.length > 0 ? qualificationLines : responsibilityLines,
+    jobDescription: normalizeWhitespace([
+      ...aboutLines,
+      ...responsibilityLines,
+      ...qualificationLines,
+    ].join(' ')),
+  }
 }
 
 export const createPanaceaMedicalTechnologiesScraper = ({
@@ -212,18 +357,86 @@ export const createPanaceaMedicalTechnologiesScraper = ({
       throw new Error(HOMEPAGE_ERROR)
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
+    const joinUsHtml = await fetchText(JOIN_US_URL)
+    if (!hasOfficialJoinUsSignal(joinUsHtml)) {
+      throw new Error(JOIN_US_ERROR)
+    }
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: (overrideNow || now)(),
-      companyCareerPage: CAREERS_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: 'official-company-careers',
-    }))
+    const firstJobsPageHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialJobsBoardSignal(firstJobsPageHtml)) {
+      throw new Error(CAREERS_ERROR)
+    }
+
+    const jobPageUrls = extractJobsListPageUrls(firstJobsPageHtml)
+    const summaries = []
+
+    for (const url of jobPageUrls) {
+      const pageHtml = url === CAREERS_URL ? firstJobsPageHtml : await fetchText(url)
+      if (!hasOfficialJobsBoardSignal(pageHtml)) {
+        throw new Error(CAREERS_ERROR)
+      }
+      summaries.push(...extractJobSummaries(pageHtml))
+    }
+
+    const uniqueSummaries = [...new Map(
+      summaries.map((job) => [job.applyUrl || job.listingJobId || job.detailUrl, job]),
+    ).values()]
+
+    if (uniqueSummaries.length === 0) {
+      throw new Error(CAREERS_ERROR)
+    }
+
+    const jobs = []
+
+    for (const summary of uniqueSummaries) {
+      let detail = {}
+
+      if (summary.detailUrl) {
+        const detailHtml = await fetchText(summary.detailUrl)
+        detail = extractJobDetail(detailHtml)
+        if (detail.detailTitle && toTitleKey(detail.detailTitle) !== toTitleKey(summary.title)) {
+          detail = {}
+        }
+      }
+
+      const locationFields = parseLocation(detail.location || summary.location)
+      const jobId = detail.jobId || extractApplyJobId(summary.applyUrl) || summary.listingJobId || summary.detailUrl
+
+      jobs.push({
+        title: summary.title,
+        company: COMPANY,
+        department: detail.department || summary.department || null,
+        location: locationFields.location,
+        locations: locationFields.locations,
+        city: locationFields.city,
+        state: locationFields.state,
+        country: 'India',
+        jobId,
+        requisitionId: jobId,
+        sourceUrl: summary.detailUrl,
+        applyUrl: summary.applyUrl,
+        employmentType: detail.employmentType || summary.employmentType || null,
+        experienceRequired: detail.experienceRequired || summary.experienceRequired || null,
+        minimumQualification: detail.minimumQualification || null,
+        preferredQualification: null,
+        requiredSkills: detail.requiredSkills || [],
+        postingDate: summary.postingDate,
+        closingDate: summary.closingDate,
+        jobDescription: detail.jobDescription || normalizeWhitespace([
+          summary.department,
+          summary.location,
+          summary.experienceRequired,
+        ].filter(Boolean).join(' - ')),
+        source: SOURCE,
+        link: summary.applyUrl || summary.detailUrl,
+        scrapedAt: (overrideNow || now)(),
+        companyCareerPage: CAREERS_URL,
+        companyDomain: COMPANY_DOMAIN,
+        atsPlatform: 'official-first-party-careers-portal',
+      })
+    }
+
+    return jobs
   },
 })
 

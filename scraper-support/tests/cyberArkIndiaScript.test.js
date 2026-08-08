@@ -15,6 +15,28 @@ const verifiedCyberArkCareersHtml = `
 </html>
 `
 
+const redirectedCyberArkCareersHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Idira | The Identity Security Platform - Palo Alto Networks</title>
+    <meta
+      name="description"
+      content="Protect your organization with Idira. Modernize identity governance, automate access reviews, and secure every identity across your hybrid cloud environment."
+    />
+    <link rel="canonical" href="https://www.paloaltonetworks.com/idira" />
+  </head>
+  <body>
+    <h1>Idira</h1>
+    <p>Identity Security Platform</p>
+    <p>Protect your organization with Idira.</p>
+    <footer>
+      <a href="https://jobs.paloaltonetworks.com/en/" target="_blank" rel="noopener">Careers</a>
+    </footer>
+  </body>
+</html>
+`
+
 const verifiedPaloAltoIndiaHtml = `
 <!doctype html>
 <html>
@@ -102,6 +124,53 @@ test('CyberArk India sentinel returns [] only while the verified official handof
           url,
           headers: {},
           html: verifiedCyberArkCareersHtml,
+        }
+      }
+
+      if (url === cyberArkIndia.PALO_ALTO_INDIA_URL) {
+        return {
+          status: 200,
+          url,
+          headers: {},
+          html: verifiedPaloAltoIndiaHtml,
+        }
+      }
+
+      if (url === cyberArkIndia.PALO_ALTO_INDIA_SEARCH_URL) {
+        return {
+          status: 200,
+          url,
+          headers: {},
+          html: verifiedPaloAltoIndiaSearchHtml,
+        }
+      }
+
+      throw new Error(`Unexpected CyberArk India URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    cyberArkIndia.CYBERARK_CAREERS_URL,
+    cyberArkIndia.PALO_ALTO_INDIA_URL,
+    cyberArkIndia.PALO_ALTO_INDIA_SEARCH_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('CyberArk India sentinel accepts the current Friday, August 7, 2026 redirect-based CyberArk-to-Palo-Alto handoff', async () => {
+  const cyberArkIndia = await loadCyberArkIndiaModule()
+  const requestedUrls = []
+
+  const jobs = await cyberArkIndia.createCyberArkIndiaScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === cyberArkIndia.CYBERARK_CAREERS_URL) {
+        return {
+          status: 200,
+          url: 'https://www.paloaltonetworks.com/idira',
+          headers: {},
+          html: redirectedCyberArkCareersHtml,
         }
       }
 

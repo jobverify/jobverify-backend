@@ -6,6 +6,9 @@ const officialHomepageHtml = `
 <html lang="en">
   <head>
     <title>FlintLab Sirius - Device Infrastructure PaaS</title>
+    <meta name="description" content="FlintLab is an AI-powered device infrastructure company. The Sirius Platform is an AI-powered device infrastructure PaaS, unifying real and virtual devices with cloud-native execution, predictive observability, and seamless integration via UI, CLI, and APIs - enabling enterprises to orchestrate and manage devices at scale with low latency and minimal operational overhead." />
+    <link rel="canonical" href="https://flintlab.io" />
+    <meta property="og:title" content="FlintLab Sirius - AI-Powered Device Infrastructure PaaS" />
   </head>
   <body>
     <a href="#main-content">Skip to main content</a>
@@ -20,11 +23,25 @@ const officialHomepageHtml = `
       </nav>
     </header>
     <main id="main-content">
-      <a href="/request-demo">Request a Demo</a>
-      <h1>Begin Your Journey Towards Precision Testing</h1>
-      <p>Login to continue</p>
-      <p>FlintLab powers efficient, collaborative testing across devices.</p>
-      <p>What's New</p>
+      <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "FlintLab",
+          "legalName": "AI NEXUS FLINT LAB INDIA PRIVATE LIMITED.",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "engage@flintlab.io"
+          }
+        }
+      </script>
+      <h1>Ship Mobile &amp; Web Apps</h1>
+      <h2>With Real Confidence, At Scale</h2>
+      <p>FlintLab unifies real devices, emulators, and cloud-native execution in one platform, backed by a developer advocacy team that stress-tests your releases before your users do.</p>
+      <p>Platform, People, and Compliance: All Covered</p>
+      <h3>Sirius: One Platform for Every Device</h3>
+      <p>FlintLab's AI-powered device infrastructure PaaS unifies real and virtual devices with cloud-native execution, one-click runs, and predictive observability, all reachable through UI, CLI, and APIs.</p>
+      <button>Ask FlintBot</button>
       <a href="https://www.linkedin.com/company/flintlab-inc">LinkedIn</a>
     </main>
   </body>
@@ -67,6 +84,10 @@ test('FlintLab scraper constants stay pinned to the verified official homepage, 
   assert.equal(flintLab.COMPANY, 'FlintLab')
   assert.equal(flintLab.HOMEPAGE_URL, 'https://flintlab.io/')
   assert.equal(flintLab.SITEMAP_URL, 'https://flintlab.io/sitemap.xml')
+  assert.equal(flintLab.VERIFIED_ON, '2026-08-07')
+  assert.match(flintLab.VERIFIED_SURFACE_SUMMARY, /Friday, August 7, 2026/i)
+  assert.match(flintLab.VERIFIED_SURFACE_SUMMARY, /Ship Mobile & Web Apps/i)
+  assert.match(flintLab.VERIFIED_SURFACE_SUMMARY, /Ask FlintBot/i)
   assert.deepEqual(flintLab.NO_PUBLIC_CAREERS_ROUTE_URLS, [
     'https://flintlab.io/careers',
     'https://flintlab.io/careers/',

@@ -7,6 +7,8 @@ export const SOURCE = 'laukika'
 export const COMPANY = 'Laukika Consultancy Solutions Private Limited'
 export const HOMEPAGE_URL = 'https://www.laukika.com/'
 export const CAREERS_URL = 'https://www.laukika.com/know-our-brand/'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://www.laukika.com/ remained Laukika Consultancy Solutions Private Limited\'s first-party homepage, that https://www.laukika.com/know-our-brand/ remained its same-domain brand and hiring page with a resume handoff but no public job listings, and that the verified surface still exposed no trustworthy public jobs feed.'
 export const CAREERS_ROUTE_URLS = [
   'https://www.laukika.com/careers',
   'https://www.laukika.com/career',
@@ -26,10 +28,11 @@ const HOMEPAGE_META_SIGNALS = [
   /<meta property="og:site_name" content="Laukika Consultancy Solutions"\s*\/?>/i,
 ]
 
-const HOMEPAGE_BODY_SIGNALS = [
-  'BEST DIGITAL MARKETING AGENCY IN BANGALORE & MYSURU',
-  'Laukika Consultancy Solutions has been a valuable partner in supporting our digital growth journey.',
-  'Know Our Brand',
+const HOMEPAGE_BODY_SIGNAL_PATTERNS = [
+  /(?:BEST DIGITAL MARKETING AGENCY IN BANGALORE & MYSURU|TURN STORIES TO MEASURABLE SUCCESS)/i,
+  /\bDIGITAL MARKETING AGENCY IN BANGALORE\b/i,
+  /Laukika Consultancy Solutions has been a valuable partner in supporting our digital growth journey\./i,
+  /\bKnow Our Brand\b/i,
 ]
 
 const CAREERS_PAGE_SIGNALS = [
@@ -118,7 +121,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml)
 
   return HOMEPAGE_META_SIGNALS.every((pattern) => pattern.test(rawHtml))
-    && HOMEPAGE_BODY_SIGNALS.every((signal) => normalized.includes(signal))
+    && HOMEPAGE_BODY_SIGNAL_PATTERNS.every((pattern) => pattern.test(normalized))
     && /<title>\s*Best Digital Marketing Agency in Bangalore \| Laukika\s*<\/title>/i.test(rawHtml)
     && /<meta property="og:url" content="https:\/\/www\.laukika\.com\/"\s*\/?>/i.test(rawHtml)
 }

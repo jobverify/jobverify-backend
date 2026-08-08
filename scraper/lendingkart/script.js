@@ -13,14 +13,14 @@ export const SOURCE = 'lendingkart'
 export const COMPANY_NAME = 'Lendingkart'
 export const COMPANY = COMPANY_NAME
 export const COMPANY_ID = 'main'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-07'
 export const OFFICIAL_SITE_URL = 'https://www.lendingkart.com/'
 export const OFFICIAL_CAREERS_URL = 'https://www.lendingkart.com/careers/'
 export const PUBLIC_JOBS_URL = 'https://www.lendingkart.com/job/'
 export const DARWINBOX_ORIGIN = 'https://hrlendingkart.darwinbox.in'
 export const PUBLIC_ALL_JOBS_URL = `${DARWINBOX_ORIGIN}/ms/candidatev2/${COMPANY_ID}/careers/allJobs`
 export const VERIFIED_JOB_DETAIL_EXAMPLE_URL =
-  `${DARWINBOX_ORIGIN}/ms/candidatev2/${COMPANY_ID}/careers/jobDetails/a6a2696757d426?from=all`
+  `${DARWINBOX_ORIGIN}/ms/candidatev2/${COMPANY_ID}/careers/jobDetails/a6a7318ee583fe?from=all`
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -50,14 +50,26 @@ const normalizeComparableUrl = (value) => {
 
 const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
 
+const isOfficialDarwinboxJobDetailUrl = (value = '') => {
+  try {
+    const url = new URL(String(value ?? ''))
+    return sameUrl(url.origin, DARWINBOX_ORIGIN)
+      && new RegExp(
+        `^/ms/candidatev2/${COMPANY_ID}/careers/jobDetails/[a-z0-9]+$`,
+        'i',
+      ).test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
 export const extractDarwinboxJobUrl = (html = '') => {
   for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const href = match[1]
     const text = normalizeWhitespace(match[2])
 
-    if (!/hrlendingkart\.darwinbox\.in/i.test(href)) continue
+    if (!isOfficialDarwinboxJobDetailUrl(href)) continue
     if (!/apply now|apply|view details|job openings|careers|jobs/i.test(text)) continue
-    if (!/\/ms\/candidatev2\/main\/careers\/jobDetails\//i.test(href)) continue
 
     try {
       return new URL(href, PUBLIC_JOBS_URL).toString().replace(/\/+$/g, '')
@@ -84,7 +96,7 @@ export const hasPublicJobsPageSignal = (html = '') => {
     && /careers/i.test(text)
     && /explore job openings/i.test(text)
     && /apply now/i.test(text)
-    && sameUrl(extractDarwinboxJobUrl(html), VERIFIED_JOB_DETAIL_EXAMPLE_URL)
+    && Boolean(extractDarwinboxJobUrl(html))
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

@@ -2,7 +2,6 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { isBlockedInternalUrl, resolveBrowserExecutablePath } from '../../scraper-support/utils/browser.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -16,59 +15,16 @@ const NEXT_BUTTON_SELECTOR = '[aria-label="Button to select next week"]'
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-let puppeteerModulePromise
-
-const loadPuppeteer = async () => {
-  if (!puppeteerModulePromise) {
-    puppeteerModulePromise = import('puppeteer')
-  }
-
-  const { default: puppeteer } = await puppeteerModulePromise
-  return puppeteer
-}
-
 const launchMetaBrowser = async () => {
-  const puppeteer = await loadPuppeteer()
-  const args = [
-    '--disable-dev-shm-usage',
-    '--disable-gpu',
-    '--disable-extensions',
-    '--no-first-run',
-    '--no-default-browser-check',
-    '--js-flags="--max-old-space-size=256"',
-  ]
-
-  if (process.env.PUPPETEER_DISABLE_SANDBOX === 'true') {
-    args.push('--no-sandbox', '--disable-setuid-sandbox')
-  }
-
-  const executablePath = resolveBrowserExecutablePath()
-
-  return puppeteer.launch({
-    headless: true,
-    args,
-    protocolTimeout: 300000,
-    ...(executablePath ? { executablePath } : {}),
-  })
+  throw new Error(
+    '[meta] API-only migration required: no verified HTTP/API contract is available; browser automation is disabled.',
+  )
 }
 
-const createMetaPage = async (browser) => {
-  const page = await browser.newPage()
-  await page.setRequestInterception(true)
-  page.on('request', async (request) => {
-    if (await isBlockedInternalUrl(request.url())) {
-      await request.abort()
-      return
-    }
-
-    const type = request.resourceType()
-    if (['image', 'stylesheet', 'font', 'media'].includes(type)) {
-      await request.abort()
-    } else {
-      await request.continue()
-    }
-  })
-  return page
+const createMetaPage = async () => {
+  throw new Error(
+    '[meta] API-only migration required: no verified HTTP/API contract is available; browser automation is disabled.',
+  )
 }
 
 const decodeHtmlEntities = (value) => String(value ?? '')

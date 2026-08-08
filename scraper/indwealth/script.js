@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { INDWEALTH_CATALOG } from './catalog.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -22,9 +21,6 @@ export const LINKEDIN_PUBLIC_JOBS_URL = PROVIDER_METADATA.publicLinkedInJobsUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const BROWSER_SETTLE_TIME_MS = 12000
-const NETWORK_FALLBACK_ERROR_PATTERN =
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -124,15 +120,6 @@ const isVerifiedLinkedInCompanyPageUrl = (value) => {
     const url = new URL(value)
     return /(^|\.)linkedin\.com$/i.test(url.hostname)
       && /^\/company\/indmoney\/?$/i.test(url.pathname)
-  } catch {
-    return false
-  }
-}
-
-const isLinkedInUrl = (value) => {
-  try {
-    const hostname = new URL(value).hostname.replace(/^www\./i, '').toLowerCase()
-    return hostname === 'linkedin.com' || hostname === 'in.linkedin.com'
   } catch {
     return false
   }
@@ -329,13 +316,6 @@ export const hasCloudflareChallengePageSignal = (html = '') => {
     )
 }
 
-const shouldUseBrowserFallback = (page = {}) => (
-  page.status === 403 || page.status === 200
-) && hasCloudflareChallengePageSignal(page.html)
-
-const shouldUseBrowserFallbackForError = (error) =>
-  NETWORK_FALLBACK_ERROR_PATTERN.test(String(error?.message ?? error ?? ''))
-
 const shouldIgnoreLinkedInDetailError = (error) =>
   /HTTP 429\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
@@ -346,92 +326,34 @@ export const createIndwealthScraper = ({
   async run({
     fetchPage = defaultFetchPage,
     fetchText = defaultFetchText,
-    fetchBrowserPage,
     now = () => new Date().toISOString(),
   } = {}) {
-    let officialBrowserSession = null
-    let externalBrowserSession = null
-
-    const getOfficialBrowserSession = async () => {
-      if (!officialBrowserSession) {
-        officialBrowserSession = await createBrowserFetchSession({
-          userAgent: USER_AGENT,
-          settleTimeMs: BROWSER_SETTLE_TIME_MS,
-        })
-      }
-
-      return officialBrowserSession
-    }
-
-    const getExternalBrowserSession = async () => {
-      if (!externalBrowserSession) {
-        externalBrowserSession = await createBrowserFetchSession({
-          userAgent: USER_AGENT,
-        })
-      }
-
-      return externalBrowserSession
-    }
-
-    const browserPageFetcher = fetchBrowserPage || (async (url) => {
-      const session = await getOfficialBrowserSession()
-      return session.fetchPage(url)
-    })
-
-    const browserTextFetcher = async (url) => {
-      const session = await getExternalBrowserSession()
-      const page = await session.fetchPage(url)
-
-      if (![200, 304].includes(page.status)) {
-        throw new Error(`HTTP ${page.status} for ${url}`)
-      }
-
-      return page.html
-    }
-
-    const fetchPageWithFallback = async (url) => {
-      let page
-
+    const fetchApiOnlyPage = async (url) => {
       try {
-        page = await fetchPage(url)
-      } catch (error) {
-        if (!shouldUseBrowserFallbackForError(error)) {
-          throw error
+        const page = await fetchPage(url)
+        if (hasCloudflareChallengePageSignal(page.html)) {
+          throw new Error('Cloudflare challenge')
         }
-
-        return browserPageFetcher(url)
+        return page
+      } catch (error) {
+        throw new Error(`INDwealth API-only migration could not fetch ${url}: ${error.message}`)
       }
-
-      if (shouldUseBrowserFallback(page)) {
-        return browserPageFetcher(url)
-      }
-
-      return page
     }
 
-    const fetchTextWithBrowserFallback = async (url) => {
-      if (fetchText === defaultFetchText && isLinkedInUrl(url)) {
-        return browserTextFetcher(url)
-      }
-
+    const fetchApiOnlyText = async (url) => {
       try {
         return await fetchText(url)
       } catch (error) {
-        if (!shouldUseBrowserFallbackForError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
+        throw new Error(`INDwealth API-only migration could not fetch ${url}: ${error.message}`)
       }
     }
 
-    try {
-      const homepage = await fetchPageWithFallback(OFFICIAL_REDIRECT_SOURCE_URL)
+      const homepage = await fetchApiOnlyPage(OFFICIAL_REDIRECT_SOURCE_URL)
       if (homepage.status !== 200 || !hasVerifiedRedirectHomepageSignal(homepage)) {
         throw new Error('The official INDwealth redirect no longer matches the verified INDmoney homepage surface')
       }
 
-      const aboutPage = await fetchPageWithFallback(OFFICIAL_ABOUT_URL)
+      const aboutPage = await fetchApiOnlyPage(OFFICIAL_ABOUT_URL)
       if (aboutPage.status !== 200 || !hasVerifiedAboutPageSignal(aboutPage.html)) {
         throw new Error('The official INDmoney about page no longer matches the verified public surface')
       }
@@ -440,12 +362,12 @@ export const createIndwealthScraper = ({
         throw new Error('The official INDmoney about-page LinkedIn handoff changed materially')
       }
 
-      const linkedInCompanyPage = await fetchPageWithFallback(LINKEDIN_COMPANY_JOBS_URL)
+      const linkedInCompanyPage = await fetchApiOnlyPage(LINKEDIN_COMPANY_JOBS_URL)
       if (linkedInCompanyPage.status !== 200 || !hasVerifiedLinkedInCompanySignal(linkedInCompanyPage)) {
         throw new Error('The verified LinkedIn company page changed materially')
       }
 
-      const listingsHtml = await fetchTextWithBrowserFallback(LINKEDIN_PUBLIC_JOBS_URL)
+      const listingsHtml = await fetchApiOnlyText(LINKEDIN_PUBLIC_JOBS_URL)
       const listings = extractSearchResults(listingsHtml)
       if (!hasPublicLinkedInJobsSignal(listingsHtml) && listings.length === 0) {
         throw new Error('The public INDmoney LinkedIn jobs surface changed materially')
@@ -460,7 +382,7 @@ export const createIndwealthScraper = ({
 
         if (shouldFetchLinkedInDetails) {
           try {
-            detail = extractJobDetail(await fetchTextWithBrowserFallback(listing.sourceUrl))
+            detail = extractJobDetail(await fetchApiOnlyText(listing.sourceUrl))
           } catch (error) {
             if (!shouldIgnoreLinkedInDetailError(error)) {
               throw error
@@ -482,14 +404,6 @@ export const createIndwealthScraper = ({
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: now(),
       }))
-    } finally {
-      if (officialBrowserSession) {
-        await officialBrowserSession.close().catch(() => {})
-      }
-      if (externalBrowserSession) {
-        await externalBrowserSession.close().catch(() => {})
-      }
-    }
   },
 })
 

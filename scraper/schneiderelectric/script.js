@@ -2,7 +2,6 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { launchBrowser } from '../../scraper-support/utils/browser.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -128,35 +127,12 @@ export const normalizeJobListing = (item = {}) => {
   }
 }
 
-const createBrowserJsonFetcher = async () => {
-  const browser = await launchBrowser()
-  const page = await browser.newPage()
-
-  await page.goto(OFFICIAL_JOBS_URL, {
-    waitUntil: 'networkidle2',
-    timeout: NAVIGATION_TIMEOUT_MS,
+const defaultFetchJson = async (url) => {
+  const response = await fetch(url, {
+    headers: { Accept: 'application/json,text/plain,*/*' },
   })
-
-  return {
-    fetchJson: async (url) => page.evaluate(
-      async (targetUrl) => {
-        const response = await fetch(targetUrl, {
-          headers: {
-            Accept: 'application/json,text/plain,*/*',
-          },
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        return response.json()
-      },
-      url,
-    ),
-    close: async () => browser.close(),
-  }
+  if (!response.ok) throw new Error(`Schneider Electric jobs API returned HTTP ${response.status}`)
+  return response.json()
 }
 
 export const createSchneiderElectricScraper = ({
@@ -170,13 +146,8 @@ export const createSchneiderElectricScraper = ({
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : Number.POSITIVE_INFINITY,
     fetchJson,
   } = {}) => {
-    let browserContext = null
-
-    try {
-      if (!fetchJson) {
-        browserContext = await createBrowserJsonFetcher()
-        fetchJson = browserContext.fetchJson
-      }
+    {
+      fetchJson ||= defaultFetchJson
 
       const jobs = []
       const seenJobIds = new Set()
@@ -206,10 +177,6 @@ export const createSchneiderElectricScraper = ({
       }
 
       return jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
     }
   },
 })

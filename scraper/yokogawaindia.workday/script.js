@@ -9,7 +9,6 @@ import {
   shouldFetchWorkdayJobDetail,
 } from '../../scraper-support/myworkday/engine.js'
 import { extractWorkdayDetailLocations } from '../../scraper-support/myworkday/locationDetails.js'
-import { launchBrowser, createOptimizedPage } from '../../scraper-support/utils/browser.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -181,32 +180,7 @@ const defaultFetchJson = (url, body) => fetchJsonWithRetry(url, {
   label: 'yokogawaindia jobs api',
 })
 
-export const fetchRenderedOfficialCareersHtml = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-  settleDelayMs = 3000,
-} = {}) => {
-  let browser
-
-  try {
-    browser = await launchBrowserImpl()
-    const page = await createOptimizedPageImpl(browser)
-    await page.goto(CAREERS_URL, { waitUntil: 'networkidle2', timeout: 120000 })
-    if (settleDelayMs > 0) {
-      await new Promise((resolve) => setTimeout(resolve, settleDelayMs))
-    }
-    return await page.content()
-  } finally {
-    if (browser) await browser.close()
-  }
-}
-
-const defaultFetchText = async (url) => {
-  if (url === CAREERS_URL) {
-    return fetchRenderedOfficialCareersHtml()
-  }
-
-  return fetchTextWithRetry(url, {
+const defaultFetchText = async (url) => fetchTextWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -215,8 +189,7 @@ const defaultFetchText = async (url) => {
     baseDelayMs: 2000,
     timeoutMs: 20000,
     label: 'yokogawaindia detail',
-  })
-}
+})
 
 export const createYokogawaIndiaScraper = ({
   maxJobs = null,

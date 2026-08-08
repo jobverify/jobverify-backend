@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { launchBrowser, createOptimizedPage } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -167,45 +166,29 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createBrowserListingFetcher = async ({ pageSize = DEFAULT_PAGE_SIZE } = {}) => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  await page.goto(buildDarwinboxAllJobsUrl(), { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-
-  const fetchListingPage = async ({ page: pageNumber }) => page.evaluate(
-    async ({ targetCompanyId, targetPage, targetPageSize }) => {
-      const response = await fetch(`/ms/candidateapi/job/alljobs?companyId=${targetCompanyId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          companyId: targetCompanyId,
-          sort_option: 'new',
-          limit: targetPageSize,
-          page: targetPage,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      return response.json()
+const defaultFetchListingPage = async ({ page, pageSize, companyId }) => {
+  const url = new URL('/ms/candidateapi/job/alljobs', DARWINBOX_ORIGIN)
+  url.searchParams.set('companyId', companyId)
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'User-Agent': USER_AGENT,
     },
-    {
-      targetCompanyId: DARWINBOX_COMPANY_ID,
-      targetPage: pageNumber,
-      targetPageSize: pageSize,
-    },
-  )
+    body: JSON.stringify({
+      companyId,
+      sort_option: 'new',
+      limit: pageSize,
+      page,
+    }),
+  })
 
-  return {
-    fetchListingPage,
-    close: async () => browser.close(),
+  if (!response.ok) {
+    throw new Error(`RedBus Darwinbox jobs API returned HTTP ${response.status}`)
   }
+
+  return response.json()
 }
 
 export const createRedBusScraper = ({
@@ -240,13 +223,8 @@ export const createRedBusScraper = ({
       throw new Error('RedBus verified Darwinbox shell no longer matches the known public surface')
     }
 
-    let browserContext = null
-
-    try {
-      if (!fetchListingPage) {
-        browserContext = await createBrowserListingFetcher({ pageSize })
-        fetchListingPage = browserContext.fetchListingPage
-      }
+    {
+      fetchListingPage ||= defaultFetchListingPage
 
       const jobs = []
 
@@ -288,10 +266,6 @@ export const createRedBusScraper = ({
       }
 
       return jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
     }
   },
 })

@@ -192,6 +192,16 @@ const hasShowMoreButton = (page) => page.evaluate(
 
 const countApplyButtons = (page) => page.$$eval(APPLY_BUTTON_SELECTOR, (buttons) => buttons.length)
 
+const settlePopupTargetResult = (promise) => promise.then(
+  (target) => ({ target, error: null }),
+  (error) => ({ target: null, error }),
+)
+
+const isPopupTargetTimeoutError = (error) => (
+  /TimeoutError/i.test(String(error?.name || ''))
+  && /Timed out after waiting \d+ms/i.test(String(error?.message || ''))
+)
+
 const expandAllHrOneListings = async (page) => {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     if (!(await hasShowMoreButton(page))) return
@@ -262,7 +272,7 @@ const captureApplyUrls = async (page) => {
   const applyUrls = []
 
   for (const button of buttons) {
-    const targetPromise = browser.waitForTarget(
+    const targetResultPromise = settlePopupTargetResult(browser.waitForTarget(
       (target) => (
         !knownTargets.has(target)
         && target.opener() === page.target()
@@ -271,13 +281,28 @@ const captureApplyUrls = async (page) => {
       {
         timeout: 10000,
       },
-    )
+    ))
 
-    await page.bringToFront()
+    if (typeof page.bringToFront === 'function') {
+      await page.bringToFront()
+    }
     await button.click()
-    const target = await targetPromise
+    const { target, error } = await targetResultPromise
+    if (error) {
+      if (isPopupTargetTimeoutError(error)) {
+        throw new Error('Presidency University public HROne apply link popup timed out before a trusted URL became available')
+      }
+
+      throw error
+    }
+
+    const applyUrl = toTrustedApplyUrl(target?.url?.())
+    if (!applyUrl) {
+      throw new Error('Presidency University public HROne apply link popup no longer resolves to a trusted apply URL')
+    }
+
     knownTargets.add(target)
-    applyUrls.push(target.url())
+    applyUrls.push(applyUrl)
   }
 
   return applyUrls

@@ -169,6 +169,7 @@ export const extractIndiaSocialJobs = (payload) =>
         postingDate: normalizeWhitespace(record.publishDate),
         closingDate: null,
         jobDescription: joinDescription(record.jobDuty, record.workRequire),
+        publicExperienceChecked: true,
         remoteStatus: null,
       }
     })
@@ -200,6 +201,7 @@ export const extractIndiaCampusJobs = (payload) =>
         postingDate: normalizeWhitespace(record.releaseTime),
         closingDate: null,
         jobDescription: joinDescription(record.positionDesc, record.positionRequire),
+        publicExperienceChecked: true,
         remoteStatus: null,
       }
     })

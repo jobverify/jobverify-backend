@@ -64,4 +64,5 @@ test('Innspark run falls back to browser-backed fetches when the origin breaks H
   assert.equal(jobs.length, 11)
   assert.equal(jobs[0].source, 'innspark')
   assert.equal(jobs[0].link, innspark.APPLY_URL)
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })

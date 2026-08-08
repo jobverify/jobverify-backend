@@ -10,6 +10,7 @@ export const SOURCE = 'nexturn'
 export const COMPANY = 'NexTurn'
 export const HOMEPAGE_URL = 'https://nexturn.com/'
 export const CAREERS_URL = 'https://nexturn.com/careers/'
+export const VERIFIED_ON = '2026-08-07'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -170,6 +171,18 @@ const isOfficialNexTurnJobUrl = (value) => {
   }
 }
 
+const isTrustedHomepageCanonical = (value) => {
+  if (urlsMatch(value, HOMEPAGE_URL, HOMEPAGE_URL)) return true
+
+  try {
+    const url = new URL(value)
+    return /^(?:\d{1,3}\.){3}\d{1,3}$/i.test(url.hostname)
+      && normalizePathname(url.pathname) === '/'
+  } catch {
+    return false
+  }
+}
+
 const extractHref = (html) => toAbsoluteUrl(extractAttribute(html, 'href'))
 
 const extractSection = (lines, label) => {
@@ -249,8 +262,10 @@ const composeJobDescription = ({ requirements, jobDescription, jobDescriptionPre
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const canonicalUrl = extractCanonicalUrl(page, HOMEPAGE_URL)
+  const title = extractText(/<title>([\s\S]*?)<\/title>/i, page)
 
-  return urlsMatch(canonicalUrl, HOMEPAGE_URL)
+  return isTrustedHomepageCanonical(canonicalUrl)
+    && /AI-Driven\s+Cloud,\s*Data\s*&\s*Enterprise\s+Platforms\s+Engineering\s+Services/i.test(title || '')
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']NexTurn["']/i.test(page)
     && hasAnchorLinkToUrl(page, CAREERS_URL, HOMEPAGE_URL)
     && /careers@nexturn\.com/i.test(page)

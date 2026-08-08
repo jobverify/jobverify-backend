@@ -163,6 +163,10 @@ test('Datalogic India helpers stay pinned to the verified first-party careers ha
     datalogicIndia.normalizeSuccessFactorsUrl('https://career2.successfactors.eu/career?career_ns=job_listing&company=datalogics&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=11363&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta&_s.crb=abc123'),
     datalogicIndia.buildDetailUrl('11363'),
   )
+  assert.equal(
+    datalogicIndia.normalizeSuccessFactorsUrl('https://career2.successfactors.eu/career?career_ns=job_listing&amp;company=datalogics&amp;career_job_req_id=11363'),
+    'https://career2.successfactors.eu/career?career_ns=job_listing&company=datalogics&career_job_req_id=11363',
+  )
   assert.equal(datalogicIndia.extractSuccessFactorsHandoffUrl(careersHtml), datalogicIndia.SUCCESSFACTORS_BOARD_URL)
   assert.equal(datalogicIndia.hasOfficialCareersPageSignal(careersHtml), true)
   assert.equal(datalogicIndia.hasSuccessFactorsSearchPageSignal(searchHtml), true)
@@ -245,6 +249,7 @@ test('extractJobDetail keeps the live India requisition pinned to the canonical 
     postingDate: '2026-03-11',
     applyUrl: datalogicIndia.buildDetailUrl('11363'),
     sourceUrl: datalogicIndia.buildDetailUrl('11363'),
+    publicExperienceChecked: true,
   })
 })
 
@@ -296,6 +301,7 @@ test('Datalogic India run keeps the scraper on the verified careers handoff, pub
     ],
     postingDate: '2026-03-11',
     scrapedAt: '2026-07-15T00:00:00.000Z',
+    publicExperienceChecked: true,
   }])
 })
 
@@ -323,4 +329,22 @@ test('Datalogic India fails closed when the verified careers handoff or public s
     }).run(),
     /verified public successfactors search surface/i,
   )
+})
+
+test('Datalogic India blocks its browser-only SuccessFactors search path before a browser can launch', async () => {
+  const datalogicIndia = await loadDatalogicIndiaModule()
+  let fetchedDetail = false
+
+  await assert.rejects(
+    datalogicIndia.createDatalogicIndiaScraper({
+      fetchText: async (url) => {
+        if (url === datalogicIndia.CAREERS_PAGE_URL) return careersHtml
+        fetchedDetail = true
+        throw new Error(`Unexpected Datalogic India URL: ${url}`)
+      },
+    }).run(),
+    /datalogicindia.*api-only migration.*browser automation is disabled/i,
+  )
+
+  assert.equal(fetchedDetail, false)
 })

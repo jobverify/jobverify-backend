@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -17,8 +16,6 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 const ORACLE_PREVIEW_LINK_PATTERN =
   /https:\/\/emit\.fa\.ca3\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_2001\/requisitions\/preview\/(\d+)/i
-const BROWSER_TIMEOUT_MS = 60000
-const BROWSER_SETTLE_DELAY_MS = 8000
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -232,52 +229,6 @@ const defaultFetchJson = async (url) => {
 const isCloudflareChallengePage = (page = {}) =>
   Number(page.status) === 403 && hasCloudflareChallengeSignal(page.html)
 
-const createRenderedPageFetcher = () => {
-  let browser = null
-  let page = null
-
-  const getPage = async () => {
-    if (!browser) {
-      browser = await launchBrowser({ headless: true })
-      page = await createOptimizedPage(browser)
-      await page.setUserAgent(USER_AGENT)
-    }
-
-    return page
-  }
-
-  return {
-    close: async () => {
-      if (browser) {
-        await browser.close()
-      }
-    },
-    fetchPage: async (url) => {
-      const browserPage = await getPage()
-      const response = await browserPage.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      try {
-        await browserPage.waitForFunction(
-          () => document.body.innerText.includes('Job Description'),
-          { timeout: 15000 },
-        )
-      } catch {
-        await new Promise((resolve) => setTimeout(resolve, BROWSER_SETTLE_DELAY_MS))
-      }
-
-      return {
-        status: response?.status?.() ?? 0,
-        url: browserPage.url(),
-        html: await browserPage.content(),
-        text: await browserPage.evaluate(() => document.body.innerText),
-      }
-    },
-  }
-}
-
 export const createWspIndiaScraper = ({
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : null,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -286,33 +237,16 @@ export const createWspIndiaScraper = ({
     fetchPage = defaultFetchPage,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
-    fetchBrowserPage,
   } = {}) {
-    let renderedPageFetcher = null
-
-    const getBrowserPage = async () => {
-      if (typeof fetchBrowserPage === 'function') {
-        return fetchBrowserPage
-      }
-
-      if (!renderedPageFetcher) {
-        renderedPageFetcher = createRenderedPageFetcher()
-      }
-
-      return renderedPageFetcher.fetchPage
-    }
-
     const fetchVerifiedPage = async (url) => {
       const rawPage = await fetchPage(url)
-      if (!isCloudflareChallengePage(rawPage)) {
-        return rawPage
+      if (isCloudflareChallengePage(rawPage)) {
+        throw new Error(`WSP India API-only fetch received a Cloudflare challenge for ${url}`)
       }
-
-      const browserPageFetcher = await getBrowserPage()
-      return browserPageFetcher(url)
+      return rawPage
     }
 
-    try {
+    {
       const indiaSitePage = await fetchVerifiedPage(INDIA_SITE_URL)
       if (!hasOfficialIndiaSiteSignal(indiaSitePage.html)) {
         throw new Error('WSP India official India site surface changed; refusing to guess the jobs handoff')
@@ -366,10 +300,6 @@ export const createWspIndiaScraper = ({
       }
 
       return jobs
-    } finally {
-      if (renderedPageFetcher) {
-        await renderedPageFetcher.close()
-      }
     }
   },
 })

@@ -50,17 +50,19 @@ test('Plivo local catalog captures the verified first-party jobs shell and live 
   assert.equal(provider.paginationStrategy, 'official-jobs-shell-validation-plus-lever-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-jobs-page+verified-jobs-bundle-lever-fetch+live-empty-lever-board',
+    'verified-first-party-jobs-page+verified-jobs-bundle-lever-fetch+empty-lever-api+allow-missing-lever-board',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-26')
+  assert.equal(provider.verifiedOn, '2026-08-07')
   assert.equal(provider.modulePath, plivoModulePath)
   assert.match(provider.dryRunFile, /plivo[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.plivo\.com\/jobs\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.lever\.co\/plivo/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/api\.lever\.co\/v0\/postings\/plivo\?mode=json/i)
+  assert.match(provider.verifiedSurfaceSummary, /JobsPage\.DH20V3RG\.js/i)
+  assert.match(provider.verifiedSurfaceSummary, /404 error/i)
   assert.match(provider.verifiedSurfaceSummary, /03 open positions/i)
   assert.match(provider.verifiedSurfaceSummary, /0 public postings|returned \[\]/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Plivo'), false)

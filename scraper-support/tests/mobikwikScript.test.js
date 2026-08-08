@@ -98,3 +98,51 @@ test('MobiKwik fails closed when the rendered careers surface changes', async ()
     /MobiKwik careers handoff changed/i,
   )
 })
+
+test('MobiKwik loads its careers proof and Darwinbox jobs over native HTTP', async () => {
+  const requests = []
+  const fetchImpl = async (url, options = {}) => {
+    requests.push({ url, options })
+
+    if (url === CAREERS_URL) {
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => 'text/html' },
+        text: async () => `
+          <html><head><title>MobiKwik Careers: Join Our Team</title></head><body>
+            <p>Want to empower millions of Indians with financial Independence?</p>
+            <p>We are a publicly listed fintech company</p>
+            <p>There's a lot to love at MobiKwik</p>
+            <a href="${OFFICIAL_CAREERS_HANDOFF_URL}">View Job Openings</a>
+          </body></html>
+        `,
+      }
+    }
+
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({
+        status: 'success',
+        job_counts: 1,
+        data: [{
+          id: 'mobikwik-api-001',
+          title: 'Backend Engineer',
+          locations: 'Gurgaon, Haryana, India',
+          country: 'India',
+        }],
+      }),
+    }
+  }
+
+  const jobs = await createMobiKwikScraper({ fetchImpl }).run({ maxPages: 1 })
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(requests.map(({ url }) => url), [
+    CAREERS_URL,
+    'https://mobikwik.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+  ])
+  assert.equal(requests[1].options.method, 'POST')
+})

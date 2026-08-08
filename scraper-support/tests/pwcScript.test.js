@@ -134,50 +134,17 @@ test('run fetches the PwC experienced jobs page once and decorates shared runner
   )
 })
 
-test('run falls back to browser fetch when the PwC official careers page times out', async () => {
+test('run surfaces the PwC API-only error when the official careers page times out', async () => {
   const { buildSearchUrl, createPwcScraper } = await loadPwcModule()
-  const html = readHtmlFixture('experienced-jobs.html')
-  const rawRequests = []
-  const browserRequests = []
   const scraper = createPwcScraper({ maxJobs: 1 })
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchText: async (url) => {
-      rawRequests.push(url)
-
       if (url === buildSearchUrl()) {
         throw new Error('fetch failed | Connect Timeout Error (attempted address: www.pwc.in:443, timeout: 10000ms)')
       }
-
-      return `
-        <html>
-          <head>
-            <meta property="og:description" content="Build intelligent automation solutions with 4 years of experience in test automation and agentic workflows.">
-          </head>
-        </html>
-      `
     },
-    fetchDetailText: async () => {
-      throw new Error('provider detail API unavailable in this fixture')
-    },
-    fetchBrowserText: async (url) => {
-      browserRequests.push(url)
-
-      if (url === buildSearchUrl()) return html
-      throw new Error(`Unexpected PwC browser URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(rawRequests, [
-    buildSearchUrl(),
-    jobs[0].sourceUrl,
-  ])
-  assert.deepEqual(browserRequests, [buildSearchUrl()])
-  assert.equal(jobs.length, 1)
-  assert.match(
-    jobs[0].jobDescription,
-    /4 years of experience in test automation and agentic workflows\./i,
-  )
+  }), /Connect Timeout Error/i)
 })
 
 test('run enriches PwC jobs from provider detail APIs before falling back to rendered detail pages', async () => {

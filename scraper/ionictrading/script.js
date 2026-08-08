@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 import { IONIC_TRADING_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -122,15 +120,6 @@ export const isUnexpectedReachableSurface = (surface = {}) =>
   && surface.status > 0
   && PUBLIC_JOBS_SIGNAL_PATTERN.test(normalizeWhitespace(surface?.html))
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 const isTimeoutError = (error) => {
   if (error?.name === 'AbortError') return true
 
@@ -211,15 +200,37 @@ const defaultProbeUrl = async (url) => {
 }
 
 export const createIonicTradingScraper = () => ({
-  async run({ fetchText = defaultFetchText, probeUrl = defaultProbeUrl } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ probeUrl = defaultProbeUrl } = {}) {
+    const homepageSurface = await probeUrl(HOMEPAGE_URL)
 
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Ionic Trading verified homepage no longer matches the trusted first-party surface')
+    if (isExpectedUnavailableSurface(homepageSurface)) {
+      const adjacentSurfaces = await Promise.all(ADJACENT_ROUTE_URLS.map((url) => probeUrl(url)))
+
+      if (
+        adjacentSurfaces.every((surface) =>
+          isExpectedUnavailableSurface(surface)
+          || isExpectedHomepageLikeSurface(surface)
+          || isExpectedAdjacentRouteSurface(surface),
+        )
+      ) {
+        return []
+      }
+
+      for (const surface of adjacentSurfaces) {
+        if (isUnexpectedReachableSurface(surface)) {
+          throw new Error(`${COMPANY} public jobs surface now appears reachable: ${surface.finalUrl || surface.url}`)
+        }
+
+        if (!isExpectedUnavailableSurface(surface) && !isExpectedHomepageLikeSurface(surface) && !isExpectedAdjacentRouteSurface(surface)) {
+          throw new Error(`${COMPANY} verified adjacent route changed materially: ${surface.finalUrl || surface.url}`)
+        }
+      }
+
+      return []
     }
 
-    if (hasLinkedPublicJobsSurface(homepageHtml)) {
-      throw new Error(`${COMPANY} public jobs surface now appears reachable: ${HOMEPAGE_URL}`)
+    if (!isExpectedHomepageLikeSurface(homepageSurface)) {
+      throw new Error('Ionic Trading verified homepage no longer matches the trusted first-party surface')
     }
 
     for (const url of ADJACENT_ROUTE_URLS) {

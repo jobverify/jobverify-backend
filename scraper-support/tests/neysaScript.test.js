@@ -57,6 +57,55 @@ const jobOpeningsHtml = `
 </html>
 `
 
+const liveJobOpeningsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job Opening - Build a Career at Neysa</title>
+  </head>
+  <body>
+    <script>var ajaxAction = "filter_career_listings";</script>
+    <div class="job-section">
+      <h2 class="department-title">Finance</h2>
+      <div class="job-card">
+        <div class="job-details-wrapper">
+          <h3 class="job-title">Legal Counsel</h3>
+          <div class="job-meta">
+            <div class="locations"><span class="prefix-meta">Location:</span> <span class="details-highlight">Mumbai</span></div>
+          </div>
+        </div>
+        <div class="jd-btn-wrapper">
+          <a href="https://neysa.ai/careers/job-openings/?job_id=51219" class="job-btn">Job Details</a>
+        </div>
+      </div>
+      <h2 class="department-title">Tech</h2>
+      <div class="job-card">
+        <div class="job-details-wrapper">
+          <h3 class="job-title">Backend Engineer</h3>
+          <div class="job-meta">
+            <div class="locations"><span class="prefix-meta">Location:</span> <span class="details-highlight">Mumbai</span></div>
+          </div>
+        </div>
+        <div class="jd-btn-wrapper">
+          <a href="https://neysa.ai/careers/job-openings/?job_id=51964" class="job-btn">Job Details</a>
+        </div>
+      </div>
+      <div class="job-card">
+        <div class="job-details-wrapper">
+          <h3 class="job-title">QA Lead - Cloud/AI/Infrastructure</h3>
+          <div class="job-meta">
+            <div class="locations"><span class="prefix-meta">Location:</span> <span class="details-highlight">Mumbai</span></div>
+          </div>
+        </div>
+        <div class="jd-btn-wrapper">
+          <a href="https://neysa.ai/careers/job-openings/?job_id=52093" class="job-btn">Job Details</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
 const backendDetailHtml = `
 <!doctype html>
 <html lang="en">
@@ -87,6 +136,53 @@ const backendDetailHtml = `
       </ul>
     </div>
     <button>Apply Now</button>
+  </body>
+</html>
+`
+
+const liveBackendDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job Opening - Build a Career at Neysa</title>
+    <meta property="og:title" content="Job Openings" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "datePublished": "2025-05-22T06:03:35+00:00"
+      }
+    </script>
+  </head>
+  <body>
+    <div class="job-card">
+      <div class="job-header">
+        <div class="job-title-group">
+          <h1 class="job-title">Backend Engineer</h1>
+          <p class="job-department">Tech</p>
+        </div>
+        <div class="job-apply">
+          <a href="https://careers.kula.ai/neysa/51964" class="apply-btn" target="_blank">Apply Now</a>
+        </div>
+      </div>
+    </div>
+    <div class="job-details-wrapper">
+      <div class="job-details">
+        <div class="detail-item"><span class="label">Type</span> <span class="value">Full-time</span></div>
+        <div class="detail-item"><span class="label">Department</span> <span class="value">Tech</span></div>
+        <div class="detail-item"><span class="label">Location</span> <span class="value">Mumbai (On-site)</span></div>
+        <div class="detail-item"><span class="label">Minimum Qualifications</span> <span class="value">Bachelor's Degree or Equivalent</span></div>
+      </div>
+    </div>
+    <section>
+      <div class="job-description">
+        <h2>Job Description</h2>
+        <p><strong>Experience:</strong>&nbsp;5 to 7 years</p>
+        <p><strong>Primary Focus:</strong>&nbsp;Backend development, bug fixing, API/microservice development, production support</p>
+        <p><strong>Project:</strong>&nbsp;Overwatch, a NestJS/Nx monorepo with gRPC-based backend microservices</p>
+        <p><strong>Role Summary:</strong>&nbsp;Build and support backend microservices for Neysa cloud products.</p>
+      </div>
+    </section>
   </body>
 </html>
 `
@@ -127,9 +223,10 @@ test('Neysa verifies the official careers page and same-domain job openings sign
   assert.equal(neysa.CAREERS_PAGE_URL, 'https://neysa.ai/careers/')
   assert.equal(neysa.JOB_OPENINGS_URL, 'https://neysa.ai/careers/job-openings/')
   assert.equal(neysa.COMPANY_DOMAIN, 'neysa.ai')
-  assert.equal(neysa.VERIFIED_ON, '2026-08-03')
+  assert.equal(neysa.VERIFIED_ON, '2026-08-07')
   assert.equal(neysa.hasOfficialCareersPageSignal(careersPageHtml), true)
   assert.equal(neysa.hasOfficialJobOpeningsSignal(jobOpeningsHtml), true)
+  assert.equal(neysa.hasOfficialJobOpeningsSignal(liveJobOpeningsHtml), true)
   assert.equal(
     neysa.extractOfficialJobOpeningsUrl(careersPageHtml),
     'https://neysa.ai/careers/job-openings/',
@@ -195,6 +292,88 @@ test('Neysa extracts live job cards and enriches them from detail pages', async 
     closingDate: null,
     jobDescription:
       'Position - Backend Engineer Experience: 5 to 7 years Primary Focus: Backend development, bug fixing, API/microservice development, production support Project: Overwatch, a NestJS/Nx monorepo with gRPC-based backend microservices Role Summary Build and support backend microservices for Neysa cloud products. Key Responsibilities Develop backend APIs and microservices. Support production systems and bug fixes.',
+    remoteStatus: 'On-site',
+  })
+})
+
+test('Neysa extracts the current department-title cards and query-string job ids from the live openings shape', async () => {
+  const neysa = await loadNeysaModule()
+  const listings = neysa.extractJobListings(liveJobOpeningsHtml)
+
+  assert.equal(listings.length, 3)
+  assert.deepEqual(
+    listings.map((listing) => ({
+      title: listing.title,
+      department: listing.department,
+      location: listing.location,
+      jobId: listing.jobId,
+      requisitionId: listing.requisitionId,
+      detailUrl: listing.detailUrl,
+    })),
+    [
+      {
+        title: 'Legal Counsel',
+        department: 'Finance',
+        location: 'Mumbai, India',
+        jobId: '51219',
+        requisitionId: '51219',
+        detailUrl: 'https://neysa.ai/careers/job-openings/?job_id=51219',
+      },
+      {
+        title: 'Backend Engineer',
+        department: 'Tech',
+        location: 'Mumbai, India',
+        jobId: '51964',
+        requisitionId: '51964',
+        detailUrl: 'https://neysa.ai/careers/job-openings/?job_id=51964',
+      },
+      {
+        title: 'QA Lead - Cloud/AI/Infrastructure',
+        department: 'Tech',
+        location: 'Mumbai, India',
+        jobId: '52093',
+        requisitionId: '52093',
+        detailUrl: 'https://neysa.ai/careers/job-openings/?job_id=52093',
+      },
+    ],
+  )
+})
+
+test('Neysa extracts the current live detail shell with h1 title, Kula apply url, and labeled fields', async () => {
+  const neysa = await loadNeysaModule()
+
+  const job = neysa.extractJobDetail(liveBackendDetailHtml, {
+    title: 'Backend Engineer',
+    department: 'Tech',
+    location: 'Mumbai, India',
+    city: 'Mumbai',
+    detailUrl: 'https://neysa.ai/careers/job-openings/?job_id=51964',
+    sourceUrl: 'https://neysa.ai/careers/job-openings/?job_id=51964',
+    applyUrl: 'https://neysa.ai/careers/job-openings/?job_id=51964',
+    jobId: '51964',
+    requisitionId: '51964',
+  })
+
+  assert.deepEqual(job, {
+    title: 'Backend Engineer',
+    company: 'Neysa',
+    department: 'Tech',
+    location: 'Mumbai, India',
+    city: 'Mumbai',
+    country: 'India',
+    jobId: '51964',
+    requisitionId: '51964',
+    sourceUrl: 'https://neysa.ai/careers/job-openings/?job_id=51964',
+    applyUrl: 'https://careers.kula.ai/neysa/51964',
+    employmentType: 'Full-time',
+    experienceRequired: '5-7 years',
+    minimumQualification: "Bachelor's Degree or Equivalent",
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2025-05-22',
+    closingDate: null,
+    jobDescription:
+      'Experience: 5 to 7 years Primary Focus: Backend development, bug fixing, API/microservice development, production support Project: Overwatch, a NestJS/Nx monorepo with gRPC-based backend microservices Role Summary: Build and support backend microservices for Neysa cloud products.',
     remoteStatus: 'On-site',
   })
 })

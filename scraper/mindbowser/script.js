@@ -143,6 +143,16 @@ const readRenderedJobCards = (page) => page.$$eval(HRONE_CARD_SELECTOR, (cards) 
     .filter((card) => card.title && card.requisitionId)
 })
 
+const settlePopupTargetResult = (promise) => promise.then(
+  (target) => ({ target, error: null }),
+  (error) => ({ target: null, error }),
+)
+
+const isPopupTargetTimeoutError = (error) => (
+  /TimeoutError/i.test(String(error?.name || ''))
+  && /Timed out after waiting \d+ms/i.test(String(error?.message || ''))
+)
+
 const captureApplyUrls = async (page) => {
   const browser = page.browser?.()
   if (!browser?.waitForTarget) return []
@@ -153,26 +163,37 @@ const captureApplyUrls = async (page) => {
 
   for (const button of buttons) {
     try {
-      const targetPromise = browser.waitForTarget(
+      const targetResultPromise = settlePopupTargetResult(browser.waitForTarget(
         (target) => (
           !knownTargets.has(target)
           && target.opener?.() === page.target?.()
           && /\/apply-job\?/i.test(target.url?.() || '')
         ),
         { timeout: 5000 },
-      )
+      ))
 
       if (typeof page.bringToFront === 'function') {
         await page.bringToFront()
       }
 
       await button.click()
-      const target = await targetPromise
+      const { target, error } = await targetResultPromise
+      if (error) {
+        if (isPopupTargetTimeoutError(error)) {
+          applyUrls.push(null)
+          continue
+        }
+
+        throw error
+      }
+
       knownTargets.add(target)
 
-      const trustedUrl = toTrustedApplyUrl(target.url?.())
+      const trustedUrl = toTrustedApplyUrl(target?.url?.())
       if (trustedUrl) {
         applyUrls.push(trustedUrl)
+      } else {
+        applyUrls.push(null)
       }
     } catch {
       applyUrls.push(null)

@@ -15,6 +15,12 @@ test('getScraperCatalog includes Blubridge with its official careers site metada
   assert.equal(blubridge.atsPlatform, 'react-company-careers')
   assert.match(blubridge.companyCareerPage, /blubridge\.com\/careers/i)
   assert.equal(blubridge.companyDomain, 'blubridge.com')
+  assert.equal(blubridge.paginationStrategy, 'single-react-careers-shell+bundle-backed-job-catalog')
+  assert.equal(blubridge.extractionStrategy, 'official-react-shell+main-js-bundle+structured-fu-job-data')
+  assert.equal(blubridge.verifiedOn, '2026-08-07')
+  assert.match(blubridge.verifiedSurfaceSummary, /react app shell/i)
+  assert.match(blubridge.verifiedSurfaceSummary, /main\.10737ee8\.js/i)
+  assert.match(blubridge.verifiedSurfaceSummary, /four structured India-facing job records/i)
 })
 
 test('buildScrapers exposes a runnable Blubridge scraper without changing the runner contract', () => {

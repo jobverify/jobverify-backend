@@ -56,3 +56,18 @@ test('Yellow Messenger returns no jobs while the embedded public board is dead',
 
   assert.deepEqual(jobs, [])
 })
+
+test('Yellow Messenger validates the live contract loaded through an HTTP fetcher', async () => {
+  const yellowMessenger = await loadYellowMessengerModule()
+  const requestedUrls = []
+
+  const jobs = await yellowMessenger.createYellowMessengerScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return officialCareersHtml
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [yellowMessenger.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})

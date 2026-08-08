@@ -17,18 +17,6 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const FETCH_TIMEOUT_MS = 15000
 
-const createFetchTimeoutSignal = (timeoutMs = FETCH_TIMEOUT_MS) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
-
-  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-    return AbortSignal.timeout(timeoutMs)
-  }
-
-  const controller = new AbortController()
-  setTimeout(() => controller.abort(), timeoutMs)
-  return controller.signal
-}
-
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
@@ -97,23 +85,30 @@ const isHomepageTimeoutError = (error) => {
   const message = String(error?.message ?? '')
   return error?.name === 'TimeoutError'
     || error?.name === 'AbortError'
-    || /aborted due to timeout/i.test(message)
+    || /aborted due to timeout|timed out/i.test(message)
 }
 
 const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-    signal: createFetchTimeoutSignal(),
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(new Error(`Fetch timed out after ${FETCH_TIMEOUT_MS}ms`)), FETCH_TIMEOUT_MS)
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
@@ -128,7 +123,17 @@ export const createGoibiboScraper = () => ({
         throw error
       }
 
-      const careerPage = await fetchPage(CAREER_URL)
+      let careerPage
+      try {
+        careerPage = await fetchPage(CAREER_URL)
+      } catch (careerError) {
+        if (isHomepageTimeoutError(careerError)) {
+          return []
+        }
+
+        throw careerError
+      }
+
       if (isVerifiedUnavailableCareerPage(careerPage)) {
         return []
       }
@@ -144,7 +149,17 @@ export const createGoibiboScraper = () => ({
       throw new Error('Goibibo official homepage no longer matches the verified careers handoff')
     }
 
-    const careerPage = await fetchPage(CAREER_URL)
+    let careerPage
+    try {
+      careerPage = await fetchPage(CAREER_URL)
+    } catch (error) {
+      if (isHomepageTimeoutError(error)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!isVerifiedUnavailableCareerPage(careerPage)) {
       throw new Error('Goibibo careers route no longer matches the verified unavailable surface')
     }

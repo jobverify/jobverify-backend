@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -20,7 +19,6 @@ export const OPEN_ROLES_SECTION_ID = 'open-roles-section'
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const ROLE_CARD_SELECTOR = `#${OPEN_ROLES_SECTION_ID} .sc-edKZPI`
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 const CAREERS_BUNDLE_SCRIPT_PATTERN =
   /<script[^>]+src=["']([^"']*\/_next\/static\/chunks\/pages\/careers-[^"']+\.js)["'][^>]*>/i
@@ -397,50 +395,6 @@ export const extractVisibleOpenRoles = (cards = [], { scrapedAt } = {}) => {
     .filter(Boolean)
 }
 
-export const createBrowserOpenRolesLoader = ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => ({
-  async load() {
-    const browser = await launchBrowserImpl()
-
-    try {
-      const page = await createOptimizedPageImpl(browser)
-      const response = await page.goto(OPEN_ROLES_TAB_URL, {
-        waitUntil: 'networkidle2',
-        timeout: 60000,
-      })
-
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${OPEN_ROLES_TAB_URL}`)
-      }
-
-      await page.waitForSelector(`#${OPEN_ROLES_SECTION_ID}`, { timeout: config.jobListingTimeoutMs })
-
-      return page.evaluate(
-        (selector) =>
-          Array.from(document.querySelectorAll(selector))
-            .map((card) => {
-              const texts = Array.from(card.querySelectorAll('p'))
-                .map((node) => (node.textContent || '').trim())
-                .filter(Boolean)
-              const link = card.querySelector('a[href]')?.href || null
-
-              return {
-                title: texts[0] || null,
-                location: texts[1] || null,
-                link,
-              }
-            })
-            .filter((card) => card.title && card.location),
-        ROLE_CARD_SELECTOR,
-      )
-    } finally {
-      await browser.close()
-    }
-  },
-})
-
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -457,7 +411,12 @@ export const createLeenaAiScraper = ({
     fetchText = defaultFetchText,
     loadOpenRoles,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      throw new Error(`Leena AI API-only migration could not fetch ${CAREERS_URL}: ${error.message}`)
+    }
     if (!hasOfficialLeenaAiCareersSignals(careersHtml)) {
       throw new Error('Leena AI verified official careers page no longer matches the verified public surface')
     }

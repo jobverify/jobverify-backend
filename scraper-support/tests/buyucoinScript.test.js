@@ -66,7 +66,7 @@ test('BuyUcoin exports provider metadata for the verified first-party careers li
     companyName: 'BuyUcoin',
     officialBrandName: 'BuyUcoin',
     adapter: 'script',
-    modulePath: '../../scraper/buyucoin/script.js',
+    modulePath: '../buyucoin/script.js',
     homepageUrl: 'https://www.buyucoin.com/',
     companyCareerPage: 'https://www.buyucoin.com/career',
     atsPlatform: 'official-company-careers',
@@ -95,6 +95,11 @@ test('BuyUcoin extracts the verified inline openings and outbound apply links', 
 
   const jobs = await buyucoin.run({
     fetchText: async () => careersHtml,
+    fetchApplyMetadata: async () => ({
+      status: 200,
+      finalUrl: 'https://example.com',
+      text: '<html></html>',
+    }),
     now: () => FIXED_SCRAPED_AT,
   })
 
@@ -104,10 +109,51 @@ test('BuyUcoin extracts the verified inline openings and outbound apply links', 
     location: 'Noida, India',
     sourceUrl: 'https://www.buyucoin.com/career',
     applyUrl: 'https://www.naukri.com/job-listings-software-developer-node-js-buyucoin-noida-123456',
+    experienceRequired: null,
     company: 'BuyUcoin',
     country: 'India',
     link: 'https://www.naukri.com/job-listings-software-developer-node-js-buyucoin-noida-123456',
     source: 'buyucoin',
     scrapedAt: '2026-07-25T00:00:00.000Z',
+    publicExperienceChecked: false,
   })
+})
+
+test('BuyUcoin derives public experience ranges from external Naukri apply URLs when the inline listing omits them', async () => {
+  const buyucoin = await loadScriptModule()
+
+  const jobs = await buyucoin.run({
+    fetchText: async () => careersHtml.replace(
+      'https://www.naukri.com/job-listings-software-developer-node-js-buyucoin-noida-123456',
+      'https://www.naukri.com/job-listings-software-developer-node-js-buyucoin-noida-3-to-7-years-123456',
+    ),
+    fetchApplyMetadata: async () => ({
+      status: 200,
+      finalUrl: 'https://www.naukri.com/job-listings-software-developer-node-js-buyucoin-noida-3-to-7-years-123456',
+      text: '<html></html>',
+    }),
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  assert.equal(jobs[0].experienceRequired, '3-7 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+})
+
+test('BuyUcoin marks vanished external apply pages as publicly checked when the verified careers listing is the last remaining surface', async () => {
+  const buyucoin = await loadScriptModule()
+
+  const jobs = await buyucoin.run({
+    fetchText: async () => careersHtml,
+    fetchApplyMetadata: async (url) => ({
+      status: /indeed/i.test(url) ? 404 : 200,
+      finalUrl: url,
+      text: /indeed/i.test(url)
+        ? 'We can’t find this page. It looks like this page doesn’t exist right now.'
+        : '<html></html>',
+    }),
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  assert.equal(jobs.find((job) => job.title === 'Software Quality Analyst Engineer')?.publicExperienceChecked, true)
+  assert.equal(jobs.find((job) => job.title === 'Digital Media Executiver')?.publicExperienceChecked, true)
 })

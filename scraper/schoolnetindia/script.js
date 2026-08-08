@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -314,80 +313,6 @@ export const extractRoleCardsFromCareersHtml = (html = '') => {
     .filter(Boolean)
 }
 
-export const createBrowserRoleCardsLoader = ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => ({
-  async load() {
-    const browser = await launchBrowserImpl()
-
-    try {
-      const page = await createOptimizedPageImpl(browser)
-      const response = await page.goto(CAREERS_URL, {
-        waitUntil: 'networkidle2',
-        timeout: 60000,
-      })
-
-      if (response && !response.ok()) {
-        throw new Error(`HTTP ${response.status()} for ${CAREERS_URL}`)
-      }
-
-      await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs })
-
-      return page.evaluate((actionPatternSource) => {
-        const actionPattern = new RegExp(actionPatternSource, 'i')
-        const normalize = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
-        const seen = new Set()
-        const cards = []
-
-        const findContainer = (node) => {
-          let current = node?.parentElement || null
-          while (current) {
-            const text = normalize(current.innerText)
-            if (/experience:/i.test(text) && /posted:/i.test(text)) {
-              return current
-            }
-            current = current.parentElement
-          }
-          return null
-        }
-
-        for (const node of Array.from(document.querySelectorAll('a[href], button'))) {
-          const label = normalize(node.textContent)
-          if (!actionPattern.test(label)) continue
-
-          const container = findContainer(node)
-          if (!container) continue
-
-          const text = normalize(container.innerText)
-          if (!text) continue
-
-          const heading = container.querySelector('h1, h2, h3, h4, h5, h6, strong, b')
-          const title = normalize(heading?.textContent || text.split('\n')[0] || '')
-          const detailAnchor = Array.from(container.querySelectorAll('a[href]'))
-            .find((anchor) => /view details/i.test(normalize(anchor.textContent)))
-          const applyAnchor = Array.from(container.querySelectorAll('a[href]'))
-            .find((anchor) => /apply/i.test(normalize(anchor.textContent)))
-          const key = `${title}::${detailAnchor?.href || ''}::${applyAnchor?.href || ''}`
-
-          if (!title || seen.has(key)) continue
-          seen.add(key)
-
-          cards.push({
-            text: container.innerText,
-            detailUrl: detailAnchor?.href || null,
-            applyUrl: applyAnchor?.href || detailAnchor?.href || null,
-          })
-        }
-
-        return cards
-      }, ROLE_ACTION_PATTERN.source)
-    } finally {
-      await browser.close()
-    }
-  },
-})
-
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -402,7 +327,6 @@ export const createSchoolnetIndiaScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
-    loadRoleCards,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
@@ -414,15 +338,7 @@ export const createSchoolnetIndiaScraper = ({
       throw new Error('The official Schoolnet India recruitment portal no longer matches the verified public surface')
     }
 
-    let resolvedRoleCards
-    if (loadRoleCards) {
-      resolvedRoleCards = await loadRoleCards()
-    } else {
-      resolvedRoleCards = extractRoleCardsFromCareersHtml(careersHtml)
-      if (resolvedRoleCards.length === 0) {
-        resolvedRoleCards = await createBrowserRoleCardsLoader().load()
-      }
-    }
+    const resolvedRoleCards = extractRoleCardsFromCareersHtml(careersHtml)
 
     const jobs = buildJobsFromRoleCards(resolvedRoleCards, { scrapedAt: now() })
     if (jobs.length === 0) {

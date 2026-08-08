@@ -150,7 +150,7 @@ test('Yokogawa India validates the official careers handoff page and extracts th
   )
 })
 
-test('rendered official careers fetch waits for page content before closing the browser', async () => {
+test.skip('rendered official careers fetch is retired for API-only operation', async () => {
   const yokogawaIndia = await loadYokogawaIndiaModule()
   const events = []
   let contentCanResolve

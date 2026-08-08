@@ -70,35 +70,14 @@ test('run fetches the official Ather careers pages and returns an honest zero-op
   assert.deepEqual(jobs, [])
 })
 
-test('run falls back to a browser-backed fetch when direct HTTP access to the official Ather careers site is blocked', async () => {
+test('run reports an API-only migration error when direct HTTP access to Ather careers is blocked', async () => {
   const atherenergy = await loadAtherEnergyModule()
-  const attempts = []
 
-  const jobs = await atherenergy.createAtherEnergyScraper().run({
-    fetchText: async (url) => {
-      attempts.push(`http:${url}`)
-      throw new Error(`HTTP 403 for ${url}`)
-    },
-    fetchBrowserText: async (url) => {
-      attempts.push(`browser:${url}`)
-
-      if (url === atherenergy.CAREERS_HOME_URL) {
-        return careersHomeHtml
-      }
-
-      if (url === atherenergy.ALL_JOBS_URL) {
-        return allJobsHtml
-      }
-
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(attempts, [
-    `http:${atherenergy.CAREERS_HOME_URL}`,
-    `browser:${atherenergy.CAREERS_HOME_URL}`,
-    `http:${atherenergy.ALL_JOBS_URL}`,
-    `browser:${atherenergy.ALL_JOBS_URL}`,
-  ])
-  assert.deepEqual(jobs, [])
+  await assert.rejects(
+    atherenergy.createAtherEnergyScraper().run({
+      fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
+      fetchBrowserText: async () => assert.fail('Ather Energy must not launch a browser'),
+    }),
+    /ather energy API-only migration.*HTTP 403/i,
+  )
 })

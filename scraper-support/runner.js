@@ -37,7 +37,7 @@ const DEFAULT_SCRAPER_TIMEOUT_MS = 5 * 60 * 1000
 const DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS = 210 * 1000
 const DEFAULT_ABORT_GRACE_MS = 5 * 1000
 const DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY = 2
-const DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH = 20
+const DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH = null
 const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
 
 export const isDryRunPublicExperienceEnabled = (
@@ -87,17 +87,64 @@ export class ScraperSourceTimeoutError extends Error {
   }
 }
 
-export const isLatePuppeteerTargetClose = (reason) => {
-  const message = String(reason?.message || reason || '')
-  const stack = String(reason?.stack || '')
+const hasPuppeteerInternals = (value = '') => (
+  /puppeteer|CdpCDPSession|CallbackRegistry|NodeWebSocketTransport|puppeteer-core[\\/].*common[\\/]util\.js|third_party[\\/]rxjs/i.test(value)
+)
 
-  return /TargetCloseError|Protocol error .*(?:Target|Session) closed|(?:Target|Session) closed/i.test(`${reason?.name || ''}\n${message}`)
-    && /puppeteer|CdpCDPSession|CallbackRegistry|NodeWebSocketTransport/i.test(`${message}\n${stack}`)
+const collectNestedErrorText = (reason) => {
+  const queue = [reason]
+  const seen = new Set()
+  const fragments = []
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (current == null) continue
+
+    const isTrackable = typeof current === 'object' || typeof current === 'function'
+    if (isTrackable) {
+      if (seen.has(current)) continue
+      seen.add(current)
+    }
+
+    if (typeof current === 'string') {
+      fragments.push(current)
+      continue
+    }
+
+    for (const value of [current?.name, current?.message, current?.stack]) {
+      if (value) fragments.push(String(value))
+    }
+
+    if (current?.cause) queue.push(current.cause)
+    if (Array.isArray(current?.errors)) queue.push(...current.errors)
+  }
+
+  return fragments.join('\n')
+}
+
+export const isLatePuppeteerTargetClose = (reason) => {
+  const reasonText = collectNestedErrorText(reason)
+
+  return /TargetCloseError|Protocol error .*(?:Target|Session) closed|(?:Target|Session) closed/i.test(reasonText)
+    && hasPuppeteerInternals(reasonText)
+}
+
+export const isLatePuppeteerWaitTimeout = (reason) => {
+  const reasonText = collectNestedErrorText(reason)
+
+  return /(?:^|\n)TimeoutError(?::|\n|$)/i.test(reasonText)
+    && /Timed out after waiting \d+ms/i.test(reasonText)
+    && hasPuppeteerInternals(reasonText)
 }
 
 process.on('unhandledRejection', (reason) => {
   if (isLatePuppeteerTargetClose(reason)) {
     console.error('[runner] Ignored late Puppeteer browser-close rejection:', reason.message || reason)
+    return
+  }
+
+  if (isLatePuppeteerWaitTimeout(reason)) {
+    console.error('[runner] Ignored late Puppeteer wait-timeout rejection:', reason.message || reason)
     return
   }
 

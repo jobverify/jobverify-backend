@@ -32,8 +32,10 @@ test('KGISL scraper keeps the verified first-party URLs and public job surface p
     kgisl.CANDIDATE_HOME_URL,
     'https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal',
   )
+  assert.equal(kgisl.VERIFIED_ON, '2026-08-07')
   assert.equal(kgisl.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(kgisl.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(kgisl.hasOfficialCandidateHomeSignal(candidateHomeHtml), true)
   assert.equal(kgisl.extractCandidateHomeUrl(currentOpeningsHtml), kgisl.CANDIDATE_HOME_URL)
 
   const jobs = kgisl.extractJobs(candidateHomeHtml)
@@ -88,6 +90,40 @@ test('KGISL scraper returns normalized jobs from the verified first-party candid
   assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
+test('KGISL scraper falls back to the verified candidate portal when the kgisl.com wrapper pages time out or 504', async () => {
+  const kgisl = await loadKgislModule()
+  const requestedUrls = []
+
+  const jobs = await kgisl.createKgislScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === kgisl.HOMEPAGE_URL) {
+        throw new Error('HTTP 500 for https://www.kgisl.com/')
+      }
+      if (url === kgisl.CAREERS_URL) {
+        throw new Error('The operation was aborted due to timeout')
+      }
+      if (url === kgisl.CURRENT_OPENINGS_URL) {
+        throw new Error('HTTP 504 for https://www.kgisl.com/current-openings/')
+      }
+      if (url === kgisl.CANDIDATE_HOME_URL) return candidateHomeHtml
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    kgisl.HOMEPAGE_URL,
+    kgisl.CAREERS_URL,
+    kgisl.CURRENT_OPENINGS_URL,
+    kgisl.CANDIDATE_HOME_URL,
+  ])
+  assert.equal(jobs.length, 16)
+  assert.equal(jobs[0].jobId, 'V100889')
+  assert.equal(jobs[0].companyCareerPage, kgisl.CURRENT_OPENINGS_URL)
+})
+
 test('KGISL scraper fails closed when the verified first-party surface drifts', async () => {
   const kgisl = await loadKgislModule()
 
@@ -133,6 +169,27 @@ test('KGISL scraper fails closed when the verified first-party surface drifts', 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /candidate portal no longer exposes the verified public job cards/i,
+    /candidate portal no longer matches the verified public surface/i,
+  )
+
+  await assert.rejects(
+    kgisl.createKgislScraper().run({
+      fetchText: async (url) => {
+        if (url === kgisl.HOMEPAGE_URL) {
+          throw new Error('HTTP 500 for https://www.kgisl.com/')
+        }
+        if (url === kgisl.CAREERS_URL) {
+          throw new Error('The operation was aborted due to timeout')
+        }
+        if (url === kgisl.CURRENT_OPENINGS_URL) {
+          throw new Error('HTTP 504 for https://www.kgisl.com/current-openings/')
+        }
+        if (url === kgisl.CANDIDATE_HOME_URL) {
+          return '<html><body><h1>Unexpected</h1></body></html>'
+        }
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    }),
+    /candidate portal no longer matches the verified public surface/i,
   )
 })

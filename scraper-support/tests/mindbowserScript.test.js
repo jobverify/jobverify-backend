@@ -161,6 +161,61 @@ test('Mindbowser run validates the official careers handoff and decorates truste
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 
+test('Mindbowser readRenderedHrOneCards swallows late popup timeouts after a click failure', async () => {
+  const mindbowser = await loadMindbowserModule()
+  let unhandledReason = null
+  const onUnhandledRejection = (reason) => {
+    unhandledReason = reason
+  }
+  const popupTimeoutError = new Error('Timed out after waiting 5000ms')
+  popupTimeoutError.name = 'TimeoutError'
+
+  process.once('unhandledRejection', onUnhandledRejection)
+
+  try {
+    const page = {
+      async waitForFunction() {},
+      async $$eval(selector) {
+        if (selector === mindbowser.HRONE_CARD_SELECTOR) {
+          return renderedCards.map(({ applyUrl, ...card }) => card)
+        }
+        throw new Error(`Unexpected selector: ${selector}`)
+      },
+      async $$(selector) {
+        assert.equal(selector, `${mindbowser.HRONE_CARD_SELECTOR} .cls-apply-btn`)
+        return [{
+          async click() {
+            throw new Error('Popup click failed')
+          },
+        }]
+      },
+      async bringToFront() {},
+      browser() {
+        return {
+          targets: () => [],
+          waitForTarget: async () => new Promise((_, reject) => {
+            setTimeout(() => reject(popupTimeoutError), 0)
+          }),
+        }
+      },
+      target() {
+        return { id: 'main-target' }
+      },
+    }
+
+    const cards = await mindbowser.readRenderedHrOneCards(page)
+    assert.deepEqual(cards, renderedCards.map(({ title, requisitionId }) => ({
+      title,
+      requisitionId,
+      applyUrl: null,
+    })))
+    await new Promise((resolve) => setTimeout(resolve, 25))
+    assert.equal(unhandledReason, null)
+  } finally {
+    process.removeListener('unhandledRejection', onUnhandledRejection)
+  }
+})
+
 test('Mindbowser fails closed when the careers page drifts or the HROne handoff is no longer trusted', async () => {
   const mindbowser = await loadMindbowserModule()
 

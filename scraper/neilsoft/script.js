@@ -11,6 +11,8 @@ export const HOMEPAGE_URL = 'https://neilsoft.com/'
 export const CAREERS_URL = 'https://neilsoft.com/careers'
 export const INDIA_OPENINGS_URL = 'https://neilsoft.com/careers/current-job-openings-india'
 export const APPLICATION_EMAIL = 'careers@neilsoft.com'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://neilsoft.com/ remained Neilsoft\'s official homepage, that it now exposes a careers module linking Why Neilsoft, Employee Testimonials, and Current Job Openings-India directly from the homepage, and that the first-party India openings surface at https://neilsoft.com/careers/current-job-openings-india continued to expose public India job detail pages with mailto apply links.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -173,9 +175,14 @@ const extractSectionListItems = (html, headingPatterns = []) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
+  const hasLegacyHomepageIntro = /global Engineering Services & Solutions company/i.test(text)
+  const hasCurrentHomepageCareersModule =
+    /Why Neilsoft/i.test(text)
+    && /Employee Testimonials/i.test(text)
+    && /Current Job Openings-India/i.test(text)
 
   return /<title>\s*Engineering Services &amp; Design \|Neilsoft/i.test(page)
-    && /global Engineering Services & Solutions company/i.test(text)
+    && (hasLegacyHomepageIntro || hasCurrentHomepageCareersModule)
     && /<a[^>]+href=["']\/careers["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
 }
 

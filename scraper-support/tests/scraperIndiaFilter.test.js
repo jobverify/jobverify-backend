@@ -109,6 +109,32 @@ test('saveToFile writes normalized experience when it can be inferred from the s
   assert.equal(savedJobs[0].experienceRequired, '5+ years')
 })
 
+test('saveToFile writes explicit non-numeric experience requirements from the scraped description', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-india-filter-'))
+  const filePath = path.join(tmpDir, 'jobs.json')
+
+  saveToFile(
+    [
+      {
+        title: 'Inside Sales Representative',
+        company: 'Example India',
+        location: 'Kochi, India',
+        city: 'Kochi',
+        link: 'https://example.com/inside-sales-role',
+        experienceRequired: null,
+        jobDescription:
+          "What you've got? Hands-on experience in inside sales and lead generation Opportunity to work closely with an experienced sales team.",
+      },
+    ],
+    filePath,
+  )
+
+  const savedJobs = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+
+  assert.equal(savedJobs.length, 1)
+  assert.equal(savedJobs[0].experienceRequired, 'Hands-on experience in inside sales and lead generation')
+})
+
 test('filterIndiaJobs keeps city-only India jobs and plain remote jobs without requiring country', () => {
   const filteredJobs = filterIndiaJobs([
     {

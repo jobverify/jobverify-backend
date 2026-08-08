@@ -165,6 +165,17 @@ test('QBurst India still supports the historical job-board surface when public j
   assert.equal(hasVerifiedOpeningsPageSignal(VERIFIED_LEGACY_OPENINGS_HTML), true)
 })
 
+test('QBurst India blocks its browser-only historical board path before a browser can launch', async () => {
+  await assert.rejects(
+    run({
+      fetchHtml: async (url) => (
+        url === CAREERS_URL ? VERIFIED_CAREERS_LANDING_HTML : VERIFIED_LEGACY_OPENINGS_HTML
+      ),
+    }),
+    /qburstindia.*api-only migration.*browser automation is disabled/i,
+  )
+})
+
 test('QBurst India parses the live job card summary structure', () => {
   assert.deepEqual(
     extractJobCardSummary([

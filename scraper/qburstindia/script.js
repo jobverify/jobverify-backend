@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { chromium } from 'playwright'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'qburstindia'
@@ -255,84 +253,12 @@ export const scrapeOpeningsPage = async ({
   maxJobs = Number.POSITIVE_INFINITY,
   now = () => new Date().toISOString(),
 } = {}) => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: buildChromiumLaunchArgs(),
-  })
-
-  try {
-    const page = await browser.newPage({
-      userAgent: USER_AGENT,
-      viewport: { width: 1440, height: 2200 },
-    })
-
-    await page.goto(openingsUrl, { waitUntil: 'domcontentloaded', timeout: 90000 })
-    await wait(2500)
-    await dismissCookieConsent(page)
-
-    const targetCount = await loadTargetJobCount(page)
-    const totalToLoad = maxJobs === Number.POSITIVE_INFINITY
-      ? (targetCount || 1)
-      : maxJobs
-    const visibleCount = await ensureVisibleJobCards(page, totalToLoad)
-    const totalJobs = Math.min(targetCount || visibleCount, visibleCount, maxJobs)
-    const jobs = []
-
-    for (let index = 0; index < totalJobs; index += 1) {
-      await page.goto(openingsUrl, { waitUntil: 'domcontentloaded', timeout: 90000 })
-      await wait(2000)
-      await dismissCookieConsent(page)
-      await ensureVisibleJobCards(page, index + 1)
-
-      const button = page.locator(JOB_BUTTON_SELECTOR).nth(index)
-      await button.scrollIntoViewIfNeeded()
-
-      const summary = extractJobCardSummary(await button.evaluate((node) => {
-        let card = null
-        let current = node.parentElement
-
-        while (current && !card) {
-          const className = typeof current.className === 'string' ? current.className : ''
-          if (/jobCard__|jobListCardsItem__/i.test(className)) {
-            card = current
-            break
-          }
-          current = current.parentElement
-        }
-
-        return (card?.innerText || '')
-          .split(/\r?\n/)
-          .map((line) => line.replace(/\s+/g, ' ').trim())
-          .filter(Boolean)
-      }))
-
-      if (!summary.jobId || !summary.title) {
-        throw new Error(`[qburstindia] Missing job card data at index ${index}`)
-      }
-
-      await Promise.all([
-        page.waitForURL(DETAIL_URL_PATTERN, { timeout: 45000 }),
-        button.evaluate((node) => node.click()),
-      ])
-      await page.waitForLoadState('domcontentloaded')
-      await wait(1000)
-
-      const detailUrl = page.url()
-      const detailLines = normalizeLines(await page.locator('body').innerText())
-      const job = buildJobFromDetail({
-        summary,
-        detailLines,
-        detailUrl,
-        scrapedAt: now(),
-      })
-
-      if (job) jobs.push(job)
-    }
-
-    return jobs
-  } finally {
-    await browser.close()
-  }
+  void openingsUrl
+  void maxJobs
+  void now
+  throw new Error(
+    '[qburstindia] API-only migration required: no verified HTTP/API contract is available for the historical openings board; browser automation is disabled.',
+  )
 }
 
 export const createQBurstIndiaScraper = ({

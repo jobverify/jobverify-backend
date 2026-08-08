@@ -106,7 +106,7 @@ test('Sphera India verifies the first-party handoff and emits only India Workday
         assert.equal(options.method, 'POST')
         assert.deepEqual(JSON.parse(options.body), {
           appliedFacets: {
-            Location_Country: [sphera.INDIA_LOCATION_COUNTRY_ID],
+            locationCountry: [sphera.INDIA_LOCATION_COUNTRY_ID],
           },
           limit: 20,
           offset: 0,

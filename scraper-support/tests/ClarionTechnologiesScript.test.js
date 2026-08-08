@@ -31,6 +31,26 @@ test('Clarion Technologies validators stay pinned to the verified featured-jobs 
   const clarion = await loadModule()
   assert.equal(clarion.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(clarion.hasFeaturedJobsSignal(featuredHtml), true)
+  assert.equal(clarion.VERIFIED_ON, '2026-08-07')
+})
+
+test('Clarion Technologies default fetch page keeps the insecure TLS retry scoped to the verified iframe host', async () => {
+  const clarion = await loadModule()
+  let capturedUrl = null
+  let capturedOptions = null
+
+  await clarion.defaultFetchPage(clarion.FEATURED_JOBS_URL, {
+    fetchPageImpl: async (url, options) => {
+      capturedUrl = url
+      capturedOptions = options
+      return { status: 200, url, html: featuredHtml }
+    },
+  })
+
+  assert.equal(capturedUrl, clarion.FEATURED_JOBS_URL)
+  assert.deepEqual(capturedOptions.allowInsecureTlsHosts, ['jobs.clariontechnologies.co.in'])
+  assert.equal(capturedOptions.label, 'clariontechnologies')
+  assert.match(capturedOptions.headers['User-Agent'], /Mozilla\/5\.0/)
 })
 
 test('Clarion Technologies run validates the verified page and iframe surface and stays fail-closed', async () => {

@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { chromium } from 'playwright'
-
 import { QBSS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -217,37 +215,9 @@ export const extractContinuServeJob = ({
 }
 
 const defaultLoadLiveCareersContract = async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: buildChromiumLaunchArgs(),
-  })
-
-  try {
-    const page = await browser.newPage({ userAgent: USER_AGENT })
-
-    // Node fetch times out against this WPEngine-hosted surface in the runner environment.
-    await page.goto(CAREERS_URL, { waitUntil: 'networkidle', timeout: 60000 })
-    const listingUrl = page.url()
-    const listingHtml = await page.content()
-    const detailUrls = extractContinuServeDetailUrls(listingHtml)
-
-    const detailPages = []
-    for (const detailUrl of detailUrls) {
-      await page.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
-      detailPages.push({
-        url: page.url(),
-        html: await page.content(),
-      })
-    }
-
-    return {
-      listingUrl,
-      listingHtml,
-      detailPages,
-    }
-  } finally {
-    await browser.close()
-  }
+  throw new Error(
+    '[qbss] API-only migration required: no verified HTTP/API contract is available for the ContinuServe careers surface; browser automation is disabled.',
+  )
 }
 
 export const createQbssScraper = ({

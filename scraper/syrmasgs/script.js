@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SYRMA_SGS_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -10,7 +9,6 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const BROWSER_TIMEOUT_MS = 60000
 
 export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
@@ -122,31 +120,6 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' '),
 )
-
-const isFallbackError = (error) =>
-  /HTTP 403|timed out|timeout|und_err_connect_timeout|connect timeout|could not connect|fetch failed/i
-    .test(String(error?.message ?? error ?? ''))
-
-const createBrowserFetchSession = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
-
-      return page.content()
-    },
-  }
-}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -399,43 +372,15 @@ export const extractJobDetail = (html, listing = {}) => {
 export const createSyrmaSgsScraper = () => ({
   async run({
     fetchText = defaultFetchText,
-    fetchBrowserText,
     now = () => new Date().toISOString(),
   } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession()
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
-    try {
-      const lifeAtHtml = await fetchPageText(LIFE_AT_URL)
+    {
+      const lifeAtHtml = await fetchText(LIFE_AT_URL)
       if (!hasOfficialLifeAtSignal(lifeAtHtml)) {
         throw new Error('The verified Syrma SGS life-at careers page changed materially')
       }
 
-      const jobsHtml = await fetchPageText(JOBS_URL)
+      const jobsHtml = await fetchText(JOBS_URL)
       if (!hasOfficialJobsPageSignal(jobsHtml)) {
         throw new Error('The verified Syrma SGS jobs archive changed materially')
       }
@@ -444,7 +389,7 @@ export const createSyrmaSgsScraper = () => ({
       const jobs = []
 
       for (const card of cards) {
-        const detailHtml = await fetchPageText(card.sourceUrl)
+        const detailHtml = await fetchText(card.sourceUrl)
         const detail = extractJobDetail(detailHtml, card)
 
         jobs.push({
@@ -459,10 +404,6 @@ export const createSyrmaSgsScraper = () => ({
       }
 
       return jobs
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
     }
   },
 })

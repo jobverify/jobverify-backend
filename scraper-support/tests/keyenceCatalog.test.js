@@ -19,6 +19,8 @@ test('Keyence is registered against the verified official apply-only careers sur
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'keyence.co.in')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
   assert.match(provider.modulePath, /keyence[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Keyence'), false)
 })

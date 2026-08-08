@@ -15,12 +15,11 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const COMPANY = COMPANY_NAME
 export const OFFICIAL_SITE_URL = PROVIDER_METADATA.homepageUrl
-export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const LEGACY_CAREERS_URL = PROVIDER_METADATA.legacyCareersPageUrl
 export const OFFICIAL_CAREERS_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffUrl
 export const DARWINBOX_ORIGIN = PROVIDER_METADATA.darwinboxOrigin
 export const DARWINBOX_COMPANY_ID = PROVIDER_METADATA.darwinboxCompanyId
-export const PUBLIC_PORTAL_URL =
-  `${DARWINBOX_ORIGIN}/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/allJobs`
+export const PUBLIC_PORTAL_URL = PROVIDER_METADATA.publicAllJobsUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
@@ -62,16 +61,14 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
   return normalizeWhitespace(match?.[0])
 }
 
-export const hasOfficialPrimesoftCareersSignals = (html = '') => {
+export const hasOfficialPrimesoftHomepageSignals = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page) || ''
 
-  return extractTitle(page) === 'Careers at PrimeSoft | Shape the Future of Work with AI & IT'
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/primesoft\.net\/careers\/["']/i.test(page)
-    && text.includes('For all India open positions click the link below')
-    && text.includes('jobs@primesoft.net (India)')
-    && text.includes('Canada')
-    && /https:\/\/primesoft\.net\/jobs\/sr-software-engineering\//i.test(page)
+  return extractTitle(page) === 'PrimeSoft, Agentic AI & Enterprise Transformation'
+    && text.includes('PrimeSoft')
+    && text.includes('Careers')
+    && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -87,20 +84,20 @@ export const createPrimesoftEnterpriseScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
   darwinboxScraper: delegatedDarwinboxScraper = darwinboxScraper,
-} = {}) => ({
+  } = {}) => ({
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
     fetchListingPage,
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const homepageHtml = await fetchText(OFFICIAL_SITE_URL)
 
-    if (!hasOfficialPrimesoftCareersSignals(careersHtml)) {
-      throw new Error('The verified Primesoft Enterprise careers page no longer matches the verified public surface')
+    if (!hasOfficialPrimesoftHomepageSignals(homepageHtml)) {
+      throw new Error('The verified Primesoft Enterprise homepage careers handoff no longer matches the verified public surface')
     }
 
-    if (extractOfficialDarwinboxUrl(careersHtml) !== OFFICIAL_CAREERS_HANDOFF_URL) {
-      throw new Error('The verified Primesoft Enterprise careers page no longer links to the official Darwinbox handoff')
+    if (extractOfficialDarwinboxUrl(homepageHtml) !== OFFICIAL_CAREERS_HANDOFF_URL) {
+      throw new Error('The verified Primesoft Enterprise homepage no longer links to the official Darwinbox handoff')
     }
 
     const jobs = await delegatedDarwinboxScraper.run({

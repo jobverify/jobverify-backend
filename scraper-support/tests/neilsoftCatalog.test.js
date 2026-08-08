@@ -25,6 +25,8 @@ test('Neilsoft Ltd is registered against the verified first-party India openings
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'neilsoft.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
   assert.match(provider.modulePath, /neilsoft[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Neilsoft Ltd'), false)
 })

@@ -17,6 +17,7 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNREACHABLE_ERROR_PATTERN = /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|getaddrinfo|fetch failed|aborted due to timeout|timeout/i
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -33,6 +34,35 @@ const defaultFetchPage = async (url) => {
     html: await response.text(),
   }
 }
+
+export const isUnreachableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNREACHABLE_ERROR_PATTERN.test(message)
+    || UNREACHABLE_ERROR_PATTERN.test(causeCode)
+    || UNREACHABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchPageSafely = async (fetchPage, url) => {
+  try {
+    return await fetchPage(url)
+  } catch (error) {
+    if (!isUnreachableError(error)) throw error
+
+    return {
+      status: null,
+      url,
+      html: null,
+      errorKind: 'unreachable',
+    }
+  }
+}
+
+export const isUnavailableSurface = (page = {}) =>
+  page?.status == null
+  && page?.errorKind === 'unreachable'
 
 export const hasRedirectShellSignal = (html = '') => (
   /window\.onload=function\(\)\{window\.location\.href="\/lander"\}/i.test(String(html ?? ''))
@@ -53,26 +83,42 @@ export const createBizmaticsIndiaScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
   } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasRedirectShellSignal(homepage.html)) {
-      throw new Error('Bizmatics verified homepage shell no longer matches the known public surface')
-    }
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasRedirectShellSignal(homepage.html)) {
+        throw new Error('Bizmatics verified homepage shell no longer matches the known public surface')
+      }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasRedirectShellSignal(careersPage.html)) {
-      throw new Error('Bizmatics verified careers shell no longer matches the known public surface')
-    }
+      const careersPage = await fetchPage(CAREERS_URL)
+      if (careersPage.status !== 200 || !hasRedirectShellSignal(careersPage.html)) {
+        throw new Error('Bizmatics verified careers shell no longer matches the known public surface')
+      }
 
-    if (extractRedirectTarget(homepage.html) !== '/lander' || extractRedirectTarget(careersPage.html) !== '/lander') {
-      throw new Error('Bizmatics redirect shell no longer points to the verified /lander target')
-    }
+      if (extractRedirectTarget(homepage.html) !== '/lander' || extractRedirectTarget(careersPage.html) !== '/lander') {
+        throw new Error('Bizmatics redirect shell no longer points to the verified /lander target')
+      }
 
-    const soldDomainPage = await fetchPage(SOLD_DOMAIN_URL)
-    if (soldDomainPage.status !== 200 || !hasForSaleLanderSignal(soldDomainPage.html)) {
-      throw new Error('Bizmatics /lander no longer matches the verified sold-domain page')
-    }
+      const soldDomainPage = await fetchPage(SOLD_DOMAIN_URL)
+      if (soldDomainPage.status !== 200 || !hasForSaleLanderSignal(soldDomainPage.html)) {
+        throw new Error('Bizmatics /lander no longer matches the verified sold-domain page')
+      }
 
-    return []
+      return []
+    } catch (error) {
+      if (!isUnreachableError(error)) throw error
+
+      const surfaces = await Promise.all([
+        fetchPageSafely(fetchPage, HOMEPAGE_URL),
+        fetchPageSafely(fetchPage, CAREERS_URL),
+        fetchPageSafely(fetchPage, SOLD_DOMAIN_URL),
+      ])
+
+      if (surfaces.every(isUnavailableSurface)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 

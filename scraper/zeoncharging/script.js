@@ -2,11 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const SOURCE = 'zeoncharging'
 export const COMPANY = 'Zeon Electric Pvt Ltd'
@@ -150,85 +148,11 @@ export const hasOfficialCareersSignal = (html) => {
     && extractJobCards(page).length > 0
 }
 
-export const extractRenderedJobCards = async (url = CAREERS_URL) => {
-  const browser = await launchBrowser()
-
-  try {
-    const page = await createOptimizedPage(browser)
-    page.setDefaultNavigationTimeout(60000)
-    await page.goto(url, { waitUntil: 'domcontentloaded' })
-    await delay(5000)
-
-    const renderedCards = await page.evaluate(() => {
-      const normalize = (value) => String(value ?? '').replace(/\s+/g, ' ').trim() || null
-
-      return Array.from(document.querySelectorAll('article'))
-        .map((article) => {
-          const titleEl = article.querySelector('h3')
-          const departmentEl = article.querySelector('h6')
-          const topRow = article.querySelector('div.flex')
-          const topRowCells = Array.from(topRow?.children || [])
-            .map((element) => normalize(element.textContent))
-            .filter(Boolean)
-          const summaryContainer = titleEl?.parentElement?.querySelector('div.mb-5')
-          const summaryText = (() => {
-            if (!summaryContainer) return null
-            const clone = summaryContainer.cloneNode(true)
-            clone.querySelectorAll('details').forEach((details) => details.remove())
-            return normalize(clone.textContent)
-          })()
-          const applyLink = article.querySelector('a[href*="job_id="]')
-
-          return {
-            title: normalize(titleEl?.textContent),
-            department: normalize(departmentEl?.textContent),
-            location: topRowCells[0] || null,
-            experienceRequired: topRowCells[1] || null,
-            jobDescription: summaryText,
-            applyUrl: applyLink?.href || null,
-          }
-        })
-        .filter((card) => card.title && card.applyUrl)
-    })
-
-    return renderedCards.map((card) => {
-      const roleId = card.applyUrl.match(/[?&]job_id=(\d+)/i)?.[1] || slugify(card.title)
-      const employmentType = /internship/i.test(`${card.department || ''} ${card.title}`) ? 'Internship' : null
-
-      return {
-        title: card.title,
-        company: COMPANY,
-        department: card.department,
-        location: card.location ? `${card.location}, India` : 'India',
-        city: card.location || null,
-        state: null,
-        country: 'India',
-        jobId: `${SOURCE}-${roleId}`,
-        requisitionId: roleId,
-        sourceUrl: card.applyUrl,
-        applyUrl: card.applyUrl,
-        employmentType,
-        experienceRequired: card.experienceRequired,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: null,
-        closingDate: null,
-        jobDescription: card.jobDescription,
-        remoteStatus: 'On-site',
-      }
-    })
-  } finally {
-    await browser.close()
-  }
-}
-
 export const createZeonChargingScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
-    extractRenderedJobs = extractRenderedJobCards,
     now = () => new Date().toISOString(),
   } = {}) {
     const homepage = await fetchPage(LEGACY_HOMEPAGE_URL)
@@ -257,10 +181,7 @@ export const createZeonChargingScraper = ({
 
     let jobs = hasOfficialCareersSignal(careersPage.html) ? extractJobCards(careersPage.html) : []
     if (jobs.length === 0) {
-      jobs = await extractRenderedJobs(CAREERS_URL)
-    }
-    if (jobs.length === 0) {
-      throw new Error('Response is not the verified official careers page for Zeon Charging')
+      throw new Error('Zeon Charging API-only scraper could not find jobs in the official careers response')
     }
 
     const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs

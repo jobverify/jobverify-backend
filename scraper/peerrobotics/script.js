@@ -8,6 +8,7 @@ export const COMPANY = 'Peer Robotics'
 export const HOMEPAGE_URL = 'https://peerrobotics.ai/'
 export const ABOUT_URL = 'https://peerrobotics.ai/about'
 export const WELLFOUND_JOBS_URL = 'https://wellfound.com/company/peer-robotics/jobs'
+export const VERIFIED_ON = '2026-08-07'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -89,8 +90,19 @@ export const isVerifiedWellfoundChallenge = (page) => {
   const responseUrl = String(page?.url ?? '')
 
   return Number(page?.status) === 403
-    && normalized.includes('please enable js and disable any ad blocker')
-    && rawHtml.toLowerCase().includes('captcha-delivery.com')
+    && (
+      (
+        normalized.includes('please enable js and disable any ad blocker')
+        && rawHtml.toLowerCase().includes('captcha-delivery.com')
+      )
+      || (
+        normalized.includes('just a moment')
+        && normalized.includes('checking if the site connection is secure')
+        && normalized.includes('enable javascript and cookies to continue')
+        && normalized.includes('cloudflare ray id')
+        && normalized.includes('team@wellfound.com')
+      )
+    )
     && (
       responseUrl === WELLFOUND_JOBS_URL
       || responseUrl.startsWith('https://wellfound.com/')

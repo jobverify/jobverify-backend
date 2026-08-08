@@ -33,6 +33,13 @@ test('BGD Tech PVT LTD validates the verified careers intake surface and returns
   assert.equal(bgd.COMPANY, 'BGD Tech PVT LTD')
   assert.equal(bgd.CAREERS_URL, 'https://bgd-limited.com/careers')
   assert.equal(bgd.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(
+    bgd.hasForbiddenSurfaceSignal({
+      status: 403,
+      html: '<html><head><title>403 Forbidden</title></head><body><h1>403 Forbidden</h1></body></html>',
+    }),
+    true,
+  )
   assert.equal(bgd.pageExposesPublicJobListings(careersHtml), false)
 
   const jobs = await bgd.createBGDTechPvtLtdScraper({
@@ -66,6 +73,20 @@ test('BGD Tech PVT LTD can recover with a browser-backed careers page when direc
   })
 
   assert.deepEqual(browserUrls, [bgd.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('BGD Tech PVT LTD returns no jobs when the current public careers host responds with 403 Forbidden', async () => {
+  const bgd = await loadModule()
+
+  const jobs = await bgd.createBGDTechPvtLtdScraper({
+    fetchPage: async (url) => ({
+      status: 403,
+      url,
+      html: '<html><head><title>403 Forbidden</title></head><body><h1>403 Forbidden</h1></body></html>',
+    }),
+  }).run()
+
   assert.deepEqual(jobs, [])
 })
 

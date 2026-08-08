@@ -71,52 +71,30 @@ test('Infiniti Software Solutions validates the current first-party shell and pa
   assert.equal(jobs[1].location, 'Mumbai, India')
 })
 
-test('Infiniti Software Solutions falls back to a browser-backed page loader when Node fetch times out', async () => {
+test('Infiniti Software Solutions fails clearly when its HTTP careers request fails', async () => {
   const infiniti = await loadModule()
   const requestedPrimaryUrls = []
-  const requestedBrowserUrls = []
 
-  const jobs = await infiniti.createInfinitiSoftwareSolutionsScraper({ maxJobs: 1 }).run({
+  await assert.rejects(
+    infiniti.createInfinitiSoftwareSolutionsScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
       requestedPrimaryUrls.push(url)
       throw new TypeError('fetch failed | Connect Timeout Error')
     },
-    fetchBrowserText: async (url) => {
-      requestedBrowserUrls.push(url)
-      return careersHtml
-    },
-  })
+    }),
+    /Infiniti Software Solutions API-only scraper could not fetch its careers page: fetch failed \| Connect Timeout Error/,
+  )
 
   assert.deepEqual(requestedPrimaryUrls, [infiniti.CAREERS_URL])
-  assert.deepEqual(requestedBrowserUrls, [infiniti.CAREERS_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Customer Success Manager')
 })
 
-test('Infiniti Software Solutions recovers jobs from the live browser DOM when rendered HTML parsing yields no cards', async () => {
+test('Infiniti Software Solutions fails clearly when HTTP returns a JavaScript-only careers shell', async () => {
   const infiniti = await loadModule()
 
-  const jobs = await infiniti.createInfinitiSoftwareSolutionsScraper().run({
-    fetchText: async () => careersShellHtml,
-    fetchBrowserJobs: async () => [
-      {
-        title: 'Customer Success Manager',
-        jobDescription: 'Build long-term customer relationships and drive adoption.',
-        experienceRequired: '10+ Years',
-        city: 'Chennai',
-        applyUrl: 'https://app.goodfit.so/apply/G540dcuX',
-      },
-      {
-        title: 'Business Development Manager',
-        jobDescription: 'Drive growth through partnerships.',
-        experienceRequired: '5 - 8 Years',
-        city: 'Mumbai',
-        applyUrl: 'https://app.goodfit.so/apply/oJTXLABJ',
-      },
-    ],
-  })
-
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].title, 'Customer Success Manager')
-  assert.equal(jobs[1].location, 'Mumbai, India')
+  await assert.rejects(
+    infiniti.createInfinitiSoftwareSolutionsScraper().run({
+      fetchText: async () => careersShellHtml,
+    }),
+    /Infiniti Software Solutions API-only scraper received an unusable JavaScript-only careers shell/,
+  )
 })

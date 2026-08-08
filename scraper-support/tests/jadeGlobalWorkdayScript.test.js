@@ -145,9 +145,11 @@ test('Jade Global Workday run enriches listings with public Workday detail pages
     },
   ])
   assert.equal(jobs[0].experienceRequired, '4 years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].postingDate, '2026-05-18')
   assert.match(jobs[0].jobDescription || '', /configure absence plans/i)
   assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[1].publicExperienceChecked, true)
   assert.equal(jobs[1].postingDate, '2026-07-20')
   assert.match(jobs[1].jobDescription || '', /Oracle EPM implementations/i)
 })

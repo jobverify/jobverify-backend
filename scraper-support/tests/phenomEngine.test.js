@@ -81,6 +81,7 @@ test('extractJobDetail normalizes structured experience sentences to numeric chi
   )
 
   assert.equal(detail.experienceRequired, '5+ years')
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('extractJobDetail normalizes description-only numeric experience requirements', () => {
@@ -102,6 +103,7 @@ test('extractJobDetail normalizes description-only numeric experience requiremen
   )
 
   assert.equal(detail.experienceRequired, '4+ years')
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('extractJobDetail preserves explicit no-experience labels from structured job data', () => {
@@ -124,6 +126,7 @@ test('extractJobDetail preserves explicit no-experience labels from structured j
   )
 
   assert.equal(detail.experienceRequired, 'No experience required')
+  assert.equal(detail.publicExperienceChecked, true)
 })
 
 test('extractJobDetail ignores generic equivalent experience prose without numeric requirements', () => {
@@ -145,4 +148,5 @@ test('extractJobDetail ignores generic equivalent experience prose without numer
   )
 
   assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.publicExperienceChecked, true)
 })

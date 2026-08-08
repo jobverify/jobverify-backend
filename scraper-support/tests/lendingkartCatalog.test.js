@@ -19,7 +19,7 @@ test('Lendingkart is registered as a verified Darwinbox script provider', () => 
   )
   assert.equal(
     provider.verifiedJobDetailExampleUrl,
-    'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a2696757d426?from=all',
+    'https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a7318ee583fe?from=all',
   )
   assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.countryFilter, 'India')
@@ -30,10 +30,11 @@ test('Lendingkart is registered as a verified Darwinbox script provider', () => 
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'lendingkart.com')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-08-07')
   assert.match(provider.verifiedSurfaceSummary, /lendingkart\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /lendingkart\.com\/job/i)
-  assert.match(provider.verifiedSurfaceSummary, /jobdetails\/a6a2696757d426/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /jobdetails\/a6a7318ee583fe/i)
   assert.match(provider.modulePath, /lendingkart[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /lendingkart[\\/]jobs\.json$/i)
 })

@@ -281,11 +281,11 @@ test('CLI dry-run writes jobs.json when the scraper is executed directly', async
   }
 })
 
-test('run falls back to the public rendered careers page when the Spire listing API returns 401', async () => {
+test('run surfaces a Spire API authorization failure without opening a rendered-browser fallback', async () => {
   const tataCommunications = await loadModule()
 
-  const jobs = await tataCommunications.run({
-    now: () => new Date('2026-08-05T12:00:00.000Z'),
+  let renderedFallbackCalled = false
+  await assert.rejects(tataCommunications.run({
     fetchJson: async (url) => {
       if (String(url) === tataCommunications.WORKSPACE_BOOTSTRAP_URL) {
         return bootstrapPayload
@@ -293,44 +293,11 @@ test('run falls back to the public rendered careers page when the Spire listing 
 
       throw new Error(`HTTP 401 for ${url}`)
     },
-    fetchRenderedText: async () => renderedCareersText,
-  })
+    fetchRenderedText: async () => {
+      renderedFallbackCalled = true
+      return renderedCareersText
+    },
+  }), /HTTP 401/)
 
-  assert.equal(jobs.length, 5)
-  assert.deepEqual(jobs[0], {
-    title: 'AM- Financial Planning & Analysis',
-    company: 'Tata Communications',
-    department: null,
-    location: 'Mumbai, Maharashtra, India',
-    city: 'Mumbai',
-    jobId: '882635278',
-    requisitionId: '882635278',
-    sourceUrl: tataCommunications.HOME_URL,
-    applyUrl: tataCommunications.HOME_URL,
-    employmentType: null,
-    experienceRequired: '1Y - 3Y',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [
-      'financial planning & analysis',
-      'budgeting',
-      'variance analysis',
-      'data analysis',
-      'financial models',
-      'accounting standards',
-    ],
-    postingDate: '2026-08-05',
-    closingDate: null,
-    jobDescription: 'AM- Financial Planning & Analysis Mumbai, Maharashtra, India Skills: financial planning & analysis, budgeting, variance analysis, data analysis, financial models, accounting standards Experience: 1Y - 3Y Posted 35 minutes ago',
-    source: 'tatacommunications',
-    link: tataCommunications.HOME_URL,
-    scrapedAt: '2026-08-05T12:00:00.000Z',
-  })
-  assert.deepEqual(jobs.map((job) => job.title), [
-    'AM- Financial Planning & Analysis',
-    'Sr Engineer-Captive Operations',
-    'Analyst - Hybrid Connectivity Services',
-    'Assistant Manager - India Operations, New Rollouts and Automation',
-    'Manager - Captive Operations',
-  ])
+  assert.equal(renderedFallbackCalled, false)
 })

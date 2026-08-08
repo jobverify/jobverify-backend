@@ -4,13 +4,6 @@ import { fileURLToPath } from 'node:url'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const DETAIL_RENDER_TIMEOUT_MS = 120000
-let browserUtilsPromise = null
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
-  return browserUtilsPromise
-}
 
 export const SOURCE = 'rinextechnologies'
 export const COMPANY = 'Rinex Technologies'
@@ -313,41 +306,12 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createRenderedDetailFetcher = async () => {
-  const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    async fetchRenderedHtml(url) {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: DETAIL_RENDER_TIMEOUT_MS })
-      return page.content()
-    },
-    async close() {
-      await browser.close()
-    },
-  }
-}
-
 export const createRinexTechnologiesScraper = () => ({
   async run({
     fetchText = defaultFetchText,
-    fetchRenderedDetailHtml = null,
     now = () => new Date().toISOString(),
     maxJobs = null,
   } = {}) {
-    let renderedDetailFetcher = null
-
-    const getRenderedDetailHtml = async (url) => {
-      if (typeof fetchRenderedDetailHtml === 'function') {
-        return fetchRenderedDetailHtml(url)
-      }
-
-      renderedDetailFetcher ||= await createRenderedDetailFetcher()
-      return renderedDetailFetcher.fetchRenderedHtml(url)
-    }
-
-    try {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageShellSignal(homepageHtml)) {
       throw new Error('Rinex Technologies verified homepage shell no longer matches the trusted first-party surface')
@@ -366,7 +330,7 @@ export const createRinexTechnologiesScraper = () => ({
     for (const listing of selectedListings) {
       let detailHtml = await fetchText(listing.sourceUrl)
       if (!hasOfficialJobDetailSignal(detailHtml, listing) && isJavaScriptOnlyShell(detailHtml)) {
-        detailHtml = await getRenderedDetailHtml(listing.sourceUrl)
+        throw new Error(`Rinex Technologies API-only scraper received a JavaScript-only detail page for ${listing.sourceUrl}`)
       }
       const detail = extractJobDetail(detailHtml, listing)
 
@@ -382,11 +346,6 @@ export const createRinexTechnologiesScraper = () => ({
     }
 
     return jobs
-    } finally {
-      if (renderedDetailFetcher) {
-        await renderedDetailFetcher.close()
-      }
-    }
   },
 })
 

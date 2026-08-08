@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import MAGNIT_GLOBAL_CATALOG from './catalog.js'
@@ -23,7 +22,6 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const PAGE_SETTLE_MS = 5000
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -60,17 +58,6 @@ const firstNonEmpty = (...values) => {
 const isIndiaLocation = (location = {}) =>
   String(location.isoCountryCode ?? location.countryCode ?? '').toUpperCase() === 'IN'
   || /\bindia\b/i.test(String(location.formattedAddress ?? ''))
-
-const waitForPageSettle = async (page, timeoutMs = PAGE_SETTLE_MS) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return
-
-  if (typeof page?.waitForTimeout === 'function') {
-    await page.waitForTimeout(timeoutMs)
-    return
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, timeoutMs))
-}
 
 export const buildSearchApiUrl = () =>
   `${DAYFORCE_ORIGIN}/api/geo/${DAYFORCE_CLIENT_NAMESPACE}/jobposting/search`
@@ -165,80 +152,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createBrowserDayforceClient = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-  waitForPageSettleImpl = waitForPageSettle,
-  pageSettleMs = PAGE_SETTLE_MS,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-    await page.goto(OFFICIAL_DAYFORCE_URL, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000,
-    })
-    await waitForPageSettleImpl(page, pageSettleMs)
-
-    return {
-      async searchJobPostings(payload = buildSearchRequestPayload()) {
-        return page.evaluate(
-          async ({ authUrl, searchUrl, requestPayload }) => {
-            const csrfResponse = await fetch(authUrl, {
-              credentials: 'include',
-              headers: { Accept: 'application/json,text/plain,*/*' },
-            })
-            if (!csrfResponse.ok) {
-              throw new Error(`HTTP ${csrfResponse.status} for ${authUrl}`)
-            }
-
-            const csrfPayload = await csrfResponse.json()
-            const csrfToken = csrfPayload?.csrfToken
-            if (!csrfToken) {
-              throw new Error('Missing Dayforce CSRF token')
-            }
-
-            const response = await fetch(searchUrl, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json,text/plain,*/*',
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken,
-              },
-              body: JSON.stringify(requestPayload),
-            })
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status} for ${searchUrl}`)
-            }
-
-            return response.json()
-          },
-          {
-            authUrl: `${DAYFORCE_ORIGIN}/api/auth/csrf`,
-            searchUrl: buildSearchApiUrl(),
-            requestPayload: payload,
-          },
-        )
-      },
-      async close() {
-        await browser.close()
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
-
 export const createMagnitGlobalScraper = ({
   now = () => new Date().toISOString(),
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-  waitForPageSettleImpl = waitForPageSettle,
-  pageSettleMs = PAGE_SETTLE_MS,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
@@ -249,35 +164,23 @@ export const createMagnitGlobalScraper = ({
       throw new Error('Magnit verified first-party careers page no longer matches the pinned Dayforce handoff')
     }
 
-    let browserClient = null
-
-    try {
-      if (!searchJobPostings) {
-        browserClient = await createBrowserDayforceClient({
-          launchBrowserImpl,
-          createOptimizedPageImpl,
-          waitForPageSettleImpl,
-          pageSettleMs,
-        })
-        searchJobPostings = browserClient.searchJobPostings
-      }
-
-      const payload = await searchJobPostings(buildSearchRequestPayload(0))
-      const jobs = extractSearchPostings(payload)
-        .map((posting) => normalizeSearchPosting(posting))
-        .filter(Boolean)
-
-      return jobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      }))
-    } finally {
-      if (browserClient) {
-        await browserClient.close()
-      }
+    if (!searchJobPostings) {
+      throw new Error(
+        'Magnit Global API-only migration incomplete: no session-free Dayforce search contract has been demonstrated',
+      )
     }
+
+    const payload = await searchJobPostings(buildSearchRequestPayload(0))
+    const jobs = extractSearchPostings(payload)
+      .map((posting) => normalizeSearchPosting(posting))
+      .filter(Boolean)
+
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

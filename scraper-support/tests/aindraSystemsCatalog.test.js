@@ -79,6 +79,10 @@ test('buildScrapers and company coverage resolve Aindra Systems from the shared 
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Aindra Systems')
   assert.equal(provider.companyCareerPage, 'https://www.aindra.in/')
+  assert.equal(provider.paginationStrategy, 'single-homepage-careers-section-or-unavailable-first-party-host-fail-closed')
+  assert.equal(provider.extractionStrategy, 'verified-homepage-careers-section+inline-role-modals+first-party-host-unavailable-fail-closed')
+  assert.equal(provider.verifiedOn, '2026-07-28')
+  assert.match(provider.verifiedSurfaceSummary, /fails tls verification/i)
   assert.match(scraper.dryRunFile, /aindrasystems[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

@@ -12,19 +12,23 @@ test('Indi Energy is registered against the verified official apply-only careers
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'INDI ENERGY')
   assert.equal(provider.companyCareerPage, 'https://indienergy.in/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'official-homepage-handoff-plus-apply-only-careers-shell',
+    'homepage-plus-rebuilt-spa-shell',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-apply-only-careers-shell-zero-jobs',
+    'verified-first-party-spa-homepage+verified-careers-route-without-public-jobs-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'indienergy.in')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Desh Ki Battery/i)
+  assert.match(provider.verifiedSurfaceSummary, /Send enquiry/i)
   assert.match(provider.modulePath, /indienergy[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'INDI ENERGY'), false)
 })

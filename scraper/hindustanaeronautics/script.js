@@ -405,6 +405,7 @@ export const extractJobFromCareerDetail = (listing = {}, payload = {}) => {
     postingDate: normalizeHalDate(detail?.floated_date) || listing.floatedDate,
     closingDate: normalizeHalDate(detail?.activeupto) || listing.dueDate,
     jobDescription: normalizeWhitespace(detail?.description),
+    publicExperienceChecked: true,
   }
 }
 

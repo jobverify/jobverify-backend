@@ -303,6 +303,7 @@ test('Hindustan Aeronautics extracts current listings and keeps only real open r
     postingDate: '2026-07-09',
     closingDate: '2026-07-24',
     jobDescription: 'Notification for Engagement of ITI Trade Apprentices at Hindustan Aeronautics Limited Barrackpore under Apprentices Act-1961',
+    publicExperienceChecked: true,
   })
 })
 
@@ -371,6 +372,7 @@ test('Hindustan Aeronautics run validates the official careers shell, official A
       postingDate: '2026-07-09',
       closingDate: '2026-07-24',
       jobDescription: 'Notification for Engagement of ITI Trade Apprentices at Hindustan Aeronautics Limited Barrackpore under Apprentices Act-1961',
+      publicExperienceChecked: true,
       source: 'hindustanaeronautics',
       link: 'https://hal-india.co.in/backend/wp-content/uploads/career/ITI Apprenticeship Notification _Bk_1783569291.pdf',
       scrapedAt: FIXED_SCRAPED_AT,

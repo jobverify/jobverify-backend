@@ -23,14 +23,18 @@ const currentHomepageHtml = `
 <html lang="en-IN">
   <head>
     <meta property="og:title" content="Dream11 - Play Fantasy Cricket for FREE" />
+    <meta
+      name="description"
+      content="India's #1 fantasy cricket platform — FREE to play. Play fantasy cricket for FREE - Use your skill, pick players and join contests. 25 Cr+ users. Download the Dream11 app now."
+    />
     <link rel="canonical" href="https://www.dream11.com/" />
   </head>
   <body>
     <footer>
-      <a href="https://www.dreamsports.group/">About</a>
-      <a href="https://www.dreamsports.group/careers/">Careers</a>
-      <a href="https://www.dream11.com/help-center">Helpdesk</a>
-      <div>Sporta Technologies Private Limited</div>
+      <div tabindex="0" role="link"><p>About</p></div>
+      <div tabindex="0" role="link"><p>Careers</p></div>
+      <div tabindex="0" role="link"><p>Helpdesk</p></div>
+      <div>Sporta Technologies Private Limited. 7th Floor, Ascent, Sudam Kalu Ahire Marg, Opposite GSK, Worli, Mumbai Maharashtra 400030</div>
       <p>India's Biggest Fantasy Sports Platform: Play for Free. Win Big.</p>
     </footer>
   </body>
@@ -162,7 +166,7 @@ test('Dream11 constants and helpers stay pinned to the verified parent-brand car
   assert.equal(dream11.OFFICIAL_BRAND_NAME, 'Dream11')
   assert.equal(dream11.PARENT_COMPANY_NAME, 'Dream Sports')
   assert.equal(dream11.SOURCE, 'dream11')
-  assert.equal(dream11.VERIFIED_AT, '2026-08-01')
+  assert.equal(dream11.VERIFIED_AT, '2026-08-07')
   assert.equal(dream11.HOMEPAGE_URL, 'https://www.dream11.com/')
   assert.equal(dream11.PARENT_CAREERS_URL, 'https://www.dreamsports.group/careers')
   assert.equal(
@@ -194,6 +198,10 @@ test('Dream11 constants and helpers stay pinned to the verified parent-brand car
   assert.equal(
     dream11.extractParentCareersUrlFromHomepage(homepageHtml),
     'https://www.dreamsports.group/careers/',
+  )
+  assert.equal(
+    dream11.extractParentCareersUrlFromHomepage(currentHomepageHtml),
+    null,
   )
   assert.equal(
     dream11.isVerifiedDream11RedirectedNoTrustRoute(

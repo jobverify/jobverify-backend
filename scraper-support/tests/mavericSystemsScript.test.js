@@ -162,7 +162,7 @@ test('extractJobDetail parses the verified detail page structure', async () => {
   assert.match(job.jobDescription, /automation, regression, and performance coverage/i)
 })
 
-test('run uses the verified homepage, careers page, summary list, and job details', async () => {
+test('run uses the verified homepage, careers page, injected HTTP summary pages, and job details', async () => {
   const mavericSystems = await loadMavericSystemsModule()
 
   assert.ok(mavericSystems, 'Expected Maveric Systems scraper module to exist')
@@ -171,28 +171,6 @@ test('run uses the verified homepage, careers page, summary list, and job detail
   const summaryHtml = buildSummaryHtml()
   const summaryPageTwoHtml = buildSummaryPageTwoHtml()
   const detailHtml = buildDetailHtml()
-  let currentStage = 'summary'
-
-  const fakePage = {
-    goto: async (url) => {
-      requestedUrls.push(url)
-      currentStage = url.includes('career_ns=job_listing_summary') ? 'summary' : url.includes('career_job_req_id=5673') ? 'detail' : currentStage
-    },
-    content: async () => {
-      if (currentStage === 'summary') return summaryHtml
-      if (currentStage === 'summary-page-2') return summaryPageTwoHtml
-      if (currentStage === 'detail') return detailHtml
-      throw new Error(`Unexpected page stage: ${currentStage}`)
-    },
-    evaluate: async (fn) => {
-      if (typeof fn === 'function') {
-        currentStage = 'summary-page-2'
-      }
-    },
-    waitForNavigation: async () => {},
-    close: async () => {},
-  }
-
   const jobs = await mavericSystems.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
@@ -202,12 +180,13 @@ test('run uses the verified homepage, careers page, summary list, and job detail
       if (url === 'https://maveric-systems.com/careers/') {
         return '<html><body><a href="https://career44.sapsf.com/career?company=mavericsys">Jobs</a></body></html>'
       }
+      if (url.includes('career_job_req_id=')) return detailHtml
       throw new Error(`Unexpected fetch URL: ${url}`)
     },
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => fakePage,
+    getSearchPages: async ({ searchUrl }) => {
+      requestedUrls.push(searchUrl)
+      return [summaryHtml, summaryPageTwoHtml]
+    },
   })
 
   assert.deepEqual(requestedUrls.slice(0, 2), [
@@ -220,4 +199,24 @@ test('run uses the verified homepage, careers page, summary list, and job detail
   assert.equal(jobs[0].company, 'Maveric Systems')
   assert.equal(jobs[0].applyUrl, 'https://career44.sapsf.com/career?career_ns=job_apply&company=mavericsys&career_job_req_id=5673')
   assert.equal(jobs[0].country, 'India')
+})
+
+test('API-only run stops before returning a partial Maveric board when SuccessFactors requires unverified pagination', async () => {
+  const mavericSystems = await loadMavericSystemsModule()
+
+  await assert.rejects(
+    mavericSystems.run({
+      fetchText: async (url) => {
+        if (url === mavericSystems.HOMEPAGE_URL) {
+          return '<html><body><h1>Maveric Systems</h1></body></html>'
+        }
+        if (url === mavericSystems.CAREER_PAGE_URL) {
+          return '<html><body><a href="https://career44.sapsf.com/career?company=mavericsys">Jobs</a></body></html>'
+        }
+        if (url === mavericSystems.SUMMARY_URL) return buildSummaryHtml()
+        throw new Error(`Unexpected Maveric Systems URL: ${url}`)
+      },
+    }),
+    /Maveric Systems API-only migration required.*pagination.*browser automation is disabled/i,
+  )
 })

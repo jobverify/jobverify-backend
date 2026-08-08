@@ -269,6 +269,18 @@ test('run validates the verified Endurance first-party surfaces and returns job 
   ])
 })
 
+test('run reports an API-only migration error when direct Endurance requests are blocked', async () => {
+  const endurance = await loadEnduranceModule()
+
+  await assert.rejects(
+    endurance.createEnduranceScraper().run({
+      fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
+      createTextFetcher: async () => assert.fail('Endurance must not launch a browser'),
+    }),
+    /endurance API-only migration.*HTTP 403/i,
+  )
+})
+
 test('run fails closed when the verified Endurance homepage, careers page, job portal, or detail page drift materially', async () => {
   const endurance = await loadEnduranceModule()
 

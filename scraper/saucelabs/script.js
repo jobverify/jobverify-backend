@@ -1,10 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  createOptimizedPage as defaultCreateOptimizedPage,
-  launchBrowser as defaultLaunchBrowser,
-} from '../../scraper-support/utils/browser.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SAUCE_LABS_CATALOG from './catalog.js'
@@ -223,44 +219,23 @@ export const createSauceLabsScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    launchBrowser = defaultLaunchBrowser,
-    createOptimizedPage = defaultCreateOptimizedPage,
     fetchJson = defaultFetchJson,
     now = defaultNow,
   } = {}) {
-    let browser
+    const indiaJobs = extractIndiaJobsFromGreenhousePayload(
+      await fetchJson(GREENHOUSE_JOBS_API_URL),
+      { scrapedAt: now() },
+    )
+    const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0
+      ? indiaJobs.slice(0, maxJobs)
+      : indiaJobs
 
-    try {
-      browser = await launchBrowser()
-      const page = await createOptimizedPage(browser)
-
-      await page.goto(CAREERS_PAGE_URL, {
-        waitUntil: 'domcontentloaded',
-        timeout: 60000,
-      })
-
-      const careersHtml = await page.content()
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Response is not the verified official Sauce Labs careers page')
-      }
-
-      const indiaJobs = extractIndiaJobsFromGreenhousePayload(
-        await fetchJson(GREENHOUSE_JOBS_API_URL),
-        { scrapedAt: now() },
-      )
-      const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0
-        ? indiaJobs.slice(0, maxJobs)
-        : indiaJobs
-
-      return selectedJobs.map((job) => ({
-        ...job,
-        companyCareerPage: CAREERS_PAGE_URL,
-        companyDomain: PROVIDER_METADATA.companyDomain,
-        atsPlatform: PROVIDER_METADATA.atsPlatform,
-      }))
-    } finally {
-      if (browser) await browser.close()
-    }
+    return selectedJobs.map((job) => ({
+      ...job,
+      companyCareerPage: CAREERS_PAGE_URL,
+      companyDomain: PROVIDER_METADATA.companyDomain,
+      atsPlatform: PROVIDER_METADATA.atsPlatform,
+    }))
   },
 })
 

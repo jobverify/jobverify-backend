@@ -125,7 +125,6 @@ const SKILL_NAME_FILTER_SOURCES = new Set([
   'gocomet',
   'hiveminds',
   'impactanalytics',
-  'infocuspinnovations',
   'isocrates',
   'kapture',
   'openfinancialtechnologies',
@@ -205,6 +204,56 @@ const EXPERIENCE_RANGE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s
 const EXPERIENCE_VALUE_PATTERN = /(\d+(?:\.\d+)?)\s*(\+|plus)?\s+years?/i
 
 const normalizeSourceId = (value) => normalizeString(value)?.toLowerCase() || null
+
+const isGenericWorkableJobUrl = (value) => /^https:\/\/apply\.workable\.com\/j\/[A-Z0-9]+(?:\/apply)?$/i.test(value)
+const isAccountWorkableJobUrl = (value, accountName) => (
+  new RegExp(`^https://apply\\.workable\\.com/${escapeRegex(accountName)}/j/[A-Z0-9]+(?:/apply)?$`, 'i')
+).test(value)
+
+const hasTrustedPublicExperienceSurface = (job = {}, provider = {}) => {
+  const source = normalizeSourceId(job.source || provider.source)
+  const sourceUrl = normalizeUrl(job.sourceUrl || job.link || job.applyUrl) || ''
+  const applyUrl = normalizeUrl(job.applyUrl || job.link || job.sourceUrl) || ''
+
+  switch (source) {
+    case 'amrita':
+      return /^https:\/\/www\.amrita\.edu\/job\/.+/i.test(sourceUrl)
+        && /^https:\/\/careers\.amrita\.edu\/client\/job-search/i.test(applyUrl)
+    case 'bankofamerica':
+      return /^https:\/\/careers\.bankofamerica\.com\//i.test(sourceUrl)
+    case 'bitsilica':
+      return /^https:\/\/bitsilica\.com\/(?!careers(?:\/|$)).+/i.test(sourceUrl)
+    case 'buyhatke':
+      return /^https:\/\/compare\.buyhatke\.com\/company\/.+\.php$/i.test(sourceUrl)
+    case 'ibm':
+      return /^https:\/\/careers\.ibm\.com\//i.test(sourceUrl)
+        && /^https:\/\/careers\.ibm\.com\//i.test(applyUrl)
+    case 'innovaccer':
+      return (
+        isAccountWorkableJobUrl(sourceUrl, 'innovaccer-analytics')
+        || isGenericWorkableJobUrl(sourceUrl)
+      ) && (
+        isAccountWorkableJobUrl(applyUrl, 'innovaccer-analytics')
+        || isGenericWorkableJobUrl(applyUrl)
+      )
+    case 'jubilantfoodworks':
+      return /^https:\/\/fa-exph-saasfaprod1\.fa\.ocs\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/jubilant\/job\//i.test(sourceUrl)
+    case 'novartis':
+      return /^https:\/\/www\.novartis\.com\/careers\/career-search\/job\/details\//i.test(sourceUrl)
+    case 'nucleussoftware':
+      return /^https:\/\/nucleussoftware\.zohorecruit\.in\/jobs\/Careers/i.test(sourceUrl)
+    case 'nurturefarm':
+      return /^https:\/\/nurture\.skillate\.com(?:\/|$)/i.test(sourceUrl)
+    case 'nxtwave':
+      return /^https:\/\/nxtwave\.freshteam\.com\/jobs\//i.test(sourceUrl)
+    case 'paytm':
+      return /^https:\/\/jobs\.lever\.co\/paytm\//i.test(sourceUrl)
+    case 'plumhq':
+      return /^https:\/\/careers\.kula\.ai\/plumhq(?:\/|$)/i.test(sourceUrl)
+    default:
+      return false
+  }
+}
 
 const looksLikeTechnicalSkillToken = (value) => {
   const normalized = normalizeString(value)
@@ -1246,10 +1295,50 @@ const EXPERIENCE_CONTEXT_PATTERN = /\b(?:experience|exp\.?|required|preferred|mi
 const INVALID_EXPERIENCE_RANGE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i
 const PROFILE_NON_REQUIREMENT_CONTEXT_PATTERN = /\b(?:privacy policy|recruitment purposes|job application|retained for a period|time period|profitability|horizon|next\s+\d+\s+days|planning cycles?|roadmap(?: reviews?)?|quarterly roadmap reviews?|leave\s+per\s+year|contract\s*\(\s*\d+\s*years?\s*\))\b/i
 const STRONG_PROFILE_REQUIREMENT_PATTERN = /\b(?:minimum(?:\s+of)?|at[\s-]*least|required|preferred)\s*(?:[a-z]+\s*\(\s*)?\d+(?:\s*\))?(?:\+)?\s*(?:months?|years?|yrs?)\b|\b(?:[a-z]+\s*\(\s*)?\d+(?:\s*\))?(?:\+)?\s*(?:months?|years?|yrs?)\s+of\s+(?:relevant\s+|professional\s+|hands[- ]on\s+|related\s+)?experience\b/i
+const MEDIUM_CONFIDENCE_PROFILE_REQUIREMENT_PATTERN = /\b(?:prior|previous|relevant|strong|extensive|demonstrated|demonstrable|proven|hands[- ]on|solid|significant|practical|professional)\b(?:\s+[a-z-]+){0,4}\s+experience\b|\bexperience\s+(?:in|with|as|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b/i
+const PROFILE_EVIDENCE_TRIM_PATTERNS = [
+  /\s+[•·▪●]\s+/u,
+  /\s+(?=(?:Responsibilities?|Requirements?|Qualifications?|Preferred Qualifications?|What you(?:'ll| will)\s+bring|What you've got|Why Collaborate|Opportunity to)\b)/i,
+]
+
+const trimProfileEvidence = (value) => {
+  const normalized = normalizeString(value)
+  if (!normalized) return null
+
+  let cutoffIndex = normalized.length
+  for (const pattern of PROFILE_EVIDENCE_TRIM_PATTERNS) {
+    const match = pattern.exec(normalized)
+    if (!match || match.index <= 0) continue
+    cutoffIndex = Math.min(cutoffIndex, match.index)
+  }
+
+  return normalizeString(normalized.slice(0, cutoffIndex)) || normalized
+}
+
+const normalizeMediumConfidenceProfileEvidence = (experienceProfile = {}, evidence = null) => {
+  if (experienceProfile.confidence !== 'medium' || experienceProfile.hasExplicitExperience !== true) {
+    return null
+  }
+
+  const normalizedEvidence = trimProfileEvidence(evidence ?? experienceProfile.evidence)
+  if (!normalizedEvidence) return null
+  if (!MEDIUM_CONFIDENCE_PROFILE_REQUIREMENT_PATTERN.test(normalizedEvidence)) return null
+  if (
+    PROFILE_NON_REQUIREMENT_CONTEXT_PATTERN.test(normalizedEvidence)
+    && !STRONG_PROFILE_REQUIREMENT_PATTERN.test(normalizedEvidence)
+  ) {
+    return null
+  }
+
+  return normalizedEvidence
+}
 
 const normalizeProfileEvidence = (experienceProfile = {}) => {
-  const evidence = normalizeString(experienceProfile.evidence)
-  if (experienceProfile.confidence !== 'high' || !evidence) return null
+  const evidence = trimProfileEvidence(experienceProfile.evidence)
+  if (!evidence) return null
+  if (experienceProfile.confidence !== 'high') {
+    return normalizeMediumConfidenceProfileEvidence(experienceProfile, evidence)
+  }
 
   const rangeMatch = evidence.match(INVALID_EXPERIENCE_RANGE_PATTERN)
   if (rangeMatch) {
@@ -1398,6 +1487,14 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
   const applyUrl = normalizeUrl(job.applyUrl || job.link || job.sourceUrl)
   const sourceUrl = normalizeUrl(job.sourceUrl || job.link || job.applyUrl)
   const scrapedTimestamp = normalizeDate(job.scrapedTimestamp || job.scrapedAt) || new Date()
+  const publicExperienceChecked = (
+    job.publicExperienceChecked === true
+    || hasTrustedPublicExperienceSurface({
+      ...job,
+      applyUrl,
+      sourceUrl,
+    }, provider)
+  )
   const resolvedPostedAt = resolveJobPostedAt({
     ...job,
     scrapedTimestamp,
@@ -1442,6 +1539,7 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     companyCareerPage: normalizeUrl(job.companyCareerPage || provider.companyCareerPage),
     companyDomain: extractCompanyDomain(job, provider),
     atsPlatform: normalizeString(job.atsPlatform || provider.atsPlatform),
+    publicExperienceChecked,
     scrapedAt: scrapedTimestamp,
     scrapedTimestamp,
   }

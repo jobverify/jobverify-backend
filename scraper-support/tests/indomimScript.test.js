@@ -37,6 +37,7 @@ test('INDO-MIM scraper targets the official careers page and recognizes the veri
   const indomim = await loadIndoMimModule()
 
   assert.equal(indomim.CAREER_PAGE_URL, 'https://www.indo-mim.com/careers/')
+  assert.equal(indomim.VERIFIED_ON, '2026-08-07')
   assert.equal(indomim.hasOfficialCareersSurface(careersHtml), true)
 })
 
@@ -53,6 +54,28 @@ test('run returns no jobs when INDO-MIM exposes only its public explore-opportun
   })
 
   assert.deepEqual(requestedUrls, [indomim.CAREER_PAGE_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('run returns no jobs when INDO-MIM is temporarily fronted by the verified Sucuri redirect challenge', async () => {
+  const indomim = await loadIndoMimModule()
+
+  const jobs = await indomim.createIndoMimScraper().run({
+    fetchPage: async (url) => ({
+      status: 307,
+      url,
+      html: `
+        <html>
+          <head><title>You are being redirected...</title></head>
+          <body>
+            <noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript>
+            <script>var sucuri_cloudproxy_js = '';</script>
+          </body>
+        </html>
+      `,
+    }),
+  })
+
   assert.deepEqual(jobs, [])
 })
 

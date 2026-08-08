@@ -5,6 +5,7 @@ import {
   classifyScraperError,
   isFailureCountedForAbort,
   isLatePuppeteerTargetClose,
+  isLatePuppeteerWaitTimeout,
   resolveFailureAbortThreshold,
   shouldAbortPipelineAfterFailures,
 } from '../runner.js'
@@ -15,6 +16,46 @@ test('isLatePuppeteerTargetClose recognizes a Puppeteer session-close rejection'
   error.stack = 'TargetCloseError: Protocol error\n    at CdpCDPSession.send (puppeteer-core/lib/puppeteer/cdp/CdpSession.js:69:35)'
 
   assert.equal(isLatePuppeteerTargetClose(error), true)
+})
+
+test('isLatePuppeteerWaitTimeout recognizes a detached Puppeteer wait-task timeout', () => {
+  const error = new Error('Timed out after waiting 10000ms')
+  error.name = 'TimeoutError'
+  error.stack = [
+    'TimeoutError: Timed out after waiting 10000ms',
+    '    at file:///repo/jobverify-backend/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19',
+    '    at file:///repo/jobverify-backend/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1944:31',
+  ].join('\n')
+
+  assert.equal(isLatePuppeteerWaitTimeout(error), true)
+  assert.equal(isLatePuppeteerWaitTimeout(new Error('Timed out after waiting 10000ms')), false)
+})
+
+test('isLatePuppeteerWaitTimeout still recognizes the Puppeteer timeout from the stack when the error name drifts', () => {
+  const error = new Error('Timed out after waiting 10000ms')
+  error.name = 'Error'
+  error.stack = [
+    'TimeoutError: Timed out after waiting 10000ms',
+    '    at file:///repo/jobverify-backend/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19',
+    '    at file:///repo/jobverify-backend/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1944:31',
+  ].join('\n')
+
+  assert.equal(isLatePuppeteerWaitTimeout(error), true)
+})
+
+test('isLatePuppeteerWaitTimeout recognizes a nested Puppeteer timeout cause under a generic wrapper', () => {
+  const cause = new Error('Timed out after waiting 10000ms')
+  cause.name = 'TimeoutError'
+  cause.stack = [
+    'TimeoutError: Timed out after waiting 10000ms',
+    '    at file:///repo/jobverify-backend/node_modules/puppeteer-core/lib/puppeteer/common/util.js:232:19',
+    '    at file:///repo/jobverify-backend/node_modules/puppeteer-core/lib/third_party/rxjs/rxjs.js:1944:31',
+  ].join('\n')
+
+  const error = new Error('Browser worker shutdown failed')
+  error.cause = cause
+
+  assert.equal(isLatePuppeteerWaitTimeout(error), true)
 })
 
 test('isFailureCountedForAbort ignores upstream soft failures', () => {

@@ -18,6 +18,29 @@ const CAREERS_HTML = `
 </html>
 `
 
+const LIVE_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers - Jobs at the Leader in Identity and Access Management | Okta</title>
+  </head>
+  <body>
+    <script type="application/ld+json">
+      {"dc:title":"Careers at Okta"}
+    </script>
+    <main>
+      <h1>Build the future of identity</h1>
+      <a
+        href="https://www.okta.com/company/careers/job-listing/"
+        data-link-text="View open roles"
+      >
+        View open roles
+      </a>
+    </main>
+  </body>
+</html>
+`
+
 const JOB_LISTING_HTML = `
 <!doctype html>
 <html lang="en">
@@ -38,6 +61,24 @@ const JOB_LISTING_HTML = `
       <h3>Solutions Engineering</h3>
       <div class="views-row odd"><div class="views-field views-field-title"><span class="field-content"><a href="/company/careers/solutions-engineering/senior-alliances-solution-engineering-apj-6839581/" hreflang="en">Senior Alliances Solution Engineering APJ</a></span></div><div class="views-field views-field-field-job-location"><div class="field-content">Bengaluru, India</div></div></div>
       <div class="views-row even"><div class="views-field views-field-title"><span class="field-content"><a href="/company/careers/solutions-engineering/solutions-engineer-okta-8064221/" hreflang="en">Solutions Engineer, Okta</a></span></div><div class="views-field views-field-field-job-location"><div class="field-content">Bengaluru, India</div></div></div>
+    </article>
+  </body>
+</html>
+`
+
+const JOB_LISTING_WITH_SLUG_URL_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="canonical" href="https://www.okta.com/company/careers/job-listing/" />
+  </head>
+  <body>
+    <article class="PageFull">
+      <h2>Find your place here</h2>
+      <form data-drupal-selector="views-exposed-form-careers-main" action="/company/careers/job-listing/" method="get"></form>
+      <h3>Engineering</h3>
+      <div class="views-row even"><div class="views-field views-field-title"><span class="field-content"><a href="/company/careers/engineering/staff-sre-for-cloud-network-infrastructure-team-managing-edge-in-multi/" hreflang="en">Staff SRE for Cloud Network Infrastructure Team (Managing edge in multi-cloud(AWS &amp; GCP), mTLS, Global Routing, AI Automation)</a></span></div><div class="views-field views-field-field-job-location"><div class="field-content">Bengaluru, India</div></div></div>
+      <div class="views-row odd"><div class="views-field views-field-title"><span class="field-content"><a href="/company/careers/engineering/staff-sre-for-k8s-platform-team-aws-kubernetes-platform-creation-helm/" hreflang="en">Staff SRE for K8s Platform Team (AWS, Kubernetes, Platform Creation, Helm, Karpenter, Istio)</a></span></div><div class="views-field views-field-field-job-location"><div class="field-content">Bengaluru, India</div></div></div>
     </article>
   </body>
 </html>
@@ -91,15 +132,20 @@ test('Okta helpers preserve the verified careers landing and first-party listing
   assert.equal(okta.SOURCE, 'okta')
   assert.equal(okta.COMPANY, 'Okta')
   assert.equal(okta.OFFICIAL_BRAND_NAME, 'Okta')
-  assert.equal(okta.VERIFIED_ON, '2026-07-16')
+  assert.equal(okta.VERIFIED_ON, '2026-08-07')
   assert.equal(okta.HOMEPAGE_URL, 'https://www.okta.com/')
   assert.equal(okta.CAREERS_URL, 'https://www.okta.com/en-in/company/careers/')
   assert.equal(okta.PUBLIC_BOARD_URL, 'https://www.okta.com/company/careers/job-listing/')
   assert.equal(okta.hasOfficialCareersPageSignal(CAREERS_HTML), true)
+  assert.equal(okta.hasOfficialCareersPageSignal(LIVE_CAREERS_HTML), true)
   assert.equal(okta.hasOfficialJobListingSignal(JOB_LISTING_HTML), true)
   assert.equal(
     okta.extractJobId('https://www.okta.com/company/careers/business-technology/senior-aem-engineer-7629690/'),
     '7629690',
+  )
+  assert.equal(
+    okta.extractJobId('https://www.okta.com/company/careers/engineering/staff-sre-for-cloud-network-infrastructure-team-managing-edge-in-multi/'),
+    'engineering--staff-sre-for-cloud-network-infrastructure-team-managing-edge-in-multi',
   )
 })
 
@@ -133,6 +179,35 @@ test('extractIndiaJobsFromJobListing filters to India roles and maps first-party
   assert.equal(jobs[2].department, 'Product')
   assert.equal(jobs.at(-1)?.department, 'Solutions Engineering')
   assert.equal(jobs.some((job) => /Washington/.test(job.location ?? '')), false)
+})
+
+test('Okta keeps India roles whose first-party detail URLs no longer end with numeric requisition ids', async () => {
+  const okta = await loadOktaModule()
+  const jobs = okta.extractIndiaJobsFromJobListing(JOB_LISTING_WITH_SLUG_URL_HTML)
+
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      jobId: job.jobId,
+      requisitionId: job.requisitionId,
+      sourceUrl: job.sourceUrl,
+    })),
+    [
+      {
+        title: 'Staff SRE for Cloud Network Infrastructure Team (Managing edge in multi-cloud(AWS & GCP), mTLS, Global Routing, AI Automation)',
+        jobId: 'engineering--staff-sre-for-cloud-network-infrastructure-team-managing-edge-in-multi',
+        requisitionId: 'engineering--staff-sre-for-cloud-network-infrastructure-team-managing-edge-in-multi',
+        sourceUrl: 'https://www.okta.com/company/careers/engineering/staff-sre-for-cloud-network-infrastructure-team-managing-edge-in-multi/',
+      },
+      {
+        title: 'Staff SRE for K8s Platform Team (AWS, Kubernetes, Platform Creation, Helm, Karpenter, Istio)',
+        jobId: 'engineering--staff-sre-for-k8s-platform-team-aws-kubernetes-platform-creation-helm',
+        requisitionId: 'engineering--staff-sre-for-k8s-platform-team-aws-kubernetes-platform-creation-helm',
+        sourceUrl: 'https://www.okta.com/company/careers/engineering/staff-sre-for-k8s-platform-team-aws-kubernetes-platform-creation-helm/',
+      },
+    ],
+  )
 })
 
 test('Okta extracts experience from the official first-party job detail page', async () => {

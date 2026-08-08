@@ -23,14 +23,6 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const ALTERNATE_JOB_PORTAL_URL = 'https://www.endurancegroup.com/job-portal/'
-const DEFAULT_TIMEOUT_MS = 120000
-
-let browserUtilsPromise
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
-  return browserUtilsPromise
-}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -262,46 +254,27 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createBrowserTextFetcher = async () => {
-  const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    fetchText: async (url) => {
-      await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: DEFAULT_TIMEOUT_MS,
-      })
-      await page.waitForSelector('body', { timeout: DEFAULT_TIMEOUT_MS }).catch(() => null)
-      return page.content()
-    },
-    close: async () => browser.close(),
-  }
-}
-
 export const createEnduranceScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText,
-    createTextFetcher = createBrowserTextFetcher,
+    fetchText = defaultFetchText,
   } = {}) {
-    let textFetcher = null
-
-    try {
-      if (!fetchText) {
-        textFetcher = await createTextFetcher()
-        fetchText = textFetcher.fetchText
+    const fetchApiOnlyText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        throw new Error(`Endurance API-only migration could not fetch ${url}: ${error.message}`)
       }
+    }
 
-      const homepageHtml = await fetchText(HOMEPAGE_URL)
+      const homepageHtml = await fetchApiOnlyText(HOMEPAGE_URL)
       if (!hasOfficialHomepageSignal(homepageHtml)) {
         throw new Error('Endurance verified official homepage no longer matches the first-party contract')
       }
 
-      const careersHtml = await fetchText(CAREERS_URL)
+      const careersHtml = await fetchApiOnlyText(CAREERS_URL)
       if (!hasOfficialCareersSignal(careersHtml)) {
         throw new Error('Endurance verified first-party careers page no longer matches the official contract')
       }
@@ -311,7 +284,7 @@ export const createEnduranceScraper = ({
         throw new Error('Endurance verified first-party careers page no longer exposes the official job portal handoff')
       }
 
-      const jobPortalHtml = await fetchText(JOB_PORTAL_URL)
+      const jobPortalHtml = await fetchApiOnlyText(JOB_PORTAL_URL)
       if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
         throw new Error('Endurance verified job portal no longer matches the first-party public jobs surface')
       }
@@ -321,7 +294,7 @@ export const createEnduranceScraper = ({
       const jobs = []
 
       for (const listing of selectedListings) {
-        const detailHtml = await fetchText(listing.sourceUrl)
+        const detailHtml = await fetchApiOnlyText(listing.sourceUrl)
         if (!hasOfficialJobDetailSignal(detailHtml)) {
           throw new Error('Endurance verified first-party job detail no longer matches the public apply surface')
         }
@@ -337,11 +310,6 @@ export const createEnduranceScraper = ({
       }
 
       return jobs
-    } finally {
-      if (textFetcher) {
-        await textFetcher.close()
-      }
-    }
   },
 })
 

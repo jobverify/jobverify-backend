@@ -15,6 +15,7 @@ export const APPLY_POPUP_CONTAINER = 'sgpb-main-popup-data-container-1251'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DETAIL_FETCH_TIMEOUT_MS = 15000
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -256,19 +257,48 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchDetailText = async (url) => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(new Error(`Fetch timed out after ${DETAIL_FETCH_TIMEOUT_MS}ms`)), DETAIL_FETCH_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    if (response.status === 404 || response.status === 410) {
+      return ''
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return await response.text()
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export const createPromantiaScraper = ({ maxJobs = null, now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+  async run({ fetchText = defaultFetchText, fetchDetailText, now: overrideNow } = {}) {
     const listings = extractListings(await fetchText(CAREERS_URL))
     const selected = Number.isInteger(maxJobs) && maxJobs > 0
       ? listings.slice(0, maxJobs)
       : listings
     const jobs = []
+    const detailFetcher = fetchDetailText || (fetchText === defaultFetchText ? defaultFetchDetailText : fetchText)
 
     for (const listing of selected) {
       let detail = extractJobDetail('', listing)
 
       try {
-        const detailHtml = await fetchText(listing.sourceUrl)
+        const detailHtml = await detailFetcher(listing.sourceUrl)
         detail = extractJobDetail(detailHtml, listing)
       } catch {
         detail = extractJobDetail('', listing)

@@ -255,67 +255,50 @@ test('Delhivery scraper keeps the verified first-party careers handoff and publi
   assert.equal(delhivery.transformDelhiveryJob(listingPayload.data[3]), null)
 })
 
-test('Delhivery official surface capture uses a full browser page so the live Nuxt careers content can hydrate', async () => {
+test('Delhivery official surface capture parses the careers proof over native HTTP', async () => {
   const delhivery = await loadDelhiveryModule()
-  const calls = []
-  const fakePage = {
-    goto: async (url, options) => {
-      calls.push(['goto', url, options?.waitUntil])
-    },
-    waitForFunction: async (...args) => {
-      calls.push(['waitForFunction', args[2], args[3]])
-    },
-    title: async () => officialCareersSurface.title,
-    evaluate: async () => officialCareersSurface.text,
-    $$eval: async () => officialCareersSurface.links,
-    url: () => officialCareersSurface.url,
-  }
-  const fakeBrowser = {
-    newPage: async () => {
-      calls.push(['newPage'])
-      return fakePage
-    },
-    close: async () => {
-      calls.push(['close'])
-    },
-  }
+  const requestedUrls = []
 
   const surface = await delhivery.captureOfficialCareersSurface({
-    launchBrowserImpl: async () => fakeBrowser,
+    fetchImpl: async (url) => {
+      requestedUrls.push(url)
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => 'text/html' },
+        text: async () => `
+          <html><head><title>${officialCareersSurface.title}</title></head><body>
+            <h1>Build a career at Delhivery</h1>
+            <a href="${delhivery.OFFICIAL_CAREERS_HANDOFF_URL}">Jobs at Delhivery</a>
+            <a href="${delhivery.OFFICIAL_CAREERS_HANDOFF_URL}">Corporate Jobs</a>
+          </body></html>
+        `,
+      }
+    },
   })
 
-  assert.deepEqual(surface, officialCareersSurface)
-  assert.deepEqual(calls, [
-    ['newPage'],
-    ['goto', 'https://www.delhivery.com/careers', 'domcontentloaded'],
-    ['waitForFunction', 'Jobs at Delhivery', 'i'],
-    ['close'],
-  ])
+  assert.equal(delhivery.hasOfficialDelhiveryCareersSignals(surface), true)
+  assert.deepEqual(requestedUrls, [delhivery.OFFICIAL_CAREERS_URL])
 })
 
 test('Delhivery run verifies the careers handoff, verifies the public Darwinbox home shell, and returns normalized India jobs', async () => {
   const delhivery = await loadDelhiveryModule()
   const requestedPages = []
-  let closed = false
 
   const jobs = await delhivery.createDelhiveryScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
     getOfficialCareersSurface: async () => officialCareersSurface,
-    getBrowserListingContext: async () => ({
+    getListingContext: async () => ({
       surface: publicDarwinboxHomeSurface,
       fetchListingPage: async ({ page }) => {
         requestedPages.push(page)
         return listingPayload
       },
-      close: async () => {
-        closed = true
-      },
     }),
   })
 
   assert.deepEqual(requestedPages, [1])
-  assert.equal(closed, true)
   assert.deepEqual(
     jobs.map((job) => [job.title, job.location, job.source, job.scrapedAt]),
     [
@@ -349,10 +332,9 @@ test('Delhivery scraper fails closed when the first-party careers surface or pub
             ? { ...link, href: 'https://example.com/jobs' }
             : link),
       }),
-      getBrowserListingContext: async () => ({
+      getListingContext: async () => ({
         surface: publicDarwinboxHomeSurface,
         fetchListingPage: async () => listingPayload,
-        close: async () => {},
       }),
     }),
     /official careers page/i,
@@ -361,13 +343,12 @@ test('Delhivery scraper fails closed when the first-party careers surface or pub
   await assert.rejects(
     delhivery.createDelhiveryScraper().run({
       getOfficialCareersSurface: async () => officialCareersSurface,
-      getBrowserListingContext: async () => ({
+      getListingContext: async () => ({
         surface: {
           ...publicDarwinboxHomeSurface,
           links: [{ text: 'Broken', href: 'https://example.com/jobs' }],
         },
         fetchListingPage: async () => listingPayload,
-        close: async () => {},
       }),
     }),
     /public darwinbox home surface/i,

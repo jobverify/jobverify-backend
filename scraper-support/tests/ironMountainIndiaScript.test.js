@@ -49,6 +49,28 @@ const jobsBoardHtml = `
   </html>
 `
 
+const jobDetailShellHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Job | Iron Mountain</title>
+    </head>
+    <body>
+      <script>
+        window.__NUXT__ = {};
+        window.__NUXT__.config = {
+          public: {
+            "job-folder": "ironmountain-jobs",
+            source: "solr",
+            "x-origin": "ironmountain.jobs"
+          }
+        };
+      </script>
+      <script type="application/json" data-nuxt-data="nuxt-app" data-ssr="false" id="__NUXT_DATA__">[{"prerenderedAt":1,"serverRendered":2},1782489944046,false]</script>
+    </body>
+  </html>
+`
+
 const sitemapXml = `
   <?xml version="1.0" encoding="UTF-8"?>
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -159,6 +181,7 @@ test('Iron Mountain India run validates the official handoff, filters to India U
       if (url === ABOUT_PAGE_URL) return aboutPageHtml
       if (url === CAREERS_URL) return jobsBoardHtml
       if (url === JOBS_SITEMAP_URL) return sitemapXml
+      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) return jobDetailShellHtml
       throw new Error(`Unexpected Iron Mountain India fixture URL: ${url}`)
     },
   })
@@ -167,6 +190,8 @@ test('Iron Mountain India run validates the official handoff, filters to India U
     ABOUT_PAGE_URL,
     CAREERS_URL,
     JOBS_SITEMAP_URL,
+    'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
+    'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
   ])
   assert.deepEqual(jobs, [
     {
@@ -188,6 +213,7 @@ test('Iron Mountain India run validates the official handoff, filters to India U
       postingDate: '2026-07-12',
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
       link: 'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
       source: 'ironmountainindia',
       scrapedAt: '2026-07-16T09:30:00.000Z',
@@ -211,6 +237,7 @@ test('Iron Mountain India run validates the official handoff, filters to India U
       postingDate: '2026-07-12',
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
       link: 'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
       source: 'ironmountainindia',
       scrapedAt: '2026-07-16T09:30:00.000Z',
@@ -262,6 +289,7 @@ test('Iron Mountain India can recover with browser-backed first-party HTML when 
       attempts.push(`browser:${url}`)
       if (url === ABOUT_PAGE_URL) return aboutPageHtml
       if (url === CAREERS_URL) return jobsBoardHtml
+      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) return jobDetailShellHtml
       throw new Error(`Unexpected Iron Mountain India browser URL: ${url}`)
     },
   })
@@ -272,6 +300,10 @@ test('Iron Mountain India can recover with browser-backed first-party HTML when 
     `http:${CAREERS_URL}`,
     `browser:${CAREERS_URL}`,
     `http:${JOBS_SITEMAP_URL}`,
+    `http:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
+    `browser:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
+    `http:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
+    `browser:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'ironmountainindia')
@@ -293,6 +325,7 @@ test('Iron Mountain India also falls back to browser-backed HTML when direct req
       if (url === ABOUT_PAGE_URL) return aboutPageHtml
       if (url === CAREERS_URL) return jobsBoardHtml
       if (url === JOBS_SITEMAP_URL) return sitemapXml
+      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) return jobDetailShellHtml
       throw new Error(`Unexpected Iron Mountain India browser URL: ${url}`)
     },
   })
@@ -304,6 +337,10 @@ test('Iron Mountain India also falls back to browser-backed HTML when direct req
     `browser:${CAREERS_URL}`,
     `http:${JOBS_SITEMAP_URL}`,
     `browser:${JOBS_SITEMAP_URL}`,
+    `http:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
+    `browser:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
+    `http:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
+    `browser:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'ironmountainindia')

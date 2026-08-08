@@ -294,6 +294,7 @@ export const createJadeGlobalScraper = ({
           return {
             ...job,
             experienceRequired: detail.experienceRequired || job.experienceRequired,
+            publicExperienceChecked: detail.publicExperienceChecked === true || job.publicExperienceChecked === true,
             minimumQualification: detail.minimumQualification || job.minimumQualification,
             preferredQualification: detail.preferredQualification || job.preferredQualification,
             requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0

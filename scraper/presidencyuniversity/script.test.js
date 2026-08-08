@@ -195,6 +195,59 @@ test('readRenderedHrOneCards combines rendered HROne job cards with popup-captur
   assert.deepEqual(cards, renderedCards)
 })
 
+test('readRenderedHrOneCards does not leak popup wait rejections when an apply click fails', async () => {
+  let unhandledReason = null
+  const onUnhandledRejection = (reason) => {
+    unhandledReason = reason
+  }
+  const popupTimeoutError = new Error('Timed out after waiting 10000ms')
+  popupTimeoutError.name = 'TimeoutError'
+
+  process.once('unhandledRejection', onUnhandledRejection)
+
+  try {
+    const page = {
+      async waitForFunction() {},
+      async evaluate() {
+        return false
+      },
+      async $$eval(selector) {
+        if (selector === '.content-box .cls-apply-btn') return renderedCards.length
+        if (selector === HRONE_CARD_SELECTOR) {
+          return renderedCards.map(({ applyUrl, ...card }) => card)
+        }
+        throw new Error(`Unexpected selector: ${selector}`)
+      },
+      async $$(selector) {
+        assert.equal(selector, '.content-box .cls-apply-btn')
+        return [{
+          async click() {
+            throw new Error('Popup click failed')
+          },
+        }]
+      },
+      async bringToFront() {},
+      browser() {
+        return {
+          targets: () => [],
+          waitForTarget: async () => new Promise((_, reject) => {
+            setTimeout(() => reject(popupTimeoutError), 0)
+          }),
+        }
+      },
+      target() {
+        return { id: 'main-target' }
+      },
+    }
+
+    await assert.rejects(readRenderedHrOneCards(page), /Popup click failed/)
+    await new Promise((resolve) => setTimeout(resolve, 25))
+    assert.equal(unhandledReason, null)
+  } finally {
+    process.removeListener('unhandledRejection', onUnhandledRejection)
+  }
+})
+
 test('run validates the official Presidency University handoff and decorates rendered HROne roles', async () => {
   const events = []
   const page = {

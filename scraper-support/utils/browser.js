@@ -5,26 +5,56 @@
 
 import dns from 'node:dns/promises'
 import { existsSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp } from 'node:fs/promises'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 
 const dnsCache = new Map()
-let puppeteerPromise = null
+const DEFAULT_BROWSER_CONCURRENCY = 2
 
-const loadPuppeteer = async () => {
-  if (!puppeteerPromise) {
-    puppeteerPromise = Promise.all([
-      import('puppeteer-extra'),
-      import('puppeteer-extra-plugin-stealth'),
-    ]).then(([{ default: puppeteer }, { default: StealthPlugin }]) => {
-      puppeteer.use(StealthPlugin())
-      return puppeteer
-    })
+const parsePositiveConcurrency = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+export const resolveBrowserConcurrency = (
+  value = process.env.SCRAPER_BROWSER_CONCURRENCY,
+) => parsePositiveConcurrency(value, DEFAULT_BROWSER_CONCURRENCY)
+
+export const createBrowserLaunchLimiter = (concurrency) => {
+  const limit = parsePositiveConcurrency(concurrency, DEFAULT_BROWSER_CONCURRENCY)
+  let active = 0
+  const waiters = []
+
+  const grantNext = () => {
+    const start = waiters.shift()
+    if (start) {
+      start()
+    } else {
+      active--
+    }
   }
 
-  return puppeteerPromise
+  return {
+    acquire: () => new Promise((resolve) => {
+      const start = () => {
+        active++
+        let released = false
+        resolve(() => {
+          if (released) return
+          released = true
+          grantNext()
+        })
+      }
+
+      if (active < limit) {
+        start()
+      } else {
+        waiters.push(start)
+      }
+    }),
+  }
 }
 
 export const isPrivateIPv4 = (hostname) => {
@@ -155,49 +185,22 @@ export const isBlockedInternalUrl = async (value, resolveAddresses = resolveHost
   }
 }
 
-// Launches a Puppeteer browser instance with memory-saving arguments.
-export const launchBrowser = async ({
-  ignoreHTTPSErrors = false,
-} = {}) => {
-  const puppeteer = await loadPuppeteer()
-  const args = [
-    '--disable-dev-shm-usage',
-    '--disable-gpu',
-    '--disable-extensions',
-    '--no-first-run',
-    '--no-default-browser-check',
-    '--js-flags="--max-old-space-size=256"'
-  ]
-
-  // Chrome's Windows sandbox can prevent the DevTools target from becoming
-  // available in this scraper runtime. Keep the opt-in environment switch for
-  // other platforms, but apply the required Windows launch flags by default.
-  if (process.platform === 'win32' || process.env.PUPPETEER_DISABLE_SANDBOX === 'true') {
-    args.push('--no-sandbox', '--disable-setuid-sandbox')
-  }
-
-  const executablePath = resolveBrowserExecutablePath()
-  const userDataDir = await createBrowserUserDataDir()
-
-  try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args,
-      ignoreHTTPSErrors,
-      protocolTimeout: 300000,
-      userDataDir,
-      ...(executablePath ? { executablePath } : {}),
-    })
-
-    browser.on('disconnected', () => {
-      rm(userDataDir, { recursive: true, force: true }).catch(() => {})
-    })
-
-    return browser
-  } catch (error) {
-    await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
-    throw error
-  }
+// Shared browser scraping is disabled. Sources must use HTTP/API access.
+export const launchBrowser = async (options = {}) => {
+  const requestingSource = (
+    options.sourcePath
+    || options.source
+    || options.scraper
+    || options.configuration
+    || options.config?.sourcePath
+    || options.config?.source
+    || 'this scraper'
+  )
+  const error = new Error(
+    `API-only scraper runtime forbids browser launches. Migrate ${requestingSource} to HTTP/API access.`,
+  )
+  error.code = 'SCRAPER_BROWSER_DISABLED'
+  throw error
 }
 
 // Configures a new browser page with request interception to block heavy assets.

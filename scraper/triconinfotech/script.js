@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { chromium } from 'playwright'
-
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import TRICON_INFOTECH_CATALOG from './catalog.js'
@@ -17,100 +15,24 @@ export const COMPANY = TRICON_INFOTECH_CATALOG.companyName
 export const CAREERS_URL = TRICON_INFOTECH_CATALOG.companyCareerPage
 export const JOBS_API_URL = TRICON_INFOTECH_CATALOG.jobsApiUrl
 
-const buildChromiumLaunchArgs = () =>
-  process.env.PUPPETEER_DISABLE_SANDBOX ? ['--no-sandbox'] : []
-
-const shouldUseBrowserFallback = (error) =>
-  /connect timeout|getaddrinfo enotfound|fetch failed/i.test(String(error))
-
-export const loadWithBrowserFallback = async ({
-  primaryLoad,
-  fallbackLoad,
-}) => {
-  try {
-    return await primaryLoad()
-  } catch (error) {
-    if (!shouldUseBrowserFallback(error)) throw error
-    return fallbackLoad(error)
-  }
-}
-
-const loadPageTextWithBrowser = async (url) => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: buildChromiumLaunchArgs(),
-  })
-
-  try {
-    const page = await browser.newPage({ userAgent: USER_AGENT })
-    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 })
-    await page.waitForTimeout(3000)
-    if (response) {
-      return await response.text()
-    }
-    return await page.content()
-  } finally {
-    await browser.close()
-  }
-}
-
-const loadJsonWithBrowser = async (url, pageUrl = CAREERS_URL) => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: buildChromiumLaunchArgs(),
-  })
-
-  try {
-    const page = await browser.newPage({ userAgent: USER_AGENT })
-    await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
-    const result = await page.evaluate(async (apiUrl) => {
-      const response = await fetch(apiUrl, {
-        headers: {
-          Accept: 'application/json,text/plain,*/*',
-        },
-      })
-
-      return {
-        status: response.status,
-        text: await response.text(),
-      }
-    }, url)
-
-    if (result.status < 200 || result.status >= 300) {
-      throw new Error(`HTTP ${result.status} for ${url}`)
-    }
-
-    return JSON.parse(result.text)
-  } finally {
-    await browser.close()
-  }
-}
-
 const defaultFetchText = (url) =>
-  loadWithBrowserFallback({
-    primaryLoad: () => fetchTextWithRetry(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-      label: `${SOURCE}-html`,
-      timeoutMs: 15000,
-    }),
-    // Cloudflare-fronted routes sometimes time out in Node fetch while remaining reachable in Chromium.
-    fallbackLoad: () => loadPageTextWithBrowser(url),
+  fetchTextWithRetry(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    label: `${SOURCE}-html`,
+    timeoutMs: 15000,
   })
 
 const defaultFetchJson = (url) =>
-  loadWithBrowserFallback({
-    primaryLoad: () => fetchJsonWithRetry(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'application/json',
-      },
-      label: `${SOURCE}-json`,
-      timeoutMs: 15000,
-    }),
-    fallbackLoad: () => loadJsonWithBrowser(url),
+  fetchJsonWithRetry(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json',
+    },
+    label: `${SOURCE}-json`,
+    timeoutMs: 15000,
   })
 
 export const hasVerifiedAwsmShellSignal = (html = '') =>

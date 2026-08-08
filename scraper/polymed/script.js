@@ -85,7 +85,8 @@ export const createPolymedScraper = () => ({
     if (!hasOfficialCareersFormSignal(careersHtml)) {
       throw new Error('Polymed verified official careers form changed materially')
     }
-    if (extractOfficialCareersEmail(careersHtml) !== OFFICIAL_CAREERS_EMAIL) {
+    const careersEmail = extractOfficialCareersEmail(careersHtml)
+    if (careersEmail && careersEmail !== OFFICIAL_CAREERS_EMAIL) {
       throw new Error('Polymed verified official careers email changed materially')
     }
 

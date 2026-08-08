@@ -15,6 +15,11 @@ test('getScraperCatalog includes Finolex Industries Limited as an official empty
   assert.equal(provider.companyName, 'Finolex Industries Limited')
   assert.equal(provider.companyCareerPage, 'https://www.finolexpipes.com/career/')
   assert.equal(provider.companyDomain, 'finolexpipes.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.equal(provider.officialCareersEmail, 'career@finolexind.com')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
   assert.match(provider.modulePath, /finolexindustrieslimited[\\/]script\.js$/i)
 })
 

@@ -20,6 +20,7 @@ export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://www.ipopi.in/work-with-us',
   'https://www.ipopi.in/join-us',
 ]
+export const VERIFIED_ON = '2026-08-07'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -87,7 +88,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /<title>\s*Leading Digital Marketing Agency in Mysore & Bangalore \| Expert SEO & Social Media Marketing\s*<\/title>/i.test(page)
     && normalized.includes('#1 digital marketing company')
-    && normalized.includes('sales@ipop.in')
+    && (
+      normalized.includes('sales@ipopi.in')
+      || normalized.includes('sales@ipop.in')
+    )
     && normalized.includes('padmanabhanagar, bangalore, karnataka 560070')
     && /ipopi\s+ads\.\s+all rights reserved\./i.test(page)
 }
@@ -117,7 +121,7 @@ export const hasOfficialBlogSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return /<title>\s*Ipopi Ads Blog\s*<\/title>/i.test(page)
+  return /<title>\s*Ipopi Ads Blog(?:\s*-\s*)?\s*<\/title>/i.test(page)
     && normalized.includes('ipopi ads blog')
     && normalized.includes('latest posts')
     && normalized.includes('digital marketing')

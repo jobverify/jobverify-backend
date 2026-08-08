@@ -3,10 +3,12 @@ import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
+export const HOMEPAGE_URL = 'https://graycommit.com/'
 export const CAREERS_URL = 'https://www.graycommit.com/careers'
 export const APPLY_URL = 'https://forms.gle/JRRyEqayaV32F3xC7'
 export const COMPANY = 'Graycommit'
 export const SOURCE = 'graycommit'
+export const VERIFIED_ON = '2026-08-07'
 
 const INDIA_CITY_ALIASES = new Map([
   ['bangalore', 'Bangalore'],
@@ -21,6 +23,17 @@ const normalizeText = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim() || null
+
+const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
+  const normalized = normalizeText(value)
+  if (!normalized) return null
+
+  try {
+    return new URL(normalized, baseUrl).href
+  } catch {
+    return null
+  }
+}
 
 const slugify = (value) => normalizeText(value)
   ?.toLowerCase()
@@ -51,6 +64,38 @@ export const hasOfficialCareersSignal = (html) => {
     && /careers/i.test(page)
     && /apply\s+now/i.test(page)
     && new RegExp(APPLY_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(page)
+}
+
+export const extractBundleUrl = (html, pageUrl = CAREERS_URL) =>
+  toAbsoluteUrl(
+    String(html ?? '').match(/<script[^>]+src=["']([^"']*\/_expo\/static\/js\/web\/entry-[^"']+\.js)["']/i)?.[1]
+    || String(html ?? '').match(/<script[^>]+src=["']([^"']*entry-[^"']+\.js)["']/i)?.[1],
+    pageUrl,
+  )
+
+export const hasOfficialCareersShellSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Graycommit\s*<\/title>/i.test(page)
+    && /<div\s+id=["']root["']>\s*<\/div>/i.test(page)
+    && /Use static rendering with Expo Router/i.test(page)
+    && Boolean(extractBundleUrl(page, CAREERS_URL))
+}
+
+export const hasPublicCareersBundleSignal = (bundleText) => {
+  const page = String(bundleText ?? '')
+
+  return /careers/i.test(page)
+    || /apply\s+now/i.test(page)
+    || /forms\.gle|docs\.google\.com/i.test(page)
+    || /current openings|open positions/i.test(page)
+}
+
+export const hasVerifiedNoPublicCareersSignal = (bundleText) => {
+  const page = String(bundleText ?? '')
+
+  return /graycommit/i.test(page)
+    && !hasPublicCareersBundleSignal(page)
 }
 
 const extractArticleBlocks = (html) => [...String(html ?? '').matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)]
@@ -176,22 +221,37 @@ export const createGraycommitScraper = ({ now = () => new Date().toISOString() }
   async run({ fetchText = defaultFetchText } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
+    if (hasOfficialCareersSignal(careersHtml)) {
+      const jobs = extractJobCards(careersHtml)
+
+      if (jobs.length === 0) {
+        throw new Error('Graycommit verified careers page no longer exposes the expected India opening')
+      }
+
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt: now(),
+      }))
+    }
+
+    if (!hasOfficialCareersShellSignal(careersHtml)) {
       throw new Error('Graycommit official careers surface changed; refusing to scrape')
     }
 
-    const jobs = extractJobCards(careersHtml)
+    const bundleUrl = extractBundleUrl(careersHtml, CAREERS_URL)
+    const bundleText = await fetchText(bundleUrl)
 
-    if (jobs.length === 0) {
-      throw new Error('Graycommit verified careers page no longer exposes the expected India opening')
+    if (hasPublicCareersBundleSignal(bundleText)) {
+      throw new Error('Graycommit careers surface now exposes public listings and needs a structured scraper')
     }
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
+    if (!hasVerifiedNoPublicCareersSignal(bundleText)) {
+      throw new Error('Graycommit verified careers shell changed; refusing to assume no public jobs')
+    }
+
+    return []
   },
 })
 

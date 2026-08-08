@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   CAREER_PAGE_URL,
+  VERIFIED_ON,
   createFinolexIndustriesLimitedScraper,
   extractDepartmentOptions,
   hasEmptyOpeningsSignal,
@@ -22,20 +23,41 @@ const verifiedCurrentCareerHtml = `
           <p>Job Openings</p>
           <h2>Discover Your Career Path</h2>
         </div>
-        <div class="search-dropdown">
-          <div class="custom-select">
-            <div class="selected-value" id="selDepart">-Select Department-</div>
-            <div class="options-container">
-              <div class="option" data-value="">-Select Department-</div>
-              <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-              <html>
-                <head><title>500 Internal Server Error</title></head>
-                <body><h1>Internal Server Error</h1></body>
-              </html>
+        <div class="search-job-container">
+          <form class="search-field" id="joblocSearch">
+            <div class="search-dropdown">
+              <div class="custom-select">
+                <div class="selected-value" id="selDepart">-Select Department-</div>
+                <div class="options-container">
+                  <div class="option" data-value="">-Select Department-</div>
+                  <div class="option" data-value="Admin">Admin</div>
+                  <div class="option" data-value="Data Analytics">Data Analytics</div>
+                </div>
+              </div>
             </div>
+          </form>
+          <div class="job-lists">
+            <div class="job-list-container" id="jobListData"></div>
+            <div class="job-list-container" id="jobListNoData">There are currently no open positions matching your search criteria.</div>
+            <div class="job-detail-container" id="jobDetailsDiv"></div>
           </div>
         </div>
       </section>
+      <div class="mobile-view">
+        <div class="bottom-sheet" id="jobModal">
+          <div class="content">
+            <div class="body2">
+              <div id="modalJobDetails"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="job-not-found">
+        <a>Apply via Mail</a>
+        <a>Apply via Whatsapp</a>
+        <p class="contact-email">Email: <a href="mailto:career@finolexind.com">career@finolexind.com</a></p>
+        <p>500 Internal Server Error</p>
+      </div>
       <section class="job-application-modal">
         <form class="application-form" id="applicationForm">
           <input type="text" id="jobDropdown" name="jobDropdown" value="abc" readonly />
@@ -48,9 +70,13 @@ const verifiedCurrentCareerHtml = `
 
 test('recognizes the current official Finolex careers shell and empty-state markers', () => {
   assert.equal(CAREER_PAGE_URL, 'https://www.finolexpipes.com/career/')
+  assert.equal(VERIFIED_ON, '2026-08-07')
   assert.equal(hasOfficialCareersSignal(verifiedCurrentCareerHtml), true)
   assert.equal(hasEmptyOpeningsSignal(verifiedCurrentCareerHtml), true)
-  assert.deepEqual(extractDepartmentOptions(verifiedCurrentCareerHtml), [])
+  assert.deepEqual(extractDepartmentOptions(verifiedCurrentCareerHtml), [
+    { value: 'Admin', label: 'Admin' },
+    { value: 'Data Analytics', label: 'Data Analytics' },
+  ])
   assert.equal(hasOfficialCareersSignal('<html><body>Finolex Pipes</body></html>'), false)
 })
 
@@ -67,18 +93,16 @@ test('returns no jobs for the verified current careers shell even when the route
   assert.deepEqual(jobs, [])
 })
 
-test('fails closed when Finolex exposes public department options that need job parsing', async () => {
-  const publicOptionsHtml = verifiedCurrentCareerHtml.replace(
-    '<div class="option" data-value="">-Select Department-</div>',
-    '<div class="option" data-value="">-Select Department-</div><div class="option" data-value="sales">Sales</div>',
+test('fails closed when Finolex removes the verified no-openings results surface', async () => {
+  const driftedHtml = verifiedCurrentCareerHtml.replace(
+    'There are currently no open positions matching your search criteria.',
+    'Open positions are now available.',
   )
-
-  assert.deepEqual(extractDepartmentOptions(publicOptionsHtml), [{ value: 'sales', label: 'Sales' }])
 
   await assert.rejects(
     createFinolexIndustriesLimitedScraper().run({
-      fetchPage: async (url) => ({ status: 200, url, html: publicOptionsHtml }),
+      fetchPage: async (url) => ({ status: 200, url, html: driftedHtml }),
     }),
-    /public department options/i,
+    /no-open-positions surface/i,
   )
 })

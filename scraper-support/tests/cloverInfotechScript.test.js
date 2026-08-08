@@ -240,45 +240,18 @@ test('run paginates the Clover first-party jobs pages, fetches only India detail
   assert.equal(jobs[0].scrapedAt, '2026-07-14T00:00:00.000Z')
 })
 
-test('run falls back to browser-backed Clover pages when direct requests are blocked', async () => {
+test('run reports an API-only migration error when direct Clover requests are blocked', async () => {
   const clover = await loadCloverModule()
 
   assert.ok(clover, 'Expected Clover Infotech scraper module at ../../scraper/cloverinfotech/script.js')
 
-  const browserUrls = []
-  const jobs = await clover.createCloverInfotechScraper({
-    now: () => '2026-08-01T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      throw new Error(`HTTP 403 for ${url}`)
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-
-      if (url === clover.buildJobOpeningsPageUrl(1)) return pageOneHtml
-      if (url === clover.buildJobOpeningsPageUrl(2)) return pageTwoHtml
-      if (url === 'https://www.cloverinfotech.com/jobs/oracle-fusion-erp-finance-consultant/') {
-        return oracleFusionDetailHtml
-      }
-      if (url === 'https://www.cloverinfotech.com/jobs/senior-analyst-application-support-onestream-xf/') {
-        return oneStreamDetailHtml
-      }
-      if (url === 'https://www.cloverinfotech.com/jobs/java-tech-lead-payments-domain/') {
-        return javaTechLeadDetailHtml
-      }
-
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-  })
-
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(browserUrls, [
-    clover.buildJobOpeningsPageUrl(1),
-    'https://www.cloverinfotech.com/jobs/oracle-fusion-erp-finance-consultant/',
-    'https://www.cloverinfotech.com/jobs/senior-analyst-application-support-onestream-xf/',
-    clover.buildJobOpeningsPageUrl(2),
-    'https://www.cloverinfotech.com/jobs/java-tech-lead-payments-domain/',
-  ])
+  await assert.rejects(
+    clover.createCloverInfotechScraper().run({
+      fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
+      fetchBrowserText: async () => assert.fail('Clover Infotech must not launch a browser'),
+    }),
+    /clover infotech API-only migration.*HTTP 403/i,
+  )
 })
 
 test('run fails closed when the verified Clover listings or job details drift away from the trusted first-party surface', async () => {

@@ -14,6 +14,11 @@ test('Okta catalog resolves Okta India through the shared first-party Okta provi
   assert.equal(okta.atsPlatform, 'official-first-party-drupal-job-board')
   assert.equal(okta.companyCareerPage, 'https://www.okta.com/en-in/company/careers/')
   assert.equal(okta.publicBoardUrl, 'https://www.okta.com/company/careers/job-listing/')
+  assert.equal(okta.verifiedOn, '2026-08-07')
+  assert.equal(okta.verifiedPublicOpeningCount, 337)
+  assert.equal(okta.verifiedIndiaOpeningCount, 98)
+  assert.match(okta.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
+  assert.match(okta.verifiedSurfaceSummary, /View open roles CTA/i)
   assert.equal(companyAliases['Okta India'], 'okta')
 
   const report = generateCompanyCoverageReport({

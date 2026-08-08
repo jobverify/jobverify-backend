@@ -264,7 +264,7 @@ $env:NODE_OPTIONS = "--use-system-ca"
 $runStamp = Get-Date -Format "yyyyMMddTHHmmss"
 $logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
-npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
+npm run scrape:parallel 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
 ```
 
 Equivalent direct commands:
@@ -289,7 +289,7 @@ Remove-Item Env:SCRAPER_ONLY
 Resume at a source (including that source) after an interruption. The resume mode preserves jobs from sources before the restart point:
 
 ```powershell
-$env:SCRAPER_START_AT = "lilt"
+$env:SCRAPER_START_AT = "indegene"
 npm run scrape:parallel
 Remove-Item Env:SCRAPER_START_AT
 ```

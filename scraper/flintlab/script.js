@@ -7,6 +7,8 @@ export const SOURCE = 'flintlab'
 export const COMPANY = 'FlintLab'
 export const HOMEPAGE_URL = 'https://flintlab.io/'
 export const SITEMAP_URL = 'https://flintlab.io/sitemap.xml'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://flintlab.io/ was FlintLab\'s live first-party Next.js homepage, that it now led with the "Ship Mobile & Web Apps" and "With Real Confidence, At Scale" hero copy plus an "Ask FlintBot" control, and that its metadata and schema still identified FlintLab Sirius, AI NEXUS FLINT LAB INDIA PRIVATE LIMITED., engage@flintlab.io, and https://www.linkedin.com/company/flintlab-inc as the trusted public brand surface. Also verified on Friday, August 7, 2026 that https://flintlab.io/sitemap.xml exposed only product, docs, blog, and informational routes, while the first-party /careers, /career, and /jobs routes still resolved to branded missing-page responses rather than a public openings board. This provider remains fail-closed and returns an honest empty result until FlintLab publishes a trustworthy public careers surface.'
 export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://flintlab.io/careers',
   'https://flintlab.io/careers/',
@@ -54,11 +56,14 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('flintlab sirius')
     && normalized.includes('device infrastructure paas')
-    && normalized.includes('request a demo')
-    && normalized.includes('begin your journey towards precision testing')
-    && normalized.includes('login to continue')
-    && normalized.includes('flintlab powers efficient, collaborative testing across devices')
-    && normalized.includes("what's new")
+    && normalized.includes('ship mobile & web apps')
+    && normalized.includes('with real confidence, at scale')
+    && normalized.includes('flintlab unifies real devices, emulators, and cloud-native execution in one platform')
+    && normalized.includes('developer advocacy team that stress-tests your releases before your users do')
+    && normalized.includes('platform, people, and compliance: all covered')
+    && normalized.includes('ai nexus flint lab india private limited.')
+    && normalized.includes('engage@flintlab.io')
+    && normalized.includes('ask flintbot')
     && /linkedin\.com\/company\/flintlab-inc/i.test(rawHtml)
 }
 

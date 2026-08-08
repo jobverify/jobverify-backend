@@ -341,3 +341,12 @@ test('Qbss returns only India internal ContinuServe roles from the verified rebr
     },
   ])
 })
+
+test('Qbss blocks its browser-only live careers path before a browser can launch', async () => {
+  const qbss = await loadScriptModule()
+
+  await assert.rejects(
+    qbss.run(),
+    /qbss.*api-only migration.*browser automation is disabled/i,
+  )
+})

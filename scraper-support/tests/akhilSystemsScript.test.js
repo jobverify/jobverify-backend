@@ -254,3 +254,14 @@ test('Akhil Systems fails closed when the verified homepage Career route or inli
     /trusted first-party job cards/i,
   )
 })
+
+test('Akhil Systems reports an API-only migration error when its official careers request is blocked', async () => {
+  const akhilSystems = await loadAkhilSystemsModule()
+
+  await assert.rejects(
+    akhilSystems.createAkhilSystemsScraper().run({
+      fetchPage: async () => { throw new Error('HTTP 403') },
+    }),
+    /akhil systems API-only migration.*HTTP 403/i,
+  )
+})

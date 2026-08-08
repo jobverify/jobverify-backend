@@ -84,15 +84,13 @@ test('Way.com extracts India jobs from the current careers JSON payload', async 
   ])
 })
 
-test('Way.com run uses the rendered careers page plus jobs JSON payload', async () => {
+test('Way.com run uses the official careers response plus jobs JSON payload', async () => {
   const way = await loadModule()
   const jobs = await way.createWayDotComIndiaScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    browseCareersSurfaceImpl: async () => ({
-      careersHtml,
-      jobsJson,
-    }),
+    fetchText: async () => careersHtml,
+    fetchJson: async () => jobsJson,
   })
 
   assert.equal(jobs.length, 1)

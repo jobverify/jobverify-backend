@@ -16,7 +16,7 @@ const USER_AGENT =
 const OFFICIAL_CAREERS_PATTERNS = [
   /KEYENCE India(?:\s*[–-]\s*|&ndash;)\s*Careers/i,
   /added-value for our customers/i,
-  /forms\.office\.com\/r\/NvMRr292Pt/i,
+  />\s*Recruitment\s*</i,
 ]
 
 const PUBLIC_JOB_SIGNAL_PATTERN =

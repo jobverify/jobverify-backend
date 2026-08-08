@@ -237,9 +237,20 @@ const normalizeText = (value) =>
 const unique = (values = []) => [...new Set(values.filter(Boolean))];
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const NON_NUMERIC_EXPERIENCE_CONTEXT_EXCLUSION_PATTERN = /\b(?:customer|candidate|employee|guest|post-booking|real[- ]world|user)\s+experience\b|\bexperience\s+(?:charter|platform|the\s+world|the\s+perfect\s+blend)\b|\bwork\s+experience\s*\(in\s+years\)\b|\byears?\s+of\s+profitability\b|\bhistory\s+spanning\s+over\b|\bretained\s+for\s+a\s+period\b|\bannual\s+ctc\b|\bupload\s+cv\b/i;
+const NON_NUMERIC_EXPERIENCE_REQUIREMENT_CONTEXT_PATTERN = /\b(?:requirements?|role requirements?|qualifications?|required skills?|preferred qualifications?|must-haves?|what you(?:'ll| will)\s+bring|who we are looking for|experience\s*[:\-])\b/i;
 const NON_NUMERIC_EXPERIENCE_PATTERNS = [
-  /\b((?:prior|previous|relevant|strong|extensive|demonstrated|demonstrable|proven|hands[- ]on|solid|significant|practical|professional)\s+(?:[a-z-]+\s+){0,2}experience\s+(?:in|with|as|of|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b[^.]{0,140})/i,
-  /\b((?:experience|exp\.?)\s+(?:in|with|as|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b[^.]{0,140})/i,
+  {
+    pattern: /\b((?:prior|previous|relevant|strong|extensive|demonstrated|demonstrable|proven|hands[- ]on|solid|significant|practical|professional)\s+(?:[a-z-]+\s+){0,2}experience\s+(?:in|with|as|of|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b[^.]{0,140})/i,
+    requiresRequirementContext: false,
+  },
+  {
+    pattern: /\b((?:prior|previous|relevant|strong|extensive|demonstrated|demonstrable|proven|hands[- ]on|solid|significant|practical|professional)\s+(?:[a-z-]+\s+){0,2}experience\s+(?:preferred|required|desired)\b[^.]{0,120})/i,
+    requiresRequirementContext: false,
+  },
+  {
+    pattern: /\b((?:experience|exp\.?)\s+(?:in|with|as|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b[^.]{0,140})/i,
+    requiresRequirementContext: true,
+  },
 ];
 const LATE_SECTIONED_EXPERIENCE_PATTERN = /\b(?:qualifications?|required qualifications?|preferred qualifications?|specific qualifications?|key qualifications?|required skills|must-haves?|what you(?:'ll| will)\s+bring|who we are looking for|direct responsibilities|job position)\b[\s\S]{0,320}?\b(?:at[\s-]*least|min(?:imum)?(?:\s+of)?|more than|over|>=|>|around|about)?\s*\d+(?:\.\d+)?(?:\s*(?:\+|plus|(?:-|to|~)\s*\d+(?:\.\d+)?))?\s*(?:months?|years?|yrs?|yr)\b(?:\s+[^.]{0,120}?\bexperience\b)?/i;
 const LATE_MINIMUM_EXPERIENCE_PATTERN = /\b(?:at[\s-]*least|min(?:imum)?(?:\s+of)?|required|preferred)\s*\d+(?:\.\d+)?(?:\s*(?:\+|plus|(?:-|to|~)\s*\d+(?:\.\d+)?))?\s*(?:months?|years?|yrs?|yr)\b[^.]{0,120}?\bexperience\b/i;
@@ -271,13 +282,17 @@ const extractNonNumericExperienceEvidence = (value = "") => {
   const normalized = normalizeText(value);
   if (!normalized) return null;
 
-  for (const pattern of NON_NUMERIC_EXPERIENCE_PATTERNS) {
-    const match = normalized.match(pattern);
+  for (const { pattern, requiresRequirementContext } of NON_NUMERIC_EXPERIENCE_PATTERNS) {
+    const match = pattern.exec(normalized);
     if (!match) continue;
 
     const candidate = normalizeNonNumericExperienceEvidence(match[1]);
     if (!candidate || candidate.length < 24) continue;
     if (NON_NUMERIC_EXPERIENCE_CONTEXT_EXCLUSION_PATTERN.test(candidate)) continue;
+    if (requiresRequirementContext) {
+      const prefix = normalized.slice(Math.max(0, match.index - 120), match.index);
+      if (!NON_NUMERIC_EXPERIENCE_REQUIREMENT_CONTEXT_PATTERN.test(prefix)) continue;
+    }
 
     return candidate;
   }

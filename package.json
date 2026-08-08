@@ -63,10 +63,6 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.20.0",
     "pdfjs-dist": "^6.2.108",
-    "playwright": "^1.60.0",
-    "puppeteer": "^25.1.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {

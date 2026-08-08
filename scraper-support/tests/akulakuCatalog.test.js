@@ -51,16 +51,19 @@ test('Akulaku local catalog captures the verified first-party careers shell and 
   )
   assert.equal(
     AKULAKU_CATALOG.extractionStrategy,
-    'first-party-shell-link-verification+zhiye-list-parse+india-location-filter+detail-fetch-for-india-matches',
+    'first-party-shell-link-verification+zhiye-list-parse-or-verified-beisen-maintenance+india-location-filter+detail-fetch-for-india-matches',
   )
   assert.equal(AKULAKU_CATALOG.parser, 'custom-script')
   assert.equal(AKULAKU_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AKULAKU_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AKULAKU_CATALOG.verifiedOn, '2026-08-07')
+  assert.equal(AKULAKU_CATALOG.verifiedPublicJobCount, 0)
+  assert.equal(AKULAKU_CATALOG.verifiedIndiaJobCount, 0)
   assert.equal(AKULAKU_CATALOG.dryRunFile, 'akulaku/jobs.json')
   assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.akulaku\.com\/staff-life/i)
   assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /https:\/\/akulaku\.zhiye\.com\//i)
   assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /https:\/\/akulaku\.zhiye\.com\/alljob\/\?o=1/i)
-  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /no India roles/i)
+  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /System Upgrade Maintenance/i)
   assert.equal(AKULAKU_CATALOG.modulePath, akulakuModulePath)
 
   assert.equal(akulaku.PROVIDER_METADATA.source, AKULAKU_CATALOG.source)

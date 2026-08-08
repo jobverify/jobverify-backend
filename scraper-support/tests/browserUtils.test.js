@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createBrowserUserDataDir, resolveBrowserExecutablePath } from '../utils/browser.js'
+import {
+  createBrowserLaunchLimiter,
+  createBrowserUserDataDir,
+  launchBrowser,
+  resolveBrowserExecutablePath,
+} from '../utils/browser.js'
 
 test('resolveBrowserExecutablePath prefers an explicit Puppeteer executable override when it exists', () => {
   const executablePath = 'C:\\Tools\\Chrome\\chrome.exe'
@@ -55,4 +60,49 @@ test('createBrowserUserDataDir allocates a unique temp profile prefix for each b
 
   assert.equal(receivedPrefix, 'C:\\Temp\\jobify-puppeteer-profile-')
   assert.equal(userDataDir, 'C:\\Temp\\jobify-puppeteer-profile-abc123')
+})
+
+test('browser launch limiter queues a third session until an active browser is released', async () => {
+  const limiter = createBrowserLaunchLimiter(2)
+  const releaseFirst = await limiter.acquire()
+  const releaseSecond = await limiter.acquire()
+  let thirdSessionStarted = false
+
+  const thirdSession = limiter.acquire().then((release) => {
+    thirdSessionStarted = true
+    return release
+  })
+
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(thirdSessionStarted, false)
+
+  releaseFirst()
+  const releaseThird = await thirdSession
+  assert.equal(thirdSessionStarted, true)
+
+  releaseSecond()
+  releaseThird()
+})
+
+test('launchBrowser rejects a requesting source with an API-only migration error', async () => {
+  await assert.rejects(
+    launchBrowser({ sourcePath: 'scraper/example/script.js' }),
+    (error) => (
+      error?.code === 'SCRAPER_BROWSER_DISABLED'
+      && error.message.includes('API-only')
+      && error.message.includes('scraper/example/script.js')
+    ),
+  )
+})
+
+test('launchBrowser without source metadata gives a clear API-only migration error', async () => {
+  await assert.rejects(
+    launchBrowser(),
+    (error) => (
+      error?.code === 'SCRAPER_BROWSER_DISABLED'
+      && error.message.includes('API-only')
+      && error.message.includes('Migrate this scraper to HTTP/API access.')
+      && !error.message.includes('unknown source/configuration')
+    ),
+  )
 })

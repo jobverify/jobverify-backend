@@ -1635,12 +1635,12 @@
     "companyDomain": "aindra.in",
     "atsPlatform": "official-company-site",
     "countryFilter": "India",
-    "paginationStrategy": "single-homepage-careers-section",
-    "extractionStrategy": "verified-homepage-careers-section+inline-role-modals+mailto-apply",
+    "paginationStrategy": "single-homepage-careers-section-or-unavailable-first-party-host-fail-closed",
+    "extractionStrategy": "verified-homepage-careers-section+inline-role-modals+first-party-host-unavailable-fail-closed",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-14",
-    "verifiedSurfaceSummary": "Verified on July 14, 2026 that https://www.aindra.in/ is the official Aindra Systems homepage, the Careers navigation resolves within that same first-party page, and the Join us at Aindra section publishes public role descriptions that instruct applicants to email contactus@aindra.in."
+    "verifiedOn": "2026-07-28",
+    "verifiedSurfaceSummary": "Verified on July 28, 2026 that the legacy first-party host https://www.aindra.in/ no longer resolves in DNS, while the bare first-party host https://aindra.in/ still resolves but fails TLS verification from this environment. The previously verified Join us at Aindra careers surface is therefore not trustworthily reachable right now, so this provider stays fail-closed until a first-party host becomes safely fetchable again."
   },
   {
     "source": "airasiaindia",
@@ -1799,12 +1799,12 @@
     "companyDomain": "airtelpayments.bank.in",
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
-    "paginationStrategy": "verified-branded-bank-pages-plus-shared-airtel-careers-shell-bundle-and-darwinbox-checks",
-    "extractionStrategy": "verified-bank-homepage+verified-bank-about-page+no-branded-careers-links+shared-airtel-careers-shell+shared-bundle-reference+shared-darwinbox-shell-return-empty",
+    "paginationStrategy": "403-guarded-bank-pages-plus-shared-airtel-careers-shell-bundle-and-darwinbox-checks",
+    "extractionStrategy": "403-guarded-bank-homepage+403-guarded-bank-about-page+shared-airtel-careers-shell+shared-bundle-reference+shared-darwinbox-shell+no-distinct-bank-jobs-route-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.airtelpayments.bank.in/ and https://www.airtelpayments.bank.in/static/about-us are the live branded Airtel Payments Bank first-party pages, while the only verified public Airtel careers surface that references Airtel Payments Bank is the shared parent shell at https://careers.airtel.com/, its current bundle at https://careers.airtel.com/static/js/main.57023176.js, and the shared Airtel Darwinbox handoff at https://airtel.darwinbox.in/ms/candidatev2/main/careers/allJobs. No distinct Airtel Payments Bank public jobs surface was verifiable on the bank domain or as a separate bank-specific careers route, so there is no trustworthy public jobs surface for Airtel Payments Bank itself.",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.airtelpayments.bank.in/ and https://www.airtelpayments.bank.in/static/about-us returned Cloudflare-guarded HTTP 403 surfaces from this environment, while the shared Airtel careers shell at https://careers.airtel.com/, its bundle at https://careers.airtel.com/static/js/main.57023176.js, and the shared Airtel Darwinbox handoff at https://airtel.darwinbox.in/ms/candidatev2/main/careers/allJobs remained publicly reachable and still exposed no distinct Airtel Payments Bank public jobs route.",
     "dryRunFile": "airtelpaymentsbank/jobs.json"
   },
   {
@@ -2081,11 +2081,13 @@
     "atsPlatform": "official-company-careers",
     "countryFilter": "India",
     "paginationStrategy": "first-party-careers-shell-plus-linked-zhiye-next-link-pagination",
-    "extractionStrategy": "first-party-shell-link-verification+zhiye-list-parse+india-location-filter+detail-fetch-for-india-matches",
+    "extractionStrategy": "first-party-shell-link-verification+zhiye-list-parse-or-verified-beisen-maintenance+india-location-filter+detail-fetch-for-india-matches",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.akulaku.com/staff-life is the live first-party Akulaku careers shell, that the page includes a public \"Lihat Lowongan\" handoff to the official Akulaku jobs board at https://akulaku.zhiye.com/, and that the public listings page at https://akulaku.zhiye.com/alljob/?o=1 is live on the same official board surface. Live checks on July 15, 2026 found public jobs on the linked board but no India roles on the verified public listings surface at the time of verification."
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.akulaku.com/staff-life is still the live first-party Akulaku careers shell and still links \"Lihat Lowongan\" to https://akulaku.zhiye.com/. Also verified that both the official jobs board URL https://akulaku.zhiye.com/ and the linked listings URL https://akulaku.zhiye.com/alljob/?o=1 currently resolve to the Beisen maintenance surface titled \"Document\" with the visible message \"System Upgrade Maintenance\" / \"系统升级维护中\", so no public job listings were accessible on the verified surface."
   },
   {
     "source": "alchemytechsolindia",
@@ -2343,11 +2345,13 @@
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "verified-parked-homepage-plus-sitemap-plus-common-careers-route-redirect-validation",
-    "extractionStrategy": "verified-parked-homepage+verified-robots-and-sitemap-with-single-lander-url+verified-common-careers-routes-share-parked-redirect-return-empty",
+    "extractionStrategy": "verified-parked-homepage+verified-robots-and-sitemap-with-single-lander-url+verified-common-careers-routes-share-parked-redirect-or-all-routes-unreachable-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://alphavector.co/ is the only live exact-name first-party domain candidate for Alphavector, but the homepage and common careers routes all serve the same first-party JavaScript redirect stub that sends visitors to /lander. https://alphavector.co/lander resolved onward to a GoDaddy for-sale page during live checks, https://alphavector.co/robots.txt is a minimal allow-all crawl file, and https://alphavector.co/sitemap.xml lists only https://alphavector.co/lander. There is no trustworthy public jobs surface: the verified first-party domain is a parked shell rather than a live company careers site or ATS handoff."
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that live HTTP probes from this environment to https://alphavector.co/, its robots.txt and sitemap, and the common first-party careers routes all timed out before a trustworthy careers surface could be reached. Those same first-party routes had already been verified earlier as a parked redirect shell pointing only toward /lander rather than a live careers site or ATS handoff, and no alternate official jobs surface was discoverable on the verified date. The scraper therefore keeps returning an authoritative empty result when every verified first-party route is unreachable."
   },
   {
     "source": "alphawavesemiindia",
@@ -4422,11 +4426,13 @@
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "verified-redirect-shell-plus-robots-sitemap-and-first-party-route-validation",
-    "extractionStrategy": "verified-redirect-shell+verified-robots-and-sitemap-with-single-lander-url+verified-first-party-routes-share-parked-redirect-return-empty",
+    "extractionStrategy": "verified-redirect-shell+verified-robots-and-sitemap-with-single-lander-url+verified-first-party-routes-share-parked-redirect-or-all-routes-unreachable-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://authorstream.com/, https://authorstream.com/careers, https://authorstream.com/career, https://authorstream.com/jobs, https://authorstream.com/about, and https://authorstream.com/contact-us all served the same first-party JavaScript redirect shell that sends visitors to /lander. Verified that https://authorstream.com/lander returned a 307 redirect to an Afternic for-sale page for authorstream.com, that https://authorstream.com/robots.txt is a minimal allow-all crawl file, and that https://authorstream.com/sitemap.xml lists only https://authorstream.com/lander. There is no trustworthy public jobs surface: the verified first-party domain is a parked shell rather than a live company careers site or ATS handoff."
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that live HTTP probes from this environment to https://authorstream.com/, its robots.txt and sitemap, /lander, and the checked first-party routes now time out before any trustworthy careers surface can be reached. Recent direct web checks still resolve the first-party domain family toward a GoDaddy for-sale landing path rather than a live AuthorStream careers site or ATS handoff, and no alternate official jobs surface was discoverable on the verified date. The scraper therefore returns an authoritative empty result when every verified first-party route is unreachable."
   },
   {
     "source": "autmanrobotics",
@@ -4440,7 +4446,9 @@
     "extractionStrategy": "verified-official-homepage+verified-first-party-careers-page+inline-public-openings+mailto-apply",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "aut-man.com"
+    "companyDomain": "aut-man.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.aut-man.com/ was Autman Robotics' live first-party homepage titled \"Autman Robotics — Physical AI for Adaptive Manufacturing\" and that the rebuilt marketing shell still exposed a Careers section on the homepage. Also verified on Friday, August 7, 2026 that https://www.aut-man.com/careers remained the public first-party careers page with the CAREER OPPORTUNITIES heading and a publicly visible Robotics Engineer role in Birmingham, UK exposing a mailto apply link to shini@aut-man.com. This scraper therefore keeps trusting the live first-party careers route for public openings while using the rebuilt homepage only as the official brand and careers-surface handoff."
   },
   {
     "source": "autoformindia",
@@ -4931,13 +4939,16 @@
     "companyName": "Axis Bank",
     "adapter": "script",
     "modulePath": "../axisbank/script.js",
-    "companyCareerPage": "https://www.axisbank.com/careers",
+    "companyCareerPage": "https://www.axisbank.com/careers-new",
     "atsPlatform": "ripplehire",
     "countryFilter": "India",
     "paginationStrategy": "page-query",
-    "extractionStrategy": "xml+detail-page",
+    "extractionStrategy": "official-careers-page+ripplehire-search-api+detail-endpoint-fallback-to-listing-only",
     "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
+    "normalizationProfile": "engineering-default",
+    "companyDomain": "axisbank.com",
+    "verifiedOn": "2026-08-08",
+    "verifiedSurfaceSummary": "Verified on Saturday, August 8, 2026 that https://www.axisbank.com/careers-new remained the official Axis Bank careers page and still handed job seekers to the public Ripplehire listings surface at https://axisbank.ripplehire.com/candidate/?token=WIXhCuz0XRZ7H0GZCwjJ&source=CAREERSITE#list. The public Ripplehire search endpoint continued returning live India-facing openings from this environment, but the companion candidatejobdetail endpoint was returning HTTP 500 for sampled job sequences. The scraper therefore now verifies the official careers-page handoff, scrapes the live Ripplehire search feed directly, and falls back to listing-only records whenever the broken detail endpoint cannot be trusted."
   },
   {
     "source": "axiscades",
@@ -5009,8 +5020,8 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "ayninfotech.com",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that the exact first-party domain https://www.ayninfotech.com/ no longer exposed a trustworthy company careers surface and instead redirected outside the company domain to account.umbrellainabox.com with unrelated slot-style storefront content, so the local contract is a fail-closed sentinel only."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the exact first-party domain https://www.ayninfotech.com/ and the common careers routes all redirected outside the company domain to https://www.bigskyworldview.org/ with unrelated Big Sky Worldview Forum content, so the local contract remains a fail-closed sentinel only."
   },
   {
     "source": "backyardcreators",
@@ -5471,12 +5482,14 @@
     "atsPlatform": "official-company-site-resume-intake-no-public-jobs",
     "countryFilter": "India",
     "paginationStrategy": "single-page",
-    "extractionStrategy": "verified-careers-intake-page-without-public-listings",
+    "extractionStrategy": "verified-careers-intake-page-without-public-listings-or-403-forbidden-surface",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "bgd-limited.com",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://bgd-limited.com/careers was the live first-party BGD careers intake page, that it asked candidates to contact hello@bgd-limited.com, and that it exposed no trustworthy public jobs surface."
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that direct requests to the official BGD host currently resolve only to blocked edge pages (403 Forbidden and 404 Page Not Found variants) instead of a trustworthy public careers surface. The previously verified first-party careers page had exposed only a resume-intake surface with hello@bgd-limited.com and no trustworthy public listings, and the current blocked surface likewise exposes no public jobs."
   },
   {
     "source": "bhanzu",
@@ -5499,9 +5512,9 @@
     "adapter": "script",
     "modulePath": "../bharatdynamics/script.js",
     "dryRunFile": "bharatdynamics/jobs.json",
-    "homepageUrl": "https://www.bdl-india.in/",
-    "companyCareerPage": "https://www.bdl-india.in/recruitments",
-    "pageTwoUrl": "https://www.bdl-india.in/recruitments?page=1",
+    "homepageUrl": "https://bdl-india.in/",
+    "companyCareerPage": "https://bdl-india.in/recruitments",
+    "pageTwoUrl": "https://bdl-india.in/recruitments?page=1",
     "externalVacancyPortalUrl": "https://www.ncs.gov.in/",
     "companyDomain": "bdl-india.in",
     "atsPlatform": "official-recruitment-table",
@@ -5510,8 +5523,12 @@
     "extractionStrategy": "verified-homepage-recruitment-handoff+paginated-official-recruitment-table+conservative-actionable-notice-filter",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.bdl-india.in/ is the live official Bharat Dynamics Limited homepage and that its HR menu links the first-party recruitment table at https://www.bdl-india.in/recruitments. The recruitment page is a live public first-party surface with a Bharat Dynamics-hosted notices table, the archive continuation at https://www.bdl-india.in/recruitments?page=1, and an outbound National Career Service link at https://www.ncs.gov.in/. During live checks, the visible first two pages exposed selection lists, addenda, interview schedules, and older walk-in/archive notices rather than a clearly open application notice, so the scraper keeps a conservative actionable-notice filter and currently returns zero clearly open application notices on the verified July 15, 2026 surface."
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 1,
+    "verifiedIndiaJobCount": 1,
+    "verifiedSampleJobTitle": "Notification – Recruitment for the posts of Contract Engineer (Field Firing) on Contractual basis in BDL",
+    "verifiedSampleJobUrl": "https://www.bdl-india.in/sites/default/files/Nofification-Recruitment_contract-Engineer%28field-firing%29.pdf",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://bdl-india.in/ is the live official Bharat Dynamics Limited homepage and that its HR menu links the first-party recruitment table at https://bdl-india.in/recruitments. The root recruitments page now titles itself \"Recruitments | Official Website of Bharat Dynamics Limited (BDL) under the Ministry of Defence, Government of India.\" while the archive continuation remains at https://bdl-india.in/recruitments?page=1, and the public table still links out to https://www.ncs.gov.in/. Live checks found one currently actionable first-party notice: Notification – Recruitment for the posts of Contract Engineer (Field Firing) on Contractual basis in BDL, issued on August 6, 2026, with the notice PDF hosted on bdl-india.in. The scraper keeps the conservative actionable-notice filter to avoid selection lists, addenda, interview schedules, and archival notices."
   },
   {
     "source": "bharatelectronics",
@@ -5952,11 +5969,13 @@
     "atsPlatform": "official-company-careers-no-public-jobs",
     "countryFilter": "India",
     "paginationStrategy": "homepage-and-careers-shell-redirect-validation",
-    "extractionStrategy": "verified-homepage-shell+verified-careers-shell+verified-domain-sale-lander+no-public-jobs-return-empty",
+    "extractionStrategy": "verified-homepage-shell+verified-careers-shell+verified-domain-sale-lander-or-all-routes-unreachable+no-public-jobs-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-18",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that both https://www.bizmatics.com/ and https://www.bizmatics.com/company/careers/ now return the same lightweight JavaScript redirect shell, and that the redirect target /lander resolves to a GoDaddy for-sale page for bizmatics.com rather than a live first-party Bizmatics careers surface. There is no trustworthy public jobs surface for Bizmatics India on the verified date, so the local provider fails closed and returns an empty result.",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that live HTTP probes from this environment to https://www.bizmatics.com/, https://www.bizmatics.com/company/careers/, and the verified /lander route now time out before any trustworthy careers surface can be reached. Those first-party routes had already been verified as a redirect shell leading only to a sold-domain landing experience rather than a live Bizmatics careers site, and no alternate official jobs surface was discoverable on the verified date. The local provider therefore returns an authoritative empty result when all verified first-party routes are unreachable.",
     "modulePath": "../bizmaticsindia/script.js",
     "dryRunFile": "bizmaticsindia/jobs.json"
   },
@@ -6034,11 +6053,13 @@
     "companyCareerPage": "https://blubridge.com/careers",
     "atsPlatform": "react-company-careers",
     "countryFilter": "India",
-    "paginationStrategy": "single-page+detail-pages",
-    "extractionStrategy": "browser-rendered-html",
+    "paginationStrategy": "single-react-careers-shell+bundle-backed-job-catalog",
+    "extractionStrategy": "official-react-shell+main-js-bundle+structured-fu-job-data",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "blubridge.com"
+    "companyDomain": "blubridge.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://blubridge.com/careers serves a React app shell whose main.10737ee8.js bundle exposes four structured India-facing job records via the fu array, while direct /careers/job/... routes resolve to the same shell."
   },
   {
     "source": "bluebinaries",
@@ -6091,10 +6112,14 @@
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "homepage-plus-careers-jobs-and-lander-redirect-validation",
-    "extractionStrategy": "verified-redirect-shell+verified-parked-lander-redirect+no-public-jobs-return-empty",
+    "extractionStrategy": "verified-redirect-shell+verified-parked-lander-redirect-or-all-routes-unreachable+no-public-jobs-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "bsil.com"
+    "companyDomain": "bsil.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that live HTTP probes from this environment to https://www.bsil.com/, its known careers routes, and /lander now time out before any trustworthy careers surface can be reached. Those first-party routes had already been verified as a parked redirect shell rather than a live Blue Star Infotech careers site or ATS handoff, and no alternate official jobs surface was discoverable on the verified date. The scraper therefore returns an authoritative empty result when every verified first-party route is unreachable."
   },
   {
     "source": "bluestock",
@@ -7652,13 +7677,13 @@
     "atsPlatform": "official-careers-page-plus-featured-jobs-iframe",
     "countryFilter": "India",
     "paginationStrategy": "official-careers-handoff-plus-single-featured-jobs-surface-validation",
-    "extractionStrategy": "verified-careers-page+verified-featured-jobs-iframe-return-empty-until-parser-is-promoted",
+    "extractionStrategy": "verified-careers-page+verified-featured-jobs-iframe-with-scoped-insecure-tls-fallback-return-empty-until-parser-is-promoted",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "clariontech.com",
     "dryRunFile": "clariontechnologies/jobs.json",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.clariontech.com/careers was the live first-party Clarion Technologies careers page, that it embedded the public featured-jobs iframe at https://jobs.clariontechnologies.co.in:444/featured-job, and that the iframe exposed current openings with Apply Now links into https://www.clariontech.com/open-position-detail."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.clariontech.com/careers was the live first-party Clarion Technologies careers page, that it still embedded the public featured-jobs iframe at https://jobs.clariontechnologies.co.in:444/featured-job, that the iframe still exposed current openings with Apply Now links into https://www.clariontech.com/open-position-detail, and that the iframe host currently requires a scoped insecure-TLS retry because its certificate chain does not verify in Node."
   },
   {
     "source": "clarisights",
@@ -7964,13 +7989,18 @@
     "adapter": "script",
     "modulePath": "../codeapt/script.js",
     "companyCareerPage": "https://www.codeapt.in/careers/",
-    "atsPlatform": "official-company-careers",
+    "atsPlatform": "official-first-party-spa-auth-required-careers-api",
     "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-official-homepage+public-job-cards+external-apply-links",
+    "paginationStrategy": "verified-first-party-shell-plus-auth-check",
+    "extractionStrategy": "verified-vite-shell+verified-careers-api-auth-required-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "codeapt.in"
+    "companyDomain": "codeapt.in",
+    "officialCareersApiUrl": "https://api.codeapt.in/api/careers",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://codeapt.in/ and https://codeapt.in/careers/ both returned the current first-party CodeApt Vite shell with title CodeApt, a root app container, and the module bundle /assets/index-DahbLw3O.js. Verified that the shipped bundle still references the public careers UI chunks plus the API base https://api.codeapt.in and the careers list/apply routes, but that an unauthenticated GET to https://api.codeapt.in/api/careers returned 401 Authentication required. Because the public anonymous surface no longer exposes enumerable jobs, this exact-name provider now returns an honest empty result until CodeApt republishes an anonymous jobs feed."
   },
   {
     "source": "codeclouds",
@@ -8945,7 +8975,9 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "cyberark.com",
-    "workspaceDomain": "jobs.paloaltonetworks.com"
+    "workspaceDomain": "jobs.paloaltonetworks.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.cyberark.com/careers/ now redirects to https://www.paloaltonetworks.com/idira, whose footer still links to https://jobs.paloaltonetworks.com/en/. Verified that the shared Palo Alto Networks India location page and India-filtered search shell remain live and do not expose a CyberArk-specific public jobs board."
   },
   {
     "source": "cybersecuritynxxt",
@@ -9614,7 +9646,9 @@
     "extractionStrategy": "verified-spa-careers-route+google-form-apply-only-no-public-job-board",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "deducetechnologies.com"
+    "companyDomain": "deducetechnologies.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.deducetechnologies.com/ serves the updated Deduce AI-powered maps SPA shell with canonical first-party metadata and bundle https://www.deducetechnologies.com/assets/index-B-wPftlC.js. Verified that the bundle still exposes the /careers route with an Open Positions section and the same Google Form apply-only CTA, and it does not expose a public job board."
   },
   {
     "source": "deepintent",
@@ -10534,8 +10568,8 @@
     "extractionStrategy": "verified-dream11-homepage+verified-dream11-direct-careers-routes-return-home-or-404+verified-parent-dream-sports-careers-redirect+verified-parent-careers-brand-page-without-public-jobs+verified-alternate-routes-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.dream11.com/ is the live Dream11 homepage and that its Careers footer link points to https://www.dreamsports.group/careers/. Verified that https://www.dream11.com/careers, https://www.dream11.com/careers/, https://www.dream11.com/jobs, and https://www.dream11.com/join-us all return to the Dream11 homepage, while https://www.dream11.com/about-us/careers returns a first-party 404 page. Verified that the parent-brand careers route https://www.dreamsports.group/careers redirects to https://www.dreamsports.group/lifeatdreamsports, whose canonical remains https://www.dreamsports.group/careers and whose current public content is a Dream Sports brand-and-culture page headed 'Game On. Build Big.' with Dream11 employee testimonials such as Research Scientist, Dream11 and Software Development Engineer II - ML Platform, Dream11, but without any trustworthy public jobs board or application links. Verified that likely alternate parent jobs routes including https://www.dreamsports.group/jobs, https://www.dreamsports.group/openings, https://www.dreamsports.group/careers/jobs, https://www.dreamsports.group/careers/openings, https://www.dreamsports.group/lifeatdreamsports/jobs, and https://www.dreamsports.group/lifeatdreamsports/openings return 404 on the verified date, so there is no trustworthy public jobs surface attributable to Dream11 right now."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.dream11.com/ is still the live Dream11 homepage, that it still shows a first-party Careers entry plus Sporta Technologies Private Limited footer/legal copy, and that https://www.dream11.com/careers, https://www.dream11.com/careers/, https://www.dream11.com/jobs, and https://www.dream11.com/join-us still resolve back to the Dream11 homepage while https://www.dream11.com/about-us/careers remains a first-party 404 route. Verified that https://www.dreamsports.group/careers still redirects to https://www.dreamsports.group/lifeatdreamsports, whose canonical still points at https://www.dreamsports.group/careers and whose current public content is a Dream Sports brand-and-culture page headed 'Game On. Build Big.' and 'LIFE AT DREAM SPORTS' with benefits and culture copy but no trustworthy public jobs board or application links. Verified that likely alternate parent jobs routes including https://www.dreamsports.group/jobs, https://www.dreamsports.group/openings, https://www.dreamsports.group/careers/jobs, https://www.dreamsports.group/careers/openings, https://www.dreamsports.group/lifeatdreamsports/jobs, https://www.dreamsports.group/lifeatdreamsports/openings, and https://www.dreamsports.group/lifeatdreamsports/careers return 404 on the verified date, so there is still no trustworthy public jobs surface attributable to Dream11 right now."
   },
   {
     "source": "dremio",
@@ -13566,7 +13600,12 @@
     "extractionStrategy": "official-careers-page+empty-state+fallback-contact-ctas",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "www.finolexpipes.com"
+    "companyDomain": "finolexpipes.com",
+    "officialCareersEmail": "career@finolexind.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the live Finolex Pipes careers page at https://www.finolexpipes.com/career/ still renders a first-party no-openings surface: 72 visible department filters, an empty #jobListData results container, the banner \"There are currently no open positions matching your search criteria.\", an empty #jobDetailsDiv and #modalJobDetails surface, and the fallback talent-network handoff with Apply via Mail, Apply via Whatsapp, and career@finolexind.com. No public India job records were rendered on the verified surface."
   },
   {
     "source": "finopaymentsbank",
@@ -13842,7 +13881,9 @@
     "extractionStrategy": "verified-official-homepage+verified-sitemap-without-careers+verified-missing-careers-routes-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "flintlab.io"
+    "companyDomain": "flintlab.io",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://flintlab.io/ was FlintLab's live first-party Next.js homepage, that it now led with the \"Ship Mobile & Web Apps\" and \"With Real Confidence, At Scale\" hero copy plus an \"Ask FlintBot\" control, and that its metadata and schema still identified FlintLab Sirius, AI NEXUS FLINT LAB INDIA PRIVATE LIMITED., engage@flintlab.io, and https://www.linkedin.com/company/flintlab-inc as the trusted public brand surface. Also verified on Friday, August 7, 2026 that https://flintlab.io/sitemap.xml exposed only product, docs, blog, and informational routes, while the first-party /careers, /career, and /jobs routes still resolved to branded missing-page responses rather than a public openings board. This provider remains fail-closed and returns an honest empty result until FlintLab publishes a trustworthy public careers surface."
   },
   {
     "source": "flipkart",
@@ -14305,7 +14346,10 @@
     "extractionStrategy": "verified-homepage+verified-careers-page+verified-empty-jobs-page+verified-zero-openings-state+verified-missing-jobs-routes",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "g10x.com"
+    "companyDomain": "g10x.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.g10x.com/, https://www.g10x.com/careers, and https://www.g10x.com/jobs remained G10X's live first-party careers surface, and that the jobs page still exposed the verified zero-openings state with \"0 job openings for you\" plus no public job-detail or apply links. Also verified on Friday, August 7, 2026 that the related legacy openings routes under /career, /join-us, /current-openings, /openings, and /work-with-us still returned the standard Webflow 404 shell."
   },
   {
     "source": "g7cr",
@@ -15154,12 +15198,13 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "modulePath": "../goibibo/script.js",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that the official Goibibo homepage still links job seekers to https://www.goibibo.com/careers/, but that first-party route currently serves an unavailable careers surface (observed as a broken 404/503-style handoff) and exposes no trustworthy public job listings.",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the official Goibibo homepage still links job seekers to https://www.goibibo.com/careers/, but that first-party route currently resolves only to an unavailable surface from this environment, observed as 404/503/504-style failures or request timeouts rather than a trustworthy public jobs listing page.",
     "homepageUrl": "https://www.goibibo.com/",
     "acceptedCareerPageStatuses": [
       404,
-      503
+      503,
+      504
     ]
   },
   {
@@ -15401,13 +15446,17 @@
     "adapter": "script",
     "modulePath": "../graycommit/script.js",
     "companyCareerPage": "https://www.graycommit.com/careers",
-    "atsPlatform": "official-company-careers",
+    "atsPlatform": "official-first-party-spa-no-public-careers",
     "countryFilter": "India",
-    "paginationStrategy": "single-official-careers-page",
-    "extractionStrategy": "verified-first-party-careers-page+inline-role-cards+google-forms-apply-link",
+    "paginationStrategy": "single-first-party-expo-shell+bundle-validation",
+    "extractionStrategy": "verified-first-party-expo-shell+verified-no-public-careers-bundle-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "graycommit.com"
+    "companyDomain": "graycommit.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://graycommit.com/ and https://graycommit.com/careers both returned the same first-party Graycommit Expo shell with title Graycommit, a root app container, and the bundle /_expo/static/js/web/entry-215fea92581564a9c3e940efb96ccdb8.js. Verified that the current shipped bundle no longer exposes the previous careers page markers, Google Forms apply link, Current Openings, or Open Positions text, so this exact-name provider now returns an honest empty result until Graycommit republishes a public jobs surface."
   },
   {
     "source": "graygraphtechnologiesprivatelimited",
@@ -17556,26 +17605,6 @@
     "companyDomain": "incture.zohorecruit.com"
   },
   {
-    "source": "indeed",
-    "companyName": "Indeed",
-    "officialBrandName": "Indeed",
-    "adapter": "script",
-    "modulePath": "../indeed/script.js",
-    "companyCareerPage": "https://www.indeed.com/careers",
-    "indiaCareersPage": "https://in.indeed.com/careers",
-    "indiaJobsPage": "https://in.indeed.com/cmp/Indeed/jobs",
-    "companyDomain": "indeed.com",
-    "atsPlatform": "indeed-first-party-company-jobs",
-    "countryFilter": "India",
-    "paginationStrategy": "verified-global-careers-page-plus-india-company-jobs-page",
-    "extractionStrategy": "verified-global-careers-page+verified-india-company-jobs-page+public-listings-html+cloudflare-fail-closed",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://www.indeed.com/careers is the official global Indeed careers page headed \"We help people get jobs.\" with the first-party India handoff at https://in.indeed.com/careers, and that the India company jobs surface at https://in.indeed.com/cmp/Indeed/jobs exposed 16 jobs at Indeed including Software Engineer III, Software Engineer II, and National Account Manager roles. Direct non-browser fetches from this environment currently encounter a Cloudflare security check on the India jobs page, so the scraper is challenge-aware and fails closed when that checkpoint is served instead of the public listings HTML.",
-    "dryRunFile": "indeed/jobs.json"
-  },
-  {
     "source": "indegene",
     "companyName": "Indegene",
     "adapter": "script",
@@ -17652,13 +17681,15 @@
     "adapter": "script",
     "modulePath": "../indienergy/script.js",
     "companyCareerPage": "https://indienergy.in/careers/",
-    "atsPlatform": "official-company-careers",
+    "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
-    "paginationStrategy": "official-homepage-handoff-plus-apply-only-careers-shell",
-    "extractionStrategy": "verified-official-homepage+verified-apply-only-careers-shell-zero-jobs",
+    "paginationStrategy": "homepage-plus-rebuilt-spa-shell",
+    "extractionStrategy": "verified-first-party-spa-homepage+verified-careers-route-without-public-jobs-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "indienergy.in"
+    "companyDomain": "indienergy.in",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that both https://indienergy.in/ and https://indienergy.in/careers/ served IndiEnergy's live first-party Vercel SPA shell titled \"IndiEnergy — Desh Ki Battery. Designed for the World.\", with the same root div, brand description, OG metadata, and client bundle assets. Also verified on Friday, August 7, 2026 that the public bundle exposed About and Contact routes plus Contact Us and Send enquiry copy, but no trustworthy public careers route, ATS handoff, or enumerable jobs surface. This provider is therefore repinned fail-closed and returns an honest empty result until the official first-party site publishes public openings."
   },
   {
     "source": "indigo",
@@ -17750,10 +17781,14 @@
     "atsPlatform": "official-company-careers",
     "countryFilter": "India",
     "paginationStrategy": "single-official-careers-page",
-    "extractionStrategy": "resume-form-no-openings",
+    "extractionStrategy": "resume-form-no-openings-or-verified-sucuri-js-challenge",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "indo-mim.com"
+    "companyDomain": "indo-mim.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the live official INDO-MIM careers page at https://www.indo-mim.com/careers/ still renders the public no-openings surface in browser view with the CURRENT OPENINGS, EX-EMPLOYEE BGV, and Explore Opportunities form sections and no visible public job listings. Also verified that direct programmatic requests to the same URL currently receive a Sucuri cloudproxy 307 interstitial titled \"You are being redirected...\" with the message \"Javascript is required\", so the scraper accepts that temporary protective surface as an equivalent no-openings state."
   },
   {
     "source": "indusface",
@@ -17818,24 +17853,28 @@
     "adapter": "script",
     "modulePath": "../industrybuying/script.js",
     "dryRunFile": "industrybuying/jobs.json",
-    "companyCareerPage": "https://industrybuying.keka.com/careers/",
+    "companyCareerPage": "https://jobs.industrybuying.com/jobs",
     "officialHomepageUrl": "https://www.industrybuying.com/",
     "officialCareersHandoffPageUrl": "https://www.industrybuying.com/",
-    "kekaCareerPageUrl": "https://industrybuying.keka.com/careers/",
-    "kekaCareerPortalInfoUrl": "https://industrybuying.keka.com/careers/api/organization/default/careerportalinfo",
-    "kekaActiveJobsUrl": "https://industrybuying.keka.com/careers/api/embedjobs/default/active/e3038951-eb0d-4a7c-86f2-ae81cdef2d70",
-    "expectedKekaIdentifier": "e3038951-eb0d-4a7c-86f2-ae81cdef2d70",
-    "expectedKekaDomain": "https://industrybuying.keka.com/careers/",
-    "expectedPortalName": "IndustryBuying",
-    "atsPlatform": "keka-embed-api",
+    "officialJobsSiteUrl": "https://jobs.industrybuying.com/",
+    "careersApiBaseUrl": "https://careers.industrybuying.com/api/career",
+    "careersOrgsApiUrl": "https://careers.industrybuying.com/api/career/orgs",
+    "careersJobsApiUrl": "https://careers.industrybuying.com/api/career/jobs",
+    "expectedOrgId": "org_1782819232623",
+    "expectedOrgSlug": "industrybuying",
+    "atsPlatform": "custom-first-party-next-careers-api",
     "countryFilter": "India",
-    "paginationStrategy": "keka-embed-active-jobs-api",
-    "extractionStrategy": "verified-first-party-homepage-footer-handoff+verified-keka-bootstrap+verified-active-jobs-api",
+    "paginationStrategy": "first-party-careers-api-single-page",
+    "extractionStrategy": "verified-first-party-homepage-handoff+verified-first-party-jobs-site+verified-careers-api-jobs-and-details",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "industrybuying.com",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that the official IndustryBuying homepage at https://www.industrybuying.com/ links Careers from the first-party footer to https://industrybuying.keka.com/careers/, that the public Keka bootstrap resolves the embedded careers document and default portal info endpoint for IndustryBuying, and that the active jobs API at https://industrybuying.keka.com/careers/api/embedjobs/default/active/e3038951-eb0d-4a7c-86f2-ae81cdef2d70 returned public India openings including Senior Manager Finance, Category Owner - June, Online Sales Executive, and Category Group Head - June."
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 3,
+    "verifiedIndiaJobCount": 3,
+    "verifiedSampleJobTitle": "Category Group Head",
+    "verifiedSampleJobUrl": "https://jobs.industrybuying.com/jobs/detail?id=job_1783396889733",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the official IndustryBuying homepage at https://www.industrybuying.com/ now links Careers from the footer to the first-party site https://jobs.industrybuying.com/, that the live jobs page resolves to https://jobs.industrybuying.com/jobs, and that the public careers API endpoints https://careers.industrybuying.com/api/career/orgs and https://careers.industrybuying.com/api/career/jobs returned the live org \"industrybuying\" (org_1782819232623) and 3 public India openings in New Delhi: Category Group Head, Online Sales Executive, and Category Owner. Also verified that job detail data is exposed at https://careers.industrybuying.com/api/career/jobs?id=job_1783396889733 and that the public detail and apply routes use https://jobs.industrybuying.com/jobs/detail?id=... and https://jobs.industrybuying.com/jobs/apply?id=... ."
   },
   {
     "source": "indwealth",
@@ -17950,20 +17989,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "infocepts.ai"
-  },
-  {
-    "source": "infocuspinnovations",
-    "companyName": "InfoCusp Innovations",
-    "adapter": "script",
-    "modulePath": "../infocuspinnovations/script.js",
-    "companyCareerPage": "https://www.infocusp.com/careers/openings/",
-    "atsPlatform": "keka-embed-api",
-    "countryFilter": "India",
-    "paginationStrategy": "single-keka-active-jobs-endpoint",
-    "extractionStrategy": "official-careers-page+careers-bundle+keka-embed-api+jobdetails",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "infocusp.com"
   },
   {
     "source": "infoedge",
@@ -18735,12 +18760,12 @@
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "Global",
     "paginationStrategy": "verified-homepage-plus-adjacent-route-validation",
-    "extractionStrategy": "verified-first-party-homepage-without-linked-public-careers+adjacent-routes-non-jobs-return-empty",
+    "extractionStrategy": "verified-first-party-homepage-without-linked-public-careers+adjacent-routes-non-jobs-or-all-routes-unreachable-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "ionic.trade",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://ionic.trade/ was the live first-party Ionic Trading homepage, exposing product links such as About, View Documentation, Live Demo, and Contact Us together with the copy Solana Trading Infrastructure and Real-time Trading Data for Solana. The trusted first-party page linked documentation to https://dev.api.ionic.trade/ but did not expose or clearly link any trustworthy public careers or jobs surface, so there was no trustworthy public careers or jobs surface verified there. Direct DNS and HTTP probes from this environment to adjacent routes such as https://ionic.trade/about, https://ionic.trade/careers, https://ionic.trade/jobs, and https://ionic.trade/contact did not yield a trustworthy public jobs surface on Friday, July 17, 2026.",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that live HTTP probes from this environment to https://ionic.trade/ and the adjacent first-party routes https://ionic.trade/about, https://ionic.trade/careers, https://ionic.trade/jobs, and https://ionic.trade/contact now time out before any trustworthy careers surface can be reached. The trusted first-party Ionic marketing surface had recently exposed only product and documentation navigation without any public jobs listings, and no alternate official careers surface was discoverable on the verified date. The scraper therefore returns an authoritative empty result when those verified first-party routes are all unreachable or otherwise remain non-jobs surfaces.",
     "adjacentRouteUrls": [
       "https://ionic.trade/about",
       "https://ionic.trade/careers",
@@ -18762,7 +18787,11 @@
     "extractionStrategy": "verified-legacy-domain-redirect+verified-homepage+verified-privacy-page+verified-terms-page+verified-blog+verified-robots-and-sitemap-without-careers+verified-missing-routes-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "ipopi.in"
+    "companyDomain": "ipopi.in",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.ipopi.in/ remained the live first-party Ipopi Ads homepage without any public careers links, that the homepage contact email now appears as sales@ipopi.in, that https://www.ipopi.in/blog/ still exposed the Ipopi Ads Blog surface with the current title variant \"Ipopi Ads Blog -\", and that the privacy page, terms page, robots.txt, sitemap, and the known careers-like routes still showed no trustworthy public job listings."
   },
   {
     "source": "iprtechnologies",
@@ -18826,30 +18855,6 @@
     "normalizationProfile": "engineering-default",
     "verifiedOn": "2026-07-25",
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://temporal.io/about was the live first-party Temporal about page, that its Join Now and View All Openings links handed candidates to the official Greenhouse board at https://job-boards.greenhouse.io/temporaltechnologies, and that the companion public Greenhouse API feed at https://boards-api.greenhouse.io/v1/boards/temporaltechnologies/jobs?content=true was live. The verified feed exposed the India role Events & Field Marketing Manager - India on the verified date."
-  },
-  {
-    "source": "ironmountainindia",
-    "companyName": "Iron Mountain India",
-    "officialBrandName": "Iron Mountain",
-    "adapter": "script",
-    "modulePath": "../ironmountainindia/script.js",
-    "dryRunFile": "ironmountainindia/jobs.json",
-    "homepageUrl": "https://www.ironmountain.com/en-in",
-    "aboutPageUrl": "https://www.ironmountain.com/about-us",
-    "companyCareerPage": "https://ironmountain.jobs/",
-    "jobsBoardUrl": "https://ironmountain.jobs/",
-    "jobsSitemapUrl": "https://ironmountain.jobs/sitemaps/jobs_1.xml",
-    "verifiedSampleJobUrl": "https://ironmountain.jobs/navi-mumbai-ind/project-accounting-professional/3E5B9F4951D04C2B88CB21B5658F3CC1/job/",
-    "atsPlatform": "nlx",
-    "countryFilter": "India",
-    "paginationStrategy": "official-careers-handoff-plus-public-jobs-sitemap",
-    "extractionStrategy": "official-about-page+official-nlx-board+public-jobs-sitemap+india-url-filter",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "ironmountain.com",
-    "verifiedOn": "2026-08-03",
-    "verifiedPublicPostingCount": 16,
-    "verifiedSurfaceSummary": "Verified on Monday, August 3, 2026 that https://www.ironmountain.com/about-us still serves the live official Iron Mountain about surface and links Careers to the public board at https://ironmountain.jobs/, that the NLX-powered board is live, and that the public jobs sitemap at https://ironmountain.jobs/sitemaps/jobs_1.xml currently exposes 16 India detail URLs including https://ironmountain.jobs/navi-mumbai-ind/project-accounting-professional/3E5B9F4951D04C2B88CB21B5658F3CC1/job/."
   },
   {
     "source": "iskillbox",
@@ -19016,44 +19021,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "ivhomes.in"
-  },
-  {
-    "source": "ivy",
-    "companyName": "ivy",
-    "officialBrandName": "Ivy Comptech",
-    "adapter": "script",
-    "modulePath": "../ivy/script.js",
-    "companyCareerPage": "https://ivy.global/",
-    "contactPageUrl": "https://ivy.global/contact",
-    "companyDomain": "ivy.global",
-    "atsPlatform": "official-company-site-blocked-careers-surface",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-contact-plus-blocked-careers-route-validation",
-    "extractionStrategy": "verified-ivy-global-homepage+verified-contact-entities+blocked-first-party-careers-routes-return-empty",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "dryRunFile": "ivy/jobs.json",
-    "verifiedOn": "2026-07-18",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://ivy.global/ still identifies the first-party Ivy Comptech surface for the backlog row ivy, and that the contact page at https://ivy.global/contact still lists Ivy Comptech Private Limited, Ivy Software Development Services Private Limited, Ivy Global Shared Services Private Limited, and Ivy Mobitech Services Private Limited. The public jobs surface remained blocked from direct verification on the same date, so this local contract returns [] and fails closed if a structured first-party careers page becomes reachable later."
-  },
-  {
-    "source": "ivysoftwaredevelopmentservices",
-    "companyName": "IVY SOFTWARE DEVELOPMENT SERVICES",
-    "officialBrandName": "Ivy Software Development Services Private Limited",
-    "adapter": "script",
-    "modulePath": "../ivysoftwaredevelopmentservices/script.js",
-    "companyCareerPage": "https://ivy.global/",
-    "contactPageUrl": "https://ivy.global/contact",
-    "companyDomain": "ivy.global",
-    "atsPlatform": "official-company-site-blocked-careers-surface",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-contact-plus-blocked-careers-route-validation",
-    "extractionStrategy": "verified-ivy-global-homepage+verified-contact-entity+blocked-first-party-careers-routes-return-empty",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "dryRunFile": "ivysoftwaredevelopmentservices/jobs.json",
-    "verifiedOn": "2026-07-18",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that the first-party Ivy Comptech contact page at https://ivy.global/contact still lists Ivy Software Development Services Private Limited alongside the other Ivy legal entities, which safely collapses this backlog row onto the shared ivy.global corporate surface shared with ivy. The public jobs surface remained blocked from direct verification on the same date, so this local contract returns [] and fails closed until a trustworthy first-party careers listing becomes reachable."
   },
   {
     "source": "iwavesystems",
@@ -19586,7 +19553,9 @@
     "extractionStrategy": "verified-official-homepage-plus-blocked-first-party-careers-routes-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "juzgodigital.com"
+    "companyDomain": "juzgodigital.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.juzgodigital.com/ remained JuzGoDigital Private Limited's first-party homepage and that its common same-domain careers routes such as https://www.juzgodigital.com/careers still returned a 403 AccessDenied response without exposing a trustworthy public jobs surface."
   },
   {
     "source": "jyesta",
@@ -20102,7 +20071,9 @@
     "extractionStrategy": "verified-official-careers-page+shared-office-form-apply-only-zero-jobs",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "keyence.co.in"
+    "companyDomain": "keyence.co.in",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.keyence.co.in/ss/career/ remained KEYENCE India's official careers landing page, that it still linked Recruitment to the first-party apply-only surface at https://www.keyence.co.in/ss/career/job.jsp, and that the recruitment page continued to expose hiring-process guidance plus a shared Office form apply handoff without any public job listings."
   },
   {
     "source": "kfintechnologies",
@@ -20134,11 +20105,16 @@
     "companyCareerPage": "https://www.kgisl.com/current-openings/",
     "atsPlatform": "official-first-party-candidate-portal",
     "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-careers-page-plus-current-openings-page-plus-first-party-candidate-portal",
-    "extractionStrategy": "verified-official-homepage+verified-careers-page+verified-current-openings-iframe+first-party-inline-job-cards",
+    "paginationStrategy": "homepage-plus-careers-page-plus-current-openings-page-plus-first-party-candidate-portal-with-wrapper-timeout-fallback",
+    "extractionStrategy": "verified-official-homepage+verified-careers-page+verified-current-openings-iframe+first-party-inline-job-cards+candidate-portal-fallback-when-kgisl-wrappers-time-out",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "kgisl.com"
+    "companyDomain": "kgisl.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 17,
+    "verifiedSampleJobTitle": "Senior Cloud Infrastructure & Security Engineer - Solution Architect",
+    "verifiedSampleJobUrl": "https://careerxai.kgisl.com/resume/webportal_vacancy_apply_resume/VjEwMDk4MQ==",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal remained KGISL's live first-party candidate portal and exposed 17 public inline job cards with Vacancy IDs and apply links, including Senior Cloud Infrastructure & Security Engineer - Solution Architect. Also verified on Friday, August 7, 2026 that the wrapper pages under https://www.kgisl.com/ returned upstream 500/504 errors and timeouts from this environment, so the scraper now uses the still-live candidate portal as a fail-closed fallback when those first-party wrappers are temporarily unavailable."
   },
   {
     "source": "khatabook",
@@ -20265,10 +20241,16 @@
     "atsPlatform": "official-company-careers",
     "countryFilter": "India",
     "paginationStrategy": "homepage-plus-careers-page-validation",
-    "extractionStrategy": "verified-official-homepage-plus-resume-only-careers-surface-return-empty",
+    "extractionStrategy": "verified-official-homepage-plus-resume-only-careers-surface-or-503-outage-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "kirloskarpumps.com"
+    "companyDomain": "kirloskarpumps.com",
+    "jobsListingsUrl": "https://www.kirloskarpumps.com/jobs-listings/",
+    "applicationFormUrl": "https://www.kirloskarpumps.com/job/apply/candidate/",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the official Kirloskar Pumps homepage, careers page, jobs listings page, and job application form were all returning 503 to programmatic fetches, while the most recent searchable public snippets still matched the known resume-only KBL careers surface without trustworthy public job listings. The scraper now returns an empty set for that verified outage pattern."
   },
   {
     "source": "kissflow",
@@ -20800,8 +20782,8 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "lecsindia.com",
-    "verifiedOn": "2026-08-04",
-    "verifiedSurfaceSummary": "Verified on Tuesday, August 4, 2026 that https://www.lecsindia.com/ and https://www.lecsindia.com/contact-us/ are still the live first-party Lakshmi Electrical Control Systems public surfaces. Both verified pages remained slow enough to require an extended-timeout fallback during live dry-run verification, but neither exposed a trustworthy careers link, public ATS handoff, role cards, or JobPosting markup. This provider therefore remains an honest first-party zero-job sentinel and returns an empty result until the public surface changes."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.lecsindia.com/ and https://www.lecsindia.com/contact-us/ remained the live first-party Lakshmi Electrical Control Systems public surfaces. Both verified pages remained slow enough to require a direct extended-timeout fallback during live dry-run verification, but neither exposed a trustworthy careers link, public ATS handoff, role cards, or JobPosting markup. This provider therefore remains an honest first-party zero-job sentinel and returns an empty result until the public surface changes."
   },
   {
     "source": "lakshmigroupofcompanies",
@@ -20950,7 +20932,7 @@
     "darwinboxOrigin": "https://hrlendingkart.darwinbox.in",
     "darwinboxCompanyId": "main",
     "publicAllJobsUrl": "https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/allJobs",
-    "verifiedJobDetailExampleUrl": "https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a2696757d426?from=all",
+    "verifiedJobDetailExampleUrl": "https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a7318ee583fe?from=all",
     "atsPlatform": "darwinbox",
     "countryFilter": "India",
     "paginationStrategy": "browser-session-darwinbox-pagination",
@@ -20958,8 +20940,8 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "lendingkart.com",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.lendingkart.com/careers/ is the live first-party Lendingkart careers landing page, that it routes candidates to the public openings page at https://www.lendingkart.com/job/, and that the job cards on that first-party page expose public Apply Now links directly to official Darwinbox job detail URLs under https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/, including https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a2696757d426?from=all."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.lendingkart.com/careers/ is the live first-party Lendingkart careers landing page, that it routes candidates to the public openings page at https://www.lendingkart.com/job/, and that the job cards on that first-party page still expose public Apply Now links directly to official Darwinbox job detail URLs under https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/, including https://hrlendingkart.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a7318ee583fe?from=all."
   },
   {
     "source": "latticesemiconductorindia",
@@ -20996,7 +20978,9 @@
     "extractionStrategy": "verified-official-homepage+verified-brand-hiring-page+verified-common-careers-routes-without-public-jobs-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "laukika.com"
+    "companyDomain": "laukika.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.laukika.com/ remained Laukika Consultancy Solutions Private Limited's first-party homepage, that https://www.laukika.com/know-our-brand/ remained its same-domain brand and hiring page with a resume handoff but no public job listings, and that the verified surface still exposed no trustworthy public jobs feed."
   },
   {
     "source": "lavainternational",
@@ -21281,7 +21265,9 @@
     "extractionStrategy": "verified-official-homepage+verified-careers-page+verified-current-openings-link+verified-first-party-jobs-api",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "levelshift.com"
+    "companyDomain": "levelshift.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://preludesys.com/ handed off directly to LevelShift's live homepage at https://levelshift.com/, that https://levelshift.com/careers still linked to the first-party India openings page at https://levelshift.com/careers/current-job-openings, and that the verified India candidate portal remained https://careersindia.levelshift.com/apply/job/listing?id=1782. During live verification, Node default HTTPS validation failed on the official India API host with UNABLE_TO_VERIFY_LEAF_SIGNATURE, so this scraper now uses a narrow first-party TLS fallback only for careersindia.levelshift.com."
   },
   {
     "source": "lexmarkindia",
@@ -22330,7 +22316,9 @@
     "extractionStrategy": "verified-official-homepage+verified-page-sitemap+verified-application-only-careers-page+verified-missing-route",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "manatec.in"
+    "companyDomain": "manatec.in",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://manatec.in/ remained Manatec Electronics Private Limited's official homepage, that https://manatec.in/career/ remained a same-domain application-only careers form with the verified department selector and upload-resume workflow but no public job listings, that https://manatec.in/wp-sitemap-posts-page-1.xml still exposed the homepage and careers URLs, and that https://manatec.in/join-us still returned the verified first-party 404 surface."
   },
   {
     "source": "manhatten",
@@ -23385,10 +23373,14 @@
     "atsPlatform": "official-company-careers",
     "countryFilter": "India",
     "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-first-party-homepage-plus-inline-job-cards-and-apply-links",
+    "extractionStrategy": "verified-first-party-homepage-plus-inline-job-cards-and-apply-links+500-outage-fallback-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "mksvision.com"
+    "companyDomain": "mksvision.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 5,
+    "verifiedIndiaJobCount": 5,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://mksvision.com/ was the live first-party homepage and that https://mksvision.com/career was again exposing a public first-party jobs surface with five visible job cards linking outward to Naukri apply URLs. The same source had shown 500-style failures earlier in the day from this environment, so the scraper now preserves the live inline job-card extraction path while also failing closed to an authoritative empty result whenever both the homepage and careers page fall back into that outage state."
   },
   {
     "source": "mmrfic",
@@ -23469,10 +23461,10 @@
     "extractionStrategy": "verified-first-party-careers-page+verified-open-positions-empty-state-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-      "verifiedOn": "2026-08-03",
-      "verifiedSurfaceSummary": "Verified on Monday, August 3, 2026 that https://www.modeln.com/company/careers/ was still the live first-party Model N careers page and that its Open Positions widget rendered the filters \"Filter by location\" and \"Filter by work type\" with the empty-state text \"No results\" instead of any public role cards.",
-      "modulePath": "../modeln/script.js"
-    },
+    "verifiedOn": "2026-08-03",
+    "verifiedSurfaceSummary": "Verified on Monday, August 3, 2026 that https://www.modeln.com/company/careers/ was still the live first-party Model N careers page and that its Open Positions widget rendered the filters \"Filter by location\" and \"Filter by work type\" with the empty-state text \"No results\" instead of any public role cards.",
+    "modulePath": "../modeln/script.js"
+  },
   {
     "source": "moengage",
     "companyName": "MoEngage",
@@ -23508,8 +23500,8 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "moglix.com",
-      "verifiedOn": "2026-08-03",
-      "verifiedSurfaceSummary": "Verified on Monday, August 3, 2026 that https://www.moglix.com/career is still the live first-party Moglix careers page and that it hands off to the public jobs board at https://moglix.flexiele.com/careers/moglix/jobs. Live verification on Monday, August 3, 2026 confirmed https://moglix-api.flexiele.com/api-pub/rec/careerSectionConfiguration/search for site_url=moglix, https://moglix-api.flexiele.com/grid?gridCode=GRD0000837, and https://moglix-api.flexiele.com/api-pub/rec/careers/list returning 141 active public India vacancies, with the live grid exposing row keys via column.prop values such as job_title, date_posted, location, department, functional_area, and business_unit_name.",
+    "verifiedOn": "2026-08-03",
+    "verifiedSurfaceSummary": "Verified on Monday, August 3, 2026 that https://www.moglix.com/career is still the live first-party Moglix careers page and that it hands off to the public jobs board at https://moglix.flexiele.com/careers/moglix/jobs. Live verification on Monday, August 3, 2026 confirmed https://moglix-api.flexiele.com/api-pub/rec/careerSectionConfiguration/search for site_url=moglix, https://moglix-api.flexiele.com/grid?gridCode=GRD0000837, and https://moglix-api.flexiele.com/api-pub/rec/careers/list returning 141 active public India vacancies, with the live grid exposing row keys via column.prop values such as job_title, date_posted, location, department, functional_area, and business_unit_name.",
     "dryRunFile": "moglix/jobs.json",
     "modulePath": "../moglix/script.js"
   },
@@ -24369,7 +24361,9 @@
     "extractionStrategy": "verified-homepage+verified-careers-landing+verified-india-openings+detail-pages+mailto-apply",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "neilsoft.com"
+    "companyDomain": "neilsoft.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://neilsoft.com/ remained Neilsoft's official homepage, that it now exposes a careers module linking Why Neilsoft, Employee Testimonials, and Current Job Openings-India directly from the homepage, and that the first-party India openings surface at https://neilsoft.com/careers/current-job-openings-india continued to expose public India job detail pages with mailto apply links."
   },
   {
     "source": "nektarai",
@@ -24820,7 +24814,13 @@
     "extractionStrategy": "verified-homepage+verified-careers-page+inline-job-cards+same-domain-detail-pages+india-location-filter",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "nexturn.com"
+    "companyDomain": "nexturn.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 63,
+    "verifiedIndiaJobCount": 63,
+    "verifiedSampleJobTitle": "Staff Backend Engineer",
+    "verifiedSampleJobUrl": "https://nexturn.com/job/staff-backend-engineer/",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://nexturn.com/ remained NexTurn's live first-party homepage even though its canonical tag currently points to https://65.0.158.166/, that https://nexturn.com/careers/ remained the first-party careers page, and that the public first-party careers surface exposed 63 India job cards including Staff Backend Engineer in India, Hyderabad (Hybrid) / Remote. Verified same-domain detail pages such as https://nexturn.com/job/staff-backend-engineer/ still render the public role content directly on nexturn.com."
   },
   {
     "source": "nexusmalls",
@@ -24850,16 +24850,16 @@
     "officialJobOpeningsUrl": "https://neysa.ai/careers/job-openings/",
     "officialAboutUrl": "https://neysa.ai/about-us/",
     "officialPrivacyUrl": "https://neysa.ai/privacy-policy/",
-    "verifiedSampleJobUrl": "https://neysa.ai/careers/job-openings/backend-engineer/",
-    "verifiedPublicJobCount": 12,
+    "verifiedSampleJobUrl": "https://neysa.ai/careers/job-openings/?job_id=51964",
+    "verifiedPublicJobCount": 8,
     "atsPlatform": "official-company-careers",
     "countryFilter": "India",
     "paginationStrategy": "official-careers-page-plus-same-domain-job-openings-page",
     "extractionStrategy": "verified-first-party-careers-page+verified-same-domain-job-openings-page+detail-pages",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-08-03",
-    "verifiedSurfaceSummary": "Verified on Monday, August 3, 2026 that https://neysa.ai/careers/ remains the official first-party Neysa careers page and that its View Job Openings link still leads to the same-domain public jobs board at https://neysa.ai/careers/job-openings/. Live verification on Monday, August 3, 2026 confirmed that the current public job openings page titled Career - Neysa / Job Openings - Neysa still rendered 12 public jobs and that role detail pages such as https://neysa.ai/careers/job-openings/backend-engineer/ expose first-party job descriptions. The Neysa legal entity name Neysa Networks Private Limited is disclosed on the first-party privacy page at https://neysa.ai/privacy-policy/."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://neysa.ai/careers/ remained the official first-party Neysa careers page titled Careers at Neysa | Build the Future of AI Infrastructure, and that its View Job Openings link still leads to the same-domain public jobs board at https://neysa.ai/careers/job-openings/. Live verification on Friday, August 7, 2026 confirmed that the job openings page titled Job Opening - Build a Career at Neysa rendered 8 public jobs across Finance, Operations, Sales, and Tech, and that current role detail pages such as https://neysa.ai/careers/job-openings/?job_id=51964 expose first-party job descriptions plus Kula apply links."
   },
   {
     "source": "nference",
@@ -25655,12 +25655,12 @@
     "extractionStrategy": "verified-careers-landing+verified-first-party-drupal-job-listing+india-location-filter",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedPublicOpeningCount": 344,
-    "verifiedIndiaOpeningCount": 95,
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicOpeningCount": 337,
+    "verifiedIndiaOpeningCount": 98,
     "verifiedSampleJobTitle": "Senior AEM Engineer",
     "verifiedSampleJobUrl": "https://www.okta.com/company/careers/business-technology/senior-aem-engineer-7629690/",
-    "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that https://www.okta.com/en-in/company/careers/ is the live first-party Okta careers landing page, that its Open positions CTA links to the first-party jobs surface at https://www.okta.com/company/careers/job-listing/, and that the public listing page server-renders department-grouped role cards with first-party detail URLs. The verified listing page exposed 344 public roles in total and 95 India roles, all in Bengaluru, India, including Senior AEM Engineer, Principal Data Platform Engineer (Bengaluru), and Senior Alliances Solution Engineering APJ.",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.okta.com/en-in/company/careers/ is the live first-party Okta careers landing page, that its View open roles CTA links to the first-party jobs surface at https://www.okta.com/company/careers/job-listing/, and that the public listing page server-renders department-grouped role cards with first-party detail URLs, including current slug-based detail URLs that no longer end in numeric requisition IDs. The verified listing page exposed 337 public roles in total and 98 India roles, all in Bengaluru, India, including Senior AEM Engineer, Principal Data Platform Engineer (Bengaluru), and Senior Alliances Solution Engineering APJ.",
     "dryRunFile": "okta/jobs.json"
   },
   {
@@ -26339,14 +26339,20 @@
     "companyName": "Panacea Medical Technologies Pvt. Ltd.",
     "adapter": "script",
     "modulePath": "../panaceamedicaltechnologiespvtltd/script.js",
-    "companyCareerPage": "https://www.panaceamedical.in/join-us/",
-    "atsPlatform": "official-company-careers",
+    "homepageUrl": "https://www.panaceamedical.in/",
+    "joinUsUrl": "https://www.panaceamedical.in/join-us/",
+    "companyCareerPage": "https://www.panaceamedical.in/careers/",
+    "atsPlatform": "official-first-party-careers-portal",
     "countryFilter": "India",
-    "paginationStrategy": "official-homepage-plus-inline-join-us-page",
-    "extractionStrategy": "verified-official-homepage+verified-first-party-join-us-page+inline-accordion-job-cards+shared-mailto-apply",
+    "paginationStrategy": "join-us-handoff-plus-first-party-paginated-jobs-board",
+    "extractionStrategy": "verified-homepage+verified-join-us-handoff+paginated-first-party-job-cards+detail-page-enrichment+first-party-apply-links",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "panaceamedical.in"
+    "companyDomain": "panaceamedical.in",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 22,
+    "verifiedIndiaJobCount": 22,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the official Panacea homepage still linked to Join Us, that https://www.panaceamedical.in/join-us/ now handed off to the first-party careers board at https://www.panaceamedical.in/careers/, and that the board exposed 22 public job postings across three paginated pages with detail pages such as Electrical testing Engineer and first-party apply links under /apply/."
   },
   {
     "source": "panasonic",
@@ -26644,7 +26650,11 @@
     "extractionStrategy": "verified-homepage+verified-about-hiring-handoff+verified-wellfound-challenge-gate-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "peerrobotics.ai"
+    "companyDomain": "peerrobotics.ai",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://peerrobotics.ai/ remained the live Peer Robotics homepage, that https://peerrobotics.ai/about still exposed the first-party hiring handoff to https://wellfound.com/company/peer-robotics/jobs, and that the public Wellfound board still returned a 403 challenge gate. The current blocked response is a Cloudflare interstitial titled \"Just a moment...\" with Enable JavaScript and cookies to continue messaging and no trustworthy enumerable job data, so this exact-name provider still returns an honest empty result until the board becomes publicly accessible."
   },
   {
     "source": "pena4techsolutions",
@@ -27211,11 +27221,11 @@
     "atsPlatform": "lever",
     "countryFilter": "Global",
     "paginationStrategy": "official-jobs-shell-validation-plus-lever-api",
-    "extractionStrategy": "verified-first-party-jobs-page+verified-jobs-bundle-lever-fetch+live-empty-lever-board",
+    "extractionStrategy": "verified-first-party-jobs-page+verified-jobs-bundle-lever-fetch+empty-lever-api+allow-missing-lever-board",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.plivo.com/jobs/ is the live official Plivo jobs page, that its Astro JobsPage client bundle fetches the public Lever API at https://api.lever.co/v0/postings/plivo?mode=json, and that the corresponding public Lever board at https://jobs.lever.co/plivo is live but currently states \"No job postings currently open. Check back later!\" The first-party Plivo page still renders stale \"03 open positions\" shell copy, while the live Lever API returned [] on the verified date."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.plivo.com/jobs/ is still the live official Plivo jobs page, that its current Astro JobsPage client bundle at https://www.plivo.com/_astro/JobsPage.DH20V3RG.js still fetches the public Lever API at https://api.lever.co/v0/postings/plivo?mode=json, and that the live Lever API returned [] on the verified date. Also verified that the legacy public Lever board URL https://jobs.lever.co/plivo now resolves to a Lever-branded 404 page titled \"Not found - 404 error\" instead of the earlier empty-board layout, while the first-party Plivo page still renders stale \"03 open positions\" shell copy with no public job records."
   },
   {
     "source": "plumhq",
@@ -27378,7 +27388,7 @@
     "homepageUrl": "https://www.polymedicure.com/",
     "companyCareerPage": "https://www.polymedicure.com/careers/",
     "officialJobOpeningUrl": "https://www.polymedicure.com/job-opening/",
-    "officialCareersEmail": "career@polymedicure.com",
+    "officialCareersEmail": null,
     "companyDomain": "polymedicure.com",
     "atsPlatform": "official-company-site-careers-form-no-public-jobs-board",
     "countryFilter": "India",
@@ -27386,8 +27396,10 @@
     "extractionStrategy": "verified-careers-form+stale-job-opening-page-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.polymedicure.com/careers/ is the live official Polymed careers page and currently exposes only employer-branding copy, the explicit careers email handoff career@polymedicure.com, and a submit-application resume form rather than public job listings. Verified the separate official page at https://www.polymedicure.com/job-opening/ and found it to be stale 2019 shortcode-heavy content with Product Quick Finder and no trustworthy public jobs board. No trustworthy public jobs surface was available for the Polymed exact-name row on the verified date."
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.polymedicure.com/careers/ is the live official Polymed careers page and currently exposes employer-branding copy plus a submit-application resume form without any enumerable public job listings or explicit careers email handoff in the fetched HTML. Verified the separate official page at https://www.polymedicure.com/job-opening/ and found it to remain stale 2019 shortcode-heavy content with Product Quick Finder and no trustworthy public jobs board. No trustworthy public jobs surface was available for the Polymed exact-name row on the verified date."
   },
   {
     "source": "porter",
@@ -27639,7 +27651,11 @@
     "extractionStrategy": "verified-first-party-careers-page+verified-angel-handoff+verified-wellfound-blocked-surface-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "prepinsta.com"
+    "companyDomain": "prepinsta.com",
+    "verifiedOn": "2026-08-07",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://prepinsta.com/career-opportunities/ remained the live official PrepInsta careers page, that it still handed candidates to https://angel.co/company/prepinsta and https://angel.co/company/prepinsta/jobs, and that the public jobs handoff still resolved to https://wellfound.com/company/prepinsta/jobs. The current public jobs response is a 403 Cloudflare interstitial titled \"Just a moment...\" with Enable JavaScript and cookies to continue messaging and no trustworthy enumerable job data, so this exact-name provider still returns an honest empty result until the Wellfound board becomes publicly accessible."
   },
   {
     "source": "presidencyuniversity",
@@ -27716,21 +27732,22 @@
     "companyName": "Primesoft Enterprise",
     "adapter": "script",
     "modulePath": "../primesoftenterprise/script.js",
-    "companyCareerPage": "https://primesoft.net/careers/",
+    "companyCareerPage": "https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs",
     "homepageUrl": "https://primesoft.net/",
     "atsPlatform": "darwinbox",
     "countryFilter": "India",
     "paginationStrategy": "browser-session-darwinbox-pagination",
-    "extractionStrategy": "verified-first-party-careers-page+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter",
+    "extractionStrategy": "verified-homepage-careers-handoff+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "primesoft.net",
+    "legacyCareersPageUrl": "https://primesoft.net/careers/",
     "officialCareersHandoffUrl": "https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs",
     "publicAllJobsUrl": "https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs",
     "darwinboxOrigin": "https://primesoft.darwinbox.in",
     "darwinboxCompanyId": "main",
-    "verifiedOn": "2026-08-04",
-    "verifiedSurfaceSummary": "Verified on Tuesday, August 4, 2026 that https://primesoft.net/careers/ was the live first-party PrimeSoft careers page, that it still linked India job seekers to the official Darwinbox board at https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs, and that the public Darwinbox portal returned 15 India openings during verification."
+    "verifiedOn": "2026-08-07",
+    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that the first-party PrimeSoft homepage at https://primesoft.net/ exposed a Careers link directly to the official Darwinbox board at https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs, that the legacy first-party careers route at https://primesoft.net/careers/ no longer served the verified careers page surface, and that the public Darwinbox portal returned 16 India openings during verification."
   },
   {
     "source": "prismrmc",

@@ -1,3 +1,4 @@
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -17,9 +18,19 @@ export const INDIA_LISTING_API_URL = 'https://careersindia.levelshift.com/public
 export const INDIA_ACCOUNT_ID = '1782'
 export const INDIA_COUNTRY_CODE = 'ind'
 export const LISTING_PAGE_SIZE = 50
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://preludesys.com/ handed off directly to LevelShift\'s live homepage at https://levelshift.com/, that https://levelshift.com/careers still linked to the first-party India openings page at https://levelshift.com/careers/current-job-openings, and that the verified India candidate portal remained https://careersindia.levelshift.com/apply/job/listing?id=1782. During live verification, Node default HTTPS validation failed on the official India API host with UNABLE_TO_VERIFY_LEAF_SIGNATURE, so this scraper now uses a narrow first-party TLS fallback only for careersindia.levelshift.com.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const CERTIFICATE_ERROR_CODES = new Set([
+  'CERT_HAS_EXPIRED',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\r\n?/g, '\n')
@@ -46,11 +57,13 @@ const getHrefMatches = (html) => [...String(html ?? '').matchAll(/href=["']([^"'
 export const hasVerifiedLegacyHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
   const hrefs = getHrefMatches(html)
-
-  return normalized.includes('levelshift - preludesys')
+  const hasLegacySplashSignal = normalized.includes('levelshift - preludesys')
     && normalized.includes('preludesys is now levelshift')
     && normalized.includes('info@preludesys.com')
     && hrefs.includes(REBRAND_TARGET_URL)
+
+  // PreludeSys now sometimes lands directly on the rebranded LevelShift homepage.
+  return hasLegacySplashSignal || hasOfficialHomepageSignal(html)
 }
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -98,6 +111,105 @@ const buildIndiaListingFormData = () => {
   return form
 }
 
+const isLevelshiftIndiaApiHost = (url) => {
+  try {
+    return new URL(url).hostname.toLowerCase() === 'careersindia.levelshift.com'
+  } catch {
+    return false
+  }
+}
+
+const isCertificateVerificationFailure = (error) => {
+  const code = String(error?.code || error?.cause?.code || '').trim()
+  const message = String(error?.message || error?.cause?.message || '').trim()
+
+  return CERTIFICATE_ERROR_CODES.has(code)
+    || /unable to verify the first certificate|self[- ]signed certificate|certificate/i.test(message)
+}
+
+const serializeFallbackBody = (body) => {
+  if (body == null) {
+    return null
+  }
+
+  if (body instanceof URLSearchParams) {
+    return body.toString()
+  }
+
+  if (body instanceof FormData) {
+    const params = new URLSearchParams()
+    for (const [key, value] of body.entries()) {
+      params.append(key, String(value))
+    }
+    return params.toString()
+  }
+
+  if (typeof body === 'string') {
+    return body
+  }
+
+  throw new Error('LevelShift insecure JSON fallback received an unsupported request body')
+}
+
+const insecureFetchJson = (url, {
+  method = 'GET',
+  headers = {},
+  body = null,
+  timeoutMs = 15000,
+} = {}) => new Promise((resolve, reject) => {
+  const serializedBody = serializeFallbackBody(body)
+  const requestHeaders = {
+    ...headers,
+  }
+
+  if (serializedBody != null) {
+    if (!Object.keys(requestHeaders).some((key) => key.toLowerCase() === 'content-type')) {
+      requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+    }
+    requestHeaders['Content-Length'] = Buffer.byteLength(serializedBody)
+  }
+
+  const request = https.request(url, {
+    method,
+    headers: requestHeaders,
+    rejectUnauthorized: false,
+  }, (response) => {
+    const chunks = []
+
+    response.on('data', (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+    })
+
+    response.on('end', () => {
+      const responseBody = Buffer.concat(chunks).toString('utf8')
+      const status = Number(response.statusCode || 0)
+
+      if (status < 200 || status >= 300) {
+        reject(new Error(`HTTP ${status} for ${url}`))
+        return
+      }
+
+      try {
+        resolve(JSON.parse(responseBody))
+      } catch (error) {
+        reject(error)
+      }
+    })
+  })
+
+  request.setTimeout(timeoutMs, () => {
+    request.destroy(new Error(`Request timed out after ${timeoutMs}ms for ${url}`))
+  })
+
+  request.on('error', reject)
+
+  if (serializedBody != null) {
+    request.write(serializedBody)
+  }
+
+  request.end()
+})
+
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     return undefined
@@ -133,10 +245,11 @@ export const defaultFetchText = async (url, {
 
 export const defaultFetchJson = async (url, {
   fetchImpl = fetch,
+  insecureFetchJsonImpl = insecureFetchJson,
   timeoutMs = 15000,
   ...options
 } = {}) => {
-  const response = await fetchImpl(url, {
+  const requestInit = {
     method: options.method || 'GET',
     headers: {
       'User-Agent': USER_AGENT,
@@ -145,13 +258,40 @@ export const defaultFetchJson = async (url, {
     },
     body: options.body,
     signal: createTimeoutSignal(timeoutMs),
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.json()
+  try {
+    const response = await fetchImpl(url, requestInit)
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    if (!isLevelshiftIndiaApiHost(url) || !isCertificateVerificationFailure(error)) {
+      throw error
+    }
+
+    const fallbackHeaders = {
+      ...requestInit.headers,
+    }
+    const fallbackBody = serializeFallbackBody(requestInit.body)
+
+    if (
+      fallbackBody != null
+      && !Object.keys(fallbackHeaders).some((key) => key.toLowerCase() === 'content-type')
+    ) {
+      fallbackHeaders['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+    }
+
+    return insecureFetchJsonImpl(url, {
+      method: requestInit.method,
+      headers: fallbackHeaders,
+      body: fallbackBody,
+      timeoutMs,
+    })
+  }
 }
 
 const extractLocation = (record = {}) => {

@@ -16,7 +16,7 @@ const officialJobsHtml = `
       <h2>Open Positions</h2>
       <p>Loading positions...</p>
       <astro-island
-        component-url="/_astro/JobsPage.CF5RpfNv.js"
+        component-url="/_astro/JobsPage.DH20V3RG.js"
         component-export="default"
         renderer-url="/_astro/client.Yi0K8k_T.js"
         props="{}"
@@ -82,6 +82,21 @@ const currentOfficialLeverBoardHtml = `
 </html>
 `
 
+const currentMissingLeverBoardHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Not found - 404 error</title>
+  </head>
+  <body>
+    <main>
+      <h1>Not found</h1>
+      <p>The page you requested could not be found.</p>
+    </main>
+  </body>
+</html>
+`
+
 const sampleLeverJobs = [
   {
     id: '669aaffa-a293-4f99-8989-393aa077f854',
@@ -137,11 +152,11 @@ test('Plivo scraper pins the verified first-party jobs shell, bundle, and Lever 
   assert.equal(plivo.CAREERS_URL, 'https://www.plivo.com/jobs/')
   assert.equal(plivo.LEVER_BOARD_URL, 'https://jobs.lever.co/plivo')
   assert.equal(plivo.LEVER_API_URL, 'https://api.lever.co/v0/postings/plivo?mode=json')
-  assert.equal(plivo.VERIFIED_ON, '2026-07-26')
+  assert.equal(plivo.VERIFIED_ON, '2026-08-07')
   assert.equal(plivo.hasOfficialPlivoJobsSignal(officialJobsHtml), true)
   assert.equal(
     plivo.extractJobsBundleUrl(officialJobsHtml),
-    'https://www.plivo.com/_astro/JobsPage.CF5RpfNv.js',
+    'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js',
   )
   assert.equal(
     plivo.extractLeverApiUrl(jobsBundleJs),
@@ -151,11 +166,19 @@ test('Plivo scraper pins the verified first-party jobs shell, bundle, and Lever 
   assert.equal(plivo.hasEmptyLeverBoardSignal(officialLeverBoardHtml), true)
 })
 
-test('Plivo accepts the current July 26, 2026 empty Lever board layout', async () => {
+test('Plivo accepts both the current empty Lever board layout and the current missing-board 404 state', async () => {
   const plivo = await loadPlivoModule()
 
   assert.equal(plivo.hasOfficialLeverBoardSignal(currentOfficialLeverBoardHtml), true)
   assert.equal(plivo.hasEmptyLeverBoardSignal(currentOfficialLeverBoardHtml), true)
+  assert.equal(
+    plivo.hasMissingLeverBoardSignal({
+      status: 404,
+      url: 'https://jobs.lever.co/plivo',
+      html: currentMissingLeverBoardHtml,
+    }),
+    true,
+  )
 })
 
 test('Plivo extracts Lever jobs into shared scraper job fields and preserves a global scope', async () => {
@@ -200,9 +223,16 @@ test('Plivo run validates the first-party shell and returns [] for the live empt
     fetchText: async (url) => {
       requestedTextUrls.push(url)
       if (url === plivo.CAREERS_URL) return officialJobsHtml
-      if (url === 'https://www.plivo.com/_astro/JobsPage.CF5RpfNv.js') return jobsBundleJs
-      if (url === plivo.LEVER_BOARD_URL) return officialLeverBoardHtml
+      if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return jobsBundleJs
       throw new Error(`Unexpected Plivo text URL: ${url}`)
+    },
+    fetchPage: async (url) => {
+      assert.equal(url, plivo.LEVER_BOARD_URL)
+      return {
+        status: 404,
+        url,
+        html: currentMissingLeverBoardHtml,
+      }
     },
     fetchJson: async (url) => {
       requestedJsonUrls.push(url)
@@ -212,8 +242,7 @@ test('Plivo run validates the first-party shell and returns [] for the live empt
 
   assert.deepEqual(requestedTextUrls, [
     'https://www.plivo.com/jobs/',
-    'https://www.plivo.com/_astro/JobsPage.CF5RpfNv.js',
-    'https://jobs.lever.co/plivo',
+    'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js',
   ])
   assert.deepEqual(requestedJsonUrls, ['https://api.lever.co/v0/postings/plivo?mode=json'])
   assert.deepEqual(jobs, [])
@@ -237,9 +266,10 @@ test('Plivo fails closed when the official jobs shell or Lever contract drifts',
     plivo.createPlivoScraper().run({
       fetchText: async (url) => {
         if (url === plivo.CAREERS_URL) return officialJobsHtml
-        if (url === 'https://www.plivo.com/_astro/JobsPage.CF5RpfNv.js') return 'console.log("missing lever url")'
+        if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return 'console.log("missing lever url")'
         throw new Error(`Unexpected Plivo text URL: ${url}`)
       },
+      fetchPage: async () => ({ status: 200, url: plivo.LEVER_BOARD_URL, html: officialLeverBoardHtml }),
       fetchJson: async () => [],
     }),
     /jobs bundle no longer exposes the verified Lever API/i,
@@ -249,12 +279,33 @@ test('Plivo fails closed when the official jobs shell or Lever contract drifts',
     plivo.createPlivoScraper().run({
       fetchText: async (url) => {
         if (url === plivo.CAREERS_URL) return officialJobsHtml
-        if (url === 'https://www.plivo.com/_astro/JobsPage.CF5RpfNv.js') return jobsBundleJs
-        if (url === plivo.LEVER_BOARD_URL) return '<html><body><h1>Broken board</h1></body></html>'
+        if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return jobsBundleJs
         throw new Error(`Unexpected Plivo text URL: ${url}`)
       },
+      fetchPage: async () => ({
+        status: 200,
+        url: plivo.LEVER_BOARD_URL,
+        html: '<html><body><h1>Broken board</h1></body></html>',
+      }),
       fetchJson: async () => [],
     }),
     /verified public Lever board changed materially/i,
+  )
+
+  await assert.rejects(
+    plivo.createPlivoScraper().run({
+      fetchText: async (url) => {
+        if (url === plivo.CAREERS_URL) return officialJobsHtml
+        if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return jobsBundleJs
+        throw new Error(`Unexpected Plivo text URL: ${url}`)
+      },
+      fetchPage: async () => ({
+        status: 404,
+        url: plivo.LEVER_BOARD_URL,
+        html: currentMissingLeverBoardHtml,
+      }),
+      fetchJson: async () => sampleLeverJobs,
+    }),
+    /Lever board is missing while the Lever API still exposes jobs/i,
   )
 })

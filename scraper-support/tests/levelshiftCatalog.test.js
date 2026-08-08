@@ -122,6 +122,8 @@ test('Levelshift is registered as a verified first-party jobs scraper with the e
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'levelshift.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
   assert.match(provider.modulePath, /levelshift[\\/]script\.js$/i)
   assert.equal(companyAliases.PreludeSys, 'levelshift')
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'LevelShift'), false)
@@ -196,6 +198,10 @@ test('Levelshift scraper verifies the PreludeSys rebrand handoff plus the live f
       },
     ],
   )
+})
+
+test('Levelshift accepts the current direct PreludeSys handoff to the LevelShift homepage', () => {
+  assert.equal(hasVerifiedLegacyHomepageSignal(homepageHtml), true)
 })
 
 test('Levelshift matches company coverage directly from provider metadata', () => {

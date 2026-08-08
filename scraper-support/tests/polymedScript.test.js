@@ -17,6 +17,22 @@ const CAREERS_FORM_HTML = `
 </html>
 `
 
+const CURRENT_CAREERS_FORM_HTML = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Careers At Polymed</title>
+  </head>
+  <body>
+    <h1>Careers At Polymed</h1>
+    <p>Why Work at Polymed ?</p>
+    <p>Send us your application or simply fill the application form below:</p>
+    <label>Upload Resume (PDF only, max 30MB) *</label>
+    <input type="submit" value="Submit Application" />
+  </body>
+</html>
+`
+
 const STALE_JOB_OPENING_HTML = `
 <!doctype html>
 <html lang="en-US">
@@ -66,10 +82,12 @@ test('Polymed helpers pin the official careers form and stale job-opening page c
   assert.equal(polymed.HOMEPAGE_URL, 'https://www.polymedicure.com/')
   assert.equal(polymed.CAREERS_URL, 'https://www.polymedicure.com/careers/')
   assert.equal(polymed.JOB_OPENING_URL, 'https://www.polymedicure.com/job-opening/')
-  assert.equal(polymed.OFFICIAL_CAREERS_EMAIL, 'career@polymedicure.com')
-  assert.equal(polymed.VERIFIED_ON, '2026-07-17')
+  assert.equal(polymed.OFFICIAL_CAREERS_EMAIL, null)
+  assert.equal(polymed.VERIFIED_ON, '2026-08-07')
   assert.equal(polymed.hasOfficialCareersFormSignal(CAREERS_FORM_HTML), true)
+  assert.equal(polymed.hasOfficialCareersFormSignal(CURRENT_CAREERS_FORM_HTML), true)
   assert.equal(polymed.extractOfficialCareersEmail(CAREERS_FORM_HTML), 'career@polymedicure.com')
+  assert.equal(polymed.extractOfficialCareersEmail(CURRENT_CAREERS_FORM_HTML), null)
   assert.equal(polymed.hasStaleJobOpeningSignal(STALE_JOB_OPENING_HTML), true)
   assert.equal(polymed.hasPublicJobBoardSignals(CAREERS_FORM_HTML), false)
   assert.equal(polymed.hasPublicJobBoardSignals(PUBLIC_JOBS_HTML), true)
@@ -82,7 +100,7 @@ test('Polymed returns [] only while the careers page remains form-only and the j
   const jobs = await polymed.createPolymedScraper().run({
     fetchText: async (url) => {
       requests.push(url)
-      if (url === polymed.CAREERS_URL) return CAREERS_FORM_HTML
+      if (url === polymed.CAREERS_URL) return CURRENT_CAREERS_FORM_HTML
       if (url === polymed.JOB_OPENING_URL) return STALE_JOB_OPENING_HTML
       throw new Error(`Unexpected Polymed URL: ${url}`)
     },
@@ -125,7 +143,7 @@ test('Polymed fails closed when the careers page or stale job-opening evidence c
   await assert.rejects(
     polymed.createPolymedScraper().run({
       fetchText: async (url) => {
-        if (url === polymed.CAREERS_URL) return CAREERS_FORM_HTML
+        if (url === polymed.CAREERS_URL) return CURRENT_CAREERS_FORM_HTML
         if (url === polymed.JOB_OPENING_URL) return '<html><body><h1>Fresh openings</h1></body></html>'
         throw new Error(`Unexpected Polymed URL: ${url}`)
       },

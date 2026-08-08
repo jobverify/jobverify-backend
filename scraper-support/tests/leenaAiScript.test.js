@@ -342,46 +342,15 @@ test('run maps Leena AI roles from the first-party careers bundle without browse
   )
 })
 
-test('Leena AI browser loader extracts visible role cards from the open roles section', async () => {
+test('run reports an API-only migration error when the Leena AI careers request is blocked', async () => {
   const leenaAi = await loadLeenaAiModule()
-  const interactions = []
-  const fakePage = {
-    goto: async (url, options) => {
-      interactions.push(['goto', url, options.waitUntil])
-      return { ok: () => true, status: () => 200 }
-    },
-    waitForSelector: async (selector) => {
-      interactions.push(['waitForSelector', selector])
-    },
-    click: async () => {
-      assert.fail('Leena AI browser loader should not click role cards before extraction')
-    },
-    evaluate: async () => [
-      { title: 'Technical Program Manager', location: 'Gurgaon, India' },
-      { title: 'AI Engineer', location: 'Gurgaon, India' },
-    ],
-  }
 
-  const loader = leenaAi.createBrowserOpenRolesLoader({
-    launchBrowserImpl: async () => ({
-      close: async () => {
-        interactions.push(['close'])
-      },
+  await assert.rejects(
+    leenaAi.createLeenaAiScraper().run({
+      fetchText: async () => { throw new Error('HTTP 403') },
     }),
-    createOptimizedPageImpl: async () => fakePage,
-  })
-
-  const cards = await loader.load()
-
-  assert.deepEqual(cards, [
-    { title: 'Technical Program Manager', location: 'Gurgaon, India' },
-    { title: 'AI Engineer', location: 'Gurgaon, India' },
-  ])
-  assert.deepEqual(interactions, [
-    ['goto', 'https://leena.ai/careers?tab=explore-jobs', 'networkidle2'],
-    ['waitForSelector', '#open-roles-section'],
-    ['close'],
-  ])
+    /leena ai API-only migration.*HTTP 403/i,
+  )
 })
 
 test('run keeps Leena AI bundle-discovered jobs when PyjamaHR detail pages stop embedding structured job data', async () => {

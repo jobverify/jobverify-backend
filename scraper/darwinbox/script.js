@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -11,6 +12,7 @@ const DEFAULT_SOURCE = 'darwinbox'
 const DEFAULT_COMPANY_ID = 'main'
 const DEFAULT_PAGE_SIZE = 10
 const DEFAULT_ORIGIN = 'https://dbx.darwinbox.in'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -62,21 +64,13 @@ const isIndiaJob = (record) => {
   return /india/i.test(location || '') || /india/i.test(country || '')
 }
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-let browserUtilsPromise
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
-  return browserUtilsPromise
-}
-
 export const createDarwinboxScraper = ({
   companyName = DEFAULT_COMPANY_NAME,
   source = DEFAULT_SOURCE,
   companyId = DEFAULT_COMPANY_ID,
   pageSize = DEFAULT_PAGE_SIZE,
   origin = DEFAULT_ORIGIN,
+  fetchImpl = fetch,
 } = {}) => {
   const portalOrigin = normalizeOrigin(origin)
 
@@ -126,106 +120,65 @@ export const createDarwinboxScraper = ({
       : []
   )
 
-  const createBrowserListingFetcher = async () => {
-    const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-    const browser = await launchBrowser()
-    const page = await createOptimizedPage(browser)
-
-    try {
-      await page.goto(buildCareersPageUrl(), {
-        waitUntil: 'domcontentloaded',
-        timeout: Math.max(Number(config.jobListingTimeoutMs) || 0, 60000),
-      })
-    } catch (error) {
-      if (!/Navigation timeout/i.test(String(error?.message || error))) {
-        throw error
-      }
-    }
-    await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-    await delay(config.pageLoadDelayMs)
-
-    const fetchListingPage = async ({ page: pageNumber }) => page.evaluate(
-      async ({ targetCompanyId, targetPage, targetPageSize }) => {
-        const response = await fetch(`/ms/candidateapi/job/alljobs?companyId=${targetCompanyId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            companyId: targetCompanyId,
-            sort_option: 'new',
-            limit: targetPageSize,
-            page: targetPage,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        return response.json()
-      },
-      {
-        targetCompanyId: companyId,
-        targetPage: pageNumber,
-        targetPageSize: pageSize,
-      },
-    )
-
-    return {
-      fetchListingPage,
-      close: async () => browser.close(),
-    }
-  }
+  const fetchListingPageFromApi = ({
+    page: pageNumber,
+    pageSize: targetPageSize = pageSize,
+    companyId: targetCompanyId = companyId,
+  }) => fetchJsonWithRetry(buildListingApiUrl(targetCompanyId), {
+    fetchImpl,
+    method: 'POST',
+    headers: {
+      Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
+      'Content-Type': 'application/json',
+      Origin: portalOrigin,
+      Referer: buildCareersPageUrl(targetCompanyId),
+      'User-Agent': USER_AGENT,
+    },
+    body: JSON.stringify({
+      companyId: targetCompanyId,
+      sort_option: 'new',
+      limit: targetPageSize,
+      page: pageNumber,
+    }),
+    label: `${source}-darwinbox-listings`,
+    timeoutMs: Math.max(Number(config.jobListingTimeoutMs) || 0, 30000),
+  })
 
   const run = async ({
     maxPages = config.maxPages,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-    fetchListingPage,
+    fetchListingPage = fetchListingPageFromApi,
   } = {}) => {
-    let browserContext = null
+    const jobs = []
+    let pageNumber = 1
 
-    try {
-      if (!fetchListingPage) {
-        browserContext = await createBrowserListingFetcher()
-        fetchListingPage = browserContext.fetchListingPage
-      }
+    while (pageNumber <= maxPages) {
+      const payload = await fetchListingPage({ page: pageNumber, pageSize, companyId })
+      const results = extractSearchResults(payload)
 
-      const jobs = []
-      let pageNumber = 1
+      for (const job of results) {
+        jobs.push({
+          ...job,
+          source,
+          link: job.applyUrl || job.sourceUrl,
+          scrapedAt: new Date().toISOString(),
+        })
 
-      while (pageNumber <= maxPages) {
-        const payload = await fetchListingPage({ page: pageNumber, pageSize, companyId })
-        const results = extractSearchResults(payload)
-
-        for (const job of results) {
-          jobs.push({
-            ...job,
-            source,
-            link: job.applyUrl || job.sourceUrl,
-            scrapedAt: new Date().toISOString(),
-          })
-
-          if (maxJobs && jobs.length >= maxJobs) {
-            return jobs
-          }
+        if (maxJobs && jobs.length >= maxJobs) {
+          return jobs
         }
-
-        const totalJobCount = Number.parseInt(String(payload?.job_counts ?? ''), 10)
-        const hasMore = Number.isFinite(totalJobCount)
-          ? pageNumber * pageSize < totalJobCount
-          : Array.isArray(payload?.data) && payload.data.length === pageSize
-
-        if (!hasMore) break
-        pageNumber += 1
       }
 
-      return jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+      const totalJobCount = Number.parseInt(String(payload?.job_counts ?? ''), 10)
+      const hasMore = Number.isFinite(totalJobCount)
+        ? pageNumber * pageSize < totalJobCount
+        : Array.isArray(payload?.data) && payload.data.length === pageSize
+
+      if (!hasMore) break
+      pageNumber += 1
     }
+
+    return jobs
   }
 
   return {
@@ -233,6 +186,7 @@ export const createDarwinboxScraper = ({
     buildListingApiUrl,
     buildJobDetailUrl,
     extractSearchResults,
+    fetchListingPageFromApi,
     run,
   }
 }

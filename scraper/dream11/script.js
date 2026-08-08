@@ -93,6 +93,14 @@ export const extractParentCareersUrlFromHomepage = (html = '') => {
   return match?.[1] ?? null
 }
 
+export const hasHomepageCareersEntrySignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const linkedCareersUrl = extractParentCareersUrlFromHomepage(rawHtml)
+
+  return linkedCareersUrl === LINKED_CAREERS_URL
+    || /role=["']link["'][^>]*>[\s\S]{0,200}?\bCareers\b[\s\S]{0,200}?<\/(?:div|button)>/i.test(rawHtml)
+}
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
@@ -100,7 +108,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
   return /India's Biggest Fantasy Sports Platform: Play for Free\. Win Big\./i.test(normalized)
     && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.dream11\.com\/["']/i.test(rawHtml)
     && /\bSporta Technologies Private Limited\b/i.test(normalized)
-    && extractParentCareersUrlFromHomepage(rawHtml) === LINKED_CAREERS_URL
+    && hasHomepageCareersEntrySignal(rawHtml)
 }
 
 export const isVerifiedDream11RedirectedNoTrustRoute = (page = {}, requestedUrl) =>
@@ -132,7 +140,6 @@ export const createDream11Scraper = () => ({
     if (
       homepage.status !== 200
       || !hasOfficialHomepageSignal(homepage.html)
-      || extractParentCareersUrlFromHomepage(homepage.html) !== LINKED_CAREERS_URL
     ) {
       throw new Error('Dream11 verified official Dream11 homepage no longer matches the known public surface')
     }

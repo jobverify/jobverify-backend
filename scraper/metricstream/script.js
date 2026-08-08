@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { METRICSTREAM_CATALOG } from './catalog.js'
@@ -16,12 +15,9 @@ export const SUCCESSFACTORS_BOARD_URL = METRICSTREAM_CATALOG.successFactorsBoard
 export const SUCCESSFACTORS_SEARCH_URL = METRICSTREAM_CATALOG.successFactorsSearchUrl
 export const SUCCESSFACTORS_COMPANY_TOKEN = METRICSTREAM_CATALOG.successFactorsCompanyToken
 
-const DEFAULT_TIMEOUT_MS = 120000
 const DEFAULT_MAX_PAGES = 10
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -313,70 +309,21 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const readFirstRequisitionId = async (page) => {
-  const handle = await page.$('tr.jobResultItem .jobContentEM')
-  if (!handle) return null
-
-  try {
-    return await handle.evaluate((element) => element?.textContent?.trim() || null)
-  } finally {
-    await handle.dispose?.()
-  }
-}
-
 export const getLiveSearchPages = async ({
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
-  maxPages = DEFAULT_MAX_PAGES,
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
+  fetchText = defaultFetchText,
 } = {}) => {
-  const browser = await launchBrowserImpl()
+  const html = await fetchText(searchUrl)
+  const summary = extractSearchSummary(html)
+  const hasEnabledNextPage = /<a(?![^>]*\bdisabled\b)[^>]+title=["']Next Page["'][^>]*>/i.test(html)
 
-  try {
-    const page = await createOptimizedPageImpl(browser)
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: DEFAULT_TIMEOUT_MS })
-    await page.waitForFunction(() => document.querySelector('tr.jobResultItem'), { timeout: DEFAULT_TIMEOUT_MS })
-
-    const pages = []
-
-    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-      await sleep(1000)
-      pages.push(await page.content())
-
-      const nextHandle = await page.$('a[title="Next Page"]')
-      if (!nextHandle) break
-
-      const className = await nextHandle.evaluate(
-        (element) => element?.getAttribute?.('class') || '',
-      )
-      if (className?.includes('disabled')) {
-        await nextHandle.dispose?.()
-        break
-      }
-
-      const firstReqId = await readFirstRequisitionId(page)
-      await nextHandle.click()
-      await nextHandle.dispose?.()
-
-      if (firstReqId) {
-        await page.waitForFunction(
-          (selector, previousReqId) => {
-            const currentReqId = document.querySelector(selector)?.textContent?.trim() || null
-            return currentReqId && currentReqId !== previousReqId
-          },
-          { timeout: DEFAULT_TIMEOUT_MS },
-          'tr.jobResultItem .jobContentEM',
-          firstReqId,
-        )
-      } else {
-        await page.waitForFunction(() => document.querySelector('tr.jobResultItem'), { timeout: DEFAULT_TIMEOUT_MS })
-      }
-    }
-
-    return pages
-  } finally {
-    await browser.close()
+  if ((summary.totalPages ?? 1) > 1 || hasEnabledNextPage) {
+    throw new Error(
+      'MetricStream API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
+    )
   }
+
+  return [html]
 }
 
 export const createMetricStreamScraper = ({
@@ -404,6 +351,7 @@ export const createMetricStreamScraper = ({
     const searchPages = await getSearchPages({
       searchUrl: SUCCESSFACTORS_SEARCH_URL,
       maxPages,
+      fetchText,
     })
 
     if (!Array.isArray(searchPages) || searchPages.length === 0 || !hasSuccessFactorsSearchPageSignal(searchPages[0])) {

@@ -22,6 +22,8 @@ test('JuzGoDigital is registered as a verified first-party zero-job scraper with
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'juzgodigital.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
   assert.match(provider.modulePath, /juzgodigital[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Juzgodigital Private Limited'), false)
 })

@@ -13,14 +13,15 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Deduce - Maps and Location Content</title>
+    <title>Deduce — AI-Powered Maps &amp; Location Intelligence Platform</title>
     <meta
       name="description"
-      content="Deduce is a leading technology firm offering AI-powered products and services for mapping, geospatial data, and location intelligence."
+      content="Deduce is a leading technology firm offering AI-powered products and services for mapping, geospatial data, and location intelligence. Explore our innovations in AI, EV charging, geoboundaries, and advanced navigation."
     />
-    <meta name="twitter:site" content="@deducetechnologies" />
+    <meta property="og:title" content="Deduce — AI-Powered Maps &amp; Location Intelligence" />
+    <meta property="og:description" content="Deduce Technologies — Maps, geospatial AI, and computer vision products." />
     <link rel="canonical" href="https://www.deducetechnologies.com/" />
-    <script type="module" crossorigin src="/assets/index-_QnsED60.js"></script>
+    <script type="module" crossorigin src="/assets/index-B-wPftlC.js"></script>
   </head>
   <body>
     <div id="root"></div>
@@ -38,7 +39,7 @@ const careersSection={
 };
 `
 
-test('Deduce Technologies validates the official SPA careers apply-only surface before returning no listings', async () => {
+test('Deduce Technologies validates the current Friday, August 7, 2026 SPA careers apply-only surface before returning no listings', async () => {
   const deduceTechnologies = await loadDeduceTechnologiesModule()
   const requestedUrls = []
 
@@ -46,7 +47,7 @@ test('Deduce Technologies validates the official SPA careers apply-only surface 
   assert.equal(deduceTechnologies.CAREERS_URL, 'https://www.deducetechnologies.com/careers')
   assert.equal(
     deduceTechnologies.extractBundleUrl(homepageHtml),
-    'https://www.deducetechnologies.com/assets/index-_QnsED60.js',
+    'https://www.deducetechnologies.com/assets/index-B-wPftlC.js',
   )
   assert.equal(deduceTechnologies.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(deduceTechnologies.hasVerifiedApplyOnlyCareersSignal(careersBundleJs), true)

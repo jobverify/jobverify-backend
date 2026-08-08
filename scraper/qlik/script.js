@@ -1,5 +1,3 @@
-import { chromium } from 'playwright'
-
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 
@@ -9,7 +7,7 @@ const BASE_URL = 'https://careerhub.qlik.com'
 const CAREERS_URL = `${BASE_URL}/careers?domain=qlik.com`
 const SEARCH_URL = `${BASE_URL}/api/pcsx/search`
 const DETAIL_URL = `${BASE_URL}/api/pcsx/position_details`
-const BROWSER_HEADERS = {
+const API_HEADERS = {
   Accept: 'application/json, text/plain, */*',
   'Accept-Language': 'en-US,en;q=0.9',
   'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
@@ -20,12 +18,6 @@ const BROWSER_HEADERS = {
 const CITY_ALIASES = Object.entries(CANONICAL_CITIES)
   .filter(([alias, canonical]) => !/^(?:remote|none)$/i.test(alias) && !/^(?:Remote|None)$/i.test(canonical))
   .sort(([left], [right]) => right.length - left.length)
-
-const buildChromiumLaunchArgs = () =>
-  process.env.PUPPETEER_DISABLE_SANDBOX ? ['--no-sandbox'] : []
-
-const shouldUseBrowserFallback = (error) =>
-  /http 403|connect timeout|getaddrinfo enotfound|fetch failed/i.test(String(error))
 
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
 
@@ -98,65 +90,11 @@ const canonicalJobUrl = (value, jobId) => {
   }
 }
 
-const loadJsonWithBrowser = async (url, options = {}) => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: buildChromiumLaunchArgs(),
-  })
-
-  try {
-    const page = await browser.newPage({ userAgent: BROWSER_HEADERS['User-Agent'] })
-    await page.goto(CAREERS_URL, { waitUntil: 'networkidle', timeout: 90000 })
-    await page.waitForTimeout(5000)
-
-    const result = await page.evaluate(async ({ requestUrl, headers }) => {
-      const response = await fetch(requestUrl, {
-        credentials: 'include',
-        headers,
-      })
-
-      return {
-        status: response.status,
-        text: await response.text(),
-      }
-    }, {
-      requestUrl: url,
-      headers: {
-        Accept: options.headers?.Accept || BROWSER_HEADERS.Accept,
-        'X-Requested-With': options.headers?.['X-Requested-With'] || BROWSER_HEADERS['X-Requested-With'],
-      },
-    })
-
-    if (result.status < 200 || result.status >= 300) {
-      throw new Error(`HTTP ${result.status} for ${url}`)
-    }
-
-    return JSON.parse(result.text)
-  } finally {
-    await browser.close()
-  }
-}
-
-export const loadWithBrowserFallback = async ({
-  primaryLoad,
-  fallbackLoad,
-}) => {
-  try {
-    return await primaryLoad()
-  } catch (error) {
-    if (!shouldUseBrowserFallback(error)) throw error
-    return fallbackLoad(error)
-  }
-}
-
-const defaultFetchJson = (url, options = {}) => loadWithBrowserFallback({
-  primaryLoad: () => fetchJsonWithRetry(url, {
-    ...options,
-    headers: { ...BROWSER_HEADERS, ...(options.headers || {}) },
-    label: SOURCE,
-    timeoutMs: 20000,
-  }),
-  fallbackLoad: () => loadJsonWithBrowser(url, options),
+export const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
+  headers: { ...API_HEADERS, ...(options.headers || {}) },
+  label: SOURCE,
+  timeoutMs: 20000,
 })
 
 export const createQlikScraper = ({
@@ -186,7 +124,7 @@ export const createQlikScraper = ({
       url.searchParams.set('location', 'India')
       url.searchParams.set('start', String(start))
       url.searchParams.set('limit', String(pageSize))
-      const payload = await fetchJson(url.toString(), { method: 'GET', headers: BROWSER_HEADERS })
+      const payload = await fetchJson(url.toString(), { method: 'GET', headers: API_HEADERS })
 
       if (!Array.isArray(payload?.data?.positions)) {
         throw new Error('[qlik] Eightfold contract no longer exposes data.positions')
@@ -233,7 +171,7 @@ export const createQlikScraper = ({
         detailUrl.searchParams.set('hl', 'en')
         let detail = {}
         try {
-          const detailPayload = await fetchJson(detailUrl.toString(), { method: 'GET', headers: BROWSER_HEADERS })
+          const detailPayload = await fetchJson(detailUrl.toString(), { method: 'GET', headers: API_HEADERS })
           if (!detailPayload?.data || typeof detailPayload.data !== 'object') {
             throw new Error(`[qlik] malformed Eightfold detail for ${jobId}`)
           }
