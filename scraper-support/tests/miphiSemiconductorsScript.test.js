@@ -5,7 +5,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const fixturesDir = path.join(currentDir, '..', 'miphisemiconductors', 'fixtures')
+const fixturesDir = path.join(currentDir, '..', '..', 'scraper', 'miphisemiconductors', 'fixtures')
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 

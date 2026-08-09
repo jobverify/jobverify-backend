@@ -63,7 +63,7 @@ test('Techved Consulting local catalog captures the verified first-party ASP.NET
     provider.extractionStrategy,
     'verified-first-party-careers-page+inline-job-cards+same-page-detail-panels',
   )
-  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.equal(provider.verifiedOn, '2026-07-18')
   assert.match(provider.verifiedSurfaceSummary, /All Jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /Sr Marketing Associate/i)
   assert.match(provider.verifiedSurfaceSummary, /UX Designer/i)
@@ -155,17 +155,18 @@ test('Infrabeat Technologies local catalog captures the verified first-party Wor
   assert.equal(provider.companyName, 'Infrabeat Technologies')
   assert.equal(provider.officialBrandName, 'InfraBeat Technologies Pvt. Ltd.')
   assert.equal(provider.homepageUrl, 'https://infrabeat.com/')
-  assert.equal(provider.companyCareerPage, 'https://infrabeat.com/career/')
-  assert.equal(provider.atsPlatform, 'official-wordpress-careers-archive')
+  assert.equal(provider.companyCareerPage, 'https://infrabeat.com/careers/')
+  assert.equal(provider.atsPlatform, 'official-inline-careers-page')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-wordpress-careers-archive')
+  assert.equal(provider.paginationStrategy, 'single-inline-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-archive+career-post-cards+detail-page-urls',
+    'verified-first-party-careers-page+inline-open-position-cards+modal-job-details',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Archives:\s*Careers/i)
+  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.match(provider.verifiedSurfaceSummary, /Open Positions/i)
   assert.match(provider.verifiedSurfaceSummary, /Lead SAP MM Consultant/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead SAP FICO Consultant/i)
   assert.match(provider.verifiedSurfaceSummary, /SAP FICO Senior Consultant/i)
 
   assertCatalogMatchesBacklogRow({

@@ -273,7 +273,7 @@ test('run fails closed when the verified Exa careers page, bundle handoff, or As
         if (url === exa.CAREERS_URL) {
           return careersHtml.replace(
             '/_next/static/chunks/app/careers/page-081cdf0c040ae1c4.js',
-            '/_next/static/chunks/app/careers/page-other.js',
+            '/_next/static/chunks/app/about/page-other.js',
           )
         }
 

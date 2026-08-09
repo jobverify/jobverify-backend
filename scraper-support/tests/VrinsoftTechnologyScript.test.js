@@ -16,16 +16,21 @@ const careersHtml = `
     <title>Vrinsoft Careers | Jobs in AI, Web &amp; Software Development</title>
   </head>
   <body>
-    <h1>Build your future with Vrinsoft</h1>
-    <div class="job-card">
-      <h2>Senior React Developer</h2>
-      <span>Ahmedabad, India</span>
-      <a href="/career/job/senior-react-developer">Apply Now</a>
+    <h1 class="career-hiring-heading1">Build your future with Vrinsoft</h1>
+    <p>Apply Now On <a href="mailto:hr@vrinsofts.com">hr@vrinsofts.com</a></p>
+    <div class="accordion-item accordion-item-career">
+      <div class="accordion-header" id="senior-react-developer">
+        <p class="heading-four blue-text">Senior React Developer</p>
+      </div>
+      <div class="career-hiring-details">5+ years Ahmedabad</div>
+      <a class="apply-btn" data-id="vr-101">Apply Now</a>
     </div>
-    <div class="job-card">
-      <h2>QA Engineer</h2>
-      <span>Remote, India</span>
-      <a href="/career/job/qa-engineer">Apply Now</a>
+    <div class="accordion-item accordion-item-career">
+      <div class="accordion-header" id="qa-engineer">
+        <p class="heading-four blue-text">QA Engineer</p>
+      </div>
+      <div class="career-hiring-details">3+ years Remote</div>
+      <a class="apply-btn" data-id="vr-102">Apply Now</a>
     </div>
   </body>
 </html>
@@ -39,14 +44,22 @@ test('Vrinsoft Technology validates the verified first-party careers page and ex
     {
       title: 'Senior React Developer',
       location: 'Ahmedabad, India',
-      sourceUrl: 'https://www.vrinsofts.com/career/job/senior-react-developer',
-      applyUrl: 'https://www.vrinsofts.com/career/job/senior-react-developer',
+      city: 'Ahmedabad',
+      sourceUrl: 'https://www.vrinsofts.com/career.html#senior-react-developer',
+      applyUrl: 'https://www.vrinsofts.com/career.html#senior-react-developer',
+      jobId: 'vr-101',
+      requisitionId: 'vr-101',
+      experienceRequired: '5+ years',
     },
     {
       title: 'QA Engineer',
       location: 'Remote, India',
-      sourceUrl: 'https://www.vrinsofts.com/career/job/qa-engineer',
-      applyUrl: 'https://www.vrinsofts.com/career/job/qa-engineer',
+      city: 'Remote',
+      sourceUrl: 'https://www.vrinsofts.com/career.html#qa-engineer',
+      applyUrl: 'https://www.vrinsofts.com/career.html#qa-engineer',
+      jobId: 'vr-102',
+      requisitionId: 'vr-102',
+      experienceRequired: '3+ years',
     },
   ])
 })
@@ -72,13 +85,13 @@ test('Vrinsoft Technology run returns normalized jobs from the verified first-pa
       {
         title: 'Senior React Developer',
         location: 'Ahmedabad, India',
-        link: 'https://www.vrinsofts.com/career/job/senior-react-developer',
+        link: 'https://www.vrinsofts.com/career.html#senior-react-developer',
         source: 'vrinsofttechnology',
       },
       {
         title: 'QA Engineer',
         location: 'Remote, India',
-        link: 'https://www.vrinsofts.com/career/job/qa-engineer',
+        link: 'https://www.vrinsofts.com/career.html#qa-engineer',
         source: 'vrinsofttechnology',
       },
     ],

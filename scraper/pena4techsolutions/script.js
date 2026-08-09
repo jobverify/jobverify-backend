@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'pena4techsolutions'
 export const COMPANY = 'Pena4 Tech Solutions'
@@ -12,7 +12,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Pena4',
   adapter: 'script',
-  modulePath: '../pena4techsolutions/script.js',
+  modulePath: '../../scraper/pena4techsolutions/script.js',
   homepageUrl: 'https://www.pena4.com/',
   companyCareerPage: JOBS_URL,
   atsPlatform: 'official-first-party-jobs-page',
@@ -102,3 +102,4 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     scrapedAt: now(),
   }))
 }
+

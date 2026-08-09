@@ -15,7 +15,7 @@ test('getScraperCatalog includes Blue Star Infotech as a verified redirect-shell
   assert.equal(provider.companyDomain, 'bsil.com')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'homepage-plus-careers-jobs-and-lander-redirect-validation')
-  assert.equal(provider.extractionStrategy, 'verified-redirect-shell+verified-parked-lander-redirect+no-public-jobs-return-empty')
+  assert.equal(provider.extractionStrategy, 'verified-redirect-shell+verified-parked-lander-redirect-or-all-routes-unreachable+no-public-jobs-return-empty')
   assert.match(provider.modulePath, /bluestarinfotech[\\/]script\.js$/i)
 })
 

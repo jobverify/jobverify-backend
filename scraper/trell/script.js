@@ -8,7 +8,7 @@ export const DISPOSITION = 'verified-linkedin-company-page-plus-public-india-job
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Sunday, August 2, 2026 that direct access to https://trell.co/ timed out during live checks, but the public LinkedIn company page at https://www.linkedin.com/company/trell/ remained accessible and identified Trell via urn:li:organization:10796691, its public company description, and its website field pointing to https://trell.co/. The public LinkedIn India jobs search at https://www.linkedin.com/jobs/search/?f_C=10796691&geoId=102713980 returned "We couldn’t find a match" with zero India jobs on the verified date. This scraper validates that current public LinkedIn contract and returns India jobs only when the public search exposes them.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 
 const decodeHtml = (value = '') =>
   String(value)

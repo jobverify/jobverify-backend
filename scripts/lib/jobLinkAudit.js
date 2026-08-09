@@ -475,7 +475,7 @@ const fetchJobLinkTextOnce = async ({
       redirect: "follow",
       signal: controller.signal,
       headers: {
-        "user-agent": "JobifyApplyLinkAudit/1.0",
+        "user-agent": "JobverifyApplyLinkAudit/1.0",
         accept: "text/html,application/xhtml+xml",
       },
     });

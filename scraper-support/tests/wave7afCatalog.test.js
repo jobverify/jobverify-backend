@@ -68,12 +68,14 @@ test('Algonomy local catalog captures the verified first-party page and embedded
 
   assert.equal(defaultExport, constant)
   assert.equal(provider.source, 'algonomy')
-  assert.equal(provider.companyCareerPage, 'https://www.algonomy.com.br/en/careers/')
+  assert.equal(provider.companyCareerPage, 'https://algonomy.com/careers/')
   assert.equal(provider.paycorClientId, '8a7883c6606d030901607ae3719c71a6')
   assert.equal(provider.atsPlatform, 'official-careers-page-embedded-paycor')
   assert.equal(provider.verifiedPublicJobCount, 4)
-  assert.match(provider.verifiedSurfaceSummary, /Database Programmer \(DBP\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /recruitingbypaycor/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Database Developer/i)
+  assert.match(provider.verifiedSurfaceSummary, /legacy https:\/\/www\.algonomy\.com\.br\/en\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /public Paycor board/i)
+  assert.match(provider.verifiedSurfaceSummary, /parentUrl=https:\/\/algonomy\.com\/careers\//i)
 
   assertCatalogMatchesBacklogRow({
     provider,

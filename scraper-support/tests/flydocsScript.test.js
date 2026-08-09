@@ -9,104 +9,133 @@ const loadFlydocsModule = async () => {
   }
 }
 
-const officialCareersHtml = `
+const officialPortalHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Vacancies | flydocs</title>
-      <link rel="canonical" href="https://flydocs.aero/vacancies/">
+      <title>Jobs at Careers</title>
     </head>
     <body>
-      <main>
-        <h1>Current Vacancies</h1>
-
-        <article class="job-card">
-          <h2><a href="https://zrec.in/TLOM1?source=flydocsWebsite">Technical Records Manager</a></h2>
-          <p>Location: Pune, India</p>
-          <p>Department: Operations</p>
-          <p>Employment Type: Full time</p>
-          <p>Support airline customers across records and compliance workflows.</p>
-        </article>
-
-        <article class="job-card">
-          <h2>
-            <a href="https://flydocs.zohorecruit.in/jobs/Careers/61915000010176003/Customer-Experience-Tier-1?source=flydocsWebsite">
-              Customer Experience Tier 1
-            </a>
-          </h2>
-          <p>Location: Bengaluru, India</p>
-          <p>Department: Customer Experience</p>
-          <p>Employment Type: Full time</p>
-          <p>Handle customer support operations for aviation software users.</p>
-        </article>
-
-        <article class="job-card">
-          <h2><a href="https://zrec.in/stale-role?source=flydocsWebsite">Legacy Role</a></h2>
-          <p>Location: Remote</p>
-        </article>
-
-        <article class="job-card">
-          <h2>
-            <a href="https://flydocs.zohorecruit.in/jobs/Careers/61915000010176099/Dubai-Operations?source=flydocsWebsite">
-              Dubai Operations
-            </a>
-          </h2>
-          <p>Location: Dubai, United Arab Emirates</p>
-        </article>
-      </main>
+      <input id="pageJson" type="hidden" value="{}">
+      <input id="moduleMeta" type="hidden" value="{}">
+      <input id="jobs" type="hidden" value="[]">
+      <script>
+        var page_id = '61915000000214664';
+        window.__flydocsPortal = {"company_name":"flydocs","list_url":"https://flydocs.zohorecruit.in/jobs/careers","page_name":"careers"};
+      </script>
     </body>
   </html>
 `
 
-test('Flydocs constants and official page signal stay pinned to the verified public vacancies page', async () => {
+const jobsPayload = {
+  code: 'success',
+  data: [
+    {
+      id: '61915000008622445',
+      Posting_Title: 'Technical Records Manager',
+      Department: 'Operations',
+      City: 'Pune',
+      State: 'Maharashtra',
+      Country: 'India',
+      Job_Type: 'Full time',
+      Work_Experience: '5 years',
+      Date_Opened: '2026-07-03',
+      Job_Description: 'Support airline customers across records and compliance workflows.',
+      $url: 'https://flydocs.zohorecruit.in/jobs/Careers/61915000008622445/Technical-Records-Manager?source=flydocsWebsite',
+      Publish: true,
+      Locked: false,
+      Remote_Job: false,
+    },
+    {
+      id: '61915000010176003',
+      Posting_Title: 'Customer Experience Tier 1',
+      Department: 'Customer Experience',
+      City: 'Bangalore',
+      State: 'Karnataka',
+      Country: 'India',
+      Job_Type: 'Full time',
+      Work_Experience: null,
+      Date_Opened: null,
+      Job_Description: 'Handle customer support operations for aviation software users.',
+      $url: 'https://flydocs.zohorecruit.in/jobs/Careers/61915000010176003/Customer-Experience-Tier-1?source=flydocsWebsite',
+      Publish: true,
+      Locked: false,
+      Remote_Job: false,
+    },
+    {
+      id: '61915000010176004',
+      Posting_Title: 'Legacy Role',
+      Department: 'Operations',
+      City: 'Remote',
+      Country: 'India',
+      Job_Type: 'Full time',
+      $url: 'https://flydocs.zohorecruit.in/jobs/Careers/61915000010176004/Legacy-Role?source=flydocsWebsite',
+      Publish: false,
+      Locked: false,
+    },
+    {
+      id: '61915000010176099',
+      Posting_Title: 'Dubai Operations',
+      Department: 'Operations',
+      City: 'Dubai',
+      Country: 'United Arab Emirates',
+      Job_Type: 'Full time',
+      $url: 'https://flydocs.zohorecruit.in/jobs/Careers/61915000010176099/Dubai-Operations?source=flydocsWebsite',
+      Publish: true,
+      Locked: false,
+    },
+  ],
+}
+
+test('Flydocs constants and official portal signal stay pinned to the verified public Zoho careers portal', async () => {
   const flydocs = await loadFlydocsModule()
 
   assert.equal(flydocs.CAREERS_URL, 'https://flydocs.aero/vacancies/')
+  assert.equal(flydocs.CAREERS_PORTAL_URL, 'https://flydocs.zohorecruit.in/jobs/Careers?source=CareerSite')
+  assert.equal(
+    flydocs.CAREERS_API_URL,
+    'https://flydocs.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
+  )
   assert.equal(flydocs.COMPANY, 'flydocs')
   assert.equal(flydocs.SOURCE, 'flydocs')
-  assert.equal(flydocs.hasOfficialCareersSignal(officialCareersHtml), true)
+  assert.equal(flydocs.hasOfficialPortalSignal(officialPortalHtml), true)
 })
 
-test('extractIndiaJobs keeps India roles from the official Flydocs page and normalizes shortlinks to public Zoho detail URLs', async () => {
+test('extractIndiaJobs keeps India roles from the verified Flydocs public jobs payload', async () => {
   const flydocs = await loadFlydocsModule()
 
-  const jobs = await flydocs.extractIndiaJobs(officialCareersHtml, {
-    resolveJobUrl: async (url) => {
-      if (url === 'https://zrec.in/TLOM1?source=flydocsWebsite') {
-        return 'https://flydocs.zohorecruit.in/jobs/Careers/61915000008622445/Technical-Records-Manager?source=flydocsWebsite'
-      }
-
-      return null
-    },
-  })
+  const jobs = flydocs.extractIndiaJobs(jobsPayload)
 
   assert.deepEqual(jobs, [
     {
       title: 'Technical Records Manager',
       company: 'flydocs',
       department: 'Operations',
-      location: 'Pune, India',
+      location: 'Pune, Maharashtra, India',
       city: 'Pune',
+      state: 'Maharashtra',
       country: 'India',
       jobId: '61915000008622445',
       requisitionId: '61915000008622445',
       sourceUrl: 'https://flydocs.zohorecruit.in/jobs/Careers/61915000008622445/Technical-Records-Manager?source=flydocsWebsite',
       applyUrl: 'https://flydocs.zohorecruit.in/jobs/Careers/61915000008622445/Technical-Records-Manager?source=flydocsWebsite',
       employmentType: 'Full-time',
-      experienceRequired: null,
+      experienceRequired: '5 years',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: null,
+      postingDate: '2026-07-03',
       closingDate: null,
       jobDescription: 'Support airline customers across records and compliance workflows.',
+      remoteStatus: 'On-site',
     },
     {
       title: 'Customer Experience Tier 1',
       company: 'flydocs',
       department: 'Customer Experience',
-      location: 'Bengaluru, India',
+      location: 'Bangalore, Karnataka, India',
       city: 'Bangalore',
+      state: 'Karnataka',
       country: 'India',
       jobId: '61915000010176003',
       requisitionId: '61915000010176003',
@@ -120,36 +149,35 @@ test('extractIndiaJobs keeps India roles from the official Flydocs page and norm
       postingDate: null,
       closingDate: null,
       jobDescription: 'Handle customer support operations for aviation software users.',
+      remoteStatus: 'On-site',
     },
   ])
 })
 
-test('run validates the official Flydocs vacancies page, resolves shortlinks, and decorates shared runner fields', async () => {
+test('run validates the official Flydocs portal, fetches the public jobs payload, and decorates shared runner fields', async () => {
   const flydocs = await loadFlydocsModule()
   const requestedUrls = []
-  const resolvedUrls = []
 
   const jobs = await flydocs.createFlydocsScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === flydocs.CAREERS_URL) return officialCareersHtml
+      if (url === flydocs.CAREERS_PORTAL_URL) return officialPortalHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
-    resolveJobUrl: async (url) => {
-      resolvedUrls.push(url)
-      if (url === 'https://zrec.in/TLOM1?source=flydocsWebsite') {
-        return 'https://flydocs.zohorecruit.in/jobs/Careers/61915000008622445/Technical-Records-Manager?source=flydocsWebsite'
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      if (url === flydocs.CAREERS_API_URL) {
+        return jobsPayload
       }
 
-      return null
+      throw new Error(`Unexpected URL: ${url}`)
     },
     now: () => '2026-07-09T00:00:00.000Z',
   })
 
-  assert.deepEqual(requestedUrls, ['https://flydocs.aero/vacancies/'])
-  assert.deepEqual(resolvedUrls, [
-    'https://zrec.in/TLOM1?source=flydocsWebsite',
-    'https://zrec.in/stale-role?source=flydocsWebsite',
+  assert.deepEqual(requestedUrls, [
+    'https://flydocs.zohorecruit.in/jobs/Careers?source=CareerSite',
+    'https://flydocs.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'flydocs')
@@ -160,13 +188,13 @@ test('run validates the official Flydocs vacancies page, resolves shortlinks, an
   assert.equal(jobs[0].scrapedAt, '2026-07-09T00:00:00.000Z')
 })
 
-test('run fails closed when the Flydocs official vacancies signal disappears', async () => {
+test('run fails closed when the Flydocs official portal signal disappears', async () => {
   const flydocs = await loadFlydocsModule()
 
   await assert.rejects(
     flydocs.createFlydocsScraper().run({
       fetchText: async () => '<html><body>Unexpected page</body></html>',
     }),
-    /official Flydocs vacancies page/i,
+    /official Flydocs careers portal/i,
   )
 })

@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -14,7 +14,7 @@ export const CATALOG_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../cmclimited/script.js',
+  modulePath: '../../scraper/cmclimited/script.js',
   companyCareerPage: CMC_INFO_URL,
   atsPlatform: 'historical-company-domain-plus-parent-company-careers',
   countryFilter: 'India',
@@ -144,3 +144,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

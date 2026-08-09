@@ -208,6 +208,68 @@ test('run verifies the known Bajaj Finance handoff before replaying the public P
   ])
 })
 
+test('Bajaj Finance default public fetches are bounded by AbortSignals', async () => {
+  const bajajFinance = await loadBajajFinanceModule()
+  const originalFetch = globalThis.fetch
+  const fetchCalls = []
+
+  globalThis.fetch = async (url, options = {}) => {
+    fetchCalls.push({ url, options })
+
+    if (url === bajajFinance.COMPANY_PAGE_URL) {
+      return {
+        ok: true,
+        status: 200,
+        url,
+        text: async () => officialCompanyPageHtml,
+      }
+    }
+
+    if (url === bajajFinance.JOB_LISTINGS_URL) {
+      return {
+        ok: true,
+        status: 200,
+        url,
+        text: async () => portalShellHtml,
+      }
+    }
+
+    if (url === bajajFinance.buildApiUrl()) {
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: () => 'application/json',
+        },
+        text: async () => JSON.stringify(samplePayload),
+        json: async () => samplePayload,
+      }
+    }
+
+    throw new Error(`Unexpected Bajaj Finance URL: ${url}`)
+  }
+
+  try {
+    const jobs = await bajajFinance.createBajajFinanceScraper({
+      now: () => FIXED_SCRAPED_AT,
+    }).run()
+
+    assert.equal(jobs.length, 1)
+    assert.deepEqual(
+      fetchCalls.map((call) => call.url),
+      [
+        bajajFinance.COMPANY_PAGE_URL,
+        bajajFinance.JOB_LISTINGS_URL,
+        bajajFinance.buildApiUrl(),
+      ],
+    )
+    assert.equal(fetchCalls.every((call) => call.options.signal instanceof AbortSignal), true)
+    assert.equal(fetchCalls.every((call) => call.options.signal.aborted === false), true)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('Bajaj Finance scraper fails closed when the verified handoff or public portal shell drifts', async () => {
   const bajajFinance = await loadBajajFinanceModule()
 

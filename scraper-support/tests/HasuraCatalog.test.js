@@ -45,7 +45,7 @@ test('Hasura local catalog captures the verified Hasura-to-PromptQL careers redi
   assert.equal(provider.graphqlApiUrl, 'https://jobs.gem.com/api/public/graphql')
   assert.equal(
     provider.gemBoardBundleUrl,
-    'https://static.gem.com/scripts/jobBoards.ddgoqUdv.v2.min.js',
+    'https://static.gem.com/scripts/jobBoards.BpHUFx-E.v2.min.js',
   )
   assert.equal(provider.gemBoardTrackingId, '4a76acaa-70ac-4e16-bedb-d4426e6a9d3c')
   assert.equal(provider.atsPlatform, 'gem')
@@ -58,7 +58,7 @@ test('Hasura local catalog captures the verified Hasura-to-PromptQL careers redi
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'jobs.gem.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.verifiedPublicPostingCount, 5)
   assert.equal(provider.verifiedIndiaScopedPostingCount, 2)
   assert.equal(provider.verifiedIndiaActionableRoleCount, 1)

@@ -254,6 +254,31 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isDeterministicHttpBlock = (error) =>
+  /HTTP\s+(?:401|403|404|410|451)\b/i.test(String(error?.message ?? error ?? ''))
+
+const wrapApiOnlyFetchError = (url, error) => {
+  const wrapped = new Error(
+    `Endurance API-only migration could not fetch ${url}: ${error?.message ?? error}`,
+    { cause: error },
+  )
+
+  for (const key of ['abortRetries', 'softFailure', 'upstreamOutage', 'failureKind', 'localTimeout', 'retryDelayMs']) {
+    if (error?.[key] != null) {
+      wrapped[key] = error[key]
+    }
+  }
+
+  if (wrapped.abortRetries !== true && isDeterministicHttpBlock(error)) {
+    wrapped.abortRetries = true
+    wrapped.softFailure ??= true
+    wrapped.upstreamOutage ??= true
+    wrapped.failureKind ??= 'network_or_timeout'
+  }
+
+  return wrapped
+}
+
 export const createEnduranceScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
@@ -265,7 +290,7 @@ export const createEnduranceScraper = ({
       try {
         return await fetchText(url)
       } catch (error) {
-        throw new Error(`Endurance API-only migration could not fetch ${url}: ${error.message}`)
+        throw wrapApiOnlyFetchError(url, error)
       }
     }
 

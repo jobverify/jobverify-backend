@@ -8,7 +8,7 @@ import test from 'node:test'
 import { regenerateCompanyCoverageReport } from '../scripts/regenerateCompanyCoverageReport.js'
 
 test('regenerateCompanyCoverageReport defaults to backend scraper inventory when csvPath is omitted', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-regenerate-coverage-default-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-regenerate-coverage-default-'))
 
   try {
     const backendReportPath = path.join(tempDir, 'backend-company-coverage-report.json')
@@ -49,7 +49,7 @@ test('regenerateCompanyCoverageReport defaults to backend scraper inventory when
 })
 
 test('regenerateCompanyCoverageReport writes a fresh report from the provided CSV input', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-regenerate-coverage-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-regenerate-coverage-'))
 
   try {
     const csvPath = path.join(tempDir, 'fresh-company-list.csv')
@@ -92,8 +92,43 @@ test('regenerateCompanyCoverageReport writes a fresh report from the provided CS
   }
 })
 
+test('regenerateCompanyCoverageReport writes only the backend report by default', () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-regenerate-coverage-backend-only-'))
+
+  try {
+    const csvPath = path.join(tempDir, 'fresh-company-list.csv')
+    const backendReportPath = path.join(tempDir, 'backend-company-coverage-report.json')
+
+    writeFileSync(
+      csvPath,
+      'company_name\nAmazon Development Center\nBanyan Cloud\n',
+      'utf8',
+    )
+
+    const summary = regenerateCompanyCoverageReport({
+      csvPath,
+      backendReportPath,
+    })
+
+    assert.equal(summary.backendReportPath, backendReportPath)
+    assert.equal(summary.frontendReportPath, null)
+    assert.equal(summary.matchedCount, 2)
+    assert.equal(summary.unmatchedCount, 0)
+
+    const backendReport = JSON.parse(readFileSync(backendReportPath, 'utf8'))
+    const matchedByCompanyName = new Map(
+      backendReport.matched.map((item) => [item.companyName, item.source]),
+    )
+
+    assert.equal(matchedByCompanyName.get('Amazon Development Center'), 'amazon')
+    assert.equal(matchedByCompanyName.get('Banyan Cloud'), 'banyancloud')
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true })
+  }
+})
+
 test('regenerateCompanyCoverageReport CLI prints a JSON summary and supports explicit output paths', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-regenerate-coverage-cli-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-regenerate-coverage-cli-'))
 
   try {
     const csvPath = path.join(tempDir, 'fresh-company-list.csv')

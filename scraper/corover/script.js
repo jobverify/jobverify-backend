@@ -5,7 +5,7 @@ export const COMPANY = 'CoRover'
 export const VERIFIED_ON = '2026-07-30'
 export const CAREERS_URL = 'https://corover.ai/company/careers'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const INDIA_LOCATION_HINTS = [
   'india',
   'bangalore',

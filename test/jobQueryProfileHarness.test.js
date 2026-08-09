@@ -5,8 +5,8 @@ import path from "node:path";
 import test from "node:test";
 import { spawnSync } from "node:child_process";
 
-test("local job profiling harness runs against a real temporary MongoDB instance", async () => {
-  const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), "jobify-job-profile-test-"));
+test("local job profiling harness runs against a real temporary MongoDB instance", async (t) => {
+  const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), "jobverify-job-profile-test-"));
 
   try {
     const result = spawnSync(
@@ -23,6 +23,15 @@ test("local job profiling harness runs against a real temporary MongoDB instance
         timeout: 20 * 60 * 1000,
       },
     );
+
+    const outputText = `${result.stderr || ""}\n${result.stdout || ""}`;
+    if (
+      result.status !== 0
+      && /(Could NOT download|DownloadError|ETIMEDOUT|fastdl\.mongodb\.org)/i.test(outputText)
+    ) {
+      t.skip("mongodb-memory-server binary download is unavailable in this environment");
+      return;
+    }
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
 

@@ -7,7 +7,7 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Orion Innovation as an official browser-backed careers scraper', () => {
+test('getScraperCatalog includes Orion Innovation as an official API-only careers scraper', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'orioninnovation')
 
   assert.ok(provider)
@@ -16,6 +16,11 @@ test('getScraperCatalog includes Orion Innovation as an official browser-backed 
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.companyCareerPage, 'https://www.orioninnovation.com/careers/job/')
   assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.paginationStrategy, 'single-official-jobs-page-plus-greenhouse-feed')
+  assert.equal(
+    provider.extractionStrategy,
+    'official-jobs-page-html-cards+greenhouse-public-api-details+india-location-filter',
+  )
   assert.equal(provider.companyDomain, 'orioninnovation.com')
   assert.match(provider.modulePath, /orioninnovation[\\/]script\.js$/i)
 })

@@ -32,7 +32,7 @@ import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
 import { refreshJobDatasetSummary } from '../../src/services/jobDatasetSummaryService.js'
 
-dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') })
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env'), quiet: true })
 
 // Lazy-load Job to avoid circular import issues when this module is used standalone
 let Job

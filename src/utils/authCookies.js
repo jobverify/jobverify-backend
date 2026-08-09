@@ -1,5 +1,5 @@
-export const AUTH_COOKIE_NAME = "jobify_token";
-export const PENDING_REGISTRATION_COOKIE_NAME = "jobify_pending_registration";
+export const AUTH_COOKIE_NAME = "jobverify_token";
+export const PENDING_REGISTRATION_COOKIE_NAME = "jobverify_pending_registration";
 
 const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const PENDING_REGISTRATION_COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000;

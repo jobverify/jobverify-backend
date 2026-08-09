@@ -26,7 +26,7 @@ test('Brij is wired to a verified first-party careers handoff scraper instead of
   assert.equal(provider.verifiedOn, '2026-07-30')
   assert.equal(provider.verifiedPublicJobCount, 1)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.modulePath, /brij\.js$/)
+  assert.match(provider.modulePath, /[\\/]brij[\\/]script\.js$/i)
   assert.match(provider.verifiedSurfaceSummary, /Thursday, July 30, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/brij\.ai\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/brij\.applytojob\.com\/apply/i)

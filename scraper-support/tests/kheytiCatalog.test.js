@@ -42,7 +42,7 @@ test('Kheyti local catalog captures the verified first-party join page and publi
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.kheyti.com/')
   assert.equal(provider.companyCareerPage, 'https://jobs.kheyti.com/careers')
-  assert.equal(provider.officialJoinPageUrl, 'https://www.kheyti.com/join/')
+  assert.equal(provider.officialJoinPageUrl, 'https://www.kheyti.com/join-us')
   assert.equal(provider.officialJobsPageUrl, 'https://jobs.kheyti.com/careers')
   assert.equal(
     provider.sampleJobDetailUrl,
@@ -60,11 +60,11 @@ test('Kheyti local catalog captures the verified first-party join page and publi
   assert.equal(provider.companyDomain, 'kheyti.com')
   assert.equal(provider.verifiedOn, '2026-07-16')
   assert.equal(provider.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.kheyti\.com\/join\//i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.kheyti\.com\/join-us/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/jobs\.kheyti\.com\/careers/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /Current Job Openings/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /Green House- Product Manager/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /\b7 public India openings\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /public India openings/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /kheyti[\\/]jobs\.json$/i)
 

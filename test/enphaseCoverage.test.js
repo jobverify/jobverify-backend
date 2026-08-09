@@ -5,13 +5,13 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/index.js'
 
-const COMPANY_CSV_PATH = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const COMPANY_CSV_TEXT = "company_name\nEnphase\n"
 
-test('Enphase resolves only to its exact-name official Jobvite provider', () => {
+test('Enphase keeps its exact-name Jobvite provider while adjacent exact company names resolve separately', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'enphase')
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(COMPANY_CSV_PATH, 'utf8'),
+    csvText: COMPANY_CSV_TEXT,
     catalog,
   })
   const nearNameReport = generateCompanyCoverageReport({
@@ -29,8 +29,11 @@ test('Enphase resolves only to its exact-name official Jobvite provider', () => 
     report.matched.filter((item) => item.companyName === 'Enphase').map((item) => item.source),
     ['enphase'],
   )
-  assert.deepEqual(nearNameReport.matched, [])
-  assert.deepEqual(nearNameReport.unmatched.map((item) => item.companyName), ['Enphase Energy', 'Enphase India'])
+  assert.deepEqual(
+    nearNameReport.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
+    [['Enphase Energy', 'enphaseenergy', 'Enphase Energy']],
+  )
+  assert.deepEqual(nearNameReport.unmatched.map((item) => item.companyName), ['Enphase India'])
 })
 
 test('Enphase scraper is registered from its provider extension', () => {

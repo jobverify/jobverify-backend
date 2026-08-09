@@ -12,7 +12,7 @@ export const DISPOSITION = 'verified-public-smartrecruiters-board-plus-public-jo
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, August 1, 2026 that https://careers.smartrecruiters.com/CarousellGroup remained the accessible public Carousell Group careers board for this workbook source, that its Home Page link now resolves to https://careers.carousell.com/who-we-are/, and that the public SmartRecruiters postings API at https://api.smartrecruiters.com/v1/companies/CarousellGroup/postings?limit=100 exposed current public Carousell Group openings but no India postings in the live payload. Direct fetches to https://careers.carousell.com/ still returned a Cloudflare challenge in this environment, so this scraper validates the public SmartRecruiters board and returns India jobs only from the public SmartRecruiters API.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const SMARTRECRUITERS_JOB_HOST = 'jobs.smartrecruiters.com'
 const BOARD_REQUIRED_PATTERNS = [
   /<title[^>]*>\s*Careers at Carousell Group\s*<\/title>/i,

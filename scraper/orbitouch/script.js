@@ -17,7 +17,7 @@ export const JOBS_URL = PROVIDER_METADATA.companyCareerPage
 export const SUBMIT_CV_URL = PROVIDER_METADATA.submitCvUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')

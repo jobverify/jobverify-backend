@@ -7,8 +7,8 @@ import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const providerModulePath = '../../scraper/stackpath/script.js'
-const resolvedModulePath = path.resolve(currentDir, '../providers', providerModulePath)
+const providerModulePath = path.resolve(currentDir, '../../scraper/stackpath/script.js')
+const resolvedModulePath = providerModulePath
 
 const loadCatalogModule = async () => {
   try {

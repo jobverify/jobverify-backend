@@ -17,14 +17,8 @@ const careersHtml = `
         <p class="h4">Python-Django Developer</p>
         <p class="pr-4 career-box-content">We are looking to recruit experienced Python Developers to join our engineering team.</p>
         <div class="place-time-btn">
-          <span class="sec-icon-map">
-            <img src="../../scraper/images/map.png" alt="location"/>
-            <p>Chennai</p>
-          </span>
-          <span class="sec-icon-time">
-            <img src="../../scraper/images/time.png" alt="Time"/>
-            <p>Full Time</p>
-          </span>
+          <span class="sec-icon-map"><img src="../images/map.png" alt="location"/>Chennai</span>
+          <span class="sec-icon-time"><img src="../images/time.png" alt="Time"/>Full Time</span>
         </div>
         <div class="career-view-more"><a href="python-developers.html">View more</a></div>
       </div>
@@ -32,14 +26,8 @@ const careersHtml = `
         <p class="h4">Talent Acquisition Specialist</p>
         <p class="pr-4 career-box-content">We are growing fast and need to ramp up our team across streams.</p>
         <div class="place-time-btn">
-          <span class="sec-icon-map">
-            <img src="../../scraper/images/map.png" alt="location"/>
-            <p>Chennai</p>
-          </span>
-          <span class="sec-icon-time">
-            <img src="../../scraper/images/time.png" alt="Time"/>
-            <p>Full Time</p>
-          </span>
+          <span class="sec-icon-map"><img src="../images/map.png" alt="location"/>Chennai</span>
+          <span class="sec-icon-time"><img src="../images/time.png" alt="Time"/>Full Time</span>
         </div>
         <div class="career-view-more"><a href="talent-acquisition-specialist.html">View more</a></div>
       </div>
@@ -62,11 +50,11 @@ const pythonDeveloperHtml = `
       </div>
       <div class="place-time-btn">
         <span class="sec-icon-map">
-          <img src="../../scraper/images/map.png" alt="location"/>
+          <img src="../images/map.png" alt="location"/>
           <p>Chennai</p>
         </span>
         <span class="sec-icon-time">
-          <img src="../../scraper/images/time.png" alt="Time"/>
+          <img src="../images/time.png" alt="Time"/>
           <p>Full Time</p>
         </span>
       </div>
@@ -94,11 +82,11 @@ const talentAcquisitionHtml = `
       </div>
       <div class="place-time-btn">
         <span class="sec-icon-map">
-          <img src="../../scraper/images/map.png" alt="location"/>
+          <img src="../images/map.png" alt="location"/>
           <p>Chennai</p>
         </span>
         <span class="sec-icon-time">
-          <img src="../../scraper/images/time.png" alt="Time"/>
+          <img src="../images/time.png" alt="Time"/>
           <p>Full Time</p>
         </span>
       </div>

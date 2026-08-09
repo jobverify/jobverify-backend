@@ -1,4 +1,4 @@
-import path from 'path'
+﻿import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -19,7 +19,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'solarsquare.in',
   adapter: 'script',
   atsPlatform: 'keka-public-careers-api',
-  modulePath: '../solarsquare/script.js',
+  modulePath: '../../scraper/solarsquare/script.js',
   dryRunFile: 'solarsquare/jobs.json',
 }
 
@@ -180,3 +180,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, 'solarsquare')
   }
 }
+

@@ -207,15 +207,15 @@ test('Tesla returns no jobs only while the verified first-party search surface s
   const requestedUrls = []
 
   const jobs = await tesla.createTeslaScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
 
-      if (url === tesla.CAREERS_URL) return careersPageHtml
-      if (url === tesla.SEARCH_PAGE_URL) return searchPageHtml
-      if (url === tesla.INDIA_LISTINGS_PAGE_URL) return indiaListingsPageHtml
-      if (url === tesla.SAMPLE_INDIA_ENGINEERING_JOB_URL) return engineeringDetailHtml
-      if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return supportDetailHtml
-      if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return serviceDetailHtml
+      if (url === tesla.CAREERS_URL) return { status: 200, url, html: careersPageHtml }
+      if (url === tesla.SEARCH_PAGE_URL) return { status: 200, url, html: searchPageHtml }
+      if (url === tesla.INDIA_LISTINGS_PAGE_URL) return { status: 200, url, html: indiaListingsPageHtml }
+      if (url === tesla.SAMPLE_INDIA_ENGINEERING_JOB_URL) return { status: 200, url, html: engineeringDetailHtml }
+      if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return { status: 200, url, html: supportDetailHtml }
+      if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return { status: 200, url, html: serviceDetailHtml }
 
       throw new Error(`Unexpected Tesla URL: ${url}`)
     },
@@ -237,13 +237,13 @@ test('Tesla fails closed when the verified careers page, search surface, or Indi
 
   await assert.rejects(
     tesla.createTeslaScraper().run({
-      fetchText: async (url) => {
-        if (url === tesla.CAREERS_URL) return '<html><body><h1>Unexpected</h1></body></html>'
-        if (url === tesla.SEARCH_PAGE_URL) return searchPageHtml
-        if (url === tesla.INDIA_LISTINGS_PAGE_URL) return indiaListingsPageHtml
-        if (url === tesla.SAMPLE_INDIA_ENGINEERING_JOB_URL) return engineeringDetailHtml
-        if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return supportDetailHtml
-        if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return serviceDetailHtml
+      fetchPage: async (url) => {
+        if (url === tesla.CAREERS_URL) return { status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }
+        if (url === tesla.SEARCH_PAGE_URL) return { status: 200, url, html: searchPageHtml }
+        if (url === tesla.INDIA_LISTINGS_PAGE_URL) return { status: 200, url, html: indiaListingsPageHtml }
+        if (url === tesla.SAMPLE_INDIA_ENGINEERING_JOB_URL) return { status: 200, url, html: engineeringDetailHtml }
+        if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return { status: 200, url, html: supportDetailHtml }
+        if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return { status: 200, url, html: serviceDetailHtml }
         throw new Error(`Unexpected Tesla URL: ${url}`)
       },
     }),
@@ -252,13 +252,13 @@ test('Tesla fails closed when the verified careers page, search surface, or Indi
 
   await assert.rejects(
     tesla.createTeslaScraper().run({
-      fetchText: async (url) => {
-        if (url === tesla.CAREERS_URL) return careersPageHtml
-        if (url === tesla.SEARCH_PAGE_URL) return '<html><body><h1>Build your Career at Tesla</h1></body></html>'
-        if (url === tesla.INDIA_LISTINGS_PAGE_URL) return indiaListingsPageHtml
-        if (url === tesla.SAMPLE_INDIA_ENGINEERING_JOB_URL) return engineeringDetailHtml
-        if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return supportDetailHtml
-        if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return serviceDetailHtml
+      fetchPage: async (url) => {
+        if (url === tesla.CAREERS_URL) return { status: 200, url, html: careersPageHtml }
+        if (url === tesla.SEARCH_PAGE_URL) return { status: 200, url, html: '<html><body><h1>Build your Career at Tesla</h1></body></html>' }
+        if (url === tesla.INDIA_LISTINGS_PAGE_URL) return { status: 200, url, html: indiaListingsPageHtml }
+        if (url === tesla.SAMPLE_INDIA_ENGINEERING_JOB_URL) return { status: 200, url, html: engineeringDetailHtml }
+        if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return { status: 200, url, html: supportDetailHtml }
+        if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return { status: 200, url, html: serviceDetailHtml }
         throw new Error(`Unexpected Tesla URL: ${url}`)
       },
     }),
@@ -267,15 +267,19 @@ test('Tesla fails closed when the verified careers page, search surface, or Indi
 
   await assert.rejects(
     tesla.createTeslaScraper().run({
-      fetchText: async (url) => {
-        if (url === tesla.CAREERS_URL) return careersPageHtml
-        if (url === tesla.SEARCH_PAGE_URL) return searchPageHtml
-        if (url === tesla.INDIA_LISTINGS_PAGE_URL) return indiaListingsPageHtml
+      fetchPage: async (url) => {
+        if (url === tesla.CAREERS_URL) return { status: 200, url, html: careersPageHtml }
+        if (url === tesla.SEARCH_PAGE_URL) return { status: 200, url, html: searchPageHtml }
+        if (url === tesla.INDIA_LISTINGS_PAGE_URL) return { status: 200, url, html: indiaListingsPageHtml }
         if (url === tesla.SAMPLE_INDIA_ENGINEERING_JOB_URL) {
-          return engineeringDetailHtml.replace('https://www.tesla.com/careers/search/job/apply/251983', 'https://example.com/apply')
+          return {
+            status: 200,
+            url,
+            html: engineeringDetailHtml.replace('https://www.tesla.com/careers/search/job/apply/251983', 'https://example.com/apply'),
+          }
         }
-        if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return supportDetailHtml
-        if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return serviceDetailHtml
+        if (url === tesla.SAMPLE_INDIA_SUPPORT_JOB_URL) return { status: 200, url, html: supportDetailHtml }
+        if (url === tesla.SAMPLE_INDIA_SERVICE_JOB_URL) return { status: 200, url, html: serviceDetailHtml }
         throw new Error(`Unexpected Tesla URL: ${url}`)
       },
     }),

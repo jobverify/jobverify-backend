@@ -187,7 +187,7 @@ export const extractJobDetail = (html, listing = {}) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify Novo Nordisk GBS scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify Novo Nordisk GBS scraper)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

@@ -184,7 +184,7 @@ test('run keeps Royal Enfield on the public India Phenom lane and enriches jobs 
     'https://careers.royalenfield.com/us/en/job/P-101057/Canteen-Incharge/apply',
   )
   assert.equal(jobs[0].postingDate, '2026-07-06')
-  assert.match(jobs[0].experienceRequired, /4\+ years of experience/i)
+  assert.match(jobs[0].experienceRequired, /4\+ years/i)
   assert.match(jobs[0].minimumQualification, /Bachelor degree/i)
   assert.match(jobs[0].jobDescription, /Chennai manufacturing campus/i)
 })

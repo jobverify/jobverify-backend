@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -19,7 +19,7 @@ export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../gitbook/script.js',
+  modulePath: '../../scraper/gitbook/script.js',
   dryRunFile: 'gitbook/jobs.json',
   companyCareerPage: CAREERS_PAGE_URL,
   companyDomain: 'gitbook.com',
@@ -216,3 +216,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (isDryRun) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   else await saveToDB(jobs, SOURCE)
 }
+

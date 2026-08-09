@@ -38,20 +38,21 @@ test('Simpl local catalog captures the verified first-party no-public-jobs surfa
   assert.equal(SIMPL_CATALOG.countryFilter, 'India')
   assert.equal(
     SIMPL_CATALOG.paginationStrategy,
-    'homepage-plus-about-page-plus-careers-reference-page-no-public-job-listings',
+    'homepage-plus-about-page-no-public-job-listings',
   )
   assert.equal(
     SIMPL_CATALOG.extractionStrategy,
-    'verified-homepage+verified-about-page+verified-careers-reference-page+return-empty-when-no-public-openings',
+    'verified-homepage+verified-about-page+return-empty-when-no-public-openings',
   )
   assert.equal(SIMPL_CATALOG.parser, 'custom-script')
   assert.equal(SIMPL_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(SIMPL_CATALOG.verifiedOn, '2026-07-17')
+  assert.equal(SIMPL_CATALOG.verifiedOn, '2026-07-26')
   assert.equal(SIMPL_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Friday, July 17, 2026/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Sunday, July 26, 2026/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.get-simpl\.com\/index\.html/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.get-simpl\.com\/about\.html/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/sandbox\.getsimpl\.com\/about-us\//i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /no longer resolves upstream/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
 })
 

@@ -15,7 +15,7 @@ export const JOBS_API_URL = ODESSA_CATALOG.jobsApiUrl
 export const VERIFIED_ON = ODESSA_CATALOG.verifiedOn
 export const PROVIDER_METADATA = ODESSA_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 export const hasVerifiedOdessaCareersSignal = (html) =>
   /<title>\s*Careers\s*\|\s*All Job Openings\s*\|\s*Odessa\s*<\/title>/i.test(String(html))

@@ -117,86 +117,42 @@ test('WSP India recognizes the verified Cloudflare challenge and extracts render
   ])
 })
 
-test('WSP India falls back to browser-rendered pages when raw fetches only return the verified Cloudflare challenge', async () => {
+test('WSP India surfaces the verified Cloudflare challenge when the official India site is blocked to API-only fetches', async () => {
   const wspIndia = await loadModule()
   assert.ok(wspIndia, 'WSP India scraper module should load')
 
   const rawRequestedUrls = []
-  const browserRequestedUrls = []
-  const jobs = await wspIndia.createWspIndiaScraper({ maxPages: 2 }).run({
-    fetchPage: async (url) => {
-      rawRequestedUrls.push(url)
-      return {
-        status: 403,
-        url,
-        html: BLOCKED_PAGE_HTML,
-      }
-    },
-    fetchBrowserPage: async (url) => {
-      browserRequestedUrls.push(url)
-      if (url === wspIndia.INDIA_SITE_URL) {
-        return { status: 200, url, html: INDIA_SITE_HTML }
-      }
-      if (url === wspIndia.buildJobsPageUrl({ page: 1 })) {
-        return { status: 200, url, html: JOBS_PAGE_ONE_HTML }
-      }
-      if (url === wspIndia.buildJobsPageUrl({ page: 2 })) {
-        return { status: 200, url, html: JOBS_PAGE_TWO_HTML }
-      }
-
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-    now: () => '2026-08-04T00:00:00.000Z',
-  })
-
-  assert.deepEqual(rawRequestedUrls, [
-    wspIndia.INDIA_SITE_URL,
-    wspIndia.buildJobsPageUrl({ page: 1 }),
-    wspIndia.buildJobsPageUrl({ page: 2 }),
-  ])
-  assert.deepEqual(browserRequestedUrls, rawRequestedUrls)
-  assert.deepEqual(
-    jobs.map((job) => ({
-      title: job.title,
-      location: job.location,
-      jobId: job.jobId,
-      scrapedAt: job.scrapedAt,
-    })),
-    [
-      {
-        title: 'Engineer - Roads',
-        location: 'Bengaluru | Noida',
-        jobId: '89283',
-        scrapedAt: '2026-08-04T00:00:00.000Z',
+  await assert.rejects(
+    wspIndia.createWspIndiaScraper({ maxPages: 2 }).run({
+      fetchPage: async (url) => {
+        rawRequestedUrls.push(url)
+        return {
+          status: 403,
+          url,
+          html: BLOCKED_PAGE_HTML,
+        }
       },
-      {
-        title: 'BIM Technician - Rail Civils',
-        location: 'Noida | Bengaluru',
-        jobId: '90362',
-        scrapedAt: '2026-08-04T00:00:00.000Z',
-      },
-    ],
+      now: () => '2026-08-04T00:00:00.000Z',
+    }),
+    /Cloudflare challenge/i,
   )
+
+  assert.deepEqual(rawRequestedUrls, [wspIndia.INDIA_SITE_URL])
 })
 
-test('WSP India fails closed when the browser fallback no longer restores the verified jobs surface', async () => {
+test('WSP India fails closed when the official jobs page surface changes materially', async () => {
   const wspIndia = await loadModule()
   assert.ok(wspIndia, 'WSP India scraper module should load')
 
   await assert.rejects(
     wspIndia.createWspIndiaScraper({ maxPages: 1 }).run({
       fetchPage: async (url) => ({
-        status: 403,
+        status: 200,
         url,
-        html: BLOCKED_PAGE_HTML,
+        html: url === wspIndia.INDIA_SITE_URL
+          ? INDIA_SITE_HTML
+          : '<html><body><h1>Jobs</h1></body></html>',
       }),
-      fetchBrowserPage: async (url) => {
-        if (url === wspIndia.INDIA_SITE_URL) {
-          return { status: 200, url, html: INDIA_SITE_HTML }
-        }
-
-        return { status: 200, url, html: '<html><body><h1>Jobs</h1></body></html>' }
-      },
     }),
     /jobs page surface changed/i,
   )

@@ -1371,7 +1371,7 @@ export const getAllJobs = async (req, res) => {
         success: false,
         premiumRequired: true,
         feature: "job_filters",
-        message: "Filters are available on Jobify Premium.",
+        message: "Filters are available on Jobverify Premium.",
       });
     }
 
@@ -1554,7 +1554,7 @@ export const getJobSearch = async (req, res) => {
         success: false,
         premiumRequired: true,
         feature: "job_filters",
-        message: "Filters are available on Jobify Premium.",
+        message: "Filters are available on Jobverify Premium.",
       });
     }
 
@@ -1764,7 +1764,7 @@ export const getJobMeta = async (req, res) => {
         success: false,
         premiumRequired: true,
         feature: "job_filters",
-        message: "Filters are available on Jobify Premium.",
+        message: "Filters are available on Jobverify Premium.",
       });
     }
 
@@ -1897,7 +1897,7 @@ export const getJobCompanySuggestions = async (req, res) => {
         success: false,
         premiumRequired: true,
         feature: "job_filters",
-        message: "Filters are available on Jobify Premium.",
+        message: "Filters are available on Jobverify Premium.",
       });
     }
 

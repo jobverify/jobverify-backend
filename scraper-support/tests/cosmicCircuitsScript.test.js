@@ -90,6 +90,36 @@ test('Cosmic Circuits falls back to browser text when the verified parent career
   assert.deepEqual(jobs, [])
 })
 
+test('Cosmic Circuits aborts retries when the verified parent careers page remains blocked after fallback', async () => {
+  const cosmic = await loadModule()
+  const requested = []
+
+  await assert.rejects(
+    cosmic.createCosmicCircuitsScraper().run({
+      fetchText: async (url) => {
+        requested.push({ type: 'text', url })
+        throw new Error(`HTTP 403 for ${url}`)
+      },
+      fetchBrowserText: async (url) => {
+        requested.push({ type: 'browser', url })
+        throw new Error(`HTTP 403 for ${url}`)
+      },
+    }),
+    (error) => {
+      assert.match(error.message, /Cadence parent careers surface remains blocked/i)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      return true
+    },
+  )
+
+  assert.deepEqual(requested, [
+    { type: 'text', url: cosmic.CAREERS_URL },
+    { type: 'browser', url: cosmic.CAREERS_URL },
+  ])
+})
+
 test('Cosmic Circuits fails closed when the parent careers surface drifts or becomes brand-specific', async () => {
   const cosmic = await loadModule()
 

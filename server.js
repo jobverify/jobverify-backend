@@ -1,5 +1,5 @@
 /**
- * @file Entry point for the Jobify Express backend application.
+ * @file Entry point for the Jobverify Express backend application.
  * @module server
  */
 
@@ -202,7 +202,7 @@ app.use("/api/billing", noStore, billingRoutes);
 app.use("/api/scrape", noStore, scrapeRoutes);
 app.use("/api/admin", noStore, adminRoutes);
 app.get("/", (req, res) => {
-  res.send("Hello from the Jobify Backend!");
+  res.send("Hello from the Jobverify Backend!");
 });
 app.get("/health", (_req, res) => {
   res.status(200).json({

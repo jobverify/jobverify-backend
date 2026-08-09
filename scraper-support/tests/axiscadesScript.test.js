@@ -65,10 +65,12 @@ test('extractJobCards maps AXISCADES public jobs cards into shared scraper field
   assert.deepEqual(jobs[0], {
     title: 'System Test Engineer - Test',
     company: 'AXISCADES',
+    companyCareerPage: 'https://www.axiscades.com/jobs/',
     department: null,
     location: 'Bengaluru, Hyderabad',
     city: 'Bengaluru',
     country: 'India',
+    atsPlatform: 'official-company-careers',
     jobId: '1975',
     requisitionId: 'system-test-engineer-test-bengaluru-hyderabad-2025-11-10',
     sourceUrl: 'https://axiscadespdfs.b-cdn.net/jobs/system-test-engineer.pdf',

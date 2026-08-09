@@ -29,7 +29,7 @@ test('FirstCry local catalog captures the verified first-party informational car
   assert.equal(provider.source, 'firstcry')
   assert.equal(provider.companyName, 'FirstCry')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/firstcry/script.js')
+  assert.match(provider.modulePath, /firstcry[\\/]script\.js$/i)
   assert.equal(provider.homepageUrl, 'https://www.firstcry.com/')
   assert.equal(provider.companyCareerPage, 'https://www.firstcry.com/careers')
   assert.equal(provider.companyDomain, 'firstcry.com')

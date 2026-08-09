@@ -201,7 +201,7 @@ test('extractJobDetail reads Mars detail metadata and upgrades the Workday apply
   assert.equal(detail.requisitionId, 'R129167')
   assert.equal(detail.department, 'Digital Technologies')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.match(detail.experienceRequired, /5\+ years of experience/i)
+  assert.equal(detail.experienceRequired, '5+ years')
   assert.match(detail.minimumQualification, /Bachelor degree/i)
   assert.equal(detail.preferredQualification, null)
   assert.equal(detail.postingDate, '2026-07-08')
@@ -269,7 +269,7 @@ test('run keeps Mars jobs on the verified public Phenom search route and returns
     'https://mars.wd3.myworkdayjobs.com/en-US/External/job/Hyderabad-Telangana-India/Senior-Data-Engineer_R129167-1/apply',
   )
   assert.equal(jobs[0].postingDate, '2026-07-08')
-  assert.match(jobs[0].experienceRequired, /5\+ years of experience/i)
+  assert.equal(jobs[0].experienceRequired, '5+ years')
   assert.match(jobs[0].minimumQualification, /Bachelor degree/i)
   assert.match(jobs[0].jobDescription, /Mars digital platforms/i)
 })

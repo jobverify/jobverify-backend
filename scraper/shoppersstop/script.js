@@ -7,7 +7,7 @@ import { SHOPPERS_STOP_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 export const PROVIDER_METADATA = SHOPPERS_STOP_CATALOG
 export const SOURCE = PROVIDER_METADATA.source

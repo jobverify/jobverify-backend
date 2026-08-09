@@ -15,7 +15,7 @@ export const CONTACT_URL = PROVIDER_METADATA.contactPageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const SITEMAP_URL = PROVIDER_METADATA.sitemapUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')

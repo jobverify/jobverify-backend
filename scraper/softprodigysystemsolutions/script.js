@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'softprodigysystemsolutions'
 export const COMPANY = 'SoftProdigy System Solutions'
@@ -14,7 +14,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'SoftProdigy',
   adapter: 'script',
-  modulePath: '../softprodigysystemsolutions/script.js',
+  modulePath: '../../scraper/softprodigysystemsolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: KEKA_BOARD_URL,
   atsPlatform: 'official-homepage-plus-keka-board',
@@ -158,3 +158,4 @@ export const run = async ({
     scrapedAt: now(),
   }))
 }
+

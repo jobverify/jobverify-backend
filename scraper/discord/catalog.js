@@ -1,11 +1,11 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 15, 2026 that https://discord.com/jobs redirects to the live first-party careers page at https://discord.com/careers, that the public first-party careers script at https://discord.com/webflow-scripts/careersNew2025.js currently aggregates the three public Greenhouse boards discord, discordinternational, and internationaleor, and that the corresponding APIs at https://api.greenhouse.io/v1/boards/discord/jobs?content=true, https://api.greenhouse.io/v1/boards/discordinternational/jobs?content=true, and https://api.greenhouse.io/v1/boards/internationaleor/jobs?content=true returned 54, 1, and 2 live roles respectively for 57 live roles overall. Verified sample postings included Account Executive - Tech on the main Discord board, Program Manager, Detection & Enforcement, Counter-Extremism on the international board, and Regulatory Counsel, APAC on the international EOR board, with first-party detail routing at https://discord.com/jobs/8433948002 and Greenhouse apply handoff through the verified board URLs.'
 
 export const DISCORD_CATALOG = {
   source: 'discord',
   companyName: 'Discord',
   adapter: 'script',
-  modulePath: '../discord/script.js',
+  modulePath: '../../scraper/discord/script.js',
   companyCareerPage: 'https://discord.com/careers',
   officialJobsRedirectUrl: 'https://discord.com/jobs',
   firstPartyJobDetailsBaseUrl: 'https://discord.com/jobs/',
@@ -32,3 +32,4 @@ export const DISCORD_CATALOG = {
 }
 
 export default DISCORD_CATALOG
+

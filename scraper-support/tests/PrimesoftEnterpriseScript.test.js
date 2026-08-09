@@ -1,29 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const VERIFIED_BLOCKED_HOMEPAGE_HTML = `
+const verifiedHomepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>403 Forbidden</title>
+    <title>PrimeSoft, Agentic AI & Enterprise Transformation</title>
   </head>
   <body>
-    <h1>403 Forbidden</h1>
-    <p>Access to this resource on the server is denied!</p>
-  </body>
-</html>
-`
-
-const VERIFIED_404_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>This Page Does Not Exist</title>
-  </head>
-  <body>
-    <h1>This Page Does Not Exist</h1>
-    <p>Sorry, the page you are looking for could not be found.</p>
-    <p>It's just an accident that was not intentional.</p>
+    <h1>PrimeSoft</h1>
+    <a href="https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs">Careers</a>
   </body>
 </html>
 `
@@ -36,57 +22,87 @@ const loadModule = async () => {
   }
 }
 
-test('Primesoft Enterprise accepts the current blocked homepage and missing careers routes', async () => {
+test('Primesoft Enterprise pins the verified homepage careers handoff to the official Darwinbox board', async () => {
   const primesoft = await loadModule()
 
+  assert.equal(primesoft.SOURCE, 'primesoftenterprise')
+  assert.equal(primesoft.COMPANY_NAME, 'Primesoft Enterprise')
+  assert.equal(primesoft.OFFICIAL_SITE_URL, 'https://primesoft.net/')
   assert.equal(
-    primesoft.isVerifiedBlockedHomepage({
-      status: 403,
-      headers: {
-        server: 'hcdn',
-        platform: 'hostinger',
-        panel: 'hpanel',
-      },
-      html: VERIFIED_BLOCKED_HOMEPAGE_HTML,
-    }),
-    true,
+    primesoft.OFFICIAL_CAREERS_HANDOFF_URL,
+    'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
-
+  assert.equal(primesoft.DARWINBOX_ORIGIN, 'https://primesoft.darwinbox.in')
+  assert.equal(primesoft.DARWINBOX_COMPANY_ID, 'main')
+  assert.equal(primesoft.PUBLIC_PORTAL_URL, primesoft.OFFICIAL_CAREERS_HANDOFF_URL)
   assert.equal(
-    primesoft.isVerifiedAbsentCareersRoute({
-      status: 404,
-      html: VERIFIED_404_HTML,
-    }),
-    true,
+    primesoft.extractOfficialDarwinboxUrl(verifiedHomepageHtml),
+    primesoft.OFFICIAL_CAREERS_HANDOFF_URL,
   )
+  assert.equal(primesoft.hasOfficialPrimesoftHomepageSignals(verifiedHomepageHtml), true)
 })
 
-test('Primesoft Enterprise run returns [] while the blocked homepage and absent careers routes remain unchanged', async () => {
+test('Primesoft Enterprise run validates the homepage handoff before delegating to Darwinbox', async () => {
   const primesoft = await loadModule()
+  let delegated = false
 
-  const jobs = await primesoft.createPrimesoftEnterpriseScraper().run({
-    fetchPage: async (url) => {
-      if (url === primesoft.HOMEPAGE_URL) {
-        return {
-          status: 403,
-          url,
-          headers: {
-            server: 'hcdn',
-            platform: 'hostinger',
-            panel: 'hpanel',
+  const jobs = await primesoft.createPrimesoftEnterpriseScraper({
+    now: () => '2026-08-07T00:00:00.000Z',
+    darwinboxScraper: {
+      run: async ({ fetchListingPage }) => {
+        delegated = true
+        assert.deepEqual(await fetchListingPage({ page: 1 }), [{ id: 'stub' }])
+        return [
+          {
+            title: 'Associate Consultant',
+            company: 'Primesoft Enterprise',
+            location: 'Bengaluru, India',
+            city: 'Bengaluru',
+            country: 'India',
+            source: 'primesoftenterprise',
+            jobId: 'job-1',
+            requisitionId: null,
+            sourceUrl: 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/jobDetails/job-1',
+            applyUrl: 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/jobDetails/job-1',
+            employmentType: 'Full Time',
+            experienceRequired: null,
+            minimumQualification: null,
+            preferredQualification: null,
+            requiredSkills: [],
+            postingDate: null,
+            closingDate: null,
+            jobDescription: 'Deliver enterprise transformation programs.',
+            link: 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/jobDetails/job-1',
           },
-          html: VERIFIED_BLOCKED_HOMEPAGE_HTML,
-        }
-      }
-
-      return {
-        status: 404,
-        url,
-        headers: {},
-        html: VERIFIED_404_HTML,
-      }
+        ]
+      },
     },
+  }).run({
+    fetchText: async (url) => {
+      assert.equal(url, primesoft.OFFICIAL_SITE_URL)
+      return verifiedHomepageHtml
+    },
+    fetchListingPage: async () => [{ id: 'stub' }],
   })
 
-  assert.deepEqual(jobs, [])
+  assert.equal(delegated, true)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Associate Consultant')
+  assert.equal(jobs[0].scrapedAt, '2026-08-07T00:00:00.000Z')
+})
+
+test('Primesoft Enterprise fails closed when the verified homepage handoff drifts', async () => {
+  const primesoft = await loadModule()
+
+  await assert.rejects(
+    primesoft.createPrimesoftEnterpriseScraper({
+      darwinboxScraper: {
+        run: async () => [],
+      },
+    }).run({
+      fetchText: async () => '<html><body><h1>PrimeSoft</h1></body></html>',
+      fetchListingPage: async () => [],
+    }),
+    /homepage careers handoff|official Darwinbox handoff/i,
+  )
 })

@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -17,7 +16,6 @@ const DEFAULT_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
 }
-const BROWSER_TIMEOUT_MS = 90000
 const NULLISH_SECTION_LABELS = [
   'Apply Now',
   'Share:',
@@ -179,40 +177,6 @@ const normalizePostingDate = (value) => {
 const isBrowserFallbackError = (error) =>
   /HTTP 403|timed out|timeout|fetch failed|certificate|blocked/i.test(String(error?.message ?? error ?? ''))
 
-const createBrowserFetchSession = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-  await page.setUserAgent(DEFAULT_HEADERS['User-Agent'])
-
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
-
-      return page.content()
-    },
-    fetchFinalUrl: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
-
-      return page.url()
-    },
-  }
-}
-
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: DEFAULT_HEADERS,
   label: 'hitachiindia-text',
@@ -367,7 +331,7 @@ export const createHitachiIndiaScraper = ({
   fetchText = defaultFetchText,
   fetchImpl = defaultFetchImpl,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
+  } = {}) => ({
   async run({
     fetchText: overrideFetchText,
     fetchBrowserText,
@@ -378,42 +342,15 @@ export const createHitachiIndiaScraper = ({
   } = {}) {
     const fetchTextImpl = overrideFetchText || fetchText
     const fetchApplyImpl = overrideFetchImpl || fetchImpl
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession()
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-    const browserApplyUrlFetcher = fetchBrowserFinalUrl || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchFinalUrl(url)
-    })
+    const browserTextFetcher = typeof fetchBrowserText === 'function' ? fetchBrowserText : null
+    const browserApplyUrlFetcher =
+      typeof fetchBrowserFinalUrl === 'function' ? fetchBrowserFinalUrl : null
 
     const fetchPageText = async (url) => {
-      const shouldPreferBrowser = !overrideFetchText && /careers\.hitachi\.com/i.test(String(url))
-
-      if (shouldPreferBrowser) {
-        try {
-          return await browserTextFetcher(url)
-        } catch (error) {
-          if (!isBrowserFallbackError(error)) {
-            throw error
-          }
-        }
-      }
-
       try {
         return await fetchTextImpl(url)
       } catch (error) {
-        if (!isBrowserFallbackError(error)) {
+        if (!browserTextFetcher || !isBrowserFallbackError(error)) {
           throw error
         }
 
@@ -421,8 +358,7 @@ export const createHitachiIndiaScraper = ({
       }
     }
 
-    try {
-      const listingHtml = await fetchPageText(buildSearchPageUrl())
+    const listingHtml = await fetchPageText(buildSearchPageUrl())
     const listings = extractListings(listingHtml)
     const jobs = []
 
@@ -432,7 +368,7 @@ export const createHitachiIndiaScraper = ({
       const finalApplyUrl = detail.applyUrl
         ? await resolveApplyUrl(detail.applyUrl, {
             fetchImpl: fetchApplyImpl,
-            fetchBrowserFinalUrl: browserApplyUrlFetcher,
+            fetchBrowserFinalUrl: browserApplyUrlFetcher || undefined,
           })
         : null
 
@@ -449,11 +385,6 @@ export const createHitachiIndiaScraper = ({
     }
 
     return jobs
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
-    }
   },
 })
 

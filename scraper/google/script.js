@@ -2,7 +2,6 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
-import { launchBrowser, createOptimizedPage } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
@@ -10,22 +9,38 @@ import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurren
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const COUNTRY_NAME = 'India'
-const BASE_URL = `https://www.google.com/about/careers/applications/jobs/results?location=${COUNTRY_NAME}`
-const GOOGLE_HOST = new URL(BASE_URL).hostname
-const DEFAULT_DETAIL_CONCURRENCY = 8
+export const COUNTRY_NAME = 'India'
+export const BASE_URL = `https://www.google.com/about/careers/applications/jobs/results?location=${COUNTRY_NAME}`
+export const GOOGLE_HOST = new URL(BASE_URL).hostname
+export const GOOGLE_APPLICATIONS_BASE_URL = 'https://www.google.com/about/careers/applications/'
+export const DEFAULT_DETAIL_CONCURRENCY = 8
 
-const SELECTORS = {
-  jobList: 'ul.spHGqe',
-  jobItem: 'li.lLd3Je',
-  jobTitle: 'h3.QJPWVe',
-  jobCompany: '.RP7SMd span',
-  jobLocation: '.pwO9Dc span.r0wTof',
-  jobLink: 'a.WpHeLc[href]',
-  paginationNext: 'a[aria-label="Go to next page"]',
+const GOOGLE_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const decodeHtmlEntities = (value = '') => String(value)
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+
+const stripTags = (value = '') => String(value).replace(/<[^>]+>/g, ' ')
+
+const normalizeWhitespace = (value = '') => decodeHtmlEntities(stripTags(value))
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const extractAttribute = (tag = '', attributeName) => {
+  const match = String(tag).match(new RegExp(`${attributeName}\\s*=\\s*(['"])([\\s\\S]*?)\\1`, 'i'))
+  return match ? decodeHtmlEntities(match[2]).trim() : null
+}
 
 const extractCity = (location) => {
   if (!location) return null
@@ -41,7 +56,11 @@ const extractJobId = (link) => {
 
 const toCanonicalLink = (href) => {
   try {
-    const url = new URL(href, BASE_URL)
+    const normalizedHref = decodeHtmlEntities(href).trim()
+    const baseUrl = /^\.?\/?jobs\/results\//i.test(normalizedHref)
+      ? GOOGLE_APPLICATIONS_BASE_URL
+      : BASE_URL
+    const url = new URL(normalizedHref, baseUrl)
     if (!['http:', 'https:'].includes(url.protocol)) return null
     return url.hostname === GOOGLE_HOST ? url.href.split('?')[0] : null
   } catch {
@@ -49,102 +68,212 @@ const toCanonicalLink = (href) => {
   }
 }
 
-const defaultFetchText = (url) =>
+const toAbsoluteUrl = (href, currentUrl = BASE_URL) => {
+  try {
+    const url = new URL(decodeHtmlEntities(href), currentUrl)
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : null
+  } catch {
+    return null
+  }
+}
+
+const fetchGoogleText = (url, label) =>
   fetchTextWithRetry(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
+    headers: GOOGLE_HEADERS,
     attempts: config.retryAttempts,
     baseDelayMs: config.retryBaseDelayMs,
     timeoutMs: Math.max(config.jobListingTimeoutMs || 0, 30000),
-    label: 'google',
+    label,
   })
+
+const defaultFetchText = (url) => fetchGoogleText(url, 'google-detail')
+
+const extractTagBlock = (html, openingTagPattern, tagName) => {
+  const source = String(html ?? '')
+  const match = openingTagPattern.exec(source)
+  if (!match) return null
+
+  const startIndex = match.index
+  const tagPattern = new RegExp(`<\\/?${tagName}\\b[^>]*>`, 'gi')
+  tagPattern.lastIndex = startIndex
+
+  let depth = 0
+  let currentMatch
+  while ((currentMatch = tagPattern.exec(source)) !== null) {
+    if (currentMatch[0][1] === '/') {
+      depth -= 1
+      if (depth === 0) {
+        return source.slice(startIndex, tagPattern.lastIndex)
+      }
+      continue
+    }
+
+    depth += 1
+  }
+
+  return null
+}
+
+const splitTopLevelListItems = (html) => {
+  const source = String(html ?? '')
+  const tags = /<\/?ul\b[^>]*>|<\/?li\b[^>]*>/gi
+  const items = []
+  let ulDepth = 0
+  let liDepth = 0
+  let itemStart = -1
+  let match
+
+  while ((match = tags.exec(source)) !== null) {
+    const tag = match[0]
+    const isClosing = tag[1] === '/'
+    const isUl = /^<\/?ul\b/i.test(tag)
+
+    if (isUl) {
+      ulDepth += isClosing ? -1 : 1
+      continue
+    }
+
+    if (!isClosing) {
+      if (ulDepth === 1 && liDepth === 0) {
+        itemStart = match.index
+      }
+      liDepth += 1
+      continue
+    }
+
+    if (liDepth === 0) continue
+
+    liDepth -= 1
+    if (ulDepth === 1 && liDepth === 0 && itemStart >= 0) {
+      items.push(source.slice(itemStart, tags.lastIndex))
+      itemStart = -1
+    }
+  }
+
+  return items
+}
+
+const extractTextByClass = (html, tagName, className) =>
+  normalizeWhitespace(
+    String(html ?? '').match(
+      new RegExp(`<${tagName}\\b[^>]*class=["'][^"']*\\b${className}\\b[^"']*["'][^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'i'),
+    )?.[1],
+  ) || null
+
+const pickFirstJobsResultsHref = (html) => {
+  const source = String(html ?? '')
+  const matches = source.matchAll(/<a\b[^>]*href=(['"])([^'"]*jobs\/results[^'"]*)\1[^>]*>/gi)
+  for (const match of matches) {
+    const href = decodeHtmlEntities(match[2]).trim()
+    if (href) return href
+  }
+
+  return null
+}
+
+export const extractGoogleListingCards = (html, currentUrl = BASE_URL) => {
+  const listBlock = extractTagBlock(
+    html,
+    /<ul\b[^>]*class=["'][^"']*\bspHGqe\b[^"']*["'][^>]*>/i,
+    'ul',
+  )
+  if (!listBlock) return []
+
+  return splitTopLevelListItems(listBlock)
+    .map((cardHtml) => {
+      const title = extractTextByClass(cardHtml, 'h3', 'QJPWVe')
+      const company = normalizeWhitespace(
+        cardHtml.match(/<span\b[^>]*class=["'][^"']*\bRP7SMd\b[^"']*["'][^>]*>[\s\S]*?<span\b[^>]*>([\s\S]*?)<\/span>/i)?.[1],
+      ) || 'Google'
+      const location = extractTextByClass(cardHtml, 'span', 'r0wTof')
+      const link = toCanonicalLink(pickFirstJobsResultsHref(cardHtml))
+
+      if (!title || !link) return null
+
+      return {
+        title,
+        company,
+        location: location || 'Unknown',
+        link,
+        cardHtml,
+      }
+    })
+    .filter(Boolean)
+}
+
+export const extractGoogleNextPageUrl = (html, currentUrl = BASE_URL) => {
+  const anchorTag = String(html ?? '').match(/<a\b[^>]*aria-label=["']Go to next page["'][^>]*>/i)?.[0]
+  const href = extractAttribute(anchorTag, 'href')
+  return href ? toAbsoluteUrl(href, currentUrl) : null
+}
+
+const mergeJobDetail = (primary = {}, fallback = {}) => ({
+  jobDescription: primary.jobDescription || fallback.jobDescription || null,
+  minimumQualification: primary.minimumQualification || fallback.minimumQualification || null,
+  preferredQualification: primary.preferredQualification || fallback.preferredQualification || null,
+  requiredSkills: Array.isArray(primary.requiredSkills) && primary.requiredSkills.length > 0
+    ? primary.requiredSkills
+    : Array.isArray(fallback.requiredSkills)
+      ? fallback.requiredSkills
+      : [],
+  experienceRequired: primary.experienceRequired || fallback.experienceRequired || null,
+  publicExperienceChecked: Boolean(primary.publicExperienceChecked || fallback.publicExperienceChecked),
+  postingDate: primary.postingDate || fallback.postingDate || null,
+  department: primary.department || fallback.department || null,
+  requisitionId: primary.requisitionId || fallback.requisitionId || null,
+})
 
 export const createGoogleScraper = ({
   detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 } = {}) => ({
   async run({
-    launchBrowserImpl = launchBrowser,
-    createOptimizedPageImpl = createOptimizedPage,
+    fetchListingsText = (url) => fetchGoogleText(url, 'google-listings'),
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
   } = {}) {
-    let browser
     let currentUrl = BASE_URL
 
     try {
-      browser = await launchBrowserImpl()
-      const page = await createOptimizedPageImpl(browser)
       const allJobs = []
       const seenLinks = new Set()
       let pageNum = 1
 
       while (currentUrl && pageNum <= config.maxPages) {
-        await page.goto(currentUrl, { waitUntil: 'domcontentloaded' })
-        await sleep(config.pageLoadDelayMs)
+        const html = await fetchListingsText(currentUrl)
         console.log(`  [google] Scraping page ${pageNum} - ${currentUrl}`)
 
-        try {
-          await page.waitForSelector(SELECTORS.jobList, { timeout: config.jobListingTimeoutMs })
-        } catch {
-          throw new Error(`Job list selector not found at: ${currentUrl}`)
+        const jobs = extractGoogleListingCards(html, currentUrl)
+        if (jobs.length === 0) {
+          throw new Error(`Google job list not found at: ${currentUrl}`)
         }
-
-        const jobs = await page
-          .$$eval(
-            SELECTORS.jobItem,
-            (items, selectors) =>
-              items
-                .map((item) => {
-                  const titleEl = item.querySelector(selectors.jobTitle)
-                  const companyEl = item.querySelector(selectors.jobCompany)
-                  const locationEl = item.querySelector(selectors.jobLocation)
-                  const linkEl = item.querySelector(selectors.jobLink)
-                  if (!titleEl || !linkEl) return null
-                  return {
-                    title: titleEl.innerText.trim(),
-                    company: companyEl?.innerText.trim() || 'Google',
-                    location: locationEl?.innerText.trim() || 'Unknown',
-                    link: linkEl.href,
-                  }
-                })
-                .filter((job) => job !== null),
-            SELECTORS,
-          )
-          .catch(() => [])
 
         console.log(`  [google] Found ${jobs.length} jobs on page ${pageNum}`)
 
         const freshJobs = []
         for (const job of jobs) {
-          const cleanLink = toCanonicalLink(job.link)
-          if (!cleanLink || seenLinks.has(cleanLink)) continue
-          seenLinks.add(cleanLink)
-          freshJobs.push({
-            ...job,
-            link: cleanLink,
-          })
+          if (seenLinks.has(job.link)) continue
+          seenLinks.add(job.link)
+          freshJobs.push(job)
         }
 
         const pageJobs = await mapWithConcurrency(
           freshJobs,
           detailConcurrency,
           async (job) => {
-            const detail = await (async () => {
+            const fallbackDetail = await extractJobDetail({
+              provider: 'google',
+              html: job.cardHtml,
+            })
+
+            const fetchedDetail = await (async () => {
               const detailHtml = await fetchText(job.link)
               return extractJobDetail({
                 provider: 'google',
                 html: detailHtml,
               })
-            })().catch(() => ({
-              jobDescription: null,
-              minimumQualification: null,
-              preferredQualification: null,
-              requiredSkills: [],
-              experienceRequired: null,
-              department: null,
-            }))
+            })().catch(() => null)
+
+            const detail = mergeJobDetail(fetchedDetail || {}, fallbackDetail)
 
             return {
               jobId: extractJobId(job.link),
@@ -170,10 +299,7 @@ export const createGoogleScraper = ({
 
         allJobs.push(...pageJobs)
 
-        const nextUrl = await page.evaluate(
-          (selector) => document.querySelector(selector)?.href || null,
-          SELECTORS.paginationNext,
-        )
+        const nextUrl = extractGoogleNextPageUrl(html, currentUrl)
         if (!nextUrl || nextUrl === currentUrl) break
 
         currentUrl = nextUrl
@@ -183,8 +309,6 @@ export const createGoogleScraper = ({
       return allJobs
     } catch (err) {
       throw new Error(`[google] Scraping failed at ${currentUrl} - ${err.message}`)
-    } finally {
-      if (browser) await browser.close()
     }
   },
 })

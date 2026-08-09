@@ -99,7 +99,7 @@ test('extractJobDetail reads Allianz job detail metadata and the SuccessFactors 
   assert.equal(detail.requisitionId, '90730')
   assert.equal(detail.department, 'IT & Tech Engineering')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.experienceRequired, '13 - 15+ years')
   assert.equal(detail.preferredQualification, null)
   assert.equal(detail.postingDate, '2026-05-26')
   assert.equal(

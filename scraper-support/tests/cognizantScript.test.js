@@ -162,16 +162,12 @@ test('run paginates Cognizant listing pages, fetches details, and decorates shar
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
 })
 
-test('createDefaultFetchText falls back to curl when Cloudflare blocks the default fetch path', async () => {
+test('createDefaultFetchText falls back to curl when the default fetch path has a transport failure', async () => {
   const { createDefaultFetchText } = await loadCognizantModule()
   const calls = []
   const fetchText = createDefaultFetchText({
-    fetchImpl: async (url, options) => {
-      calls.push({ type: 'fetch', url, options })
-      return {
-        ok: false,
-        status: 403,
-      }
+    fetchImpl: async () => {
+      throw new Error('fetch failed')
     },
     execFileImpl: (command, args, callback) => {
       calls.push({ type: 'execFile', command, args })
@@ -182,8 +178,49 @@ test('createDefaultFetchText falls back to curl when Cloudflare blocks the defau
   const html = await fetchText('https://careers.cognizant.com/india-en/jobs/')
 
   assert.equal(html, '<html>ok</html>')
+  assert.equal(calls[0].type, 'execFile')
+  assert.match(calls[0].command, /curl(\.exe)?$/i)
+  assert.ok(calls[0].args.includes('https://careers.cognizant.com/india-en/jobs/'))
+})
+
+test('createDefaultFetchText treats Cognizant Cloudflare challenge pages as upstream blocks', async () => {
+  const { createDefaultFetchText } = await loadCognizantModule()
+  const calls = []
+  const fetchText = createDefaultFetchText({
+    fetchImpl: async (url, options) => {
+      calls.push({ type: 'fetch', url, options })
+      return {
+        status: 403,
+        ok: false,
+        headers: {
+          get(name) {
+            const normalized = String(name).toLowerCase()
+            if (normalized === 'server') return 'cloudflare'
+            if (normalized === 'cf-ray') return 'abc123'
+            return null
+          },
+        },
+        text: async () => '<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>Please enable JavaScript and cookies to continue <script src="https://challenges.cloudflare.com/turnstile.js"></script></body></html>',
+      }
+    },
+    execFileImpl: (command, args, callback) => {
+      calls.push({ type: 'execFile', command, args })
+      callback(null, '<html>ok</html>', '')
+    },
+  })
+
+  await assert.rejects(
+    fetchText('https://careers.cognizant.com/india-en/jobs/'),
+    (error) => {
+      assert.match(error.message, /HTTP 403 Cloudflare challenge/i)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.failureKind, 'blocked_or_access_denied')
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(calls.length, 1)
   assert.equal(calls[0].type, 'fetch')
-  assert.equal(calls[1].type, 'execFile')
-  assert.match(calls[1].command, /curl(\.exe)?$/i)
-  assert.ok(calls[1].args.includes('https://careers.cognizant.com/india-en/jobs/'))
 })

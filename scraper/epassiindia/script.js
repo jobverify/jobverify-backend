@@ -18,7 +18,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://www.epassi.com/careers was the live first-party Epassi careers page for this workbook source, that its Our vacancies section was backed by the public Jobylon embed shell configured with company id 2253 at https://cdn.jobylon.com/jobs/companies/2253/embed/v1/?target=jobylon-jobs-widget&page_size=10, and that the linked public Jobylon detail pages on https://emp.jobylon.com/jobs/ exposed the location metadata needed to filter by country. On the verified Saturday, July 25, 2026 inventory, no public roles exposed India as a location, so this scraper validates the verified first-party and public Jobylon contract and returns India jobs only when the public Jobylon detail pages explicitly include India.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const EXTERNAL_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,

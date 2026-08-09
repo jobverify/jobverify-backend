@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -18,7 +18,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'crompton.co.in',
   adapter: 'script',
   atsPlatform: 'shopify-careers-page',
-  modulePath: '../cromptongreaves/script.js',
+  modulePath: '../../scraper/cromptongreaves/script.js',
   dryRunFile: 'cromptongreaves/jobs.json',
   countryFilter: 'India',
   paginationStrategy: 'single-public-page',
@@ -197,3 +197,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

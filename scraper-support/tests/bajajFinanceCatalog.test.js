@@ -46,6 +46,7 @@ test('Bajaj Finance local catalog captures the verified first-party PeopleStrong
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.aboutbajajfinserv.com/finance-about-us')
   assert.equal(provider.homepageUrl, 'https://www.bajajfinance.com/')
+  assert.equal(provider.dryRunEnrichPublicExperience, false)
   assert.equal(provider.portalOrigin, 'https://bflcareers.peoplestrong.com')
   assert.equal(provider.jobListingsUrl, 'https://bflcareers.peoplestrong.com/')
   assert.equal(
@@ -107,6 +108,7 @@ test('buildScrapers and company coverage resolve Bajaj Finance from the shared c
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Bajaj Finance')
   assert.equal(provider.companyCareerPage, 'https://www.aboutbajajfinserv.com/finance-about-us')
+  assert.equal(provider.dryRunEnrichPublicExperience, false)
   assert.match(scraper.dryRunFile, /bajajfinance[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

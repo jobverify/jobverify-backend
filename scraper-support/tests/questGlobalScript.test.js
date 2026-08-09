@@ -112,7 +112,7 @@ test('extractJobDetail reads Quest Global job detail metadata, skills, and exper
   assert.equal(detail.requisitionId, 'P-118996')
   assert.equal(detail.department, 'Semiconductors')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.equal(detail.experienceRequired, '8+ years in semiconductor equipment / ATE lab environment.')
+  assert.equal(detail.experienceRequired, '8+ years')
   assert.equal(
     detail.minimumQualification,
     'Bachelor’s degree in Electronics / Electrical / Instrumentation Engineering.',

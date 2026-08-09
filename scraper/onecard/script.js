@@ -20,7 +20,7 @@ export const OFFICIAL_APPLY_URL = ONECARD_CATALOG.officialApplyUrl
 export const VERIFIED_AT = ONECARD_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = ONECARD_CATALOG.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

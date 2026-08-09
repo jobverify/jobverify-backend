@@ -87,30 +87,15 @@ test('Ampere Computing parses India search results and detail JSON-LD', async ()
   assert.equal(jobs[0].jobId, '12345')
 })
 
-test('Ampere Computing can recover with browser-backed pages when direct requests are blocked', async () => {
+test('Ampere Computing stays API-only and surfaces direct-request failures without a browser fallback', async () => {
   const ampere = await loadModule()
-  const browserUrls = []
 
-  const jobs = await ampere.createAmpereComputingScraper().run({
-    fetchText: async () => {
-      throw new Error(`HTTP 403 for ${ampere.SEARCH_URL}`)
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-
-      if (url === ampere.SEARCH_URL) return searchHtml
-      if (url === 'https://careers.amperecomputing.com/jobs/12345-senior-software-engineer') {
-        return detailHtml
-      }
-
-      throw new Error(`Unexpected Ampere Computing browser URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(browserUrls, [
-    ampere.SEARCH_URL,
-    'https://careers.amperecomputing.com/jobs/12345-senior-software-engineer',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Senior Software Engineer')
+  await assert.rejects(
+    ampere.createAmpereComputingScraper().run({
+      fetchText: async () => {
+        throw new Error(`HTTP 403 for ${ampere.SEARCH_URL}`)
+      },
+    }),
+    /HTTP 403 for https:\/\/careers\.amperecomputing\.com\/search\/jobs/,
+  )
 })

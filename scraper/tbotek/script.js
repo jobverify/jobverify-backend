@@ -9,7 +9,7 @@ import { TBOTEK_CATALOG as PROVIDER_METADATA } from './catalog.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source

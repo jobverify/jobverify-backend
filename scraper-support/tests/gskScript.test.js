@@ -78,7 +78,7 @@ test('run keeps India jobs from GSK search results and enriches them from detail
     'https://jobs.gsk.com/in/en/job/443558/Associate-Director-Technology-Manager',
   )
   assert.match(jobs[0].jobDescription, /Lead cross-functional technology programs for GSK/i)
-  assert.match(jobs[0].experienceRequired, /10\+ years experience/i)
+  assert.match(jobs[0].experienceRequired, /10\+ years/i)
   assert.match(jobs[0].minimumQualification, /Bachelor's degree/i)
   assert.deepEqual(jobs[0].requiredSkills, ['Technology strategy', 'Stakeholder management'])
 })

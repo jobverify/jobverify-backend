@@ -8,7 +8,7 @@ import { generateCompanyCoverageReport, getCompanyAliasMap } from '../scraper-su
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 test('getCompanyAliasMap merges base aliases with sorted extension files', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-company-aliases-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-company-aliases-'))
 
   try {
     writeFileSync(

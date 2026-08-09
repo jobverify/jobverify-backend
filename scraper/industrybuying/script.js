@@ -22,7 +22,7 @@ export const EXPECTED_ORG_ID = PROVIDER_METADATA.expectedOrgId
 export const EXPECTED_ORG_SLUG = PROVIDER_METADATA.expectedOrgSlug
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

@@ -119,7 +119,7 @@ test('Axio scraper keeps the verified first-party Darwinbox handoff explicit and
   )
 })
 
-test('run maps verified Axio Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Axio Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createAxioScraper } = await loadAxioModule()
   const scraper = createAxioScraper({
     now: () => FIXED_SCRAPED_AT,

@@ -15,7 +15,7 @@ test('getScraperCatalog includes Genpact as a Workday-backed script provider', (
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.companyCareerPage, 'https://www.genpact.com/careers')
   assert.equal(provider.companyDomain, 'genpact.com')
-  assert.match(provider.modulePath, /genpact[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /genpact\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Genpact scraper without changing the runner contract', () => {

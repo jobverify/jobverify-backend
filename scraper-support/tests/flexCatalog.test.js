@@ -15,7 +15,7 @@ test('getScraperCatalog includes Flex as a Workday-backed script provider', () =
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.companyCareerPage, 'https://flex.com/careers')
   assert.equal(provider.companyDomain, 'flex.com')
-  assert.match(provider.modulePath, /flex[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /flex\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Flex scraper without changing the runner contract', () => {

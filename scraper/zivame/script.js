@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'zivame'
@@ -12,9 +10,7 @@ export const HOMEPAGE_URL = 'https://www.zivame.com/'
 export const CAREERS_URL = 'https://www.zivame.com/careers'
 export const LEGACY_CAREERS_URL = 'https://careers.zivame.com/'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
-const BROWSER_TIMEOUT_MS = 60000
-const BROWSER_SETTLE_DELAY_MS = 8000
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bcurrent openings\b/i,
@@ -115,45 +111,6 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const createRenderedPageFetcher = () => {
-  let browser = null
-  let page = null
-
-  const getPage = async () => {
-    if (!browser) {
-      browser = await launchBrowser({ headless: true })
-      page = await createOptimizedPage(browser)
-      await page.setUserAgent(USER_AGENT)
-    }
-
-    return page
-  }
-
-  return {
-    close: async () => {
-      if (browser) {
-        await browser.close()
-      }
-    },
-    fetchPage: async (url) => {
-      const browserPage = await getPage()
-      const response = await browserPage.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      await new Promise((resolve) => setTimeout(resolve, BROWSER_SETTLE_DELAY_MS))
-
-      return {
-        status: response?.status?.() ?? 0,
-        url: browserPage.url(),
-        html: await browserPage.content(),
-        errorMessage: '',
-      }
-    },
-  }
-}
-
 export const hasPublicJobsSignal = (html = '') =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
@@ -194,59 +151,35 @@ export const isUnavailableLegacyCareersHost = (page = {}) =>
   && hasDnsResolutionFailure(page.errorMessage)
 
 export const createZivameScraper = () => ({
-  async run({
-    fetchPage = defaultFetchPage,
-    fetchBrowserPage,
-  } = {}) {
-    let renderedPageFetcher = null
-
-    const getBrowserPage = async () => {
-      if (typeof fetchBrowserPage === 'function') {
-        return fetchBrowserPage
-      }
-
-      if (!renderedPageFetcher) {
-        renderedPageFetcher = createRenderedPageFetcher()
-      }
-
-      return renderedPageFetcher.fetchPage
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (!hasOfficialHomepageSignal(homepage.html)) {
+      throw new Error('Zivame official homepage no longer matches the verified public surface')
     }
 
-    try {
-      const browserPageFetcher = await getBrowserPage()
-      const homepage = await browserPageFetcher(HOMEPAGE_URL)
-      if (!hasOfficialHomepageSignal(homepage.html)) {
-        throw new Error('Zivame official homepage no longer matches the verified public surface')
-      }
-
-      if (hasPublicJobsSignal(homepage.html)) {
-        throw new Error('Zivame homepage now appears to expose public jobs')
-      }
-
-      const careersPage = await fetchPage(CAREERS_URL)
-      if (!isBlockedCareersRoute(careersPage)) {
-        if (Number(careersPage.status) === 200 && hasPublicJobsSignal(careersPage.html)) {
-          throw new Error('Zivame official careers route now appears to expose public jobs')
-        }
-
-        throw new Error('Zivame official careers route no longer matches the verified blocked first-party state')
-      }
-
-      const legacyCareersPage = await fetchPage(LEGACY_CAREERS_URL)
-      if (!isUnavailableLegacyCareersHost(legacyCareersPage)) {
-        if (Number(legacyCareersPage.status) === 200 && hasPublicJobsSignal(legacyCareersPage.html)) {
-          throw new Error('Zivame legacy careers host now appears to expose public jobs')
-        }
-
-        throw new Error('Zivame legacy careers host no longer matches the verified unavailable state')
-      }
-
-      return []
-    } finally {
-      if (renderedPageFetcher) {
-        await renderedPageFetcher.close()
-      }
+    if (hasPublicJobsSignal(homepage.html)) {
+      throw new Error('Zivame homepage now appears to expose public jobs')
     }
+
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (!isBlockedCareersRoute(careersPage)) {
+      if (Number(careersPage.status) === 200 && hasPublicJobsSignal(careersPage.html)) {
+        throw new Error('Zivame official careers route now appears to expose public jobs')
+      }
+
+      throw new Error('Zivame official careers route no longer matches the verified blocked first-party state')
+    }
+
+    const legacyCareersPage = await fetchPage(LEGACY_CAREERS_URL)
+    if (!isUnavailableLegacyCareersHost(legacyCareersPage)) {
+      if (Number(legacyCareersPage.status) === 200 && hasPublicJobsSignal(legacyCareersPage.html)) {
+        throw new Error('Zivame legacy careers host now appears to expose public jobs')
+      }
+
+      throw new Error('Zivame legacy careers host no longer matches the verified unavailable state')
+    }
+
+    return []
   },
 })
 

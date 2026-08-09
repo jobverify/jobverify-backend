@@ -1,9 +1,9 @@
-export const LATTICE_SEMICONDUCTOR_INDIA_CATALOG = {
+﻿export const LATTICE_SEMICONDUCTOR_INDIA_CATALOG = {
   source: 'latticesemiconductorindia',
   companyName: 'Lattice Semiconductor India',
   officialBrandName: 'Lattice Semiconductor',
   adapter: 'script',
-  modulePath: '../latticesemiconductorindia/script.js',
+  modulePath: '../../scraper/latticesemiconductorindia/script.js',
   dryRunFile: 'latticesemiconductorindia/jobs.json',
   homepageUrl: 'https://www.latticesemi.com/en',
   companyCareerPage: 'https://www.latticesemi.com/About/Jobs',
@@ -26,3 +26,4 @@ export const LATTICE_SEMICONDUCTOR_INDIA_CATALOG = {
 }
 
 export default LATTICE_SEMICONDUCTOR_INDIA_CATALOG
+

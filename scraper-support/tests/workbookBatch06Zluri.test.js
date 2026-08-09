@@ -66,7 +66,7 @@ test('Zluri validates the verified first-party careers page, embedded Keka confi
   assert.equal(zluri.SOURCE, 'zluri')
   assert.equal(zluri.COMPANY, 'Zluri')
   assert.equal(zluri.OFFICIAL_BRAND, 'Zluri')
-  assert.equal(zluri.VERIFIED_ON, '2026-07-25')
+  assert.equal(zluri.VERIFIED_ON, '2026-08-02')
   assert.equal(zluri.CAREERS_URL, 'https://www.zluri.com/careers')
   assert.equal(zluri.KEKA_BOARD_URL, 'https://zluri.keka.com/careers/')
   assert.equal(zluri.EXPECTED_KEKA_IDENTIFIER, 'ed2b6b25-be74-43f1-9a38-c3bf27b9146c')
@@ -79,7 +79,7 @@ test('Zluri validates the verified first-party careers page, embedded Keka confi
     zluri.ACTIVE_JOBS_URL,
     'https://zluri.keka.com/careers/api/embedjobs/default/active/ed2b6b25-be74-43f1-9a38-c3bf27b9146c',
   )
-  assert.match(zluri.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(zluri.VERIFIED_SURFACE_SUMMARY, /Sunday, August 2, 2026/)
   assert.equal(zluri.hasOfficialCareersPageSignal(careersHtml), true)
   assert.deepEqual(zluri.extractEmbeddedKekaConfig(careersHtml), {
     identifier: 'ed2b6b25-be74-43f1-9a38-c3bf27b9146c',

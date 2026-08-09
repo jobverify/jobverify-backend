@@ -14,7 +14,7 @@ export const DARWINBOX_COMPANY_ID = '606876f7e2c79'
 export const DARWINBOX_CAREERS_URL =
   'https://cardekho.darwinbox.in/ms/candidate/606876f7e2c79/careers'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const PAGE_SIZE = 10
 
 const darwinboxScraper = createDarwinboxScraper({

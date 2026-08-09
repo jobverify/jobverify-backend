@@ -11,6 +11,11 @@ const jobSearchHtml = `
   </head>
   <body>
     <h1>Search Open Jobs Worldwide</h1>
+    <p>Work at SitusAMC and build a career with us.</p>
+    <p>How you'll work with our teams across global markets.</p>
+    <p>Career Areas</p>
+    <p>Locations</p>
+    <p>Search Jobs</p>
     <p>Remote Location IN - Bengaluru IN - Chennai IN - Gurgaon IN - Hyderabad IN - Navi Mumbai IN - Pune</p>
     <a href="https://careers.situsamc.com/work-at-situsamc/corporate-careers/job-opportunities">Corporate</a>
     <a href="https://careers.situsamc.com/work-at-situsamc/residential-real-estate-careers/job-opportunities">Residential</a>

@@ -1,8 +1,8 @@
-export const provider = {
+﻿export const provider = {
   source: 'azugatelematics',
   companyName: 'Azuga Telematics',
   adapter: 'script',
-  modulePath: '../azugatelematics/script.js',
+  modulePath: '../../scraper/azugatelematics/script.js',
   companyCareerPage: 'https://www.azuga.com/careers',
   atsPlatform: 'official-company-site-no-open-roles',
   countryFilter: 'India',
@@ -18,3 +18,4 @@ export const provider = {
 }
 
 export default provider
+

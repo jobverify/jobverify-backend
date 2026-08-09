@@ -21,7 +21,7 @@ export const VERIFIED_INDIA_JOB_URL = PROVIDER_METADATA.verifiedIndiaJobUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const JOBS_PAYLOAD_PATTERN = /window\['atosjobs_[^']+'\]\s*=\s*(\{[\s\S]*?\});<\/script>/i
 
 const normalizeWhitespace = (value) => {

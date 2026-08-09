@@ -255,7 +255,7 @@ test('Housr catalog entry points to the verified first-party careers scraper', a
     housr.DISPOSITION,
     'verified-first-party-careers-page-plus-same-origin-detail-pages',
   )
-  assert.equal(provider?.modulePath, '../../scraper/housr/script.js')
+  assert.match(provider?.modulePath || '', /[\\/]housr[\\/]script\.js$/i)
   assert.equal(provider?.companyCareerPage, housr.CAREERS_URL)
   assert.equal(provider?.companyDomain, 'housr.in')
   assert.equal(

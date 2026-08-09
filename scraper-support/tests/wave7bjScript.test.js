@@ -20,6 +20,8 @@ const avizvaCareersHtml = `
   <body>
     <main>
       <h1>We Aim, Learn, and Grow Each Day with Passion and Purpose</h1>
+      <label>Select Role</label>
+      <label>Select Location</label>
       <div class="job-box">
         <div class="job-info">
           <ul>

@@ -38,7 +38,7 @@ test('buildScraperOptions keeps Revature on the verified official homepage hando
   assert.equal(options.baseUrl, 'https://revature.wd1.myworkdayjobs.com/revaturecareers')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'revature')
-  assert.match(options.scraperDir, /revature$/)
+  assert.match(options.scraperDir, /revature\.workday$/)
 })
 
 test('Revature verifies the official homepage handoff before delegating to the shared Workday runner', async () => {
@@ -65,7 +65,7 @@ test('Revature verifies the official homepage handoff before delegating to the s
   assert.equal(receivedOptions.baseUrl, 'https://revature.wd1.myworkdayjobs.com/revaturecareers')
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'revature')
-  assert.match(receivedOptions.scraperDir, /revature$/)
+  assert.match(receivedOptions.scraperDir, /revature\.workday$/)
 })
 
 test('run fails closed when the official Revature homepage handoff changes', async () => {

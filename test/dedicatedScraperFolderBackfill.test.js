@@ -16,7 +16,8 @@ const repoDir = path.resolve(backendDir, '..')
 const scraperDir = path.join(backendDir, 'scraper')
 const COVERAGE_ARTIFACT_BASENAME = 'company-scraper-check-india-hiring-400.csv'
 const manifestPath = path.join(
-  scraperDir,
+  backendDir,
+  'scraper-support',
   'providers',
   'providerExtensions',
   'zz-dedicated-scraper-folder-backfill.json',

@@ -260,27 +260,17 @@ test('Coupa Software Inc run paginates the verified first-party jobs pages and r
   assert.equal(jobs[2].employmentType, 'Remote')
 })
 
-test('Coupa Software Inc falls back to browser-backed jobs pages when direct requests return 403', async () => {
+test('Coupa Software Inc stays HTTP-only when direct requests fail', async () => {
   const coupa = await loadScriptModule()
-  const browserUrls = []
 
-  const jobs = await coupa.createCoupaSoftwareIncScraper().run({
-    fetchText: async (url) => {
-      throw new Error(`HTTP 403 for ${url}`)
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-      if (url === coupa.JOBS_PAGE_URL) return jobsPageOneHtml
-      if (url === 'https://careers.coupa.com/en/jobs/?page=2') return jobsPageTwoHtml
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-  })
-
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(browserUrls, [
-    coupa.JOBS_PAGE_URL,
-    'https://careers.coupa.com/en/jobs/?page=2',
-  ])
+  await assert.rejects(
+    coupa.createCoupaSoftwareIncScraper().run({
+      fetchText: async (url) => {
+        throw new Error(`HTTP 403 for ${url}`)
+      },
+    }),
+    /HTTP 403 for https:\/\/careers\.coupa\.com\/en\/jobs\//i,
+  )
 })
 
 test('Coupa Software Inc fails closed when the verified jobs shell changes materially', async () => {

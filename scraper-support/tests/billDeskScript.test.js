@@ -116,27 +116,15 @@ test('BillDesk fails closed when the careers shell or embedded openings bundle c
   )
 })
 
-test('BillDesk can recover with browser-backed careers shell and bundle fetches when direct requests time out', async () => {
+test('BillDesk stays API-only and surfaces direct timeout failures without a browser fallback', async () => {
   const billDesk = await loadBillDeskModule()
-  const browserUrls = []
 
-  const jobs = await billDesk.createBillDeskScraper({ now: () => FIXED_SCRAPED_AT }).run({
-    fetchText: async () => {
-      throw new Error('The operation was aborted due to timeout')
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-      if (url === billDesk.CAREERS_URL) return careersShellHtml
-      if (url === 'https://www.billdesk.com/web/assets/index-CoF-wxI2.js') return careersBundle
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(browserUrls, [
-    billDesk.CAREERS_URL,
-    'https://www.billdesk.com/web/assets/index-CoF-wxI2.js',
-  ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'billdesk')
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  await assert.rejects(
+    billDesk.createBillDeskScraper({ now: () => FIXED_SCRAPED_AT }).run({
+      fetchText: async () => {
+        throw new Error('The operation was aborted due to timeout')
+      },
+    }),
+    /The operation was aborted due to timeout/,
+  )
 })

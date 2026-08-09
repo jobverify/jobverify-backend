@@ -16,7 +16,7 @@ export const APPLICATION_EMAIL = 'ts_tag_offshore@tetrasoft.us'
 export const ATS_PLATFORM = 'official-company-careers-html'
 export const VERIFIED_ON = '2026-07-18'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const HTML_ENTITY_MAP = {
   '&amp;': '&',

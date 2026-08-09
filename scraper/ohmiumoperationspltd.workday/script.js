@@ -67,7 +67,7 @@ export const hasVerifiedWorkdayBoardSignal = (html) => {
     && WORKDAY_EMAIL_PATTERN.test(page)
 }
 
-const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
 
 export const backfillMissingJobIds = (jobs = []) => {
   const normalizedJobs = jobs.map((job) => {

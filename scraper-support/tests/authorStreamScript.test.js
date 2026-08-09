@@ -58,7 +58,7 @@ test('AuthorStream scraper constants stay pinned to the verified parked redirect
   assert.equal(authorStream.SOURCE, 'authorstream')
   assert.equal(authorStream.COMPANY, 'AuthorStream')
   assert.equal(authorStream.OFFICIAL_BRAND_NAME, 'AuthorStream')
-  assert.equal(authorStream.VERIFIED_AT, '2026-07-28')
+  assert.equal(authorStream.VERIFIED_AT, '2026-08-07')
   assert.equal(authorStream.HOMEPAGE_URL, 'https://authorstream.com/')
   assert.equal(authorStream.LANDER_URL, 'https://authorstream.com/lander')
   assert.equal(authorStream.ROBOTS_TXT_URL, 'https://authorstream.com/robots.txt')

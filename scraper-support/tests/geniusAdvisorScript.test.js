@@ -26,6 +26,8 @@ const HOMEPAGE_HTML = `
       <main>
         <h1>Building Brands. Creating Value.</h1>
         <p>We help retail and consumer businesses build clarity, strong systems, and sustainable growth — from strategy to execution.</p>
+        <p>Mumbai, India</p>
+        <p>+91 96862 04879</p>
       </main>
     </body>
   </html>
@@ -41,6 +43,8 @@ const ABOUT_HTML = `
       <p>Experience That Guides Real Growth.</p>
       <p>The Genius Advisors is a founder-led advisory firm helping retail and consumer businesses build, transform, and grow.</p>
       <p>Jai M Bihani Founder &amp; Principal Advisor</p>
+      <p>Mumbai, India</p>
+      <p>+91 96862 04879</p>
     </body>
   </html>
 `
@@ -68,7 +72,7 @@ test('Genius Advisor sentinel accepts the current brochure-site drift from Satur
 
 test('Genius Advisor returns no jobs when adjacent careers routes only fall back to the brochure homepage', async () => {
   const jobs = await createGeniusAdvisorScraper().run({
-    fetchBrowserText: async (url) => {
+    fetchText: async (url) => {
       if (url === FIRST_PARTY_PAGE_URLS[0]) return HOMEPAGE_HTML
       if (url === FIRST_PARTY_PAGE_URLS[1]) return ABOUT_HTML
       if (url === FIRST_PARTY_PAGE_URLS[2]) return CONTACT_HTML
@@ -92,7 +96,7 @@ test('Genius Advisor returns no jobs when adjacent careers routes only fall back
 test('Genius Advisor still fails closed if a first-party jobs listing becomes reachable', async () => {
   await assert.rejects(
     createGeniusAdvisorScraper().run({
-      fetchBrowserText: async (url) => {
+      fetchText: async (url) => {
         if (url === FIRST_PARTY_PAGE_URLS[0]) return HOMEPAGE_HTML
         if (url === FIRST_PARTY_PAGE_URLS[1]) return ABOUT_HTML
         if (url === FIRST_PARTY_PAGE_URLS[2]) return CONTACT_HTML

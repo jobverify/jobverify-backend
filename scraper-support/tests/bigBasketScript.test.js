@@ -101,7 +101,7 @@ test('BigBasket scraper keeps the verified official careers handoff explicit and
   )
 })
 
-test('run maps verified BigBasket Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified BigBasket Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createBigBasketScraper } = await loadBigBasketModule()
   const scraper = createBigBasketScraper({
     now: () => FIXED_SCRAPED_AT,

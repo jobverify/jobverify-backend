@@ -14,7 +14,7 @@ export const COMPANY_DOMAIN = NETFLIX_CATALOG.companyDomain
 export const VERIFIED_ON = NETFLIX_CATALOG.verifiedOn
 export const PROVIDER_METADATA = NETFLIX_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const POSITIONS_MARKER = '&#34;positions&#34;:'
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {

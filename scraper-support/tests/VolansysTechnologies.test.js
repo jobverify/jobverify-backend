@@ -54,10 +54,12 @@ test('Volansys Technologies validates the generic parent board and blocked offic
 
   const parentCareersHtml = `
     <html>
-      <head><title>Careers | ACL Digital</title></head>
+      <head><title>ACL Digital</title></head>
       <body>
-        <h1>ACL Digital Careers</h1>
-        <p>Search for jobs across ACL Digital.</p>
+        <h1>ACL Digital Job Portal</h1>
+        <p>Search Jobs</p>
+        <p>Job Seekers/ New Hire</p>
+        <p>Looking for a job?</p>
       </body>
     </html>
   `

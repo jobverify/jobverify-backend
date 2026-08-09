@@ -15,7 +15,7 @@ export const SMARTRECRUITERS_LISTING_API_URL =
 export const SMARTRECRUITERS_DETAIL_API_URL_TEMPLATE =
   'https://api.smartrecruiters.com/v1/companies/amberstudent/postings/{{jobId}}'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const PAGE_SIZE = 100
 
 const decodeHtml = (value = '') =>

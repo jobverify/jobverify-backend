@@ -229,7 +229,7 @@ test('Havas India pins the verified first-party careers page, public Workday boa
   )
 })
 
-test('Havas India run validates the verified first-party handoff and extracts India Workday jobs through an injected browser-session fetcher', async () => {
+test('Havas India run validates the verified first-party handoff and extracts India Workday jobs through an injected jobs API fetcher', async () => {
   const havasIndia = await loadModule()
   const requestedPages = []
   const requestedJobsCalls = []

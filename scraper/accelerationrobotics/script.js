@@ -108,7 +108,7 @@ export const extractJobDetail = (html) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

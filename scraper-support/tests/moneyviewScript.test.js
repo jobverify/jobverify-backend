@@ -116,7 +116,7 @@ test('Moneyview scraper keeps the verified official Darwinbox handoff explicit a
   )
 })
 
-test('run maps verified Moneyview Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Moneyview Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createMoneyviewScraper } = await loadMoneyviewModule()
   const scraper = createMoneyviewScraper({
     now: () => FIXED_SCRAPED_AT,

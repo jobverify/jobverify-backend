@@ -47,16 +47,18 @@ test('DealShare local catalog captures the verified first-party homepage, SPA ca
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-spa-about-hub+verified-spa-careers-content-without-openings+verified-direct-careers-route-access-denied-return-empty',
+    'verified-homepage+verified-about-hub-spa-shell+verified-spa-bundle-about-and-careers-copy-without-openings+verified-direct-careers-route-access-denied-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-08')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /dealshare[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dealshare\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/about\.dealshare\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/about\.dealshare\.in\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /\bSPA shell\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /\bJS bundle\b/i)
   assert.match(provider.verifiedSurfaceSummary, /AccessDenied/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'DealShare'), false)

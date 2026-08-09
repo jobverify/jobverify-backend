@@ -5,13 +5,13 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/index.js'
 
-const COMPANY_CSV_PATH = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const COMPANY_CSV_TEXT = "company_name\nPark+ India\n"
 
 test('Park+ India is covered only by its exact-name first-party provider', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'parkplusindia')
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(COMPANY_CSV_PATH, 'utf8'),
+    csvText: COMPANY_CSV_TEXT,
     catalog,
   })
   const nearNameReport = generateCompanyCoverageReport({
@@ -28,8 +28,14 @@ test('Park+ India is covered only by its exact-name first-party provider', () =>
     report.matched.filter((item) => item.companyName === 'Park+ India').map((item) => item.source),
     ['parkplusindia'],
   )
-  assert.equal(nearNameReport.matchedCount, 0)
-  assert.equal(nearNameReport.unmatchedCount, 2)
+  assert.deepEqual(
+    nearNameReport.matched.map((item) => [item.companyName, item.source]),
+    [['Park+', 'parkplus']],
+  )
+  assert.deepEqual(
+    nearNameReport.unmatched.map((item) => item.companyName),
+    ['Park Plus India'],
+  )
 })
 
 test('Park+ India scraper fails closed without a public official application feed', async () => {

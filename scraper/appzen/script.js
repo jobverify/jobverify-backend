@@ -11,7 +11,7 @@ export const DISPOSITION = 'verified-first-party-careers-page-plus-public-lever-
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, August 1, 2026 that https://www.appzen.com/careers remained the live exact-name AppZen careers surface, that it still embedded the public Lever account appzen, and that the corresponding public Lever board at https://jobs.lever.co/appzen plus https://api.lever.co/v0/postings/appzen?mode=json exposed a trustworthy public jobs inventory including India roles. The public Lever board footer now renders Powered by Lever instead of the older Jobs powered by Lever copy, while preserving the same public jobs contract. This scraper validates the verified first-party careers embed and public Lever board, then returns India jobs only from the public Lever API.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeEntities = (value = '') =>
   String(value)

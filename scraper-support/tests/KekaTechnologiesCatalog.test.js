@@ -11,7 +11,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('KEKA TECHNOLOGIES catalog captures the verified first-party Keka role pages', async () => {
+test('KEKA TECHNOLOGIES catalog captures the verified Keka-hosted careers shell and active jobs contract', async () => {
   const {
     KEKA_TECHNOLOGIES_CATALOG,
     default: defaultCatalog,
@@ -22,29 +22,25 @@ test('KEKA TECHNOLOGIES catalog captures the verified first-party Keka role page
   assert.equal(KEKA_TECHNOLOGIES_CATALOG.companyName, 'KEKA TECHNOLOGIES')
   assert.equal(KEKA_TECHNOLOGIES_CATALOG.officialBrandName, 'Keka Technologies Private Limited')
   assert.equal(KEKA_TECHNOLOGIES_CATALOG.adapter, 'script')
-  assert.equal(KEKA_TECHNOLOGIES_CATALOG.companyCareerPage, 'https://www.keka.com/careers')
-  assert.equal(KEKA_TECHNOLOGIES_CATALOG.companyDomain, 'keka.com')
-  assert.equal(KEKA_TECHNOLOGIES_CATALOG.atsPlatform, 'first-party-role-pages-plus-keka-apply-links')
+  assert.equal(KEKA_TECHNOLOGIES_CATALOG.companyCareerPage, 'https://hr.keka.com/careers/')
+  assert.equal(KEKA_TECHNOLOGIES_CATALOG.companyDomain, 'hr.keka.com')
+  assert.equal(KEKA_TECHNOLOGIES_CATALOG.atsPlatform, 'keka-careers-embed-jobs-api')
+  assert.equal(KEKA_TECHNOLOGIES_CATALOG.jobsBoardUrl, 'https://hr.keka.com/careers/')
   assert.equal(KEKA_TECHNOLOGIES_CATALOG.countryFilter, 'India')
   assert.equal(
     KEKA_TECHNOLOGIES_CATALOG.paginationStrategy,
-    'verified-careers-landing-plus-curated-first-party-role-pages',
+    'verified-keka-careers-shell-plus-active-jobs-api',
   )
   assert.equal(
     KEKA_TECHNOLOGIES_CATALOG.extractionStrategy,
-    'verified-careers-landing+verified-first-party-role-pages+hr-keka-apply-links',
+    'verified-keka-careers-shell+embedded-career-config+active-jobs-api',
   )
   assert.equal(KEKA_TECHNOLOGIES_CATALOG.parser, 'custom-script')
   assert.equal(KEKA_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(KEKA_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-18')
-  assert.deepEqual(KEKA_TECHNOLOGIES_CATALOG.verifiedRolePageUrls, [
-    'https://www.keka.com/careers/product-manager',
-    'https://www.keka.com/careers/design-roles',
-    'https://www.keka.com/marketing-roles',
-  ])
-  assert.match(KEKA_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /Associate Product Manager/i)
-  assert.match(KEKA_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /Manager Product Designer/i)
-  assert.match(KEKA_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /Growth Marketer/i)
+  assert.equal(KEKA_TECHNOLOGIES_CATALOG.verifiedOn, '2026-08-07')
+  assert.match(KEKA_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /official Keka careers host/i)
+  assert.match(KEKA_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /24040a7e-a7c5-47a5-9cd5-019962c66385/i)
+  assert.match(KEKA_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /active jobs API/i)
   assert.match(KEKA_TECHNOLOGIES_CATALOG.modulePath, /kekatechnologies[\\/]script\.js$/i)
 })
 

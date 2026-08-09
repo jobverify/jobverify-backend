@@ -88,7 +88,7 @@ test('Cerence hydrated local catalog stays script-runner compatible for central 
   assert.equal(provider.companyCareerPage, 'https://www.cerence.com/about/careers')
   assert.equal(provider.companyDomain, 'cerence.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /cerence[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /cerence\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /cerence.workday[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
 })

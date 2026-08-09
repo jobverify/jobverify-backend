@@ -41,7 +41,7 @@ export const extractIndiaOpenings = (html = '') => Array.from(
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)', Accept: 'text/html' },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)', Accept: 'text/html' },
   })
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
   return response.text()

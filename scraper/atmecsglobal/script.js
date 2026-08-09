@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { ATMECS_GLOBAL_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -37,13 +36,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 20000,
 })
-
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
 
 export const isTrustedUnavailableFailure = (error) => {
   const message = String(error?.message ?? error ?? '').toLowerCase()
@@ -68,66 +64,30 @@ export const hasPublicJobsSignal = (html = '') =>
   /<article\b/i.test(String(html ?? ''))
   || /class=["'][^"']*job[-\s]?card/i.test(String(html ?? ''))
   || /Apply now/i.test(String(html ?? ''))
-  || /href=["'][^"']*(?:\/jobs?\/|\/careers?\/)[^"']*["']/i.test(String(html ?? ''))
+  || /href=["'][^"']*(?:\/jobs?\/[^"']+|\/careers?\/[^"']+)["']/i.test(String(html ?? ''))
 
 export const createAtmecsGlobalScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchBrowserText,
-  } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
+  async run({ fetchText = defaultFetchText } = {}) {
+    let jobsHtml
     try {
-      let jobsHtml
-      try {
-        jobsHtml = await fetchPageText(CAREERS_URL)
-      } catch (error) {
-        if (isTrustedUnavailableFailure(error)) {
-          return []
-        }
-
-        throw error
+      jobsHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (isTrustedUnavailableFailure(error)) {
+        return []
       }
 
-      if (hasPublicJobsSignal(jobsHtml)) {
-        throw new Error('ATMECS Global surface now appears to expose public jobs')
-      }
-
-      if (!hasOfficialJobsShellSignal(jobsHtml)) {
-        throw new Error('ATMECS Global verified first-party jobs page no longer matches the trusted surface')
-      }
-
-      return []
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+      throw error
     }
+
+    if (hasPublicJobsSignal(jobsHtml)) {
+      throw new Error('ATMECS Global surface now appears to expose public jobs')
+    }
+
+    if (!hasOfficialJobsShellSignal(jobsHtml)) {
+      throw new Error('ATMECS Global verified first-party jobs page no longer matches the trusted surface')
+    }
+
+    return []
   },
 })
 

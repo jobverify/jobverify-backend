@@ -161,7 +161,7 @@ test('OSI Digital scraper follows the verified job openings handoff and decorate
       options: {
         method: 'POST',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+          'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
           Accept: 'application/json',
           'X-Api-Key': 'osi-public-key',
         },

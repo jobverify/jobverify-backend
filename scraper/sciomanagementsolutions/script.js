@@ -2,10 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import SCIOMS_CATALOG from './catalog.js'
-import {
-  createBrowserTextFallback,
-  defaultShouldUseBrowserTextFallback,
-} from '../../scraper-support/shared/browserTextFallback.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -19,6 +15,8 @@ export const APPLY_URL = SCIOMS_CATALOG.applyUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PROTOCOL_PARSE_ERROR_PATTERN =
+  /response does not match the http\/1\.1 protocol|invalid header value char|hpe_invalid_header_token|http parser error/i
 
 const defaultFetchText = (url) =>
   fetchTextWithRetry(url, {
@@ -63,14 +61,23 @@ const ACTUAL_PUBLIC_JOB_PATTERNS = [
   /\/job(s)?\//i,
 ]
 
-export const shouldUseBrowserFallback = (error) => {
+const isProtocolParseError = (error) => {
   const message = String(error?.message ?? error ?? '')
   const causeMessage = String(error?.cause?.message ?? '')
   const causeCode = String(error?.cause?.code ?? '')
-  const combined = `${message} ${causeCode} ${causeMessage}`
+  return PROTOCOL_PARSE_ERROR_PATTERN.test(`${message} ${causeCode} ${causeMessage}`)
+}
 
-  return defaultShouldUseBrowserTextFallback(error)
-    || /response does not match the http\/1\.1 protocol|invalid header value char|hpe_invalid_header_token|http parser error/i.test(combined)
+const buildBrokenHttpSurfaceError = (surfaceLabel, error) => {
+  const upstreamError = new Error(
+    `SCIO Management Solutions verified ${surfaceLabel} currently returns a broken HTTP/1.1 response`,
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
 }
 
 export const extractPositionOptions = (html = '') =>
@@ -108,36 +115,40 @@ export const hasPublicJobListingsSignal = (html = '') =>
   || ACTUAL_PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const createScioManagementSolutionsScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchBrowserText = undefined,
-  } = {}) {
-    const browserFallback = createBrowserTextFallback({
-      fetchText,
-      fetchBrowserText,
-      userAgent: USER_AGENT,
-      shouldUseBrowserFallback,
-    })
-
+  async run({ fetchText = defaultFetchText } = {}) {
+    let careersHtml
     try {
-      const careersHtml = await browserFallback.fetchText(CAREERS_URL)
-      if (!hasVerifiedCareersSignal(careersHtml)) {
-        throw new Error('Response is not the verified SCIO Management Solutions careers shell')
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (isProtocolParseError(error)) {
+        throw buildBrokenHttpSurfaceError('careers shell', error)
       }
-
-      const applyHtml = await browserFallback.fetchText(APPLY_URL)
-      if (!hasVerifiedApplyFormSignal(applyHtml)) {
-        throw new Error('Response is not the verified SCIO Management Solutions apply form shell')
-      }
-
-      if (hasPublicJobListingsSignal(careersHtml) || hasPublicJobListingsSignal(applyHtml)) {
-        throw new Error('SCIO Management Solutions careers surface now exposes public positions')
-      }
-
-      return []
-    } finally {
-      await browserFallback.close()
+      throw error
     }
+
+    if (!hasVerifiedCareersSignal(careersHtml)) {
+      throw new Error('Response is not the verified SCIO Management Solutions careers shell')
+    }
+
+    let applyHtml
+    try {
+      applyHtml = await fetchText(APPLY_URL)
+    } catch (error) {
+      if (isProtocolParseError(error)) {
+        throw buildBrokenHttpSurfaceError('apply form shell', error)
+      }
+      throw error
+    }
+
+    if (!hasVerifiedApplyFormSignal(applyHtml)) {
+      throw new Error('Response is not the verified SCIO Management Solutions apply form shell')
+    }
+
+    if (hasPublicJobListingsSignal(careersHtml) || hasPublicJobListingsSignal(applyHtml)) {
+      throw new Error('SCIO Management Solutions careers surface now exposes public positions')
+    }
+
+    return []
   },
 })
 

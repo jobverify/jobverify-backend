@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -10,6 +10,8 @@ export const CAREERS_URL = 'https://alchemytechsol.com/career/'
 export const LEGACY_CAREERS_URL = 'https://www.alchemytechsol.com/eng/careernew.html'
 
 const SOURCE = 'alchemytechsolindia'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -152,75 +154,40 @@ const normalizeOpening = (opening, { now }) => {
     scrapedAt: now(),
   }
 }
-
-const createBrowserTextFetcher = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-
-    return {
-      close: async () => browser.close(),
-      fetchText: async (url) => {
-        const response = await page.goto(url, {
-          waitUntil: 'domcontentloaded',
-          timeout: 30000,
-        })
-
-        if (!response?.ok()) {
-          throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-        }
-
-        return page.content()
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 30000,
+})
 
 export const createAlchemyTechsolIndiaScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText } = {}) {
-    let browserContext = null
-
-    try {
-      if (!fetchText) {
-        browserContext = await createBrowserTextFetcher()
-        fetchText = browserContext.fetchText
-      }
-
-      const html = await fetchText(CAREERS_URL)
-      const openings = extractCurrentOpenings(html)
-      const legacyHtml = await fetchText(LEGACY_CAREERS_URL)
-      const legacyIndicatesOfficialCareersSurface = pageIndicatesOfficialCareersSurface(legacyHtml)
-      const categoryUrls = extractLegacyCategoryUrls(legacyHtml)
-      if (categoryUrls.length === 0 && openings.length === 0 && !legacyIndicatesOfficialCareersSurface) {
-        throw new Error('Alchemy Techsol legacy careers surface no longer exposes category job links')
-      }
-
-      const legacyOpenings = []
-      for (const categoryUrl of categoryUrls) {
-        const categoryHtml = await fetchText(categoryUrl)
-        legacyOpenings.push(...extractLegacyCategoryOpenings(categoryHtml, categoryUrl))
-      }
-
-      const seenJobIds = new Set()
-
-      return [...openings, ...legacyOpenings]
-        .filter((opening) => isIndiaOpening(opening))
-        .map((opening) => normalizeOpening(opening, { now }))
-        .filter((job) => job && !seenJobIds.has(job.jobId) && seenJobIds.add(job.jobId))
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+  async run({ fetchText = defaultFetchText } = {}) {
+    const html = await fetchText(CAREERS_URL)
+    const openings = extractCurrentOpenings(html)
+    const legacyHtml = await fetchText(LEGACY_CAREERS_URL)
+    const legacyIndicatesOfficialCareersSurface = pageIndicatesOfficialCareersSurface(legacyHtml)
+    const categoryUrls = extractLegacyCategoryUrls(legacyHtml)
+    if (categoryUrls.length === 0 && openings.length === 0 && !legacyIndicatesOfficialCareersSurface) {
+      throw new Error('Alchemy Techsol legacy careers surface no longer exposes category job links')
     }
+
+    const legacyOpenings = []
+    for (const categoryUrl of categoryUrls) {
+      const categoryHtml = await fetchText(categoryUrl)
+      legacyOpenings.push(...extractLegacyCategoryOpenings(categoryHtml, categoryUrl))
+    }
+
+    const seenJobIds = new Set()
+
+    return [...openings, ...legacyOpenings]
+      .filter((opening) => isIndiaOpening(opening))
+      .map((opening) => normalizeOpening(opening, { now }))
+      .filter((job) => job && !seenJobIds.has(job.jobId) && seenJobIds.add(job.jobId))
   },
 })
 

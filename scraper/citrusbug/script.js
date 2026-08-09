@@ -9,7 +9,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, August 1, 2026 that https://citrusbug.com/career/ was the live exact-company CitrusBug careers surface, that it still publicly listed Ahmedabad onsite openings for Digital Marketing (Sr level), Executive Assistant (EA) to CEO, and Sales Head - IT Services, and that applicants were handled through the first-party on-page Apply for Job form plus the jobs@citrusbug.co contact channel. This scraper validates that verified same-page public contract and returns the public Ahmedabad roles from the official careers page.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const CAREERS_PAGE_PATTERNS = [
   /\bJoin Our Team\b/i,

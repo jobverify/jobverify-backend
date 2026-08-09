@@ -292,11 +292,12 @@ const isPartTimeLabel = (value) => /part[\s_-]?time/i.test(String(value ?? ''))
 const hasInternshipCue = (value) => /intern|internship|trainee|apprentice/i.test(String(value ?? ''))
 
 const inferEmploymentType = (job = {}) => {
+  const explicitType = normalizeString(job.employmentType)
+  if (explicitType) return isPartTimeLabel(explicitType) ? null : explicitType
+
   const title = normalizeString(job.title) || ''
   if (hasInternshipCue(title)) return 'Internship'
 
-  const explicitType = normalizeString(job.employmentType)
-  if (explicitType) return isPartTimeLabel(explicitType) ? null : explicitType
   if (job.jobType === 'Full-time Fresher' || job.jobType === 'Full-time Experienced') {
     return 'Full-time'
   }
@@ -1324,6 +1325,12 @@ const normalizeMediumConfidenceProfileEvidence = (experienceProfile = {}, eviden
   if (!normalizedEvidence) return null
   if (!MEDIUM_CONFIDENCE_PROFILE_REQUIREMENT_PATTERN.test(normalizedEvidence)) return null
   if (
+    !NUMERIC_EXPERIENCE_PATTERN.test(normalizedEvidence)
+    && !/\bno experience required\b/i.test(normalizedEvidence)
+  ) {
+    return null
+  }
+  if (
     PROFILE_NON_REQUIREMENT_CONTEXT_PATTERN.test(normalizedEvidence)
     && !STRONG_PROFILE_REQUIREMENT_PATTERN.test(normalizedEvidence)
   ) {
@@ -1354,7 +1361,21 @@ const normalizeProfileEvidence = (experienceProfile = {}) => {
 
 const sanitizeExperienceProfile = (experienceProfile = {}) => {
   const evidence = normalizeProfileEvidence(experienceProfile)
-  if (!evidence) return experienceProfile
+  if (!evidence) {
+    if (!normalizeString(experienceProfile.evidence)) return experienceProfile
+
+    return {
+      ...experienceProfile,
+      minimumYears: null,
+      maximumYears: null,
+      isOpenEnded: false,
+      preferredMinimumYears: null,
+      hasExplicitExperience: false,
+      confidence: 'low',
+      evidence: null,
+      experienceBucket: 'unspecified',
+    }
+  }
 
   const minimumYears = Number.parseFloat(experienceProfile.minimumYears)
   const maximumYears = Number.parseFloat(experienceProfile.maximumYears)

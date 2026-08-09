@@ -245,7 +245,7 @@ test('LILT derives experienceRequired from verified Ashby descriptions for India
     ],
   })
 
-  assert.equal(dtpJob.experienceRequired, '2+ years')
+  assert.equal(dtpJob.experienceRequired, '2 years')
   assert.equal(smeJob.experienceRequired, '5+ years')
 })
 

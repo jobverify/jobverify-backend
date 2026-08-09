@@ -99,10 +99,10 @@ test('MKS Vision scraper extracts the current public jobs list from the official
   const requestedUrls = []
 
   const jobs = await mksvision.createMksVisionScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === mksvision.HOMEPAGE_URL) return homepageHtml
-      if (url === mksvision.CAREER_PAGE_URL) return careersHtml
+      if (url === mksvision.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === mksvision.CAREER_PAGE_URL) return { status: 200, url, html: careersHtml }
       throw new Error(`Unexpected MKS Vision URL: ${url}`)
     },
   })

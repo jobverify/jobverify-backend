@@ -112,7 +112,7 @@ test('Kotak Securities scraper keeps the verified official Darwinbox handoff exp
   )
 })
 
-test('run maps verified Kotak Securities Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Kotak Securities Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createKotakSecuritiesScraper } = await loadKotakSecuritiesModule()
   const scraper = createKotakSecuritiesScraper({
     now: () => FIXED_SCRAPED_AT,

@@ -10,7 +10,7 @@ export const REQUEST_HEADERS = {
   Accept: 'application/json',
   'X-Origin': 'cummins.jobs',
   Referer: 'https://cummins.jobs/',
-  'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+  'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
 }
 
 const COMPANY = 'Cummins India'

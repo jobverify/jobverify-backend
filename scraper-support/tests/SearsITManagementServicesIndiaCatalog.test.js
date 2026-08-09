@@ -25,7 +25,7 @@ test('Sears IT & Management Services India local catalog captures the verified c
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /Pune/i)
   assert.match(provider.verifiedSurfaceSummary, /Hyderabad/i)
-  assert.match(provider.verifiedSurfaceSummary, /public role list/i)
+  assert.match(provider.verifiedSurfaceSummary, /trustworthy structured job titles or detail links/i)
   assert.equal(typeof module.run, 'function')
 })
 

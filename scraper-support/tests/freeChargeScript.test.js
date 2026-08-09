@@ -29,6 +29,7 @@ const careersPageHtml = `
     <main>
       <h1>#ChangeYourFuture</h1>
       <p>Grow Your Career While We Revolutionize Payments</p>
+      <p>open roles</p>
       <a href="https://freecharge.ripplehire.com/candidate/?token=IoV5vvUSMKLwmaa1Suou&amp;source=CAREERSITE#list">
         Explore Opportunities
       </a>

@@ -158,7 +158,7 @@ export const extractIndiaJobsFromGreenhousePayload = (
 const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
   method: 'GET',
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
     Accept: 'application/json,text/plain,*/*',
     Referer: GREENHOUSE_BOARD_URL,
   },
@@ -171,7 +171,7 @@ const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
       Accept: 'text/html,application/xhtml+xml',
       Referer: OFFICIAL_SITE_URL,
     },

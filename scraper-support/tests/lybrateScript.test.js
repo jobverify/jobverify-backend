@@ -20,6 +20,20 @@ const officialJobsHtml = `
   </html>
 `
 
+const verifiedJobsRedirectLoopPage = {
+  status: 301,
+  url: 'https://www.lybrate.com/jobs',
+  location: 'https://www.lybrate.com/jobs',
+  html: '',
+}
+
+const verifiedJobsRedirectLoopSlashPage = {
+  status: 308,
+  url: 'https://www.lybrate.com/jobs/',
+  location: '/jobs',
+  html: '',
+}
+
 const officialAboutHtml = `
   <html>
     <body>
@@ -49,12 +63,12 @@ const loadLybrateModule = async () => {
   }
 }
 
-test('Lybrate sentinel pins the verified stale first-party jobs shell and dead embedded API constants', async () => {
+test('Lybrate sentinel pins the verified redirect-loop jobs route and dead embedded API constants', async () => {
   const lybrate = await loadLybrateModule()
 
   assert.equal(lybrate.SOURCE, 'lybrate')
   assert.equal(lybrate.COMPANY_NAME, 'Lybrate')
-  assert.equal(lybrate.VERIFIED_ON, '2026-08-03')
+  assert.equal(lybrate.VERIFIED_ON, '2026-08-04')
   assert.equal(lybrate.HOMEPAGE_URL, 'https://www.lybrate.com/')
   assert.equal(lybrate.JOBS_PAGE_URL, 'https://www.lybrate.com/jobs')
   assert.equal(lybrate.ABOUT_PAGE_URL, 'https://www.lybrate.com/about')
@@ -70,6 +84,8 @@ test('Lybrate sentinel pins the verified stale first-party jobs shell and dead e
     ),
     false,
   )
+  assert.equal(lybrate.isVerifiedJobsPageRedirectLoop(verifiedJobsRedirectLoopPage), true)
+  assert.equal(lybrate.isVerifiedJobsPageRedirectLoop(verifiedJobsRedirectLoopSlashPage), true)
   assert.equal(lybrate.hasOfficialAboutPageSignal(officialAboutHtml), true)
   assert.equal(
     lybrate.hasOfficialAboutPageSignal(
@@ -81,19 +97,26 @@ test('Lybrate sentinel pins the verified stale first-party jobs shell and dead e
   assert.equal(lybrate.isDeadEmbeddedJobsApiResponse(liveEmbeddedApiResponse), false)
 })
 
-test('Lybrate sentinel returns [] only while the first-party jobs shell still points at a dead embedded API', async () => {
+test('Lybrate sentinel returns [] only while the first-party jobs route stays in the verified redirect loop and the embedded API remains dead', async () => {
   const lybrate = await loadLybrateModule()
   const requestedTextUrls = []
+  const requestedPageUrls = []
   const requestedJsonUrls = []
 
   const jobs = await lybrate.createLybrateScraper().run({
     fetchText: async (url) => {
       requestedTextUrls.push(url)
 
-      if (url === lybrate.JOBS_PAGE_URL) return officialJobsHtml
       if (url === lybrate.ABOUT_PAGE_URL) return officialAboutHtml
 
       throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchPage: async (url) => {
+      requestedPageUrls.push(url)
+
+      if (url === lybrate.JOBS_PAGE_URL) return verifiedJobsRedirectLoopPage
+
+      throw new Error(`Unexpected page URL: ${url}`)
     },
     fetchJson: async (url) => {
       requestedJsonUrls.push(url)
@@ -103,10 +126,8 @@ test('Lybrate sentinel returns [] only while the first-party jobs shell still po
     },
   })
 
-  assert.deepEqual(requestedTextUrls, [
-    lybrate.JOBS_PAGE_URL,
-    lybrate.ABOUT_PAGE_URL,
-  ])
+  assert.deepEqual(requestedTextUrls, [lybrate.ABOUT_PAGE_URL])
+  assert.deepEqual(requestedPageUrls, [lybrate.JOBS_PAGE_URL])
   assert.deepEqual(requestedJsonUrls, [lybrate.JOBS_API_URL])
   assert.deepEqual(jobs, [])
 })
@@ -122,9 +143,12 @@ test('Lybrate sentinel accepts the documented HTTP 404 API payload as an authori
   try {
     const jobs = await lybrate.createLybrateScraper().run({
       fetchText: async (url) => {
-        if (url === lybrate.JOBS_PAGE_URL) return officialJobsHtml
         if (url === lybrate.ABOUT_PAGE_URL) return officialAboutHtml
         throw new Error(`Unexpected text URL: ${url}`)
+      },
+      fetchPage: async (url) => {
+        if (url === lybrate.JOBS_PAGE_URL) return verifiedJobsRedirectLoopPage
+        throw new Error(`Unexpected page URL: ${url}`)
       },
     })
 
@@ -134,20 +158,24 @@ test('Lybrate sentinel accepts the documented HTTP 404 API payload as an authori
   }
 })
 
-test('Lybrate sentinel fails closed when the first-party jobs shell or embedded API changes materially', async () => {
+test('Lybrate sentinel fails closed when the first-party jobs route or embedded API changes materially', async () => {
   const lybrate = await loadLybrateModule()
 
   await assert.rejects(
     lybrate.createLybrateScraper().run({
       fetchText: async (url) => {
-        if (url === lybrate.JOBS_PAGE_URL) {
-          return officialJobsHtml.replace('CURRENT OPENINGS', 'LATEST ROLES')
-        }
         if (url === lybrate.ABOUT_PAGE_URL) {
           return officialAboutHtml
         }
+
         throw new Error(`Unexpected text URL: ${url}`)
       },
+      fetchPage: async () => ({
+        status: 200,
+        url: lybrate.JOBS_PAGE_URL,
+        location: null,
+        html: officialJobsHtml.replace('CURRENT OPENINGS', 'LATEST ROLES'),
+      }),
       fetchJson: async () => deadEmbeddedApiResponse,
     }),
     /verified official jobs page no longer matches the verified public surface/i,
@@ -156,10 +184,10 @@ test('Lybrate sentinel fails closed when the first-party jobs shell or embedded 
   await assert.rejects(
     lybrate.createLybrateScraper().run({
       fetchText: async (url) => {
-        if (url === lybrate.JOBS_PAGE_URL) return officialJobsHtml
         if (url === lybrate.ABOUT_PAGE_URL) return officialAboutHtml
         throw new Error(`Unexpected text URL: ${url}`)
       },
+      fetchPage: async () => verifiedJobsRedirectLoopPage,
       fetchJson: async () => liveEmbeddedApiResponse,
     }),
     /embedded jobs api no longer matches the verified dead public surface/i,

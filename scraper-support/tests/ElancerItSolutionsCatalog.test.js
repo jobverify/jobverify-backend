@@ -38,7 +38,7 @@ test('Elancer It Solutions exports provider metadata for the verified first-part
     companyDomain: 'elancerits.com',
     verifiedOn: '2026-07-18',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://elancerits.com/careers.html was the live first-party Elancer IT Solutions careers page and that it exposed public same-page openings including Project Coordinator / Senior Team Coordinator and Business Development Executive – AI & Data Services, with resumes directed to hr@elancerits.com.',
+      'Verified on Saturday, July 18, 2026 that https://elancerits.com/careers.html was the live first-party Elancer IT Solutions careers page and that it exposed public same-page openings including Project Coordinator / Senior Team Coordinator and Business Development Executive - AI & Data Services, with resumes directed to hr@elancerits.com.',
     dryRunFile: 'elanceritsolutions/jobs.json',
   })
 

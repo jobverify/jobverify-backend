@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { pathToFileURL } from 'node:url'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { getScraperCatalog } from '../providers/index.js'
@@ -32,7 +33,7 @@ test('Mentor Graphics should resolve to the existing Siemens provider via alias 
 
 test('Mentor Graphics should not introduce a second local runner when Siemens is already runnable', async () => {
   const siemens = getScraperCatalog().find((item) => item.source === 'siemens')
-  const module = await import(siemens.modulePath)
+  const module = await import(pathToFileURL(siemens.modulePath).href)
 
   assert.ok(siemens)
   assert.match(siemens.modulePath, /siemens[\\/]script\.js$/i)

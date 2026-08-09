@@ -7,7 +7,7 @@ import { loadConfig } from '../utils/loadConfig.js'
 
 const scraperDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../../scraper/cloudlending',
+  '../../scraper/cloudlending.workday',
 )
 
 const loadModule = async () => {

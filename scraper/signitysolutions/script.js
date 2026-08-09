@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'signitysolutions'
 export const COMPANY = 'Signity Solutions'
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Signity Solutions',
   adapter: 'script',
-  modulePath: '../signitysolutions/script.js',
+  modulePath: '../../scraper/signitysolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
@@ -107,3 +107,4 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     scrapedAt: now(),
   }))
 }
+

@@ -100,7 +100,7 @@ test('extractJobDetail reads Signify job detail metadata and Workday apply links
   assert.equal(detail.requisitionId, '361860')
   assert.equal(detail.department, 'Digital(IT)')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.match(detail.experienceRequired, /8 \u2013 10 years of experience/i)
+  assert.match(detail.experienceRequired, /8\s*(?:-|–)\s*10 years/i)
   assert.match(detail.minimumQualification, /Bachelor/i)
   assert.equal(detail.preferredQualification, null)
   assert.equal(detail.postingDate, '2026-04-28')

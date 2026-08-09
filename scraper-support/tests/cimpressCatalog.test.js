@@ -15,7 +15,7 @@ test('getScraperCatalog includes Cimpress as a RippleHire script provider with o
   assert.equal(cimpress.atsPlatform, 'ripplehire')
   assert.match(cimpress.companyCareerPage, /cimpress\.ripplehire\.com\/candidate/i)
   assert.equal(cimpress.companyDomain, 'cimpress.ripplehire.com')
-  assert.match(cimpress.modulePath, /\.\.\/cimpress\/script\.js$/i)
+  assert.match(cimpress.modulePath, /cimpress[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Cimpress RippleHire scraper without changing the runner contract', () => {

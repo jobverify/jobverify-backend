@@ -11,7 +11,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, August 1, 2026 that https://www.chippercash.com/careers was the live first-party Chipper Cash careers surface, that https://www.chippercash.com/career-current-openings still exposed only one same-origin role link for RISK AND COMPLIANCE OFFICER/ASSOCIATE RWANDA, and that the linked public role page still carried an application deadline of February 24, 2026, which was already in the past on Saturday, August 1, 2026. Because the reviewed first-party openings inventory remained stale and non-India, no trustworthy current public jobs contract was verified for Chipper Cash India, so this company-local scraper stays fail-closed and returns no jobs until a stable current openings flow is verified.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const REQUIRED_CAREERS_PATTERNS = [
   /\bGive the World New Ways to Transact\b/i,

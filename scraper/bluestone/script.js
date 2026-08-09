@@ -30,7 +30,7 @@ const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     redirect: 'follow',
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify Bluestone scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify Bluestone scraper)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })

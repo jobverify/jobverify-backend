@@ -25,7 +25,7 @@ test('getScraperCatalog includes Magna Automotive on the verified Magna careers 
   assert.equal(provider.companyName, 'Magna Automotive')
   assert.equal(provider.companyCareerPage, 'https://www.magna.com/careers')
   assert.equal(provider.companyDomain, 'magna.com')
-  assert.match(provider.modulePath, /magnaautomotive[\\/]script\.js$/)
+  assert.match(provider.modulePath, /magnaautomotive\.workday[\\/]script\.js$/)
 })
 
 test('buildScrapers exposes a runnable Magna Automotive scraper without changing the runner contract', async () => {
@@ -49,7 +49,7 @@ test('buildScrapers exposes a runnable Magna Automotive scraper without changing
   assert.equal(options.baseUrl, 'https://wd3.myworkdaysite.com/recruiting/magna/Magna')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'magnaautomotive')
-  assert.match(options.scraperDir, /magnaautomotive$/)
+  assert.match(options.scraperDir, /magnaautomotive\.workday$/)
 })
 
 test('Magna Automotive coverage resolves the exact CSV row without aliases', async () => {

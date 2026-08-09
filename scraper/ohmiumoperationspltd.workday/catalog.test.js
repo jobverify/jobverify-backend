@@ -22,7 +22,7 @@ test('Ohmium Operations (P) Ltd is registered against the verified official Ohmi
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'ohmium.com')
-  assert.match(provider.modulePath, /ohmiumoperationspltd[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /ohmiumoperationspltd\.workday[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Ohmium Operations (P) Ltd'), false)
 })
 
@@ -47,5 +47,5 @@ test('Ohmium Operations (P) Ltd is runnable through the scraper provider catalog
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'ohmiumoperationspltd')
   assert.equal(scraper.provider.companyCareerPage, 'https://www.ohmium.com/')
-  assert.match(scraper.dryRunFile, /ohmiumoperationspltd[\\/]jobs\.json$/i)
+  assert.match(scraper.dryRunFile, /ohmiumoperationspltd\.workday[\\/]jobs\.json$/i)
 })

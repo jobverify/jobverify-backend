@@ -87,30 +87,51 @@ test('SCIO sentinel detects real public job signals once positions are populated
   assert.equal(scio.hasPublicJobListingsSignal('<div>Job ID: SCIO-101</div>'), true)
 })
 
-test('SCIO sentinel returns [] while the verified apply form remains a placeholder, even when direct fetch needs browser fallback', async () => {
+test('SCIO sentinel returns [] while the verified apply form remains a placeholder over direct HTTP', async () => {
   const scio = await loadScioModule()
   const requested = []
 
   const jobs = await scio.createScioManagementSolutionsScraper().run({
     fetchText: async (url) => {
-      requested.push(`direct:${url}`)
-      throw new Error('fetch failed | Response does not match the HTTP/1.1 protocol (Invalid header value char)')
-    },
-    fetchBrowserText: async (url) => {
-      requested.push(`browser:${url}`)
+      requested.push(url)
       if (url === scio.CAREERS_URL) return careersHtml
       if (url === scio.APPLY_URL) return applyHtml
-      throw new Error(`Unexpected browser URL: ${url}`)
+      throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
   assert.deepEqual(requested, [
-    `direct:${scio.CAREERS_URL}`,
-    `browser:${scio.CAREERS_URL}`,
-    `direct:${scio.APPLY_URL}`,
-    `browser:${scio.APPLY_URL}`,
+    scio.CAREERS_URL,
+    scio.APPLY_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('SCIO aborts retries when the verified first-party shells break HTTP parsing over direct HTTP', async () => {
+  const scio = await loadScioModule()
+  const protocolError = new TypeError('fetch failed')
+  protocolError.cause = new Error(
+    'Response does not match the HTTP/1.1 protocol (Invalid header value char)',
+  )
+
+  await assert.rejects(
+    scio.createScioManagementSolutionsScraper().run({
+      fetchText: async () => {
+        throw protocolError
+      },
+    }),
+    (error) => {
+      assert.match(
+        error.message,
+        /SCIO Management Solutions verified careers shell currently returns a broken HTTP\/1\.1 response/i,
+      )
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.failureKind, 'network_or_timeout')
+      return true
+    },
+  )
 })
 
 test('SCIO sentinel fails closed when the verified shell drifts or positions appear', async () => {

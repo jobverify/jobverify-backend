@@ -111,22 +111,18 @@ test('Tricon Infotech sentinel fails closed if first-party AWSM jobs start rende
   )
 })
 
-test('Tricon Infotech falls back to the browser loader when the primary fetch path times out', async () => {
+test('Tricon Infotech treats either rendered job cards or a non-empty AWSM payload as a public jobs surface', async () => {
   const tricon = await loadScriptModule()
-  let fallbackCalled = false
 
-  const result = await tricon.loadWithBrowserFallback({
-    primaryLoad: async () => {
-      throw new Error(
-        'fetch failed | Connect Timeout Error (attempted addresses: 172.67.70.186:443, timeout: 10000ms)',
-      )
-    },
-    fallbackLoad: async () => {
-      fallbackCalled = true
-      return 'browser-result'
-    },
-  })
-
-  assert.equal(result, 'browser-result')
-  assert.equal(fallbackCalled, true)
+  assert.equal(
+    tricon.hasPublicJobsSurfaceSignal(
+      '<div class="awsm-b-job-post-title">Data Engineer</div>',
+      emptyFeed,
+    ),
+    true,
+  )
+  assert.equal(
+    tricon.hasPublicJobsSurfaceSignal(careersHtml, [{ id: 'job-1' }]),
+    true,
+  )
 })

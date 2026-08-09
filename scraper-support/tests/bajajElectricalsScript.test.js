@@ -93,7 +93,7 @@ test('Bajaj Electricals scraper keeps the verified official Darwinbox pointer ex
   )
 })
 
-test('run maps Bajaj Electricals Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps Bajaj Electricals Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createBajajElectricalsScraper } = await loadBajajElectricalsModule()
   const scraper = createBajajElectricalsScraper({
     now: () => FIXED_SCRAPED_AT,

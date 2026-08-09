@@ -5,8 +5,9 @@ const careersShellHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>FinBox Careers</title>
+    <title>FinBox</title>
     <link rel="canonical" href="https://www.finbox.in/careers">
+    <meta name="description" content="Powering modern credit with a suite of infrastructure, risk intelligence and orchestration solutions.">
     <script type="application/ld+json">
       {"@context":"https://schema.org","@type":"Organization","name":"FinBox"}
     </script>
@@ -17,6 +18,17 @@ const careersShellHtml = `
       <a href="https://jobs.reczee.com/finbox/job-embed">View open roles</a>
     </main>
   </body>
+</html>
+`
+
+const jobsBoardHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="title" content="Jobs at FinBox">
+    <meta name="description" content="Come join our awesome team at FinBox!">
+  </head>
+  <body></body>
 </html>
 `
 
@@ -120,6 +132,7 @@ test('FinBox helpers stay pinned to the verified first-party careers shell and p
     'https://jobs.reczee.com/finbox/IGCBY/apply',
   )
   assert.equal(finBox.hasVerifiedCareersShell(careersShellHtml), true)
+  assert.equal(finBox.hasVerifiedJobsEmbedShell(jobsBoardHtml), true)
   assert.equal(
     finBox.extractJobsEmbedUrl(careersShellHtml),
     'https://jobs.reczee.com/finbox/job-embed',
@@ -161,6 +174,9 @@ test('run verifies the FinBox first-party careers handoff and returns public Fin
       if (url === finBox.CAREERS_PAGE_URL) {
         return careersShellHtml
       }
+      if (url === finBox.JOBS_BOARD_URL) {
+        return jobsBoardHtml
+      }
 
       throw new Error(`Unexpected FinBox text URL: ${url}`)
     },
@@ -179,7 +195,10 @@ test('run verifies the FinBox first-party careers handoff and returns public Fin
     },
   })
 
-  assert.deepEqual(textRequests, [finBox.CAREERS_PAGE_URL])
+  assert.deepEqual(textRequests, [
+    finBox.CAREERS_PAGE_URL,
+    finBox.JOBS_BOARD_URL,
+  ])
   assert.deepEqual(jsonRequests, [
     finBox.COMPANY_DETAILS_API_URL,
     finBox.REQUISITIONS_API_URL,
@@ -196,8 +215,8 @@ test('FinBox fails closed when the first-party careers handoff or Reczee company
   await assert.rejects(
     finBox.createFinBoxScraper().run({
       fetchText: async () => careersShellHtml.replace(
-        'https://jobs.reczee.com/finbox/job-embed',
-        'https://jobs.reczee.com/finbox/jobs',
+        'FinBox',
+        'FinBox Careers',
       ),
       fetchJson: async () => companyDetailsPayload,
     }),
@@ -206,7 +225,16 @@ test('FinBox fails closed when the first-party careers handoff or Reczee company
 
   await assert.rejects(
     finBox.createFinBoxScraper().run({
-      fetchText: async () => careersShellHtml,
+      fetchText: async (url) => {
+        if (url === finBox.CAREERS_PAGE_URL) {
+          return careersShellHtml
+        }
+        if (url === finBox.JOBS_BOARD_URL) {
+          return jobsBoardHtml
+        }
+
+        throw new Error(`Unexpected FinBox text URL: ${url}`)
+      },
       fetchJson: async (url) => {
         if (url === finBox.COMPANY_DETAILS_API_URL) {
           return {

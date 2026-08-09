@@ -63,9 +63,9 @@ const ensureSafeApply = ({ applyMode, dryRun }) => {
     throw new Error("Refusing to apply indexes while NODE_ENV=production.");
   }
 
-  if (process.env.JOBIFY_ACKNOWLEDGE_INDEX_MUTATIONS !== "true") {
+  if (process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS !== "true") {
     throw new Error(
-      "Refusing to apply index changes without JOBIFY_ACKNOWLEDGE_INDEX_MUTATIONS=true.",
+      "Refusing to apply index changes without JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS=true.",
     );
   }
 };

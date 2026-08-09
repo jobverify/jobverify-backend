@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 import COUPA_SOFTWARE_INC_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -11,7 +10,7 @@ export const COMPANY = COUPA_SOFTWARE_INC_CATALOG.companyName
 export const JOBS_PAGE_URL = COUPA_SOFTWARE_INC_CATALOG.jobsPageUrl
 export const VERIFIED_ON = COUPA_SOFTWARE_INC_CATALOG.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -177,39 +176,29 @@ const normalizeJob = (job, scrapedAt) => ({
 export const createCoupaSoftwareIncScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    const textFetcher = createBrowserTextFallback({
-      fetchText,
-      fetchBrowserText,
-      userAgent: USER_AGENT,
-    })
+  async run({ fetchText = defaultFetchText } = {}) {
+    const firstPage = await fetchText(JOBS_PAGE_URL)
+    if (!hasOfficialJobsPageSignal(firstPage)) {
+      throw new Error('The verified Coupa jobs page no longer matches the trusted first-party surface')
+    }
 
-    try {
-      const firstPage = await textFetcher.fetchText(JOBS_PAGE_URL)
-      if (!hasOfficialJobsPageSignal(firstPage)) {
-        throw new Error('The verified Coupa jobs page no longer matches the trusted first-party surface')
-      }
+    const visited = new Set([JOBS_PAGE_URL])
+    const queue = extractPaginationUrls(firstPage)
+    const jobs = extractIndiaJobsFromPage(firstPage)
 
-      const visited = new Set([JOBS_PAGE_URL])
-      const queue = extractPaginationUrls(firstPage)
-      const jobs = extractIndiaJobsFromPage(firstPage)
-
-      while (queue.length > 0) {
-        const nextUrl = queue.shift()
-        if (!nextUrl || visited.has(nextUrl)) continue
-        visited.add(nextUrl)
-        const html = await textFetcher.fetchText(nextUrl)
-        for (const job of extractIndiaJobsFromPage(html)) {
-          if (!jobs.some((existing) => existing.jobId === job.jobId)) {
-            jobs.push(job)
-          }
+    while (queue.length > 0) {
+      const nextUrl = queue.shift()
+      if (!nextUrl || visited.has(nextUrl)) continue
+      visited.add(nextUrl)
+      const html = await fetchText(nextUrl)
+      for (const job of extractIndiaJobsFromPage(html)) {
+        if (!jobs.some((existing) => existing.jobId === job.jobId)) {
+          jobs.push(job)
         }
       }
-
-      return jobs.map((job) => normalizeJob(job, now()))
-    } finally {
-      await textFetcher.close()
     }
+
+    return jobs.map((job) => normalizeJob(job, now()))
   },
 })
 

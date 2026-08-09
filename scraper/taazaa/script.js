@@ -19,7 +19,7 @@ export const EXPECTED_IDENTIFIER = PROVIDER_METADATA.expectedIdentifier
 export const EXPECTED_KEKA_DOMAIN = 'taazaa.keka.com'
 export const EXPECTED_PORTAL_NAME = 'Taazaa'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

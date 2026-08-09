@@ -12,7 +12,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const LEGACY_HOMEPAGE_URL = PROVIDER_METADATA.legacyHomepageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const defaultProbe = async (url) => {
   try {

@@ -112,13 +112,13 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Fullerton India helpers stay pinned to the verified redirect, careers handoff, Workline board, and listing payload contract', async () => {
+test('Fullerton India helpers stay pinned to the verified redirect, careers handoff, Workline board, and listing payload contract from August 2, 2026', async () => {
   const fullertonIndia = await loadScriptModule()
 
   assert.equal(fullertonIndia.SOURCE, 'fullertonindia')
   assert.equal(fullertonIndia.COMPANY, 'Fullerton India')
   assert.equal(fullertonIndia.OFFICIAL_BRAND_NAME, 'SMFG India Credit')
-  assert.equal(fullertonIndia.VERIFIED_AT, '2026-07-15')
+  assert.equal(fullertonIndia.VERIFIED_AT, '2026-08-02')
   assert.equal(fullertonIndia.HOMEPAGE_URL, 'https://fullertonindia.com/')
   assert.equal(fullertonIndia.REDIRECTED_HOMEPAGE_URL, 'https://www.smfgindiacredit.com/')
   assert.equal(fullertonIndia.CAREERS_URL, 'https://www.smfgindiacredit.com/careers.aspx')
@@ -213,7 +213,7 @@ test('Fullerton India run validates the redirect, first-party careers handoff, W
     fetchPage: async (url) => {
       pageRequests.push(url)
 
-      if (url === fullertonIndia.HOMEPAGE_URL) {
+      if (url === fullertonIndia.REDIRECTED_HOMEPAGE_URL) {
         return {
           status: 200,
           url: fullertonIndia.REDIRECTED_HOMEPAGE_URL,
@@ -251,7 +251,7 @@ test('Fullerton India run validates the redirect, first-party careers handoff, W
   })
 
   assert.deepEqual(pageRequests, [
-    fullertonIndia.HOMEPAGE_URL,
+    fullertonIndia.REDIRECTED_HOMEPAGE_URL,
     fullertonIndia.CAREERS_URL,
     fullertonIndia.JOBS_BOARD_ENTRY_URL,
   ])
@@ -282,7 +282,7 @@ test('Fullerton India fails closed when the redirect, careers handoff, Workline 
   await assert.rejects(
     fullertonIndia.createFullertonIndiaScraper().run({
       fetchPage: async (url) => {
-        if (url === fullertonIndia.HOMEPAGE_URL) {
+        if (url === fullertonIndia.REDIRECTED_HOMEPAGE_URL) {
           return { status: 200, url, html: '<html><head><title>Unexpected</title></head><body>Placeholder</body></html>' }
         }
 
@@ -295,7 +295,7 @@ test('Fullerton India fails closed when the redirect, careers handoff, Workline 
   await assert.rejects(
     fullertonIndia.createFullertonIndiaScraper().run({
       fetchPage: async (url) => {
-        if (url === fullertonIndia.HOMEPAGE_URL) {
+        if (url === fullertonIndia.REDIRECTED_HOMEPAGE_URL) {
           return {
             status: 200,
             url: fullertonIndia.REDIRECTED_HOMEPAGE_URL,
@@ -323,7 +323,7 @@ test('Fullerton India fails closed when the redirect, careers handoff, Workline 
   await assert.rejects(
     fullertonIndia.createFullertonIndiaScraper().run({
       fetchPage: async (url) => {
-        if (url === fullertonIndia.HOMEPAGE_URL) {
+        if (url === fullertonIndia.REDIRECTED_HOMEPAGE_URL) {
           return {
             status: 200,
             url: fullertonIndia.REDIRECTED_HOMEPAGE_URL,
@@ -352,7 +352,7 @@ test('Fullerton India fails closed when the redirect, careers handoff, Workline 
   await assert.rejects(
     fullertonIndia.createFullertonIndiaScraper().run({
       fetchPage: async (url) => {
-        if (url === fullertonIndia.HOMEPAGE_URL) {
+        if (url === fullertonIndia.REDIRECTED_HOMEPAGE_URL) {
           return {
             status: 200,
             url: fullertonIndia.REDIRECTED_HOMEPAGE_URL,

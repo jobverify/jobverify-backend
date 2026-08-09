@@ -15,7 +15,7 @@ export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Thursday, July 30, 2026 that https://www.aranca.com/careers.php was the live first-party Aranca careers page, that its public calls to action Explore Open Positions and Current Openings both handed candidates to the public jobs board at https://www2.aranca.com/careers/, and that the paginated board publicly exposed 17 current openings including 16 India-located roles across Mumbai and Gurgaon plus a separate California sales role. This scraper validates the verified first-party handoff, walks the public pagination links, and returns the current India jobs from the visible Aranca detail pages such as Senior Analyst - Private Credit and Senior Consultant/Assistant Manager - Financial Modeling.'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const INDIA_LOCATION_PATTERN =
   /\b(mumbai|gurgaon|gurugram|bangalore|bengaluru|pune|hyderabad|noida|delhi|chennai|kolkata|india)\b/i
 

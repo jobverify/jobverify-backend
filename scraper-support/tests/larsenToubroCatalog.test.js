@@ -13,5 +13,5 @@ test('getScraperCatalog includes Larsen & Toubro as a PeopleStrong script provid
   assert.equal(provider.companyCareerPage, 'https://www.larsentoubro.com/corporate/careers')
   assert.equal(provider.companyDomain, 'larsentoubrocareers.peoplestrong.com')
   assert.equal(provider.extractionStrategy, 'peoplestrong-jobs-api')
-  assert.equal(provider.modulePath, '../../scraper/larsentoubro/script.js')
+  assert.match(provider.modulePath, /larsentoubro[\\/]script\.js$/i)
 })

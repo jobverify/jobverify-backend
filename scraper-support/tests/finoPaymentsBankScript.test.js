@@ -76,6 +76,49 @@ const loadFinoPaymentsBankModule = async () => {
   }
 }
 
+const createVerifiedFetchPage = (overrides = {}) => async (url) => {
+  if (url === 'https://www.finobank.com/') {
+    return overrides.legacyHomepage ?? {
+      status: 200,
+      url: 'https://www.fino.bank.in/',
+      html: homepageHtml,
+    }
+  }
+
+  if (url === 'https://www.fino.bank.in/') {
+    return overrides.homepage ?? {
+      status: 200,
+      url,
+      html: homepageHtml,
+    }
+  }
+
+  if (url === 'https://www.fino.bank.in/company/careers') {
+    return overrides.careersPage ?? {
+      status: 200,
+      url,
+      html: careersPageHtml,
+    }
+  }
+
+  if ([
+    'https://www.fino.bank.in/careers',
+    'https://www.fino.bank.in/career',
+    'https://www.fino.bank.in/jobs',
+    'https://www.fino.bank.in/join-us',
+    'https://www.fino.bank.in/work-with-us',
+    'https://www.fino.bank.in/current-openings',
+  ].includes(url)) {
+    return overrides.alternateRoute?.(url) ?? {
+      status: 404,
+      url,
+      html: alternate404Html,
+    }
+  }
+
+  throw new Error(`Unexpected URL: ${url}`)
+}
+
 test('Fino Payments Bank pins the verified homepage handoff, non-listing careers page, and 404 alternate routes', async () => {
   const finoPaymentsBank = await loadFinoPaymentsBankModule()
 
@@ -183,116 +226,60 @@ test('Fino Payments Bank sentinel fails closed when the homepage handoff, career
 
   await assert.rejects(
     finoPaymentsBank.createFinoPaymentsBankScraper().run({
-      fetchPage: async (url) => {
-        if (url === finoPaymentsBank.LEGACY_HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: homepageHtml,
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
+      fetchPage: createVerifiedFetchPage({
+        legacyHomepage: {
+          status: 200,
+          url: finoPaymentsBank.LEGACY_HOMEPAGE_URL,
+          html: homepageHtml,
+        },
+      }),
     }),
     /legacy homepage redirect/i,
   )
 
   await assert.rejects(
     finoPaymentsBank.createFinoPaymentsBankScraper().run({
-      fetchPage: async (url) => {
-        if (url === finoPaymentsBank.LEGACY_HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url: finoPaymentsBank.HOMEPAGE_URL,
-            html: homepageHtml,
-          }
-        }
-
-        if (url === finoPaymentsBank.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: homepageHtml.replace('https://www.fino.bank.in/company/careers', 'https://example.com/jobs'),
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
+      fetchPage: createVerifiedFetchPage({
+        homepage: {
+          status: 200,
+          url: finoPaymentsBank.HOMEPAGE_URL,
+          html: homepageHtml.replace('https://www.fino.bank.in/company/careers', 'https://example.com/jobs'),
+        },
+      }),
     }),
     /homepage Careers link changed materially/i,
   )
 
   await assert.rejects(
     finoPaymentsBank.createFinoPaymentsBankScraper().run({
-      fetchPage: async (url) => {
-        if (url === finoPaymentsBank.LEGACY_HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url: finoPaymentsBank.HOMEPAGE_URL,
-            html: homepageHtml,
-          }
-        }
-
-        if (url === finoPaymentsBank.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: homepageHtml,
-          }
-        }
-
-        if (url === finoPaymentsBank.CAREERS_URL) {
-          return {
-            status: 200,
-            url,
-            html: publicJobPageHtml,
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
+      fetchPage: createVerifiedFetchPage({
+        careersPage: {
+          status: 200,
+          url: finoPaymentsBank.CAREERS_URL,
+          html: publicJobPageHtml,
+        },
+      }),
     }),
     /careers page now exposes public jobs/i,
   )
 
   await assert.rejects(
     finoPaymentsBank.createFinoPaymentsBankScraper().run({
-      fetchPage: async (url) => {
-        if (url === finoPaymentsBank.LEGACY_HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url: finoPaymentsBank.HOMEPAGE_URL,
-            html: homepageHtml,
-          }
-        }
-
-        if (url === finoPaymentsBank.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: homepageHtml,
-          }
-        }
-
-        if (url === finoPaymentsBank.CAREERS_URL) {
-          return {
-            status: 200,
-            url,
-            html: careersPageHtml,
-          }
-        }
-
-        if (url === finoPaymentsBank.ALTERNATE_ROUTE_URLS[0]) {
-          return {
-            status: 200,
-            url,
-            html: homepageHtml,
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
+      fetchPage: createVerifiedFetchPage({
+        alternateRoute: (url) => (
+          url === finoPaymentsBank.ALTERNATE_ROUTE_URLS[0]
+            ? {
+                status: 200,
+                url,
+                html: homepageHtml,
+              }
+            : {
+                status: 404,
+                url,
+                html: alternate404Html,
+              }
+        ),
+      }),
     }),
     /alternate careers route changed materially or now exposes public jobs/i,
   )

@@ -184,7 +184,7 @@ test('Panasonic scraper pins the verified corporate India route and Jibe API con
   )
 })
 
-test('run maps verified Panasonic India jobs into Jobify jobs', async () => {
+test('run maps verified Panasonic India jobs into Jobverify jobs', async () => {
   const { createPanasonicScraper } = await loadPanasonicModule()
   const requestedUrls = []
   const scraper = createPanasonicScraper({

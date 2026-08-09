@@ -13,7 +13,7 @@ export const CAREERS_URL = PLATFORM_SCIENCE_CATALOG.companyCareerPage
 export const GREENHOUSE_BOARD_URL = 'https://job-boards.greenhouse.io/platformscience'
 export const GREENHOUSE_API_URL = 'https://boards-api.greenhouse.io/v1/boards/platformscience/jobs?content=true'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

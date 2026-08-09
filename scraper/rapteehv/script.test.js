@@ -152,6 +152,7 @@ test('RAPTEE HV maps the Keka jobs payload into the shared contract', async () =
         postingDate: '2026-07-09',
         closingDate: null,
         jobDescription: 'Work across vehicle design, manufacturing, and validation.',
+        publicExperienceChecked: true,
       },
       {
         title: 'Industrial IoT Developer Intern',
@@ -172,6 +173,7 @@ test('RAPTEE HV maps the Keka jobs payload into the shared contract', async () =
         postingDate: '2026-07-09',
         closingDate: null,
         jobDescription: 'No public location listed.',
+        publicExperienceChecked: true,
       },
     ],
   )

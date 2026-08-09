@@ -29,7 +29,7 @@ test('Intello Labs is registered as an exact-name fail-closed provider', () => {
   assert.equal(provider.companyDomain, 'intellolabs.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/intellolabs/script.js')
+  assert.match(provider.modulePath, /intellolabs[\\/]script\.js$/i)
   assert.equal(provider.verifiedOn, '2026-07-26')
 })
 

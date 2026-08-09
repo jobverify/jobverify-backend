@@ -47,6 +47,22 @@ const corporateCareersHtml = `
 </html>
 `
 
+const notFoundShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Page not found | Sapphire Foods</title>
+  </head>
+  <body>
+    <h1>Page not found</h1>
+    <p>We're sorry, but the page you requested cannot be found.</p>
+    <a href="https://www.sapphire.terbiumsolutions.com/careers/store-careers">Store Careers</a>
+    <a href="https://www.sapphire.terbiumsolutions.com/careers/corporate-careers">Corporate Careers</a>
+    <footer>Sapphire Foods India Ltd.</footer>
+  </body>
+</html>
+`
+
 const storeRoleCards = [
   {
     title: 'Assistant Restaurant Manager',
@@ -96,13 +112,13 @@ const loadModule = async () => {
   }
 }
 
-test('Sapphire Foods helpers stay pinned to the verified official careers landing and two public role pages', async () => {
+test('Sapphire Foods helpers stay pinned to the verified official careers routes and empty-state shell', async () => {
   const sapphire = await loadModule()
 
   assert.equal(sapphire.SOURCE, 'sapphirefoods')
   assert.equal(sapphire.COMPANY, 'Sapphire Foods')
   assert.equal(sapphire.OFFICIAL_BRAND_NAME, 'Sapphire Foods India Ltd.')
-  assert.equal(sapphire.VERIFIED_ON, '2026-07-17')
+  assert.equal(sapphire.VERIFIED_ON, '2026-08-04')
   assert.equal(sapphire.HOMEPAGE_URL, 'https://www.sapphirefoods.in/')
   assert.equal(sapphire.CAREERS_LANDING_URL, 'https://www.sapphire.terbiumsolutions.com/careers')
   assert.equal(
@@ -117,6 +133,7 @@ test('Sapphire Foods helpers stay pinned to the verified official careers landin
   assert.equal(sapphire.hasCareersLandingSignal('<html><body>Careers</body></html>'), false)
   assert.equal(sapphire.hasStoreCareersSignal(storeCareersHtml), true)
   assert.equal(sapphire.hasCorporateCareersSignal(corporateCareersHtml), true)
+  assert.equal(sapphire.hasVerifiedNotFoundShell(notFoundShellHtml), true)
   assert.equal(sapphire.normalizeBrand('shared'), 'Shared')
   assert.equal(sapphire.normalizeLocationToCountry('Mumbai').country, 'India')
   assert.deepEqual(
@@ -179,11 +196,11 @@ test('Sapphire Foods run validates the official careers surfaces, combines store
   const jobs = await sapphire.createSapphireFoodsScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === sapphire.CAREERS_LANDING_URL) return careersLandingHtml
-      if (url === sapphire.STORE_CAREERS_URL) return storeCareersHtml
-      if (url === sapphire.CORPORATE_CAREERS_URL) return corporateCareersHtml
+      if (url === sapphire.CAREERS_LANDING_URL) return { status: 200, url, html: careersLandingHtml }
+      if (url === sapphire.STORE_CAREERS_URL) return { status: 200, url, html: storeCareersHtml }
+      if (url === sapphire.CORPORATE_CAREERS_URL) return { status: 200, url, html: corporateCareersHtml }
       throw new Error(`Unexpected URL: ${url}`)
     },
     loadRoleCards: async (url) => {
@@ -238,6 +255,31 @@ test('Sapphire Foods run validates the official careers surfaces, combines store
   assert.equal(jobs.length, 4)
 })
 
+test('Sapphire Foods run returns no jobs when all verified official careers routes resolve to the branded empty-state shell', async () => {
+  const sapphire = await loadModule()
+  const requestedUrls = []
+  const roleCardLoads = []
+
+  const jobs = await sapphire.createSapphireFoodsScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return { status: 404, url, html: notFoundShellHtml }
+    },
+    loadRoleCards: async (url) => {
+      roleCardLoads.push(url)
+      return []
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [
+    sapphire.CAREERS_LANDING_URL,
+    sapphire.STORE_CAREERS_URL,
+    sapphire.CORPORATE_CAREERS_URL,
+  ])
+  assert.deepEqual(roleCardLoads, [])
+})
+
 test('Sapphire Foods browser role loader opens the official role page and returns extracted role cards', async () => {
   const sapphire = await loadModule()
   const interactions = []
@@ -275,8 +317,10 @@ test('Sapphire Foods fails closed when the verified official surfaces drift mate
 
   await assert.rejects(
     sapphire.createSapphireFoodsScraper().run({
-      fetchText: async (url) => {
-        if (url === sapphire.CAREERS_LANDING_URL) return '<html><body>Careers</body></html>'
+      fetchPage: async (url) => {
+        if (url === sapphire.CAREERS_LANDING_URL) return { status: 200, url, html: '<html><body>Careers</body></html>' }
+        if (url === sapphire.STORE_CAREERS_URL) return { status: 404, url, html: notFoundShellHtml }
+        if (url === sapphire.CORPORATE_CAREERS_URL) return { status: 404, url, html: notFoundShellHtml }
         throw new Error(`Unexpected URL: ${url}`)
       },
       loadRoleCards: async () => [],
@@ -286,10 +330,10 @@ test('Sapphire Foods fails closed when the verified official surfaces drift mate
 
   await assert.rejects(
     sapphire.createSapphireFoodsScraper().run({
-      fetchText: async (url) => {
-        if (url === sapphire.CAREERS_LANDING_URL) return careersLandingHtml
-        if (url === sapphire.STORE_CAREERS_URL) return '<html><body>Store Careers</body></html>'
-        if (url === sapphire.CORPORATE_CAREERS_URL) return corporateCareersHtml
+      fetchPage: async (url) => {
+        if (url === sapphire.CAREERS_LANDING_URL) return { status: 200, url, html: careersLandingHtml }
+        if (url === sapphire.STORE_CAREERS_URL) return { status: 200, url, html: '<html><body>Store Careers</body></html>' }
+        if (url === sapphire.CORPORATE_CAREERS_URL) return { status: 200, url, html: corporateCareersHtml }
         throw new Error(`Unexpected URL: ${url}`)
       },
       loadRoleCards: async () => [],

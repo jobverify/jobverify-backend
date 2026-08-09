@@ -88,7 +88,7 @@ test('DishTV verifies the current homepage, sitemap, and careers page contract',
   assert.equal(hasOfficialCareersPageSignal(careersPage), true)
 })
 
-test('DishTV extracts trusted current-opening cards and maps them to Jobify jobs', () => {
+test('DishTV extracts trusted current-opening cards and maps them to Jobverify jobs', () => {
   const cards = extractJobCards(careersPage.html)
 
   assert.equal(cards.length, 1)

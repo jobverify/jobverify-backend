@@ -1,9 +1,9 @@
-export const JAIDKA_CATALOG = {
+﻿export const JAIDKA_CATALOG = {
   source: 'jaidka',
   companyName: 'Jaidka',
   officialBrandName: 'Jaidka Power Systems Pvt. Ltd.',
   adapter: 'script',
-  modulePath: '../jaidka/script.js',
+  modulePath: '../../scraper/jaidka/script.js',
   dryRunFile: 'jaidka/jobs.json',
   homepageUrl: 'https://jaidka.in/',
   companyCareerPage: 'https://jaidka.in/',
@@ -23,3 +23,4 @@ export const JAIDKA_CATALOG = {
 }
 
 export default JAIDKA_CATALOG
+

@@ -18,7 +18,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('PeopleStrong Technologies local catalog captures the broken public listing routes without alias churn', async () => {
+test('PeopleStrong Technologies local catalog captures the restored public API behind broken list routes without alias churn', async () => {
   const { PEOPLESTRONG_TECHNOLOGIES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(PEOPLESTRONG_TECHNOLOGIES_CATALOG)
 
@@ -28,11 +28,12 @@ test('PeopleStrong Technologies local catalog captures the broken public listing
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://careers.peoplestrong.com/')
   assert.equal(provider.companyDomain, 'careers.peoplestrong.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-no-public-jobs')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.atsPlatform, 'official-company-careers-api')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /job\/joblist/i)
-  assert.match(provider.verifiedSurfaceSummary, /Could not find method getRequisitionListWithPaginationBySolrBundle/i)
+  assert.match(provider.verifiedSurfaceSummary, /404 shell responses/i)
+  assert.match(provider.verifiedSurfaceSummary, /returns live requisitions again/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'PeopleStrong Technologies'), false)
 })
 

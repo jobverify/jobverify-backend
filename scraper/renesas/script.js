@@ -114,7 +114,7 @@ export const createRenesasScraper = () => ({
     fetchText = (url, options = {}) => fetchTextWithRetry(url, {
       headers: {
         Accept: 'text/html,application/xhtml+xml',
-        'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
       },
       label: SOURCE,
       timeoutMs: 25000,

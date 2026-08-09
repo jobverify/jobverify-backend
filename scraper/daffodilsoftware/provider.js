@@ -1,4 +1,4 @@
-import {
+﻿import {
   CAREER_URL,
   COMPANY,
   SOURCE,
@@ -8,7 +8,7 @@ export const provider = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../daffodilsoftware/script.js',
+  modulePath: '../../scraper/daffodilsoftware/script.js',
   companyCareerPage: CAREER_URL,
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
@@ -24,3 +24,4 @@ export const provider = {
 }
 
 export default provider
+

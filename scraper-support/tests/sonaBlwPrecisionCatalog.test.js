@@ -37,34 +37,35 @@ test('Sona BLW Precision local catalog captures the verified resume-upload senti
     'Sona BLW Precision Forgings Limited (Sona Comstar)',
   )
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://sonacomstar.com/career')
+  assert.equal(provider.companyCareerPage, 'https://sonacomstar.com/our-culture')
   assert.equal(provider.officialCompanyPageUrl, 'https://sonacomstar.com/pages/about-us')
   assert.equal(provider.officialCulturePageUrl, 'https://sonacomstar.com/our-culture')
   assert.equal(
     provider.cautionNoticeUrl,
-    'https://api.procuzy.com/sonacomstar/public/pdf/cautionary_notice_against_fake_employment_or_offers_etc.pdf',
+    'https://sonacomstar.com/files/policy/Cautionary_Notice_Against_Fake_Employment_Offers_etc.pdf',
   )
   assert.equal(provider.companyDomain, 'sonacomstar.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-resume-upload-no-public-jobs')
+  assert.equal(provider.atsPlatform, 'official-company-site-culture-page-broken-career-route-no-public-jobs')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-career-page-plus-legal-entity-footer-checks',
+    'verified-culture-page-plus-linked-career-404-plus-legal-entity-footer-checks',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-career-page+footer-legal-entity+cautionary-notice-no-public-jobs-return-empty',
+    'verified-culture-page+linked-career-404+footer-legal-entity+cautionary-notice-no-public-jobs-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-26')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /sonablwprecision[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sonacomstar\.com\/career/i)
-  assert.match(provider.verifiedSurfaceSummary, /Upload Resume/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sonacomstar\.com\/our-culture/i)
+  assert.match(provider.verifiedSurfaceSummary, /Life @Sona Comstar/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 404/i)
   assert.match(provider.verifiedSurfaceSummary, /Sona BLW Precision Forgings Limited/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /fails closed and returns an empty array/i)
 
   assert.equal(sonaBlwPrecision.PROVIDER_METADATA.source, SONA_BLW_PRECISION_CATALOG.source)
   assert.equal(sonaBlwPrecision.CAREER_PAGE_URL, SONA_BLW_PRECISION_CATALOG.companyCareerPage)

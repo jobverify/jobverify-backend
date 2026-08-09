@@ -6,9 +6,18 @@ const FIXED_SCRAPED_AT = '2026-07-17T18:00:00.000Z'
 const careersPageHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Careers at Times Internet | Explore Jobs with Times of India, Economic Times, Times Prime & More</title>
+  </head>
   <body>
     <main>
-      <h1>JOIN US</h1>
+      <h1>TAKE US TO THE NEXT LEVEL</h1>
+      <div>JOB CATEGORY</div>
+      <div>All Categories</div>
+      <div>LOCATION</div>
+      <div>All Locations</div>
+      <div>JOB TYPE</div>
+      <div>All Types</div>
       <a href="https://timesinternet.in/careers/job-detail/698222a358a30d19cf667cbb">
         Associate Sales LOCATION: Mumbai BUSINESS: Times Ad Platform EXPERIENCE: 2 - 8 Years
       </a>
@@ -27,6 +36,9 @@ const careersPageHtml = `
 const associateSalesDetailHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Associate Sales Job at Times Internet | Times Ad Platform Jobs in Mumbai Apply Now</title>
+  </head>
   <body>
     <main>
       <h2>Associate Sales</h2>
@@ -57,6 +69,9 @@ const associateSalesDetailHtml = `
 const legalDetailHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Manager - Legal Job at Times Internet | Legal Jobs in Noida Apply Now</title>
+  </head>
   <body>
     <main>
       <h2>Manager - Legal</h2>
@@ -81,6 +96,9 @@ const legalDetailHtml = `
 const enterpriseDetailHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Enterprise Sales Manager Job at Times Internet | Times Mobile Jobs in Mumbai Apply Now</title>
+  </head>
   <body>
     <main>
       <h2>Enterprise Sales Manager</h2>
@@ -89,7 +107,7 @@ const enterpriseDetailHtml = `
       <p>EXPERIENCE 3 - 12 Years</p>
       <a href="/careers/custom-job">Apply now</a>
       <h2>JOB DESCRIPTION</h2>
-      <p>About Times Internet</p>
+      <p>About the company</p>
       <p>About the Role</p>
       <p>Lead enterprise sales initiatives across multiple cities.</p>
       <h2>Work Responsibilities</h2>
@@ -241,7 +259,12 @@ test('Times Internet fails closed when the verified listing page or detail pages
             <!doctype html>
             <html>
               <body>
-                <h1>JOIN US</h1>
+                <div>JOB CATEGORY</div>
+                <div>All Categories</div>
+                <div>LOCATION</div>
+                <div>All Locations</div>
+                <div>JOB TYPE</div>
+                <div>All Types</div>
                 <p>Associate Sales LOCATION: Mumbai BUSINESS: Times Ad Platform EXPERIENCE: 2 - 8 Years</p>
                 <p>Enterprise Sales Manager</p>
                 <p>Manager - Legal</p>

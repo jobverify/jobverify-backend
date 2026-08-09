@@ -83,7 +83,7 @@ test('extractSearchSummary reads Wipro total result counts from the SuccessFacto
   })
 })
 
-test('normalizeEmploymentType maps Wipro titles into Jobify employment types', () => {
+test('normalizeEmploymentType maps Wipro titles into Jobverify employment types', () => {
   assert.equal(normalizeEmploymentType('Intern L0 1'), 'Internship')
   assert.equal(normalizeEmploymentType('Contract Analyst'), 'Contract')
   assert.equal(normalizeEmploymentType('M365 Solution architect'), 'Full-time')

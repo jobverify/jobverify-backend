@@ -72,7 +72,7 @@ test('getScraperCatalog includes Cloud Lending as a verified Q2 Workday wrapper'
     'https://www.q2.com/products/digital-banking/altfi-lending',
     'https://www.q2.com/',
   ])
-  assert.match(provider.modulePath, /cloudlending[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /cloudlending\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /cloudlending.workday[\\/]jobs\.json$/i)
 
   assert.equal(CLOUD_LENDING_CATALOG.source, provider.source)
@@ -88,7 +88,7 @@ test('getScraperCatalog includes Cloud Lending as a verified Q2 Workday wrapper'
   assert.equal(cloudLending.CAREER_PAGE_URL, provider.companyCareerPage)
   assert.equal(cloudLending.BASE_URL, provider.baseUrl)
 
-  const config = loadConfig(path.join(testsDir, '../../scraper/cloudlending'))
+  const config = loadConfig(path.join(testsDir, '../../scraper/cloudlending.workday'))
   assert.equal(config.listingStrategy, 'jobs-api')
   assert.equal(config.jobsApiUrl, provider.jobsApiUrl)
   assert.equal(config.detailUrlBase, provider.detailUrlBase)

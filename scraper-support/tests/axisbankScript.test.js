@@ -22,6 +22,26 @@ const fixturesDir = path.join(
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
+const officialCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers New</title>
+  </head>
+  <body>
+    <main>
+      <h1>Axis Bank Careers</h1>
+      <p>Explore opportunities across Axis Bank.</p>
+      <p>Upload your resume to get started.</p>
+      <p>Don't see your preferred role listed here? Share your profile anyway.</p>
+      <a href="https://axisbank.ripplehire.com/candidate/?token=WIXhCuz0XRZ7H0GZCwjJ&source=CAREERSITE#list">
+        Browse jobs
+      </a>
+    </main>
+  </body>
+</html>
+`
+
 test('buildSearchRequestPayload keeps Axis Bank listings on the official RippleHire tokenized endpoint contract', async () => {
   const axisBank = await loadAxisBankModule()
   assert.ok(axisBank)
@@ -181,6 +201,10 @@ test('run fetches the Axis Bank RippleHire listing and detail payloads, then dec
         body: options.body ? String(options.body) : null,
       })
 
+      if (url === axisBank.OFFICIAL_CAREERS_PAGE_URL) {
+        return officialCareersHtml
+      }
+
       if (url === 'https://axisbank.ripplehire.com/candidate/candidatejobsearch') {
         return readFixture('search-results-page-0.xml')
       }
@@ -201,8 +225,8 @@ test('run fetches the Axis Bank RippleHire listing and detail payloads, then dec
     },
   })
 
-  assert.deepEqual(requested.map((entry) => entry.method), ['POST', 'GET', 'GET'])
-  assert.match(requested[0].body, /WIXhCuz0XRZ7H0GZCwjJ/)
+  assert.deepEqual(requested.map((entry) => entry.method), ['GET', 'POST', 'GET', 'GET'])
+  assert.match(requested[1].body, /WIXhCuz0XRZ7H0GZCwjJ/)
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].company, 'Axis Bank')
   assert.equal(jobs[0].source, 'axisbank')

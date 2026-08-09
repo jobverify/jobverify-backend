@@ -51,15 +51,15 @@ test('CRTD Technologies scraper module loads and exposes the verified first-part
   const crtd = await loadModule()
   assert.ok(crtd, 'CRTD Technologies scraper module should load')
 
-  assert.equal(crtd.HOMEPAGE_URL, 'https://crtd.in/')
-  assert.equal(crtd.CAREERS_URL, 'https://crtd.in/fresher-jobs')
-  assert.equal(crtd.API_JOBS_URL, 'https://crtd.in/api/jobs/?page=1&page_size=100')
-  assert.equal(crtd.API_STATS_URL, 'https://crtd.in/api/jobs/dynamic-job-openings/')
+  assert.equal(crtd.HOMEPAGE_URL, 'https://www.crtd.in/')
+  assert.equal(crtd.CAREERS_URL, 'https://www.crtd.in/fresher-jobs')
+  assert.equal(crtd.API_JOBS_URL, 'https://www.crtd.in/api/jobs/?page=1&page_size=100')
+  assert.equal(crtd.API_STATS_URL, 'https://www.crtd.in/api/jobs/dynamic-job-openings/')
   assert.equal(crtd.hasOfficialShellSignal(homepageHtml), true)
   assert.equal(crtd.hasOfficialShellSignal('<html><body>Other company</body></html>'), false)
   assert.equal(
     crtd.extractBundleAssetUrl(jobsPageHtml),
-    'https://crtd.in/assets/index-DlI3UhW3.js',
+    'https://www.crtd.in/assets/index-DlI3UhW3.js',
   )
   assert.equal(crtd.hasVerifiedPublicJobsBundleSignal(jobsBundleJs), true)
   assert.equal(
@@ -76,10 +76,16 @@ test('CRTD Technologies scraper returns no jobs only while the verified first-pa
 
   const requests = []
   const jobs = await crtd.createCrtdTechnologiesScraper().run({
+    fetchPage: async (url) => {
+      requests.push(url)
+      if (url === crtd.HOMEPAGE_URL || url === crtd.CAREERS_URL) {
+        return { status: 200, url, html: jobsPageHtml }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
     fetchText: async (url) => {
       requests.push(url)
-      if (url === crtd.HOMEPAGE_URL) return homepageHtml
-      if (url === crtd.CAREERS_URL) return jobsPageHtml
       if (url === crtd.extractBundleAssetUrl(jobsPageHtml)) return jobsBundleJs
       throw new Error(`Unexpected text URL: ${url}`)
     },
@@ -96,7 +102,7 @@ test('CRTD Technologies scraper returns no jobs only while the verified first-pa
   assert.deepEqual(requests, [
     crtd.HOMEPAGE_URL,
     crtd.CAREERS_URL,
-    'https://crtd.in/assets/index-DlI3UhW3.js',
+    'https://www.crtd.in/assets/index-DlI3UhW3.js',
     crtd.API_JOBS_URL,
     crtd.API_STATS_URL,
   ])
@@ -109,9 +115,12 @@ test('CRTD Technologies scraper fails closed when the verified public surface ch
 
   await assert.rejects(
     crtd.createCrtdTechnologiesScraper().run({
-      fetchText: async (url) => {
-        if (url === crtd.HOMEPAGE_URL) return '<html><body>Unbranded shell</body></html>'
-        return jobsPageHtml
+      fetchPage: async (url) => {
+        if (url === crtd.HOMEPAGE_URL) {
+          return { status: 200, url, html: '<html><body>Unbranded shell</body></html>' }
+        }
+
+        return { status: 200, url, html: jobsPageHtml }
       },
       fetchStatus: async () => 400,
     }),
@@ -120,8 +129,8 @@ test('CRTD Technologies scraper fails closed when the verified public surface ch
 
   await assert.rejects(
     crtd.createCrtdTechnologiesScraper().run({
+      fetchPage: async (url) => ({ status: 200, url, html: jobsPageHtml }),
       fetchText: async (url) => {
-        if (url === crtd.HOMEPAGE_URL || url === crtd.CAREERS_URL) return jobsPageHtml
         return 'const routes=["/fresher-jobs"];'
       },
       fetchStatus: async () => 400,
@@ -131,8 +140,8 @@ test('CRTD Technologies scraper fails closed when the verified public surface ch
 
   await assert.rejects(
     crtd.createCrtdTechnologiesScraper().run({
+      fetchPage: async (url) => ({ status: 200, url, html: jobsPageHtml }),
       fetchText: async (url) => {
-        if (url === crtd.HOMEPAGE_URL || url === crtd.CAREERS_URL) return jobsPageHtml
         return jobsBundleJs
       },
       fetchStatus: async () => 200,

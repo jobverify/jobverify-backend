@@ -4,12 +4,10 @@ import { fileURLToPath } from 'node:url'
 import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import HAVAS_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const PROVIDER_METADATA = HAVAS_INDIA_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -24,6 +22,7 @@ const PAGE_SIZE = 20
 const DETAIL_FETCH_CONCURRENCY = 4
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const WORKDAY_ORIGIN = new URL(WORKDAY_BOARD_URL).origin
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -80,8 +79,6 @@ const defaultFetchPage = async (url) => {
     html: await response.text(),
   }
 }
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const mapWithConcurrency = async (items, concurrency, mapper) => {
   const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
@@ -282,51 +279,26 @@ export const extractJobsFromPayload = (payload = {}, scrapedAt = new Date().toIS
     : []
 )
 
-const createBrowserJobsFetcher = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  await page.goto(WORKDAY_BOARD_URL, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-  await delay(config.pageLoadDelayMs)
-
-  const fetchJobsPage = async ({
-    offset = 0,
-    limit = PAGE_SIZE,
-    countryFacetId = null,
-  } = {}) => page.evaluate(
-    async ({ targetOffset, targetLimit, targetCountryFacetId }) => {
-      const response = await fetch('/wday/cxs/havas/GroupExternalCareerSite/jobs', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          appliedFacets: targetCountryFacetId ? { Country: [targetCountryFacetId] } : {},
-          limit: targetLimit,
-          offset: targetOffset,
-          searchText: '',
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      return response.json()
-    },
-    {
-      targetOffset: offset,
-      targetLimit: limit,
-      targetCountryFacetId: countryFacetId,
-    },
-  )
-
-  return {
-    fetchJobsPage,
-    close: async () => browser.close(),
-  }
-}
+const defaultFetchJobsPage = async ({
+  offset = 0,
+  limit = PAGE_SIZE,
+  countryFacetId = null,
+} = {}) => fetchJsonWithRetry(JOBS_API_URL, {
+  method: 'POST',
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    'Content-Type': 'application/json',
+    Origin: WORKDAY_ORIGIN,
+    Referer: WORKDAY_BOARD_URL,
+  },
+  body: countryFacetId
+    ? buildIndiaJobsRequestBody({ offset, limit, countryFacetId })
+    : buildUnfilteredJobsRequestBody({ offset, limit }),
+  attempts: 1,
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const createHavasIndiaScraper = ({
   now: defaultNow = () => new Date().toISOString(),
@@ -334,7 +306,7 @@ export const createHavasIndiaScraper = ({
 } = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
-    fetchJobsPage,
+    fetchJobsPage = defaultFetchJobsPage,
     now = defaultNow,
   } = {}) {
     const careersPage = await fetchPage(CAREERS_URL)
@@ -360,96 +332,83 @@ export const createHavasIndiaScraper = ({
       throw new Error('Havas India verified public Workday board changed materially')
     }
 
-    let browserContext = null
+    const unfilteredPayload = await fetchJobsPage({
+      offset: 0,
+      limit: PAGE_SIZE,
+      countryFacetId: null,
+    })
+    const countryFacetId = extractIndiaCountryFacetId(unfilteredPayload)
+    const scrapedAt = now()
+    const jobs = []
+    const seenJobIds = new Set()
+    let offset = 0
 
-    try {
-      if (!fetchJobsPage) {
-        browserContext = await createBrowserJobsFetcher()
-        fetchJobsPage = browserContext.fetchJobsPage
-      }
-
-      const unfilteredPayload = await fetchJobsPage({
-        offset: 0,
+    for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+      const payload = await fetchJobsPage({
+        offset,
         limit: PAGE_SIZE,
-        countryFacetId: null,
+        countryFacetId,
       })
-      const countryFacetId = extractIndiaCountryFacetId(unfilteredPayload)
-      const scrapedAt = now()
-      const jobs = []
-      const seenJobIds = new Set()
-      let offset = 0
+      const postings = extractJobsFromPayload(payload, scrapedAt)
 
-      for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-        const payload = await fetchJobsPage({
-          offset,
-          limit: PAGE_SIZE,
-          countryFacetId,
-        })
-        const postings = extractJobsFromPayload(payload, scrapedAt)
-
-        if (pageNumber === 1 && postings.length === 0) {
-          return []
-        }
-
-        for (const posting of postings) {
-          if (seenJobIds.has(posting.jobId)) {
-            continue
-          }
-
-          seenJobIds.add(posting.jobId)
-          jobs.push(posting)
-        }
-
-        offset += postings.length
-        if (!shouldContinueWorkdayJobsApiPagination({
-          jobsCount: postings.length,
-          offsetAfterPage: offset,
-          payloadTotal: payload?.total || 0,
-          pageSize: PAGE_SIZE,
-        })) {
-          break
-        }
+      if (pageNumber === 1 && postings.length === 0) {
+        return []
       }
 
-      return mapWithConcurrency(
-        jobs,
-        DETAIL_FETCH_CONCURRENCY,
-        async (job) => {
-          try {
-            const detailPage = await fetchPage(job.link)
-            if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
-              return job
-            }
+      for (const posting of postings) {
+        if (seenJobIds.has(posting.jobId)) {
+          continue
+        }
 
-            const detail = await extractJobDetail({
-              provider: 'workday',
-              html: detailPage.html,
-            })
+        seenJobIds.add(posting.jobId)
+        jobs.push(posting)
+      }
 
-            return {
-              ...job,
-              department: detail.department || job.department,
-              jobDescription: detail.jobDescription || job.jobDescription,
-              minimumQualification: detail.minimumQualification || job.minimumQualification,
-              preferredQualification: detail.preferredQualification || job.preferredQualification,
-              requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
-                ? detail.requiredSkills
-                : job.requiredSkills,
-              experienceRequired: detail.experienceRequired || job.experienceRequired,
-              requisitionId: detail.requisitionId || job.requisitionId,
-              postedAt: detail.postingDate || job.postedAt,
-              postingDate: detail.postingDate || job.postingDate || null,
-            }
-          } catch {
-            return job
-          }
-        },
-      )
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
+      offset += postings.length
+      if (!shouldContinueWorkdayJobsApiPagination({
+        jobsCount: postings.length,
+        offsetAfterPage: offset,
+        payloadTotal: payload?.total || 0,
+        pageSize: PAGE_SIZE,
+      })) {
+        break
       }
     }
+
+    return mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.link)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailPage.html,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            requisitionId: detail.requisitionId || job.requisitionId,
+            postedAt: detail.postingDate || job.postedAt,
+            postingDate: detail.postingDate || job.postingDate || null,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 

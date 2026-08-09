@@ -10,7 +10,7 @@ export const DISPOSITION = 'verified-first-party-careers-page-plus-public-jazzhr
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, August 1, 2026 that https://www.buzzboard.ai/careers/ was the live first-party BuzzBoard careers surface, that it still handed applicants to the public JazzHR board at https://buzzboard.applytojob.com/apply, and that the first-party careers page publicly exposed current openings including Associate Product Manager / Product Manager, Software Engineer (Node JS Developer), and Test Engineer (Automation). This scraper validates those verified surfaces and returns the public BuzzBoard openings.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const BOARD_HOST = new URL(BOARD_URL).hostname
 const BOARD_PATH = '/apply'
 const GENERIC_CONTEXT_PATTERNS = [

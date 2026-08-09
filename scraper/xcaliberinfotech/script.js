@@ -13,7 +13,7 @@ export const COMPANY_DOMAIN = 'xcaliberinfotech.com'
 export const ATS_PLATFORM = 'sucuri-blocked-first-party-careers-shell'
 export const VERIFIED_ON = '2026-07-18'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const REQUEST_HEADERS = {
   'User-Agent': USER_AGENT,
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',

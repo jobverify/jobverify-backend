@@ -12,10 +12,9 @@ const scraperDir = path.resolve(currentDir, '..', '..', 'scraper')
 const manifest = {
   batch: '01',
   companies: dedicatedProviders
-    .filter((provider) => provider.originalModulePath === '../../scraper/workbookbatch01/failClosedSentinel.js')
+    .filter((provider) => provider.originalModulePath === '../workbookbatch01/failClosedSentinel.js')
     .map((provider) => provider.companyName),
 }
-const scriptModulePathFor = (source) => `../${source}/script.js`
 
 test('workbook batch 01 companies all resolve to providers', () => {
   const report = generateCompanyCoverageReport({
@@ -56,8 +55,8 @@ test('workbook batch 01 sentinels are registered and stay fail-closed', async ()
     assert.ok(catalogProvider)
     assert.ok(scraper)
     assert.equal(catalogProvider.companyName, provider.companyName)
-    assert.equal(catalogProvider.modulePath, scriptModulePathFor(provider.source))
-    assert.equal(catalogProvider.originalModulePath, '../../scraper/workbookbatch01/failClosedSentinel.js')
+    assert.equal(catalogProvider.modulePath, path.join(scraperDir, provider.source, 'script.js'))
+    assert.equal(catalogProvider.originalModulePath, '../workbookbatch01/failClosedSentinel.js')
     assert.equal(catalogProvider.atsPlatform, 'workbook-exact-name-sentinel')
     assert.equal(
       catalogProvider.extractionStrategy,

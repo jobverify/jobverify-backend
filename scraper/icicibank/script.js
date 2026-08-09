@@ -298,8 +298,6 @@ export const createIciciBankScraper = ({
       }
     }
 
-    const shouldPreferBrowserJson = fetchJson === defaultFetchJson
-
     try {
       for (let pageNo = 0; pageNo < maxPageCount; pageNo += 1) {
         const searchRequestOptions = {
@@ -307,14 +305,12 @@ export const createIciciBankScraper = ({
           headers: createSearchHeaders(),
           body: wrapEncryptedSearchPayload(buildSearchRequestPayload(pageNo)),
         }
-        const searchResponse = shouldPreferBrowserJson
-          ? await browserJsonFetcher(
-            SEARCH_API_URL,
-            searchRequestOptions,
-            browserJsonPrimed ? null : CAREERS_PORTAL_URL,
-          )
-          : await fetchJsonWithBrowserFallback(SEARCH_API_URL, searchRequestOptions)
-        browserJsonPrimed = browserJsonPrimed || shouldPreferBrowserJson
+        const searchResponse = await fetchJsonWithBrowserFallback(
+          SEARCH_API_URL,
+          searchRequestOptions,
+          browserJsonPrimed ? null : CAREERS_PORTAL_URL,
+        )
+        browserJsonPrimed = browserJsonPrimed || Boolean(fetchBrowserJson)
         const { totalRows, records } = extractSearchRecords(searchResponse)
         const listings = extractSearchResults(searchResponse)
 
@@ -325,17 +321,12 @@ export const createIciciBankScraper = ({
             method: 'GET',
             headers: createDetailHeaders(),
           }
-          const detailResponse = shouldPreferBrowserJson
-            ? await browserJsonFetcher(
-              buildDetailApiUrl(listing.jobId),
-              detailRequestOptions,
-              browserJsonPrimed ? null : CAREERS_PORTAL_URL,
-            )
-            : await fetchJsonWithBrowserFallback(
-              buildDetailApiUrl(listing.jobId),
-              detailRequestOptions,
-            )
-          browserJsonPrimed = browserJsonPrimed || shouldPreferBrowserJson
+          const detailResponse = await fetchJsonWithBrowserFallback(
+            buildDetailApiUrl(listing.jobId),
+            detailRequestOptions,
+            browserJsonPrimed ? null : CAREERS_PORTAL_URL,
+          )
+          browserJsonPrimed = browserJsonPrimed || Boolean(fetchBrowserJson)
           const job = extractJobDetail(detailResponse, listing)
 
           jobs.push({

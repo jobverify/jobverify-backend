@@ -8,8 +8,8 @@ const careersHtml = `
   <body>
     <h1>#JoinTheJoy</h1>
     <h2>Open Roles</h2>
-    <span>Gurugram, India</span>
-    <span>Full-Time</span>
+    <div class="s-paragraph">Gurugram, India</div>
+    <div class="s-paragraph">Full-Time</div>
     <h5>Sales Manager - Acquisition</h5>
     <a href="/job-opening/sales-manager-acquisition">Learn More</a>
   </body>

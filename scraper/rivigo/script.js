@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { createFailClosedSentinelScraper } from '../zwayam/failClosedSentinel.js'
 import { RIVIGO_CATALOG } from './catalog.js'
 
@@ -20,9 +19,22 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const DEFAULT_TIMEOUT_MS = 30000
-const DEFAULT_SETTLE_MS = 2000
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
 
 const decodeEntities = (value = '') =>
   String(value)
@@ -93,84 +105,24 @@ export const hasVerifiedParentDarwinboxSignal = ({ url = '', html = '' } = {}) =
     && /\bOpen Jobs\b/i.test(text)
 }
 
-export const createBrowserPageFetcher = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
-  settleMs = DEFAULT_SETTLE_MS,
-} = {}) => {
-  const browser = await launchBrowserImpl({ ignoreHTTPSErrors: true })
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-    await page.setUserAgent(USER_AGENT)
-
-    return {
-      close: async () => browser.close(),
-      fetchPage: async (url, { waitForSelector = null } = {}) => {
-        const response = await page.goto(url, {
-          waitUntil: 'domcontentloaded',
-          timeout: timeoutMs,
-        })
-
-        if (waitForSelector) {
-          await page.waitForSelector(waitForSelector, { timeout: timeoutMs })
-        }
-
-        await delay(settleMs)
-
-        return {
-          status: response?.status() ?? null,
-          url: page.url(),
-          html: await page.content(),
-        }
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
-
 export const createRivigoScraper = () => ({
-  async run({ fetchPage } = {}) {
-    let browserFetcher = null
-
-    try {
-      if (!fetchPage) {
-        browserFetcher = await createBrowserPageFetcher()
-        const selectorsByUrl = {
-          [HOMEPAGE_URL]: 'a[href*="mahindralogistics.com/work-with-us"], a[href*="mahindralogistics.com/life-at-mll"]',
-          [CAREERS_URL]: 'a[href="https://nectar.darwinbox.in/ms/candidate/careers"]',
-          [PARENT_DARWINBOX_URL]: 'a[href*="/candidatev2/main/careers/allJobs"], body',
-        }
-
-        fetchPage = (url) => browserFetcher.fetchPage(url, {
-          waitForSelector: selectorsByUrl[url] || null,
-        })
-      }
-
-      const homepagePage = await fetchPage(HOMEPAGE_URL)
-      if (!hasVerifiedRedirectedHomepageSignal(homepagePage)) {
-        throw new Error('Rivigo verified Mahindra Logistics B2B Express landing no longer matches the trusted public surface')
-      }
-
-      const parentCareersPage = await fetchPage(CAREERS_URL)
-      if (!hasVerifiedParentCareersSignal(parentCareersPage)) {
-        throw new Error('Rivigo verified parent-company careers handoff no longer matches the trusted Mahindra Logistics work-with-us surface')
-      }
-
-      const parentDarwinboxPage = await fetchPage(PARENT_DARWINBOX_URL)
-      if (!hasVerifiedParentDarwinboxSignal(parentDarwinboxPage)) {
-        throw new Error('Rivigo verified parent-company Darwinbox board no longer matches the trusted Mahindra Logistics and Subsidiaries surface')
-      }
-
-      return createFailClosedSentinelScraper().run()
-    } finally {
-      if (browserFetcher) {
-        await browserFetcher.close()
-      }
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepagePage = await fetchPage(HOMEPAGE_URL)
+    if (!hasVerifiedRedirectedHomepageSignal(homepagePage)) {
+      throw new Error('Rivigo verified Mahindra Logistics B2B Express landing no longer matches the trusted public surface')
     }
+
+    const parentCareersPage = await fetchPage(CAREERS_URL)
+    if (!hasVerifiedParentCareersSignal(parentCareersPage)) {
+      throw new Error('Rivigo verified parent-company careers handoff no longer matches the trusted Mahindra Logistics work-with-us surface')
+    }
+
+    const parentDarwinboxPage = await fetchPage(PARENT_DARWINBOX_URL)
+    if (!hasVerifiedParentDarwinboxSignal(parentDarwinboxPage)) {
+      throw new Error('Rivigo verified parent-company Darwinbox board no longer matches the trusted Mahindra Logistics and Subsidiaries surface')
+    }
+
+    return createFailClosedSentinelScraper().run()
   },
 })
 

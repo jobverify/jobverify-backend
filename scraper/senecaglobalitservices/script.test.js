@@ -105,6 +105,7 @@ test('Seneca scraper normalizes detail pages into jobs', async () => {
     postingDate: null,
     closingDate: null,
     jobDescription: 'Own QA strategy across multiple products.',
+    publicExperienceChecked: true,
     requisitionId: 'senior-qa-lead',
     source: 'senecaglobalitservices',
     link: 'https://www.senecaglobal.com/india-careers/senior-qa-lead/',

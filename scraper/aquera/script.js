@@ -45,6 +45,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: 'aquera',
   timeoutMs: 15000,
 })

@@ -10,7 +10,7 @@ const testsDir = path.dirname(fileURLToPath(import.meta.url))
 const INDIA_FACET_ID = 'c4f78be1a8f14da0ab49ce1162348a5e'
 
 test('Cerence local Workday config uses the live jobs API with the lowercase locationCountry facet', () => {
-  const config = loadConfig(path.join(testsDir, '../../scraper/cerence'))
+  const config = loadConfig(path.join(testsDir, '../../scraper/cerence.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
   assert.equal(

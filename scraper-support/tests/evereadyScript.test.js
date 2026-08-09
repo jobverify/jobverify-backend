@@ -26,7 +26,7 @@ const officialTalentHtml = `
           <select name="state">
             <option>West Bengal</option>
           </select>
-          <button type="submit">Submit</button>
+          <button type="submit">Apply Now</button>
         </form>
       </main>
     </body>

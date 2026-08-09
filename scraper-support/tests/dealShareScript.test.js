@@ -26,58 +26,39 @@ const directAccessDeniedHtml = `
 </Error>
 `
 
-const aboutHubHtml = `
+const aboutHubShellHtml = `
 <!doctype html>
 <html>
   <head>
     <title>DealShare</title>
+    <script type="module" crossorigin src="/assets/index-4b034da8.js"></script>
+    <link rel="stylesheet" href="/assets/index-5a00a0f0.css">
   </head>
   <body>
-    <a href="/about">About</a>
-    <a href="/careers">Careers</a>
-    <a href="/media">Media</a>
-    <a href="/contact">Contact</a>
-    <h1>Mass Market for Mass India, Online</h1>
-    <p>Watch Our Story</p>
-    <p>Crafting extraordinarily simple tech solutions to help Bharat shop with ease</p>
-    <p>Our Impact in numbers</p>
-    <p>Build. Innovate. Create Value.</p>
+    <div id="root"></div>
   </body>
 </html>
 `
 
-const careersSpaHtml = `
-<!doctype html>
-<html>
-  <head>
-    <title>DealShare</title>
-  </head>
-  <body>
-    <a href="/about">About</a>
-    <a href="/careers">Careers</a>
-    <a href="/media">Media</a>
-    <a href="/contact">Contact</a>
-    <h1>Building everyday savings for India</h1>
-    <p>Haq Se Bachao</p>
-    <h2>Why DealShare</h2>
-    <p>India deserves honest prices — every day</p>
-    <h2>Our Culture</h2>
-    <p>Flat Hierarchy</p>
-    <h2>Growth & Innovation</h2>
-    <p>Technology enables how we deliver value</p>
-    <h2>PDA - Public Display of Appreciation</h2>
-    <h2>Financial Benefits</h2>
-    <p>From ESOPs to incentives and promotions, we are big on material expression of appreciation</p>
-    <h2>Fast Paced</h2>
-    <h2>Testimonials</h2>
-    <h2>Contact</h2>
-    <p>Bangalore</p>
-    <p>E-mail: support@dealshare.in</p>
-    <p>Jaipur</p>
-    <p>Kolkata</p>
-    <p>Gurgaon</p>
-  </body>
-</html>
+const spaBundleText = `
+About Careers Media Contact
+Mass Market for Mass India, Online
+Watch Our Story
+Crafting extraordinarily simple tech solutions to help Bharat shop with ease
+Our Impact in numbers
+Build. Innovate. Create Value.
+Building everyday savings for India
+Haq Se Bachao
+Why DealShare
+Our Culture
+Flat Hierarchy
+Growth & Innovation
+PDA - Public Display of Appreciation
+Financial Benefits
+Fast Paced
+Testimonials
+Contact
+support@dealshare.in
 `
 
 const publicJobsCareersHtml = `
@@ -93,6 +74,12 @@ const publicJobsCareersHtml = `
 </html>
 `
 
+const publicJobsBundleText = `
+${spaBundleText}
+Current Openings
+<a href="https://jobs.lever.co/dealshare/software-engineer">Apply now</a>
+`
+
 const loadDealShareModule = async () => {
   try {
     return await import('../../scraper/dealshare/script.js')
@@ -106,7 +93,7 @@ test('DealShare sentinel constants stay pinned to the verified homepage, SPA car
 
   assert.equal(dealShare.SOURCE, 'dealshare')
   assert.equal(dealShare.COMPANY, 'DealShare')
-  assert.equal(dealShare.VERIFIED_ON, '2026-07-15')
+  assert.equal(dealShare.VERIFIED_ON, '2026-08-08')
   assert.equal(dealShare.HOMEPAGE_URL, 'https://www.dealshare.in/')
   assert.equal(dealShare.ABOUT_HUB_URL, 'https://about.dealshare.in/')
   assert.equal(dealShare.CAREERS_SPA_URL, 'https://about.dealshare.in/careers')
@@ -120,43 +107,26 @@ test('DealShare sentinel constants stay pinned to the verified homepage, SPA car
     }),
     true,
   )
-  assert.equal(dealShare.hasAboutHubSignal(aboutHubHtml), true)
-  assert.equal(dealShare.hasCareersSpaNoJobsSignal(careersSpaHtml), true)
+  assert.equal(dealShare.hasAboutHubShellSignal(aboutHubShellHtml), true)
+  assert.equal(dealShare.hasAboutHubSignal(spaBundleText), true)
+  assert.equal(dealShare.hasCareersSpaNoJobsSignal(spaBundleText), true)
   assert.equal(dealShare.hasCareersSpaNoJobsSignal(publicJobsCareersHtml), false)
-  assert.deepEqual(dealShare.extractSuspiciousJobLinks(careersSpaHtml), [])
+  assert.deepEqual(dealShare.extractSuspiciousJobLinks(spaBundleText), [])
   assert.deepEqual(
     dealShare.extractSuspiciousJobLinks(publicJobsCareersHtml),
     ['https://jobs.lever.co/dealshare/software-engineer'],
   )
 })
 
-test('DealShare sentinel returns [] only while the verified SPA careers content stays job-free and the direct route remains access denied', async () => {
+test('DealShare sentinel returns [] only while the verified SPA shell, published bundle, and direct route stay job-free', async () => {
   const dealShare = await loadDealShareModule()
   const requestedPages = []
-
-  let stage = 'about'
-  let currentUrl = dealShare.ABOUT_HUB_URL
-
-  const fakePage = {
-    goto: async (url) => {
-      requestedPages.push(url)
-      currentUrl = url
-      stage = 'about'
-    },
-    waitForTimeout: async () => {},
-    content: async () => (stage === 'careers' ? careersSpaHtml : aboutHubHtml),
-    click: async (selector) => {
-      if (!/careers/i.test(selector)) {
-        throw new Error(`Unexpected click selector: ${selector}`)
-      }
-      stage = 'careers'
-      currentUrl = dealShare.CAREERS_SPA_URL
-    },
-    url: () => currentUrl,
-  }
+  const bundleUrl = 'https://about.dealshare.in/assets/index-4b034da8.js'
 
   const jobs = await dealShare.createDealShareScraper().run({
     fetchPage: async (url) => {
+      requestedPages.push(url)
+
       if (url === dealShare.HOMEPAGE_URL) {
         return { status: 200, url, html: homepageHtml }
       }
@@ -165,20 +135,30 @@ test('DealShare sentinel returns [] only while the verified SPA careers content 
         return { status: 403, url, html: directAccessDeniedHtml }
       }
 
+      if (url === dealShare.ABOUT_HUB_URL) {
+        return { status: 200, url, html: aboutHubShellHtml }
+      }
+
+      if (url === bundleUrl) {
+        return { status: 200, url, html: spaBundleText }
+      }
+
       throw new Error(`Unexpected fetch URL: ${url}`)
     },
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => fakePage,
   })
 
-  assert.deepEqual(requestedPages, [dealShare.ABOUT_HUB_URL])
+  assert.deepEqual(requestedPages, [
+    dealShare.HOMEPAGE_URL,
+    dealShare.DIRECT_CAREERS_ROUTE_URL,
+    dealShare.ABOUT_HUB_URL,
+    bundleUrl,
+  ])
   assert.deepEqual(jobs, [])
 })
 
-test('DealShare sentinel fails closed when the homepage, direct careers route, SPA about hub, or careers content drifts into a public jobs surface', async () => {
+test('DealShare sentinel fails closed when the homepage, direct careers route, SPA shell, or published bundle drifts into a public jobs surface', async () => {
   const dealShare = await loadDealShareModule()
+  const bundleUrl = 'https://about.dealshare.in/assets/index-4b034da8.js'
 
   await assert.rejects(
     dealShare.createDealShareScraper().run({
@@ -188,8 +168,6 @@ test('DealShare sentinel fails closed when the homepage, direct careers route, S
         }
         throw new Error('Should not fetch further')
       },
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => ({}),
     }),
     /homepage no longer matches the verified public surface/i,
   )
@@ -201,32 +179,14 @@ test('DealShare sentinel fails closed when the homepage, direct careers route, S
           return { status: 200, url, html: homepageHtml }
         }
         if (url === dealShare.DIRECT_CAREERS_ROUTE_URL) {
-          return { status: 200, url, html: careersSpaHtml }
+          return { status: 200, url, html: spaBundleText }
         }
         throw new Error('Should not fetch further')
       },
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => ({}),
     }),
     /direct careers route no longer matches the verified access-denied state/i,
   )
 
-  let stage = 'about'
-  let currentUrl = dealShare.ABOUT_HUB_URL
-  const browserWithPublicCareers = {
-    goto: async (url) => {
-      currentUrl = url
-      stage = 'about'
-    },
-    waitForTimeout: async () => {},
-    content: async () => (stage === 'careers' ? publicJobsCareersHtml : aboutHubHtml),
-    click: async () => {
-      stage = 'careers'
-      currentUrl = dealShare.CAREERS_SPA_URL
-    },
-    url: () => currentUrl,
-  }
-
   await assert.rejects(
     dealShare.createDealShareScraper().run({
       fetchPage: async (url) => {
@@ -236,26 +196,18 @@ test('DealShare sentinel fails closed when the homepage, direct careers route, S
         if (url === dealShare.DIRECT_CAREERS_ROUTE_URL) {
           return { status: 403, url, html: directAccessDeniedHtml }
         }
+        if (url === dealShare.ABOUT_HUB_URL) {
+          return { status: 200, url, html: aboutHubShellHtml }
+        }
+        if (url === bundleUrl) {
+          return { status: 200, url, html: publicJobsBundleText }
+        }
         throw new Error(`Unexpected fetch URL: ${url}`)
       },
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => browserWithPublicCareers,
     }),
     /careers page no longer matches the verified no-openings surface|public jobs links/i,
   )
 
-  const browserWithBrokenAbout = {
-    goto: async (url) => {
-      currentUrl = url
-    },
-    waitForTimeout: async () => {},
-    content: async () => '<html><body><h1>Welcome</h1></body></html>',
-    click: async () => {
-      currentUrl = dealShare.CAREERS_SPA_URL
-    },
-    url: () => currentUrl,
-  }
-
   await assert.rejects(
     dealShare.createDealShareScraper().run({
       fetchPage: async (url) => {
@@ -265,11 +217,12 @@ test('DealShare sentinel fails closed when the homepage, direct careers route, S
         if (url === dealShare.DIRECT_CAREERS_ROUTE_URL) {
           return { status: 403, url, html: directAccessDeniedHtml }
         }
+        if (url === dealShare.ABOUT_HUB_URL) {
+          return { status: 200, url, html: '<html><body><h1>Welcome</h1></body></html>' }
+        }
         throw new Error(`Unexpected fetch URL: ${url}`)
       },
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => browserWithBrokenAbout,
     }),
-    /about hub no longer matches the verified public surface/i,
+    /about hub no longer matches the verified public SPA shell/i,
   )
 })

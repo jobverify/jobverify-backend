@@ -50,19 +50,19 @@ test('Jana Small Finance Bank local catalog captures the verified empty-board se
   assert.equal(JANA_SMALL_FINANCE_BANK_CATALOG.countryFilter, 'India')
   assert.equal(
     JANA_SMALL_FINANCE_BANK_CATALOG.paginationStrategy,
-    'verified-homepage-plus-careers-page-plus-current-openings-page-validation',
+    'verified-homepage-plus-careers-page-plus-linked-current-openings-surface-validation',
   )
   assert.equal(
     JANA_SMALL_FINANCE_BANK_CATALOG.extractionStrategy,
-    'verified-first-party-careers-surface-with-generic-email-handoff-return-empty',
+    'verified-first-party-careers-surface-with-no-public-jobs-handoff-return-empty',
   )
   assert.equal(JANA_SMALL_FINANCE_BANK_CATALOG.parser, 'custom-script')
   assert.equal(JANA_SMALL_FINANCE_BANK_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedOn, '2026-07-26')
+  assert.match(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
   assert.match(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.jana\.bank\.in\/about-us\/careers-hm\//i)
   assert.match(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.jana\.bank\.in\/index\.php\/career\/current-openings/i)
-  assert.match(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedSurfaceSummary, /careers@jana\.bank\.in/i)
-  assert.match(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedSurfaceSummary, /no trustworthy public job listings/i)
+  assert.match(JANA_SMALL_FINANCE_BANK_CATALOG.verifiedSurfaceSummary, /no-public-jobs 404 page/i)
   assert.equal(JANA_SMALL_FINANCE_BANK_CATALOG.dryRunFile, 'janasmallfinancebank/jobs.json')
 
   assert.equal(

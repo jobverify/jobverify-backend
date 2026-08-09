@@ -86,7 +86,7 @@ test('Polaris local catalog captures the verified first-party careers shell and 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.polaris.com/en-us/careers/')
   assert.equal(provider.companyDomain, 'polaris.com')
-  assert.equal(provider.modulePath, '../../scraper/polaris.workday/script.js')
+  assert.match(provider.modulePath, /polaris\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /polaris.workday[\\/]jobs\.json$/i)
 
   assert.equal(polaris.PROVIDER_METADATA.source, provider.source)

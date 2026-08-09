@@ -14,7 +14,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://brainstormforce.com/join/ was the live exact-name Brainstorm Force careers surface, that it exposed public same-origin role pages under https://brainstormforce.com/join/, and that current India-targeted roles with working detail pages including Product Manager and Senior Laravel Developer handed applicants to Brainstorm Force application forms on https://forms.brainstormforce.com/. This scraper validates the verified first-party careers surface, keeps only India-tagged listings, and excludes stale cards that redirect away from their advertised detail pages.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 
 const REQUIRED_SURFACE_PATTERNS = [
   /<title>\s*Join\s*-\s*Brainstorm Force\s*<\/title>/i,

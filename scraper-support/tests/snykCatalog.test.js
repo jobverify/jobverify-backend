@@ -36,7 +36,7 @@ test('Snyk local catalog captures the verified first-party careers pages and Wor
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'snyk.io')
   assert.equal(provider.verifiedOn, '2026-07-25')
-  assert.match(provider.modulePath, /snyk[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /snyk\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /snyk.workday[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/snyk\.io\/careers\//i)
@@ -53,7 +53,7 @@ test('getScraperCatalog includes Snyk as a runnable script provider', () => {
   assert.equal(provider.companyName, 'Snyk')
   assert.equal(provider.companyCareerPage, 'https://snyk.io/careers/all-jobs/')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /snyk[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /snyk\.workday[\\/]script\.js$/i)
 })
 
 test('Snyk India resolves through the dedicated alias extension to the broader Snyk provider', () => {

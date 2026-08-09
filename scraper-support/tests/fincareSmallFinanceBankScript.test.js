@@ -62,6 +62,13 @@ test('run returns an empty array after validating that the legacy Fincare domain
   const jobs = await fincare.createFincareSmallFinanceBankScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
+      if (url === MERGED_PARENT_HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url: MERGED_PARENT_HOMEPAGE_URL,
+          html: auHomepageHtml,
+        }
+      }
       if (url === LEGACY_HOMEPAGE_URL) {
         return {
           status: 200,
@@ -81,6 +88,7 @@ test('run returns an empty array after validating that the legacy Fincare domain
   })
 
   assert.deepEqual(requestedUrls, [
+    MERGED_PARENT_HOMEPAGE_URL,
     LEGACY_HOMEPAGE_URL,
     LEGACY_HOMEPAGE_NO_WWW_URL,
   ])
@@ -93,6 +101,13 @@ test('run fails closed when the legacy redirect target or the merged AU homepage
   await assert.rejects(
     fincare.createFincareSmallFinanceBankScraper().run({
       fetchPage: async (url) => {
+        if (url === MERGED_PARENT_HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url: MERGED_PARENT_HOMEPAGE_URL,
+            html: auHomepageHtml,
+          }
+        }
         if (url === LEGACY_HOMEPAGE_URL) {
           return {
             status: 200,
@@ -109,6 +124,13 @@ test('run fails closed when the legacy redirect target or the merged AU homepage
   await assert.rejects(
     fincare.createFincareSmallFinanceBankScraper().run({
       fetchPage: async (url) => {
+        if (url === MERGED_PARENT_HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url: MERGED_PARENT_HOMEPAGE_URL,
+            html: auHomepageHtml,
+          }
+        }
         if (url === LEGACY_HOMEPAGE_URL) {
           return {
             status: 200,

@@ -4,10 +4,13 @@ import test from 'node:test'
 const careersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Career Openings - Fingent Careers</title>
+  </head>
   <body>
     <h1>Explore Our Current Openings</h1>
     <a href="/careers/accounts-executive-contract-role/">Accounts Executive [Contract Role] 1 - 3 Years</a>
-    <a href="/careers/associate-technical-lead-dotnet/">Associate Technical Lead – .NET 8 - 14 years</a>
+    <a href="/careers/associate-technical-lead-dotnet/">Associate Technical Lead - .NET 8 - 14 years</a>
     <a href="/careers/vice-president-of-sales/">Vice President of Sales 15+ Years</a>
     <a href="/careers/senior-software-engineer-dotnet/">Senior Software Engineer .NET 6 - 8 years</a>
     <a href="/careers/devops-engineer/">DevOps Engineer 1-3Years</a>
@@ -53,7 +56,7 @@ test('Fingent exports local provider metadata for the verified first-party openi
     companyDomain: 'fingent.com',
     verifiedOn: '2026-07-18',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://www.fingent.com/careers/career-openings/ was the live first-party Fingent openings page, and that it publicly exposed current opening links such as Accounts Executive [Contract Role], Associate Technical Lead – .NET, Senior Software Engineer .NET, DevOps Engineer, and Data Engineer with experience ranges in the visible listing text.',
+      'Verified on Saturday, July 18, 2026 that https://www.fingent.com/careers/career-openings/ was the live first-party Fingent openings page, and that it publicly exposed current opening links such as Accounts Executive [Contract Role], Associate Technical Lead - .NET, Senior Software Engineer .NET, DevOps Engineer, and Data Engineer with experience ranges in the visible listing text.',
     dryRunFile: 'fingent/jobs.json',
   })
 

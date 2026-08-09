@@ -297,6 +297,35 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
+export const buildListingFallbackJob = (listing = {}) => {
+  const title = normalizeWhitespace(listing.title)
+  const location = buildLocation(listing.locationText)
+  const jobId = listing.jobId || buildJobId(title)
+
+  return {
+    title,
+    company: COMPANY,
+    department: null,
+    location,
+    city: deriveCity(listing.locationText),
+    state: deriveState(listing.locationText),
+    country: 'India',
+    jobId,
+    requisitionId: listing.requisitionId || jobId,
+    sourceUrl: listing.sourceUrl || buildJobUrl(title),
+    applyUrl: listing.sourceUrl || buildJobUrl(title),
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: 'Apply via the Rinex Technologies job page.',
+    remoteStatus: /remote|hybrid|work from home/i.test(location) ? 'Remote' : 'On-site',
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -329,10 +358,17 @@ export const createRinexTechnologiesScraper = () => ({
 
     for (const listing of selectedListings) {
       let detailHtml = await fetchText(listing.sourceUrl)
-      if (!hasOfficialJobDetailSignal(detailHtml, listing) && isJavaScriptOnlyShell(detailHtml)) {
-        throw new Error(`Rinex Technologies API-only scraper received a JavaScript-only detail page for ${listing.sourceUrl}`)
+      let detail
+
+      if (!hasOfficialJobDetailSignal(detailHtml, listing)) {
+        if (isJavaScriptOnlyShell(detailHtml)) {
+          detail = buildListingFallbackJob(listing)
+        } else {
+          throw new Error('verified Rinex Technologies job detail no longer matches the trusted first-party application surface')
+        }
+      } else {
+        detail = extractJobDetail(detailHtml, listing)
       }
-      const detail = extractJobDetail(detailHtml, listing)
 
       jobs.push({
         ...detail,

@@ -1,9 +1,9 @@
-export const STACKPATH_CATALOG = {
+﻿export const STACKPATH_CATALOG = {
   source: 'stackpath',
   companyName: 'StackPath',
   officialBrandName: 'StackPath',
   adapter: 'script',
-  modulePath: '../stackpath/script.js',
+  modulePath: '../../scraper/stackpath/script.js',
   dryRunFile: 'stackpath/jobs.json',
   companyCareerPage: 'https://www.stackpath.com/',
   companyDomain: 'stackpath.com',
@@ -20,3 +20,4 @@ export const STACKPATH_CATALOG = {
 }
 
 export default STACKPATH_CATALOG
+

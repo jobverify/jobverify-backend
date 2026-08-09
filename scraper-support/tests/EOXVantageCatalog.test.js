@@ -4,12 +4,15 @@ import test from 'node:test'
 const careersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Careers | Start Your Career at EOX Vantage</title>
+  </head>
   <body>
-    <h2>Start your career at EOX Vantage.</h2>
-    <p>With headquarters in Cleveland, Ohio, offices in Bangalore and Mangalore, India and a remote call center throughout the US.</p>
-    <h2>Sales and Client Growth Executive</h2>
-    <h2>Cleveland, OH</h2>
-    <a href="https://eoxvantage.com/job-inquiry/">Apply Now</a>
+    <h1>Start Your Career at EOX Vantage</h1>
+    <p>A tech company doing genuinely interesting work.</p>
+    <p>Two simple ways to take the next step.</p>
+    <a href="https://eoxvantage.com/current-openings/">Apply to a Current Opening</a>
+    <a href="https://eoxvantage.com/job-inquiry/">Send Us Your Resume</a>
   </body>
 </html>
 `
@@ -30,7 +33,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('EOX Vantage exports local provider metadata for the verified US-only first-party opening', async () => {
+test('EOX Vantage exports local provider metadata for the redesigned first-party careers page without public openings', async () => {
   const providerModule = await loadProviderModule()
   const scriptModule = await loadScriptModule()
 
@@ -42,16 +45,16 @@ test('EOX Vantage exports local provider metadata for the verified US-only first
     modulePath: '../../scraper/eoxvantage/script.js',
     homepageUrl: 'https://eoxvantage.com/',
     companyCareerPage: 'https://eoxvantage.com/careers/',
-    atsPlatform: 'official-company-careers-us-only-current-opening',
+    atsPlatform: 'official-company-careers-no-public-openings',
     countryFilter: 'India',
-    paginationStrategy: 'single-page-current-openings-validation',
-    extractionStrategy: 'verified-first-party-careers-page+us-only-opening+india-filter-returns-empty',
+    paginationStrategy: 'browser-rendered-single-page-no-public-openings-validation',
+    extractionStrategy: 'verified-first-party-redesigned-careers-page+no-public-role-cards+india-filter-returns-empty',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'eoxvantage.com',
-    verifiedOn: '2026-07-18',
+    verifiedOn: '2026-08-02',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://eoxvantage.com/careers/ was the live first-party EOX Vantage careers page, that it exposed a public Sales and Client Growth Executive opening in Cleveland, Ohio with an Apply Now handoff, and that the page did not expose any India-located public role cards despite noting Bangalore and Mangalore offices.',
+      'Verified on Sunday, August 2, 2026 that https://eoxvantage.com/careers/ is the live first-party EOX Vantage careers page, that the page now presents a redesigned employer-branding surface headed by "Start Your Career at EOX Vantage" with prompts to apply to a current opening or send a resume, and that it no longer exposes public role cards, location-specific openings, or Apply Now job handoffs on the page. No trustworthy India-located public opening was exposed during live verification.',
     dryRunFile: 'eoxvantage/jobs.json',
   })
 
@@ -61,18 +64,11 @@ test('EOX Vantage exports local provider metadata for the verified US-only first
   assert.deepEqual(scriptModule.PROVIDER_METADATA, providerModule.provider)
 })
 
-test('EOX Vantage validates the first-party careers page and returns no India jobs from the verified US-only opening set', async () => {
+test('EOX Vantage validates the redesigned first-party careers page and returns no India jobs when no public role cards are exposed', async () => {
   const eox = await loadScriptModule()
 
   assert.equal(eox.hasOfficialCareersSignal(careersHtml), true)
-  assert.deepEqual(eox.extractOpenings(careersHtml), [
-    {
-      title: 'Sales and Client Growth Executive',
-      location: 'Cleveland, OH',
-      sourceUrl: 'https://eoxvantage.com/job-inquiry/',
-      applyUrl: 'https://eoxvantage.com/job-inquiry/',
-    },
-  ])
+  assert.deepEqual(eox.extractOpenings(careersHtml), [])
 
   const jobs = await eox.run({
     fetchText: async () => careersHtml,

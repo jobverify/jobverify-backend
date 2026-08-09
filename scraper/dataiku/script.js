@@ -14,7 +14,7 @@ export const GREENHOUSE_BOARD_URL = 'https://job-boards.greenhouse.io/dataiku'
 export const GREENHOUSE_API_URL = 'https://boards-api.greenhouse.io/v1/boards/dataiku/jobs?content=true'
 export const VERIFIED_ON = DATAIKU_CATALOG.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

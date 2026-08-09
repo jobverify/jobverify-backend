@@ -16,11 +16,11 @@ import {
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const scraperDir = path.dirname(fileURLToPath(import.meta.url))
-const companyCsvPath = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const companyCsvText = "company_name\nTricentis\n"
 
 test('resolves only the literal Tricentis CSV name to its official Workday provider', () => {
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(companyCsvPath, 'utf8'),
+    csvText: companyCsvText,
     catalog: getScraperCatalog(),
   })
   const nearNameReport = generateCompanyCoverageReport({

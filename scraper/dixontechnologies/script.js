@@ -26,7 +26,7 @@ export const VERIFIED_ON = DIXON_TECHNOLOGIES_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = DIXON_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = DIXON_TECHNOLOGIES_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const OFFICIAL_PAGE_TIMEOUT_MS = 15000
 
 const darwinboxScraper = createDarwinboxScraper({

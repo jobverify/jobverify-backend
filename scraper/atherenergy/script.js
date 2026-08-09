@@ -20,10 +20,44 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: CAREERS_HOME_URL,
   },
+  attempts: 1,
   label: 'atherenergy',
   timeoutMs: 15000,
 })
+
+const isHttpStatusError = (error, statusCode, url) => {
+  const escapedUrl = String(url).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`HTTP\\s+${statusCode}\\b[\\s\\S]*${escapedUrl}`, 'i')
+    .test(String(error?.message ?? error ?? ''))
+}
+
+const isDeterministicHttpBlock = (error) =>
+  /HTTP\s+(?:401|403|404|410|451)\b/i.test(String(error?.message ?? error ?? ''))
+
+const wrapApiOnlyFetchError = (url, error) => {
+  const wrapped = new Error(
+    `Ather Energy API-only migration could not fetch ${url}: ${error?.message ?? error}`,
+    { cause: error },
+  )
+
+  for (const key of ['abortRetries', 'softFailure', 'upstreamOutage', 'failureKind', 'localTimeout', 'retryDelayMs']) {
+    if (error?.[key] != null) {
+      wrapped[key] = error[key]
+    }
+  }
+
+  if (wrapped.abortRetries !== true && isDeterministicHttpBlock(error)) {
+    wrapped.abortRetries = true
+    wrapped.softFailure ??= true
+    wrapped.upstreamOutage ??= true
+    wrapped.failureKind ??= 'network_or_timeout'
+  }
+
+  return wrapped
+}
 
 export const hasCareersHomeSignal = (html) =>
   CAREERS_HOME_SIGNAL_PATTERN.test(String(html || ''))
@@ -56,17 +90,28 @@ export const createAtherEnergyScraper = ({
       try {
         return await fetchText(url)
       } catch (error) {
-        throw new Error(`Ather Energy API-only migration could not fetch ${url}: ${error.message}`)
+        throw wrapApiOnlyFetchError(url, error)
       }
     }
 
-    const careersHomeHtml = await fetchPageText(CAREERS_HOME_URL)
-
-    if (!hasCareersHomeSignal(careersHomeHtml)) {
-      return []
+    let careersHomeHtml = null
+    try {
+      careersHomeHtml = await fetchPageText(CAREERS_HOME_URL)
+    } catch (error) {
+      if (!isHttpStatusError(error, 403, CAREERS_HOME_URL)) {
+        throw error
+      }
     }
 
     const allJobsHtml = await fetchPageText(ALL_JOBS_URL)
+    if (careersHomeHtml && !hasCareersHomeSignal(careersHomeHtml)) {
+      return []
+    }
+
+    if (!hasJobsPageSignal(allJobsHtml)) {
+      return []
+    }
+
     const jobs = extractJobs(allJobsHtml)
 
     return maxJobs ? jobs.slice(0, maxJobs) : jobs

@@ -136,7 +136,7 @@ const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     },
   })
 

@@ -16,7 +16,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const VERIFIED_JOB_DETAIL_URLS = [...PROVIDER_METADATA.verifiedJobDetailUrls]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const RELEVANT_JOB_PATH = /^\/careers\/[^/]+\/$/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')

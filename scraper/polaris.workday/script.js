@@ -20,7 +20,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {

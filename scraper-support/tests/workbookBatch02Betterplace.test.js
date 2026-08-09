@@ -121,7 +121,7 @@ test('BetterPlace catalog entry points to the verified public careers cards scra
     betterplace.DISPOSITION,
     'verified-first-party-careers-page-visible-cards',
   )
-  assert.equal(provider?.modulePath, '../../scraper/betterplace/script.js')
+  assert.match(provider?.modulePath || '', /[\\/]betterplace[\\/]script\.js$/i)
   assert.equal(provider?.companyCareerPage, betterplace.CAREERS_URL)
   assert.equal(provider?.companyDomain, 'betterplace.co.in')
   assert.equal(provider?.atsPlatform, betterplace.DISPOSITION)

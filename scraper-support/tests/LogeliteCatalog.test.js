@@ -4,37 +4,40 @@ import test from 'node:test'
 const careersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Join Our Dynamic Digital Marketing &amp; Web Development Team</title>
+  </head>
   <body>
     <h1>Career</h1>
     <p>Open Job Positions</p>
     <h2>Your Career Starts Here</h2>
-    <section>
-      <h3>Human Resource Executive</h3>
-      <p>Total Openings 1</p>
-      <p>Lucknow</p>
-      <p>Subject to Interview</p>
-      <p>We're looking for a dynamic Human Resource Executive to join our team and contribute to a positive work environment.</p>
-      <a href="/career/hr-executive-details">Download Details</a>
+    <div class="career-page-card">
+      <h3 class="card-title"><a href="/career/hr-executive-details">Human Resource Executive</a></h3>
+      <span class="card-status">Total Openings 1</span>
+      <p class="card-meta-item">Lucknow</p>
+      <p class="card-meta-item">Subject to Interview</p>
+      <p class="card-disc">We're looking for a dynamic Human Resource Executive to join our team and contribute to a positive work environment.</p>
+      <a href="/career/hr-executive-details">Download Details PDF</a>
       <a href="/career/hr-executive-apply">Apply Now</a>
-    </section>
-    <section>
-      <h3>Business Development Manager</h3>
-      <p>Total Openings 1</p>
-      <p>Lucknow</p>
-      <p>Subject to Interview</p>
-      <p>We're looking for a professional with a good understanding of the market and a track record of sales success.</p>
-      <a href="/career/business-development-manager-details">Download Details</a>
+    </div>
+    <div class="career-page-card">
+      <h3 class="card-title"><a href="/career/business-development-manager-details">Business Development Manager</a></h3>
+      <span class="card-status">Total Openings 1</span>
+      <p class="card-meta-item">Lucknow</p>
+      <p class="card-meta-item">Subject to Interview</p>
+      <p class="card-disc">We're looking for a professional with a good understanding of the market and a track record of sales success.</p>
+      <a href="/career/business-development-manager-details">Download Details PDF</a>
       <a href="/career/business-development-manager-apply">Apply Now</a>
-    </section>
-    <section>
-      <h3>Sales & Support Executive</h3>
-      <p>Total Openings 5</p>
-      <p>Lucknow</p>
-      <p>Subject to Interview</p>
-      <p>We are looking for a customer-centric individual with excellent communication and problem-solving skills.</p>
-      <a href="/career/sales-support-executive-details">Download Details</a>
-      <a href="/career/sales-support-executive-apply">Apply Now</a>
-    </section>
+    </div>
+    <div class="career-page-card">
+      <h3 class="card-title"><a href="/career/seo-executive-details">SEO Executive</a></h3>
+      <span class="card-status">Total Openings 2</span>
+      <p class="card-meta-item">Lucknow</p>
+      <p class="card-meta-item">Subject to Interview</p>
+      <p class="card-disc">We are looking for an SEO Executive with strong on-page and off-page optimization fundamentals.</p>
+      <a href="/career/seo-executive-details">Download Details PDF</a>
+      <a href="/career/seo-executive-apply">Apply Now</a>
+    </div>
   </body>
 </html>
 `
@@ -74,9 +77,9 @@ test('Logelite exports local provider metadata for the verified first-party care
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'logelite.com',
-    verifiedOn: '2026-07-18',
+    verifiedOn: '2026-08-03',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://logelite.com/career/ was the live first-party Logelite careers page, and that it publicly exposed role cards such as Human Resource Executive, Business Development Manager, and Sales & Support Executive with Lucknow location text plus Download Details and Apply Now links.',
+      'Verified on Monday, August 3, 2026 that https://logelite.com/career/ is still the live first-party Logelite careers page and that it publicly exposes role cards such as Human Resource Executive, Business Development Manager, and SEO Executive with Lucknow location text plus first-party role pages, Download Details PDFs, and Apply Now links.',
     dryRunFile: 'logelite/jobs.json',
   })
 
@@ -93,21 +96,24 @@ test('Logelite extracts verified same-page role cards with first-party apply lin
 
   const jobs = await logelite.run({
     fetchText: async () => careersHtml,
-    now: () => '2026-07-18T00:00:00.000Z',
+    now: () => '2026-08-03T00:00:00.000Z',
   })
 
   assert.equal(jobs.length, 3)
   assert.deepEqual(jobs[0], {
     title: 'Human Resource Executive',
+    company: 'Logelite',
     location: 'Lucknow, India',
+    city: 'Lucknow',
+    country: 'India',
     openings: '1',
     compensation: 'Subject to Interview',
     sourceUrl: 'https://logelite.com/career/hr-executive-details',
     applyUrl: 'https://logelite.com/career/hr-executive-apply',
-    company: 'Logelite',
-    country: 'India',
+    jobDescription:
+      "We're looking for a dynamic Human Resource Executive to join our team and contribute to a positive work environment.",
     link: 'https://logelite.com/career/hr-executive-apply',
     source: 'logelite',
-    scrapedAt: '2026-07-18T00:00:00.000Z',
+    scrapedAt: '2026-08-03T00:00:00.000Z',
   })
 })

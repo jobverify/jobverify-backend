@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import BRAINIUM_INFORMATION_TECHNOLOGIES_CATALOG from './catalog.js'
@@ -161,82 +160,45 @@ export const extractRoleCards = (html = '') => {
   return extractLegacyRoleCards(html)
 }
 
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
-
 export const createBrainiumInformationTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    let browserSession = null
+  async run({ fetchText = defaultFetchText } = {}) {
+    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
 
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
+    if (!hasOfficialBrainiumCareersSignals(careersHtml)) {
+      throw new Error('Brainium Information Technologies verified official careers page no longer matches the verified public surface')
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchVerifiedText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
+    const roles = extractRoleCards(careersHtml)
+    if (roles.length === 0) {
+      throw new Error('Brainium Information Technologies verified careers surface no longer exposes open roles')
     }
 
-    try {
-      const careersHtml = await fetchVerifiedText(OFFICIAL_CAREERS_URL)
-
-      if (!hasOfficialBrainiumCareersSignals(careersHtml)) {
-        throw new Error('Brainium Information Technologies verified official careers page no longer matches the verified public surface')
-      }
-
-      const roles = extractRoleCards(careersHtml)
-      if (roles.length === 0) {
-        throw new Error('Brainium Information Technologies verified careers surface no longer exposes open roles')
-      }
-
-      return roles.map((role) => ({
-        title: role.title,
-        company: COMPANY_NAME,
-        department: role.department,
-        location: role.location,
-        city: role.city,
-        country: role.country,
-        jobId: role.jobId,
-        requisitionId: null,
-        sourceUrl: role.sourceUrl,
-        applyUrl: role.applyUrl,
-        employmentType: role.employmentType,
-        experienceRequired: null,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: role.skills,
-        postingDate: null,
-        closingDate: null,
-        jobDescription: null,
-        publicExperienceChecked: true,
-        source: SOURCE,
-        link: role.applyUrl,
-        scrapedAt: now(),
-      }))
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
-    }
+    return roles.map((role) => ({
+      title: role.title,
+      company: COMPANY_NAME,
+      department: role.department,
+      location: role.location,
+      city: role.city,
+      country: role.country,
+      jobId: role.jobId,
+      requisitionId: null,
+      sourceUrl: role.sourceUrl,
+      applyUrl: role.applyUrl,
+      employmentType: role.employmentType,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: role.skills,
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      publicExperienceChecked: true,
+      source: SOURCE,
+      link: role.applyUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

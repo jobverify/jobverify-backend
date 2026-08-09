@@ -1,8 +1,8 @@
-# Jobify Backend
+# Jobverify Backend
 
 ## Release: 26.07.02
 
-Express and MongoDB backend for Jobify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
+Express and MongoDB backend for Jobverify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
 ## Tech Stack
 
@@ -15,7 +15,7 @@ Express and MongoDB backend for Jobify, with a separate scraper runtime that col
 ## Repository Layout
 
 ```text
-Jobify-backend/
+Jobverify-backend/
 |-- src/                  Application source code
 |   |-- controllers/      Route handlers
 |   |-- middleware/       Auth, CSRF, validation, error handling
@@ -82,10 +82,9 @@ disk-backed scraper providers. Refresh it after adding or removing a scraper:
 npm run coverage:companies:sync
 ```
 
-The refresh also writes the frontend live-company-name projection and removes
-the deprecated frontend raw coverage report. `npm run coverage:companies --
-<csv>` only evaluates an external backlog against the catalog and aliases; it
-does not refresh the scraper inventory.
+The refresh removes obsolete frontend coverage artifacts. `npm run
+coverage:companies -- <csv>` only evaluates an external backlog against the
+catalog and aliases; it does not refresh the scraper inventory.
 
 To run only the companies listed in `../new_Companies.csv`, use:
 
@@ -101,7 +100,7 @@ npm run scrape:csv -- ../path/to/company-list.csv --parallel --dry-run
 
 ## Public job API abuse protection
 
-Jobify keeps public job discovery open without requiring login. `GET /api/jobs`, `GET|POST /api/jobs/search`, and `GET /api/jobs/:id` are the guarded anonymous discovery routes. Job metadata, landing-page statistics, live hiring companies, and the SEO feed remain public and continue to rely on the existing coarse IP limits.
+Jobverify keeps public job discovery open without requiring login. `GET /api/jobs`, `GET|POST /api/jobs/search`, and `GET /api/jobs/:id` are the guarded anonymous discovery routes. Job metadata, landing-page statistics, live hiring companies, and the SEO feed remain public and continue to rely on the existing coarse IP limits.
 
 The in-memory abuse guard watches for rapid distinct page walking and bursts of distinct job-detail reads, then returns JSON-only throttling responses before the controllers do expensive database work. This is designed to be lightweight enough for Render Free and does not require Redis or another managed store.
 

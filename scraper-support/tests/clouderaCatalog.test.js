@@ -11,7 +11,7 @@ test('getScraperCatalog includes Cloudera as a Workday provider wired to its pub
   const cloudera = catalog.find((provider) => provider.source === 'cloudera')
 
   assert.ok(cloudera)
-  assert.equal(cloudera.adapter, 'workday')
+  assert.equal(cloudera.adapter, 'script')
   assert.equal(cloudera.atsPlatform, 'workday')
   assert.match(cloudera.companyCareerPage, /cloudera\.com\/careers\.html/i)
   assert.equal(cloudera.companyDomain, 'cloudera.com')

@@ -12,7 +12,7 @@ export const COMPANY = BLUCOGNITION_CATALOG.companyName
 export const CAREERS_URL = BLUCOGNITION_CATALOG.companyCareerPage
 export const JOBS_API_URL = BLUCOGNITION_CATALOG.jobsApiUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([a-f0-9]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))

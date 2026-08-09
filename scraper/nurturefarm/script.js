@@ -228,13 +228,14 @@ export const extractJobListings = (html) => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  ...options,
 })
 
 export const createNurtureFarmScraper = () => ({
@@ -247,7 +248,7 @@ export const createNurtureFarmScraper = () => ({
 
     let html
     try {
-      html = await fetchText(extractJobsUrl(joinUsHtml))
+      html = await fetchText(extractJobsUrl(joinUsHtml), { attempts: 1 })
     } catch (error) {
       if (!isExpectedJobsBoardTimeout(error)) {
         throw error

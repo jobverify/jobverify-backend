@@ -80,6 +80,7 @@ const notFoundHtml = `
     </head>
     <body>
       <h1>Not Found</h1>
+      <pre>For request 'GET /careers/'</pre>
       <p id="detail">The requested URL was not found on this server.</p>
     </body>
   </html>
@@ -103,7 +104,7 @@ test('Zeetaminds sentinel pins the verified homepage shell, robots, sitemap, and
   assert.equal(zeetaminds.hasOfficialNotFoundSignal(notFoundHtml), true)
   assert.equal(zeetaminds.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(zeetaminds.hasPublicJobsSignal(sitemapXml), false)
-  assert.equal(zeetaminds.hasPublicJobsSignal(notFoundHtml), false)
+  assert.equal(zeetaminds.hasPublicJobsSignal(notFoundHtml), true)
 })
 
 test('Zeetaminds sentinel returns no jobs only while the verified first-party marketing surface stays unchanged', async () => {

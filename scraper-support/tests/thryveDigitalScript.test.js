@@ -124,7 +124,6 @@ test('Thryve Digital run validates the first-party careers page before delegatin
       postingDate: '05-Aug-2026',
       closingDate: null,
       jobDescription: '<p>Analyze healthcare operations data and build actionable insights.</p>',
-      publicExperienceChecked: false,
       source: 'thryvedigital',
       link: 'https://tdh.darwinbox.in/ms/candidatev2/main/careers/jobDetails/thryve-001',
       scrapedAt: FIXED_SCRAPED_AT,

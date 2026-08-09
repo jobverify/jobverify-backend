@@ -15,7 +15,7 @@ export const VERIFIED_SURFACE_SUMMARY =
   "Verified on Thursday, July 30, 2026 that https://locus.sh/careers/ was the live first-party Locus careers page, that its primary careers CTA labeled Explore Open Roles linked directly to the public Freshteam board at https://locus.freshteam.com/jobs, and that the board publicly exposed 12 current openings including India roles such as Senior Security Engineer and Sr. Technical Account Manager in Bengaluru. This scraper validates that verified official handoff and public Freshteam board, then returns the current India jobs from the visible public detail pages."
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value = '') =>
   String(value)

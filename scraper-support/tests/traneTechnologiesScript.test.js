@@ -183,7 +183,7 @@ test('run keeps Trane Technologies on the public India Phenom lane and preserves
     'https://tranetechnologies.wd12.myworkdayjobs.com/Trane_Technologies_Careers/job/Bengaluru-Karnataka-India/Senior-Software-Engineer_JR-12345/apply',
   )
   assert.equal(jobs[0].postingDate, '2026-07-09')
-  assert.match(jobs[0].experienceRequired, /5\+ years of experience/i)
+  assert.match(jobs[0].experienceRequired, /5\+ years/i)
   assert.match(jobs[0].minimumQualification, /Bachelor degree/i)
   assert.match(jobs[0].jobDescription, /Trane Technologies India teams/i)
 })

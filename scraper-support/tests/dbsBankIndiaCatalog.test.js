@@ -76,7 +76,7 @@ test('DBS Bank India local catalog hydrates into coverage without needing an ali
 
   assert.equal(provider.companyName, 'DBS Bank India')
   assert.equal(provider.companyDomain, 'dbs.com')
-  assert.match(provider.modulePath, /dbsbankindia[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /dbsbankindia\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /dbsbankindia.workday[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

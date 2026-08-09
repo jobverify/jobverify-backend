@@ -1,9 +1,9 @@
-export const LEXMARK_INDIA_CATALOG = {
+﻿export const LEXMARK_INDIA_CATALOG = {
   source: 'lexmarkindia',
   companyName: 'Lexmark India',
   officialBrandName: 'Lexmark India',
   adapter: 'script',
-  modulePath: '../lexmarkindia/script.js',
+  modulePath: '../../scraper/lexmarkindia/script.js',
   dryRunFile: 'lexmarkindia/jobs.json',
   companyCareerPage: 'https://origin-www.lexmark.com/en_in/careers.html',
   jobSearchUrl: 'https://origin-www.lexmark.com/en_in/careers/job-search.html',
@@ -25,3 +25,4 @@ export const LEXMARK_INDIA_CATALOG = {
 }
 
 export default LEXMARK_INDIA_CATALOG
+

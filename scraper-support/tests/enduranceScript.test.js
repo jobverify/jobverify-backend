@@ -277,7 +277,11 @@ test('run reports an API-only migration error when direct Endurance requests are
       fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
       createTextFetcher: async () => assert.fail('Endurance must not launch a browser'),
     }),
-    /endurance API-only migration.*HTTP 403/i,
+    (error) => {
+      assert.match(error.message, /endurance API-only migration.*HTTP 403/i)
+      assert.equal(error.abortRetries, true)
+      return true
+    },
   )
 })
 

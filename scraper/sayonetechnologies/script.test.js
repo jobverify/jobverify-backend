@@ -9,100 +9,122 @@ const loadSayOneModule = async () => {
   }
 }
 
-const careersPageData = {
-  url: 'https://www.sayonetech.com/career/',
-  title: 'Careers | Jobs in Kochi | SayOne',
-  text: `
-    Find the Right Place
-    Our Culture
-    Are You Ready to be an Integral Part of SayOne?
-    Job Offers
-    Career Email: careers@sayonetech.com
-  `,
-}
+const careersPageHtml = String.raw`<!DOCTYPE html>
+<html>
+  <head>
+    <title>Careers | Jobs in Kochi | SayOne</title>
+    <script src="/_next/static/chunks/placeholder.js"></script>
+    <script src="/_next/static/chunks/public-data.js"></script>
+  </head>
+  <body>
+    <h1>Find the Right Place</h1>
+    <section>Our Culture</section>
+    <h2>Are You Ready to be an Integral Part of SayOne?</h2>
+    <p>Career Email: careers@sayonetech.com</p>
+  </body>
+</html>`
 
-const zeroVacancyPageData = {
-  text: `
-    Job Offers
-    No vacancies available
-    Please check back later for new opportunities.
-  `,
-  jobCardCount: 0,
-}
+const publicDataChunkJs = String.raw`
+  "use strict";
+  (self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[2889],{
+    12889:(e,t,a)=>{
+      a.d(t,{S$:()=>h});
+      let l=(0,a(83845).GO)({
+        baseURL:"https://strapi.sayonetech.com/api",
+        auth:"test-public-token"
+      }),
+      h=async()=>[];
+    }
+  }]);
+`
 
-const renderedJobCards = [
-  {
-    index: 0,
-    title: 'Java Spring Boot Developer',
-    shortDescription: 'We are looking for a skilled and motivated Software Developer.',
-    experience: '3-5',
-    location: 'Infopark, Kochi',
-    buttonText: 'View Job',
-  },
-  {
-    index: 1,
-    title: 'Project Coordinator/Project Manager',
-    shortDescription: 'We are seeking a detail-oriented project coordinator.',
-    experience: '4+',
-    location: 'Kochi',
-    buttonText: 'View Job',
-  },
-]
-
-const modalDetailsByCardIndex = {
-  0: {
-    title: 'Java Spring Boot Developer',
-    experience: '3-5',
-    location: 'Infopark, Kochi',
-    description: 'We are looking for a skilled and motivated Software Developer with 3+ years of hands-on experience.',
-    sections: [
-      {
-        heading: 'Responsibilities',
-        content: 'Design, develop, and maintain Java Spring Boot microservices\nCollaborate with cross-functional teams',
-      },
-      {
-        heading: 'Requirements',
-        content: '3-5 years of professional experience\nStrong proficiency in Java and Spring Boot\nSoft Skills\nGood communication',
-      },
-    ],
-    applyUrl: 'mailto:careers@sayonetech.com',
-  },
-  1: {
-    title: 'Project Coordinator/Project Manager',
-    experience: '4+',
-    location: 'Kochi',
-    description: 'We are seeking a detail-oriented project coordinator who can work across teams.',
-    sections: [
-      {
-        heading: 'Responsibilities',
-        content: 'Track project progress\nCoordinate with internal stakeholders',
-      },
-      {
-        heading: 'Requirements',
-        content: '4+ years of project coordination experience\nExperience with Agile delivery',
-      },
-    ],
-    applyUrl: 'mailto:careers@sayonetech.com',
-  },
+const jobsPayload = {
+  data: [
+    {
+      id: 17,
+      documentId: 'rgxuymsiglunmo2966nba0fy',
+      title: 'Java Spring Boot Developer',
+      slug: 'java-spring-boot-developer-job-opening',
+      experience: '3-5',
+      description: 'We are looking for a skilled and motivated Software Developer with 3+ years of hands-on experience.',
+      location: 'Infopark, Kochi',
+      job_type: 'Full-time',
+      job_status: 'Open',
+      responsibilities: [
+        '- Design, develop, and maintain Java Spring Boot microservices',
+        '- Collaborate with cross-functional teams',
+      ].join('\n'),
+      requirements: [
+        '- 3-5 years of professional experience',
+        '- Strong proficiency in Java and Spring Boot',
+        '**Soft Skills**',
+        '- Good communication',
+      ].join('\n'),
+      createdAt: '2026-01-07T04:54:03.570Z',
+      updatedAt: '2026-01-07T04:54:03.570Z',
+      publishedAt: '2026-01-07T04:54:03.590Z',
+    },
+    {
+      id: 15,
+      documentId: 'r0u96lngxeaw0m84lip9gpwd',
+      title: 'Fullstack Developer',
+      slug: 'fullstack-developer',
+      experience: '2-3',
+      description: 'We are looking for a skilled and motivated Fullstack Developer with 2+ years of experience.',
+      location: 'Infopark, Kochi',
+      job_type: 'Full-time',
+      job_status: 'Open',
+      responsibilities: '- Build scalable APIs and services',
+      requirements: [
+        '- 2+ years of hands-on experience in backend and frontend development',
+        '- Proficiency in backend frameworks: Django, Flask, or FastAPI',
+      ].join('\n'),
+      createdAt: '2025-11-12T12:08:02.861Z',
+      updatedAt: '2025-11-12T12:08:02.861Z',
+      publishedAt: '2025-11-12T12:08:02.879Z',
+    },
+  ],
 }
 
 test('SayOne Technologies validates the verified first-party careers surface and zero-vacancy signal', async () => {
   const sayOne = await loadSayOneModule()
   assert.ok(sayOne, 'Expected SayOne Technologies scraper module at ./script.js')
 
+  const pageData = {
+    url: sayOne.CAREERS_PAGE_URL,
+    title: 'Careers | Jobs in Kochi | SayOne',
+    text: [
+      'Find the Right Place',
+      'Our Culture',
+      'Are You Ready to be an Integral Part of SayOne?',
+      'Career Email: careers@sayonetech.com',
+    ].join('\n'),
+  }
+
   assert.equal(sayOne.SOURCE, 'sayonetechnologies')
   assert.equal(sayOne.COMPANY, 'SayOne Technologies')
   assert.equal(sayOne.CAREERS_PAGE_URL, 'https://www.sayonetech.com/career/')
-  assert.equal(sayOne.hasOfficialCareersSignal(careersPageData), true)
-  assert.equal(sayOne.hasExplicitNoVacanciesSignal(zeroVacancyPageData), true)
+  assert.equal(sayOne.hasOfficialCareersSignal(pageData), true)
+  assert.equal(
+    sayOne.hasExplicitNoVacanciesSignal('No vacancies available. Please check back later for new opportunities.'),
+    true,
+  )
 })
 
-test('SayOne Technologies normalizes rendered cards and modal details into India job records', async () => {
+test('SayOne Technologies extracts live Strapi config from the public chunk and normalizes jobs', async () => {
   const sayOne = await loadSayOneModule()
   assert.ok(sayOne, 'Expected SayOne Technologies scraper module at ./script.js')
 
   assert.deepEqual(
-    sayOne.buildJobFromCardAndDetail(renderedJobCards[0], modalDetailsByCardIndex[0]),
+    sayOne.extractStrapiConfig(publicDataChunkJs),
+    {
+      baseUrl: 'https://strapi.sayonetech.com/api',
+      authToken: 'test-public-token',
+    },
+  )
+
+  assert.deepEqual(
+    sayOne.buildJobFromPosting(jobsPayload.data[0]),
     {
       title: 'Java Spring Boot Developer',
       company: 'SayOne Technologies',
@@ -110,11 +132,11 @@ test('SayOne Technologies normalizes rendered cards and modal details into India
       location: 'Infopark, Kochi',
       city: 'Kochi',
       country: 'India',
-      jobId: 'java-spring-boot-developer-infopark-kochi-3-5',
-      requisitionId: 'java-spring-boot-developer-infopark-kochi-3-5',
+      jobId: 'java-spring-boot-developer-job-opening',
+      requisitionId: 'java-spring-boot-developer-job-opening',
       sourceUrl: 'https://www.sayonetech.com/career/',
       applyUrl: 'mailto:careers@sayonetech.com',
-      employmentType: null,
+      employmentType: 'Full-time',
       experienceRequired: '3-5',
       minimumQualification: null,
       preferredQualification: null,
@@ -123,7 +145,7 @@ test('SayOne Technologies normalizes rendered cards and modal details into India
         'Strong proficiency in Java and Spring Boot',
         'Good communication',
       ],
-      postingDate: null,
+      postingDate: '2026-01-07T04:54:03.590Z',
       closingDate: null,
       jobDescription: [
         'Description: We are looking for a skilled and motivated Software Developer with 3+ years of hands-on experience.',
@@ -135,34 +157,44 @@ test('SayOne Technologies normalizes rendered cards and modal details into India
   )
 })
 
-test('SayOne Technologies runs through the verified browser-rendered public careers surface', async () => {
+test('SayOne Technologies runs through the verified API-only careers surface', async () => {
   const sayOne = await loadSayOneModule()
   assert.ok(sayOne, 'Expected SayOne Technologies scraper module at ./script.js')
 
-  const requestedUrls = []
-  const detailRequests = []
+  const requestedTextUrls = []
+  const requestedJson = []
 
-  const jobs = await sayOne.createSayonetechnologiesScraper({ maxJobs: 2 }).run({
-    collectPageDataImpl: async (_page, url) => {
-      requestedUrls.push(url)
-      return careersPageData
-    },
-    waitForRenderedJobsImpl: async () => ({
-      text: careersPageData.text,
-      jobCardCount: renderedJobCards.length,
-    }),
-    readRenderedJobCardsImpl: async () => renderedJobCards,
-    readJobDetailModalImpl: async (_page, cardIndex) => {
-      detailRequests.push(cardIndex)
-      return modalDetailsByCardIndex[cardIndex]
-    },
-    launchBrowserImpl: async () => ({ close: async () => {} }),
-    createOptimizedPageImpl: async () => ({}),
+  const jobs = await sayOne.createSayonetechnologiesScraper({
+    maxJobs: 2,
     now: () => '2026-07-11T07:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+      if (url === sayOne.CAREERS_PAGE_URL) return careersPageHtml
+      if (url === 'https://www.sayonetech.com/_next/static/chunks/placeholder.js') return 'console.log("noop")'
+      if (url === 'https://www.sayonetech.com/_next/static/chunks/public-data.js') return publicDataChunkJs
+      throw new Error(`Unexpected fetchText URL: ${url}`)
+    },
+    fetchJson: async (url, options = {}) => {
+      requestedJson.push({ url, options })
+      return jobsPayload
+    },
   })
 
-  assert.deepEqual(requestedUrls, [sayOne.CAREERS_PAGE_URL])
-  assert.deepEqual(detailRequests, [0, 1])
+  assert.deepEqual(
+    requestedTextUrls,
+    [
+      sayOne.CAREERS_PAGE_URL,
+      'https://www.sayonetech.com/_next/static/chunks/placeholder.js',
+      'https://www.sayonetech.com/_next/static/chunks/public-data.js',
+    ],
+  )
+  assert.equal(requestedJson.length, 1)
+  assert.match(requestedJson[0].url, /job-postings/i)
+  assert.equal(
+    requestedJson[0].options.headers.Authorization,
+    'Bearer test-public-token',
+  )
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'sayonetechnologies')
   assert.equal(jobs[0].link, 'mailto:careers@sayonetech.com')
@@ -170,15 +202,18 @@ test('SayOne Technologies runs through the verified browser-rendered public care
   assert.equal(jobs[1].city, 'Kochi')
 })
 
-test('SayOne Technologies returns no jobs only when the verified public page shows an explicit zero-vacancy state', async () => {
+test('SayOne Technologies returns no jobs when the verified public jobs API is empty', async () => {
   const sayOne = await loadSayOneModule()
   assert.ok(sayOne, 'Expected SayOne Technologies scraper module at ./script.js')
 
   const jobs = await sayOne.createSayonetechnologiesScraper().run({
-    collectPageDataImpl: async () => careersPageData,
-    waitForRenderedJobsImpl: async () => zeroVacancyPageData,
-    launchBrowserImpl: async () => ({ close: async () => {} }),
-    createOptimizedPageImpl: async () => ({}),
+    fetchText: async (url) => {
+      if (url === sayOne.CAREERS_PAGE_URL) return careersPageHtml
+      if (url === 'https://www.sayonetech.com/_next/static/chunks/placeholder.js') return 'console.log("noop")'
+      if (url === 'https://www.sayonetech.com/_next/static/chunks/public-data.js') return publicDataChunkJs
+      throw new Error(`Unexpected fetchText URL: ${url}`)
+    },
+    fetchJson: async () => ({ data: [] }),
   })
 
   assert.deepEqual(jobs, [])
@@ -190,13 +225,12 @@ test('SayOne Technologies fails closed when the verified first-party careers con
 
   await assert.rejects(
     sayOne.createSayonetechnologiesScraper().run({
-      collectPageDataImpl: async () => ({
-        url: sayOne.CAREERS_PAGE_URL,
-        title: 'Unexpected Careers Page',
-        text: 'Open roles somewhere else',
-      }),
-      launchBrowserImpl: async () => ({ close: async () => {} }),
-      createOptimizedPageImpl: async () => ({}),
+      fetchText: async (url) => {
+        if (url === sayOne.CAREERS_PAGE_URL) {
+          return '<html><head><title>Unexpected Careers Page</title></head><body>Open roles somewhere else</body></html>'
+        }
+        throw new Error(`Unexpected fetchText URL: ${url}`)
+      },
     }),
     /verified official public surface/i,
   )

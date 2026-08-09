@@ -158,7 +158,12 @@ test('Jade Global run validates the official careers page and returns normalized
     },
   })
 
-  assert.deepEqual(requests.pages, [jadeGlobal.CAREERS_URL])
+  assert.deepEqual(requests.pages, [
+    jadeGlobal.CAREERS_URL,
+    'https://jadeglobal.wd5.myworkdayjobs.com/Jade_Careers/job/San-Jose-CA/Lead-ServiceNow-Developer_R-105505',
+    'https://jadeglobal.wd5.myworkdayjobs.com/Jade_Careers/job/Pune-Maharashtra/Oracle-SCM-Functional--Oracle-Cloud-SCM-Expert-_R-105727',
+    'https://jadeglobal.wd5.myworkdayjobs.com/Jade_Careers/job/Pune-Maharashtra/Workday-Extend-Developer_R-104429',
+  ])
   assert.deepEqual(requests.jobsApi, [
     {
       url: jadeGlobal.JOBS_API_URL,

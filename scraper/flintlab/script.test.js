@@ -13,14 +13,18 @@ const homepageHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>FlintLab Sirius - Device Infrastructure PaaS</title>
+      <title>FlintLab Sirius | Ship Mobile &amp; Web Apps</title>
     </head>
     <body>
-      <a href="/request-demo">Request a Demo</a>
-      <p>Begin Your Journey Towards Precision Testing</p>
-      <p>Login to continue</p>
-      <p>FlintLab powers efficient, collaborative testing across devices.</p>
-      <p>What's New</p>
+      <h1>Ship Mobile &amp; Web Apps</h1>
+      <p>With Real Confidence, At Scale</p>
+      <p>FlintLab Sirius - Device Infrastructure PaaS</p>
+      <p>FlintLab unifies real devices, emulators, and cloud-native execution in one platform.</p>
+      <p>Developer advocacy team that stress-tests your releases before your users do.</p>
+      <p>Platform, people, and compliance: all covered.</p>
+      <p>AI NEXUS FLINT LAB INDIA PRIVATE LIMITED.</p>
+      <a href="mailto:engage@flintlab.io">engage@flintlab.io</a>
+      <button type="button">Ask FlintBot</button>
       <a href="https://www.linkedin.com/company/flintlab-inc">LinkedIn</a>
     </body>
   </html>

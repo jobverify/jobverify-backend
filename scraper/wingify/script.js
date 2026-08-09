@@ -19,7 +19,7 @@ export const VERIFIED_SURFACE_SUMMARY =
 export const EXPECTED_KEKA_DOMAIN = 'wingify.keka.com'
 export const EXPECTED_PORTAL_NAME = 'Wingify Software Pvt. Ltd.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

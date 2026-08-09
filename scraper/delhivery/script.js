@@ -29,7 +29,7 @@ const DEFAULT_PAGE_SIZE = 10
 const DEFAULT_TIMEOUT_MS = Number.isInteger(config.jobListingTimeoutMs)
   ? config.jobListingTimeoutMs
   : 30000
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))

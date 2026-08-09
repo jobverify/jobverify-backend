@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -22,11 +22,11 @@ export const PROVIDER_METADATA = {
   companyDomain: 'sisa.ai',
   adapter: 'script',
   atsPlatform: 'keka-embed-api',
-  modulePath: '../sisainformationsecurity/script.js',
+  modulePath: '../../scraper/sisainformationsecurity/script.js',
   dryRunFile: 'sisainformationsecurity/jobs.json',
 }
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -248,3 +248,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (isDryRun) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   else await saveToDB(jobs, SOURCE)
 }
+

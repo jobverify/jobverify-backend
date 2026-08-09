@@ -1,9 +1,9 @@
-export const INNOVAL_DIGITAL_SOLUTIONS_CATALOG = {
+﻿export const INNOVAL_DIGITAL_SOLUTIONS_CATALOG = {
   source: 'innovaldigitalsolutions',
   companyName: 'Innoval Digital Solutions',
   officialBrandName: 'Innoval Digital Solutions',
   adapter: 'script',
-  modulePath: '../innovaldigitalsolutions/script.js',
+  modulePath: '../../scraper/innovaldigitalsolutions/script.js',
   companyCareerPage: 'https://www.ivldsp.com/company/',
   companyDomain: 'ivldsp.com',
   atsPlatform: 'official-company-site-no-public-careers',
@@ -20,3 +20,4 @@ export const INNOVAL_DIGITAL_SOLUTIONS_CATALOG = {
 }
 
 export default INNOVAL_DIGITAL_SOLUTIONS_CATALOG
+

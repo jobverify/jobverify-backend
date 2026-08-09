@@ -10,7 +10,7 @@ export const COMPANY = TANISHA_SYSTEMS_CATALOG.companyName
 export const CAREERS_URL = TANISHA_SYSTEMS_CATALOG.companyCareerPage
 export const VERIFIED_ON = TANISHA_SYSTEMS_CATALOG.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

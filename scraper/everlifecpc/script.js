@@ -1,11 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const CAREERS_URL = 'https://cpcdiagnostics.in/career'
 
@@ -133,61 +131,35 @@ export const extractJobs = (html) => {
   return jobs
 }
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const createBrowserHtmlFetcher = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-
-    return {
-      close: async () => browser.close(),
-      fetchRenderedHtml: async (url) => {
-        await page.goto(url, {
-          waitUntil: 'domcontentloaded',
-          timeout: 30000,
-        })
-        await delay(config.pageLoadDelayMs)
-        return page.content()
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (compatible; JobverifyBot/1.0)',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  attempts: 1,
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const createEverlifeCpcScraper = () => ({
   async run({
     fetchRenderedHtml,
+    fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
   } = {}) {
-    let browserContext = null
-
-    try {
-      if (!fetchRenderedHtml) {
-        browserContext = await createBrowserHtmlFetcher()
-        fetchRenderedHtml = browserContext.fetchRenderedHtml
-      }
-
-      const html = await fetchRenderedHtml(CAREERS_URL)
-      const jobs = extractJobs(html)
-
-      return jobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      }))
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+    if (!fetchRenderedHtml) {
+      fetchRenderedHtml = (url) => fetchText(url)
     }
+
+    const html = await fetchRenderedHtml(CAREERS_URL)
+    const jobs = extractJobs(html)
+
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

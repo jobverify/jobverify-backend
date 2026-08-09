@@ -125,7 +125,7 @@ test('AgroStar scraper keeps the verified official Darwinbox handoff explicit an
   )
 })
 
-test('run maps AgroStar Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps AgroStar Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createAgroStarScraper } = await loadModule()
   const scraper = createAgroStarScraper({
     now: () => FIXED_SCRAPED_AT,
@@ -160,7 +160,6 @@ test('run maps AgroStar Darwinbox listings into Jobify jobs and keeps only India
       postingDate: '14-Jul-2026',
       closingDate: null,
       jobDescription: '<p>Lead the Saharanpur cluster growth plan.</p>',
-      publicExperienceChecked: false,
       source: 'agrostar',
       link: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48',
       scrapedAt: FIXED_SCRAPED_AT,
@@ -168,17 +167,36 @@ test('run maps AgroStar Darwinbox listings into Jobify jobs and keeps only India
   ])
 })
 
-test('run uses the native Darwinbox API when no listing page fetcher is injected', async () => {
+test('run seeds the public Darwinbox shell before using the native listings API when no listing page fetcher is injected', async () => {
   const { createAgroStarScraper } = await loadModule()
   const requests = []
+  const handoffOnlyCareersHtml = officialCareersHtml
+    .replace(/<h3>Cluster Manager - Saharanpur<\/h3>\s*<a[^>]+>Apply Now<\/a>/, '')
+    .replace(/<h3>Senior Manager - Crop Protection<\/h3>\s*<a[^>]+>Apply Now<\/a>/, '')
   const scraper = createAgroStarScraper({
     now: () => FIXED_SCRAPED_AT,
-    fetchImpl: async (url, options) => {
+    fetchImpl: async (url, options = {}) => {
       requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [],
+          },
+          text: async () => '<!doctype html><html><body>AgroStar - </body></html>',
+        }
+      }
+
       return {
         ok: true,
         status: 200,
-        headers: { get: () => 'application/json' },
+        headers: {
+          get: () => 'application/json',
+          getSetCookie: () => [],
+        },
         json: async () => listingPayload,
       }
     },
@@ -186,14 +204,62 @@ test('run uses the native Darwinbox API when no listing page fetcher is injected
 
   const jobs = await scraper.run({
     maxPages: 1,
-    fetchText: async () => officialCareersHtml,
+    fetchText: async () => handoffOnlyCareersHtml,
   })
 
   assert.equal(jobs.length, 1)
-  assert.equal(requests.length, 1)
+  assert.equal(requests.length, 2)
   assert.equal(
     requests[0].url,
+    'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
+  assert.equal(requests[0].options.method, 'GET')
+  assert.equal(
+    requests[1].url,
     'https://agrostar.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
   )
-  assert.equal(requests[0].options.method, 'POST')
+  assert.equal(requests[1].options.method, 'POST')
+})
+
+test('run can use inline official Darwinbox job links when the first-party careers page already exposes them', async () => {
+  const { createAgroStarScraper } = await loadModule()
+  const requests = []
+  const scraper = createAgroStarScraper({
+    now: () => FIXED_SCRAPED_AT,
+    fetchImpl: async (url) => {
+      requests.push(url)
+      throw new Error(`Unexpected Darwinbox API request: ${url}`)
+    },
+  })
+
+  const jobs = await scraper.run({
+    fetchText: async () => currentOfficialCareersHtml,
+  })
+
+  assert.deepEqual(requests, [])
+  assert.deepEqual(jobs, [
+    {
+      title: 'Cluster Manager - Saharanpur',
+      company: 'AgroStar',
+      department: null,
+      location: null,
+      city: null,
+      jobId: 'a69f8bd0c30c48',
+      requisitionId: null,
+      sourceUrl: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48',
+      applyUrl: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48',
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      publicExperienceChecked: true,
+      source: 'agrostar',
+      link: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48',
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
+  ])
 })

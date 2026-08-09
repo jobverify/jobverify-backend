@@ -29,7 +29,7 @@ test('Khazana Jewellery local catalog captures the verified no-public-jobs caree
   assert.equal(KHAZANA_JEWELLERY_CATALOG.companyName, 'Khazana Jewellery')
   assert.equal(KHAZANA_JEWELLERY_CATALOG.officialBrandName, 'Khazana Jewellery')
   assert.equal(KHAZANA_JEWELLERY_CATALOG.adapter, 'script')
-  assert.equal(KHAZANA_JEWELLERY_CATALOG.modulePath, '../khazanajewellery/script.js')
+  assert.equal(KHAZANA_JEWELLERY_CATALOG.modulePath, '../../scraper/khazanajewellery/script.js')
   assert.equal(KHAZANA_JEWELLERY_CATALOG.dryRunFile, 'khazanajewellery/jobs.json')
   assert.equal(KHAZANA_JEWELLERY_CATALOG.homepageUrl, 'https://www.khazanajewellery.com/')
   assert.equal(KHAZANA_JEWELLERY_CATALOG.companyCareerPage, 'https://www.khazanajewellery.com/careers?page_id=33')

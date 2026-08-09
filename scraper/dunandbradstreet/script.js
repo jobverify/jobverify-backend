@@ -4,7 +4,7 @@ export const CAREER_PAGE_URL = 'https://jobs.lever.co/dnb/'
 export const LEVER_ENDPOINT = 'https://api.lever.co/v0/postings/dnb?mode=json'
 
 const DEFAULT_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (compatible; JobifyBot/1.0)',
+  'User-Agent': 'Mozilla/5.0 (compatible; JobverifyBot/1.0)',
   Accept: 'application/json',
 }
 

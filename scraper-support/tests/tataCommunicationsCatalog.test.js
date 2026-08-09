@@ -24,7 +24,7 @@ test('getScraperCatalog includes the Tata Communications custom script provider 
   assert.equal(provider.workspaceDomain, 'jobs.tatacommunications.com')
   assert.equal(provider.workspaceId, 'TCLPROD-c62po')
   assert.equal(provider.apiBase, 'https://io.spire2grow.com/ies/v1/p')
-  assert.match(provider.modulePath, /\.\.\/tatacommunications\/script\.js$/)
+  assert.match(provider.modulePath, /[\\/]tatacommunications[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Tata Communications scraper without changing the runner contract', () => {

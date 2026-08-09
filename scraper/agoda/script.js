@@ -10,7 +10,7 @@ export const COMPANY = 'Agoda'
 export const GREENHOUSE_API_URL =
   'https://boards-api.greenhouse.io/v1/boards/agoda/jobs?content=true'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

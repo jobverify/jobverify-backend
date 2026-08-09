@@ -1,4 +1,4 @@
-import path from 'path'
+﻿import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -21,7 +21,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'cloudthat.com',
   adapter: 'script',
   atsPlatform: 'keka-embed-api',
-  modulePath: '../cloudthat/script.js',
+  modulePath: '../../scraper/cloudthat/script.js',
   dryRunFile: 'cloudthat/jobs.json',
 }
 
@@ -292,3 +292,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(0)
   }
 }
+

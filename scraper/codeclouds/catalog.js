@@ -1,9 +1,9 @@
-export const CODECLOUDS_CATALOG = {
+﻿export const CODECLOUDS_CATALOG = {
   source: 'codeclouds',
   companyName: 'CodeClouds',
   officialBrandName: 'CodeClouds',
   adapter: 'script',
-  modulePath: '../codeclouds/script.js',
+  modulePath: '../../scraper/codeclouds/script.js',
   companyCareerPage: 'https://careers.codeclouds.com/jobs/',
   companyDomain: 'careers.codeclouds.com',
   atsPlatform: 'official-company-careers-zero-results',
@@ -19,3 +19,4 @@ export const CODECLOUDS_CATALOG = {
 }
 
 export default CODECLOUDS_CATALOG
+

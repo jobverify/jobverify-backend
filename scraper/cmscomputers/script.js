@@ -38,7 +38,7 @@ const normalizeVisibleText = (value) => normalizeWhitespace(
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
@@ -53,7 +53,7 @@ const defaultFetchText = async (url) => {
 const defaultFetchJson = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
       Accept: 'application/json',
     },
   })
@@ -68,7 +68,7 @@ const defaultFetchJson = async (url) => {
 const defaultFetchPortalForm = async (jobId) => {
   const response = await fetch(buildFountainPortalApplicationFormUrl(jobId), {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
       Accept: 'application/json',
     },
   })

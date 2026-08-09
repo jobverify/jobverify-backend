@@ -10,7 +10,7 @@ import {
 } from '../scraper-support/providers/index.js'
 
 test('loadProviderExtensions merges sorted JSON files into a single provider list', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-provider-extensions-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-provider-extensions-'))
 
   try {
     writeFileSync(
@@ -53,7 +53,7 @@ test('loadProviderExtensions merges sorted JSON files into a single provider lis
 })
 
 test('getScraperCatalog includes providers loaded from extension files', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-provider-catalog-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-provider-catalog-'))
 
   try {
     writeFileSync(
@@ -98,7 +98,7 @@ test('getScraperCatalog includes providers loaded from extension files', () => {
 })
 
 test('getScraperCatalog prefers the later extension entry when sources collide', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-provider-catalog-dedupe-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-provider-catalog-dedupe-'))
 
   try {
     writeFileSync(

@@ -71,7 +71,7 @@ const defaultFetchJson = async (url) => {
     headers: {
       Accept: 'application/json',
       Referer: CAREERS_URL,
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     },
   })
 

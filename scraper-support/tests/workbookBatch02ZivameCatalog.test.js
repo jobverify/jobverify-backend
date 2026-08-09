@@ -23,5 +23,5 @@ test('Zivame is wired to a verified same-origin live scraper instead of the gene
   assert.equal(provider.verifiedPublicJobCount, 3)
   assert.equal(provider.verifiedIndiaJobCount, 3)
   assert.equal(scraper.provider.modulePath, provider.modulePath)
-  assert.match(provider.modulePath, /zivame\.js$/)
+  assert.match(provider.modulePath, /[\\/]zivame[\\/]script\.js$/i)
 })

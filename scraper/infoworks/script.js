@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
-
 import { INFOWORKS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -12,6 +10,10 @@ const USER_AGENT =
 const BROWSER_TIMEOUT_MS = 60000
 const PUBLIC_JOBS_SIGNAL_PATTERN =
   /\b(careers?|jobs?|open positions|apply now|search jobs|current openings)\b/i
+const DEFAULT_HEADERS = {
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'User-Agent': USER_AGENT,
+}
 
 export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
@@ -68,76 +70,61 @@ const isUnexpectedReachableSurface = (surface = {}) =>
   && surface.finalUrl !== ACQUISITION_URL
   && PUBLIC_JOBS_SIGNAL_PATTERN.test(normalizeWhitespace(surface?.html))
 
-const createBrowserProbeSession = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-  await page.setUserAgent(USER_AGENT)
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
+const defaultProbeUrl = async (url) => {
+  const response = await fetch(url, {
+    headers: DEFAULT_HEADERS,
+    redirect: 'follow',
+    signal: createTimeoutSignal(BROWSER_TIMEOUT_MS),
+  })
 
   return {
-    close: async () => browser.close(),
-    probeUrl: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      return {
-        url,
-        finalUrl: page.url(),
-        status: response?.status() ?? null,
-        html: await page.content(),
-        errorKind: null,
-      }
-    },
+    url,
+    finalUrl: response.url || url,
+    status: response.status,
+    html: await response.text(),
+    errorKind: null,
   }
 }
 
 export const createInfoworksScraper = () => ({
   async run({ probeUrl } = {}) {
-    let browserSession = null
+    const probe = probeUrl || defaultProbeUrl
 
-    const getProbeUrl = async () => {
-      if (probeUrl) return probeUrl
-
-      if (!browserSession) {
-        browserSession = await createBrowserProbeSession()
-      }
-
-      return browserSession.probeUrl
+    const acquisitionSurface = await probe(ACQUISITION_URL)
+    if (!isExpectedInfoworksRedirectSurface(acquisitionSurface)) {
+      throw new Error(
+        'Infoworks verified acquisition page no longer matches the trusted first-party surface',
+      )
     }
 
-    try {
-      const probe = await getProbeUrl()
+    for (const url of FIRST_PARTY_REDIRECT_ROUTES) {
+      const surface = await probe(url)
 
-      const acquisitionSurface = await probe(ACQUISITION_URL)
-      if (!isExpectedInfoworksRedirectSurface(acquisitionSurface)) {
+      if (isExpectedInfoworksRedirectSurface(surface)) continue
+
+      if (isUnexpectedReachableSurface(surface)) {
         throw new Error(
-          'Infoworks verified acquisition page no longer matches the trusted first-party surface',
+          `${COMPANY} public jobs surface now appears reachable: ${surface.finalUrl || surface.url}`,
         )
       }
 
-      for (const url of FIRST_PARTY_REDIRECT_ROUTES) {
-        const surface = await probe(url)
-
-        if (isExpectedInfoworksRedirectSurface(surface)) continue
-
-        if (isUnexpectedReachableSurface(surface)) {
-          throw new Error(
-            `${COMPANY} public jobs surface now appears reachable: ${surface.finalUrl || surface.url}`,
-          )
-        }
-
-        throw new Error(
-          `${COMPANY} verified redirect route changed materially: ${surface.finalUrl || surface.url}`,
-        )
-      }
-
-      return []
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+      throw new Error(
+        `${COMPANY} verified redirect route changed materially: ${surface.finalUrl || surface.url}`,
+      )
     }
+
+    return []
   },
 })
 

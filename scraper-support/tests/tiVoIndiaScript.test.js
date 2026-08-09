@@ -5,16 +5,11 @@ const TIVO_HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <body>
-    <main>
-      <h1>With TiVo, the choice is always yours.</h1>
-      <p>A smart TV Powered by TiVo gives you the power to choose what you want to watch.</p>
-      <footer>
-        <p>©2026 Xperi Inc. All Rights Reserved.</p>
-        <a href="https://www.xperi.com">Company</a>
-        <a href="https://www.xperi.com/careers/">Careers</a>
-        <a href="https://www.xperi.com/company/locations/">Locations</a>
-      </footer>
-    </main>
+    <h1>With TiVo, the choice is always yours.</h1>
+    <p>A smart TV Powered by TiVo gives you the power to choose what you want to watch.</p>
+    <a href="https://www.xperi.com/careers/">Careers</a>
+    <a href="https://www.xperi.com/company/">Company</a>
+    <footer>&copy;2026 Xperi Inc. All Rights Reserved.</footer>
   </body>
 </html>
 `
@@ -23,14 +18,12 @@ const XPERI_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <body>
-    <main>
-      <h1>Careers</h1>
-      <h2>Extraordinary opportunities await.</h2>
-      <p>Through our brands – DTS®, HD Radio™, IMAX® Enhanced and TiVo® – we power billions of smart devices.</p>
-      <p>Search Jobs</p>
-      <a href="https://xperi.com/careers/open-positions/">View Openings</a>
-      <p>How will you create extraordinary?</p>
-    </main>
+    <h1>Careers</h1>
+    <p>Extraordinary opportunities await.</p>
+    <p>Through our brands &#8211; DTS&#174;, HD Radio&#8482;, IMAX&#174; Enhanced and TiVo&#174;</p>
+    <div>Search Jobs</div>
+    <div>View Openings</div>
+    <div>Life @ Xperi</div>
   </body>
 </html>
 `
@@ -39,18 +32,11 @@ const XPERI_LOCATIONS_HTML = `
 <!doctype html>
 <html lang="en">
   <body>
-    <main>
-      <h1>Locations</h1>
-      <p>Filter by Country Australia China India Ireland Japan Mexico Poland Singapore South Korea Sweden Taiwan United Kingdom United States</p>
-      <section>
-        <h2>Xperi Bangalore</h2>
-        <p>10th Floor, ‘Primrose’ Building 7B, Embassy Tech Village, Outer Ring Road, Devarabisanahalli, Bangalore, India 560103</p>
-      </section>
-      <section>
-        <h2>Xperi Pune</h2>
-        <p>Sky Vista, Ground Floor, Next to Eminence IT Park, Airport Road, Viman Nagar Pune, Maharashtra, India 411014</p>
-      </section>
-    </main>
+    <div>Filter by Country Australia China India Ireland Japan Mexico Poland Singapore South Korea Sweden Taiwan United Kingdom United States</div>
+    <div>Xperi Bangalore</div>
+    <div>Bangalore, India 560103</div>
+    <div>Xperi Pune</div>
+    <div>Pune, Maharashtra, India 411014</div>
   </body>
 </html>
 `

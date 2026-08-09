@@ -1013,6 +1013,26 @@ test('does not infer experience from contract-duration labels', () => {
   assert.equal(normalized.experienceRequired, null)
 })
 
+test('does not promote non-numeric medium-confidence experience phrases into experienceRequired', () => {
+  const normalized = normalizeScrapedJob({
+    title: 'PB India Banking Product Manager - AVP',
+    company: 'Barclays',
+    location: 'Mumbai, India',
+    sourceUrl: 'https://search.jobs.barclays/job/mumbai/pb-india-banking-product-manager-avp/13015/97553105744',
+    description: [
+      'Essential Skills / Basic Qualifications:',
+      'Graduate degree.',
+      'Strong understanding of Indian regulatory frameworks.',
+      'Experience with governance processes such as ALCO, audit, and risk committees.',
+      'Commercial acumen with a client-focused mindset.',
+    ].join(' '),
+    experienceRequired: null,
+  })
+
+  assert.equal(normalized.experienceRequired, null)
+  assert.equal(normalized.experienceProfile?.evidence || null, null)
+})
+
 test('preserves a source-verified missing experience requirement when the scraper has already checked the public detail page', () => {
   const normalized = normalizeScrapedJob({
     title: 'Associate Business Development iGT - Citizen and Business Services Advisory Noida',

@@ -31,7 +31,7 @@ test('RDC Concrete (India) Ltd exposes the exact provider and alias mappings for
 
   assert.equal(provider.companyName, 'RDC Concrete (India) Ltd')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/rdcconcreteindialtd/script.js')
+  assert.equal(provider.modulePath, '../rdcconcreteindialtd/script.js')
   assert.equal(provider.companyCareerPage, 'https://www.rdc.in/careers')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')

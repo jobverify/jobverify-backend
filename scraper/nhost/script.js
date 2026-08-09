@@ -31,7 +31,7 @@ export const VERIFIED_ROLE_URLS = [
   'https://nhost.io/careers/developer-relations-engineer',
 ]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const EXPERIENCE_PATTERN = /\b\d+\+\s+years?\b|\b\d+-\d+\s+years?\b/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')

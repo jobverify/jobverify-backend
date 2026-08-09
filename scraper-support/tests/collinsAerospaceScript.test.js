@@ -105,7 +105,7 @@ test('extractJobDetail reads Collins Aerospace job detail metadata and the offic
     'https://careers.rtx.com/global/en/job/01849281/Manager-SCM',
   )
   assert.match(detail.jobDescription, /as a procurement manager/i)
-  assert.match(detail.experienceRequired, /12\+ years prior relevant experience/i)
+  assert.equal(detail.experienceRequired, '12+ years')
   assert.match(detail.minimumQualification, /BE\/ Masters Degree/i)
 })
 

@@ -95,7 +95,7 @@ export const resolveBrowserExecutablePath = ({
 export const createBrowserUserDataDir = async ({
   mkdtempImpl = mkdtemp,
   tmpdirPath = os.tmpdir(),
-} = {}) => mkdtempImpl(path.join(tmpdirPath, 'jobify-puppeteer-profile-'))
+} = {}) => mkdtempImpl(path.join(tmpdirPath, 'jobverify-puppeteer-profile-'))
 
 const resolveHostnameAddresses = async (hostname) => {
   if (dnsCache.has(hostname)) return dnsCache.get(hostname)
@@ -154,6 +154,7 @@ export const launchBrowser = async (options = {}) => {
     `API-only scraper runtime forbids browser launches. Migrate ${requestingSource} to HTTP/API access.`,
   )
   error.code = 'SCRAPER_BROWSER_DISABLED'
+  error.abortRetries = true
   throw error
 }
 

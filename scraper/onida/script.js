@@ -16,7 +16,7 @@ export const HOMEPAGE_URL = ONIDA_CATALOG.officialHomepageUrl
 export const LIFE_AT_ONIDA_URL = ONIDA_CATALOG.companyCareerPage
 export const BLOCKED_CAREERS_ROUTE_URLS = [...ONIDA_CATALOG.blockedCareersRouteUrls]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,

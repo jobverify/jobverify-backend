@@ -16,7 +16,7 @@ export const LINKEDIN_JOBS_HOST = PROVIDER_METADATA.officialLinkedInJobsHost
 export const LINKEDIN_COMPANY_ID = PROVIDER_METADATA.officialLinkedInCompanyId
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#8211;|&ndash;/gi, '-')

@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -193,72 +192,35 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const isBrowserFallbackError = (error) =>
-  /timed out|timeout|fetch failed|could not connect|err_failed/i
-    .test(String(error?.message ?? error ?? ''))
-
 export const createBillDeskScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
+  async run({ fetchText = defaultFetchText } = {}) {
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!pageIndicatesCareersShell(careersHtml)) {
+      throw new Error('BillDesk careers page no longer exposes the verified first-party careers shell')
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchVerifiedText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
+    const bundleUrl = extractBundleUrl(careersHtml)
+    if (!bundleUrl) {
+      throw new Error('BillDesk careers page no longer exposes the verified bundle URL')
     }
 
-    try {
-      const careersHtml = await fetchVerifiedText(CAREERS_URL)
-      if (!pageIndicatesCareersShell(careersHtml)) {
-        throw new Error('BillDesk careers page no longer exposes the verified first-party careers shell')
-      }
-
-      const bundleUrl = extractBundleUrl(careersHtml)
-      if (!bundleUrl) {
-        throw new Error('BillDesk careers page no longer exposes the verified bundle URL')
-      }
-
-      const bundle = await fetchVerifiedText(bundleUrl)
-      if (!bundleIndicatesCareerContent(bundle)) {
-        throw new Error('BillDesk careers bundle no longer exposes the verified embedded openings content')
-      }
-
-      const jobs = extractJobsFromBundle(bundle)
-      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-      return selectedJobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      }))
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+    const bundle = await fetchText(bundleUrl)
+    if (!bundleIndicatesCareerContent(bundle)) {
+      throw new Error('BillDesk careers bundle no longer exposes the verified embedded openings content')
     }
+
+    const jobs = extractJobsFromBundle(bundle)
+    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+    return selectedJobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

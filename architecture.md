@@ -1,8 +1,8 @@
-# Jobify Backend Architecture
+# Jobverify Backend Architecture
 
 ## Overview
 
-Jobify Backend is an Express 5 and MongoDB application with a separate scraper runtime. It handles:
+Jobverify Backend is an Express 5 and MongoDB application with a separate scraper runtime. It handles:
 
 - email-first account registration and verification
 - cookie-backed authenticated sessions with CSRF protection
@@ -89,7 +89,7 @@ Every API request passes through a shared security stack:
 3. `requireJsonMutation` rejects mutating `/api` requests that are not JSON.
 4. `createCsrfProtection()` rejects mutating `/api` requests unless:
    - the request origin is allowed
-   - the `jobify_csrf` cookie exists
+   - the `jobverify_csrf` cookie exists
    - the `x-csrf-token` header matches the cookie value
 5. A global `/api` rate limiter caps request volume per IP.
 6. Route-level middleware performs auth, validation, and role checks.
@@ -98,7 +98,7 @@ Every API request passes through a shared security stack:
 
 Authentication accepts either:
 
-- the httpOnly `jobify_token` cookie
+- the httpOnly `jobverify_token` cookie
 - an `Authorization: Bearer ...` header
 
 The frontend primarily relies on the cookie. The backend still accepts Bearer tokens for compatibility.
@@ -109,7 +109,7 @@ The frontend initializes mutating requests through:
 
 - `GET /api/auth/csrf-token`
 
-That route issues the non-httpOnly `jobify_csrf` cookie and returns the same token in JSON. The client mirrors it into the `x-csrf-token` header for `POST`, `PUT`, `PATCH`, and `DELETE`.
+That route issues the non-httpOnly `jobverify_csrf` cookie and returns the same token in JSON. The client mirrors it into the `x-csrf-token` header for `POST`, `PUT`, `PATCH`, and `DELETE`.
 
 ## Authentication
 
@@ -157,7 +157,7 @@ Flow:
    - validates credentials
    - applies a separate login backoff keyed by normalized email plus IP
    - rejects deactivated users
-   - sets the httpOnly `jobify_token` cookie
+   - sets the httpOnly `jobverify_token` cookie
    - returns a non-sensitive user snapshot in JSON
 
 7. `POST /api/auth/logout`

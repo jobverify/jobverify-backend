@@ -56,6 +56,19 @@ const career503Html = `
 </html>
 `
 
+const career504Html = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>504 Gateway Timeout</title>
+  </head>
+  <body>
+    <h1>Gateway Timeout</h1>
+    <p>The upstream service timed out.</p>
+  </body>
+</html>
+`
+
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -77,10 +90,10 @@ test('Goibibo sentinel constants stay pinned to the verified homepage and unavai
 
   assert.equal(goibibo.SOURCE, 'goibibo')
   assert.equal(goibibo.COMPANY, 'Goibibo')
-  assert.equal(goibibo.VERIFIED_ON, '2026-07-16')
+  assert.equal(goibibo.VERIFIED_ON, '2026-08-07')
   assert.equal(goibibo.HOMEPAGE_URL, 'https://www.goibibo.com/')
   assert.equal(goibibo.CAREER_URL, 'https://www.goibibo.com/careers/')
-  assert.deepEqual(goibibo.ACCEPTED_CAREER_PAGE_STATUSES, [404, 503])
+  assert.deepEqual(goibibo.ACCEPTED_CAREER_PAGE_STATUSES, [404, 503, 504])
 
   assert.equal(goibibo.pageHasOfficialGoibiboSignals(homepageHtml), true)
   assert.equal(goibibo.extractCareerUrl(homepageHtml), goibibo.CAREER_URL)
@@ -100,6 +113,14 @@ test('Goibibo sentinel constants stay pinned to the verified homepage and unavai
       status: 503,
       url: goibibo.CAREER_URL,
       html: career503Html,
+    }),
+    true,
+  )
+  assert.equal(
+    goibibo.isVerifiedUnavailableCareerPage({
+      status: 504,
+      url: goibibo.CAREER_URL,
+      html: career504Html,
     }),
     true,
   )

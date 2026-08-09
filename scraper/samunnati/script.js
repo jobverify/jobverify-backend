@@ -23,7 +23,7 @@ export const VERIFIED_ON = SAMUNNATI_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = SAMUNNATI_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = SAMUNNATI_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,

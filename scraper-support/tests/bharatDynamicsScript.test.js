@@ -183,15 +183,15 @@ test('Bharat Dynamics exports the verified first-party recruitment-table contrac
 
   assert.equal(bdl.SOURCE, 'bharatdynamics')
   assert.equal(bdl.COMPANY, 'Bharat Dynamics')
-  assert.equal(bdl.HOMEPAGE_URL, 'https://www.bdl-india.in/')
-  assert.equal(bdl.RECRUITMENTS_URL, 'https://www.bdl-india.in/recruitments')
+  assert.equal(bdl.HOMEPAGE_URL, 'https://bdl-india.in/')
+  assert.equal(bdl.RECRUITMENTS_URL, 'https://bdl-india.in/recruitments')
   assert.equal(bdl.NCS_URL, 'https://www.ncs.gov.in/')
-  assert.equal(bdl.buildRecruitmentsPageUrl(1), 'https://www.bdl-india.in/recruitments')
-  assert.equal(bdl.buildRecruitmentsPageUrl(2), 'https://www.bdl-india.in/recruitments?page=1')
+  assert.equal(bdl.buildRecruitmentsPageUrl(1), 'https://bdl-india.in/recruitments')
+  assert.equal(bdl.buildRecruitmentsPageUrl(2), 'https://bdl-india.in/recruitments?page=1')
   assert.equal(bdl.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
   assert.equal(
     bdl.extractRecruitmentUrl(HOMEPAGE_HTML),
-    'https://www.bdl-india.in/recruitments',
+    'https://bdl-india.in/recruitments',
   )
   assert.equal(bdl.hasOfficialRecruitmentsPageSignal(VERIFIED_RECRUITMENTS_HTML), true)
   assert.equal(bdl.extractNcsUrl(VERIFIED_RECRUITMENTS_HTML), 'https://www.ncs.gov.in/')
@@ -215,8 +215,8 @@ test('Bharat Dynamics extracts only clearly actionable recruitment notices and f
     country: 'India',
     jobId: 'bharatdynamics-recruitment-of-project-engineers-vide-advt-2026-9-through-walk-in-interview-in-hyderabad-on-20th-21st-july-2026-2026-07-14',
     requisitionId: 'advt-no-2026-9',
-    sourceUrl: 'https://www.bdl-india.in/sites/default/files/BDL_Advt_2026-9_14072026.pdf',
-    applyUrl: 'https://www.bdl-india.in/sites/default/files/BDL_Advt_2026-9_14072026.pdf',
+    sourceUrl: 'https://bdl-india.in/sites/default/files/BDL_Advt_2026-9_14072026.pdf',
+    applyUrl: 'https://bdl-india.in/sites/default/files/BDL_Advt_2026-9_14072026.pdf',
     employmentType: 'Contract',
     experienceRequired: null,
     minimumQualification: null,
@@ -247,9 +247,9 @@ test('Bharat Dynamics runner validates the official homepage and paginated recru
   })
 
   assert.deepEqual(requestedUrls, [
-    'https://www.bdl-india.in/',
-    'https://www.bdl-india.in/recruitments',
-    'https://www.bdl-india.in/recruitments?page=1',
+    'https://bdl-india.in/',
+    'https://bdl-india.in/recruitments',
+    'https://bdl-india.in/recruitments?page=1',
   ])
   assert.deepEqual(jobs, [])
 })

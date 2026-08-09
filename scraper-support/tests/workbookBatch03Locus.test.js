@@ -285,7 +285,8 @@ test('Locus catalog entry points to the verified careers handoff and Freshteam b
       },
     ],
   )
-  assert.equal(provider?.modulePath, '../../scraper/locus/script.js')
+  assert.match(provider?.modulePath || '', /[\\/]locus[\\/]script\.js$/i)
+  assert.equal(provider?.verifiedPublicJobCount, 12)
   assert.equal(provider?.companyCareerPage, locus.CAREERS_URL)
   assert.equal(provider?.companyDomain, 'locus.sh')
   assert.equal(provider?.atsPlatform, locus.DISPOSITION)

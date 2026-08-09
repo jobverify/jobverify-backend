@@ -71,7 +71,7 @@ export const extractOpenJobs = (html) => [...String(html ?? '').matchAll(/<tr\b[
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyBot/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyBot/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })

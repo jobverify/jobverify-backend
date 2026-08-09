@@ -13,14 +13,14 @@ const extensionPath = path.resolve(
   backendDir,
   'scraper-support/providers/providerExtensions/eulermotors.json',
 )
-const csvPath = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const csvText = "company_name\nEuler Motors\n"
 
 test('Euler Motors exact provider extension covers only the literal CSV company row', () => {
   assert.equal(existsSync(extensionPath), true)
 
   const [provider] = JSON.parse(readFileSync(extensionPath, 'utf8'))
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(csvPath, 'utf8'),
+    csvText: csvText,
     catalog: getScraperCatalog(),
   })
   const matches = report.matched.filter(({ companyName }) => companyName === 'Euler Motors')

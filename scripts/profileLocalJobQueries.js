@@ -88,16 +88,19 @@ const main = async () => {
     backendDir,
     getFlag("output-dir", "../artifacts/local-job-query-profile"),
   );
+  const mongoDownloadDir = path.join(outputDir, "mongodb-binaries");
   const beforeOutputDir = path.join(outputDir, "before-indexes");
   const afterOutputDir = path.join(outputDir, "after-indexes");
 
   mkdirSync(outputDir, { recursive: true });
+  mkdirSync(mongoDownloadDir, { recursive: true });
   mkdirSync(beforeOutputDir, { recursive: true });
   mkdirSync(afterOutputDir, { recursive: true });
+  process.env.MONGOMS_DOWNLOAD_DIR = mongoDownloadDir;
 
   const mongoServer = await MongoMemoryServer.create({
     instance: {
-      dbName: "jobify_profile",
+      dbName: "jobverify_profile",
       storageEngine: "wiredTiger",
     },
   });
@@ -107,7 +110,7 @@ const main = async () => {
   try {
     process.env.MONGO_URI = mongoUri;
     process.env.NODE_ENV = "test";
-    process.env.JOBIFY_ACKNOWLEDGE_INDEX_MUTATIONS = "true";
+    process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS = "true";
     await mongoose.connect(mongoUri);
     await Job.deleteMany({});
     const seedInfo = await seedJobProfileFixtures(Job, { totalJobs });

@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,7 +16,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: OFFICIAL_BRAND_NAME,
   adapter: 'script',
-  modulePath: '../acronisindia.workday/script.js',
+  modulePath: '../../scraper/acronisindia.workday/script.js',
   companyCareerPage: CAREERS_URL,
   officialCareersHandoffUrl: JOBS_URL,
   workdayDetailBaseUrl: WORKDAY_DETAIL_BASE_URL,
@@ -318,3 +318,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

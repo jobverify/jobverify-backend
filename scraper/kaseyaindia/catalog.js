@@ -1,9 +1,9 @@
-export const KASEYA_INDIA_CATALOG = {
+﻿export const KASEYA_INDIA_CATALOG = {
   source: 'kaseyaindia',
   companyName: 'Kaseya India',
   officialBrandName: 'Kaseya',
   adapter: 'script',
-  modulePath: '../kaseyaindia/script.js',
+  modulePath: '../../scraper/kaseyaindia/script.js',
   dryRunFile: 'kaseyaindia/jobs.json',
   homepageUrl: 'https://www.kaseya.com/careers/jobs/',
   companyCareerPage: 'https://www.kaseya.com/careers/jobs/',
@@ -13,6 +13,7 @@ export const KASEYA_INDIA_CATALOG = {
   verifiedSampleJobUrl: 'https://www.kaseya.com/careers/jobs/id/6015830004/',
   atsPlatform: 'greenhouse',
   countryFilter: 'India',
+  verifiedPublicJobCount: 261,
   paginationStrategy: 'verified-first-party-careers-page-plus-greenhouse-api',
   extractionStrategy: 'verified-first-party-careers-page+greenhouse-api+first-party-detail-urls',
   parser: 'custom-script',
@@ -23,3 +24,4 @@ export const KASEYA_INDIA_CATALOG = {
 }
 
 export default KASEYA_INDIA_CATALOG
+

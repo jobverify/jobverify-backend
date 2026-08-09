@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { formatFinalSummaryTable } from '../scraper-support/finalSummaryFormatter.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
@@ -74,20 +75,6 @@ const readSourcesFromListFile = (filePath) => {
   return [...new Set(sources)]
 }
 
-const buildFinalTable = (summary = {}) => Object.keys(summary).map((source) => {
-  const result = summary[source]
-  return {
-    Source: source,
-    Status: result.success
-      ? 'OK'
-      : (result.skipped ? 'Skip' : (result.softFailure ? 'Upstream' : 'Fail')),
-    Jobs: result.jobs || 0,
-    New: result.inserted || 0,
-    Updated: result.updated || 0,
-    Time: `${((result.durationMs || 0) / 1000).toFixed(1)}s`,
-  }
-})
-
 const main = async () => {
   const options = parseArgs(process.argv.slice(2))
   const sourceLog = resolveAgainstRepoRoot(options.sourceLog)
@@ -109,7 +96,7 @@ const main = async () => {
   const summary = await runAll()
 
   console.log('\nFinal Pipeline Summary:')
-  console.table(buildFinalTable(summary))
+  console.log(formatFinalSummaryTable(summary))
 
   const failures = Object.entries(summary)
     .filter(([, result]) => result.success !== true && result.skipped !== true)

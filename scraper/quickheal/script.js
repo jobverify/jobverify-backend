@@ -22,7 +22,7 @@ export const VERIFIED_ON = QUICK_HEAL_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = QUICK_HEAL_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = QUICK_HEAL_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,

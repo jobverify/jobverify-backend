@@ -27,7 +27,7 @@ test('buildScraperOptions keeps TIPS on the verified official careers handoff an
   )
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'theindianpublicschool')
-  assert.match(options.scraperDir, /theindianpublicschool$/)
+  assert.match(options.scraperDir, /theindianpublicschool\.workday$/)
 })
 
 test('run delegates TIPS scraping to the shared Workday runner with the verified tenant options', async () => {
@@ -51,5 +51,5 @@ test('run delegates TIPS scraping to the shared Workday runner with the verified
   )
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'theindianpublicschool')
-  assert.match(receivedOptions.scraperDir, /theindianpublicschool$/)
+  assert.match(receivedOptions.scraperDir, /theindianpublicschool\.workday$/)
 })

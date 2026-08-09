@@ -1,5 +1,20 @@
 import { withRetry } from './retry.js'
 
+const NON_RETRIABLE_HTTP_STATUSES = new Set([401, 403, 404, 410, 451])
+const NON_RETRIABLE_TRANSPORT_CODES = new Set([
+  'CERT_HAS_EXPIRED',
+  'EAI_AGAIN',
+  'ENOTFOUND',
+  'ERR_CERT_DATE_INVALID',
+  'ERR_NAME_NOT_RESOLVED',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
+const NON_RETRIABLE_TRANSPORT_PATTERN =
+  /(getaddrinfo\s+(?:ENOTFOUND|EAI_AGAIN)|ENOTFOUND|EAI_AGAIN|ERR_NAME_NOT_RESOLVED|the remote name could not be resolved|name or service not known|NXDOMAIN|ERR_TLS_CERT_ALTNAME_INVALID|certificate's altnames|certificate has expired|CERT_HAS_EXPIRED|ERR_CERT_DATE_INVALID|unable to verify the first certificate|UNABLE_TO_VERIFY_LEAF_SIGNATURE|unable to verify leaf signature|UNABLE_TO_GET_ISSUER_CERT_LOCALLY|unable to get local issuer certificate|SELF_SIGNED_CERT_IN_CHAIN|self signed certificate in certificate chain|Response does not match the HTTP\/1\.1 protocol|Missing expected CR after header value|Invalid header value char|HPE_INVALID_HEADER_TOKEN)/i
+
 export const parseRetryAfterHeader = (value, nowMs = Date.now()) => {
   const normalized = String(value ?? '').trim()
   if (!normalized) {
@@ -64,7 +79,9 @@ const buildHtmlInsteadOfJsonError = (url, html) => {
   const title = extractHtmlTitle(html)
   const haystack = `${title || ''} ${html}`
   if (/forbidden|access denied|not authorized|unauthorized/i.test(haystack)) {
-    return new Error(`Forbidden HTML response for ${url}`)
+    const error = new Error(`Forbidden HTML response for ${url}`)
+    error.abortRetries = true
+    return error
   }
 
   return new Error(`Expected JSON from ${url} but received HTML${title ? ` (${title})` : ''}`)
@@ -74,6 +91,10 @@ const buildHttpError = (response, url) => {
   const error = new Error(`HTTP ${response.status} for ${url}`)
   error.status = response.status
 
+  if (NON_RETRIABLE_HTTP_STATUSES.has(response.status)) {
+    error.abortRetries = true
+  }
+
   if (response.status === 429) {
     const retryDelayMs = parseRetryAfterHeader(response.headers?.get?.('retry-after'))
     if (retryDelayMs != null) {
@@ -82,6 +103,31 @@ const buildHttpError = (response, url) => {
   }
 
   return error
+}
+
+const isNonRetriableTransportError = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+
+    const code = typeof current?.code === 'string' ? current.code.trim() : ''
+    if (code && NON_RETRIABLE_TRANSPORT_CODES.has(code)) {
+      return true
+    }
+
+    const message = typeof current?.message === 'string'
+      ? current.message
+      : String(current ?? '')
+    if (NON_RETRIABLE_TRANSPORT_PATTERN.test(message)) {
+      return true
+    }
+
+    current = current?.cause
+  }
+
+  return false
 }
 
 const fetchWithRetry = async (url, {
@@ -137,6 +183,9 @@ const fetchWithRetry = async (url, {
       } catch (error) {
         if (callerSignal?.aborted) {
           throwCallerAbort()
+        }
+        if (isNonRetriableTransportError(error)) {
+          error.abortRetries = true
         }
         throw error
       }

@@ -13,7 +13,7 @@ export const VERIFIED_SURFACE_SUMMARY =
   "Verified on Thursday, July 30, 2026 that https://www.betterplace.co.in/ explicitly directed job seekers to BetterPlace's careers page at https://aj.betterplace.co.in/careers/, and that the public Betterplace Select careers page exposed 18 live visible job cards across Operations and Business Development & Sales with stable data-value slugs such as field-hr-executive-bangalore and staffing-manager-delhi. This scraper validates that verified public careers shell and returns the public India job cards from the official BetterPlace surface without inventing hidden detail data."
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const CAREERS_PAGE_PATTERNS = [
   /<title[^>]*>\s*We're Hiring \| Work with us - Careers at Betterplace Select\s*<\/title>/i,

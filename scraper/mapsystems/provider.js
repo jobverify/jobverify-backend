@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'mapsystems',
   companyName: 'MAP Systems',
   officialBrandName: 'MAPSystems',
   adapter: 'script',
-  modulePath: '../mapsystems/script.js',
+  modulePath: '../../scraper/mapsystems/script.js',
   homepageUrl: 'https://mapsystemsindia.com/',
   companyCareerPage: 'https://mapsystemsindia.com/careers.html',
   atsPlatform: 'first-party-static-careers-page',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

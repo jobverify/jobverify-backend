@@ -43,28 +43,28 @@ const jobPortalHtml = `
           <a href="https://www.endurancegroup.com/career/technical-architect/">Read More</a>
         </li>
         <li class="job-card">
-          <h3>Job Opening for Technical Lead – Hardware</h3>
+          <h3>Job Opening for Technical Lead â€“ Hardware</h3>
           <p>7 Years</p>
           <p>Assistant Manager</p>
           <p>Pune</p>
           <a href="https://www.endurancegroup.com/career/technical-lead-hardware/">Read More</a>
         </li>
         <li class="job-card">
-          <h3>Job Opening for Technical Member – Hardware</h3>
+          <h3>Job Opening for Technical Member â€“ Hardware</h3>
           <p>4 Years</p>
           <p>Assistant Manager</p>
           <p>Pune</p>
           <a href="https://www.endurancegroup.com/career/technical-member-hardware/">Read More</a>
         </li>
         <li class="job-card">
-          <h3>Job Opening for Technical Lead – Software</h3>
+          <h3>Job Opening for Technical Lead â€“ Software</h3>
           <p>7 Years</p>
           <p>Assistant Manager</p>
           <p>Pune</p>
           <a href="https://www.endurancegroup.com/career/technical-lead-software/">Read More</a>
         </li>
         <li class="job-card">
-          <h3>Job Opening for Technical Member – Software</h3>
+          <h3>Job Opening for Technical Member â€“ Software</h3>
           <p>4 Years</p>
           <p>Assistant Manager</p>
           <p>Pune</p>
@@ -126,14 +126,14 @@ const technicalLeadHardwareDetailHtml = `
   </head>
   <body>
     <main>
-      <h1>Technical Lead – Hardware</h1>
+      <h1>Technical Lead â€“ Hardware</h1>
       <div class="job-meta">
         <p>Assistant Manager</p>
         <p>7 Years</p>
         <p>Pune</p>
       </div>
       <a href="#apply">Apply now</a>
-      <h2>Technical Lead – Hardware</h2>
+      <h2>Technical Lead â€“ Hardware</h2>
       <h3>Job Responsibilities</h3>
       <ul>
         <li>He/She will work as the Hardware Lead for our Ongoing Embedded Project.</li>
@@ -187,24 +187,7 @@ test('Endurance Technologies helpers keep the verified first-party careers, job 
   )
   assert.equal(enduranceTechnologies.hasOfficialJobPortalSignal(jobPortalHtml), true)
   assert.deepEqual(
-    await enduranceTechnologies.collectListingCandidates({
-      evaluate: async () => ([
-        {
-          title: 'Job Opening for Technical Architect',
-          experience: '14 Years',
-          designation: 'Assistant Manager',
-          location: 'Pune',
-          sourceUrl: 'https://www.endurancegroup.com/career/technical-architect/',
-        },
-        {
-          title: 'Job Opening for Technical Lead – Hardware',
-          experience: '7 Years',
-          designation: 'Assistant Manager',
-          location: 'Pune',
-          sourceUrl: 'https://www.endurancegroup.com/career/technical-lead-hardware/',
-        },
-      ]),
-    }),
+    enduranceTechnologies.collectListingCandidates(jobPortalHtml).slice(0, 2),
     [
       {
         title: 'Job Opening for Technical Architect',
@@ -214,7 +197,7 @@ test('Endurance Technologies helpers keep the verified first-party careers, job 
         sourceUrl: 'https://www.endurancegroup.com/career/technical-architect/',
       },
       {
-        title: 'Job Opening for Technical Lead – Hardware',
+        title: 'Job Opening for Technical Lead â€“ Hardware',
         experience: '7 Years',
         designation: 'Assistant Manager',
         location: 'Pune',
@@ -322,81 +305,26 @@ test('Endurance Technologies run validates the first-party careers page, browser
   const enduranceTechnologies = await loadModule()
   const requestedUrls = []
 
-  let currentStage = 'careers'
-
-  const fakePage = {
-    goto: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === enduranceTechnologies.CAREERS_URL) {
-        currentStage = 'careers'
-        return
-      }
-
-      if (url === enduranceTechnologies.JOB_PORTAL_URL) {
-        currentStage = 'job-portal'
-        return
-      }
-
-      if (url === 'https://www.endurancegroup.com/career/technical-architect/') {
-        currentStage = 'technical-architect'
-        return
-      }
-
-      if (url === 'https://www.endurancegroup.com/career/technical-lead-hardware/') {
-        currentStage = 'technical-lead-hardware'
-        return
-      }
-
-      throw new Error(`Unexpected Endurance Technologies URL: ${url}`)
-    },
-    waitForSelector: async () => {},
-    content: async () => {
-      if (currentStage === 'careers') return careersHtml
-      if (currentStage === 'job-portal') return jobPortalHtml
-      if (currentStage === 'technical-architect') return technicalArchitectDetailHtml
-      if (currentStage === 'technical-lead-hardware') return technicalLeadHardwareDetailHtml
-      throw new Error(`Unexpected stage: ${currentStage}`)
-    },
-    evaluate: async () => {
-      if (currentStage !== 'job-portal') {
-        throw new Error(`Unexpected evaluate stage: ${currentStage}`)
-      }
-
-      return [
-        {
-          title: 'Job Opening for Technical Architect',
-          experience: '14 Years',
-          designation: 'Assistant Manager',
-          location: 'Pune',
-          sourceUrl: 'https://www.endurancegroup.com/career/technical-architect/',
-        },
-        {
-          title: 'Job Opening for Technical Lead – Hardware',
-          experience: '7 Years',
-          designation: 'Assistant Manager',
-          location: 'Pune',
-          sourceUrl: 'https://www.endurancegroup.com/career/technical-lead-hardware/',
-        },
-        {
-          title: 'Job Opening for Technical Member – Hardware',
-          experience: '4 Years',
-          designation: 'Assistant Manager',
-          location: 'Pune',
-          sourceUrl: 'https://www.endurancegroup.com/career/technical-member-hardware/',
-        },
-      ]
-    },
-  }
+  const htmlByUrl = new Map([
+    [enduranceTechnologies.CAREERS_URL, careersHtml],
+    [enduranceTechnologies.JOB_PORTAL_URL, jobPortalHtml],
+    ['https://www.endurancegroup.com/career/technical-architect/', technicalArchitectDetailHtml],
+    ['https://www.endurancegroup.com/career/technical-lead-hardware/', technicalLeadHardwareDetailHtml],
+  ])
 
   const jobs = await enduranceTechnologies.createEnduranceTechnologiesScraper({
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => fakePage,
     now: () => FIXED_SCRAPED_AT,
     maxJobs: 2,
-  }).run()
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      const html = htmlByUrl.get(url)
+      if (!html) {
+        throw new Error(`Unexpected Endurance Technologies URL: ${url}`)
+      }
+      return html
+    },
+  })
 
   assert.deepEqual(requestedUrls, [
     enduranceTechnologies.CAREERS_URL,
@@ -407,7 +335,7 @@ test('Endurance Technologies run validates the first-party careers page, browser
   assert.equal(jobs.length, 2)
   assert.deepEqual(
     jobs.map((job) => job.title),
-    ['Technical Architect', 'Technical Lead – Hardware'],
+    ['Technical Architect', 'Technical Lead â€“ Hardware'],
   )
 
   assert.deepEqual(jobs[0], {
@@ -468,66 +396,33 @@ test('Endurance Technologies fails closed when the careers landing page, job por
   const enduranceTechnologies = await loadModule()
 
   await assert.rejects(
-    enduranceTechnologies.createEnduranceTechnologiesScraper({
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        waitForSelector: async () => {},
-        content: async () => '<html><body><h1>Careers</h1></body></html>',
-      }),
-    }).run(),
+    enduranceTechnologies.createEnduranceTechnologiesScraper().run({
+      fetchText: async () => '<html><body><h1>Careers</h1></body></html>',
+    }),
     /careers page no longer matches/i,
   )
 
-  let currentStage = 'careers'
-  const brokenPortalPage = {
-    goto: async (url) => {
-      currentStage = url === enduranceTechnologies.CAREERS_URL ? 'careers' : 'job-portal'
-    },
-    waitForSelector: async () => {},
-    content: async () => currentStage === 'careers'
-      ? careersHtml
-      : '<html><body><h2>Current Opening</h2><p>Drop your CV here</p></body></html>',
-  }
-
   await assert.rejects(
-    enduranceTechnologies.createEnduranceTechnologiesScraper({
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => brokenPortalPage,
-    }).run(),
+    enduranceTechnologies.createEnduranceTechnologiesScraper().run({
+      fetchText: async (url) => (
+        url === enduranceTechnologies.CAREERS_URL
+          ? careersHtml
+          : '<html><body><h2>Current Opening</h2><p>Drop your CV here</p></body></html>'
+      ),
+    }),
     /job portal no longer matches/i,
   )
 
-  currentStage = 'careers'
-  const brokenDetailPage = {
-    goto: async (url) => {
-      if (url === enduranceTechnologies.CAREERS_URL) currentStage = 'careers'
-      else if (url === enduranceTechnologies.JOB_PORTAL_URL) currentStage = 'job-portal'
-      else currentStage = 'detail'
-    },
-    waitForSelector: async () => {},
-    content: async () => {
-      if (currentStage === 'careers') return careersHtml
-      if (currentStage === 'job-portal') return jobPortalHtml
-      return technicalArchitectDetailHtml.replace('Job Qualifications', 'Qualifications')
-    },
-    evaluate: async () => ([
-      {
-        title: 'Job Opening for Technical Architect',
-        experience: '14 Years',
-        designation: 'Assistant Manager',
-        location: 'Pune',
-        sourceUrl: 'https://www.endurancegroup.com/career/technical-architect/',
-      },
-    ]),
-  }
-
   await assert.rejects(
     enduranceTechnologies.createEnduranceTechnologiesScraper({
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => brokenDetailPage,
       maxJobs: 1,
-    }).run(),
+    }).run({
+      fetchText: async (url) => {
+        if (url === enduranceTechnologies.CAREERS_URL) return careersHtml
+        if (url === enduranceTechnologies.JOB_PORTAL_URL) return jobPortalHtml
+        return technicalArchitectDetailHtml.replace('Job Qualifications', 'Qualifications')
+      },
+    }),
     /job detail no longer matches/i,
   )
 })

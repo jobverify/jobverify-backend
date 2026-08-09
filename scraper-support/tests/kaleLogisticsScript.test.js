@@ -99,7 +99,7 @@ test('Kale Logistics keeps the verified first-party Darwinbox handoff explicit a
   )
 })
 
-test('run maps verified Kale Logistics Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Kale Logistics Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const kaleLogistics = await loadKaleLogisticsModule()
   const scraper = kaleLogistics.createKaleLogisticsScraper({
     now: () => FIXED_SCRAPED_AT,

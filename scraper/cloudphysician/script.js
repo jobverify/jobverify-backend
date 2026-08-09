@@ -80,7 +80,7 @@ export const EXPECTED_OPENINGS = [
   },
 ]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 const EXPECTED_JD_PATHS = new Set(
   EXPECTED_OPENINGS.map(({ jdUrl }) => new URL(jdUrl).pathname.replace(/\/+$/, '')),
 )

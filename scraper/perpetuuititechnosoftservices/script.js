@@ -16,7 +16,7 @@ export const CAREERS_ROUTE_URL = 'https://ptechnosoft.com/careers'
 export const CAREER_ROUTE_URL = 'https://ptechnosoft.com/career'
 export const JOBS_ROUTE_URL = 'https://ptechnosoft.com/jobs'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const PUBLIC_JOB_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bopen positions?\b/i,

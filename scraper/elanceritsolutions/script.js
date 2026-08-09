@@ -1,4 +1,4 @@
-export const SOURCE = 'elanceritsolutions'
+﻿export const SOURCE = 'elanceritsolutions'
 export const COMPANY = 'Elancer It Solutions'
 export const HOMEPAGE_URL = 'https://elancerits.com/'
 export const CAREERS_URL = 'https://elancerits.com/careers.html'
@@ -9,7 +9,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Elancer IT Solutions',
   adapter: 'script',
-  modulePath: '../elanceritsolutions/script.js',
+  modulePath: '../../scraper/elanceritsolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-openings-page',
@@ -21,7 +21,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'elancerits.com',
   verifiedOn: '2026-07-18',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://elancerits.com/careers.html was the live first-party Elancer IT Solutions careers page and that it exposed public same-page openings including Project Coordinator / Senior Team Coordinator and Business Development Executive – AI & Data Services, with resumes directed to hr@elancerits.com.',
+    'Verified on Saturday, July 18, 2026 that https://elancerits.com/careers.html was the live first-party Elancer IT Solutions careers page and that it exposed public same-page openings including Project Coordinator / Senior Team Coordinator and Business Development Executive - AI & Data Services, with resumes directed to hr@elancerits.com.',
   dryRunFile: 'elanceritsolutions/jobs.json',
 }
 
@@ -86,3 +86,4 @@ export const run = async ({
     }
   })
 }
+

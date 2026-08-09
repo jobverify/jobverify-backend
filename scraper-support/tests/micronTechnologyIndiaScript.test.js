@@ -113,7 +113,7 @@ test('Micron Technology India scraper constants stay pinned to the verified firs
   assert.equal(micron.isIndiaLocation('Boise, Idaho, United States'), false)
 })
 
-test('Micron Technology India run verifies the official careers page and maps public India Eightfold jobs into Jobify jobs', async () => {
+test('Micron Technology India run verifies the official careers page and maps public India Eightfold jobs into Jobverify jobs', async () => {
   const micron = await loadModule()
   const requestedUrls = []
   const scraper = micron.createMicronTechnologyIndiaScraper()

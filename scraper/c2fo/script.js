@@ -219,6 +219,37 @@ export const buildJobDetailApiUrl = (jobPostingId) =>
 
 export const buildJobDetailUrl = (jobPostingId) => `${OFFICIAL_DAYFORCE_URL}/jobs/${jobPostingId}`
 
+export const extractCookieHeaderFromResponse = (response) => {
+  const headers = response?.headers
+  if (!headers) return null
+
+  const setCookies = typeof headers.getSetCookie === 'function'
+    ? headers.getSetCookie()
+    : String(headers.get?.('set-cookie') || '')
+      .split(/,(?=\s*[^;,=\s]+=[^;]+)/)
+      .filter(Boolean)
+
+  const cookieHeader = setCookies
+    .map((line) => normalizeWhitespace(String(line).split(';')[0]))
+    .filter(Boolean)
+    .join('; ')
+
+  return cookieHeader || null
+}
+
+export const buildDayforceSessionHeaders = (
+  session = {},
+  { includeContentType = false } = {},
+) => ({
+  'User-Agent': USER_AGENT,
+  Accept: 'application/json,text/plain,*/*',
+  Cookie: session.cookieHeader,
+  'X-CSRF-Token': session.csrfToken,
+  Referer: OFFICIAL_DAYFORCE_URL,
+  Origin: DAYFORCE_ORIGIN,
+  ...(includeContentType ? { 'Content-Type': 'application/json;charset=UTF-8' } : {}),
+})
+
 export const buildSearchRequestPayload = (paginationStart = 0) => ({
   clientNamespace: DAYFORCE_CLIENT_NAMESPACE,
   jobBoardCode: DAYFORCE_JOB_BOARD_CODE,
@@ -364,14 +395,42 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
+    ...(options.headers || {}),
   },
-  label: 'c2fo-sitecontext',
-  timeoutMs: 15000,
+  label: options.label || 'c2fo-json',
+  timeoutMs: options.timeoutMs || 15000,
 })
+
+export const createDayforceSession = async ({
+  fetchJson = defaultFetchJson,
+} = {}) => {
+  let csrfResponse = null
+  const payload = await fetchJson(buildCsrfUrl(), {
+    label: 'c2fo-dayforce-csrf',
+    fetchImpl: async (url, requestInit) => {
+      const response = await fetch(url, requestInit)
+      csrfResponse = response
+      return response
+    },
+  })
+
+  const csrfToken = firstNonEmpty(payload?.csrfToken)
+  const cookieHeader = extractCookieHeaderFromResponse(csrfResponse)
+
+  if (!csrfToken || !cookieHeader) {
+    throw new Error('C2FO Dayforce public session bootstrap no longer exposes a CSRF token and cookie contract')
+  }
+
+  return {
+    csrfToken,
+    cookieHeader,
+  }
+}
 
 export const createC2foScraper = ({
   now = () => new Date().toISOString(),
@@ -379,6 +438,7 @@ export const createC2foScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    createDayforceSessionImpl = createDayforceSession,
     searchJobPostings,
     fetchJobDetail,
     maxPages = Number.isInteger(config.maxPages) ? config.maxPages : 1,
@@ -390,24 +450,47 @@ export const createC2foScraper = ({
       throw new Error('C2FO verified official careers page no longer matches the verified Dayforce public surface')
     }
 
-    const siteContext = await fetchJson(buildSiteContextUrl())
+    const siteContext = await fetchJson(buildSiteContextUrl(), {
+      label: 'c2fo-sitecontext',
+    })
 
     if (!hasVerifiedDayforceSiteContext(siteContext)) {
       throw new Error('C2FO verified Dayforce public jobs surface no longer matches the pinned C2FO site context')
     }
 
-    if (!searchJobPostings || !fetchJobDetail) {
-      throw new Error(
-        'C2FO API-only migration incomplete: no session-free Dayforce search and detail contract has been demonstrated',
-      )
+    let dayforceSessionPromise = null
+    const getDayforceSession = async () => {
+      if (!dayforceSessionPromise) {
+        dayforceSessionPromise = Promise.resolve(createDayforceSessionImpl({ fetchJson }))
+      }
+
+      return dayforceSessionPromise
     }
+
+    const sessionFreeSearchJobPostings = searchJobPostings || (async (payload) => {
+      const session = await getDayforceSession()
+      return fetchJson(buildSearchApiUrl(), {
+        method: 'POST',
+        headers: buildDayforceSessionHeaders(session, { includeContentType: true }),
+        body: JSON.stringify(payload),
+        label: 'c2fo-dayforce-search',
+      })
+    })
+
+    const sessionFreeFetchJobDetail = fetchJobDetail || (async (jobPostingId) => {
+      const session = await getDayforceSession()
+      return fetchJson(buildJobDetailApiUrl(jobPostingId), {
+        headers: buildDayforceSessionHeaders(session),
+        label: `c2fo-dayforce-detail-${jobPostingId}`,
+      })
+    })
 
     const jobs = []
     const seenJobIds = new Set()
     let paginationStart = 0
 
     for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-      const searchPayload = await searchJobPostings(buildSearchRequestPayload(paginationStart))
+      const searchPayload = await sessionFreeSearchJobPostings(buildSearchRequestPayload(paginationStart))
       const postings = extractSearchPostings(searchPayload)
       if (!postings.length) break
 
@@ -418,7 +501,7 @@ export const createC2foScraper = ({
 
         let detail = listing
         try {
-          const detailPayload = await fetchJobDetail(listing.jobId)
+          const detailPayload = await sessionFreeFetchJobDetail(listing.jobId)
           detail = {
             ...detail,
             ...normalizeJobDetail(detailPayload, listing),

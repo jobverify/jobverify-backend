@@ -11,7 +11,7 @@ export const SOURCE = ZETA_GLOBAL_CATALOG.source
 export const COMPANY = ZETA_GLOBAL_CATALOG.companyName
 export const GREENHOUSE_API_URL = 'https://boards-api.greenhouse.io/v1/boards/zetaglobal/jobs?content=true'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

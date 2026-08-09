@@ -21,7 +21,7 @@ test('buildScraperOptions keeps Silicon Labs India on the official Silicon Labs 
   assert.equal(options.baseUrl, 'https://silabs.wd1.myworkdayjobs.com/SiliconlabsCareers')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'siliconlabsindia')
-  assert.match(options.scraperDir, /siliconlabsindia$/)
+  assert.match(options.scraperDir, /siliconlabsindia\.workday$/)
 })
 
 test('run delegates Silicon Labs India scraping to the shared Workday runner with the official tenant options', async () => {
@@ -42,5 +42,5 @@ test('run delegates Silicon Labs India scraping to the shared Workday runner wit
   assert.equal(receivedOptions.baseUrl, 'https://silabs.wd1.myworkdayjobs.com/SiliconlabsCareers')
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'siliconlabsindia')
-  assert.match(receivedOptions.scraperDir, /siliconlabsindia$/)
+  assert.match(receivedOptions.scraperDir, /siliconlabsindia\.workday$/)
 })

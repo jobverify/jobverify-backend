@@ -40,6 +40,18 @@ const isBrowserFallbackError = (error) =>
   /HTTP 403|timed out|timeout|fetch failed|could not connect|err_failed/i
     .test(String(error?.message ?? error ?? ''))
 
+const buildBlockedCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Enerparc Energy verified careers page remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
 export const createEnerparcEnergyScraper = () => ({
   async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
     let browserSession = null
@@ -70,7 +82,15 @@ export const createEnerparcEnergyScraper = () => ({
     }
 
     try {
-      const careersHtml = await fetchVerifiedText(CAREERS_URL)
+      let careersHtml
+      try {
+        careersHtml = await fetchVerifiedText(CAREERS_URL)
+      } catch (error) {
+        if (isBrowserFallbackError(error)) {
+          throw buildBlockedCareersSurfaceError(error)
+        }
+        throw error
+      }
 
       if (!hasOfficialCareersSignal(careersHtml)) {
         throw new Error('Enerparc Energy careers page no longer matches the verified official careers surface')

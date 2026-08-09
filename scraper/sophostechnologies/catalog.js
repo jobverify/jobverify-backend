@@ -1,9 +1,9 @@
-export const SOPHOS_TECHNOLOGIES_CATALOG = {
+﻿export const SOPHOS_TECHNOLOGIES_CATALOG = {
   source: 'sophostechnologies',
   companyName: 'Sophos Technologies',
   officialBrandName: 'Sophos',
   adapter: 'script',
-  modulePath: '../sophostechnologies/script.js',
+  modulePath: '../../scraper/sophostechnologies/script.js',
   companyCareerPage: 'https://www.sophos.com/en-us/company/careers',
   companyDomain: 'sophos.com',
   leverBoardUrl: 'https://jobs.lever.co/sophos',
@@ -22,3 +22,4 @@ export const SOPHOS_TECHNOLOGIES_CATALOG = {
 }
 
 export default SOPHOS_TECHNOLOGIES_CATALOG
+

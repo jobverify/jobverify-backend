@@ -126,7 +126,9 @@ test('extractJobDetail reads JobPosting JSON-LD and run decorates scraped jobs',
     country: 'India',
     employmentType: 'Full-time',
     postingDate: '2026-06-21',
+    experienceRequired: null,
     jobDescription: 'Design and build embedded software platforms.',
+    publicExperienceChecked: null,
   })
 
   const requestedUrls = []

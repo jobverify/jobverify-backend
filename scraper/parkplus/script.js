@@ -114,7 +114,7 @@ const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': 'Jobify first-party careers scraper',
+      'User-Agent': 'Jobverify first-party careers scraper',
     },
     redirect: 'follow',
   })

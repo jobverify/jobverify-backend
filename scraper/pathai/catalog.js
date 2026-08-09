@@ -1,11 +1,11 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://www.pathai.com/careers is the live first-party PathAI careers page, that it exposes a first-party Open Positions section under PathAI\'s own domain, that https://job-boards.greenhouse.io/pathai redirects into the PathAI-owned careers experience, and that the public Greenhouse feed at https://boards-api.greenhouse.io/v1/boards/pathai/jobs?content=true returned 9 live roles with first-party https://www.pathai.com/careers/{jobId}?gh_jid={jobId} detail URLs. No India roles were live in the verified public feed on the verified date, so this provider currently returns an honest empty set while the trusted surface remains unchanged.'
 
 export const PATH_AI_CATALOG = {
   source: 'pathai',
   companyName: 'PathAI',
   adapter: 'script',
-  modulePath: '../pathai/script.js',
+  modulePath: '../../scraper/pathai/script.js',
   dryRunFile: 'pathai/jobs.json',
   companyCareerPage: 'https://www.pathai.com/careers',
   greenhouseBoardUrl: 'https://job-boards.greenhouse.io/pathai',
@@ -25,3 +25,4 @@ export const PATH_AI_CATALOG = {
 }
 
 export default PATH_AI_CATALOG
+

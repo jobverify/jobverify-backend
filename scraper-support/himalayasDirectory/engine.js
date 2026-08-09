@@ -203,7 +203,7 @@ const defaultFetchJson = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'JobifyScraper/1.0',
+      'User-Agent': 'JobverifyScraper/1.0',
     },
   })
 

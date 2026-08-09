@@ -121,17 +121,13 @@ test('Backyard Creators returns [] when the current first-party homepage is live
   const backyardCreators = await loadBackyardCreatorsModule()
 
   const jobs = await backyardCreators.createBackyardCreatorsScraper().run({
-    fetchText: async () => '<html><body><script src="app.js"></script></body></html>',
+    fetchText: async () => currentHomepageHtml,
     fetchPage: async (url) => {
       if (url === backyardCreators.CAREERS_URL) {
         return { status: 404, url, html: '' }
       }
 
       throw new Error(`Unexpected page URL: ${url}`)
-    },
-    fetchBrowserPage: async (url) => {
-      assert.equal(url, backyardCreators.HOMEPAGE_URL)
-      return { status: 200, url, html: currentHomepageHtml }
     },
   })
 
@@ -193,11 +189,6 @@ test('Backyard Creators fails closed when the verified homepage or careers surfa
         status: 200,
         url,
         html: careersHtml,
-      }),
-      fetchBrowserPage: async () => ({
-        status: 200,
-        url: backyardCreators.HOMEPAGE_URL,
-        html: homepageHtml.replace('Redefining Hearing Through', 'Unexpected Homepage'),
       }),
     }),
     /verified official homepage/i,

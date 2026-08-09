@@ -124,7 +124,7 @@ test('Appy Pie exports the verified first-party job-board contract', async () =>
     companyName: 'Appy Pie',
     officialBrandName: 'Appy Pie',
     adapter: 'script',
-    modulePath: '../appypie/script.js',
+    modulePath: '../../scraper/appypie/script.js',
     homepageUrl: 'https://www.appypie.com/',
     companyCareerPage: 'https://careers.appypie.com/careers',
     atsPlatform: 'wordpress-simple-jobs',

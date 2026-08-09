@@ -200,8 +200,16 @@ const normalizeExperienceEvidence = (value) => normalizeWhitespace(value)
   .replace(/\bYear\b/g, 'year')
   || null
 
+const extractDirectExperienceLabel = (value) => normalizeExperienceEvidence(
+  extractFirst(
+    /\bExperience\s*:\s*(\d+(?:\s*(?:-|to)\s*\d+)?\s*(?:\+)?\s*(?:Years?|Year|Months?|Month))\b/i,
+    value,
+  ),
+)
+
 const extractExperienceRequired = ({ title, jobDescription }) => (
-  normalizeExperienceEvidence(extractJobFilterSignals({
+  extractDirectExperienceLabel(jobDescription)
+  || normalizeExperienceEvidence(extractJobFilterSignals({
     title,
     jobDescription,
     experienceRequired: null,

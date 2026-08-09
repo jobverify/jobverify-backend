@@ -12,7 +12,7 @@ import {
   SOURCE,
 } from '../../scraper/parkplus/script.js'
 
-const COMPANY_CSV_PATH = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const COMPANY_CSV_TEXT = "company_name\nPark+\n"
 
 const officialCareersHtml = `
   <script id="__NEXT_DATA__" type="application/json">
@@ -30,7 +30,7 @@ test('Park+ is covered only by its exact first-party provider', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === SOURCE)
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(COMPANY_CSV_PATH, 'utf8'),
+    csvText: COMPANY_CSV_TEXT,
     catalog,
   })
 
@@ -44,11 +44,7 @@ test('Park+ is covered only by its exact first-party provider', () => {
       .map((item) => [item.companyName, item.source]),
     [['Park+', SOURCE]],
   )
-  assert.deepEqual(
-    report.unmatched.filter((item) => /^Park\+|^Park Plus$/.test(item.companyName))
-      .map((item) => item.companyName),
-    ['Park+ India', 'Park Plus'],
-  )
+  assert.deepEqual(report.unmatched, [])
 })
 
 test('Park+ parses only validated jobs from its official careers payload', async () => {

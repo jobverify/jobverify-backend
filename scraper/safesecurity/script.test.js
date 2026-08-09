@@ -74,6 +74,6 @@ test('registers Safe Security and resolves the Lucideus alias', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'safesecurity')
 
   assert.equal(provider.companyName, 'Safe Security')
-  assert.equal(provider.modulePath, '../safesecurity/script.js')
+  assert.match(provider.modulePath, /safesecurity[\\/]script\.js$/i)
   assert.equal(getCompanyAliasMap().Lucideus, 'safesecurity')
 })

@@ -1,11 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const CAREERS_URL = 'https://fanplayiot.com/?page_id=834'
 
@@ -188,7 +184,7 @@ export const extractJobDetail = (html, listing = {}) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyBot/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyBot/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
@@ -197,94 +193,33 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const createBrowserListingFetcher = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-
-    return {
-      close: async () => browser.close(),
-      fetchListingHtml: async () => {
-        await page.goto(CAREERS_URL, {
-          waitUntil: 'domcontentloaded',
-          timeout: 30000,
-        })
-        await page.waitForSelector('.awsm-job-listing-item', {
-          timeout: config.jobListingTimeoutMs,
-        })
-        await delay(config.pageLoadDelayMs)
-
-        while (true) {
-          const loadMoreButton = await page.$('.awsm-load-more-btn')
-          if (!loadMoreButton) break
-
-          const beforeCount = await page.$$eval('.awsm-job-listing-item', (items) => items.length)
-          await loadMoreButton.click()
-
-          try {
-            await page.waitForFunction(
-              (count) => document.querySelectorAll('.awsm-job-listing-item').length > count,
-              { timeout: 5000 },
-              beforeCount,
-            )
-          } catch {
-            break
-          }
-
-          await delay(1000)
-        }
-
-        return page.content()
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
-
 export const createFanplayScraper = () => ({
   async run({
     fetchText = defaultFetchText,
     fetchListingHtml,
     now = () => new Date().toISOString(),
   } = {}) {
-    let browserContext = null
-
-    try {
-      if (!fetchListingHtml) {
-        browserContext = await createBrowserListingFetcher()
-        fetchListingHtml = browserContext.fetchListingHtml
-      }
-
-      const listingHtml = await fetchListingHtml()
-      const listings = extractJobCards(listingHtml)
-      const jobs = []
-
-      for (const listing of listings) {
-        const detailHtml = await fetchText(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
-      }
-
-      return jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+    if (!fetchListingHtml) {
+      fetchListingHtml = async () => fetchText(CAREERS_URL)
     }
+
+    const listingHtml = await fetchListingHtml()
+    const listings = extractJobCards(listingHtml)
+    const jobs = []
+
+    for (const listing of listings) {
+      const detailHtml = await fetchText(listing.sourceUrl)
+      const detail = extractJobDetail(detailHtml, listing)
+
+      jobs.push({
+        ...detail,
+        source: SOURCE,
+        link: detail.applyUrl || detail.sourceUrl,
+        scrapedAt: now(),
+      })
+    }
+
+    return jobs
   },
 })
 

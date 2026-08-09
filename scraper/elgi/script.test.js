@@ -126,19 +126,35 @@ test('ELGi scraper validates the official page then decorates Darwinbox India jo
   assert.equal(DARWINBOX_CAREERS_URL, 'https://elgi.darwinbox.in/ms/candidate/a61e65404e890b/careers')
 })
 
-test('ELGi scraper posts directly to the verified Darwinbox listing API', async () => {
+test('ELGi scraper seeds the public Darwinbox shell before posting to the verified listing API', async () => {
   const elgi = await loadModule()
   assert.ok(elgi, 'ELGi scraper module should load')
 
   const requests = []
   const jobs = await elgi.createElgiScraper({
     maxJobs: 1,
-    fetchImpl: async (url, options) => {
+    fetchImpl: async (url, options = {}) => {
       requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [],
+          },
+          text: async () => '<!doctype html><html><body>ELGI Group - </body></html>',
+        }
+      }
+
       return {
         ok: true,
         status: 200,
-        headers: { get: () => 'application/json' },
+        headers: {
+          get: () => 'application/json',
+          getSetCookie: () => [],
+        },
         json: async () => ({
           status: 'success',
           job_counts: 1,
@@ -163,11 +179,13 @@ test('ELGi scraper posts directly to the verified Darwinbox listing API', async 
 
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].jobId, 'job-api-001')
-  assert.equal(requests.length, 1)
-  assert.equal(requests[0].url, elgi.DARWINBOX_LISTING_API_URL)
-  assert.equal(requests[0].options.method, 'POST')
-  assert.equal(requests[0].options.headers.Origin, elgi.DARWINBOX_ORIGIN)
-  assert.equal(requests[0].options.headers.Referer, elgi.DARWINBOX_PUBLIC_ALL_JOBS_URL)
+  assert.equal(requests.length, 2)
+  assert.equal(requests[0].url, elgi.DARWINBOX_PUBLIC_ALL_JOBS_URL)
+  assert.equal(requests[0].options.method, 'GET')
+  assert.equal(requests[1].url, elgi.DARWINBOX_LISTING_API_URL)
+  assert.equal(requests[1].options.method, 'POST')
+  assert.equal(requests[1].options.headers.Origin, elgi.DARWINBOX_ORIGIN)
+  assert.equal(requests[1].options.headers.Referer, elgi.DARWINBOX_PUBLIC_ALL_JOBS_URL)
 })
 
 test('ELGi scraper rejects an official careers page that no longer matches the verified public surface', async () => {

@@ -105,7 +105,7 @@ test('extractJobDetail reads Avantor job detail metadata and public apply links 
   assert.equal(detail.requisitionId, 'R-172344')
   assert.equal(detail.department, 'Sales')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.equal(detail.experienceRequired, 'Minimum of 4+ years of chemical sales experience required.')
+  assert.equal(detail.experienceRequired, '4+ years')
   assert.match(detail.location, /Hyderabad/i)
   assert.match(detail.jobDescription, /working independently under close supervision/i)
   assert.match(detail.minimumQualification, /B\.Tech/i)

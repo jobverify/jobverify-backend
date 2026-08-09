@@ -426,7 +426,7 @@ test("verifyEmail reuses the pending password when the verification link opens i
           token: "raw-verification-token",
         },
         headers: {
-          cookie: `jobify_pending_registration=${browserNonce}`,
+          cookie: `jobverify_pending_registration=${browserNonce}`,
         },
       },
       res,

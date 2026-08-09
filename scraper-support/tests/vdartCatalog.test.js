@@ -26,7 +26,7 @@ test('VDart exports a fail-closed provider contract for the verified blocked job
     companyName: 'VDart',
     officialBrandName: 'VDart',
     adapter: 'script',
-    modulePath: '../vdart/script.js',
+    modulePath: '../../scraper/vdart/script.js',
     homepageUrl: 'https://www.vdart.com/',
     companyCareerPage: 'https://vdart.jobs.net/',
     atsPlatform: 'official-company-careers-blocked',

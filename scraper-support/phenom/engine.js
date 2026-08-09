@@ -135,9 +135,42 @@ const normalizeExperienceDuration = (value) => normalizeWhitespace(value)
 const extractExperienceDuration = (value, { requireKeyword = true } = {}) => {
   const text = stripTags(value)
   if (!text) return null
-  if (requireKeyword && !EXPERIENCE_KEYWORD_PATTERN.test(text)) return null
+  const normalizedText = text.replace(
+    /(\d+(?:\.\d+)?)\s+\+\s*(?=(?:months?|mos?|mo|years?|yrs?|yr)\b)/gi,
+    '$1+ ',
+  )
+    .replace(/[\u2013\u2014\u2212]/g, '-')
+  if (requireKeyword) {
+    const contextualMatch = (
+      normalizedText.match(
+        /\b((?:\d+(?:\.\d+)?\+?\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)))(?:\s+of)?(?:\s+[a-z0-9/&()-]+){0,8}\s+(?:experience|experienced|exp\.?)\b/i,
+      )
+      || normalizedText.match(
+        /\b(?:experience|experienced|exp\.?)\b[^.]{0,80}?\b((?:\d+(?:\.\d+)?\+?\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)))\b/i,
+      )
+    )
+    if (contextualMatch) {
+      return normalizeExperienceDuration(contextualMatch[1])
+    }
 
-  const matched = text.match(EXPERIENCE_DURATION_PATTERN)
+    const sectionHeadingMatch = normalizedText.match(
+      /\bexperience(?:\s*&\s*[a-z]+)?\b[^0-9]{0,40}\b((?:\d+(?:\.\d+)?\+?\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)))\b/i,
+    )
+    if (sectionHeadingMatch) {
+      return normalizeExperienceDuration(sectionHeadingMatch[1])
+    }
+
+    const leadingTitleDurationMatch = normalizedText.match(
+      /^[^.]{0,160}?\(\s*((?:\d+(?:\.\d+)?\+?\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)\s*(?:-|to)\s*\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)|\d+(?:\.\d+)?\+?\s*(?:months?|mos?|mo|years?|yrs?|yr)))\s*\)/i,
+    )
+    if (leadingTitleDurationMatch) {
+      return normalizeExperienceDuration(leadingTitleDurationMatch[1])
+    }
+
+    return null
+  }
+
+  const matched = normalizedText.match(EXPERIENCE_DURATION_PATTERN)
   return matched ? normalizeExperienceDuration(matched[0]) : null
 }
 

@@ -11,23 +11,57 @@ const sampleSapHtml = `
     <head><title>Jobs in India | SAP Careers</title></head>
     <body>
       <h1>India</h1>
-      <p>Results 1 – 25 of 42 Page 1 of 2</p>
-      <a href="https://jobs.sap.com/job/Bangalore-AI-Product-Manager-SAP-Concur-Spend-KA-560066/1411111111/">
-        AI Product Manager, SAP Concur Spend
-      </a>
-      Bangalore, IN, 560066
-      <a href="https://jobs.sap.com/job/Bangalore-Development-Expert-Java-Kotlin-Go-Dot-Net-SAP-Concur-Travel-KA-562149/1412222222/">
-        Development Expert (Java/ Kotlin/ Go/ Dot Net), SAP Concur Travel
-      </a>
-      Bangalore, KA, IN, 562149
-      <a href="https://jobs.sap.com/job/Bangalore-Head-of-Engineering-Concur-Invoice-Bangalore-KA-562149/1413333333/">
-        Head of Engineering - Concur Invoice - Bangalore
-      </a>
-      Bangalore, KA, IN, 562149
-      <a href="https://jobs.sap.com/job/Mumbai-Solution-Sales-Expert-Finance-oCFO-Cloud-ERP-Solution-IN-400051/1414444444/">
-        Solution Sales Expert - Finance (oCFO) / Cloud ERP Solution
-      </a>
-      Mumbai, IN, 400051
+      <form>
+        <label>Search by keyword</label>
+        <label>Search by location</label>
+      </form>
+      <div id="searchresults">
+        <p>Results 1 - 25 of 42 Page 1 of 2</p>
+        <table>
+          <tbody>
+            <tr class="data-row">
+              <td class="colTitle hidden-phone">
+                <a class="jobTitle-link" href="https://jobs.sap.com/job/Bangalore-AI-Product-Manager-SAP-Concur-Spend-KA-560066/1411111111/">
+                  AI Product Manager, SAP Concur Spend
+                </a>
+              </td>
+              <td class="colLocation hidden-phone">
+                <span class="jobLocation">Bangalore, IN, 560066</span>
+              </td>
+            </tr>
+            <tr class="data-row">
+              <td class="colTitle hidden-phone">
+                <a class="jobTitle-link" href="https://jobs.sap.com/job/Bangalore-Development-Expert-Java-Kotlin-Go-Dot-Net-SAP-Concur-Travel-KA-562149/1412222222/">
+                  Development Expert (Java/ Kotlin/ Go/ Dot Net), SAP Concur Travel
+                </a>
+              </td>
+              <td class="colLocation hidden-phone">
+                <span class="jobLocation">Bangalore, KA, IN, 562149</span>
+              </td>
+            </tr>
+            <tr class="data-row">
+              <td class="colTitle hidden-phone">
+                <a class="jobTitle-link" href="https://jobs.sap.com/job/Bangalore-Head-of-Engineering-Concur-Invoice-Bangalore-KA-562149/1413333333/">
+                  Head of Engineering - Concur Invoice - Bangalore
+                </a>
+              </td>
+              <td class="colLocation hidden-phone">
+                <span class="jobLocation">Bangalore, KA, IN, 562149</span>
+              </td>
+            </tr>
+            <tr class="data-row">
+              <td class="colTitle hidden-phone">
+                <a class="jobTitle-link" href="https://jobs.sap.com/job/Mumbai-Solution-Sales-Expert-Finance-oCFO-Cloud-ERP-Solution-IN-400051/1414444444/">
+                  Solution Sales Expert - Finance (oCFO) / Cloud ERP Solution
+                </a>
+              </td>
+              <td class="colLocation hidden-phone">
+                <span class="jobLocation">Mumbai, IN, 400051</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </body>
   </html>
 `

@@ -15,7 +15,7 @@ export const JOBS_URL = PROPROFS_CATALOG.blockedJobsUrl
 export const VERIFIED_ON = PROPROFS_CATALOG.verifiedOn
 export const PROVIDER_METADATA = PROPROFS_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 export const hasVerifiedProProfsAboutSignal = (html) =>
   /<title>\s*ProProfs\s*-\s*Delightfully Smart Tools\s*<\/title>/i.test(String(html))

@@ -19,7 +19,7 @@ const loadCatalogModule = async () => {
 
 const buildProvider = (catalogEntry) => hydrateProviderCatalogEntry({ ...catalogEntry, modulePath })
 
-test('Mitratech local catalog captures the verified Cloudflare-blocked careers surface', async () => {
+test('Mitratech local catalog captures the verified Greenhouse careers handoff', async () => {
   const { MITRATECH_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = buildProvider(MITRATECH_CATALOG)
 
@@ -27,10 +27,12 @@ test('Mitratech local catalog captures the verified Cloudflare-blocked careers s
   assert.equal(provider.source, 'mitratech')
   assert.equal(provider.companyName, 'Mitratech')
   assert.equal(provider.companyCareerPage, 'https://mitratech.com/about-us/careers/')
-  assert.equal(provider.atsPlatform, 'official-careers-route-blocked-by-cloudflare')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.greenhouseBoardUrl, 'https://job-boards.greenhouse.io/mitratech')
+  assert.equal(provider.greenhouseJobsApiUrl, 'https://boards-api.greenhouse.io/v1/boards/mitratech/jobs')
+  assert.equal(provider.atsPlatform, 'greenhouse')
+  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.match(provider.verifiedSurfaceSummary, /Greenhouse/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.equal(provider.modulePath, modulePath)
 })
 

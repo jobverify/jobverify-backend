@@ -29,7 +29,7 @@ test('Figma local catalog captures the verified first-party careers page and Gre
   assert.equal(provider.source, 'figma')
   assert.equal(provider.companyName, 'Figma')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/figma/script.js')
+  assert.match(provider.modulePath, /figma[\\/]script\.js$/i)
   assert.equal(provider.companyCareerPage, 'https://www.figma.com/careers/')
   assert.equal(provider.officialCareersLandingUrl, 'https://www.figma.com/careers/')
   assert.equal(provider.greenhouseJobsApiUrl, 'https://boards-api.greenhouse.io/v1/boards/figma/jobs')

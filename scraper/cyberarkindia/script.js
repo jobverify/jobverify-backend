@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -15,7 +15,7 @@ export const CATALOG_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../cyberarkindia/script.js',
+  modulePath: '../../scraper/cyberarkindia/script.js',
   companyCareerPage: CYBERARK_CAREERS_URL,
   atsPlatform: 'official-company-careers-handoff-to-shared-parent-jobs',
   countryFilter: 'India',
@@ -179,3 +179,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

@@ -4,7 +4,7 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
-test('CropIn resolves only to its literal-name official provider', () => {
+test('CropIn resolves approved case variants to its literal-name official provider', () => {
   const report = generateCompanyCoverageReport({
     csvText: 'company_name\nCropIn\nCropin\nCrop In\n',
     catalog: getScraperCatalog(),
@@ -12,11 +12,14 @@ test('CropIn resolves only to its literal-name official provider', () => {
 
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [['CropIn', 'cropin', 'CropIn']],
+    [
+      ['CropIn', 'cropin', 'CropIn'],
+      ['Cropin', 'cropin', 'CropIn'],
+    ],
   )
   assert.deepEqual(
     report.unmatched.map((item) => item.companyName),
-    ['Cropin', 'Crop In'],
+    ['Crop In'],
   )
 })
 

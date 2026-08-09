@@ -1,13 +1,14 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 export const SOURCE = 'mindbowser'
 export const COMPANY = 'Mindbowser'
 export const CAREERS_URL = 'https://www.mindbowser.com/careers/'
 export const HRONE_SHORT_URL = 'https://hr-1.in/829c17'
+export const VERIFIED_DIRECT_BOARD_URL =
+  'https://career.hrone.cloud/career-portal?appId=D4IM8Pter1tGpvCi9qWp3h0li63WVYC-4Cbl_BKzuTL2vSHSOUvAJ4TORFt2EHbhhfmB9gSFEb8yxNeD80N5uO44aEac23GQDGWsG3B0ja3vDYvD5hSh4A9ODQxbmKVE&dc=mindbowser&rqt=UVozgs-AUV1ILPLBxDlf7A&cc=RmRTOEP811ZQ7X23qWFemnOjjDO74eWSy-tIBe7xALk'
 export const HRONE_CARD_SELECTOR = '.content-box'
 
 const APPLY_BUTTON_SELECTOR = `${HRONE_CARD_SELECTOR} .cls-apply-btn`
@@ -106,6 +107,16 @@ export const isTrustedBoardPageUrl = (value) => {
   }
 }
 
+export const hasOpaqueHrOneShellSignal = (html) => {
+  const source = String(html ?? '')
+
+  return /<app-root><\/app-root>|<app-root\b/i.test(source)
+    && /<base\s+href="\/"\s*\/?>/i.test(source)
+    && /runtime\.[a-f0-9]+.*?\.js/i.test(source)
+    && /polyfills\.[a-f0-9]+.*?\.js/i.test(source)
+    && /main\.[a-f0-9]+.*?\.js/i.test(source)
+}
+
 export const toTrustedApplyUrl = (value) => {
   try {
     const url = new URL(value)
@@ -154,16 +165,16 @@ const isPopupTargetTimeoutError = (error) => (
 )
 
 const captureApplyUrls = async (page) => {
-  const browser = page.browser?.()
-  if (!browser?.waitForTarget) return []
+  const pageBrowser = page.browser?.()
+  if (!pageBrowser?.waitForTarget) return []
 
   const buttons = await page.$$(APPLY_BUTTON_SELECTOR)
-  const knownTargets = new Set(typeof browser.targets === 'function' ? browser.targets() : [])
+  const knownTargets = new Set(typeof pageBrowser.targets === 'function' ? pageBrowser.targets() : [])
   const applyUrls = []
 
   for (const button of buttons) {
     try {
-      const targetResultPromise = settlePopupTargetResult(browser.waitForTarget(
+      const targetResultPromise = settlePopupTargetResult(pageBrowser.waitForTarget(
         (target) => (
           !knownTargets.has(target)
           && target.opener?.() === page.target?.()
@@ -202,8 +213,6 @@ const captureApplyUrls = async (page) => {
 
   return applyUrls
 }
-
-const getBoardNavigationTimeoutMs = () => Math.max(config.jobListingTimeoutMs || 30000, 90000)
 
 export const readRenderedHrOneCards = async (page) => {
   await page.waitForFunction(
@@ -266,14 +275,20 @@ export const extractMindbowserJobs = (cards, { boardUrl } = {}) => {
   })
 }
 
+const finalizeJobs = (jobs, now = () => new Date().toISOString()) => jobs.map((job) => ({
+  ...job,
+  source: SOURCE,
+  link: job.applyUrl,
+  scrapedAt: now(),
+}))
+
 export const createMindbowserScraper = ({
   maxJobs = null,
+  now = () => new Date().toISOString(),
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const browserFactory = options.launchBrowser || launchBrowser
-    const pageFactory = options.createPage || createOptimizedPage
-    const readRenderedCards = options.readRenderedCards || readRenderedHrOneCards
+    const fetchBoardCards = options.fetchBoardCards || options.readRenderedCards || null
     const careersHtml = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
@@ -285,37 +300,24 @@ export const createMindbowserScraper = ({
       throw new Error('Mindbowser careers page no longer links to the verified public HROne vacancies surface')
     }
 
-    let browser
-    try {
-      browser = await browserFactory()
-      const page = await pageFactory(browser)
-      await page.goto(vacanciesUrl, {
-        waitUntil: 'domcontentloaded',
-        timeout: getBoardNavigationTimeoutMs(),
-      })
-      await page.waitForSelector(HRONE_CARD_SELECTOR, {
-        timeout: config.jobListingTimeoutMs || 30000,
-      })
-
-      const boardUrl = page.url()
-      if (!isTrustedBoardPageUrl(boardUrl)) {
-        throw new Error('Mindbowser public vacancies handoff no longer resolves to the trusted HROne board')
-      }
-
-      const jobs = extractMindbowserJobs(await readRenderedCards(page), { boardUrl })
+    if (typeof fetchBoardCards === 'function') {
+      const jobs = extractMindbowserJobs(
+        await fetchBoardCards(VERIFIED_DIRECT_BOARD_URL, { fetchText }),
+        { boardUrl: VERIFIED_DIRECT_BOARD_URL },
+      )
       const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0
         ? jobs.slice(0, maxJobs)
         : jobs
 
-      return selectedJobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl,
-        scrapedAt: new Date().toISOString(),
-      }))
-    } finally {
-      if (browser) await browser.close()
+      return finalizeJobs(selectedJobs, now)
     }
+
+    const boardHtml = await fetchText(VERIFIED_DIRECT_BOARD_URL)
+    if (!hasOpaqueHrOneShellSignal(boardHtml)) {
+      throw new Error('Mindbowser trusted HROne board no longer resolves to the verified opaque public shell')
+    }
+
+    return []
   },
 })
 

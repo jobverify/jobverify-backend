@@ -1,14 +1,18 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { resolve4, resolve6 } from 'node:dns/promises'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import {
+  DEFAULT_DNS_LOOKUP_TIMEOUT_MS,
+  resolveHostAddressesWithTimeout,
+} from '../../scraper-support/utils/dnsHostResolution.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://proptimes.com/'
+export const DNS_LOOKUP_TIMEOUT_MS = DEFAULT_DNS_LOOKUP_TIMEOUT_MS
 export const CAREER_HOSTS = [
   'proptimes.com',
   'www.proptimes.com',
@@ -27,25 +31,18 @@ export const hasPublicCareerHost = (addresses) => Array.isArray(addresses) && ad
 
 export const extractOpenings = () => []
 
-export const resolveCareerHosts = async (hosts = CAREER_HOSTS) => {
-  const addresses = new Set()
-
-  for (const host of hosts) {
-    try {
-      for (const address of await resolve4(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-
-    try {
-      for (const address of await resolve6(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-  }
-
-  return [...addresses]
-}
+export const resolveCareerHosts = async (
+  hosts = CAREER_HOSTS,
+  {
+    resolve4Impl,
+    resolve6Impl,
+    timeoutMs = DNS_LOOKUP_TIMEOUT_MS,
+  } = {},
+) => resolveHostAddressesWithTimeout(hosts, {
+  resolve4Impl,
+  resolve6Impl,
+  timeoutMs,
+})
 
 export const createPropTimesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,

@@ -23,5 +23,5 @@ test('CoRover is wired to a verified same-origin live scraper instead of the gen
   assert.equal(provider.verifiedPublicJobCount, 4)
   assert.equal(provider.verifiedIndiaJobCount, 4)
   assert.equal(scraper.provider.modulePath, provider.modulePath)
-  assert.match(provider.modulePath, /corover\.js$/)
+  assert.match(provider.modulePath, /[\\/]corover[\\/]script\.js$/i)
 })

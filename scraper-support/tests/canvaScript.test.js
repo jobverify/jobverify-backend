@@ -232,24 +232,17 @@ test('Canva run paginates the official first-party jobs board and keeps only Ind
   assert.equal(jobs[2].remoteStatus, 'On-site')
 })
 
-test('Canva can recover with browser-backed pages when direct requests are blocked', async () => {
+test('Canva stays API-only and surfaces direct-request failures without a browser fallback', async () => {
   const canva = await loadCanvaModule()
-  const browserUrls = []
 
-  const jobs = await canva.createCanvaScraper({ maxJobs: 1 }).run({
-    fetchText: async () => {
-      throw new Error(`HTTP 403 for ${canva.CAREERS_URL}`)
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-      return pageOneHtml
-    },
-    now: () => '2026-07-14T00:00:00.000Z',
-  })
-
-  assert.deepEqual(browserUrls, [canva.CAREERS_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'canva')
+  await assert.rejects(
+    canva.createCanvaScraper({ maxJobs: 1 }).run({
+      fetchText: async () => {
+        throw new Error(`HTTP 403 for ${canva.CAREERS_URL}`)
+      },
+    }),
+    /HTTP 403 for https:\/\/www\.lifeatcanva\.com\/en\/jobs\//,
+  )
 })
 
 test('Canva fails closed when the verified jobs surface or first-party job URLs change', async () => {

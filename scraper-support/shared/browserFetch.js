@@ -1,4 +1,3 @@
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
 import { extractTextFromPdfBuffer } from './pdfText.js'
 
 const DEFAULT_BROWSER_TIMEOUT_MS = 60000
@@ -6,82 +5,46 @@ const DEFAULT_BROWSER_TIMEOUT_MS = 60000
 const TEXT_CONTENT_TYPE_PATTERN = /(?:javascript|json|text\/plain|xml)/i
 const PDF_CONTENT_TYPE_PATTERN = /application\/pdf/i
 
-const readPageText = async (page) => page.evaluate(() => (
-  document.body?.innerText
-  || document.body?.textContent
-  || document.documentElement?.innerText
-  || document.documentElement?.textContent
-  || ''
-))
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const fetchPdfBufferViaPage = async (page, url) => {
-  const payload = await page.evaluate(async (targetUrl) => {
-    const response = await fetch(targetUrl, { credentials: 'include' })
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${targetUrl}`)
-    }
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || typeof AbortSignal?.timeout !== 'function') {
+    return undefined
+  }
 
-    return Array.from(new Uint8Array(await response.arrayBuffer()))
-  }, url)
-
-  return Uint8Array.from(payload)
+  return AbortSignal.timeout(timeoutMs)
 }
 
-const fetchTextViaPageRequest = async (
-  page,
-  url,
-  {
-    headers = {},
-    method = 'GET',
-    body = null,
-  } = {},
-) => page.evaluate(async ({
-  targetUrl,
-  requestHeaders,
-  requestMethod,
-  requestBody,
-}) => {
-  const response = await fetch(targetUrl, {
-    method: requestMethod,
-    credentials: 'include',
-    headers: requestHeaders,
-    ...(requestBody != null ? { body: requestBody } : {}),
-  })
-    const text = await response.text()
+const buildHeaders = (userAgent, headers = {}, referer = null) => {
+  const mergedHeaders = {
+    ...(userAgent ? { 'User-Agent': userAgent } : {}),
+    ...headers,
+  }
 
-    return {
-      ok: response.ok,
-      status: response.status,
-      url: response.url,
-      text,
-    }
-  }, {
-    targetUrl: url,
-    requestHeaders: headers,
-    requestMethod: method,
-    requestBody: body,
-  })
+  if (referer) {
+    mergedHeaders.Referer = referer
+  }
 
-const readResponseContent = async (page, response) => {
-  const headers = response?.headers?.() || {}
-  const contentType = headers['content-type'] || headers['Content-Type'] || ''
-  const responseUrl = response?.url?.() || ''
+  return mergedHeaders
+}
+
+const readResponseContent = async (response) => {
+  const contentType = response.headers?.get?.('content-type') || ''
+  const responseUrl = response.url || ''
 
   if (TEXT_CONTENT_TYPE_PATTERN.test(contentType)) {
-    return readPageText(page)
+    return response.text()
   }
 
   if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(responseUrl)) {
     try {
-      // Chromium exposes the PDF viewer shell through page content, so refetch
-      // the actual PDF bytes from inside the loaded page before parsing.
-      return await extractTextFromPdfBuffer(await fetchPdfBufferViaPage(page, responseUrl))
+      return await extractTextFromPdfBuffer(new Uint8Array(await response.arrayBuffer()))
     } catch {
       return ''
     }
   }
 
-  return page.content()
+  return response.text()
 }
 
 export const createBrowserFetchSession = async ({
@@ -91,68 +54,68 @@ export const createBrowserFetchSession = async ({
   settleTimeMs = 0,
   ignoreHTTPSErrors = false,
 } = {}) => {
-  const browser = await launchBrowser({ ignoreHTTPSErrors })
-  const page = await createOptimizedPage(browser)
-
-  if (userAgent) {
-    await page.setUserAgent(userAgent)
-  }
-
-  const navigate = async (url, options = {}) => {
-    const response = await page.goto(url, {
-      waitUntil,
-      timeout: timeoutMs,
-      ...(options.referer ? { referer: options.referer } : {}),
+  const request = async (url, options = {}) => {
+    const response = await fetch(url, {
+      method: options.method || 'GET',
+      headers: buildHeaders(userAgent, options.headers, options.referer),
+      ...(options.body != null ? { body: options.body } : {}),
+      signal: createTimeoutSignal(timeoutMs),
     })
 
-    if (!response) {
-      throw new Error(`No response for ${url}`)
-    }
-
     if (settleTimeMs > 0) {
-      await new Promise((resolve) => setTimeout(resolve, settleTimeMs))
+      await sleep(settleTimeMs)
     }
 
     return response
   }
 
   return {
-    close: async () => browser.close(),
+    close: async () => {},
     fetchText: async (url, options = {}) => {
-      const response = await navigate(url, options)
+      const response = await request(url, options)
 
-      if (!response.ok()) {
-        throw new Error(`HTTP ${response.status()} for ${url}`)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for ${url}`)
       }
 
-      return readResponseContent(page, response)
+      return readResponseContent(response)
     },
     fetchPage: async (url, options = {}) => {
-      const response = await navigate(url, options)
+      const response = await request(url, options)
 
       return {
-        status: response.status(),
-        url: response.url(),
-        html: await readResponseContent(page, response),
+        status: response.status,
+        url: response.url,
+        html: await readResponseContent(response),
       }
+    },
+    fetchFinalUrl: async (url, options = {}) => {
+      const response = await request(url, options)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for ${url}`)
+      }
+
+      return response.url || url
     },
     fetchJson: async (url, options = {}) => {
       if (options.landingUrl) {
-        const landingResponse = await navigate(options.landingUrl, options)
-        if (!landingResponse.ok()) {
-          throw new Error(`HTTP ${landingResponse.status()} for ${options.landingUrl}`)
+        const landingResponse = await request(options.landingUrl, options)
+        if (!landingResponse.ok) {
+          throw new Error(`HTTP ${landingResponse.status} for ${options.landingUrl}`)
         }
       }
 
-      const payload = await fetchTextViaPageRequest(page, url, options)
-      if (!payload.ok) {
-        throw new Error(`HTTP ${payload.status} for ${url}`)
+      const response = await request(url, options)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for ${url}`)
       }
 
+      const text = await response.text()
       try {
-        return JSON.parse(payload.text)
+        return JSON.parse(text)
       } catch (error) {
-        throw new Error(`Expected JSON from ${url} but received an invalid browser payload`, {
+        throw new Error(`Expected JSON from ${url} but received an invalid API payload`, {
           cause: error,
         })
       }

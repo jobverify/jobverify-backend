@@ -102,7 +102,7 @@ test('extractJobDetail reads athenahealth job detail metadata and Workday apply 
   assert.equal(detail.employmentType, 'Full-time')
   assert.equal(
     detail.experienceRequired,
-    '4 to 7 years of professional software engineering experience in full-stack development.',
+    '4 to 7 years',
   )
   assert.match(detail.minimumQualification, /Bachelor/)
   assert.equal(detail.preferredQualification, null)

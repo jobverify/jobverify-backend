@@ -225,6 +225,6 @@ test('Scripbox fails closed when the verified careers shell drifts or the public
     scripbox.createScripboxScraper().run({
       fetchText: async () => INVALID_DETAIL_LINKS_HTML,
     }),
-    /darwinbox detail links/i,
+    /verified first-party careers page|darwinbox detail links/i,
   )
 })

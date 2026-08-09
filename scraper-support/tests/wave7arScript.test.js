@@ -136,32 +136,38 @@ const technosoftHomepageHtml = `
 const infrabeatCareersHtml = `
 <!doctype html>
 <html>
+  <head>
+    <title>Careers at InfraBeat: Join Our Global Digital Transformation Team</title>
+  </head>
   <body>
-    <header class="page-header">
-      <h1 class="page-title">Archives: <span>Careers</span></h1>
-    </header>
-    <article id="post-4211" class="post-4211 career type-career status-publish hentry">
-      <header class="entry-header">
-        <h2 class="entry-title"><a href="https://infrabeat.com/career/lead-sap-mm-consultant/" rel="bookmark">Lead SAP MM Consultant</a></h2>
-      </header>
-      <div class="entry-content">
-        <p><strong>Job Location :</strong> Pune</p>
-        <p><strong>SAP Experience : </strong>8+ years of experience in SAP development in client environments of similar scope and size</p>
-        <p><strong>Roles &amp; Responsibilities:</strong></p>
-        <ul><li>Drive discovery sessions.</li><li>Lead SAP MM implementation topics.</li></ul>
+    <h1>Join our innovative team</h1>
+    <h2>Open Positions</h2>
+    <div class="accordion-item">
+      <div class="modal fade career-modal" id="lead-sap-mm-consultant">
+        <div class="career-apply-modal">
+          <p>Roles &amp; Responsibilities: Drive discovery sessions. Lead SAP MM implementation topics.</p>
+        </div>
+        <h3 class="job_title">Lead SAP MM Consultant</h3>
+        <h6>Location</h6>
+        <p>Pune</p>
+        <h6>Experience</h6>
+        <p>8+ years of experience in SAP development in client environments of similar scope and size</p>
+        <a href="#lead-sap-mm-consultant">Apply Now</a>
       </div>
-    </article>
-    <article id="post-4212" class="post-4212 career type-career status-publish hentry">
-      <header class="entry-header">
-        <h2 class="entry-title"><a href="https://infrabeat.com/career/senior-sap-fico-consultant/" rel="bookmark">SAP FICO Senior Consultant</a></h2>
-      </header>
-      <div class="entry-content">
-        <p><strong>Job Location :</strong> Pune</p>
-        <p><strong>Experience : </strong>5+ years of SAP FICO consulting experience</p>
-        <p><strong>Roles &amp; Responsibilities:</strong></p>
-        <ul><li>Configure SAP FICO.</li><li>Collaborate across modules.</li></ul>
+    </div>
+    <div class="accordion-item">
+      <div class="modal fade career-modal" id="senior-sap-fico-consultant">
+        <div class="career-apply-modal">
+          <p>Roles &amp; Responsibilities: Configure SAP FICO. Collaborate across modules.</p>
+        </div>
+        <h3 class="job_title">SAP FICO Senior Consultant</h3>
+        <h6>Location</h6>
+        <p>Pune</p>
+        <h6>Experience</h6>
+        <p>5+ years of SAP FICO consulting experience</p>
+        <a href="#senior-sap-fico-consultant">Apply Now</a>
       </div>
-    </article>
+    </div>
   </body>
 </html>
 `
@@ -451,8 +457,8 @@ test('Infrabeat Technologies scraper stays pinned to the first-party WordPress c
 
   assert.equal(infrabeat.SOURCE, 'infrabeattechnologies')
   assert.equal(infrabeat.COMPANY, 'Infrabeat Technologies')
-  assert.equal(infrabeat.CAREERS_URL, 'https://infrabeat.com/career/')
-  assert.equal(infrabeat.VERIFIED_ON, '2026-07-18')
+  assert.equal(infrabeat.CAREERS_URL, 'https://infrabeat.com/careers/')
+  assert.equal(infrabeat.VERIFIED_ON, '2026-08-02')
   assert.equal(infrabeat.hasOfficialCareersSignal(infrabeatCareersHtml), true)
   assert.equal(infrabeat.hasOfficialCareersSignal('<html><body>No archive</body></html>'), false)
   assert.deepEqual(infrabeat.extractJobs(infrabeatCareersHtml), [
@@ -465,8 +471,8 @@ test('Infrabeat Technologies scraper stays pinned to the first-party WordPress c
       country: 'India',
       jobId: 'lead-sap-mm-consultant',
       requisitionId: 'lead-sap-mm-consultant',
-      sourceUrl: 'https://infrabeat.com/career/lead-sap-mm-consultant/',
-      applyUrl: 'https://infrabeat.com/career/lead-sap-mm-consultant/',
+      sourceUrl: 'https://infrabeat.com/careers/#lead-sap-mm-consultant',
+      applyUrl: 'https://infrabeat.com/careers/#lead-sap-mm-consultant',
       employmentType: null,
       experienceRequired: '8+ years of experience in SAP development in client environments of similar scope and size',
       minimumQualification: null,
@@ -485,8 +491,8 @@ test('Infrabeat Technologies scraper stays pinned to the first-party WordPress c
       country: 'India',
       jobId: 'senior-sap-fico-consultant',
       requisitionId: 'senior-sap-fico-consultant',
-      sourceUrl: 'https://infrabeat.com/career/senior-sap-fico-consultant/',
-      applyUrl: 'https://infrabeat.com/career/senior-sap-fico-consultant/',
+      sourceUrl: 'https://infrabeat.com/careers/#senior-sap-fico-consultant',
+      applyUrl: 'https://infrabeat.com/careers/#senior-sap-fico-consultant',
       employmentType: null,
       experienceRequired: '5+ years of SAP FICO consulting experience',
       minimumQualification: null,
@@ -505,14 +511,14 @@ test('Infrabeat Technologies scraper stays pinned to the first-party WordPress c
 
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'infrabeattechnologies')
-  assert.equal(jobs[0].link, 'https://infrabeat.com/career/lead-sap-mm-consultant/')
+  assert.equal(jobs[0].link, 'https://infrabeat.com/careers/#lead-sap-mm-consultant')
   assert.equal(jobs[0].scrapedAt, '2026-07-18T08:00:00.000Z')
 
   await assert.rejects(
     infrabeat.createInfrabeatTechnologiesScraper().run({
       fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
     }),
-    /verified infrabeat technologies careers archive/i,
+    /verified infrabeat technologies careers page/i,
   )
 })
 

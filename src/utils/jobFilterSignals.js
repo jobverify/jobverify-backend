@@ -708,6 +708,35 @@ const parseExperienceProfile = (job = {}) => {
     };
   }
 
+  const explicitFieldContextualValueMatch = explicitExperienceField?.match(
+    /^(\d+(?:\.\d+)?)\s*(\+|plus)?\s*(months?|years?|yrs?)\s+(?:of|for)\s+.+?\bexperience\b$/i,
+  );
+  if (explicitFieldContextualValueMatch) {
+    const exactYears = convertExperienceValueToYears(
+      explicitFieldContextualValueMatch[1],
+      explicitFieldContextualValueMatch[3],
+    );
+    const openEnded = Boolean(explicitFieldContextualValueMatch[2]);
+    const evidence = formatExperienceValueWithUnit(
+      explicitFieldContextualValueMatch[1],
+      explicitFieldContextualValueMatch[3],
+      { openEnded },
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: openEnded ? null : exactYears,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(exactYears), null)
+        : bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
   const noExperienceMatch = combinedText.match(
     /\b(no prior experience required|no experience required|freshers? can apply|entry-level applicants are encouraged)\b/i,
   );

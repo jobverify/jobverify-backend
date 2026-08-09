@@ -52,7 +52,7 @@ test('findCompanyJobsUrl resolves the matching Wellfound jobs link from a direct
   )
 })
 
-test('extractWellfoundJobs maps public Wellfound job links into Jobify job records', () => {
+test('extractWellfoundJobs maps public Wellfound job links into Jobverify job records', () => {
   assert.deepEqual(extractWellfoundJobs({
     html: jobsHtml,
     provider,

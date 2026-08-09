@@ -1,9 +1,9 @@
-export const CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG = {
+﻿export const CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG = {
   source: 'campsystemsinternationalinc',
   companyName: 'CAMP Systems International, Inc.',
   officialBrandName: 'CAMP Systems',
   adapter: 'script',
-  modulePath: '../campsystemsinternationalinc/script.js',
+  modulePath: '../../scraper/campsystemsinternationalinc/script.js',
   companyCareerPage: 'https://www.campsystems.com/careers',
   companyDomain: 'campsystems.com',
   atsPlatform: 'official-company-site-no-public-careers',
@@ -19,3 +19,4 @@ export const CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG = {
 }
 
 export default CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG
+

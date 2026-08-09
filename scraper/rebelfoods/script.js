@@ -14,7 +14,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const CAREERS_EMAIL = PROVIDER_METADATA.officialCareersEmail
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')

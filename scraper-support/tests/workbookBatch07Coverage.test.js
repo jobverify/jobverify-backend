@@ -22,6 +22,7 @@ const slugifySource = (value) =>
     .replace(/\s+/g, '')
 
 const scriptModulePathFor = (source) => `../${source}/script.js`
+const hydratedScriptModulePathFor = (source) => path.join(scraperDir, source, 'script.js')
 
 test('workbook batch 07 registers the expected exact-name sentinels', () => {
   const expectedSources = new Set(EXPECTED_BATCH_COMPANIES.map((companyName) => slugifySource(companyName)))
@@ -38,7 +39,7 @@ test('workbook batch 07 registers the expected exact-name sentinels', () => {
     assert.equal(provider.source, slugifySource(provider.companyName))
     assert.equal(provider.adapter, 'script')
     assert.equal(provider.modulePath, scriptModulePathFor(provider.source))
-    assert.equal(provider.originalModulePath, '../../scraper/workbookbatch07/failClosedSentinel.js')
+    assert.equal(provider.originalModulePath, '../workbookbatch07/failClosedSentinel.js')
     assert.equal(provider.companyCareerPage, undefined)
     assert.equal(provider.companyDomain, undefined)
     assert.equal(provider.atsPlatform, 'workbook-exact-name-sentinel')
@@ -91,7 +92,7 @@ test('workbook batch 07 sentinel scrapers stay registered and fail closed with z
   assert.equal(scrapers.length, expectedSources.size)
 
   for (const scraper of scrapers) {
-    assert.equal(scraper.provider.modulePath, scriptModulePathFor(scraper.name))
+    assert.equal(scraper.provider.modulePath, hydratedScriptModulePathFor(scraper.name))
     assert.equal(scraper.provider.atsPlatform, 'workbook-exact-name-sentinel')
     assert.deepEqual(await scraper.run(), [])
   }

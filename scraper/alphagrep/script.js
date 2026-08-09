@@ -20,7 +20,7 @@ export const VERIFIED_INDIA_JOB_URL = PROVIDER_METADATA.verifiedIndiaJobUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const KNOWN_INDIA_LISTING_LOCATIONS = new Set(['india', 'mumbai', 'bangalore', 'chennai', 'hyderabad'])
 
 const decodeHtmlEntities = (value) => String(value ?? '')

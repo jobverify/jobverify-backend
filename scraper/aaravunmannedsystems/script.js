@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -14,7 +14,7 @@ export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../aaravunmannedsystems/script.js',
+  modulePath: '../../scraper/aaravunmannedsystems/script.js',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
@@ -347,3 +347,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

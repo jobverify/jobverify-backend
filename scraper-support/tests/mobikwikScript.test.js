@@ -142,7 +142,8 @@ test('MobiKwik loads its careers proof and Darwinbox jobs over native HTTP', asy
   assert.equal(jobs.length, 1)
   assert.deepEqual(requests.map(({ url }) => url), [
     CAREERS_URL,
+    PUBLIC_ALL_JOBS_URL,
     'https://mobikwik.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
   ])
-  assert.equal(requests[1].options.method, 'POST')
+  assert.equal(requests[2].options.method, 'POST')
 })

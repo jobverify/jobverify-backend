@@ -1,8 +1,8 @@
-{
+﻿{
   "source": "ajsk",
   "companyName": "AJSK",
   "adapter": "script",
-  "modulePath": "../ajsk/script.js",
+  "modulePath": "../../scraper/ajsk/script.js",
   "companyCareerPage": "https://www.ajsk.com/",
   "atsPlatform": "official-company-site-no-public-careers",
   "countryFilter": "India",
@@ -15,3 +15,4 @@
   "verifiedSurfaceSummary": "Verified https://www.ajsk.com/ and https://www.ajsk.com/wp-json/wp/v2/pages?per_page=100 on July 15, 2026. There is no trustworthy public jobs surface: the official first-party AJSK GmbH site is a small WordPress brochure site whose page inventory only exposed Home, Kontakt, and Impressum, while common first-party careers routes such as /careers/, /career/, /jobs/, /join-us/, /work-with-us/, /openings/, /karriere/, and /stellen/ returned first-party 404 pages.",
   "pagesApiUrl": "https://www.ajsk.com/wp-json/wp/v2/pages?per_page=100"
 }
+

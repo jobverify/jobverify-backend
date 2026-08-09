@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -60,59 +59,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createVolkswagenGroupTechnologySolutionsIndiaScraper = () => ({
   async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    let browser = null
-    let page = null
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      if (!browser) {
-        browser = await launchBrowser({ ignoreHTTPSErrors: true })
-        page = await createOptimizedPage(browser)
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36')
-      }
-
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: 120000,
-      })
-
-      if (!response || !response.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'NO_RESPONSE'} for ${url}`)
-      }
-
-      try {
-        await page.waitForFunction(
-          (targetUrl) => {
-            const text = document.body?.innerText || document.body?.textContent || ''
-            if (targetUrl === 'https://www.vwg-digitalsolutions.in/') {
-              return /Volkswagen Group Digital Solutions/i.test(text)
-                && /Careers|Apply For Job Opportunities/i.test(text)
-            }
-
-            return /No jobs matched\.?\s*Try widening your search/i.test(text)
-              || /No jobs match(?:ed)? your selections/i.test(text)
-              || document.querySelectorAll('tr.jobResultItem').length > 0
-          },
-          { timeout: 30000 },
-          url,
-        )
-      } catch {
-        // Fall through and inspect whatever rendered text is currently available.
-      }
-
-      return await page.evaluate(() => (
-        document.body?.innerText
-        || document.body?.textContent
-        || document.documentElement?.innerText
-        || document.documentElement?.textContent
-        || ''
-      ))
-    })
+    const browserTextFetcher = typeof fetchBrowserText === 'function' ? fetchBrowserText : null
 
     const fetchPageText = async (url) => {
       try {
         return await fetchText(url)
       } catch (error) {
-        if (!isBrowserFallbackError(error)) {
+        if (!browserTextFetcher || !isBrowserFallbackError(error)) {
           throw error
         }
 
@@ -120,41 +73,35 @@ export const createVolkswagenGroupTechnologySolutionsIndiaScraper = () => ({
       }
     }
 
-    try {
-      let officialSiteHtml = await fetchPageText(CAREERS_URL)
-      if (!hasOfficialSiteSignal(officialSiteHtml)) {
-        officialSiteHtml = await browserTextFetcher(CAREERS_URL)
-      }
-
-      if (!hasOfficialSiteSignal(officialSiteHtml)) {
-        throw new Error('The Volkswagen Group Digital Solutions India first-party surface no longer matches the verified site signal')
-      }
-
-      let boardHtml
-      try {
-        boardHtml = await fetchText(BOARD_URL)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        boardHtml = await browserTextFetcher(BOARD_URL)
-      }
-
-      if (!hasNoOpeningsSignal(boardHtml) && hasOpaqueBoardShellSignal(boardHtml)) {
-        boardHtml = await browserTextFetcher(BOARD_URL)
-      }
-
-      if (!hasNoOpeningsSignal(boardHtml)) {
-        throw new Error('The Volkswagen SuccessFactors board no longer matches the verified no-openings contract')
-      }
-
-      return []
-    } finally {
-      if (browser) {
-        await browser.close()
-      }
+    let officialSiteHtml = await fetchPageText(CAREERS_URL)
+    if (!hasOfficialSiteSignal(officialSiteHtml) && browserTextFetcher) {
+      officialSiteHtml = await browserTextFetcher(CAREERS_URL)
     }
+
+    if (!hasOfficialSiteSignal(officialSiteHtml)) {
+      throw new Error('The Volkswagen Group Digital Solutions India first-party surface no longer matches the verified site signal')
+    }
+
+    let boardHtml
+    try {
+      boardHtml = await fetchText(BOARD_URL)
+    } catch (error) {
+      if (!browserTextFetcher || !isBrowserFallbackError(error)) {
+        throw error
+      }
+
+      boardHtml = await browserTextFetcher(BOARD_URL)
+    }
+
+    if (!hasNoOpeningsSignal(boardHtml) && hasOpaqueBoardShellSignal(boardHtml) && browserTextFetcher) {
+      boardHtml = await browserTextFetcher(BOARD_URL)
+    }
+
+    if (!hasNoOpeningsSignal(boardHtml)) {
+      throw new Error('The Volkswagen SuccessFactors board no longer matches the verified no-openings contract')
+    }
+
+    return []
   },
 })
 

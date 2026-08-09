@@ -45,20 +45,20 @@ test('Deskera local catalog captures the verified homepage and broken LinkedIn j
   assert.equal(provider.companyDomain, 'deskera.com')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-broken-linkedin-jobs-handoff')
+  assert.equal(provider.paginationStrategy, 'homepage-plus-linkedin-guest-search-handoff')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-linkedin-company-page+verified-broken-linkedin-jobs-link-return-empty',
+    'verified-homepage+verified-linkedin-company-page+verified-linkedin-guest-search-handoff-without-exact-deskera-board-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /deskera[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.deskera\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.linkedin\.com\/jobs\/deskera-jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.linkedin\.com\/company\/deskera\//i)
-  assert.match(provider.verifiedSurfaceSummary, /404/i)
+  assert.match(provider.verifiedSurfaceSummary, /generic LinkedIn guest jobs search page/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Deskera'), false)
 
   assert.equal(deskera.PROVIDER_METADATA.source, provider.source)

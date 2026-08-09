@@ -49,7 +49,7 @@ test('extractOpenings maps C-DOT official current-opening rows into shared job f
     country: 'India',
     jobId: 'cdot-42',
     requisitionId: 'cdot-42',
-    sourceUrl: 'https://cdot.in/cdotweb/assets/docs/curr_openings/adv/Notification-Scientist.pdf',
+    sourceUrl: 'https://cdot.in/scraper/assets/docs/curr_openings/adv/Notification-Scientist.pdf',
     applyUrl: 'https://cdotrecruitment.cdot.in/cdotrecruitmentportal/college_home.jsp?adv_id=42',
     employmentType: null,
     experienceRequired: null,

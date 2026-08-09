@@ -124,7 +124,7 @@ test('extractJobDetail reads Beckman job detail metadata and apply links from Da
   assert.equal(detail.requisitionId, 'R1310882')
   assert.equal(detail.department, 'Digital Products Development')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.equal(detail.experienceRequired, '7+ years proven experience in Java/J2EE Programming.')
+  assert.equal(detail.experienceRequired, '7+ years')
   assert.match(detail.location, /Bangalore/i)
   assert.match(detail.jobDescription, /architect, design, Code, debug and implement software features/i)
   assert.match(detail.minimumQualification, /Bachelor’s\/Master’s degree/i)

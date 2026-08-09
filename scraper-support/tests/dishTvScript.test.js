@@ -193,6 +193,37 @@ const buildJobCardHtml = (opening) => `
   </div>
 `
 
+const decodeEntities = (value) => String(value ?? '')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&#039;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&#8211;|&ndash;/gi, '-')
+  .replace(/&#8212;|&mdash;/gi, '-')
+
+const stripTags = (value) => decodeEntities(String(value ?? ''))
+  .replace(/<(?:br|\/p|\/div|\/li|\/ul|\/ol|\/h[1-6]|\/span|\/strong)\b[^>]*>/gi, '\n')
+  .replace(/<(?:p|div|li|ul|ol|h[1-6]|span|strong)\b[^>]*>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+  .map((match) => stripTags(match[1]))
+  .filter(Boolean)
+
+const expectedCardFromOpening = (opening) => ({
+  title: opening.title,
+  department: opening.department || null,
+  location: opening.location || null,
+  experience: opening.experience || null,
+  applyUrl: opening.applyUrl,
+  contactName: opening.contactName,
+  contactEmail: opening.contactEmail,
+  jobDescription: stripTags(opening.customHtml),
+  requiredSkills: extractListItems(opening.customHtml),
+})
+
 const homepagePage = {
   status: 200,
   url: 'https://www.dishtv.in/',
@@ -205,6 +236,7 @@ const homepagePage = {
       </head>
       <body>
         <h1>Snack on the content you love.</h1>
+        <h2>All day, every day.</h2>
         <footer>
           <a href="/about-us.html">About Us</a>
           <a href="/careers.html">Careers</a>
@@ -306,16 +338,10 @@ test('DishTV constants and extractors stay pinned to the verified first-party ca
       applyUrl: card.applyUrl,
       contactName: card.contactName,
       contactEmail: card.contactEmail,
+      jobDescription: card.jobDescription,
+      requiredSkills: card.requiredSkills,
     })),
-    VERIFIED_OPENINGS.map((opening) => ({
-      title: opening.title,
-      department: opening.department || null,
-      location: opening.location || null,
-      experience: opening.experience || null,
-      applyUrl: opening.applyUrl,
-      contactName: opening.contactName,
-      contactEmail: opening.contactEmail,
-    })),
+    VERIFIED_OPENINGS.map(expectedCardFromOpening),
   )
 
   const reactJob = dishTv.buildJobFromCard(cards[5])
@@ -332,6 +358,8 @@ test('DishTV constants and extractors stay pinned to the verified first-party ca
       experienceRequired: reactJob.experienceRequired,
       contactName: reactJob.contactName,
       contactEmail: reactJob.contactEmail,
+      requiredSkills: reactJob.requiredSkills,
+      jobDescription: reactJob.jobDescription,
       employmentType: reactJob.employmentType,
       postingDate: reactJob.postingDate,
       closingDate: reactJob.closingDate,
@@ -348,6 +376,12 @@ test('DishTV constants and extractors stay pinned to the verified first-party ca
       experienceRequired: '3+ Years',
       contactName: 'Ritu Pilkhwal',
       contactEmail: 'ritu.pilkhwal.hr@d2hdesk.com',
+      requiredSkills: [
+        'Expert knowledge of React JS / Redux / Sagas',
+        'Expert in building extra-ordinary User Interfaces - HTML5, CSS3, JSX, SCSS etc',
+        'Exposure to Unit testing and CI / CD using any tools mandatory AWS, Bamboo, Github Actions, Jenkins etc',
+      ],
+      jobDescription: 'Expert knowledge of React JS / Redux / Sagas Expert in building extra-ordinary User Interfaces - HTML5, CSS3, JSX, SCSS etc Exposure to Unit testing and CI / CD using any tools mandatory AWS, Bamboo, Github Actions, Jenkins etc',
       employmentType: null,
       postingDate: null,
       closingDate: null,
@@ -450,7 +484,7 @@ test('DishTV scraper fails closed when the verified homepage, sitemap, careers p
         if (url === dishTv.HOMEPAGE_URL) {
           return {
             ...homepagePage,
-            html: homepagePage.html.replace('/careers.html', '/investors.html'),
+            html: homepagePage.html.replace('All day, every day.', 'Always on.'),
           }
         }
 

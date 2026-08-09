@@ -19,6 +19,15 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const SITEMAP_XML = `
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://ptechnosoft.com/</loc></url>
+  <url><loc>https://ptechnosoft.com/about/</loc></url>
+  <url><loc>https://ptechnosoft.com/contact/</loc></url>
+</urlset>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/perpetuuititechnosoftservices/script.js')
@@ -34,10 +43,13 @@ test('Perpetuuiti Technosoft Services recognizes the verified homepage redirect 
   assert.equal(perpetuuiti.HOMEPAGE_URL, 'https://ptechnosoft.com/')
   assert.equal(perpetuuiti.LEGACY_CAREERS_URL, 'https://perpetuuiti.com/Careers.php')
   assert.equal(perpetuuiti.LEGACY_CAREERS_FORM_URL, 'https://perpetuuiti.com/Careers-Form.php')
+  assert.equal(perpetuuiti.SITEMAP_URL, 'https://www.ptechnosoft.com/sitemap.xml')
   assert.equal(perpetuuiti.CAREERS_ROUTE_URL, 'https://ptechnosoft.com/careers')
   assert.equal(perpetuuiti.CAREER_ROUTE_URL, 'https://ptechnosoft.com/career')
   assert.equal(perpetuuiti.JOBS_ROUTE_URL, 'https://ptechnosoft.com/jobs')
   assert.equal(perpetuuiti.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(perpetuuiti.hasExpectedSitemapSurface(SITEMAP_XML), true)
+  assert.equal(perpetuuiti.hasCareersLikeRoute(SITEMAP_XML), false)
   assert.equal(
     perpetuuiti.isHomepageRedirectSurface({
       status: 200,
@@ -70,6 +82,10 @@ test('Perpetuuiti Technosoft Services returns [] only while the legacy careers U
     [
       perpetuuiti.LEGACY_CAREERS_FORM_URL,
       { status: 200, url: perpetuuiti.HOMEPAGE_URL, text: HOMEPAGE_HTML },
+    ],
+    [
+      perpetuuiti.SITEMAP_URL,
+      { status: 200, url: perpetuuiti.SITEMAP_URL, text: SITEMAP_XML },
     ],
     [
       perpetuuiti.CAREERS_ROUTE_URL,
@@ -110,6 +126,10 @@ test('Perpetuuiti Technosoft Services fails closed when a checked route starts e
 
         if (url === perpetuuiti.LEGACY_CAREERS_URL || url === perpetuuiti.LEGACY_CAREERS_FORM_URL) {
           return { status: 200, url: perpetuuiti.HOMEPAGE_URL, text: HOMEPAGE_HTML }
+        }
+
+        if (url === perpetuuiti.SITEMAP_URL) {
+          return { status: 200, url, text: SITEMAP_XML }
         }
 
         if (url === perpetuuiti.CAREERS_ROUTE_URL) {

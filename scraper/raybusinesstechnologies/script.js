@@ -10,7 +10,7 @@ export const SOURCE = provider.source
 export const COMPANY = provider.companyName
 export const CAREERS_URL = provider.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const APPLY_URL = new URL('/about-us/careers/apply-online', CAREERS_URL).toString()
 
 const HTML_ENTITY_MAP = new Map([

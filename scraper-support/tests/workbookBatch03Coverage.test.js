@@ -9,7 +9,7 @@ import { getScraperCatalog } from '../providers/index.js'
 const manifest = {
   batch: '03',
   companies: dedicatedProviders
-    .filter((provider) => String(provider.originalModulePath || '').startsWith('../../scraper/workbookbatch03/'))
+    .filter((provider) => String(provider.originalModulePath || '').startsWith('../workbookbatch03/'))
     .map((provider) => provider.companyName),
 }
 const providersBySource = new Map(dedicatedProviders.map((provider) => [provider.source, provider]))

@@ -19,7 +19,7 @@ export const DARWINBOX_PUBLIC_ALL_JOBS_URL =
 export const DARWINBOX_LISTING_API_URL =
   'https://elgi.darwinbox.in/ms/candidateapi/job/alljobs?companyId=a61e65404e890b'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const PAGE_SIZE = 10
 const OFFICIAL_PROMISE_TEXT = "WE'RE ALWAYS BETTER. AND THAT'S A PROMISE"
 const OFFICIAL_FIT_TEXT = 'ARE YOU RIGHT FOR US?'

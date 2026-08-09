@@ -100,7 +100,7 @@ test('validateLiveUncovered500Manifest rejects covered companies, duplicate URLs
 })
 
 test('runLiveUncovered500ManifestValidation loads a manifest path and returns a clean summary', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-live-uncovered-500-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-live-uncovered-500-'))
   const manifestPath = path.join(tempDir, 'manifest.json')
 
   writeFileSync(

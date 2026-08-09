@@ -351,20 +351,15 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
   assert.match(jobs[1].jobDescription || '', /test case design|attention to detail/i)
 })
 
-test('Rocket Software uses browser fallback for the verified careers page and delegates to the live Workday board', async () => {
+test('Rocket Software uses the verified careers page over direct HTTP and delegates to the live Workday board', async () => {
   const rocket = await loadModule('../../scraper/rocketsoftware/script.js')
+  const requestedUrls = []
 
   assert.equal(rocket.hasOfficialCareersSignal(rocketCareersHtml), true)
-  assert.equal(
-    rocket.shouldUseBrowserFallback(new Error('HTTP 403 for https://www.rocketsoftware.com/en-us/careers')),
-    true,
-  )
 
   const jobs = await rocket.createRocketSoftwareScraper().run({
-    fetchText: async () => {
-      throw new Error('HTTP 403 for https://www.rocketsoftware.com/en-us/careers')
-    },
-    fetchBrowserText: async (url) => {
+    fetchText: async (url) => {
+      requestedUrls.push(url)
       assert.equal(url, rocket.CAREERS_URL)
       return rocketCareersHtml
     },
@@ -377,6 +372,7 @@ test('Rocket Software uses browser fallback for the verified careers page and de
     },
   })
 
+  assert.deepEqual(requestedUrls, [rocket.CAREERS_URL])
   assert.deepEqual(jobs, [
     {
       ...rocketWorkdayJobs[0],

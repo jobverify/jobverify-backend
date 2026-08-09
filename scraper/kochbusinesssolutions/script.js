@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -23,7 +23,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Koch Business Solutions',
   adapter: 'script',
-  modulePath: '../kochbusinesssolutions/script.js',
+  modulePath: '../../scraper/kochbusinesssolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   searchJobsUrl: SEARCH_JOBS_URL,
@@ -186,3 +186,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

@@ -9,7 +9,7 @@ export const SOURCE = SAP_CONCUR_CATALOG.source
 export const COMPANY = SAP_CONCUR_CATALOG.companyName
 export const SAP_INDIA_JOBS_URL = SAP_CONCUR_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')

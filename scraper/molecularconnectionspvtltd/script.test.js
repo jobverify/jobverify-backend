@@ -63,7 +63,9 @@ const technologyOpeningsHtml = `
       <h2>LOCATION</h2>
       <h2>POSTED ON</h2>
 
-      <h2>Application Support Specialist - Publishing Platforms</h2>
+      <h2 data-post-link="https://career.molecularconnections.com/jobs/application-support-specialist-publishing-platforms/">
+        Application Support Specialist - Publishing Platforms
+      </h2>
       <p>Bengaluru</p>
       <p>February 1, 2026</p>
 
@@ -74,11 +76,15 @@ const technologyOpeningsHtml = `
         }
       </style>
 
-      <h2>Application Support Specialist - Life Sciences &amp; Publishing Platforms</h2>
+      <h2 data-post-link="https://career.molecularconnections.com/jobs/application-support-specialist-life-sciences-publishing-platforms/">
+        Application Support Specialist - Life Sciences &amp; Publishing Platforms
+      </h2>
       <p>Bengaluru</p>
       <p>August 7, 2025</p>
 
-      <h2>Senior Python developer</h2>
+      <h2 data-post-link="https://career.molecularconnections.com/jobs/senior-python-developer/">
+        Senior Python developer
+      </h2>
       <p>Bengaluru</p>
       <p>January 29, 2025</p>
     </main>
@@ -131,7 +137,7 @@ test('Molecular Connections extracts the verified technology openings and routes
       location: 'Bengaluru, India',
       city: 'Bangalore',
       postingDate: '2026-02-01',
-      sourceUrl: 'https://career.molecularconnections.com/technology-job-openings/#application-support-specialist-publishing-platforms',
+      sourceUrl: 'https://career.molecularconnections.com/jobs/application-support-specialist-publishing-platforms/',
       applyUrl: 'https://career.molecularconnections.com/job-openings/',
     },
     {
@@ -139,7 +145,7 @@ test('Molecular Connections extracts the verified technology openings and routes
       location: 'Bengaluru, India',
       city: 'Bangalore',
       postingDate: '2025-08-07',
-      sourceUrl: 'https://career.molecularconnections.com/technology-job-openings/#application-support-specialist-life-sciences-publishing-platforms',
+      sourceUrl: 'https://career.molecularconnections.com/jobs/application-support-specialist-life-sciences-publishing-platforms/',
       applyUrl: 'https://career.molecularconnections.com/job-openings/',
     },
     {
@@ -147,7 +153,7 @@ test('Molecular Connections extracts the verified technology openings and routes
       location: 'Bengaluru, India',
       city: 'Bangalore',
       postingDate: '2025-01-29',
-      sourceUrl: 'https://career.molecularconnections.com/technology-job-openings/#senior-python-developer',
+      sourceUrl: 'https://career.molecularconnections.com/jobs/senior-python-developer/',
       applyUrl: 'https://career.molecularconnections.com/job-openings/',
     },
   ])
@@ -176,6 +182,9 @@ test('Molecular Connections run validates the verified public surfaces and decor
     molecularConnections.CAREERS_HOME_URL,
     molecularConnections.TECHNOLOGY_OPENINGS_URL,
     molecularConnections.APPLY_URL,
+    'https://career.molecularconnections.com/jobs/application-support-specialist-publishing-platforms/',
+    'https://career.molecularconnections.com/jobs/application-support-specialist-life-sciences-publishing-platforms/',
+    'https://career.molecularconnections.com/jobs/senior-python-developer/',
   ])
   assert.equal(jobs.length, 3)
   assert.equal(jobs[0].company, 'Molecular Connections Pvt Ltd')

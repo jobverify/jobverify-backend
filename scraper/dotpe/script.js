@@ -10,7 +10,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   "Verified on Saturday, July 25, 2026 that https://dotpe.in/careers.html was the live exact-company DotPe careers page, that its View Open Roles and See Openings CTAs were both non-navigating # anchors, and that its We're hiring search form exposed only the placeholder Search Jobs, Enter Keyword plus a Search all Jobs submit control with no actionable public search endpoint. No trustworthy enumerable public jobs contract was verified for DotPe, so this company-local scraper stays fail-closed until DotPe exposes a stable first-party or officially handed-off public openings flow."
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 
 const REQUIRED_SURFACE_PATTERNS = [
   /<title[^>]*>\s*DotPe\s*<\/title>/i,

@@ -66,7 +66,7 @@ test('Brainvire verifies the official first-party careers page and extracts inli
   assert.equal(jobs[1].title, 'Project Manager')
 })
 
-test('Brainvire run maps inline first-party roles into Jobify jobs', async () => {
+test('Brainvire run maps inline first-party roles into Jobverify jobs', async () => {
   const brainvire = await loadBrainvireModule()
 
   const jobs = await brainvire.createBrainvireScraper({

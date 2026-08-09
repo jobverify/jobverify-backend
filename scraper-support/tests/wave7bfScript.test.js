@@ -127,6 +127,43 @@ const mcafeeSearchShellHtml = `
 </html>
 `
 
+const mcafeeJobsPageHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>McAfee, LLC Job Search - Jobs</h1>
+    <p>Not ready to apply? Stay connected with us</p>
+    <a href="/login">Jobs Log In</a>
+  </body>
+</html>
+`
+
+const mcafeeJobsApiPayload = {
+  jobs: [
+    {
+      data: {
+        country: 'India',
+        title: 'Data Engineer / Analyst',
+        req_id: '1469',
+        slug: '1469',
+        language: 'en-us',
+        apply_url: 'https://careers.mcafee.com/jobs/1469/apply?lang=en-us',
+        categories: [{ name: 'Engineering' }],
+        department: 'Engineering',
+        employment_type: 'FULL_TIME',
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        short_location: 'Bengaluru, India',
+        description: 'Build and optimize analytics pipelines.',
+        responsibilities: 'Partner with product and security teams.',
+        posted_date: '2026-08-01',
+        posting_expiry_date: null,
+        tags1: ['Python', 'SQL'],
+      },
+    },
+  ],
+}
+
 const betsolBoardHtml = `
 <!doctype html>
 <html lang="en">
@@ -261,34 +298,57 @@ test('StrategicERP scraper returns normalized first-party position cards', async
   assert.equal(jobs[1].experienceRequired, '2 year')
 })
 
-test('McAfee fail-closed scraper validates the careers shell and non-enumerable search wrapper', async () => {
+test('McAfee scraper validates the careers shell, jobs page, legacy wrapper, and public India jobs API', async () => {
   const mcafee = await loadModule('../../scraper/mcafee/script.js')
-  const requestedUrls = []
+  const requestedPageUrls = []
+  const requestedJsonUrls = []
 
   assert.equal(mcafee.hasJoinShellSignal(mcafeeJoinHtml), true)
+  assert.equal(mcafee.hasJobsPageSignal(mcafeeJobsPageHtml), true)
   assert.equal(
     mcafee.hasNonEnumerableSearchShellSignal({
-      status: 200,
+      status: 404,
       html: mcafeeSearchShellHtml,
     }),
     true,
   )
+  assert.equal(mcafee.hasMcAfeeJobsApiSignal(mcafeeJobsApiPayload), true)
 
   const jobs = await mcafee.createMcAfeeScraper().run({
     fetchPage: async (url) => {
-      requestedUrls.push(url)
+      requestedPageUrls.push(url)
       if (url === mcafee.JOIN_URL) {
         return { status: 200, url, html: mcafeeJoinHtml }
       }
+      if (url === mcafee.JOBS_PAGE_URL) {
+        return { status: 200, url, html: mcafeeJobsPageHtml }
+      }
       if (url === mcafee.SEARCH_RESULTS_URL) {
-        return { status: 200, url, html: mcafeeSearchShellHtml }
+        return { status: 404, url, html: mcafeeSearchShellHtml }
       }
       throw new Error(`Unexpected McAfee URL: ${url}`)
     },
+    fetchJson: async (url) => {
+      requestedJsonUrls.push(url)
+      assert.equal(url, `${mcafee.JOBS_API_URL}?country=India&limit=100`)
+      return {
+        status: 200,
+        url,
+        json: mcafeeJobsApiPayload,
+      }
+    },
   })
 
-  assert.deepEqual(requestedUrls, [mcafee.JOIN_URL, mcafee.SEARCH_RESULTS_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedPageUrls, [
+    mcafee.JOIN_URL,
+    mcafee.JOBS_PAGE_URL,
+    mcafee.SEARCH_RESULTS_URL,
+  ])
+  assert.deepEqual(requestedJsonUrls, [`${mcafee.JOBS_API_URL}?country=India&limit=100`])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Data Engineer / Analyst')
+  assert.equal(jobs[0].location, 'Bengaluru, India')
+  assert.equal(jobs[0].department, 'Engineering')
 })
 
 test('Betsol scraper returns India jobs from the verified exact-name SmartRecruiters board', async () => {

@@ -60,3 +60,31 @@ test('Datum Advanced Composites sentinel fails closed when any verified first-pa
     /Datum Advanced Composites canonical first-party hosts now resolve/i,
   )
 })
+
+test('resolveCareerHosts bounds and parallelizes stalled DNS lookups', async () => {
+  const datum = await loadModule()
+  const calls = []
+  const never = (family) => async (host) => {
+    calls.push(`${family}:${host}`)
+    return new Promise(() => {})
+  }
+  const startedAt = Date.now()
+
+  const addresses = await datum.resolveCareerHosts(
+    ['one.example', 'two.example'],
+    {
+      resolve4Impl: never('v4'),
+      resolve6Impl: never('v6'),
+      timeoutMs: 10,
+    },
+  )
+
+  assert.deepEqual(addresses, [])
+  assert.deepEqual(calls.sort(), [
+    'v4:one.example',
+    'v4:two.example',
+    'v6:one.example',
+    'v6:two.example',
+  ])
+  assert.ok(Date.now() - startedAt < 150)
+})

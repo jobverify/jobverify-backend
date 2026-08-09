@@ -21,7 +21,7 @@ export const VERIFIED_SURFACE_SUMMARY = ADITYA_BIRLA_CAPITAL_CATALOG.verifiedSur
 export const IONA_APPLY_BASE_URL = 'https://abccareers.iona.ai/job-details/referral'
 export const ABG_PEOPLESTRONG_APPLY_BASE_URL = 'https://abgcareers.peoplestrong.com/job/detail'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const firstNonEmpty = (...values) => {
   for (const value of values) {

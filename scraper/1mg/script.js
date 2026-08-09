@@ -22,7 +22,7 @@ export const VERIFIED_ON = ONE_MG_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = ONE_MG_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = ONE_MG_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,

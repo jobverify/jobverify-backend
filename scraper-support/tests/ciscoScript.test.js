@@ -91,7 +91,7 @@ test('extractJobDetail reads Cisco job detail metadata and workday apply link fr
   assert.equal(detail.requisitionId, '2012591')
   assert.equal(detail.department, 'Product and Engineering')
   assert.equal(detail.employmentType, 'Full-time')
-  assert.equal(detail.experienceRequired, null)
+  assert.equal(detail.experienceRequired, '7+ years')
   assert.equal(detail.preferredQualification, null)
   assert.equal(detail.postingDate, '2026-06-03')
   assert.equal(

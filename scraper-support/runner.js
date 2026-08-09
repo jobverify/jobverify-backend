@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-dotenv.config({ path: path.resolve(currentDir, '../.env') })
+dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
 
 import { deleteAllJobsFromDB, saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
 import { filterIndiaJobs } from './utils/indiaLocationFilter.js'
@@ -27,6 +27,7 @@ import {
   resolveParallelWorkerConcurrency,
   resolveRecommendedLocalDryRunConcurrency,
 } from './utils/parallelConcurrency.js'
+import { formatFinalSummaryTable } from './finalSummaryFormatter.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
@@ -39,11 +40,20 @@ const DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS = 210 * 1000
 const DEFAULT_ABORT_GRACE_MS = 5 * 1000
 const DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY = 2
 const DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH = null
-const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
 
 export const isDryRunPublicExperienceEnabled = (
   value = process.env.SCRAPER_DISABLE_DRY_RUN_PUBLIC_EXPERIENCE,
 ) => !/^(?:1|true|yes)$/i.test(String(value ?? '').trim())
+
+export const resolveDryRunPublicExperienceEnabled = ({
+  scraper = null,
+  value = process.env.SCRAPER_DISABLE_DRY_RUN_PUBLIC_EXPERIENCE,
+} = {}) => {
+  if (scraper?.provider?.dryRunEnrichPublicExperience === true) return true
+  if (scraper?.provider?.dryRunEnrichPublicExperience === false) return false
+  return isDryRunPublicExperienceEnabled(value)
+}
 
 export const resolveDryRunMaxJobsToEnrich = (
   value = process.env.SCRAPER_DRY_RUN_MAX_JOBS_TO_ENRICH,
@@ -61,9 +71,12 @@ export const resolveDryRunMaxJobsToEnrich = (
 }
 
 export const buildDryRunSnapshotOptions = ({
-  enrichPublicExperience = isDryRunPublicExperienceEnabled(),
+  scraper = null,
+  enrichPublicExperience = resolveDryRunPublicExperienceEnabled({ scraper }),
   experienceEnrichmentConcurrency = DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY,
-  maxJobsToEnrich = resolveDryRunMaxJobsToEnrich(),
+  maxJobsToEnrich = resolveDryRunMaxJobsToEnrich(
+    scraper?.provider?.dryRunMaxJobsToEnrich ?? process.env.SCRAPER_DRY_RUN_MAX_JOBS_TO_ENRICH,
+  ),
 } = {}) => ({
   enrichPublicExperience,
   experienceEnrichmentConcurrency,
@@ -76,6 +89,31 @@ export const finalizeDirectRunnerExit = ({
 } = {}) => {
   const exitCode = Number.isInteger(processRef?.exitCode) ? processRef.exitCode : 0
   exit(exitCode)
+}
+
+export const formatParallelProgressLog = (
+  completedCount,
+  totalScrapers,
+  timestamp = new Date(),
+) => {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(timestamp)
+      .filter(({ type }) => type !== 'literal')
+      .map(({ type, value }) => [type, value]),
+  )
+  const milliseconds = String(timestamp.getUTCMilliseconds()).padStart(3, '0')
+  const istTimestamp = `${parts.year}-${parts.month}-${parts.day} -- ${parts.hour}:${parts.minute}:${parts.second}.${milliseconds} IST`
+
+  return `[${istTimestamp}] [runner] Progress: ${completedCount}/${totalScrapers} scrapers finished.`
 }
 
 export class ScraperSourceTimeoutError extends Error {
@@ -355,14 +393,26 @@ export const resolveScraperTimeoutMs = (
   workdayValue = process.env.WORKDAY_SCRAPER_TIMEOUT_MS,
 ) => {
   const isWorkday = isWorkdayScraper(scraper)
+  const configuredSourceTimeout = Number.parseInt(
+    String(scraper?.timeoutMs ?? scraper?.provider?.scraperTimeoutMs ?? '').trim(),
+    10,
+  )
   const parsedWorkdayTimeout = Number.parseInt(workdayValue, 10)
   const defaultTimeout = isWorkday
     ? (
-        Number.isFinite(parsedWorkdayTimeout) && parsedWorkdayTimeout >= 0
-          ? parsedWorkdayTimeout
-          : DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS
+        Number.isFinite(configuredSourceTimeout) && configuredSourceTimeout >= 0
+          ? configuredSourceTimeout
+          : (
+            Number.isFinite(parsedWorkdayTimeout) && parsedWorkdayTimeout >= 0
+              ? parsedWorkdayTimeout
+              : DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS
+          )
       )
-    : DEFAULT_SCRAPER_TIMEOUT_MS
+    : (
+        Number.isFinite(configuredSourceTimeout) && configuredSourceTimeout >= 0
+          ? configuredSourceTimeout
+          : DEFAULT_SCRAPER_TIMEOUT_MS
+      )
 
   if (value == null || value === '') return defaultTimeout
 
@@ -474,7 +524,7 @@ export const runAll = async () => {
   const failureAbortThreshold = resolveFailureAbortThreshold()
 
   console.log(`\n${'='.repeat(60)}`)
-  console.log(`  Jobify Scraper Pipeline — ${isDryRun ? 'DRY RUN' : 'LIVE'} | ${isParallel ? 'PARALLEL' : 'SEQUENTIAL'}`)
+  console.log(`  Jobverify Scraper Pipeline - ${isDryRun ? 'DRY RUN' : 'LIVE'} | ${isParallel ? 'PARALLEL' : 'SEQUENTIAL'}`)
   console.log(`  Started: ${new Date().toISOString()}`)
   console.log(`${'='.repeat(60)}\n`)
   if (resumeMessage) console.log(`[runner] ${resumeMessage}\n`)
@@ -491,7 +541,7 @@ export const runAll = async () => {
     try {
       await ensureScrapersSeeded()
     } catch (seedErr) {
-      console.error('  ✗ Failed to seed scraper status records:', seedErr.message)
+      console.error('  ERROR Failed to seed scraper status records:', seedErr.message)
     }
   }
 
@@ -519,15 +569,15 @@ export const runAll = async () => {
       try {
         const status = await ScraperStatus.findOne({ source: scraper.name }).lean().exec()
         if (status && status.isActive === false) {
-          console.log(`  ⚠ ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
+          console.log(`  WARN ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
           continue
         }
       } catch (dbErr) {
-        console.error(`  ✗ ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
+        console.error(`  ERROR ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
       }
     }
 
-    console.log(`▶ ${progressStr}Running [${scraper.name}]...`)
+    console.log(`${progressStr}Running [${scraper.name}]...`)
 
     try {
       if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
@@ -548,7 +598,7 @@ export const runAll = async () => {
         await saveDryRunSnapshot(
           indiaJobs,
           scraper.dryRunFile,
-          buildDryRunSnapshotOptions(),
+          buildDryRunSnapshotOptions({ scraper }),
         )
         result = {
           jobs: indiaJobs.length,
@@ -557,7 +607,7 @@ export const runAll = async () => {
           mode: 'dry-run',
           file: scraper.dryRunFile,
         }
-        console.log(`  ✓ [${scraper.name}] ${indiaJobs.length} India jobs → ${scraper.dryRunFile}`)
+        console.log(`  OK [${scraper.name}] ${indiaJobs.length} India jobs -> ${scraper.dryRunFile}`)
       } else {
         result = await saveToDB(jobs, scraper.name, {
           refreshDatasetSummary: false,
@@ -583,7 +633,7 @@ export const runAll = async () => {
         ...classification,
       }
       const failureLabel = failureResult.softFailure ? 'UPSTREAM:' : 'FAILED:'
-      console.error(`  ✗ [${scraper.name}] ${failureLabel}`, err.message)
+      console.error(`  ERROR [${scraper.name}] ${failureLabel}`, err.message)
       summary[scraper.name] = failureResult
       if (isFailureCountedForAbort(failureResult)) {
         failedCount++
@@ -594,7 +644,7 @@ export const runAll = async () => {
       try {
         await upsertScraperStatus(scraper.name, summary[scraper.name])
       } catch (dbErr) {
-        console.error(`  ✗ [${scraper.name}] Failed to save status to DB:`, dbErr.message)
+        console.error(`  ERROR [${scraper.name}] Failed to save status to DB:`, dbErr.message)
       }
     }
 
@@ -623,7 +673,7 @@ export const runAll = async () => {
     try {
       await writeScraperRun(new Date(startTime), summary)
     } catch (dbErr) {
-      console.error(`  ✗ Failed to save run history to DB:`, dbErr.message)
+      console.error(`  ERROR Failed to save run history to DB:`, dbErr.message)
     }
   }
 
@@ -654,15 +704,15 @@ export const runScraper = async (scraper, progressStr = '') => {
     try {
       const status = await ScraperStatus.findOne({ source: scraper.name }).lean().exec()
       if (status && status.isActive === false) {
-        console.log(`  ⚠ ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
+        console.log(`  WARN ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
         return { success: true, skipped: true, jobs: 0, eligibleJobs: 0, inserted: 0, updated: 0, deleted: 0, filteredOld: 0, missed: 0, expired: 0, durationMs: 0 }
       }
     } catch (dbErr) {
-      console.error(`  ✗ ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
+      console.error(`  ERROR ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
     }
   }
 
-  console.log(`▶ ${progressStr}Starting [${scraper.name}]...`)
+  console.log(`${progressStr}Starting [${scraper.name}]...`)
 
   try {
     if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
@@ -683,7 +733,7 @@ export const runScraper = async (scraper, progressStr = '') => {
       await saveDryRunSnapshot(
         indiaJobs,
         scraper.dryRunFile,
-        buildDryRunSnapshotOptions(),
+        buildDryRunSnapshotOptions({ scraper }),
       )
       result = {
         jobs: indiaJobs.length,
@@ -692,7 +742,7 @@ export const runScraper = async (scraper, progressStr = '') => {
         mode: 'dry-run',
         file: scraper.dryRunFile,
       }
-      console.log(`  ✓ [${scraper.name}] ${indiaJobs.length} India jobs → ${scraper.dryRunFile}`)
+      console.log(`  OK [${scraper.name}] ${indiaJobs.length} India jobs -> ${scraper.dryRunFile}`)
     } else {
       result = await saveToDB(jobs, scraper.name, {
         refreshDatasetSummary: false,
@@ -714,7 +764,7 @@ export const runScraper = async (scraper, progressStr = '') => {
       try {
         await upsertScraperStatus(scraper.name, successResult)
       } catch (dbErr) {
-        console.error(`  ✗ [${scraper.name}] Failed to save status to DB:`, dbErr.message)
+        console.error(`  ERROR [${scraper.name}] Failed to save status to DB:`, dbErr.message)
       }
     }
 
@@ -728,13 +778,13 @@ export const runScraper = async (scraper, progressStr = '') => {
       ...classification,
     }
     const failureLabel = failResult.softFailure ? 'UPSTREAM:' : 'FAILED:'
-    console.error(`  ✗ [${scraper.name}] ${failureLabel}`, err.message)
+    console.error(`  ERROR [${scraper.name}] ${failureLabel}`, err.message)
 
     if (!isDryRun) {
       try {
         await upsertScraperStatus(scraper.name, failResult)
       } catch (dbErr) {
-        console.error(`  ✗ [${scraper.name}] Failed to save status to DB:`, dbErr.message)
+        console.error(`  ERROR [${scraper.name}] Failed to save status to DB:`, dbErr.message)
       }
     }
 
@@ -794,7 +844,7 @@ const runAllParallel = async (startedAt = new Date()) => {
       summary[name] = rest
       
       completedCount++
-      console.log(`[runner] Progress: ${completedCount}/${totalScrapers} scrapers finished.\n`)
+      console.log(`${formatParallelProgressLog(completedCount, totalScrapers)}\n`)
 
       if (isFailureCountedForAbort(result)) {
         failedCount++
@@ -828,7 +878,7 @@ const runAllParallel = async (startedAt = new Date()) => {
     try {
       await writeScraperRun(new Date(startTime), summary)
     } catch (dbErr) {
-      console.error(`  ✗ Failed to save run history to DB:`, dbErr.message)
+      console.error(`  ERROR Failed to save run history to DB:`, dbErr.message)
     }
   }
 
@@ -885,7 +935,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     })
 
     console.log('\nFinal Pipeline Summary:')
-    console.table(tableData)
+    console.log(formatFinalSummaryTable(summary))
 
     const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
     const failureAbortThreshold = resolveFailureAbortThreshold()

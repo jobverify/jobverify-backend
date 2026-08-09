@@ -1,4 +1,4 @@
-export const GLANCE_CATALOG = {
+﻿export const GLANCE_CATALOG = {
   source: 'glance',
   companyName: 'Glance',
   officialBrandName: 'Glance AI',
@@ -17,7 +17,7 @@ export const GLANCE_CATALOG = {
     'verified-first-party-careers-page+embedded-next-data-jobs+greenhouse-jobs-api+first-party-detail-route-canonicalization+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  modulePath: '../glance/script.js',
+  modulePath: '../../scraper/glance/script.js',
   dryRunFile: 'glance/jobs.json',
   verifiedOn: '2026-07-16',
   verifiedSurfaceSummary:
@@ -25,3 +25,4 @@ export const GLANCE_CATALOG = {
 }
 
 export default GLANCE_CATALOG
+

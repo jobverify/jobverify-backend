@@ -1,9 +1,9 @@
-export const BATTRE_ELECTRIC_CATALOG = {
+﻿export const BATTRE_ELECTRIC_CATALOG = {
   source: 'battreelectric',
   companyName: 'BattRE Electric',
   officialBrandName: 'Batt:RE Electric Mobility',
   adapter: 'script',
-  modulePath: '../battreelectric/script.js',
+  modulePath: '../../scraper/battreelectric/script.js',
   dryRunFile: 'battreelectric/jobs.json',
   homepageUrl: 'https://battre.in/',
   companyCareerPage: 'https://battre.in/',
@@ -22,3 +22,4 @@ export const BATTRE_ELECTRIC_CATALOG = {
 }
 
 export default BATTRE_ELECTRIC_CATALOG
+

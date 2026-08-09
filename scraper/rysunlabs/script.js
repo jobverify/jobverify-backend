@@ -12,7 +12,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const OBSERVED_PUBLIC_JOBS_URL = PROVIDER_METADATA.observedPublicJobsUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {

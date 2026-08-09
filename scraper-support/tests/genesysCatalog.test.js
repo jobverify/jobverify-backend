@@ -15,7 +15,7 @@ test('getScraperCatalog includes Genesys as a Workday-backed script provider', (
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.companyCareerPage, 'https://www.genesys.com/company/careers')
   assert.equal(provider.companyDomain, 'genesys.com')
-  assert.match(provider.modulePath, /genesys[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /genesys\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Genesys scraper without changing the runner contract', () => {

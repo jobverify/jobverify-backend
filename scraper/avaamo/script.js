@@ -8,7 +8,7 @@ export const DISPOSITION = 'verified-first-party-careers-page-plus-public-same-o
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://avaamo.ai/careers/ was the live first-party Avaamo careers page, that it exposed public same-origin Learn more job pages for active openings, and that trustworthy India listings were publicly available for Applied AI Engineer, Senior Software Engineer – Full-Stack, Senior QA Engineer, Conversational AI Lead or Architect, Conversation Designer, Product Manager, and Solution Delivery Manager. The reviewed Forward Deployed Engineer (FDE) card on the official careers page pointed to the full-stack detail page instead of an FDE detail page, so this scraper validates listing-to-detail title agreement and returns only India jobs whose first-party detail page matches the listing.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const CAREERS_PAGE_PATTERNS = [
   /<title[^>]*>\s*Careers at Avaamo\s*<\/title>/i,

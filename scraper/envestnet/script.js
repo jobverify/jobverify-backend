@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,18 +21,6 @@ export const VERIFIED_LISTING_SIGNALS = [
 export const VERIFIED_DETAIL_SIGNAL = 'Description'
 
 const NAVIGATION_TIMEOUT_MS = 45000
-const PAGE_SETTLE_MS = 2500
-
-const waitForPageSettle = async (page, timeoutMs = PAGE_SETTLE_MS) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return
-
-  if (typeof page?.waitForTimeout === 'function') {
-    await page.waitForTimeout(timeoutMs)
-    return
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, timeoutMs))
-}
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -83,6 +71,39 @@ const parseTotalResults = (text) => {
   const match = String(text ?? '').match(/Showing\s+\d+\s*-\s*\d+\s+of\s+(\d+)\s+result\(s\)/i)
   return match ? Number.parseInt(match[1], 10) : null
 }
+
+const stripTagsToText = (value) => String(value ?? '')
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
+  .replace(/<p\b[^>]*>/gi, '\n')
+  .replace(/<li\b[^>]*>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+
+const extractPageLinks = (html = '', baseUrl = SEARCH_URL) => [...String(html ?? '').matchAll(
+  /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+)]
+  .map((match) => ({
+    text: normalizeWhitespace(match[2]) || '',
+    href: new URL(match[1], baseUrl).toString(),
+  }))
+
+const buildPageDataFromHtml = (html = '', url = SEARCH_URL) => ({
+  url,
+  title: normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]),
+  text: stripTagsToText(html),
+  links: extractPageLinks(html, url),
+})
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  attempts: 1,
+  label: SOURCE,
+  timeoutMs: NAVIGATION_TIMEOUT_MS,
+})
 
 export const hasVerifiedIndiaListingSurface = (pageData) => {
   const title = normalizeWhitespace(pageData?.title)
@@ -188,110 +209,63 @@ export const extractJobFromDetailPage = (pageData) => {
   }
 }
 
-const collectPageData = async (page, url) => {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
-  await page.waitForSelector('body', { timeout: NAVIGATION_TIMEOUT_MS }).catch(() => null)
-  await waitForPageSettle(page)
-
-  return page.evaluate(() => ({
-    url: window.location.href,
-    title: document.title,
-    text: document.body?.innerText || '',
-    links: Array.from(document.querySelectorAll('a[href]')).map((anchor) => ({
-      text: anchor.textContent || '',
-      href: anchor.href,
-    })),
-  }))
-}
-
-const createBrowserContext = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const listingPage = await createOptimizedPageImpl(browser)
-    const detailPage = await createOptimizedPageImpl(browser)
-
-    return {
-      browser,
-      listingPage,
-      detailPage,
-      close: async () => browser.close(),
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
-
 export const createEnvestnetScraper = ({
   maxJobs = null,
 } = {}) => ({
   async run({
     maxPages = 5,
-    collectPageDataImpl = collectPageData,
-    launchBrowserImpl = launchBrowser,
-    createOptimizedPageImpl = createOptimizedPage,
+    fetchText = defaultFetchText,
+    collectPageDataImpl,
   } = {}) {
-    const browserContext = await createBrowserContext({
-      launchBrowserImpl,
-      createOptimizedPageImpl,
-    })
-
-    try {
-      const listingLinks = []
-
-      for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-        const pageData = await collectPageDataImpl(
-          browserContext.listingPage,
-          buildListingPageUrl(pageNumber),
-        )
-
-        if (!hasVerifiedIndiaListingSurface(pageData)) {
-          throw new Error('Envestnet India jobs page no longer matches the verified public surface')
-        }
-
-        const pageLinks = extractListingJobLinks(pageData)
-        if (pageLinks.length === 0) break
-
-        listingLinks.push(...pageLinks)
-
-        const totalResults = parseTotalResults(pageData.text)
-        if (Number.isInteger(totalResults) && listingLinks.length >= totalResults) {
-          break
-        }
-
-        if (pageLinks.length < 25) {
-          break
-        }
-      }
-
-      const uniqueLinks = uniqueBy(listingLinks, (job) => job.url)
-      const selectedLinks = Number.isInteger(maxJobs)
-        ? uniqueLinks.slice(0, maxJobs)
-        : uniqueLinks
-
-      const jobs = []
-
-      for (const listing of selectedLinks) {
-        const detailPageData = await collectPageDataImpl(browserContext.detailPage, listing.url)
-        const job = extractJobFromDetailPage(detailPageData)
-        if (!job) continue
-
-        jobs.push({
-          ...job,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-      }
-
-      return jobs
-    } finally {
-      await browserContext.close()
+    if (!collectPageDataImpl) {
+      collectPageDataImpl = async (url) => buildPageDataFromHtml(await fetchText(url), url)
     }
+
+    const listingLinks = []
+
+    for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+      const pageData = await collectPageDataImpl(buildListingPageUrl(pageNumber))
+
+      if (!hasVerifiedIndiaListingSurface(pageData)) {
+        throw new Error('Envestnet India jobs page no longer matches the verified public surface')
+      }
+
+      const pageLinks = extractListingJobLinks(pageData)
+      if (pageLinks.length === 0) break
+
+      listingLinks.push(...pageLinks)
+
+      const totalResults = parseTotalResults(pageData.text)
+      if (Number.isInteger(totalResults) && listingLinks.length >= totalResults) {
+        break
+      }
+
+      if (pageLinks.length < 25) {
+        break
+      }
+    }
+
+    const uniqueLinks = uniqueBy(listingLinks, (job) => job.url)
+    const selectedLinks = Number.isInteger(maxJobs)
+      ? uniqueLinks.slice(0, maxJobs)
+      : uniqueLinks
+
+    const jobs = []
+
+    for (const listing of selectedLinks) {
+      const detailPageData = await collectPageDataImpl(listing.url)
+      const job = extractJobFromDetailPage(detailPageData)
+      if (!job) continue
+
+      jobs.push({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      })
+    }
+
+    return jobs
   },
 })
 

@@ -13,49 +13,23 @@ const VERIFIED_CAREERS_HTML = `
       <p>Where culture meets purpose.</p>
       <a href="#we-re-hiring">Explore open positions</a>
       <p>Chief Executive Officer and Co-founder, Yellow.ai</p>
+      <div id="we-re-hiring">
+        <div id="rec_job_listing_div"></div>
+        <script src="https://static.zohocdn.com/recruit/embed_careers_site/javascript/v1.1/embed_jobs.js"></script>
+        <script>
+          rec_embed_js.load({
+            widget_id:"rec_job_listing_div",
+            page_name:"Careers",
+            source:"CareerSite",
+            site:"https://careers.yellow.ai",
+            empty_job_msg:"No current Openings"
+          });
+        </script>
+      </div>
     </main>
   </body>
 </html>
 `
-
-const VERIFIED_ZOHO_PORTAL_TEXT = `
-HOME JOBS
-Find the career of your dreams
-Current Openings
-GTM recruiter Position filled
-Powered by
-`
-
-const CLOSED_PAYLOAD = {
-  code: 'success',
-  data: [
-    {
-      Posting_Title: 'GTM recruiter',
-      Is_Locked: true,
-      Publish: false,
-      Keep_on_Career_Site: true,
-      City: 'Bangalore South',
-      State: 'Karnataka',
-      Country: 'India',
-      Job_Type: 'Full time',
-      Job_Description: 'About Yellow.ai We are a global leader in Conversational AI.',
-      Date_Opened: '04/02/2025',
-      $url: 'https://yellow.zohorecruit.in/jobs/Careers/157454000000803145/GTM-recruiter?source=CareerSite',
-      id: '157454000000803145',
-    },
-  ],
-}
-
-const ACTIVE_PAYLOAD = {
-  code: 'success',
-  data: [
-    {
-      ...CLOSED_PAYLOAD.data[0],
-      Is_Locked: false,
-      Publish: true,
-    },
-  ],
-}
 
 const loadModule = async () => {
   try {
@@ -65,53 +39,45 @@ const loadModule = async () => {
   }
 }
 
-test('Yellow Messenger ignores filled Zoho Recruit records and returns [] while no published India jobs remain', async () => {
+test('Yellow Messenger returns [] while the verified embedded Zoho careers surface remains in the dead-board state', async () => {
   const yellowMessenger = await loadModule()
-
-  assert.equal(typeof yellowMessenger.extractIndiaJobs, 'function')
-  assert.deepEqual(yellowMessenger.extractIndiaJobs(CLOSED_PAYLOAD), [])
-})
-
-test('Yellow Messenger maps published India roles from the verified Zoho Recruit payload', async () => {
-  const yellowMessenger = await loadModule()
-  const scraper = yellowMessenger.createYellowMessengerScraper({
-    now: () => '2026-07-26T00:00:00.000Z',
-  })
+  const scraper = yellowMessenger.createYellowMessengerScraper()
 
   const jobs = await scraper.run({
     loadLiveCareersContract: async () => ({
       careersHtml: VERIFIED_CAREERS_HTML,
-      boardUrl: 'https://yellow.zohorecruit.in/jobs/Careers',
-      boardText: VERIFIED_ZOHO_PORTAL_TEXT,
-      payload: ACTIVE_PAYLOAD,
     }),
   })
 
-  assert.deepEqual(jobs, [
-    {
-      title: 'GTM recruiter',
-      company: 'Yellow Messenger',
-      department: null,
-      location: 'Bangalore South, Karnataka, India',
-      city: 'Bangalore South',
-      state: 'Karnataka',
-      country: 'India',
-      jobId: '157454000000803145',
-      requisitionId: '157454000000803145',
-      sourceUrl: 'https://yellow.zohorecruit.in/jobs/Careers/157454000000803145/GTM-recruiter?source=CareerSite',
-      applyUrl: 'https://yellow.zohorecruit.in/jobs/Careers/157454000000803145/GTM-recruiter?source=CareerSite',
-      employmentType: 'Full-time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '04/02/2025',
-      closingDate: null,
-      jobDescription: 'About Yellow.ai We are a global leader in Conversational AI.',
-      remoteStatus: 'On-site',
-      source: 'yellowmessenger',
-      link: 'https://yellow.zohorecruit.in/jobs/Careers/157454000000803145/GTM-recruiter?source=CareerSite',
-      scrapedAt: '2026-07-26T00:00:00.000Z',
+  assert.deepEqual(jobs, [])
+  assert.equal(yellowMessenger.SOURCE, 'yellowmessenger')
+  assert.equal(yellowMessenger.COMPANY, 'Yellow Messenger')
+  assert.equal(yellowMessenger.OFFICIAL_BRAND, 'Yellow.ai')
+  assert.equal(yellowMessenger.CAREERS_URL, 'https://yellow.ai/career/')
+  assert.equal(yellowMessenger.EMBEDDED_ZOHO_SITE_URL, 'https://careers.yellow.ai')
+  assert.equal(
+    yellowMessenger.DISPOSITION,
+    'verified-rebrand-careers-surface-plus-dead-zohorecruit-embed-return-empty',
+  )
+  assert.match(
+    yellowMessenger.VERIFIED_SURFACE_SUMMARY,
+    /Verified on Sunday, August 2, 2026/i,
+  )
+  assert.match(yellowMessenger.VERIFIED_SURFACE_SUMMARY, /site:"https:\/\/careers\.yellow\.ai"/i)
+  assert.match(yellowMessenger.VERIFIED_SURFACE_SUMMARY, /does not exist/i)
+})
+
+test('Yellow Messenger validates the current careers contract when loaded through fetchText', async () => {
+  const yellowMessenger = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await yellowMessenger.createYellowMessengerScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return VERIFIED_CAREERS_HTML
     },
-  ])
+  })
+
+  assert.deepEqual(requestedUrls, [yellowMessenger.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })

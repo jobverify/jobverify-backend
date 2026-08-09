@@ -14,7 +14,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const GREENHOUSE_BOARD_URL = PROVIDER_METADATA.greenhouseBoardUrl
 export const GREENHOUSE_JOBS_API_URL = PROVIDER_METADATA.greenhouseJobsApiUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

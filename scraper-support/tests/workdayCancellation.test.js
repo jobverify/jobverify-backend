@@ -60,7 +60,7 @@ test('the script provider adapter forwards cancellation through a custom Workday
 
 test('provider decoration preserves an explicitly confirmed Workday empty result', async () => {
   const confirmedEmpty = []
-  const authoritativeEmpty = Symbol.for('jobify.workday.authoritative-empty')
+  const authoritativeEmpty = Symbol.for('jobverify.workday.authoritative-empty')
   Object.defineProperty(confirmedEmpty, authoritativeEmpty, { value: true })
   const scraper = buildScrapers().find((item) => item.name === 'alphawavesemiindia')
   assert.ok(scraper)
@@ -75,7 +75,7 @@ test('provider decoration preserves an explicitly confirmed Workday empty result
 
 test('Ohmium job-id backfill preserves confirmed empty provenance', async () => {
   const { backfillMissingJobIds } = await import('../../scraper/ohmiumoperationspltd.workday/script.js')
-  const authoritativeEmpty = Symbol.for('jobify.workday.authoritative-empty')
+  const authoritativeEmpty = Symbol.for('jobverify.workday.authoritative-empty')
   const confirmedEmpty = []
   Object.defineProperty(confirmedEmpty, authoritativeEmpty, { value: true })
 

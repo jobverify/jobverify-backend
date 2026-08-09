@@ -22,7 +22,7 @@ export const VERIFIED_JOB_DETAIL_URLS = [
 export const COUNTRY_FILTER = PROVIDER_METADATA.countryFilter
 export const VERIFIED_BUSINESS_UNIT = 'Cubic Transportation Systems'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const WORKDAY_BOARD_CANONICAL_URL = 'https://cubic.wd1.myworkdayjobs.com/cubic_global_careers'
 const PAGE_SIZE = 20
 const DEFAULT_DETAIL_CONCURRENCY = 4

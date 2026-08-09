@@ -41,5 +41,5 @@ test('Analog Devices India is runnable through the shared Workday scraper', () =
 
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
-  assert.match(scraper.dryRunFile, /analogdevicesindia[\\/]jobs\.json$/i)
+  assert.match(scraper.dryRunFile, /analogdevicesindia\.workday[\\/]jobs\.json$/i)
 })

@@ -21,7 +21,7 @@ export const TURBOHIRE_HOST = PROVIDER_METADATA.publicApplyHost
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const CAREERS_TITLE = 'Careers at Khatabook | Khatabook Jobs | Latest Khatabook Openings'
 const INDIA_CITY_FALLBACK_PATTERN = /\b(bengaluru|bangalore|gurugram|gurgaon|mumbai|pune|chennai|hyderabad)\b/i
 

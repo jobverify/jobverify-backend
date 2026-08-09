@@ -10,7 +10,7 @@ import { SNAPDEAL_CATALOG } from './catalog.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 export const SOURCE = SNAPDEAL_CATALOG.source
 export const COMPANY_NAME = SNAPDEAL_CATALOG.companyName

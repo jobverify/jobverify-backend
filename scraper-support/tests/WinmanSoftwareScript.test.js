@@ -12,7 +12,7 @@ const verifiedCareersHtml = `
     <p>Build your career with Winman Software at Mangaluru.</p>
     <table id="experienced_table">
       <tr>
-        <th>Open Position</th>
+        <th>Designation and Job Profile</th>
         <th>Experience</th>
       </tr>
       <tr>

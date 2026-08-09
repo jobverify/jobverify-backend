@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
@@ -17,7 +17,7 @@ export const PROVIDER_CONFIG = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../cosmiccircuits/script.js',
+  modulePath: '../../scraper/cosmiccircuits/script.js',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-parent-company-careers',
   countryFilter: 'India',
@@ -38,12 +38,28 @@ const WORKDAY_HANDOFF_PATTERN = /https:\/\/cadence\.wd1\.myworkdayjobs\.com\/Ext
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const isBlockedParentCareersError = (error) =>
+  /HTTP (?:403|429)\b|timed out|timeout|fetch failed|could not connect|err_failed/i
+    .test(String(error?.message ?? error ?? ''))
+
+const buildBlockedParentCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Cosmic Circuits verified Cadence parent careers surface remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
 
 export const extractWorkdayHandoffUrls = (html) => {
   const matches = String(html ?? '').match(WORKDAY_HANDOFF_PATTERN) || []
@@ -67,11 +83,19 @@ export const createCosmicCircuitsScraper = () => ({
     const textFetcher = createBrowserTextFallback({
       fetchText,
       fetchBrowserText,
-      userAgent: 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      userAgent: 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     })
 
     try {
-      const careersHtml = await textFetcher.fetchText(CAREERS_URL)
+      let careersHtml
+      try {
+        careersHtml = await textFetcher.fetchText(CAREERS_URL)
+      } catch (error) {
+        if (isBlockedParentCareersError(error)) {
+          throw buildBlockedParentCareersSurfaceError(error)
+        }
+        throw error
+      }
 
       if (!hasOfficialParentCareersSignal(careersHtml)) {
         throw new Error('Cosmic Circuits verified Cadence parent careers surface changed')
@@ -105,3 +129,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

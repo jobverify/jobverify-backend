@@ -66,7 +66,7 @@ test('buildScraperOptions keeps Ohmium on the verified Workday board and India l
   assert.equal(options.baseUrl, 'https://ohmium.wd12.myworkdayjobs.com/Ohmium_Careers')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'ohmiumoperationspltd')
-  assert.match(options.scraperDir, /ohmiumoperationspltd$/)
+  assert.match(options.scraperDir, /ohmiumoperationspltd\.workday$/)
 })
 
 test('loads the India location guardrail for the shared Workday runner', () => {
@@ -114,7 +114,7 @@ test('Ohmium verifies the official homepage handoff and live Workday board befor
   assert.equal(receivedOptions.baseUrl, 'https://ohmium.wd12.myworkdayjobs.com/Ohmium_Careers')
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'ohmiumoperationspltd')
-  assert.match(receivedOptions.scraperDir, /ohmiumoperationspltd$/)
+  assert.match(receivedOptions.scraperDir, /ohmiumoperationspltd\.workday$/)
 })
 
 test('run fails closed when the verified Ohmium handoff or board changes', async () => {

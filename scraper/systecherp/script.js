@@ -11,7 +11,7 @@ export const HOMEPAGE_URL = 'https://www.systecherp.com/'
 export const CAREERS_PAGE_URL = 'https://www.systecherp.com/company/careers'
 export const JOBS_EMAIL = 'joinus@systecherp.com'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)'
 const EMPLOYMENT_TYPE_PATTERN = /(Full-time|Part-time|Contract|Internship|Temporary|Freelance)$/i
 
 const decodeHtml = (value) => String(value ?? '')

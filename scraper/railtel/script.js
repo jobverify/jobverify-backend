@@ -466,6 +466,9 @@ export const extractCurrentJobs = (html) =>
 export const createRailTelScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   detailFetchConcurrency = DEFAULT_DETAIL_FETCH_CONCURRENCY,
+  noticeEnrichmentLimit = Number.isInteger(config.noticeEnrichmentLimit)
+    ? config.noticeEnrichmentLimit
+    : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = requestTextAllowingInsecureTls, fetchDocumentText = null } = {}) {
@@ -482,16 +485,36 @@ export const createRailTelScraper = ({
     }
 
     const detailFetcher = fetchDocumentText
-      || (fetchText === requestTextAllowingInsecureTls ? requestDocumentTextAllowingInsecureTls : null)
+      || (
+        (fetchDocumentText
+          ? noticeEnrichmentLimit
+          : (noticeEnrichmentLimit == null ? 0 : noticeEnrichmentLimit)) !== 0
+        && fetchText === requestTextAllowingInsecureTls
+          ? requestDocumentTextAllowingInsecureTls
+          : null
+      )
+    const resolvedNoticeEnrichmentLimit = fetchDocumentText
+      ? noticeEnrichmentLimit
+      : (noticeEnrichmentLimit == null ? 0 : noticeEnrichmentLimit)
     const memoizedDetailFetcher = detailFetcher
       ? memoizeFetchDocumentText(detailFetcher)
       : null
-    const jobsWithNoticeDetails = detailFetcher
-      ? await mapWithConcurrency(
-          selectedJobs,
-          detailFetchConcurrency,
-          (job) => enrichJobFromNoticeText(job, memoizedDetailFetcher),
+    const jobsToEnrich = detailFetcher
+      ? (
+          resolvedNoticeEnrichmentLimit == null
+            ? selectedJobs
+            : selectedJobs.slice(0, Math.max(0, resolvedNoticeEnrichmentLimit))
         )
+      : []
+    const jobsWithNoticeDetails = jobsToEnrich.length > 0
+      ? [
+          ...await mapWithConcurrency(
+            jobsToEnrich,
+            detailFetchConcurrency,
+            (job) => enrichJobFromNoticeText(job, memoizedDetailFetcher),
+          ),
+          ...selectedJobs.slice(jobsToEnrich.length),
+        ]
       : selectedJobs
 
     return jobsWithNoticeDetails.map((job) => ({

@@ -11,14 +11,14 @@ const currentDir = fileURLToPath(new URL('.', import.meta.url))
 const scraperDir = path.resolve(currentDir, '..', '..', 'scraper')
 const manifest = {
   companies: dedicatedProviders
-    .filter((provider) => String(provider.originalModulePath || '').startsWith('../../scraper/workbookbatch03/'))
+    .filter((provider) => String(provider.originalModulePath || '').startsWith('../workbookbatch03/'))
     .map((provider) => provider.companyName),
 }
 const providersBySource = new Map(dedicatedProviders.map((provider) => [provider.source, provider]))
 const LIVE_SOURCES = new Set(['housr', 'locus'])
 const SENTINEL_EXTRACTION_STRATEGY =
   'exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified'
-const scriptModulePathFor = (source) => `../${source}/script.js`
+const scriptModulePathPatternFor = (source) => new RegExp(`[\\\\/]${source}[\\\\/]script\\.js$`, 'i')
 
 test('Workbook batch 03 sentinel providers remain exact-name, verified, and fail closed', async () => {
   const catalog = getScraperCatalog()
@@ -40,8 +40,8 @@ test('Workbook batch 03 sentinel providers remain exact-name, verified, and fail
     assert.ok(provider)
     assert.ok(scraper)
     assert.equal(provider.companyName, providerExtension.companyName)
-    assert.equal(provider.modulePath, scriptModulePathFor(provider.source))
-    assert.equal(provider.originalModulePath, '../../scraper/workbookbatch03/failClosedSentinel.js')
+    assert.match(provider.modulePath, scriptModulePathPatternFor(provider.source))
+    assert.equal(provider.originalModulePath, '../workbookbatch03/failClosedSentinel.js')
     assert.equal(provider.dryRunFile, path.join(scraperDir, provider.source, 'jobs.json'))
     assert.equal(provider.atsPlatform, 'workbook-exact-name-sentinel')
     assert.equal(provider.countryFilter, 'India')

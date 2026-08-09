@@ -14,7 +14,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 export const COMPANY_CONFIG_URL = PROVIDER_METADATA.companyConfigUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const INDIA_LOCATION_PATTERN =
   /\b(india|mumbai|pune|bangalore|bengaluru|gurugram|gurgaon|noida|hyderabad|chennai|delhi)\b/i
 

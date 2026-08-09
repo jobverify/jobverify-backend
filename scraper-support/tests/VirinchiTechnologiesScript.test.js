@@ -28,7 +28,7 @@ test('Virinchi Technologies validators stay pinned to the verified profile-signu
   const virinchi = await loadModule()
 
   assert.equal(virinchi.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(virinchi.hasProfileSignupOnlySignal(careersHtml), true)
+  assert.equal(virinchi.hasNoPublicJobListingsSignal(careersHtml), true)
 })
 
 test('Virinchi Technologies stays fail-closed while the first-party careers page still exposes only profile signup', async () => {

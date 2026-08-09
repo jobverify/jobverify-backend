@@ -16,7 +16,7 @@ test('getScraperCatalog includes the Silicon Labs India script provider with off
   assert.equal(siliconLabsIndia.companyName, 'Silicon Labs India')
   assert.equal(siliconLabsIndia.companyCareerPage, 'https://www.silabs.com/about-us/careers')
   assert.equal(siliconLabsIndia.companyDomain, 'silabs.com')
-  assert.match(siliconLabsIndia.modulePath, /siliconlabsindia[\\/]script\.js$/i)
+  assert.match(siliconLabsIndia.modulePath, /siliconlabsindia\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Silicon Labs India scraper', () => {

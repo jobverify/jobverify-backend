@@ -24,7 +24,9 @@ const careersHubHtml = `
   </head>
   <body>
     <h1>Cloud Software Group</h1>
-    <a href="https://careers.cloud.com/jobs/search">Search jobs</a>
+    <p>100 million users around the globe</p>
+    <p>Ready to apply? Search for open roles.</p>
+    <a href="https://careers.cloud.com/jobs/search">See all opportunities</a>
   </body>
 </html>
 `
@@ -32,9 +34,18 @@ const careersHubHtml = `
 const careersSearchHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Career Search - Cloud Software Group</title>
+  </head>
   <body>
-    <h1>Search Jobs</h1>
+    <h1>Find your next career opportunity</h1>
+    <div>Country</div>
+    <div>Brand</div>
+    <div>India</div>
     <p>Non-TIBCO Office</p>
+    <p>Citrix</p>
+    <p>Cloud Software Group Corporate</p>
+    <p>Spotfire</p>
     <a href="https://careers.cloud.com/jobs/example-role">Example job</a>
   </body>
 </html>

@@ -46,6 +46,40 @@ test('fetchTextWithRetry throws an HTTP error after exhausting retries', async (
   )
 })
 
+test('fetchTextWithRetry treats deterministic HTTP 403 responses as non-retriable', async () => {
+  let attempts = 0
+
+  await assert.rejects(
+    fetchTextWithRetry('https://example.com/blocked', {
+      attempts: 3,
+      baseDelayMs: 1,
+      timeoutMs: 50,
+      label: 'blocked-text',
+      fetchImpl: async () => {
+        attempts += 1
+        return {
+          ok: false,
+          status: 403,
+          headers: {
+            get: () => null,
+          },
+          text: async () => 'forbidden',
+        }
+      },
+    }),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[blocked-text\] Retry aborted after attempt 1\/3\. Last error: HTTP 403 for https:\/\/example\.com\/blocked/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(attempts, 1)
+})
+
 test('fetchTextWithRetry aborts outer scraper retries after exhausting its own retry budget', async () => {
   let fetchAttempts = 0
 
@@ -78,6 +112,230 @@ test('fetchTextWithRetry aborts outer scraper retries after exhausting its own r
   )
 
   assert.equal(fetchAttempts, 3)
+})
+
+test('fetchTextWithRetry treats DNS resolution failures as non-retriable transport errors', async () => {
+  let attempts = 0
+
+  await assert.rejects(
+    withRetry(
+      () => fetchTextWithRetry('https://example.com/missing-host', {
+        attempts: 3,
+        baseDelayMs: 1,
+        timeoutMs: 50,
+        label: 'missing-host-fetch',
+        fetchImpl: async () => {
+          attempts += 1
+          const dnsError = new Error('getaddrinfo ENOTFOUND missing.example.com')
+          dnsError.code = 'ENOTFOUND'
+          const fetchError = new TypeError('fetch failed')
+          fetchError.cause = dnsError
+          throw fetchError
+        },
+      }),
+      {
+        attempts: 2,
+        baseDelayMs: 1,
+        label: 'outer-missing-host',
+      },
+    ),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[outer-missing-host\] Retry aborted after attempt 1\/2\. Last error: \[missing-host-fetch\] Retry aborted after attempt 1\/3\. Last error: fetch failed \| getaddrinfo ENOTFOUND missing\.example\.com/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(attempts, 1)
+})
+
+test('fetchTextWithRetry treats EAI_AGAIN resolution failures as non-retriable transport errors', async () => {
+  let attempts = 0
+
+  await assert.rejects(
+    withRetry(
+      () => fetchTextWithRetry('https://example.com/flaky-host', {
+        attempts: 3,
+        baseDelayMs: 1,
+        timeoutMs: 50,
+        label: 'flaky-host-fetch',
+        fetchImpl: async () => {
+          attempts += 1
+          const dnsError = new Error('getaddrinfo EAI_AGAIN flaky.example.com')
+          dnsError.code = 'EAI_AGAIN'
+          const fetchError = new TypeError('fetch failed')
+          fetchError.cause = dnsError
+          throw fetchError
+        },
+      }),
+      {
+        attempts: 2,
+        baseDelayMs: 1,
+        label: 'outer-flaky-host',
+      },
+    ),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[outer-flaky-host\] Retry aborted after attempt 1\/2\. Last error: \[flaky-host-fetch\] Retry aborted after attempt 1\/3\. Last error: fetch failed \| getaddrinfo EAI_AGAIN flaky\.example\.com/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(attempts, 1)
+})
+
+test('fetchTextWithRetry treats deterministic HTTP protocol parse failures as non-retriable transport errors', async () => {
+  let attempts = 0
+
+  await assert.rejects(
+    withRetry(
+      () => fetchTextWithRetry('https://example.com/broken-origin', {
+        attempts: 3,
+        baseDelayMs: 1,
+        timeoutMs: 50,
+        label: 'broken-origin-fetch',
+        fetchImpl: async () => {
+          attempts += 1
+          throw new TypeError(
+            'fetch failed | Response does not match the HTTP/1.1 protocol (Missing expected CR after header value)',
+          )
+        },
+      }),
+      {
+        attempts: 2,
+        baseDelayMs: 1,
+        label: 'outer-broken-origin',
+      },
+    ),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[outer-broken-origin\] Retry aborted after attempt 1\/2\. Last error: \[broken-origin-fetch\] Retry aborted after attempt 1\/3\. Last error: fetch failed \| Response does not match the HTTP\/1\.1 protocol \(Missing expected CR after header value\)/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(attempts, 1)
+})
+
+test('fetchTextWithRetry treats deterministic invalid-header parser failures as non-retriable transport errors', async () => {
+  let attempts = 0
+
+  await assert.rejects(
+    withRetry(
+      () => fetchTextWithRetry('https://example.com/invalid-header-origin', {
+        attempts: 3,
+        baseDelayMs: 1,
+        timeoutMs: 50,
+        label: 'invalid-header-origin-fetch',
+        fetchImpl: async () => {
+          attempts += 1
+          throw new TypeError(
+            'fetch failed | Response does not match the HTTP/1.1 protocol (Invalid header value char)',
+          )
+        },
+      }),
+      {
+        attempts: 2,
+        baseDelayMs: 1,
+        label: 'outer-invalid-header-origin',
+      },
+    ),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[outer-invalid-header-origin\] Retry aborted after attempt 1\/2\. Last error: \[invalid-header-origin-fetch\] Retry aborted after attempt 1\/3\. Last error: fetch failed \| Response does not match the HTTP\/1\.1 protocol \(Invalid header value char\)/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(attempts, 1)
+})
+
+test('fetchTextWithRetry treats certificate-expired transport failures as non-retriable transport errors', async () => {
+  let attempts = 0
+
+  await assert.rejects(
+    withRetry(
+      () => fetchTextWithRetry('https://example.com/expired-cert', {
+        attempts: 3,
+        baseDelayMs: 1,
+        timeoutMs: 50,
+        label: 'expired-cert-fetch',
+        fetchImpl: async () => {
+          attempts += 1
+          const tlsError = new Error('certificate has expired')
+          tlsError.code = 'CERT_HAS_EXPIRED'
+          const fetchError = new TypeError('fetch failed')
+          fetchError.cause = tlsError
+          throw fetchError
+        },
+      }),
+      {
+        attempts: 2,
+        baseDelayMs: 1,
+        label: 'outer-expired-cert',
+      },
+    ),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[outer-expired-cert\] Retry aborted after attempt 1\/2\. Last error: \[expired-cert-fetch\] Retry aborted after attempt 1\/3\. Last error: fetch failed \| certificate has expired/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(attempts, 1)
+})
+
+test('fetchTextWithRetry treats certificate-chain verification failures as non-retriable transport errors', async () => {
+  let attempts = 0
+
+  await assert.rejects(
+    withRetry(
+      () => fetchTextWithRetry('https://example.com/untrusted-chain', {
+        attempts: 3,
+        baseDelayMs: 1,
+        timeoutMs: 50,
+        label: 'untrusted-chain-fetch',
+        fetchImpl: async () => {
+          attempts += 1
+          const tlsError = new Error('unable to verify the first certificate')
+          tlsError.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+          const fetchError = new TypeError('fetch failed')
+          fetchError.cause = tlsError
+          throw fetchError
+        },
+      }),
+      {
+        attempts: 2,
+        baseDelayMs: 1,
+        label: 'outer-untrusted-chain',
+      },
+    ),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[outer-untrusted-chain\] Retry aborted after attempt 1\/2\. Last error: \[untrusted-chain-fetch\] Retry aborted after attempt 1\/3\. Last error: fetch failed \| unable to verify the first certificate/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(attempts, 1)
 })
 
 test('fetchJsonWithRetry reports forbidden HTML bodies without JSON parser noise', async () => {

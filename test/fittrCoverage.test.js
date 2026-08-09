@@ -5,21 +5,24 @@ import { generateCompanyCoverageReport } from '../scraper-support/providers/comp
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 import { run } from '../scraper/fittr/script.js'
 
-test('Fittr resolves only to its literal exact-name first-party provider', () => {
+test('Fittr resolves approved case variants to its literal exact-name first-party provider', () => {
   const report = generateCompanyCoverageReport({
     csvText: 'company_name\nFittr\nFITTR\nFittr Technologies\n',
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.matchedCount, 1)
-  assert.equal(report.unmatchedCount, 2)
+  assert.equal(report.matchedCount, 2)
+  assert.equal(report.unmatchedCount, 1)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [['Fittr', 'fittr', 'Fittr']],
+    [
+      ['Fittr', 'fittr', 'Fittr'],
+      ['FITTR', 'fittr', 'Fittr'],
+    ],
   )
   assert.deepEqual(
     report.unmatched.map((item) => item.companyName),
-    ['FITTR', 'Fittr Technologies'],
+    ['Fittr Technologies'],
   )
 })
 

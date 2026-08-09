@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -15,8 +15,17 @@ export const CURRENT_OPENINGS_URL = 'https://www.nimblework.com/careers/current-
 
 const ATS_PLATFORM = 'official-company-careers'
 const APPLY_EMAIL = 'careers@nimblework.com'
-const DEFAULT_TIMEOUT_MS = 60000
-const DEFAULT_SETTLE_MS = 5000
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'User-Agent': USER_AGENT,
+  },
+  label: 'nimblework-text',
+  timeoutMs: 45000,
+})
 
 const SECTION_DEFINITIONS = [
   { key: 'jobRequirements', label: 'Job Requirements' },
@@ -360,87 +369,28 @@ export const extractPublicJobs = (html) => {
   })
 }
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-export const createBrowserTextFetcher = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
-  settleMs = DEFAULT_SETTLE_MS,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-
-    return {
-      close: async () => browser.close(),
-      fetchText: async (url, { waitForSelector = null } = {}) => {
-        const response = await page.goto(url, {
-          waitUntil: 'domcontentloaded',
-          timeout: timeoutMs,
-        })
-
-        if (!response?.ok()) {
-          throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-        }
-
-        if (waitForSelector) {
-          await page.waitForSelector(waitForSelector, { timeout: timeoutMs })
-        }
-
-        await delay(settleMs)
-        return page.content()
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
-
 export const createNimbleWorkScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText, now: nowOverride } = {}) {
-    let browserContext = null
+  async run({ fetchText = defaultFetchText, now: nowOverride } = {}) {
     const getNow = nowOverride || now
 
-    try {
-      if (!fetchText) {
-        browserContext = await createBrowserTextFetcher()
-        const selectorsByUrl = {
-          [HOMEPAGE_URL]: 'a[href="/careers/"]',
-          [CAREERS_URL]: 'a[href="/careers/current-openings/"]',
-          [CURRENT_OPENINGS_URL]: '.eael-accordion-tab-title',
-        }
-
-        fetchText = (url) => browserContext.fetchText(url, {
-          waitForSelector: selectorsByUrl[url] || null,
-        })
-      }
-
-      const homepageHtml = await fetchText(HOMEPAGE_URL)
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
-        throw new Error('Nimble Work, Inc verified official homepage no longer matches the known first-party surface')
-      }
-
-      const careersHtml = await fetchText(CAREERS_URL)
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Nimble Work, Inc verified first-party careers page no longer matches the known handoff surface')
-      }
-
-      const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
-      if (!hasOfficialCurrentOpeningsSignal(currentOpeningsHtml)) {
-        throw new Error('Nimble Work, Inc verified first-party current openings page no longer matches the known accordion listings surface')
-      }
-
-      return extractPublicJobs(currentOpeningsHtml).map((job) => normalizeJobForProvider(job, {
-        now: getNow,
-      }))
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    if (!hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('Nimble Work, Inc verified official homepage no longer matches the known first-party surface')
     }
+
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Nimble Work, Inc verified first-party careers page no longer matches the known handoff surface')
+    }
+
+    const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
+    if (!hasOfficialCurrentOpeningsSignal(currentOpeningsHtml)) {
+      throw new Error('Nimble Work, Inc verified first-party current openings page no longer matches the known accordion listings surface')
+    }
+
+    return extractPublicJobs(currentOpeningsHtml).map((job) => normalizeJobForProvider(job, {
+      now: getNow,
+    }))
   },
 })
 

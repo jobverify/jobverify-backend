@@ -197,7 +197,7 @@ test('Allied Digital Services verifies the official first-party root, careers, a
   ])
 })
 
-test('Allied Digital Services run validates the first-party surfaces and decorates Hiring Now listings into Jobify jobs', async () => {
+test('Allied Digital Services run validates the first-party surfaces and decorates Hiring Now listings into Jobverify jobs', async () => {
   const allied = await loadAlliedModule()
   const requestedUrls = []
 

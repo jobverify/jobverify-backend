@@ -31,7 +31,7 @@ test('getScraperCatalog includes Crompton Greaves as a verified first-party care
   assert.equal(sharedProvider.source, 'cromptongreaves')
   assert.equal(sharedProvider.companyName, 'Crompton Greaves Consumer Electricals Limited')
   assert.equal(sharedProvider.adapter, 'script')
-  assert.equal(sharedProvider.modulePath, '../../scraper/cromptongreaves/script.js')
+  assert.match(sharedProvider.modulePath, /cromptongreaves[\\/]script\.js$/i)
   assert.equal(sharedProvider.companyCareerPage, 'https://www.crompton.co.in/pages/careers')
   assert.equal(sharedProvider.atsPlatform, 'shopify-careers-page')
   assert.equal(sharedProvider.countryFilter, 'India')
@@ -53,7 +53,7 @@ test('getScraperCatalog includes Crompton Greaves as a verified first-party care
     source: sharedProvider.source,
     companyName: sharedProvider.companyName,
     adapter: sharedProvider.adapter,
-    modulePath: sharedProvider.modulePath,
+    modulePath: provider.modulePath,
     companyCareerPage: sharedProvider.companyCareerPage,
     atsPlatform: sharedProvider.atsPlatform,
     countryFilter: sharedProvider.countryFilter,

@@ -18,7 +18,7 @@ export const ACTIVE_JOBS_URL = `${KEKA_BOARD_URL}api/jobs/default/active`
 export const EXPECTED_KEKA_DOMAIN = 'healthasyst.keka.com'
 export const EXPECTED_PORTAL_NAME = 'HealthAsyst'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

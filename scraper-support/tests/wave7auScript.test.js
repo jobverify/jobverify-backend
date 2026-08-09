@@ -199,29 +199,17 @@ test('Excelra Knowledge Solutions run returns only India jobs from the verified 
   assert.equal(jobs[0].applyUrl, 'https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a44b39717416')
 })
 
-test('Excelra Knowledge Solutions can source the verified first-party careers page from an injected browser text fetcher', async () => {
+test('Excelra Knowledge Solutions fails closed when the verified first-party careers contract drifts', async () => {
   const excelra = await loadModule('../../scraper/excelraknowledgesolutions/script.js')
-  const requestedUrls = []
-  let closed = false
 
-  const jobs = await excelra.createExcelraKnowledgeSolutionsScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    createTextFetcher: async () => ({
-      fetchText: async (url) => {
-        requestedUrls.push(url)
-        return excelraCareersHtml
-      },
-      close: async () => {
-        closed = true
-      },
+  await assert.rejects(
+    excelra.createExcelraKnowledgeSolutionsScraper({
+      now: () => FIXED_SCRAPED_AT,
+    }).run({
+      fetchText: async () => '<html><body><h1>Current openings</h1></body></html>',
     }),
-  })
-
-  assert.deepEqual(requestedUrls, [excelra.CAREERS_URL])
-  assert.equal(closed, true)
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Senior Business Analyst')
+    /verified first-party careers page/i,
+  )
 })
 
 test('Blazeclan Technologies sentinel validates the broken Zoho handoff before returning []', async () => {

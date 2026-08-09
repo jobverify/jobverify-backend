@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'VDart',
   adapter: 'script',
-  modulePath: '../vdart/script.js',
+  modulePath: '../../scraper/vdart/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers-blocked',
@@ -59,7 +59,7 @@ export const defaultFetchPage = async (url, {
 } = {}) => {
   const response = await fetchImpl(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
@@ -98,3 +98,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

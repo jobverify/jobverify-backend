@@ -11,7 +11,7 @@ export const PROVIDER_METADATA = ONETRUST_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(Number.parseInt(hex, 16)))

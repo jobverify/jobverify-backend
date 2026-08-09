@@ -79,7 +79,7 @@ test('Greenko Hub scraper keeps the verified homepage to Darwinbox handoff expli
   )
 })
 
-test('run maps verified Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createGreenkoHubScraper } = await loadGreenkoHubModule()
   const scraper = createGreenkoHubScraper({
     now: () => FIXED_SCRAPED_AT,

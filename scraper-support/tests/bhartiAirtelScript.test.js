@@ -107,7 +107,7 @@ test('Bharti Airtel scraper keeps the verified official careers Darwinbox pointe
   )
 })
 
-test('run maps Bharti Airtel Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps Bharti Airtel Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createBhartiAirtelScraper } = await loadBhartiAirtelModule()
   const scraper = createBhartiAirtelScraper({
     now: () => FIXED_SCRAPED_AT,

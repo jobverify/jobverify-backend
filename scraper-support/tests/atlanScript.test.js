@@ -134,7 +134,7 @@ test('Atlan run validates the official careers page and returns only listed Indi
       requiredSkills: [],
       postingDate: '2026-07-14T00:00:00.000Z',
       closingDate: null,
-      jobDescription: '<p>Build data products.</p>',
+      jobDescription: 'Build data products.',
       source: 'atlan',
       link: 'https://jobs.ashbyhq.com/atlan/atl-1/application',
       scrapedAt: '2026-07-14T00:00:00.000Z',

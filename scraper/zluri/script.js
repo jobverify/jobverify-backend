@@ -16,7 +16,7 @@ export const DISPOSITION = 'verified-first-party-careers-page-plus-public-keka-e
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Sunday, August 2, 2026 that https://www.zluri.com/careers remained the live Zluri first-party careers surface, that it still embedded the public Keka jobs widget from https://zluri.keka.com/careers/api/embedjobs/js/ed2b6b25-be74-43f1-9a38-c3bf27b9146c, and that https://zluri.keka.com/careers/api/embedjobs/default/active/ed2b6b25-be74-43f1-9a38-c3bf27b9146c still exposed India roles including Bangalore openings. This scraper validates those verified surfaces and returns India jobs only from the public Keka payload.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

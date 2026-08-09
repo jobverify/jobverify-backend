@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -17,10 +16,6 @@ export const WORKDAY_BOARD_URL = PROVIDER_METADATA.workdayBoardUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-export const shouldUseBrowserFallback = (error) =>
-  /HTTP (?:403|429)\b|just a moment|cloudflare|forbidden|captcha|challenge|access denied|blocked/i
-    .test(String(error?.message ?? error ?? ''))
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -54,68 +49,28 @@ export const hasOfficialCareersSignal = (html = '') => {
 export const createRocketSoftwareScraper = () => ({
   async run({
     fetchText = defaultFetchText,
-    fetchBrowserText,
     runWorkday = runWorkdayScraper,
   } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Rocket Software verified careers page changed materially')
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      const page = await session.fetchPage(url)
-
-      if (![200, 304].includes(page.status)) {
-        throw new Error(`HTTP ${page.status} for ${url}`)
-      }
-
-      return page.html
+    const jobs = await runWorkday({
+      company: COMPANY,
+      baseUrl: WORKDAY_BOARD_URL,
+      locationCountry: 'India',
+      source: SOURCE,
+      scraperDir: currentDir,
     })
 
-    const fetchTextWithBrowserFallback = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!shouldUseBrowserFallback(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
-    try {
-      const careersHtml = await fetchTextWithBrowserFallback(CAREERS_URL)
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Rocket Software verified careers page changed materially')
-      }
-
-      const jobs = await runWorkday({
-        company: COMPANY,
-        baseUrl: WORKDAY_BOARD_URL,
-        locationCountry: 'India',
-        source: SOURCE,
-        scraperDir: currentDir,
-      })
-
-      return jobs.map((job) => ({
-        ...job,
-        company: job.company || COMPANY,
-        source: job.source || SOURCE,
-        sourceUrl: job.sourceUrl || job.link || null,
-        applyUrl: job.applyUrl || job.link || null,
-      }))
-    } finally {
-      if (browserSession) {
-        await browserSession.close().catch(() => {})
-      }
-    }
+    return jobs.map((job) => ({
+      ...job,
+      company: job.company || COMPANY,
+      source: job.source || SOURCE,
+      sourceUrl: job.sourceUrl || job.link || null,
+      applyUrl: job.applyUrl || job.link || null,
+    }))
   },
 })
 

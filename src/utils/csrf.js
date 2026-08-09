@@ -4,7 +4,7 @@ import {
   getRequestCookie,
 } from "./authCookies.js";
 
-export const CSRF_COOKIE_NAME = "jobify_csrf";
+export const CSRF_COOKIE_NAME = "jobverify_csrf";
 export const CSRF_HEADER_NAME = "x-csrf-token";
 
 export const createCsrfToken = () => crypto.randomBytes(32).toString("hex");

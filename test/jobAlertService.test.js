@@ -67,14 +67,14 @@ test("buildWhatsappMessageBody includes title, company, location, summary, and d
     company: "Example Corp",
     city: "Bengaluru",
     summary: "Build React landing pages for the campus product.",
-    jobUrl: "https://jobify.example/jobs/frontend-intern",
+    jobUrl: "https://jobverify.example/jobs/frontend-intern",
   }]);
 
   assert.match(body, /Frontend Intern/);
   assert.match(body, /Example Corp/);
   assert.match(body, /Bengaluru/);
   assert.match(body, /React landing pages/);
-  assert.match(body, /https:\/\/jobify\.example\/jobs\/frontend-intern/);
+  assert.match(body, /https:\/\/jobverify\.example\/jobs\/frontend-intern/);
 });
 
 test("buildWhatsappMessageBody uses persisted job description and apply URL fields", () => {
@@ -83,11 +83,11 @@ test("buildWhatsappMessageBody uses persisted job description and apply URL fiel
     company: "Example Corp",
     location: "Pune, India",
     description: "Build API services for the campus product.",
-    applyUrl: "https://jobify.example/jobs/backend-intern",
+    applyUrl: "https://jobverify.example/jobs/backend-intern",
   }]);
 
   assert.match(body, /Build API services/);
-  assert.match(body, /https:\/\/jobify\.example\/jobs\/backend-intern/);
+  assert.match(body, /https:\/\/jobverify\.example\/jobs\/backend-intern/);
 });
 
 test("queueJobAlertsForJobs records providerName and failure metadata without aborting later users", async () => {

@@ -23,7 +23,7 @@ export const VERIFIED_ROLE_URLS = PROVIDER_METADATA.verifiedRoleUrls
 export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const ROLE_CARD_PATTERN =
   /<h4[^>]*>(.*?)<\/h4>[\s\S]*?<span[^>]*>\s*(?:<svg[\s\S]*?<\/svg>)?\s*([^<]+?)\s*<\/span>[\s\S]*?<span[^>]*>\s*(?:<svg[\s\S]*?<\/svg>)?\s*([^<]+?)\s*<\/span>[\s\S]*?<p[^>]*>(.*?)<\/p>[\s\S]*?<a class="stretched-link" href="([^"]+)"><\/a>/gi
 

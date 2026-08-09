@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'napierhealthcaresolutions',
   companyName: 'Napier Healthcare Solutions',
   officialBrandName: 'Napier',
   adapter: 'script',
-  modulePath: '../napierhealthcaresolutions/script.js',
+  modulePath: '../../scraper/napierhealthcaresolutions/script.js',
   homepageUrl: 'http://www.napierhealthcare.com/v2/',
   companyCareerPage: 'http://www.napierhealthcare.com/v2/careers/',
   atsPlatform: 'official-careers-marketing-page-no-live-public-openings',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

@@ -1,4 +1,3 @@
-import { createBrowserFetchSession } from '../shared/browserFetch.js'
 import { createPaginationState, getNextPageRequest, updatePaginationState } from './pagination.js'
 import {
   expandTemplate,
@@ -211,32 +210,6 @@ const createFallbackDetailUrl = (provider, record, config) => {
   return toAbsoluteUrl(detailUrl, provider)
 }
 
-const BROWSER_USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const isBrowserJsonFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout/i
-    .test(String(error?.message ?? error ?? ''))
-
-const canUseBrowserJsonFallback = (provider, url, options = {}) => {
-  const method = String(options.method || 'GET').toUpperCase()
-
-  return method === 'GET'
-    && options.body == null
-    && (
-      provider.atsPlatform === 'eightfold'
-      || /\/api\/pcsx\//i.test(String(url ?? ''))
-    )
-}
-
-const parseBrowserJson = (rawText, url) => {
-  try {
-    return JSON.parse(String(rawText ?? '').trim())
-  } catch (error) {
-    throw new Error(`Browser JSON fallback returned invalid JSON for ${url}: ${error.message}`)
-  }
-}
-
 const isBlockedEightfoldInventoryError = (error) => {
   const message = String(error?.message ?? error ?? '')
 
@@ -318,57 +291,6 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
   }
   const jobs = []
   let state = createPaginationState(config.pagination)
-  let browserSession = null
-  let browserJsonFetcher = null
-  let browserSessionPrimed = false
-
-  const getBrowserJsonFetcher = async () => {
-    if (fetchBrowserJson) {
-      return fetchBrowserJson
-    }
-
-    if (browserJsonFetcher) {
-      return browserJsonFetcher
-    }
-
-    browserSession = await createBrowserFetchSession({ userAgent: BROWSER_USER_AGENT })
-    const warmupUrl = config.discovery.careerPageUrl || provider.companyCareerPage || null
-
-    browserJsonFetcher = async (url, options = {}) => {
-      if (!browserSessionPrimed) {
-        browserSessionPrimed = true
-
-        if (warmupUrl) {
-          try {
-            await browserSession.fetchPage(warmupUrl)
-          } catch {
-            // Best-effort warmup: the API request itself is the real signal.
-          }
-        }
-      }
-
-      const rawText = await browserSession.fetchText(url, {
-        referer: warmupUrl || options?.headers?.Referer,
-      })
-
-      return parseBrowserJson(rawText, url)
-    }
-
-    return browserJsonFetcher
-  }
-
-  const fetchJsonWithFallback = async (url, options = {}) => {
-    try {
-      return await fetchJson(url, options)
-    } catch (error) {
-      if (!canUseBrowserJsonFallback(provider, url, options) || !isBrowserJsonFallbackError(error)) {
-        throw error
-      }
-
-      const browserFetcher = await getBrowserJsonFetcher()
-      return browserFetcher(url, options)
-    }
-  }
 
   try {
     while (true) {
@@ -383,7 +305,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         url.searchParams.set(key, value)
       })
 
-      const listingPayload = await fetchJsonWithFallback(url.toString(), {
+      const listingPayload = await fetchJson(url.toString(), {
         method: config.request.method,
         headers: config.request.headers,
         body: serializeRequestBody(
@@ -406,7 +328,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
             })
 
             try {
-              detailPayload = await fetchJsonWithFallback(detailUrl, {
+              detailPayload = await fetchJson(detailUrl, {
                 method: config.detail.method,
                 headers: config.detail.headers,
                 body: serializeRequestBody(config.detail.body, config.detail.headers),
@@ -458,9 +380,5 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
     }
 
     throw error
-  } finally {
-    if (browserSession) {
-      await browserSession.close()
-    }
   }
 }

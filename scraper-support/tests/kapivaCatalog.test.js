@@ -29,7 +29,7 @@ test('Kapiva local catalog captures the verified no-public-jobs sentinel contrac
   assert.equal(KAPIVA_CATALOG.companyName, 'Kapiva')
   assert.equal(KAPIVA_CATALOG.officialBrandName, 'Kapiva')
   assert.equal(KAPIVA_CATALOG.adapter, 'script')
-  assert.equal(KAPIVA_CATALOG.modulePath, '../kapiva/script.js')
+  assert.equal(KAPIVA_CATALOG.modulePath, '../../scraper/kapiva/script.js')
   assert.equal(KAPIVA_CATALOG.dryRunFile, 'kapiva/jobs.json')
   assert.equal(KAPIVA_CATALOG.homepageUrl, 'https://kapiva.in/')
   assert.equal(KAPIVA_CATALOG.aboutPageUrl, 'https://kapiva.in/about-us/')

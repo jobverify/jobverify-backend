@@ -113,6 +113,30 @@ test('Pramata Knowledge Solutions returns [] when the direct careers fetch is 40
   assert.deepEqual(jobs, [])
 })
 
+test('Pramata Knowledge Solutions aborts retries when the careers surface stays blocked after fallback', async () => {
+  const pramata = await loadModule()
+
+  await assert.rejects(
+    pramata.createPramataKnowledgeSolutionsScraper().run({
+      fetchText: async () => {
+        throw new Error(`HTTP 403 for ${pramata.CAREERS_URL}`)
+      },
+      fetchBrowserPage: async (url) => ({
+        status: 403,
+        url,
+        html: '<html><body><h1>Forbidden</h1></body></html>',
+      }),
+    }),
+    (error) => {
+      assert.match(error.message, /Pramata Knowledge Solutions verified careers surface remains blocked/i)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      return true
+    },
+  )
+})
+
 test('Pramata Knowledge Solutions fails closed when the challenge contract drifts or a scraper-visible jobs surface appears', async () => {
   const pramata = await loadModule()
 

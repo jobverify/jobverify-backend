@@ -79,7 +79,7 @@ export const extractZohoCareerJobs = (html) => extractJobsPayload(html)
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyBot/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyBot/1.0)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

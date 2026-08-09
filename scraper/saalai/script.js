@@ -14,7 +14,7 @@ export const DARWINBOX_COMPANY_ID = 'a6824906a5ab4c'
 export const DARWINBOX_ORIGIN = 'https://hrmsadcg.darwinbox.com'
 export const OFFICIAL_CAREERS_URL = 'https://saal.ai/careers/'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,

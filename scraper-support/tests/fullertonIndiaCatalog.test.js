@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Fullerton India local catalog captures the verified redirect plus Workline careers handoff contract', async () => {
+test('Fullerton India local catalog captures the verified redirect plus Workline careers handoff contract on August 2, 2026', async () => {
   const { FULLERTON_INDIA_CATALOG } = await loadCatalogModule()
   const fullertonIndia = await loadScriptModule()
 
@@ -64,7 +64,7 @@ test('Fullerton India local catalog captures the verified redirect plus Workline
   )
   assert.equal(FULLERTON_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(FULLERTON_INDIA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(FULLERTON_INDIA_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(FULLERTON_INDIA_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(FULLERTON_INDIA_CATALOG.dryRunFile, 'fullertonindia/jobs.json')
   assert.equal(FULLERTON_INDIA_CATALOG.modulePath, fullertonIndiaModulePath)
   assert.match(FULLERTON_INDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/fullertonindia\.com\//i)

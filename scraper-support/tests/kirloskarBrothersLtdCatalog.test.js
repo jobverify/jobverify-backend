@@ -17,7 +17,7 @@ test('Kirloskar Brothers Ltd is registered as a verified first-party zero-job sc
   assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage-plus-resume-only-careers-surface-return-empty',
+    'verified-official-homepage-plus-resume-only-careers-surface-or-503-outage-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

@@ -12,7 +12,7 @@ export const DISPOSITION = 'verified-first-party-careers-page-plus-public-career
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://covalensedigital.com/careers was the live first-party Covalense Digital careers surface, that its public client-side bundle resolved the careers API contract to https://testingbe.covalensedigital.com/api/auth/getlistof-career, and that the public API exposed current openings including India roles such as GenAI & LLM Engineer, Machine Learning Engineer, Oracle BRM Developer, and Java Developer. The same public inventory also included a US-only Software Architect role in Herndon, Virginia, so this scraper validates the verified page-plus-bundle contract and returns India jobs only from the public careers API.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const REQUIRED_CAREERS_PAGE_PATTERNS = [
   /<title[^>]*>\s*Join Covalense Digital\s*\|\s*Telecom and Tech Jobs\s*\|\s*Careers\s*<\/title>/i,

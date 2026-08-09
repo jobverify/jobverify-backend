@@ -27,7 +27,7 @@ test('Junglee Games local catalog captures the verified fail-closed careers cont
   assert.equal(JUNGLEE_GAMES_CATALOG.companyName, 'Junglee Games')
   assert.equal(JUNGLEE_GAMES_CATALOG.officialBrandName, 'Junglee Games')
   assert.equal(JUNGLEE_GAMES_CATALOG.adapter, 'script')
-  assert.equal(JUNGLEE_GAMES_CATALOG.modulePath, '../jungleegames/script.js')
+  assert.equal(JUNGLEE_GAMES_CATALOG.modulePath, '../../scraper/jungleegames/script.js')
   assert.equal(JUNGLEE_GAMES_CATALOG.homepageUrl, 'https://www.jungleegames.com/')
   assert.equal(JUNGLEE_GAMES_CATALOG.companyCareerPage, 'https://www.jungleegames.com/grow.php')
   assert.equal(

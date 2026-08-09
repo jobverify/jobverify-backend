@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'blinkit'
@@ -41,10 +39,6 @@ const defaultFetchPage = async (url) => {
     html: await response.text(),
   }
 }
-
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
@@ -104,63 +98,30 @@ export const hasVerifiedJobsShellSignal = (html) => {
   }
 
 export const createBlinkitScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (isOfficialAccessDeniedPage(homepage)) {
+      throw buildOfficialAccessDeniedError()
     }
 
-    const browserPageFetcher = fetchBrowserPage || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchPage(url)
-    })
-
-    const fetchVerifiedPage = async (url) => {
-      try {
-        const page = await fetchPage(url)
-        if (!isOfficialAccessDeniedPage(page) && ![403, 429].includes(Number(page.status))) {
-          return page
-        }
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-      }
-
-      const browserPage = await browserPageFetcher(url)
-      if (isOfficialAccessDeniedPage(browserPage)) {
-        throw buildOfficialAccessDeniedError()
-      }
-
-      return browserPage
+    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+      throw new Error('Blinkit verified official homepage no longer matches the known public surface')
     }
 
-    try {
-      const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
-      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-        throw new Error('Blinkit verified official homepage no longer matches the known public surface')
-      }
-
-      const jobsPage = await fetchVerifiedPage(JOBS_URL)
-      if (jobsPage.status !== 200 || !hasVerifiedJobsShellSignal(jobsPage.html)) {
-        throw new Error('Blinkit verified first-party jobs surface no longer matches the known zero-openings shell')
-      }
-
-      if (hasOpenJobCards(jobsPage.html)) {
-        throw new Error('Blinkit jobs surface changed materially or now exposes public openings')
-      }
-
-      return []
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+    const jobsPage = await fetchPage(JOBS_URL)
+    if (isOfficialAccessDeniedPage(jobsPage)) {
+      throw buildOfficialAccessDeniedError()
     }
+
+    if (jobsPage.status !== 200 || !hasVerifiedJobsShellSignal(jobsPage.html)) {
+      throw new Error('Blinkit verified first-party jobs surface no longer matches the known zero-openings shell')
+    }
+
+    if (hasOpenJobCards(jobsPage.html)) {
+      throw new Error('Blinkit jobs surface changed materially or now exposes public openings')
+    }
+
+    return []
   },
 })
 

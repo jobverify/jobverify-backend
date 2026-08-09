@@ -48,7 +48,7 @@ test('Selectsys exports local provider metadata for the verified first-party ema
     companyName: 'Selectsys',
     officialBrandName: 'Selectsys',
     adapter: 'script',
-    modulePath: '../selectsys/script.js',
+    modulePath: '../../scraper/selectsys/script.js',
     homepageUrl: 'https://www.selectsys.com/',
     companyCareerPage: 'https://www.selectsys.com/careers',
     atsPlatform: 'official-company-careers-email-apply',

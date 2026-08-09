@@ -9,7 +9,7 @@ const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://americanchase.keka.com/careers/'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

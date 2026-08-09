@@ -13,7 +13,7 @@ export const DISPOSITION = 'verified-homepage-handoff-plus-public-rcareers-searc
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Monday, August 3, 2026 that https://www.netmeds.com/ remained the live Netmeds exact-name public company surface, that its footer Career link handed applicants to the public Reliance Retail careers portal at https://rcareers.ril.com/sap%28bD1lbiZjPTQ0OQ==%29/bc/bsp/sap/zerec_home_page/home_page.do, and that the live Netmeds business search there returned zero current public openings. This scraper now validates the homepage-to-RCareers handoff and returns the portal\'s current Netmeds jobs when they exist.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const REQUIRED_BRAND_PATTERN = /\bnetmeds(?:\.com)?\b/i
 const TITLE_BRAND_PATTERN = /<title[^>]*>[\s\S]*?\bnetmeds(?:\.com)?\b[\s\S]*?<\/title>/i
 const SURFACE_META_PATTERN =

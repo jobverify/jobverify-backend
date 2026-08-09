@@ -1,33 +1,43 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const verifiedCareersHtml = `
+const verifiedLoginShellHtml = `
 <!doctype html>
 <html lang="en">
   <head>
     <title>ProvenTech</title>
   </head>
   <body>
-    <section class="innerPage contact career">
-      <h3>Careers at ProvenTech</h3>
-      <p>If you’re considering ProvenTech or just want more information, simply fill out the form and we’ll be in touch.</p>
-      <div class="address">
-        <h3>SAP UI5/Fiori Consultant</h3>
-        <div><p class="mb-0">Software Engineer<br> Full Time<br> Hyderabad.<br></p></div>
-      </div>
-      <div class="address mt-4">
-        <h3>SAP ABAP Developer</h3>
-        <div><p class="mb-0">Software Engineer<br> Full Time<br> Hyderabad.<br></p></div>
-      </div>
-      <div class="address mt-4">
-        <h3>Documentum D2 Administrator</h3>
-        <div><p class="mb-0">Software Engineer<br> Full Time<br> Hyderabad.<br></p></div>
-      </div>
-      <div class="address mt-4">
-        <h3>SAP MDG (Master Data Governance) Functional Consultant</h3>
-        <div><p class="mb-0">Software Engineer<br> Full Time<br> Hyderabad.<br></p></div>
-      </div>
+    <section class="login-shell">
+      <p>Powered by ProvenTech</p>
+      <p>ProvenTech Human Resource Management System allows employees to access HR-related information.</p>
+      <button>Login</button>
+      <a href="/forgot-password">Forgot Password?</a>
     </section>
+  </body>
+</html>
+`
+
+const missingCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Page not found at /careers</title>
+  </head>
+  <body>
+    <h1>Page not found</h1>
+  </body>
+</html>
+`
+
+const missingJobsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Page not found at /jobs</title>
+  </head>
+  <body>
+    <h1>Page not found</h1>
   </body>
 </html>
 `
@@ -40,130 +50,103 @@ const loadModule = async () => {
   }
 }
 
-test('Proventech helpers stay pinned to the verified first-party careers cards from Friday, July 17, 2026', async () => {
+test('Proventech helpers stay pinned to the verified HRMS login shell and missing careers routes from Tuesday, August 4, 2026', async () => {
   const proventech = await loadModule()
 
   assert.equal(proventech.SOURCE, 'proventech')
   assert.equal(proventech.COMPANY, 'Proventech')
-  assert.equal(proventech.CAREERS_URL, 'https://new.proventech.in/index?temp=career')
-  assert.equal(proventech.APPLY_URL, 'https://new.proventech.in/index?temp=career')
-  assert.equal(proventech.VERIFIED_ON, '2026-07-17')
-  assert.equal(proventech.hasOfficialCareersSignal(verifiedCareersHtml), true)
-  assert.equal(proventech.hasOfficialCareersSignal('<html><body><h1>Careers</h1></body></html>'), false)
-  assert.deepEqual(proventech.extractJobs(verifiedCareersHtml), [
-    {
-      title: 'SAP UI5/Fiori Consultant',
-      company: 'Proventech',
-      department: 'Software Engineer',
-      location: 'Hyderabad, Telangana, India',
-      city: 'Hyderabad',
-      country: 'India',
-      jobId: 'sap-ui5-fiori-consultant',
-      requisitionId: 'sap-ui5-fiori-consultant',
-      sourceUrl: 'https://new.proventech.in/index?temp=career',
-      applyUrl: 'https://new.proventech.in/index?temp=career',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    },
-    {
-      title: 'SAP ABAP Developer',
-      company: 'Proventech',
-      department: 'Software Engineer',
-      location: 'Hyderabad, Telangana, India',
-      city: 'Hyderabad',
-      country: 'India',
-      jobId: 'sap-abap-developer',
-      requisitionId: 'sap-abap-developer',
-      sourceUrl: 'https://new.proventech.in/index?temp=career',
-      applyUrl: 'https://new.proventech.in/index?temp=career',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    },
-    {
-      title: 'Documentum D2 Administrator',
-      company: 'Proventech',
-      department: 'Software Engineer',
-      location: 'Hyderabad, Telangana, India',
-      city: 'Hyderabad',
-      country: 'India',
-      jobId: 'documentum-d2-administrator',
-      requisitionId: 'documentum-d2-administrator',
-      sourceUrl: 'https://new.proventech.in/index?temp=career',
-      applyUrl: 'https://new.proventech.in/index?temp=career',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    },
-    {
-      title: 'SAP MDG (Master Data Governance) Functional Consultant',
-      company: 'Proventech',
-      department: 'Software Engineer',
-      location: 'Hyderabad, Telangana, India',
-      city: 'Hyderabad',
-      country: 'India',
-      jobId: 'sap-mdg-master-data-governance-functional-consultant',
-      requisitionId: 'sap-mdg-master-data-governance-functional-consultant',
-      sourceUrl: 'https://new.proventech.in/index?temp=career',
-      applyUrl: 'https://new.proventech.in/index?temp=career',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    },
+  assert.equal(proventech.HOMEPAGE_URL, 'https://hr.proventech.in/')
+  assert.deepEqual(proventech.CAREERS_ROUTE_URLS, [
+    'https://hr.proventech.in/careers',
+    'https://hr.proventech.in/jobs',
   ])
+  assert.equal(proventech.PROVIDER_METADATA.companyCareerPage, 'https://hr.proventech.in/')
+  assert.equal(proventech.PROVIDER_METADATA.verifiedOn, '2026-08-04')
+  assert.equal(proventech.hasVerifiedLoginShellSignal(verifiedLoginShellHtml), true)
+  assert.equal(proventech.hasPublicJobsSignal(verifiedLoginShellHtml), false)
+  assert.equal(
+    proventech.isExpectedMissingCareerRoute({
+      status: 404,
+      url: proventech.CAREERS_ROUTE_URLS[0],
+      html: missingCareersHtml,
+    }),
+    true,
+  )
+  assert.equal(
+    proventech.isExpectedMissingCareerRoute({
+      status: 404,
+      url: proventech.CAREERS_ROUTE_URLS[1],
+      html: missingJobsHtml,
+    }),
+    true,
+  )
 })
 
-test('Proventech run validates the verified careers page before decorating extracted jobs', async () => {
+test('Proventech run validates the verified login shell and returns [] while public careers routes stay missing', async () => {
   const proventech = await loadModule()
   const requestedUrls = []
 
-  const jobs = await proventech.createProventechScraper({ maxJobs: 2 }).run({
-    fetchText: async (url) => {
+  const jobs = await proventech.createProventechScraper().run({
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === proventech.CAREERS_URL) return verifiedCareersHtml
+
+      if (url === proventech.HOMEPAGE_URL) {
+        return { status: 200, url, html: verifiedLoginShellHtml }
+      }
+
+      if (url === proventech.CAREERS_ROUTE_URLS[0]) {
+        return { status: 404, url, html: missingCareersHtml }
+      }
+
+      if (url === proventech.CAREERS_ROUTE_URLS[1]) {
+        return { status: 404, url, html: missingJobsHtml }
+      }
+
       throw new Error(`Unexpected Proventech URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [proventech.CAREERS_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'proventech')
-  assert.equal(jobs[0].link, 'https://new.proventech.in/index?temp=career')
-  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+  assert.deepEqual(requestedUrls, [
+    proventech.HOMEPAGE_URL,
+    ...proventech.CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
-test('Proventech run fails closed when the verified careers surface drifts', async () => {
+test('Proventech run fails closed when the verified login shell drifts or a careers route starts exposing public jobs', async () => {
   const proventech = await loadModule()
 
   await assert.rejects(
     proventech.createProventechScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
+      fetchPage: async (url) => {
+        if (url === proventech.HOMEPAGE_URL) {
+          return { status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }
+        }
+
+        return { status: 404, url, html: missingCareersHtml }
+      },
     }),
-    /verified proventech careers surface/i,
+    /HRMS login shell changed materially/i,
+  )
+
+  await assert.rejects(
+    proventech.createProventechScraper().run({
+      fetchPage: async (url) => {
+        if (url === proventech.HOMEPAGE_URL) {
+          return { status: 200, url, html: verifiedLoginShellHtml }
+        }
+
+        if (url === proventech.CAREERS_ROUTE_URLS[0]) {
+          return {
+            status: 200,
+            url,
+            html: '<html><body><h1>Current Openings</h1><a>Apply now</a></body></html>',
+          }
+        }
+
+        return { status: 404, url, html: missingJobsHtml }
+      },
+    }),
+    /no-public-careers route changed materially/i,
   )
 })

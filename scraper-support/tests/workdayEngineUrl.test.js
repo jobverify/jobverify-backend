@@ -961,7 +961,7 @@ test('runWorkdayScraper jobs-api mode does not require Puppeteer when the first 
 
     assert.deepEqual(jobs, [])
     assert.equal(
-      jobs[Symbol.for('jobify.workday.authoritative-empty')],
+      jobs[Symbol.for('jobverify.workday.authoritative-empty')],
       true,
     )
     assert.deepEqual(calls.map((call) => call.method), ['GET', 'POST'])
@@ -1013,7 +1013,7 @@ test('nonempty Workday payloads that produce no valid jobs are not marked author
 
     assert.deepEqual(jobs, [])
     assert.notEqual(
-      jobs[Symbol.for('jobify.workday.authoritative-empty')],
+      jobs[Symbol.for('jobverify.workday.authoritative-empty')],
       true,
     )
   } finally {

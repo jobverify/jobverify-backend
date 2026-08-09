@@ -152,6 +152,39 @@ const COGNIZANT_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
+const extractHtmlTitle = (html) =>
+  String(html ?? '').match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim() || null
+
+export const hasCloudflareChallengeSignal = (html = '') => {
+  const page = String(html ?? '')
+  const title = extractHtmlTitle(page) || ''
+
+  return /just a moment\.\.\./i.test(title)
+    && /challenges\.cloudflare\.com|cf-browser-verification|cf-chl/i.test(page)
+}
+
+const buildBlockedCareersPageError = (url, response, html) => {
+  const title = extractHtmlTitle(html)
+  const status = Number(response?.status) || 403
+  const upstreamError = new Error(
+    `Cognizant careers page returned HTTP ${status} Cloudflare challenge${title ? ` (${title})` : ''} for ${url}`,
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'blocked_or_access_denied'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
+const buildHttpStatusError = (url, response) => {
+  const status = Number(response?.status)
+  const error = new Error(`HTTP ${Number.isFinite(status) ? status : 'unknown'} for ${url}`)
+  if (Number.isFinite(status) && [401, 403, 404, 429].includes(status)) {
+    error.abortRetries = true
+  }
+  return error
+}
+
 const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, reject) => {
   const command = process.platform === 'win32' ? 'curl.exe' : 'curl'
   const args = [
@@ -290,12 +323,26 @@ export const createDefaultFetchText = ({
 } = {}) => async (url) => {
   try {
     const response = await fetchImpl(url, { headers: COGNIZANT_HEADERS })
-    if (response.ok) {
-      return response.text()
+    const html = await response.text()
+
+    if (
+      hasCloudflareChallengeSignal(html)
+      && Number(response?.status) === 403
+      && /cloudflare/i.test(response?.headers?.get?.('server') || '')
+      && String(response?.headers?.get?.('cf-ray') || '').trim().length > 0
+    ) {
+      throw buildBlockedCareersPageError(url, response, html)
     }
 
-    return runCurlRequest(url, execFileImpl)
-  } catch {
+    if (response.ok) {
+      return html
+    }
+
+    throw buildHttpStatusError(url, response)
+  } catch (error) {
+    if (error?.abortRetries === true || error?.softFailure === true) {
+      throw error
+    }
     return runCurlRequest(url, execFileImpl)
   }
 }

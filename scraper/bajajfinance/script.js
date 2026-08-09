@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+
 import { BAJAJ_FINANCE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -17,6 +19,21 @@ export const DEFAULT_SEARCH_BODY = {}
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+export const DEFAULT_FETCH_TIMEOUT_MS = 20000
+
+export const createFetchTimeoutSignal = (timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -122,13 +139,20 @@ export const buildPublicHeaders = () => ({
   'Content-Type': 'application/json',
 })
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, {
+  signal,
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
+} = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: composeAbortSignals(
+      signal,
+      createFetchTimeoutSignal(timeoutMs),
+    ),
   })
 
   return {
@@ -143,6 +167,10 @@ const defaultFetchJson = async (url, options = {}) => {
     method: options.method || 'GET',
     headers: options.headers,
     body: options.body,
+    signal: composeAbortSignals(
+      options.signal,
+      createFetchTimeoutSignal(options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS),
+    ),
   })
 
   if (!response.ok) {
@@ -227,8 +255,9 @@ export const createBajajFinanceScraper = ({
     fetchJson = defaultFetchJson,
     pageSize = DEFAULT_PAGE_SIZE,
     maxPages = Number.POSITIVE_INFINITY,
+    signal,
   } = {}) {
-    const companyPage = await fetchPage(COMPANY_PAGE_URL)
+    const companyPage = await fetchPage(COMPANY_PAGE_URL, { signal })
     if (companyPage.status !== 200 || !hasOfficialBajajFinancePageSignal(companyPage.html)) {
       throw new Error('Bajaj Finance verified official Bajaj Finance page no longer matches the known public surface')
     }
@@ -238,7 +267,7 @@ export const createBajajFinanceScraper = ({
       throw new Error('Bajaj Finance verified official company page no longer exposes the known PeopleStrong handoff')
     }
 
-    const portalPage = await fetchPage(JOB_LISTINGS_URL)
+    const portalPage = await fetchPage(JOB_LISTINGS_URL, { signal })
     if (portalPage.status !== 200 || !hasPublicPortalShell(portalPage.html)) {
       throw new Error('Bajaj Finance verified public PeopleStrong portal no longer matches the known public surface')
     }
@@ -251,6 +280,7 @@ export const createBajajFinanceScraper = ({
         method: 'POST',
         headers: buildPublicHeaders(),
         body: JSON.stringify(DEFAULT_SEARCH_BODY),
+        signal,
       })
 
       const rawRecords = Array.isArray(payload?.response) ? payload.response : []

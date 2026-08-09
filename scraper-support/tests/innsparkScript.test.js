@@ -66,3 +66,34 @@ test('Innspark run falls back to browser-backed fetches when the origin breaks H
   assert.equal(jobs[0].link, innspark.APPLY_URL)
   assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
+
+test('Innspark aborts retries when the verified first-party surface still breaks HTTP parsing after fallback', async () => {
+  const innspark = await loadModule()
+  const requestedUrls = []
+  const protocolError = new TypeError('fetch failed')
+  protocolError.cause = new Error(
+    'Response does not match the HTTP/1.1 protocol (Missing expected CR after header value)',
+  )
+
+  await assert.rejects(
+    innspark.createInnsparkScraper().run({
+      fetchText: async () => {
+        throw protocolError
+      },
+      fetchBrowserText: async (url) => {
+        requestedUrls.push(url)
+        throw protocolError
+      },
+    }),
+    (error) => {
+      assert.match(error.message, /Innspark verified careers page currently returns a broken HTTP\/1\.1 response/i)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.failureKind, 'network_or_timeout')
+      return true
+    },
+  )
+
+  assert.deepEqual(requestedUrls, [innspark.CAREERS_URL])
+})

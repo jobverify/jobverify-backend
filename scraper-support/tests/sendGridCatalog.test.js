@@ -12,7 +12,7 @@ test('SendGrid is registered as a verified custom script provider on the Twilio 
   assert.equal(provider.companyCareerPage, 'https://jobs.twilio.com/careers')
   assert.equal(provider.companyDomain, 'jobs.twilio.com')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/sendgrid/script.js')
+  assert.match(provider.modulePath, /sendgrid[\\/]script\.js$/i)
   assert.equal(provider.verifiedOn, '2026-07-25')
   assert.match(provider.verifiedSurfaceSummary, /twilio\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /SendGrid/i)

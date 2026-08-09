@@ -305,7 +305,7 @@ test('run falls back to browser-backed ICICI APIs when Node fetch times out', as
     {
       url: `${iciciBank.DETAIL_API_BASE_URL}/2204493`,
       method: 'GET',
-      landingUrl: iciciBank.CAREERS_PORTAL_URL,
+      landingUrl: null,
     },
   ])
   assert.equal(jobs.length, 1)

@@ -21,7 +21,7 @@ test('buildScraperOptions keeps Genpact on the official careers page and Workday
   assert.equal(options.baseUrl, 'https://genpact.wd108.myworkdayjobs.com/External_Careers')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'genpact')
-  assert.match(options.scraperDir, /genpact$/)
+  assert.match(options.scraperDir, /genpact\.workday$/)
 })
 
 test('run delegates Genpact scraping to the shared Workday runner with the official tenant options', async () => {
@@ -42,5 +42,5 @@ test('run delegates Genpact scraping to the shared Workday runner with the offic
   assert.equal(receivedOptions.baseUrl, 'https://genpact.wd108.myworkdayjobs.com/External_Careers')
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'genpact')
-  assert.match(receivedOptions.scraperDir, /genpact$/)
+  assert.match(receivedOptions.scraperDir, /genpact\.workday$/)
 })

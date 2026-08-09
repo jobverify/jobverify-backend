@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import test from 'node:test'
 
 test('SentinelOne catalog describes the verified first-party Greenhouse contract', async () => {
@@ -27,7 +27,7 @@ test('SentinelOne catalog describes the verified first-party Greenhouse contract
       companyName: 'SentinelOne',
       officialBrandName: 'SentinelOne',
       adapter: 'script',
-      modulePath: '../sentinelone/script.js',
+      modulePath: '../../scraper/sentinelone/script.js',
       companyCareerPage: 'https://www.sentinelone.com/careers/',
       companyDomain: 'sentinelone.com',
       atsPlatform: 'greenhouse',
@@ -47,3 +47,4 @@ test('SentinelOne catalog describes the verified first-party Greenhouse contract
   assert.match(SENTINELONE_CATALOG.verifiedSurfaceSummary, /sentinellabs/i)
   assert.match(SENTINELONE_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.sentinelone\.com\/jobs\//i)
 })
+

@@ -14,7 +14,7 @@ export const WWW_DOMAIN_URL = PROVIDER_METADATA.exactNameWwwDomainUrl
 export const PORTFOLIO_URL = PROVIDER_METADATA.officialPortfolioReferenceUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOB_PATTERNS = [
   /\bapply now\b/i,

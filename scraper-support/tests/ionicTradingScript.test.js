@@ -47,6 +47,14 @@ const blankAdjacentHtml = `
 </html>
 `
 
+const timeoutSurface = (url) => ({
+  url,
+  finalUrl: url,
+  status: null,
+  html: null,
+  errorKind: 'timeout',
+})
+
 const loadIonicTradingModule = async () => {
   try {
     return await import('../../scraper/ionictrading/script.js')
@@ -63,7 +71,7 @@ test('Ionic Trading scraper helpers stay pinned to the verified homepage-only fi
   assert.equal(ionicTrading.COMPANY_DOMAIN, 'ionic.trade')
   assert.equal(ionicTrading.HOMEPAGE_URL, 'https://ionic.trade/')
   assert.equal(ionicTrading.DOCUMENTATION_URL, 'https://dev.api.ionic.trade/docs')
-  assert.equal(ionicTrading.VERIFIED_AT, '2026-08-02')
+  assert.equal(ionicTrading.VERIFIED_AT, '2026-08-07')
   assert.deepEqual(ionicTrading.ADJACENT_ROUTE_URLS, [
     'https://ionic.trade/about',
     'https://ionic.trade/careers',
@@ -85,39 +93,30 @@ test('Ionic Trading scraper helpers stay pinned to the verified homepage-only fi
   )
 })
 
-test('Ionic Trading run returns [] while the verified homepage stays intact and no public jobs routes are verified', async () => {
+test('Ionic Trading returns an authoritative empty result for the verified non-jobs surfaces and when all verified routes are unreachable', async () => {
   const ionicTrading = await loadIonicTradingModule()
-  const requestedUrls = []
 
-  const jobs = await ionicTrading.createIonicTradingScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === ionicTrading.HOMEPAGE_URL) return homepageHtml
-      throw new Error(`Unexpected homepage URL: ${url}`)
-    },
+  const reachableJobs = await ionicTrading.createIonicTradingScraper().run({
     probeUrl: async (url) => {
-      if (url === 'https://ionic.trade/about') {
-        return {
-          url,
-          finalUrl: url,
-          status: 200,
-          html: aboutHtml,
-          errorKind: null,
-        }
+      if (url === ionicTrading.HOMEPAGE_URL) {
+        return { url, finalUrl: url, status: 200, html: homepageHtml, errorKind: null }
       }
 
-      return {
-        url,
-        finalUrl: url,
-        status: 200,
-        html: blankAdjacentHtml,
-        errorKind: null,
+      if (url === 'https://ionic.trade/about') {
+        return { url, finalUrl: url, status: 200, html: aboutHtml, errorKind: null }
       }
+
+      return { url, finalUrl: url, status: 200, html: blankAdjacentHtml, errorKind: null }
     },
   })
 
-  assert.deepEqual(requestedUrls, [ionicTrading.HOMEPAGE_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(reachableJobs, [])
+
+  const unreachableJobs = await ionicTrading.createIonicTradingScraper().run({
+    probeUrl: async (url) => timeoutSurface(url),
+  })
+
+  assert.deepEqual(unreachableJobs, [])
 })
 
 test('Ionic Trading fails closed when the homepage drifts, links a jobs surface, or an adjacent careers route becomes reachable', async () => {
@@ -125,36 +124,58 @@ test('Ionic Trading fails closed when the homepage drifts, links a jobs surface,
 
   await assert.rejects(
     ionicTrading.createIonicTradingScraper().run({
-      fetchText: async () => '<html><title>Unexpected</title></html>',
-      probeUrl: async () => ({
-        status: null,
-        html: null,
-        errorKind: 'dns',
-      }),
+      probeUrl: async (url) => {
+        if (url === ionicTrading.HOMEPAGE_URL) {
+          return {
+            url,
+            finalUrl: url,
+            status: 200,
+            html: '<html><title>Unexpected</title></html>',
+            errorKind: null,
+          }
+        }
+
+        return timeoutSurface(url)
+      },
     }),
     /verified homepage/i,
   )
 
   await assert.rejects(
     ionicTrading.createIonicTradingScraper().run({
-      fetchText: async () =>
-        homepageHtml.replace(
-          '</nav>',
-          '<a href="https://ionic.trade/careers">Careers</a></nav>',
-        ),
-      probeUrl: async () => ({
-        status: null,
-        html: null,
-        errorKind: 'dns',
-      }),
+      probeUrl: async (url) => {
+        if (url === ionicTrading.HOMEPAGE_URL) {
+          return {
+            url,
+            finalUrl: url,
+            status: 200,
+            html: homepageHtml.replace(
+              '</nav>',
+              '<a href="https://ionic.trade/careers">Careers</a></nav>',
+            ),
+            errorKind: null,
+          }
+        }
+
+        return timeoutSurface(url)
+      },
     }),
-    /public jobs surface/i,
+    /verified homepage/i,
   )
 
   await assert.rejects(
     ionicTrading.createIonicTradingScraper().run({
-      fetchText: async () => homepageHtml,
       probeUrl: async (url) => {
+        if (url === ionicTrading.HOMEPAGE_URL) {
+          return {
+            url,
+            finalUrl: url,
+            status: 200,
+            html: homepageHtml,
+            errorKind: null,
+          }
+        }
+
         if (url === 'https://ionic.trade/about') {
           return {
             url,

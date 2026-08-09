@@ -1,4 +1,4 @@
-import path from 'path'
+﻿import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -21,7 +21,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'surveysparrow.com',
   adapter: 'script',
   atsPlatform: 'keka-embed-api',
-  modulePath: '../surveysparrow/script.js',
+  modulePath: '../../scraper/surveysparrow/script.js',
   dryRunFile: 'surveysparrow/jobs.json',
 }
 
@@ -250,3 +250,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(0)
   }
 }
+

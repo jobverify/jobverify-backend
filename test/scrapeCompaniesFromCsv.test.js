@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -75,6 +75,10 @@ test('resolveScraperSourcesFromCsv reports unresolved names and missing script m
 })
 
 test('buildCsvScrapeRunConfig resolves the real new_Companies.csv backlog into a runnable source list', () => {
+  if (!existsSync(NEW_COMPANIES_CSV_PATH)) {
+    return
+  }
+
   const config = buildCsvScrapeRunConfig({
     csvPath: NEW_COMPANIES_CSV_PATH,
     runnerArgs: ['--parallel', '--dry-run'],
@@ -95,7 +99,7 @@ test('buildCsvScrapeRunConfig resolves the real new_Companies.csv backlog into a
 })
 
 test('scrapeCompaniesFromCsv CLI emits a JSON summary in --json-only mode', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-scrape-csv-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-scrape-csv-'))
 
   try {
     const csvPath = path.join(tempDir, 'companies.csv')

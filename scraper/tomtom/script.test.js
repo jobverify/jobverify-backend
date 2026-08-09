@@ -27,8 +27,9 @@ const puneOfficeHtml = `
   <body>
     <h1>Pune Office</h1>
     <div>TomTom India Pvt Ltd</div>
+    <div>Pune, India</div>
     <div>Yerwada, Pune 411006</div>
-    <a href="/careers/joboverview/?location=Pune,+India">See Pune jobs</a>
+    <a href="/careers/joboverview/?location=Pune,+India">See jobs</a>
   </body>
 </html>
 `
@@ -56,6 +57,7 @@ const leverBoardHtml = `
     <title>TomTom</title>
   </head>
   <body>
+    <h1>Job openings at TomTom</h1>
     <a href="http://tomtom.com/careers">TomTom careers</a>
     <div>Location type</div>
     <div>Location</div>

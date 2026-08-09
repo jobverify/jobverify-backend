@@ -61,7 +61,7 @@ export const createGoDaddyScraper = ({ now = () => new Date().toISOString() } = 
     fetchText = (url) => fetchTextWithRetry(url, {
       headers: {
         Accept: 'text/html,application/xhtml+xml',
-        'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
       },
       label: 'godaddy',
       timeoutMs: 25000,

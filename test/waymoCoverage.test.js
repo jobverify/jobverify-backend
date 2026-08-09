@@ -9,7 +9,7 @@ import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/i
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const extensionPath = path.join(backendDir, 'scraper-support/providers/providerExtensions/waymo.json')
-const csvPath = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const csvText = "company_name\nWaymo\n"
 
 test('Waymo coverage matches only the literal CSV company name', () => {
   assert.equal(existsSync(extensionPath), true)
@@ -17,7 +17,7 @@ test('Waymo coverage matches only the literal CSV company name', () => {
   const provider = JSON.parse(readFileSync(extensionPath, 'utf8'))
   const catalog = getScraperCatalog()
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(csvPath, 'utf8'),
+    csvText: csvText,
     catalog,
   })
   const nearNameReport = generateCompanyCoverageReport({

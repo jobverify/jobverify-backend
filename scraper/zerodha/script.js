@@ -61,7 +61,7 @@ const normalizeJob = (item) => {
 const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: {
     Accept: 'application/json',
-    'User-Agent': 'Jobify scraper; official Zerodha careers API',
+    'User-Agent': 'Jobverify scraper; official Zerodha careers API',
   },
   label: SOURCE,
   timeoutMs: 15000,

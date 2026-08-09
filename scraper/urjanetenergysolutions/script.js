@@ -14,7 +14,7 @@ export const ACQUISITION_BLOG_URL = 'https://www.arcadia.com/blog/arcadia-acquir
 export const URJANET_REDIRECT_URL = 'https://www.urjanet.com/'
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

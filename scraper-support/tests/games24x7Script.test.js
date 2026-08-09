@@ -139,7 +139,7 @@ test('Games24x7 scraper keeps the verified official Darwinbox handoff explicit a
   )
 })
 
-test('run maps verified Games24x7 Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Games24x7 Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createGames24x7Scraper } = await loadGames24x7Module()
   const scraper = createGames24x7Scraper({
     now: () => FIXED_SCRAPED_AT,

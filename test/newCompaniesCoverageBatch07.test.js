@@ -1,15 +1,21 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 
 import { generateCompanyCoverageReport, getCompanyAliasMap } from '../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
-const NEW_COMPANIES_CSV = readFileSync(new URL('../../new_Companies.csv', import.meta.url), 'utf8')
+const NEW_COMPANIES_CSV_URL = new URL('../../new_Companies.csv', import.meta.url)
 
-test('new_Companies.csv resolves fully after workbook batch 07 aliases load', () => {
+test('new_Companies.csv resolves fully after workbook batch 07 aliases load', (t) => {
+  if (!existsSync(NEW_COMPANIES_CSV_URL)) {
+    t.skip(`Missing backlog CSV: ${NEW_COMPANIES_CSV_URL.pathname}`)
+    return
+  }
+
+  const newCompaniesCsv = readFileSync(NEW_COMPANIES_CSV_URL, 'utf8')
   const report = generateCompanyCoverageReport({
-    csvText: NEW_COMPANIES_CSV,
+    csvText: newCompaniesCsv,
     catalog: getScraperCatalog(),
     aliasMap: getCompanyAliasMap(),
   })

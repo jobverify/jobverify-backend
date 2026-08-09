@@ -1,7 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolve4, resolve6 } from 'node:dns/promises'
 import https from 'node:https'
+import {
+  DEFAULT_DNS_LOOKUP_TIMEOUT_MS,
+  resolveHostAddressesWithTimeout,
+} from '../../scraper-support/utils/dnsHostResolution.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -15,6 +18,7 @@ export const BRAND_HOME_URL = 'https://www.centumelectronics.com/'
 export const INDIA_CAREERS_HANDOFF_URL = 'http://careers.centumelectronics.com/'
 export const INDIA_CAREERS_HOST = 'careers.centumelectronics.com'
 export const EUROPE_NA_CAREERS_URL = 'https://centumtns.recruitee.com/'
+export const DNS_LOOKUP_TIMEOUT_MS = DEFAULT_DNS_LOOKUP_TIMEOUT_MS
 
 export const COMMON_CAREER_ROUTE_PROBES = Object.freeze([
   {
@@ -148,23 +152,18 @@ export const hasCentumHomepageSignal = (html = '') => {
 export const hasResolvableFirstPartyCareersHost = (addresses) =>
   Array.isArray(addresses) && addresses.length > 0
 
-export const resolveCareerHost = async (host = INDIA_CAREERS_HOST) => {
-  const addresses = new Set()
-
-  try {
-    for (const address of await resolve4(host)) {
-      addresses.add(address)
-    }
-  } catch {}
-
-  try {
-    for (const address of await resolve6(host)) {
-      addresses.add(address)
-    }
-  } catch {}
-
-  return [...addresses]
-}
+export const resolveCareerHost = async (
+  host = INDIA_CAREERS_HOST,
+  {
+    resolve4Impl,
+    resolve6Impl,
+    timeoutMs = DNS_LOOKUP_TIMEOUT_MS,
+  } = {},
+) => resolveHostAddressesWithTimeout([host], {
+  resolve4Impl,
+  resolve6Impl,
+  timeoutMs,
+})
 
 export const createCentumElectronicsScraper = () => ({
   async run({

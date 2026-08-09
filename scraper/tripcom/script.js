@@ -78,7 +78,7 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
     ...(options.headers || {}),
   },
   label: SOURCE,

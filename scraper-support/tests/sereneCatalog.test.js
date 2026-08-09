@@ -46,14 +46,15 @@ test('Serene local catalog captures the verified first-party careers, jobs, and 
   assert.equal(provider.paginationStrategy, 'single-public-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-first-party-jobs-page+shared-first-party-application-form',
+    'verified-first-party-careers-page+verified-first-party-jobs-page+same-domain-job-detail-pages+shared-first-party-application-form',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /serene[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sereneinfosolutions\.in\/job\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.sereneinfosolutions\.in\/jobs\//i)
   assert.match(provider.verifiedSurfaceSummary, /Bench Sales Recruiter/i)
   assert.match(provider.verifiedSurfaceSummary, /Talent Acquisition Associate/i)

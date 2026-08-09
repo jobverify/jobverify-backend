@@ -286,7 +286,7 @@ test('extractResultsSummary reads Lupin India pagination totals from the officia
   })
 })
 
-test('extractJobDetail reads Lupin detail pages into normalized Jobify job fields', async () => {
+test('extractJobDetail reads Lupin detail pages into normalized Jobverify job fields', async () => {
   const lupin = await loadLupinModule()
   const detail = lupin.extractJobDetail(detailPageOfficerHtml, {
     title: 'Officer -Quality Control',

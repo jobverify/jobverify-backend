@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'fingent'
 export const COMPANY = 'Fingent'
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Fingent',
   adapter: 'script',
-  modulePath: '../fingent/script.js',
+  modulePath: '../../scraper/fingent/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-openings-page',
@@ -25,7 +25,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'fingent.com',
   verifiedOn: '2026-07-18',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.fingent.com/careers/career-openings/ was the live first-party Fingent openings page, and that it publicly exposed current opening links such as Accounts Executive [Contract Role], Associate Technical Lead – .NET, Senior Software Engineer .NET, DevOps Engineer, and Data Engineer with experience ranges in the visible listing text.',
+    'Verified on Saturday, July 18, 2026 that https://www.fingent.com/careers/career-openings/ was the live first-party Fingent openings page, and that it publicly exposed current opening links such as Accounts Executive [Contract Role], Associate Technical Lead - .NET, Senior Software Engineer .NET, DevOps Engineer, and Data Engineer with experience ranges in the visible listing text.',
   dryRunFile: 'fingent/jobs.json',
 }
 
@@ -93,3 +93,4 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     scrapedAt: now(),
   }))
 }
+

@@ -84,7 +84,7 @@ test('extractSearchSummary reads total counts and page offsets from Mphasis Ripp
   })
 })
 
-test('normalizeEmploymentType maps RippleHire job type labels into Jobify job type inputs', () => {
+test('normalizeEmploymentType maps RippleHire job type labels into Jobverify job type inputs', () => {
   assert.equal(normalizeEmploymentType('Full Time', 'Senior Software Engineer'), 'Full-time')
   assert.equal(normalizeEmploymentType('Fixed Term Employee', 'Trainee Software Engg -Systems'), 'Contract')
   assert.equal(normalizeEmploymentType('', 'Software Engineering Intern'), 'Internship')

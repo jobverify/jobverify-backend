@@ -12,7 +12,7 @@ export const SOURCE = COLAN_INFOTECH_CATALOG.source
 export const COMPANY = COLAN_INFOTECH_CATALOG.companyName
 export const CAREERS_URL = COLAN_INFOTECH_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')

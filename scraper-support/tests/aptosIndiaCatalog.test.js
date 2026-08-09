@@ -57,7 +57,7 @@ test('Aptos India catalog captures the verified first-party Aptos careers handof
   )
   assert.match(APTOS_INDIA_CATALOG.verifiedSurfaceSummary, /\b3 India roles\b/i)
   assert.match(APTOS_INDIA_CATALOG.verifiedSurfaceSummary, /IN Bangalore Office/i)
-  assert.match(APTOS_INDIA_CATALOG.modulePath, /aptosindia[\\/]script\.js$/i)
+  assert.match(APTOS_INDIA_CATALOG.modulePath, /aptosindia\.workday[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Aptos India'), false)
 })
 

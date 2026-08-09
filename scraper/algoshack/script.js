@@ -11,7 +11,7 @@ export const SOURCE = ALGOSHACK_CATALOG.source
 export const COMPANY = ALGOSHACK_CATALOG.companyName
 export const CAREER_PAGE_URL = ALGOSHACK_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

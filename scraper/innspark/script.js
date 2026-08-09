@@ -16,6 +16,8 @@ export const APPLY_URL = 'https://innspark.in/apply/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PROTOCOL_PARSE_ERROR_PATTERN =
+  /missing expected cr after header value|response does not match the HTTP\/1\.1 protocol|protocol(?:\s+parse)?\s+error/i
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -51,6 +53,23 @@ const slugify = (value) => normalizeWhitespace(value)
 const stripExperienceSuffix = (value) => normalizeWhitespace(
   String(value ?? '').replace(/\s*\((?:\d+\s*-\s*\d+|\d+\+?)\s+years? of experience\)\s*$/i, ''),
 )
+
+const isProtocolParseError = (error) => {
+  const combined = `${error?.message ?? error ?? ''} ${error?.cause?.message ?? ''}`
+  return PROTOCOL_PARSE_ERROR_PATTERN.test(combined)
+}
+
+const buildBrokenHttpSurfaceError = (surfaceLabel, error) => {
+  const upstreamError = new Error(
+    `Innspark verified ${surfaceLabel} currently returns a broken HTTP/1.1 response`,
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
 
 const buildJobDescription = (lines) => normalizeWhitespace(
   lines
@@ -248,7 +267,7 @@ export const createInnsparkScraper = () => ({
       fetchBrowserText,
       userAgent: USER_AGENT,
       shouldUseBrowserFallback: (error) =>
-        /missing expected cr after header value|protocol(?:\s+parse)?\s+error/i.test(String(error?.message ?? error ?? ''))
+        isProtocolParseError(error)
         || defaultShouldUseBrowserNetworkFallback(error),
       browserSessionOptions: {
         timeoutMs: 90000,
@@ -258,10 +277,28 @@ export const createInnsparkScraper = () => ({
     })
 
     try {
-      const careersHtml = await browserFallback.fetchText(CAREERS_URL)
+      let careersHtml
+      try {
+        careersHtml = await browserFallback.fetchText(CAREERS_URL)
+      } catch (error) {
+        if (isProtocolParseError(error)) {
+          throw buildBrokenHttpSurfaceError('careers page', error)
+        }
+        throw error
+      }
+
       const jobs = extractCareerJobs(careersHtml)
 
-      const applyHtml = await browserFallback.fetchText(APPLY_URL)
+      let applyHtml
+      try {
+        applyHtml = await browserFallback.fetchText(APPLY_URL)
+      } catch (error) {
+        if (isProtocolParseError(error)) {
+          throw buildBrokenHttpSurfaceError('apply form', error)
+        }
+        throw error
+      }
+
       assertApplyFormMatchesJobs(jobs, applyHtml)
 
       return jobs.map((job) => ({

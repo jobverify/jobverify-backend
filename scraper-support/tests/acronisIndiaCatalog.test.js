@@ -42,7 +42,7 @@ test('Acronis India exports local provider metadata for the verified Acronis fir
     companyName: 'Acronis India',
     officialBrandName: 'Acronis',
     adapter: 'script',
-    modulePath: '../acronisindia.workday/script.js',
+    modulePath: '../../scraper/acronisindia.workday/script.js',
     companyCareerPage: 'https://www.acronis.com/en/careers/',
     officialCareersHandoffUrl: 'https://www.acronis.com/en/careers/jobs/',
     workdayDetailBaseUrl: 'https://acronis.wd502.myworkdayjobs.com/acronis_careers/',

@@ -1,9 +1,9 @@
-export const KAPIVA_CATALOG = {
+﻿export const KAPIVA_CATALOG = {
   source: 'kapiva',
   companyName: 'Kapiva',
   officialBrandName: 'Kapiva',
   adapter: 'script',
-  modulePath: '../kapiva/script.js',
+  modulePath: '../../scraper/kapiva/script.js',
   dryRunFile: 'kapiva/jobs.json',
   homepageUrl: 'https://kapiva.in/',
   aboutPageUrl: 'https://kapiva.in/about-us/',
@@ -23,3 +23,4 @@ export const KAPIVA_CATALOG = {
 }
 
 export default KAPIVA_CATALOG
+

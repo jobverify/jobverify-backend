@@ -174,15 +174,66 @@ test('run verifies the official C2FO Dayforce surface and returns only India job
   ])
 })
 
-test('fails closed when C2FO has no demonstrated session-free Dayforce HTTP client', async () => {
-  const { createC2foScraper } = await loadC2foModule()
+test('run uses the default session-free Dayforce search and detail contract when overrides are absent', async () => {
+  const c2fo = await loadC2foModule()
+  const requested = []
 
-  await assert.rejects(
-    createC2foScraper().run({
-      fetchText: async () => officialCareersHtml,
-      fetchJson: async () => siteContextPayload,
+  const jobs = await c2fo.createC2foScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => officialCareersHtml,
+    createDayforceSessionImpl: async () => ({
+      csrfToken: 'csrf-token',
+      cookieHeader: 'cookie-a=1; cookie-b=2',
     }),
-    /C2FO API-only migration incomplete: no session-free Dayforce search and detail contract has been demonstrated/i,
+    fetchJson: async (url, options = {}) => {
+      requested.push({
+        url,
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        body: options.body || null,
+      })
+
+      if (url === c2fo.buildSiteContextUrl()) return siteContextPayload
+      if (url === c2fo.buildSearchApiUrl()) return searchPayload
+      if (url === c2fo.buildJobDetailApiUrl('2213')) return detailPayload
+
+      throw new Error(`Unexpected C2FO URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(
+    requested.map((entry) => ({
+      url: entry.url,
+      method: entry.method,
+      hasCookie: entry.headers.Cookie || null,
+      hasCsrf: entry.headers['X-CSRF-Token'] || null,
+      body: entry.body,
+    })),
+    [
+      {
+        url: c2fo.buildSiteContextUrl(),
+        method: 'GET',
+        hasCookie: null,
+        hasCsrf: null,
+        body: null,
+      },
+      {
+        url: c2fo.buildSearchApiUrl(),
+        method: 'POST',
+        hasCookie: 'cookie-a=1; cookie-b=2',
+        hasCsrf: 'csrf-token',
+        body: JSON.stringify(c2fo.buildSearchRequestPayload()),
+      },
+      {
+        url: c2fo.buildJobDetailApiUrl('2213'),
+        method: 'GET',
+        hasCookie: 'cookie-a=1; cookie-b=2',
+        hasCsrf: 'csrf-token',
+        body: null,
+      },
+    ],
   )
 })
 

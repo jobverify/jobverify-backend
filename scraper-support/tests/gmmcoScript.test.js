@@ -84,7 +84,7 @@ test('GMMCO scraper keeps the verified official careers handoff explicit and fai
   )
 })
 
-test('run maps verified Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createGmmcoScraper } = await loadGmmcoModule()
   const scraper = createGmmcoScraper({
     now: () => FIXED_SCRAPED_AT,

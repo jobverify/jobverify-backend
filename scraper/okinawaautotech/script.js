@@ -10,7 +10,7 @@ export const COMPANY = 'Okinawa Autotech'
 export const CAREERS_URL = 'https://okinawascooters.com/career'
 export const OFFICIAL_DOMAIN = 'okinawascooters.com'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')

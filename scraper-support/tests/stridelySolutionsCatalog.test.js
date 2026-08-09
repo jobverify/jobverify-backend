@@ -48,7 +48,7 @@ test('Stridely Solutions exports local provider metadata for the verified first-
     companyName: 'Stridely Solutions',
     officialBrandName: 'Stridely Solutions',
     adapter: 'script',
-    modulePath: '../stridelysolutions/script.js',
+    modulePath: '../../scraper/stridelysolutions/script.js',
     homepageUrl: 'https://www.stridelysolutions.com/',
     companyCareerPage: 'https://www.stridelysolutions.com/insights/blog/jobs/',
     atsPlatform: 'official-company-careers',

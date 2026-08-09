@@ -21,7 +21,7 @@ test('getScraperCatalog includes LSEG on the verified official careers page back
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'lseg.com')
-  assert.match(provider.modulePath, /lseg[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /lseg\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable LSEG scraper and exact backlog coverage works without aliases', () => {

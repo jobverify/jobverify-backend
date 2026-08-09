@@ -1,9 +1,9 @@
-export const SENTINELONE_CATALOG = {
+﻿export const SENTINELONE_CATALOG = {
   source: 'sentinelone',
   companyName: 'SentinelOne',
   officialBrandName: 'SentinelOne',
   adapter: 'script',
-  modulePath: '../sentinelone/script.js',
+  modulePath: '../../scraper/sentinelone/script.js',
   companyCareerPage: 'https://www.sentinelone.com/careers/',
   officialJobsPage: 'https://www.sentinelone.com/jobs/',
   companyDomain: 'sentinelone.com',
@@ -23,3 +23,4 @@ export const SENTINELONE_CATALOG = {
 }
 
 export default SENTINELONE_CATALOG
+

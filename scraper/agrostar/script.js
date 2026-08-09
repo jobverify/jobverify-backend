@@ -22,7 +22,7 @@ export const VERIFIED_ON = AGROSTAR_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = AGROSTAR_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = AGROSTAR_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
@@ -75,6 +75,82 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const normalizeDarwinboxJobUrl = (value) => {
+  if (!value) return null
+
+  try {
+    const url = new URL(value, OFFICIAL_CAREERS_URL)
+    url.hash = ''
+    url.search = ''
+
+    if (url.hostname !== 'agrostar.darwinbox.in') return null
+    if (!url.pathname.startsWith(`/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/jobDetails/`)) {
+      return null
+    }
+
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+const extractJobIdFromUrl = (value) => {
+  try {
+    return new URL(value).pathname.split('/').filter(Boolean).pop() || null
+  } catch {
+    return null
+  }
+}
+
+export const extractInlineJobsFromOfficialCareersPage = (html = '') => {
+  const page = String(html ?? '')
+  const jobs = []
+  const seenJobIds = new Set()
+  const pattern = /(?:<h3[^>]*>([\s\S]*?)<\/h3>[\s\S]*?)?<a[^>]+href=["']([^"']*\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
+
+  for (const match of page.matchAll(pattern)) {
+    const titleFromHeading = normalizeWhitespace(match[1])
+    const titleFromAnchor = normalizeWhitespace(match[3])
+    const sourceUrl = normalizeDarwinboxJobUrl(match[2])
+    const title = titleFromHeading || (
+      /^(apply now|view job|view details|learn more)$/i.test(titleFromAnchor || '')
+        ? null
+        : titleFromAnchor
+    )
+    const jobId = extractJobIdFromUrl(sourceUrl)
+
+    if (!sourceUrl || !title || !jobId || seenJobIds.has(jobId)) {
+      continue
+    }
+
+    seenJobIds.add(jobId)
+    jobs.push({
+      title,
+      company: COMPANY_NAME,
+      department: null,
+      location: null,
+      city: null,
+      jobId,
+      requisitionId: null,
+      sourceUrl,
+      applyUrl: sourceUrl,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      publicExperienceChecked: true,
+      source: SOURCE,
+      link: sourceUrl,
+    })
+  }
+
+  return jobs
+}
+
 export const createAgroStarScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
@@ -100,11 +176,16 @@ export const createAgroStarScraper = ({
       throw new Error('AgroStar verified official careers page no longer matches the verified public surface')
     }
 
-    const jobs = await darwinboxScraper.run({
-      maxPages,
-      maxJobs,
-      fetchListingPage,
-    })
+    const inlineJobs = !fetchListingPage
+      ? extractInlineJobsFromOfficialCareersPage(careersHtml)
+      : []
+    const jobs = inlineJobs.length > 0
+      ? (maxJobs ? inlineJobs.slice(0, maxJobs) : inlineJobs)
+      : await darwinboxScraper.run({
+        maxPages,
+        maxJobs,
+        fetchListingPage,
+      })
     const scrapedAt = now()
 
     return jobs.map((job) => ({

@@ -1,202 +1,273 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { launchBrowser, createOptimizedPage } from '../../scraper-support/utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const BASE_URL = 'https://www.rubrik.com/company/careers'
-const RUBRIK_HOST = new URL(BASE_URL).hostname
+export const SOURCE = 'rubrik'
+export const COMPANY = 'Rubrik'
+export const CAREERS_URL = 'https://www.rubrik.com/company/careers'
 
-const SELECTORS = {
-  departmentGridItem: '.careers_departments_grid_item',
-  departmentName: '.departments_grid_name',
-  departmentLink: '.departments_grid__new-link',
-  listingContainer: '.careers_section_listing_container',
-  locationTitle: '.careers_section_listing_location_title',
-  jobItem: '.careers_section_listing_job_item',
-  jobTitle: '.careers_section_listing_job_item_title',
-  jobAnchor: '.careers_section_listing_job_item_anchor',
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const normalizeWhitespace = (value) => {
+  if (value == null) return null
+
+  const normalized = String(value)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized || null
+}
+
+const extractTextLines = (html) => String(html ?? '')
+  .replace(/\r/g, '')
+  .replace(/<(?:br|\/p|\/div|\/li|\/h[1-6]|\/section|\/article|\/main|\/ul|\/ol|\/table|\/tr)\b[^>]*>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+  .split('\n')
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
+export const hasOfficialCareersSignal = (html = '') => {
+  const title = normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] ?? null)
+  const text = normalizeWhitespace(html) || ''
+
+  return /careers\s*@\s*rubrik/i.test(title || '')
+    && /together,\s*we(?:’|')re unstoppable/i.test(text)
+    && /view all jobs/i.test(text)
+}
+
+export const getSafeRubrikUrl = (value) => {
+  try {
+    const url = new URL(value, CAREERS_URL)
+    if (!['http:', 'https:'].includes(url.protocol)) return null
+    return url.hostname === new URL(CAREERS_URL).hostname ? url.href : null
+  } catch {
+    return null
+  }
+}
+
+export const extractDepartmentLinks = (html = '') => {
+  const links = []
+  const seen = new Set()
+
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']*\/company\/careers\/departments\/(?!job)[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const url = getSafeRubrikUrl(match[1])
+    const name = normalizeWhitespace(match[2])
+    if (!url || !name || seen.has(url)) continue
+    seen.add(url)
+    links.push({ name, url })
+  }
+
+  return links
+}
+
+export const extractJobLinks = (html = '') => {
+  const links = []
+  const seen = new Set()
+
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']*\/company\/careers\/departments\/job[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const url = getSafeRubrikUrl(match[1])
+    const title = normalizeWhitespace(match[2])
+    if (!url || !title || seen.has(url)) continue
+    seen.add(url)
+    links.push({ title, url })
+  }
+
+  return links
+}
+
+const extractJobId = (link) => {
+  try {
+    const url = new URL(link)
+    const reqId = normalizeWhitespace(url.searchParams.get('reqId'))
+    if (reqId) return reqId
+
+    const jobToken = url.pathname.match(/\/job\.([^/?#]+)/i)?.[1]
+    return normalizeWhitespace(jobToken)
+  } catch {
+    return null
+  }
 }
 
 const isIndiaLocation = (location) => /\bindia\b/i.test(location || '')
 
 const extractCity = (location) => {
-  if (!location) return null
-  const loc = location.trim()
-  if (/remote/i.test(loc)) return 'Remote'
-  const commaParts = loc.split(',')
-  if (commaParts.length > 1) return commaParts[0].trim()
-  const spaceMatch = loc.match(/^(\S+)\s+India/i)
-  if (spaceMatch) return spaceMatch[1].trim()
-  return loc.replace(/\s*India\s*$/i, '').trim() || loc
+  const normalized = normalizeWhitespace(location)
+  if (!normalized) return null
+  if (/remote/i.test(normalized)) return 'Remote'
+
+  const city = normalized
+    .replace(/\bOffice\b/gi, '')
+    .replace(/\bIndia\b/gi, '')
+    .replace(/[,:-]+$/g, '')
+    .split(',')[0]
+    .trim()
+
+  return city || normalized
 }
 
-const extractJobId = (link) => {
-  try {
-    return new URL(link).searchParams.get('reqId') ?? null
-  } catch {
-    return null
+const extractSectionLines = (lines, startPatterns, endPatterns) => {
+  const startIndex = lines.findIndex((line) => startPatterns.some((pattern) => pattern.test(line)))
+  if (startIndex === -1) return []
+
+  const sectionLines = []
+  for (const line of lines.slice(startIndex + 1)) {
+    if (endPatterns.some((pattern) => pattern.test(line))) break
+    sectionLines.push(line)
+  }
+
+  return sectionLines
+}
+
+export const extractJobFromHtml = ({
+  html,
+  department,
+  jobUrl,
+  now = () => new Date().toISOString(),
+} = {}) => {
+  const lines = extractTextLines(html)
+  const summaryIndex = lines.findIndex((line) => /^job summary$/i.test(line))
+  const title = normalizeWhitespace(
+    summaryIndex >= 0
+      ? lines.slice(summaryIndex + 1).find((line) => !/^location\b/i.test(line) && !/^about\b/i.test(line))
+      : lines.find((line) => !/^careers\s*@\s*rubrik/i.test(line)),
+  )
+  const locationLine = lines.find((line) => /^location[:\s]/i.test(line) || /\bindia\b/i.test(line))
+  const location = normalizeWhitespace(locationLine?.replace(/^location[:\s]*/i, ''))
+
+  if (!title || !location) return null
+
+  const descriptionLines = extractSectionLines(
+    lines,
+    [/^about the role$/i, /^about role$/i, /^about the team$/i, /^about rubrik$/i],
+    [/^required skills/i, /^experience & qualifications/i, /^why join us/i, /^apply for this job$/i, /^join us$/i, /^eeo is the law$/i],
+  )
+  const skillsLines = extractSectionLines(
+    lines,
+    [/^required skills/i, /^experience & qualifications you'll need$/i],
+    [/^why join us$/i, /^apply for this job$/i, /^join us$/i, /^eeo is the law$/i],
+  )
+  const fullText = lines.join(' ')
+  const experienceRequired = normalizeWhitespace(fullText.match(/\b(\d+\+?(?:\s*-\s*\d+)?)\s+years?\b/i)?.[0] ?? null)
+
+  return {
+    jobId: extractJobId(jobUrl),
+    title,
+    company: COMPANY,
+    department: normalizeWhitespace(department),
+    location,
+    city: extractCity(location),
+    country: 'India',
+    sourceUrl: jobUrl,
+    applyUrl: jobUrl,
+    employmentType: null,
+    experienceRequired,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: skillsLines.filter(Boolean),
+    postingDate: null,
+    closingDate: null,
+    jobDescription: normalizeWhitespace(descriptionLines.join('\n')),
+    remoteStatus: /remote/i.test(location) ? 'Remote' : 'On-site',
+    source: SOURCE,
+    link: jobUrl,
+    scrapedAt: now(),
   }
 }
 
-const getSafeRubrikUrl = (value) => {
-  try {
-    const url = new URL(value, BASE_URL)
-    if (!['http:', 'https:'].includes(url.protocol)) return null
-    return url.hostname === RUBRIK_HOST ? url.href : null
-  } catch {
-    return null
-  }
-}
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
-/**
- * Scrapes all India-based job listings from Rubrik's careers page.
- * @returns {Promise<object[]>} Array of normalised job objects
- */
-export const run = async () => {
-  let browser
-  let currentUrl = BASE_URL
+export const createRubrikScraper = ({
+  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+} = {}) => ({
+  async run({
+    fetchText = defaultFetchText,
+    now = () => new Date().toISOString(),
+  } = {}) {
+    const careersHtml = await fetchText(CAREERS_URL)
 
-  try {
-    browser = await launchBrowser()
-    const page = await createOptimizedPage(browser)
-    const detailPage = await createOptimizedPage(browser)
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Rubrik careers page no longer matches the verified official public surface')
+    }
 
-    await page.waitForSelector(SELECTORS.departmentGridItem)
+    const departments = extractDepartmentLinks(careersHtml)
+    if (departments.length === 0) {
+      throw new Error('Rubrik official careers page no longer exposes department links for browser-free scraping')
+    }
 
-    const departments = await page.$$eval(
-      SELECTORS.departmentGridItem,
-      (items, selectors) =>
-        items
-          .map((item) => ({
-            name: item.querySelector(selectors.departmentName)?.innerText.trim() ?? null,
-            url: item.querySelector(selectors.departmentLink)?.href ?? null,
-          }))
-          .filter((d) => d.name && d.url),
-      SELECTORS,
-    )
+    const jobs = []
+    const seenJobUrls = new Set()
 
-    const safeDepartments = departments
-      .map((department) => ({
-        ...department,
-        url: getSafeRubrikUrl(department.url),
-      }))
-      .filter((department) => department.url)
+    for (const department of departments) {
+      const departmentHtml = await fetchText(department.url)
+      const jobLinks = extractJobLinks(departmentHtml)
 
-    console.log(`  [rubrik] Found ${departments.length} departments: ${departments.map((d) => d.name).join(', ')}`)
+      for (const jobLink of jobLinks) {
+        if (seenJobUrls.has(jobLink.url)) continue
+        seenJobUrls.add(jobLink.url)
 
-    const allJobs = []
-    const seenLinks = new Set()
+        const jobHtml = await fetchText(jobLink.url)
+        const job = extractJobFromHtml({
+          html: jobHtml,
+          department: department.name,
+          jobUrl: jobLink.url,
+          now,
+        })
 
-    for (const department of safeDepartments) {
-      currentUrl = department.url
-      try {
-        await page.goto(department.url, { waitUntil: 'domcontentloaded' })
+        if (!job || !isIndiaLocation(job.location)) continue
+        jobs.push(job)
 
-        try {
-          await page.waitForSelector(SELECTORS.listingContainer, {
-            timeout: config.jobListingTimeoutMs,
-          })
-        } catch {
-          console.log(`  [rubrik] No listings for "${department.name}" at ${department.url}. Skipping.`)
-          continue
+        if (Number.isInteger(maxJobs) && jobs.length >= maxJobs) {
+          return jobs
         }
-
-        const jobs = await page.$$eval(
-          SELECTORS.listingContainer,
-          (containers, selectors) => {
-            const deptJobs = []
-            containers.forEach((container) => {
-              const location =
-                container.querySelector(selectors.locationTitle)?.innerText.trim() ?? 'Unknown Location'
-              container.querySelectorAll(selectors.jobItem).forEach((item) => {
-                const titleEl = item.querySelector(selectors.jobTitle)
-                const anchorEl = item.querySelector(selectors.jobAnchor)
-                if (titleEl && anchorEl) {
-                  deptJobs.push({ title: titleEl.innerText.trim(), link: anchorEl.href, location })
-                }
-              })
-            })
-            return deptJobs
-          },
-          SELECTORS,
-        )
-
-        let deptCount = 0
-        for (const job of jobs) {
-          if (!isIndiaLocation(job.location)) continue
-          const safeJobUrl = getSafeRubrikUrl(job.link)
-          if (!safeJobUrl || seenLinks.has(safeJobUrl)) continue
-          seenLinks.add(safeJobUrl)
-          deptCount++
-          const detail = await (async () => {
-            await detailPage.goto(safeJobUrl, { waitUntil: 'domcontentloaded' })
-            await detailPage.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-            await new Promise((r) => setTimeout(r, config.pageLoadDelayMs))
-            return extractJobDetail({
-              provider: 'rubrik',
-              html: await detailPage.content(),
-            })
-          })().catch(() => ({
-            jobDescription: null,
-            minimumQualification: null,
-            preferredQualification: null,
-            requiredSkills: [],
-            experienceRequired: null,
-            department: department.name,
-          }))
-          allJobs.push({
-            jobId: extractJobId(safeJobUrl),
-            title: job.title,
-            company: 'Rubrik',
-            department: detail.department || department.name,
-            location: job.location,
-            city: extractCity(job.location),
-            link: safeJobUrl,
-            source: 'rubrik',
-            jobDescription: detail.jobDescription,
-            minimumQualification: detail.minimumQualification,
-            preferredQualification: detail.preferredQualification,
-            requiredSkills: detail.requiredSkills,
-            experienceRequired: detail.experienceRequired,
-            publicExperienceChecked: detail.publicExperienceChecked ?? false,
-            scrapedAt: new Date().toISOString(),
-          })
-        }
-        console.log(`  [rubrik] ${department.name}: ${deptCount} India jobs`)
-      } catch (err) {
-        // Include department URL so the retry log surfaces the exact failing page
-        console.error(`  [rubrik] Failed scraping "${department.name}" at ${department.url}: ${err.message}`)
       }
     }
 
-    return allJobs
-  } catch (err) {
-    throw new Error(`[rubrik] Scraping failed at ${currentUrl} — ${err.message}`)
-  } finally {
-    if (browser) await browser.close()
-  }
-}
+    return jobs
+  },
+})
 
-// Standalone: node scraper/rubrik/script.js [--dry-run]
+export const run = async (options = {}) => createRubrikScraper(options).run(options)
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
-  console.log(`Running Rubrik scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()
-  console.log(`\nTotal India jobs scraped: ${jobs.length}`)
-  const cities = [...new Set(jobs.map((j) => j.city).filter(Boolean))].sort()
-  console.log(`Cities found: ${cities.join(', ')}`)
+
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-    console.log(`Dry run — wrote ${jobs.length} jobs to jobs.json`)
   } else {
-    const result = await saveToDB(jobs, 'rubrik')
-    console.log('DB result:', result)
-    process.exit(0)
+    await saveToDB(jobs, SOURCE)
   }
 }

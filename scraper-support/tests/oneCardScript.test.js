@@ -153,7 +153,7 @@ test('OneCard scraper pins the verified official careers surface and embedded pu
   )
 })
 
-test('run maps verified OneCard jobs payload into Jobify jobs and uses the official careers page as the source link', async () => {
+test('run maps verified OneCard jobs payload into Jobverify jobs and uses the official careers page as the source link', async () => {
   const { createOneCardScraper } = await loadOneCardModule()
   const scraper = createOneCardScraper({
     now: () => FIXED_SCRAPED_AT,

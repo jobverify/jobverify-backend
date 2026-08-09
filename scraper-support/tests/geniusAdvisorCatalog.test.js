@@ -29,15 +29,15 @@ test('Genius Advisor catalog metadata captures the verified first-party brochure
   assert.equal(provider.businessPhone, '+91 96862 04879')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'browser-verified-brochure-pages-plus-timeout-route-validation')
+  assert.equal(provider.paginationStrategy, 'browser-verified-brochure-pages-plus-brochure-fallback-route-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-homepage-about-and-contact-pages+adjacent-exact-name-careers-routes-timeout-return-empty',
+    'verified-first-party-homepage-about-and-contact-pages+adjacent-exact-name-careers-routes-brochure-fallback-or-timeout-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'thegeniusadvisor.in')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-07-25')
   assert.deepEqual(provider.firstPartyCareerRoutes, [
     'https://www.thegeniusadvisor.in/careers',
     'https://www.thegeniusadvisor.in/jobs',
@@ -47,7 +47,7 @@ test('Genius Advisor catalog metadata captures the verified first-party brochure
   ])
   assert.match(provider.modulePath, /geniusadvisor[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /geniusadvisor[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.thegeniusadvisor\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.thegeniusadvisor\.in\/about\.html/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.thegeniusadvisor\.in\/contact\.html/i)

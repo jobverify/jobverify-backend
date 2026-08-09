@@ -20,7 +20,7 @@ test('getScraperCatalog includes Yokogawa India on the official careers page wit
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'yokogawa.com')
-  assert.match(provider.modulePath, /yokogawaindia[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /yokogawaindia\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Yokogawa India scraper without changing the runner contract', () => {

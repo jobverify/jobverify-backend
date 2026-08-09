@@ -129,7 +129,7 @@ test('Polaris validates the accepted careers shell and then delegates to the sha
 
 test('Polaris also accepts an unblocked first-party careers shell when it is directly fetchable', async () => {
   const polaris = await loadPolarisModule()
-  const authoritativeEmpty = Symbol.for('jobify.workday.authoritative-empty')
+  const authoritativeEmpty = Symbol.for('jobverify.workday.authoritative-empty')
   const confirmedEmpty = []
   Object.defineProperty(confirmedEmpty, authoritativeEmpty, { value: true })
 

@@ -191,7 +191,7 @@ test('Leena AI scraper keeps the verified first-party Explore Jobs surface expli
   )
 })
 
-test('run maps verified Leena AI role cards into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Leena AI role cards into Jobverify jobs and keeps only India roles', async () => {
   const { createLeenaAiScraper } = await loadLeenaAiModule()
   const scraper = createLeenaAiScraper({
     now: () => FIXED_SCRAPED_AT,

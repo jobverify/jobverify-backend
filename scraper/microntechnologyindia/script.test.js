@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   OFFICIAL_CAREERS_URL,
   SEARCH_PAGE_SIZE,
+  buildDetailApiUrl,
   buildListingApiUrl,
   createMicronTechnologyIndiaScraper,
   hasOfficialMicronIndiaCareersSignal,
@@ -20,6 +21,39 @@ const CAREERS_HTML = `<!DOCTYPE html>
 </body>
 </html>`
 
+const buildDetailPayload = (jobId) => ({
+  data: {
+    positionId: String(jobId),
+    jobDescription: 'Requires 5+ years of experience building production silicon systems.',
+  },
+})
+
+const withMockedMicronDetailFetch = async (runTest) => {
+  const originalFetch = globalThis.fetch
+
+  globalThis.fetch = async (url) => {
+    const detailUrl = String(url)
+    if (!/\/api\/pcsx\/position_details\b/i.test(detailUrl)) {
+      throw new Error(`Unexpected network fetch: ${detailUrl}`)
+    }
+
+    const positionId = new URL(detailUrl).searchParams.get('position_id') || 'unknown'
+
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      text: async () => JSON.stringify(buildDetailPayload(positionId)),
+    }
+  }
+
+  try {
+    return await runTest()
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+}
+
 test('Micron Technology India builds the verified Eightfold listing URL', () => {
   assert.equal(
     buildListingApiUrl(),
@@ -34,7 +68,7 @@ test('Micron Technology India still verifies the first-party India careers hando
 
 test('Micron Technology India paginates through 10-job Eightfold result pages', async () => {
   const scraper = createMicronTechnologyIndiaScraper()
-  const seenSearchUrls = []
+  const seenApiUrls = []
 
   const makePosition = (index) => ({
     id: 5000 + index,
@@ -68,10 +102,15 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
     },
     fetchJson: async (url) => {
       const parsedUrl = new URL(url)
+      seenApiUrls.push(url)
+
+      if (/\/api\/pcsx\/position_details\b/i.test(parsedUrl.pathname)) {
+        return buildDetailPayload(parsedUrl.searchParams.get('position_id'))
+      }
+
       const start = parsedUrl.searchParams.get('start')
       const limit = parsedUrl.searchParams.get('limit')
 
-      seenSearchUrls.push(url)
       assert.equal(limit, String(SEARCH_PAGE_SIZE))
 
       const payload = listingResponses.get(start)
@@ -84,10 +123,12 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
   })
 
   assert.deepEqual(
-    seenSearchUrls,
+    seenApiUrls,
     [
       'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10',
+      ...Array.from({ length: 10 }, (_, index) => buildDetailApiUrl(5001 + index)),
       'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=10&limit=10',
+      ...Array.from({ length: 3 }, (_, index) => buildDetailApiUrl(5011 + index)),
     ],
   )
   assert.equal(jobs.length, 13)
@@ -138,9 +179,9 @@ test('Micron Technology India keeps successful jobs when its owned browser sessi
     }),
   })
 
-  const jobs = await scraper.run({
+  const jobs = await withMockedMicronDetailFetch(async () => scraper.run({
     fetchText: async () => CAREERS_HTML,
-  })
+  }))
 
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Principal Engineer')
@@ -174,9 +215,9 @@ test('Micron Technology India uses the shared browser text fetch with the India 
     }),
   })
 
-  const jobs = await scraper.run({
+  const jobs = await withMockedMicronDetailFetch(async () => scraper.run({
     fetchText: async () => CAREERS_HTML,
-  })
+  }))
 
   assert.equal(jobs.length, 1)
   assert.deepEqual(calls, [
@@ -226,9 +267,9 @@ test('Micron Technology India recreates its browser session after a transient ab
     },
   })
 
-  const jobs = await scraper.run({
+  const jobs = await withMockedMicronDetailFetch(async () => scraper.run({
     fetchText: async () => CAREERS_HTML,
-  })
+  }))
 
   assert.equal(sessionCreations, 2)
   assert.equal(jobs.length, 1)

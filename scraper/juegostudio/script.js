@@ -77,6 +77,18 @@ const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
+const buildBlockedCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Juego Studio verified careers page remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
 export const createJuegoStudioScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
@@ -104,7 +116,14 @@ export const createJuegoStudioScraper = ({
           throw error
         }
 
-        return browserTextFetcher(url)
+        try {
+          return await browserTextFetcher(url)
+        } catch (browserError) {
+          if (isBrowserFallbackError(browserError)) {
+            throw buildBlockedCareersSurfaceError(browserError)
+          }
+          throw browserError
+        }
       }
     }
 

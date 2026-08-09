@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { ENDURANCE_TECHNOLOGIES_CATALOG } from './catalog.js'
@@ -229,79 +228,40 @@ export const hasOfficialJobPortalSignal = (html = '') => {
     && /href=["'][^"']*\/career\/[^"']+["']/i.test(rawHtml)
 }
 
-export const collectListingCandidates = async (page, baseUrl = JOB_PORTAL_URL) => {
-  if (typeof page.evaluate !== 'function') {
-    throw new Error('Endurance Technologies job portal page does not support DOM extraction')
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return page.evaluate((portalUrl) => {
-    const normalizeTextInPage = (value) => String(value ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()
-
-    const toAbsoluteUrlInPage = (value) => {
-      try {
-        return new URL(value, portalUrl).toString()
-      } catch {
-        return null
-      }
-    }
-
-    const pickContainer = (anchor) => {
-      let node = anchor
-      let fallback = anchor.parentElement || anchor
-
-      for (let depth = 0; node && node !== document.body && depth < 8; depth += 1) {
-        const text = normalizeTextInPage(node.innerText || '')
-        if (
-          text
-          && text.length <= 900
-          && (/job opening for/i.test(text) || /\b\d+\s*Years?\b/i.test(text))
-          && /\bPune\b/i.test(text)
-        ) {
-          return node
-        }
-
-        fallback = node
-        node = node.parentElement
-      }
-
-      return fallback
-    }
-
-    const candidates = []
-    const seen = new Set()
-
-    for (const anchor of Array.from(document.querySelectorAll('a[href]'))) {
-      const sourceUrl = toAbsoluteUrlInPage(anchor.getAttribute('href'))
-      if (!sourceUrl) continue
-
-      try {
-        const url = new URL(sourceUrl)
-        if (!url.pathname.startsWith('/career/')) continue
-      } catch {
-        continue
-      }
-
-      if (seen.has(sourceUrl)) continue
-      seen.add(sourceUrl)
-
-      const container = pickContainer(anchor)
-      const lines = String(container?.innerText || '')
-        .split(/\n+/)
-        .map((line) => normalizeTextInPage(line))
-        .filter(Boolean)
-
-      candidates.push({
-        title: lines.find((line) => /job opening for/i.test(line)) || lines[0] || normalizeTextInPage(anchor.textContent),
-        experience: lines.find((line) => /\b\d+\s*Years?\b/i.test(line)) || null,
-        designation: lines.find((line) => /manager/i.test(line)) || null,
-        location: lines.find((line) => /\bPune\b/i.test(line)) || null,
-        sourceUrl,
-      })
-    }
-
-    return candidates
-  }, baseUrl)
+  return response.text()
 }
+
+export const collectListingCandidates = (html = '', baseUrl = JOB_PORTAL_URL) => [...String(html ?? '').matchAll(
+  /<li\b[^>]*class="[^"]*job-card[^"]*"[^>]*>([\s\S]*?)<\/li>/gi,
+)]
+  .map((match) => {
+    const block = match[1]
+    const paragraphs = [...String(block).matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map((paragraphMatch) => stripTagsToText(paragraphMatch[1]))
+      .filter(Boolean)
+
+    return {
+      title: stripTagsToText(block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1]),
+      experience: paragraphs[0] || null,
+      designation: paragraphs[1] || null,
+      location: paragraphs[2] || null,
+      sourceUrl: absoluteUrl(block.match(/<a[^>]+href="([^"]+)"[^>]*>/i)?.[1], baseUrl),
+    }
+  })
+  .filter((candidate) => candidate.title && candidate.sourceUrl)
 
 export const normalizeListingCandidate = (candidate = {}) => {
   const sourceUrl = absoluteUrl(candidate.sourceUrl, JOB_PORTAL_URL)
@@ -403,89 +363,57 @@ export const extractJobDetail = (html = '', listing = {}) => {
   }
 }
 
-const waitForSelectorIfAvailable = async (page, selector) => {
-  if (typeof page.waitForSelector !== 'function') return
-
-  await page.waitForSelector(selector, { timeout: DEFAULT_TIMEOUT_MS }).catch(() => null)
-}
-
 export const createEnduranceTechnologiesScraper = ({
-  launchBrowser: launchBrowserImpl = launchBrowser,
-  createOptimizedPage: createOptimizedPageImpl = createOptimizedPage,
   now = () => new Date().toISOString(),
   maxJobs = null,
 } = {}) => ({
-  async run() {
-    const browser = await launchBrowserImpl()
-
-    try {
-      const page = await createOptimizedPageImpl(browser)
-
-      await page.goto(CAREERS_URL, {
-        waitUntil: 'domcontentloaded',
-        timeout: DEFAULT_TIMEOUT_MS,
-      })
-      await waitForSelectorIfAvailable(page, 'body')
-
-      const careersHtml = await page.content()
-      if (!hasOfficialCareersPageSignal(careersHtml)) {
-        throw new Error('Endurance Technologies careers page no longer matches the verified first-party surface')
-      }
-
-      const jobPortalUrl = extractJobPortalUrl(careersHtml)
-      if (!sameUrl(jobPortalUrl, JOB_PORTAL_URL)) {
-        throw new Error('Endurance Technologies careers page no longer exposes the verified first-party job portal handoff')
-      }
-
-      await page.goto(jobPortalUrl, {
-        waitUntil: 'domcontentloaded',
-        timeout: DEFAULT_TIMEOUT_MS,
-      })
-      await waitForSelectorIfAvailable(page, 'body')
-
-      const jobPortalHtml = await page.content()
-      if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
-        throw new Error('Endurance Technologies job portal no longer matches the verified first-party public surface')
-      }
-
-      const listings = uniqueStrings(
-        (await collectListingCandidates(page, jobPortalUrl))
-          .map((candidate) => JSON.stringify(normalizeListingCandidate(candidate)))
-          .filter((value) => value !== 'null'),
-      ).map((serialized) => JSON.parse(serialized))
-
-      if (listings.length === 0) {
-        throw new Error('Endurance Technologies job portal no longer exposes parseable first-party public openings')
-      }
-
-      const limitedListings = Number.isInteger(maxJobs) && maxJobs > 0
-        ? listings.slice(0, maxJobs)
-        : listings
-
-      const jobs = []
-
-      for (const listing of limitedListings) {
-        await page.goto(listing.sourceUrl, {
-          waitUntil: 'domcontentloaded',
-          timeout: DEFAULT_TIMEOUT_MS,
-        })
-        await waitForSelectorIfAvailable(page, 'body')
-
-        const detailHtml = await page.content()
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
-      }
-
-      return jobs
-    } finally {
-      await browser.close()
+  async run({
+    fetchText = defaultFetchText,
+  } = {}) {
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCareersPageSignal(careersHtml)) {
+      throw new Error('Endurance Technologies careers page no longer matches the verified first-party surface')
     }
+
+    const jobPortalUrl = extractJobPortalUrl(careersHtml)
+    if (!sameUrl(jobPortalUrl, JOB_PORTAL_URL)) {
+      throw new Error('Endurance Technologies careers page no longer exposes the verified first-party job portal handoff')
+    }
+
+    const jobPortalHtml = await fetchText(jobPortalUrl)
+    if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
+      throw new Error('Endurance Technologies job portal no longer matches the verified first-party public surface')
+    }
+
+    const listings = uniqueStrings(
+      collectListingCandidates(jobPortalHtml, jobPortalUrl)
+        .map((candidate) => JSON.stringify(normalizeListingCandidate(candidate)))
+        .filter((value) => value !== 'null'),
+    ).map((serialized) => JSON.parse(serialized))
+
+    if (listings.length === 0) {
+      throw new Error('Endurance Technologies job portal no longer exposes parseable first-party public openings')
+    }
+
+    const limitedListings = Number.isInteger(maxJobs) && maxJobs > 0
+      ? listings.slice(0, maxJobs)
+      : listings
+
+    const jobs = []
+
+    for (const listing of limitedListings) {
+      const detailHtml = await fetchText(listing.sourceUrl)
+      const detail = extractJobDetail(detailHtml, listing)
+
+      jobs.push({
+        ...detail,
+        source: SOURCE,
+        link: detail.applyUrl || detail.sourceUrl,
+        scrapedAt: now(),
+      })
+    }
+
+    return jobs
   },
 })
 

@@ -108,7 +108,7 @@ test('getScraperCatalog includes Hotstar as a verified JioStar Workday provider'
   assert.equal(provider.companyCareerPage, 'https://www.jiostar.com/')
   assert.equal(provider.companyDomain, 'hotstar.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /hotstar[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /hotstar\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Hotstar scraper without changing the runner contract', () => {

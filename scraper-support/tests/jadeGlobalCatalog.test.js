@@ -73,7 +73,7 @@ test('Jade Global local catalog captures the verified first-party Workday contra
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.jadeglobal.com/careers')
   assert.equal(provider.companyDomain, 'jadeglobal.com')
-  assert.equal(provider.modulePath, '../../scraper/jadeglobal.workday/script.js')
+  assert.match(provider.modulePath, /jadeglobal\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /jadeglobal.workday[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Jade Global'), false)
 
@@ -111,7 +111,7 @@ test('getScraperCatalog includes Jade Global as a verified Workday provider', ()
   assert.equal(provider.companyCareerPage, 'https://www.jadeglobal.com/careers')
   assert.equal(provider.companyDomain, 'jadeglobal.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /jadeglobal[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /jadeglobal\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Jade Global scraper without changing the runner contract', () => {

@@ -78,7 +78,7 @@ const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyBot/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyBot/1.0)',
     },
   })
 

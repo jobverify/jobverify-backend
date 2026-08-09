@@ -174,7 +174,7 @@ test('Droom scraper helpers stay pinned to the verified first-party homepage, in
   assert.equal(droom.SOURCE, 'droom')
   assert.equal(droom.COMPANY, 'Droom')
   assert.equal(droom.OFFICIAL_BRAND_NAME, 'Droom')
-  assert.equal(droom.VERIFIED_ON, '2026-07-15')
+  assert.equal(droom.VERIFIED_ON, '2026-08-02')
   assert.equal(droom.HOMEPAGE_URL, 'https://droom.in/')
   assert.equal(droom.CAREERS_URL, 'https://droom.in/career')
   assert.equal(droom.APPLICATION_FORM_URL, 'https://droom.in/career#career-form')

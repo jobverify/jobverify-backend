@@ -12,7 +12,7 @@ const DEFAULT_SOURCE = 'darwinbox'
 const DEFAULT_COMPANY_ID = 'main'
 const DEFAULT_PAGE_SIZE = 10
 const DEFAULT_ORIGIN = 'https://dbx.darwinbox.in'
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -36,6 +36,48 @@ const normalizeWhitespace = (value) => {
 
 const normalizeOrigin = (value) =>
   (normalizeWhitespace(value) || DEFAULT_ORIGIN).replace(/\/+$/g, '')
+
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  return undefined
+}
+
+const extractSetCookieValues = (headers) => {
+  if (!headers) return []
+
+  if (typeof headers.getSetCookie === 'function') {
+    const values = headers.getSetCookie()
+    if (Array.isArray(values)) {
+      return values.map((value) => normalizeWhitespace(value)).filter(Boolean)
+    }
+  }
+
+  const singleValue = normalizeWhitespace(headers.get?.('set-cookie'))
+  return singleValue ? [singleValue] : []
+}
+
+const buildCookieHeader = (setCookieValues = []) => {
+  const cookieValues = setCookieValues
+    .map((value) => normalizeWhitespace(String(value).split(';')[0]))
+    .filter(Boolean)
+
+  return cookieValues.length > 0 ? cookieValues.join('; ') : null
+}
+
+const isRetryableDarwinboxListingError = (error) => {
+  if (!error) return false
+  if (error.status === 403) return true
+
+  const message = normalizeWhitespace(error.message) || ''
+  return /(?:^| )HTTP 403\b|Forbidden HTML response/i.test(message)
+}
 
 const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
@@ -73,6 +115,13 @@ export const createDarwinboxScraper = ({
   fetchImpl = fetch,
 } = {}) => {
   const portalOrigin = normalizeOrigin(origin)
+  const requestTimeoutMs = Math.max(Number(config.jobListingTimeoutMs) || 0, 30000)
+  let publicSessionCookieHeader = null
+  const invokeFetchImpl = (url, requestInit) => (
+    fetchImpl === globalThis.fetch
+      ? globalThis.fetch(url, requestInit)
+      : fetchImpl(url, requestInit)
+  )
 
   const buildCareersPageUrl = (targetCompanyId = companyId) =>
     `${portalOrigin}/ms/candidatev2/${targetCompanyId}/careers/allJobs`
@@ -82,6 +131,42 @@ export const createDarwinboxScraper = ({
 
   const buildJobDetailUrl = (jobId, targetCompanyId = companyId) =>
     `${portalOrigin}/ms/candidatev2/${targetCompanyId}/careers/jobDetails/${normalizeWhitespace(jobId) || ''}`
+
+  const updatePublicSessionCookieHeader = (headers) => {
+    const nextCookieHeader = buildCookieHeader(extractSetCookieValues(headers))
+    if (nextCookieHeader) {
+      publicSessionCookieHeader = nextCookieHeader
+    }
+    return publicSessionCookieHeader
+  }
+
+  const cookieAwareFetchImpl = async (url, requestInit) => {
+    const response = await invokeFetchImpl(url, requestInit)
+    updatePublicSessionCookieHeader(response?.headers)
+    return response
+  }
+
+  const seedPublicSessionCookie = async (
+    targetCompanyId = companyId,
+    { forceRefresh = false } = {},
+  ) => {
+    if (!forceRefresh && publicSessionCookieHeader) return publicSessionCookieHeader
+
+    try {
+      await cookieAwareFetchImpl(buildCareersPageUrl(targetCompanyId), {
+        method: 'GET',
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        signal: createTimeoutSignal(requestTimeoutMs),
+      })
+    } catch {
+      // Best effort only; some tenants may still allow the API without a seeded cookie.
+    }
+
+    return publicSessionCookieHeader
+  }
 
   const extractSearchResults = (payload = {}) => (
     Array.isArray(payload?.data)
@@ -113,7 +198,9 @@ export const createDarwinboxScraper = ({
             postingDate: normalizeWhitespace(record.posted_on),
             closingDate: null,
             jobDescription,
-            publicExperienceChecked: Boolean(jobDescription && !experienceRequired),
+            ...(jobDescription && !experienceRequired
+              ? { publicExperienceChecked: true }
+              : {}),
           }
         })
         .filter(Boolean)
@@ -124,25 +211,47 @@ export const createDarwinboxScraper = ({
     page: pageNumber,
     pageSize: targetPageSize = pageSize,
     companyId: targetCompanyId = companyId,
-  }) => fetchJsonWithRetry(buildListingApiUrl(targetCompanyId), {
-    fetchImpl,
-    method: 'POST',
-    headers: {
-      Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
-      'Content-Type': 'application/json',
-      Origin: portalOrigin,
-      Referer: buildCareersPageUrl(targetCompanyId),
-      'User-Agent': USER_AGENT,
-    },
-    body: JSON.stringify({
+  }) => (async () => {
+    const requestBody = JSON.stringify({
       companyId: targetCompanyId,
       sort_option: 'new',
       limit: targetPageSize,
       page: pageNumber,
-    }),
-    label: `${source}-darwinbox-listings`,
-    timeoutMs: Math.max(Number(config.jobListingTimeoutMs) || 0, 30000),
-  })
+    })
+
+    for (let attemptNumber = 1; attemptNumber <= 2; attemptNumber += 1) {
+      const cookieHeader = await seedPublicSessionCookie(targetCompanyId, { forceRefresh: true })
+      const headers = {
+        'User-Agent': USER_AGENT,
+        Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
+        'Content-Type': 'application/json',
+        Origin: portalOrigin,
+        Referer: buildCareersPageUrl(targetCompanyId),
+      }
+
+      if (cookieHeader) {
+        headers.cookie = cookieHeader
+      }
+
+      try {
+        return await fetchJsonWithRetry(buildListingApiUrl(targetCompanyId), {
+          fetchImpl: cookieAwareFetchImpl,
+          attempts: 1,
+          method: 'POST',
+          headers,
+          body: requestBody,
+          label: `${source}-darwinbox-listings`,
+          timeoutMs: requestTimeoutMs,
+        })
+      } catch (error) {
+        if (attemptNumber >= 2 || !isRetryableDarwinboxListingError(error)) {
+          throw error
+        }
+      }
+    }
+
+    throw new Error(`[${source}] Darwinbox listings retry exhausted unexpectedly`)
+  })()
 
   const run = async ({
     maxPages = config.maxPages,

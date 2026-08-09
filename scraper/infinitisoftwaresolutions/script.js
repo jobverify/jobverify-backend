@@ -23,10 +23,6 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const getParagraphs = (block) => [...String(block ?? '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-  .map((item) => normalizeWhitespace(item[1]))
-  .filter(Boolean)
-
 const toAbsoluteUrl = (value) => {
   try {
     const url = new URL(value, CAREERS_URL)
@@ -64,28 +60,43 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /goodfit\.so\/apply/i.test(page)
 }
 
+export const extractJobsSection = (html = '') =>
+  String(html ?? '').match(
+    /<h2[^>]*>\s*Explore Job Opportunities\s*<\/h2>([\s\S]*?)(?=<h2[^>]*>\s*Life at Infiniti\s*<\/h2>|$)/i,
+  )?.[1] ?? ''
+
 export const extractJobs = (html = '') => {
+  const jobsSection = extractJobsSection(html)
+  const sectionHtml = jobsSection || String(html ?? '')
   const jobs = []
   const seen = new Set()
+  const roleHeadings = [...sectionHtml.matchAll(
+    /<h2[^>]*class=["'][^"']*elementor-heading-title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/gi,
+  )]
 
-  for (const match of String(html ?? '').matchAll(
-    /<a[^>]*href=["']([^"']*goodfit\.so[^"']+)["'][^>]*>\s*[\s\S]*?Apply[\s\S]*?<\/a>/gi,
-  )) {
-    const applyUrl = toAbsoluteUrl(match[1])
+  for (let index = 0; index < roleHeadings.length; index += 1) {
+    const headingMatch = roleHeadings[index]
+    const nextHeadingIndex = roleHeadings[index + 1]?.index ?? sectionHtml.length
+    const localBlock = sectionHtml.slice(headingMatch.index, nextHeadingIndex)
+    const title = normalizeWhitespace(headingMatch[1])
+    const applyUrl = toAbsoluteUrl(
+      localBlock.match(/<a[^>]*href=["']([^"']*goodfit\.so[^"']+)["'][^>]*>/i)?.[1],
+    )
     const jobId = extractJobId(applyUrl)
-    if (!applyUrl || !jobId || seen.has(jobId)) continue
+    if (!title || title === 'Explore Job Opportunities' || !applyUrl || !jobId || seen.has(jobId)) continue
 
-    const localBlock = String(html ?? '').slice(Math.max(0, (match.index || 0) - 8000), (match.index || 0) + match[0].length)
-    const titleMatches = [...localBlock.matchAll(/<h2[^>]*class=["'][^"']*elementor-heading-title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/gi)]
-    const paragraphMatches = [...localBlock.matchAll(/<p>([\s\S]*?)<\/p>/gi)]
+    const descriptionBlock = localBlock.match(
+      /<div[^>]*class=["'][^"']*elementor-widget-text-editor[^"']*["'][^>]*>[\s\S]*?<div[^>]*class=["'][^"']*elementor-widget-container[^"']*["'][^>]*>([\s\S]*?)<\/div>\s*<\/div>/i,
+    )?.[1]
     const iconValueMatches = [...localBlock.matchAll(
-      /<div[^>]*class=["'][^"']*elementor-icon-box-title[^"']*["'][^>]*>\s*<span>\s*([^<]+)\s*<\/span>\s*<\/div>/gi,
+      /<div[^>]*class=["'][^"']*elementor-icon-box-title[^"']*["'][^>]*>\s*<span\b[^>]*>\s*([^<]+)\s*<\/span>\s*<\/div>/gi,
     )]
-    const title = normalizeWhitespace(titleMatches.at(-1)?.[1])
-    const jobDescription = normalizeWhitespace(paragraphMatches.at(-1)?.[1])
-    const iconValues = iconValueMatches.map((item) => normalizeWhitespace(item[1])).filter(Boolean)
-    const experienceRequired = iconValues.at(-2) || null
-    const city = iconValues.at(-1) || null
+    const iconValues = iconValueMatches
+      .map((item) => normalizeWhitespace(item[1]))
+      .filter(Boolean)
+    const experienceRequired = iconValues[0] || null
+    const city = iconValues[1] || null
+    const jobDescription = normalizeWhitespace(descriptionBlock)
 
     if (!title || !city || !applyUrl || !jobId || !INDIA_LOCATION_PATTERN.test(city)) continue
     seen.add(jobId)

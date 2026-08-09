@@ -16,7 +16,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Sapphire Foods local catalog captures the verified first-party careers landing and public store/corporate role pages', async () => {
+test('Sapphire Foods local catalog captures the verified first-party empty-state contract for the official careers routes', async () => {
   const {
     SAPPHIRE_FOODS_CATALOG,
     VERIFIED_SURFACE_SUMMARY,
@@ -44,10 +44,13 @@ test('Sapphire Foods local catalog captures the verified first-party careers lan
   assert.equal(SAPPHIRE_FOODS_CATALOG.companyDomain, 'sapphirefoods.in')
   assert.equal(SAPPHIRE_FOODS_CATALOG.atsPlatform, 'official-company-site-public-role-pages')
   assert.equal(SAPPHIRE_FOODS_CATALOG.countryFilter, 'India')
-  assert.equal(SAPPHIRE_FOODS_CATALOG.paginationStrategy, 'official-store-and-corporate-pages-no-pagination')
+  assert.equal(
+    SAPPHIRE_FOODS_CATALOG.paginationStrategy,
+    'verified-branded-404-empty-state-or-store-and-corporate-pages-no-pagination',
+  )
   assert.equal(
     SAPPHIRE_FOODS_CATALOG.extractionStrategy,
-    'verified-careers-landing+verified-store-careers-page+verified-corporate-careers-page+role-card-link-extraction',
+    'verified-branded-404-empty-state-or-verified-careers-landing+verified-store-careers-page+verified-corporate-careers-page+role-card-link-extraction',
   )
   assert.equal(SAPPHIRE_FOODS_CATALOG.parser, 'custom-script')
   assert.equal(SAPPHIRE_FOODS_CATALOG.normalizationProfile, 'engineering-default')
@@ -56,14 +59,13 @@ test('Sapphire Foods local catalog captures the verified first-party careers lan
     SAPPHIRE_FOODS_CATALOG.verifiedSampleCorporateRoleTitle,
     'Manager - Treasury ( Finance & Accounts)',
   )
-  assert.equal(SAPPHIRE_FOODS_CATALOG.verifiedOn, '2026-07-17')
+  assert.equal(SAPPHIRE_FOODS_CATALOG.verifiedOn, '2026-08-04')
   assert.equal(SAPPHIRE_FOODS_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Friday, July 17, 2026/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.sapphire\.terbiumsolutions\.com\/careers/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /store-careers/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /corporate-careers/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Assistant Restaurant Manager/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Manager - Treasury/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Tuesday, August 4, 2026/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.sapphire\.terbiumsolutions\.com\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /landing, store, and corporate careers pages/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Page not found/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /returns no jobs/i)
 })
 
 test('Sapphire Foods backlog row matches directly from local provider metadata without alias churn', async () => {

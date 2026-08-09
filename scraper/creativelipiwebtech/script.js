@@ -14,7 +14,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CONTACT_URL = PROVIDER_METADATA.companyCareerPage
 export const PAGE_SITEMAP_URL = 'https://creativelipi.com/page-sitemap.xml'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')

@@ -19,7 +19,7 @@ export const VERIFIED_KEKA_CONFIG = {
   portalName: 'default',
 }
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

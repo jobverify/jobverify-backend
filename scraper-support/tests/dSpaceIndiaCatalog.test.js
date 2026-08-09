@@ -29,7 +29,7 @@ test('dSpace India local catalog captures the verified first-party careers and I
   assert.equal(provider.source, 'dspaceindia')
   assert.equal(provider.companyName, 'dSpace India')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/dspaceindia/script.js')
+  assert.match(provider.modulePath, /dspaceindia[\\/]script\.js$/i)
   assert.equal(provider.companyCareerPage, 'https://www.dspace.com/en/pub/home/career/jobfinder/stellen.cfm')
   assert.equal(provider.officialCareersLandingUrl, 'https://www.dspace.com/en/pub/home/career.cfm')
   assert.equal(provider.jobFinderEntryUrl, 'https://www.dspace.com/en/pub/home/career/jobfinder.cfm')

@@ -11,7 +11,7 @@ export const SOURCE = NOISE_CATALOG.source
 export const COMPANY = NOISE_CATALOG.companyName
 export const CAREERS_URL = NOISE_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const JOB_PATH_PATTERN = /\/jobs\/([A-Za-z0-9]+)\/([A-Za-z0-9-]+)/i
 
 const normalizeWhitespace = (value) => String(value ?? '')

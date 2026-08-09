@@ -101,7 +101,7 @@ test('ClearTax scraper keeps the verified official careers handoff explicit and 
   )
 })
 
-test('run maps verified ClearTax Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified ClearTax Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createClearTaxScraper } = await loadClearTaxModule()
   const scraper = createClearTaxScraper({
     now: () => FIXED_SCRAPED_AT,

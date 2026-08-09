@@ -359,6 +359,6 @@ test('run fails closed when the Zeon redirect, about page, contact page, or care
       },
       extractRenderedJobs: async () => [],
     }),
-    /official careers page/i,
+    /official careers response/i,
   )
 })

@@ -16,7 +16,7 @@ test('getScraperCatalog includes Raymond as a PeopleStrong script provider', () 
   assert.equal(provider.companyCareerPage, 'https://www.raymond.in/career')
   assert.equal(provider.companyDomain, 'raymondcareers.peoplestrong.com')
   assert.equal(provider.extractionStrategy, 'official-careers-shell+client-bundle-handoff+peoplestrong-jobs-api')
-  assert.equal(provider.modulePath, '../../scraper/raymond/script.js')
+  assert.match(provider.modulePath, /raymond[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Raymond scraper without changing the runner contract', () => {

@@ -2,59 +2,25 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 const homepageHtml = `
-<!DOCTYPE html>
-<html lang="en" prefix="og: https://ogp.me/ns#">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Namaah — 600,000+ Sacred Baby Names by Religion, Meaning & Origin</title>
-<meta name="description" content="Discover 600,000+ authentic baby names from 11 world religions — Hindu, Muslim, Christian, Jewish, Sikh, Buddhist, Greek, Norse, Egyptian, Celtic & Japanese. Filter by gender, meaning, letter and theme. Free baby name finder.">
-<meta name="author" content="Namaah">
-<link rel="canonical" href="https://namaah.co.in/">
-<meta property="og:site_name" content="Namaah">
-<meta property="og:title" content="Namaah — 600,000+ Sacred Baby Names by Religion & Meaning">
-<meta property="og:url" content="https://namaah.co.in/">
-<meta name="twitter:site" content="@namaah_coin">
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebSite",
-      "@id": "https://namaah.co.in/#website",
-      "name": "Namaah",
-      "alternateName": "Namaah Sacred Baby Names",
-      "url": "https://namaah.co.in/"
-    },
-    {
-      "@type": "WebApplication",
-      "@id": "https://namaah.co.in/#app",
-      "name": "Namaah Baby Name Finder",
-      "applicationCategory": "LifestyleApplication"
-    }
-  ]
-}
-</script>
-</head>
-<body>
-  <main>
-    <h1>Namaah</h1>
-    <p>600,000+ authentic baby names from 11 world religions and mythologies, searchable by gender, meaning, letter, theme and religion.</p>
-    <p>Find the perfect baby name from Hindu, Muslim, Christian, Jewish, Greek, Norse, Egyptian, Celtic &amp; more traditions. 600k+ names, free.</p>
-  </main>
-</body>
+<!doctype html>
+<html>
+  <head>
+    <script>
+      window.onload = function() { window.location.href = "/lander" }
+    </script>
+  </head>
 </html>
 `
 
-const missingRoute = {
-  status: 404,
-  url: 'https://namaah.co.in/careers',
-  html: '',
+const verifiedNoJobsRoute = {
+  status: 200,
+  url: 'https://namaah.in/careers',
+  html: homepageHtml,
 }
 
 const liveJobsRoute = {
   status: 200,
-  url: 'https://namaah.co.in/jobs',
+  url: 'https://namaah.in/jobs',
   html: `
     <html>
       <head><title>Namaah Careers</title></head>
@@ -79,31 +45,31 @@ const loadModule = async () => {
   }
 }
 
-test('Namaah Pvt Ltd sentinel pins the verified first-party no-public-jobs surface from July 13, 2026', async () => {
+test('Namaah Pvt Ltd sentinel pins the verified first-party no-public-jobs surface from August 3, 2026', async () => {
   const namaah = await loadModule()
 
   assert.equal(namaah.SOURCE, 'namaahpvtltd')
   assert.equal(namaah.COMPANY, 'Namaah Pvt Ltd')
-  assert.equal(namaah.VERIFIED_ON, '2026-07-13')
-  assert.equal(namaah.HOMEPAGE_URL, 'https://namaah.co.in/')
+  assert.equal(namaah.VERIFIED_ON, '2026-08-03')
+  assert.equal(namaah.HOMEPAGE_URL, 'https://namaah.in/')
   assert.deepEqual(namaah.NO_PUBLIC_JOB_ROUTE_URLS, [
-    'https://namaah.co.in/careers',
-    'https://namaah.co.in/careers/',
-    'https://namaah.co.in/jobs',
-    'https://namaah.co.in/jobs/',
+    'https://namaah.in/careers',
+    'https://namaah.in/careers/',
+    'https://namaah.in/jobs',
+    'https://namaah.in/jobs/',
   ])
   assert.equal(
     namaah.VERIFIED_SURFACE_SUMMARY,
-    'The verified first-party public surface on July 13, 2026 was https://namaah.co.in/, a Namaah baby-names product homepage with no public jobs board, while common careers and jobs routes returned 404.',
+    'Verified on Monday, August 3, 2026 that https://namaah.in/ now serves only a first-party JavaScript redirect shell that sends visitors to /lander, with no public jobs board, and that common careers and jobs routes return the same no-public-jobs shell.',
   )
 
-  assert.equal(namaah.isFirstPartyUrl('https://namaah.co.in/careers'), true)
-  assert.equal(namaah.isFirstPartyUrl('https://www.namaah.co.in/careers'), true)
+  assert.equal(namaah.isFirstPartyUrl('https://namaah.in/careers'), true)
+  assert.equal(namaah.isFirstPartyUrl('https://www.namaah.in/careers'), true)
   assert.equal(namaah.isFirstPartyUrl('https://example.com/jobs'), false)
   assert.equal(namaah.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(namaah.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(namaah.hasPublicJobsSignal(liveJobsRoute.html), true)
-  assert.equal(namaah.isVerifiedNoJobsRoute(missingRoute), true)
+  assert.equal(namaah.isVerifiedNoJobsRoute(verifiedNoJobsRoute), true)
   assert.equal(namaah.isVerifiedNoJobsRoute(liveJobsRoute), false)
 })
 
@@ -120,7 +86,7 @@ test('Namaah Pvt Ltd sentinel returns [] only while the verified first-party sur
       }
 
       if (namaah.NO_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: '' }
+        return { status: 200, url, html: homepageHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -189,7 +155,7 @@ test('Namaah Pvt Ltd sentinel fails closed when the verified first-party surface
         }
 
         if (namaah.NO_PUBLIC_JOB_ROUTE_URLS.slice(1).includes(url)) {
-          return { status: 404, url, html: '' }
+          return { status: 200, url, html: homepageHtml }
         }
 
         throw new Error(`Unexpected URL: ${url}`)

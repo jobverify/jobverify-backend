@@ -269,6 +269,7 @@ test('run uses browser-backed first-party HTML when direct HTTP access is blocke
   assert.deepEqual(attempts, [
     `http:${remunance.HOMEPAGE_URL}`,
     `browser:${remunance.HOMEPAGE_URL}`,
+    `http:${remunance.JOBS_URL}`,
     `browser:${remunance.JOBS_URL}:listing`,
     'http:https://remunance.com/jobs/new-product-introduction-buyer/',
     'browser:https://remunance.com/jobs/new-product-introduction-buyer/',
@@ -311,6 +312,7 @@ test('run also uses browser-backed first-party HTML when direct HTTP access is r
   assert.deepEqual(attempts, [
     `http:${remunance.HOMEPAGE_URL}`,
     `browser:${remunance.HOMEPAGE_URL}`,
+    `http:${remunance.JOBS_URL}`,
     `browser:${remunance.JOBS_URL}:listing`,
     'http:https://remunance.com/jobs/new-product-introduction-buyer/',
     'browser:https://remunance.com/jobs/new-product-introduction-buyer/',

@@ -13,7 +13,7 @@ const loadPractoCatalog = async () => {
   }
 }
 
-test('Practo catalog captures the verified July 26, 2026 hidden-and-closed careers contract', async () => {
+test('Practo catalog captures the verified August 1, 2026 public Zwayam search contract', async () => {
   const { PRACTO_CATALOG } = await loadPractoCatalog()
 
   assert.equal(PRACTO_CATALOG.source, 'practo')
@@ -23,28 +23,28 @@ test('Practo catalog captures the verified July 26, 2026 hidden-and-closed caree
   assert.equal(PRACTO_CATALOG.homepageUrl, 'https://www.practo.com/')
   assert.equal(PRACTO_CATALOG.companyCareerPage, 'https://careers.practo.com/practo/')
   assert.equal(PRACTO_CATALOG.companyDomain, 'practo.com')
-  assert.equal(PRACTO_CATALOG.atsPlatform, 'zwayam-no-public-jobs-sentinel')
+  assert.equal(PRACTO_CATALOG.atsPlatform, 'zwayam-public-search')
   assert.equal(PRACTO_CATALOG.countryFilter, 'India')
   assert.equal(
     PRACTO_CATALOG.paginationStrategy,
-    'official-careers-shell-plus-zwayam-search-contract-validation',
+    'official-careers-shell-plus-zwayam-search-pagination',
   )
   assert.equal(
     PRACTO_CATALOG.extractionStrategy,
-    'verified-careers-shell+verified-zwayam-search-hidden-closed-only-return-empty',
+    'verified-careers-shell+zwayam-search+zwayam-jobs-service-detail',
   )
   assert.equal(PRACTO_CATALOG.parser, 'custom-script')
   assert.equal(PRACTO_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(PRACTO_CATALOG.verifiedOn, '2026-07-26')
+  assert.equal(PRACTO_CATALOG.verifiedOn, '2026-08-01')
   assert.equal(PRACTO_CATALOG.officialSearchApiUrl, 'https://public.zwayam.com/jobs/search')
   assert.equal(PRACTO_CATALOG.zwayamCompanyId, 'MTYzMDI=')
   assert.equal(PRACTO_CATALOG.zwayamDetailCompanyId, '16302')
-  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
-  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /app-root shell/i)
+  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
   assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Practo \| Careers/i)
-  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Hidden/i)
-  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Closed/i)
-  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /rendered current openings/i)
+  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /\b13 live India openings\b/i)
+  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /Creative Strategist Manager/i)
+  assert.match(PRACTO_CATALOG.verifiedSurfaceSummary, /jobs-service\/v1\/jobs\/careersite/i)
   assert.match(PRACTO_CATALOG.modulePath, /scraper[\\/]practo[\\/]script\.js$/i)
   assert.match(PRACTO_CATALOG.dryRunFile, /practo[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Practo'), false)

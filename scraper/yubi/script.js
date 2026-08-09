@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -17,7 +17,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Yubi',
   adapter: 'script',
-  modulePath: '../yubi/script.js',
+  modulePath: '../../scraper/yubi/script.js',
   companyCareerPage: CAREERS_PORTAL_URL,
   careersApiUrl: CAREERS_API_URL,
   companyDomain: 'go-yubi.zohorecruit.in',
@@ -202,3 +202,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

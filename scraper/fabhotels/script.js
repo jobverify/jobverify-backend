@@ -22,7 +22,7 @@ export const VERIFIED_ROLE_URLS = PROVIDER_METADATA.verifiedRoleUrls
 export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const DETAIL_URL_PATTERN = /^https:\/\/www\.fabhotels\.com\/careers\/(?!department-)[A-Z0-9-]+$/i
 
 const STATE_BY_CITY = {

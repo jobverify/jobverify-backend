@@ -123,10 +123,11 @@ test('McAfee local catalog captures the verified non-enumerable careers shell fa
   assert.equal(provider.source, 'mcafee')
   assert.equal(provider.companyCareerPage, 'https://careers.mcafee.com/join')
   assert.equal(provider.searchResultsUrl, 'https://careers.mcafee.com/global/en/search-results')
-  assert.equal(provider.atsPlatform, 'jibe-careers-shell-sentinel')
-  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.atsPlatform, 'jibe-jobs-api')
+  assert.equal(provider.verifiedPublicJobCount, 5)
   assert.match(provider.verifiedSurfaceSummary, /404/i)
-  assert.match(provider.verifiedSurfaceSummary, /stable anonymous inventory surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /api\/jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /Data Engineer \/ Analyst/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

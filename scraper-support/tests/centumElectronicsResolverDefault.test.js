@@ -47,3 +47,29 @@ test('Centum Electronics only retries certificate failures for the verified firs
     false,
   )
 })
+
+test('Centum Electronics bounds stalled DNS lookups for the verified India careers host', async () => {
+  const centum = await loadCentumElectronicsModule()
+  const calls = []
+  const never = (family) => async (host) => {
+    calls.push(`${family}:${host}`)
+    return new Promise(() => {})
+  }
+  const startedAt = Date.now()
+
+  const addresses = await centum.resolveCareerHost(
+    centum.INDIA_CAREERS_HOST,
+    {
+      resolve4Impl: never('v4'),
+      resolve6Impl: never('v6'),
+      timeoutMs: 10,
+    },
+  )
+
+  assert.deepEqual(addresses, [])
+  assert.deepEqual(calls.sort(), [
+    `v4:${centum.INDIA_CAREERS_HOST}`,
+    `v6:${centum.INDIA_CAREERS_HOST}`,
+  ])
+  assert.ok(Date.now() - startedAt < 150)
+})

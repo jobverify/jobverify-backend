@@ -140,24 +140,19 @@ test('Brainium Information Technologies run returns structured jobs from the ver
   assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
-test('Brainium Information Technologies falls back to a browser-rendered careers page when the direct request is blocked', async () => {
+test('Brainium Information Technologies stays API-only and surfaces direct-request failures without a browser fallback', async () => {
   const brainium = await loadBrainiumModule()
 
-  const jobs = await brainium.createBrainiumInformationTechnologiesScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async () => {
-      throw new Error('HTTP 403 for https://www.brainiuminfotech.com/careers')
-    },
-    fetchBrowserText: async (url) => {
-      assert.equal(url, 'https://www.brainiuminfotech.com/careers')
-      return careersHtml
-    },
-  })
-
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].applyUrl, 'https://www.brainiuminfotech.com/careers#open-positions')
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
+  await assert.rejects(
+    brainium.createBrainiumInformationTechnologiesScraper({
+      now: () => FIXED_SCRAPED_AT,
+    }).run({
+      fetchText: async () => {
+        throw new Error('HTTP 403 for https://www.brainiuminfotech.com/careers')
+      },
+    }),
+    /HTTP 403 for https:\/\/www\.brainiuminfotech\.com\/careers/,
+  )
 })
 
 test('Brainium Information Technologies fails closed when the verified careers surface no longer exposes open roles', async () => {

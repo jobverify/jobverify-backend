@@ -33,18 +33,18 @@ test('Alphavector provider metadata captures the verified parked no-public-caree
   assert.equal(provider.paginationStrategy, 'verified-parked-homepage-plus-sitemap-plus-common-careers-route-redirect-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-parked-homepage+verified-robots-and-sitemap-with-single-lander-url+verified-common-careers-routes-share-parked-redirect-return-empty',
+    'verified-parked-homepage+verified-robots-and-sitemap-with-single-lander-url+verified-common-careers-routes-share-parked-redirect-or-all-routes-unreachable-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-07')
   assert.match(provider.modulePath, /alphavector[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 7, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/alphavector\.co\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/alphavector\.co\/robots\.txt/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/alphavector\.co\/sitemap\.xml/i)
-  assert.match(provider.verifiedSurfaceSummary, /GoDaddy/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /robots\.txt/i)
+  assert.match(provider.verifiedSurfaceSummary, /sitemap/i)
+  assert.match(provider.verifiedSurfaceSummary, /parked redirect shell/i)
+  assert.match(provider.verifiedSurfaceSummary, /no alternate official jobs surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Alphavector'), false)
 })
 

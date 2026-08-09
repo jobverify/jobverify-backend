@@ -11,7 +11,7 @@ test('Safran Engineering Services India is registered against the verified Safra
   assert.ok(provider, 'Expected Safran Engineering Services India provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Safran Engineering Services India')
-  assert.equal(provider.modulePath, '../../scraper/safranengineeringservicesindia/script.js')
+  assert.match(provider.modulePath, /safranengineeringservicesindia[\\/]script\.js$/i)
   assert.equal(
     provider.companyCareerPage,
     'https://www.safran-group.com/jobs?companies%5B%5D=636-safran-engineering-services&countries%5B%5D=1083-india',

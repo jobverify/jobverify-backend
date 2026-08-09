@@ -52,7 +52,7 @@ test('Itron India catalog captures the verified official careers handoff and Ind
     /https:\/\/itron\.wd5\.myworkdayjobs\.com\/Itron\?locationCountry=c4f78be1a8f14da0ab49ce1162348a5e/i,
   )
   assert.match(ITRON_INDIA_CATALOG.verifiedSurfaceSummary, /View Jobs in India/i)
-  assert.match(ITRON_INDIA_CATALOG.modulePath, /itronindia[\\/]script\.js$/i)
+  assert.match(ITRON_INDIA_CATALOG.modulePath, /itronindia\.workday[\\/]script\.js$/i)
 })
 
 test('Itron India backlog matching works directly from the local catalog metadata', async () => {

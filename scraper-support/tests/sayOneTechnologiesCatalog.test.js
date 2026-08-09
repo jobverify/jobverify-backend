@@ -14,10 +14,10 @@ test('SayOne Technologies is registered as a verified first-party careers scrape
   assert.equal(provider.companyCareerPage, 'https://www.sayonetech.com/career/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-react-careers-page')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-public-strapi-feed')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-react-careers-page-plus-browser-rendered-job-cards-and-modal-details',
+    'verified-first-party-careers-page+public-strapi-job-postings-api+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

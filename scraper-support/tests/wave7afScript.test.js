@@ -60,7 +60,10 @@ const algonomyCareersHtml = `
 <html lang="en">
   <body>
     <h2>Search Job Openings</h2>
+    <h2>Why Algonomy</h2>
     <h2>We have global openings in core business and technical teams across our company.</h2>
+    <p>Working at Algonomy is more than just a job. It's a mission.</p>
+    <p>Algonomy is now part of ADA</p>
     <script id="gnewtonjs" type="text/javascript" src="//recruitingbypaycor.com/career/iframe.action?clientId=8a7883c6606d030901607ae3719c71a6"></script>
   </body>
 </html>

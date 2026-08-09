@@ -57,8 +57,8 @@ test('createBrowserUserDataDir allocates a unique temp profile prefix for each b
     },
   })
 
-  assert.equal(receivedPrefix, 'C:\\Temp\\jobify-puppeteer-profile-')
-  assert.equal(userDataDir, 'C:\\Temp\\jobify-puppeteer-profile-abc123')
+  assert.equal(receivedPrefix, 'C:\\Temp\\jobverify-puppeteer-profile-')
+  assert.equal(userDataDir, 'C:\\Temp\\jobverify-puppeteer-profile-abc123')
 })
 
 test('launchBrowser rejects a requesting source with an API-only migration error', async () => {
@@ -66,6 +66,7 @@ test('launchBrowser rejects a requesting source with an API-only migration error
     launchBrowser({ sourcePath: 'scraper/example/script.js' }),
     (error) => (
       error?.code === 'SCRAPER_BROWSER_DISABLED'
+      && error?.abortRetries === true
       && error.message.includes('API-only')
       && error.message.includes('scraper/example/script.js')
     ),
@@ -77,6 +78,7 @@ test('launchBrowser without source metadata gives a clear API-only migration err
     launchBrowser(),
     (error) => (
       error?.code === 'SCRAPER_BROWSER_DISABLED'
+      && error?.abortRetries === true
       && error.message.includes('API-only')
       && error.message.includes('Migrate this scraper to HTTP/API access.')
       && !error.message.includes('unknown source/configuration')

@@ -6,7 +6,7 @@ export const JOBS_API_URL = 'https://genesys.wd1.myworkdayjobs.com/wday/cxs/gene
 export const INDIA_COUNTRY_FACET_ID = 'c4f78be1a8f14da0ab49ce1162348a5e'
 
 const DEFAULT_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (compatible; JobifyBot/1.0)',
+  'User-Agent': 'Mozilla/5.0 (compatible; JobverifyBot/1.0)',
   Accept: 'application/json',
   'Content-Type': 'application/json',
 }

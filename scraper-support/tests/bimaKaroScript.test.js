@@ -31,16 +31,22 @@ test('BimaKaro recognizes the verified official host timeout state', async () =>
 
 test('BimaKaro returns no jobs only while both official routes still time out', async () => {
   const bimakaro = await loadBimaKaroModule()
-  const requestedUrls = []
+  const requested = []
 
   const jobs = await bimakaro.createBimaKaroScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
+    fetchText: async (url, options) => {
+      requested.push({ url, options })
       throw new Error('connect ETIMEDOUT')
     },
   })
 
-  assert.deepEqual(requestedUrls, [bimakaro.HOMEPAGE_URL, bimakaro.CAREERS_URL])
+  assert.deepEqual(
+    requested,
+    [
+      { url: bimakaro.HOMEPAGE_URL, options: { attempts: 1 } },
+      { url: bimakaro.CAREERS_URL, options: { attempts: 1 } },
+    ],
+  )
   assert.deepEqual(jobs, [])
 })
 

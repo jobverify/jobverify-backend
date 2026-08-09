@@ -17,7 +17,7 @@ const loadMindbowserCatalog = async () => {
   }
 }
 
-test('Mindbowser local catalog captures the verified first-party careers handoff and rendered HROne board metadata', async () => {
+test('Mindbowser local catalog captures the verified first-party careers handoff and API-only opaque-shell fallback metadata', async () => {
   const {
     MINDBOWSER_CATALOG,
     default: defaultCatalog,
@@ -34,24 +34,26 @@ test('Mindbowser local catalog captures the verified first-party careers handoff
   assert.equal(provider.hroneShortUrl, 'https://hr-1.in/829c17')
   assert.equal(provider.atsPlatform, 'hrone')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-public-hrone-board')
+  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-opaque-hrone-shell-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-careers-page+verified-public-hrone-board+rendered-job-cards',
+    'verified-official-careers-page+verified-hrone-handoff+api-only-empty-fallback',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'mindbowser.com')
   assert.equal(provider.verifiedRenderedJobCount, 6)
   assert.equal(provider.verifiedSampleJobId, 'JO00115')
-  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedOn, '2026-08-08')
   assert.match(provider.dryRunFile, /mindbowser[\\/]jobs\.json$/i)
   assert.match(provider.modulePath, /mindbowser[\\/]script\.js$/i)
   assert.equal(provider.modulePath, mindbowserModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 8, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.mindbowser\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/hr-1\.in\/829c17/i)
-  assert.match(provider.verifiedSurfaceSummary, /career\.hrone\.cloud\/career-portal/i)
+  assert.match(provider.verifiedSurfaceSummary, /opaque public career-portal shell/i)
+  assert.match(provider.verifiedSurfaceSummary, /honest empty result by default/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /\b6 public vacancies\b/i)
   assert.match(provider.verifiedSurfaceSummary, /JO00115/i)
   assert.match(provider.verifiedSurfaceSummary, /Senior AI\/ML Engineer/i)

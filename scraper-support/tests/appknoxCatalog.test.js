@@ -11,7 +11,7 @@ test('Appknox is registered as a verified custom script provider', () => {
   assert.equal(provider.companyCareerPage, 'https://www.appknox.com/careers')
   assert.equal(provider.companyDomain, 'appknox.com')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/appknox/script.js')
+  assert.match(provider.modulePath, /appknox[\\/]script\.js$/i)
   assert.equal(provider.verifiedOn, '2026-07-25')
   assert.match(provider.verifiedSurfaceSummary, /publicly exposed three openings/i)
 })

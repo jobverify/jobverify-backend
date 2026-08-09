@@ -11,7 +11,7 @@ export const CURRENT_JOB_URLS = [
   'https://innefu.com/career/project-manager/',
 ]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper; +https://innefu.com/careers/)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper; +https://innefu.com/careers/)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')

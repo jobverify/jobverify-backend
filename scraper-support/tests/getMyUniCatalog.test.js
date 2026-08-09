@@ -26,7 +26,7 @@ const loadGetMyUniModule = async () => {
   }
 }
 
-test('GetMyUni local catalog captures the verified contact-us empty-state sentinel without aliases', async () => {
+test('GetMyUni local catalog captures the verified contact-us empty-state sentinel without aliases on July 25, 2026', async () => {
   const { GET_MY_UNI_CATALOG } = await loadCatalogModule()
   const getMyUni = await loadGetMyUniModule()
   const provider = hydrateProviderCatalogEntry(GET_MY_UNI_CATALOG)
@@ -52,7 +52,7 @@ test('GetMyUni local catalog captures the verified contact-us empty-state sentin
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'getmyuni.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-07-25')
   assert.match(provider.dryRunFile, /getmyuni[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.getmyuni\.com\/contact-us/i)
   assert.match(provider.verifiedSurfaceSummary, /contact@getmyuni\.com/i)

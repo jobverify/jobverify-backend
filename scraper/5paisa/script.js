@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -16,7 +16,7 @@ export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../5paisa/script.js',
+  modulePath: '../../scraper/5paisa/script.js',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
@@ -441,3 +441,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

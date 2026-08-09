@@ -8,7 +8,7 @@ export const DISPOSITION = 'verified-first-party-careers-page-plus-same-origin-d
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Thursday, July 30, 2026 that https://housr.in/career was the live first-party Housr careers page, that it publicly listed 9 same-origin openings under /career/{jobId}, and that detail pages such as https://housr.in/career/4 exposed trustworthy job descriptions plus Apply with LinkedIn handoffs for current India roles including Assistant Resident Manager/Resident Manager (Bangalore & Pune). This scraper validates the verified Housr careers shell and same-origin detail payloads, then returns the current India jobs from the official public surface.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const CAREERS_PAGE_PATTERNS = [
   /<title[^>]*>\s*Shape the Future of Luxury CoLiving At Housr\s*<\/title>/i,

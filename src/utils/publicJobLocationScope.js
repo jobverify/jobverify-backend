@@ -29,6 +29,7 @@ export const PUBLIC_JOB_ALLOWED_LOCATION_LABELS = Object.freeze([
 ]);
 
 const INDIA_OFFSITE_REGEX = /^India Offsite(?:\s*\(.*\))?$/i;
+const PLAIN_REMOTE_REGEX = /^remote$/i;
 const GROUPED_LOCATION_LABEL_REGEX =
   /^(?:\d+\s+locations?|multiple locations|various locations|unknown|none)(?:\s*,\s*(?:india|in|ind))?$/i;
 const LOCATION_MARKUP_OR_CODE_REGEXES = Object.freeze([
@@ -78,6 +79,12 @@ const matchesSpecialLocationLabel = (value = "") => {
   return SPECIAL_LOCATION_REGEXES.some((regex) => regex.test(trimmed));
 };
 
+const matchesPlainRemoteLabel = (value = "") => {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return false;
+  return PLAIN_REMOTE_REGEX.test(trimmed);
+};
+
 const matchesIndiaLocationMarker = (value = "") => {
   const trimmed = String(value || "").trim();
   if (!trimmed) return false;
@@ -122,13 +129,28 @@ export const getValidIndiaCityForJob = (job = {}) => {
       matchesSpecialLocationLabel(value) || matchesIndiaLocationMarker(value)
     ));
   const hasLocationHint = [...primaryCandidates, ...locationCandidates].some(Boolean);
+  const remoteCandidates = [...primaryCandidates, ...locationCandidates]
+    .filter((value) => matchesPlainRemoteLabel(value));
+  const hasOnlyPlainRemoteLabels = (
+    remoteCandidates.length > 0
+    && remoteCandidates.length === primaryCandidates.length + locationCandidates.length
+  );
+  const allowPlainRemoteLabel = (
+    explicitIndiaCountry
+    || hasIndiaScopeHint
+    || hasOnlyPlainRemoteLabels
+  );
 
   // First try the primary city/location fields
   for (const candidate of primaryCandidates) {
     if (matchesSpecialLocationLabel(candidate)) return "Remote";
+    if (matchesPlainRemoteLabel(candidate) && allowPlainRemoteLabel) return "Remote";
     const normalized = extractCityCandidate(candidate);
     if (!normalized) continue;
-    if (isRemoteCity(normalized) && !hasIndiaScopeHint) continue;
+    if (isRemoteCity(normalized)) {
+      if (matchesIndiaLocationMarker(candidate) || allowPlainRemoteLabel) return "Remote";
+      continue;
+    }
     if (matchesIndiaLocationMarker(candidate)) return normalized;
     if (ALLOWED_CITY_SET.has(normalized.toLowerCase())) return normalized;
   }
@@ -136,13 +158,19 @@ export const getValidIndiaCityForJob = (job = {}) => {
   // Then try special labels
   if (matchesSpecialLocationLabel(city)) return "Remote"; // Map "India Offsite" etc to Remote
   if (matchesSpecialLocationLabel(location)) return "Remote";
+  if (matchesPlainRemoteLabel(city) && allowPlainRemoteLabel) return "Remote";
+  if (matchesPlainRemoteLabel(location) && allowPlainRemoteLabel) return "Remote";
 
   // Finally scan the locations array
   for (const value of locationCandidates) {
     if (matchesSpecialLocationLabel(value)) return "Remote";
+    if (matchesPlainRemoteLabel(value) && allowPlainRemoteLabel) return "Remote";
     const normalizedValue = extractCityCandidate(value);
     if (!normalizedValue) continue;
-    if (isRemoteCity(normalizedValue) && !hasIndiaScopeHint) continue;
+    if (isRemoteCity(normalizedValue)) {
+      if (matchesIndiaLocationMarker(value) || allowPlainRemoteLabel) return "Remote";
+      continue;
+    }
     if (matchesIndiaLocationMarker(value)) return normalizedValue;
     if (ALLOWED_CITY_SET.has(normalizedValue.toLowerCase())) return normalizedValue;
   }

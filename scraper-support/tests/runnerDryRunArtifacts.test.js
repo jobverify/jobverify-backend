@@ -15,8 +15,33 @@ const loadDryRunRunner = async () => {
   }
 }
 
+test('dry-run progress logs use only ASCII markers', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-log-'))
+  const dryRunFile = path.join(tempDir, 'jobs.json')
+  const runner = await loadDryRunRunner()
+  const originalLog = console.log
+  const output = []
+
+  console.log = (...args) => output.push(args.join(' '))
+  try {
+    const result = await runner.runScraper({
+      name: 'ascii-log-source',
+      provider: { adapter: 'custom' },
+      dryRunFile,
+      run: async () => [],
+    })
+
+    assert.equal(result.success, true)
+    assert.ok(output.some((line) => line === 'Starting [ascii-log-source]...'))
+    assert.ok(output.every((line) => /^[\x00-\x7F]*$/.test(line)))
+  } finally {
+    console.log = originalLog
+    fs.rmSync(tempDir, { recursive: true, force: true })
+  }
+})
+
 test('a failed dry run clears stale jobs.json output instead of leaving old data behind', async () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const dryRunFile = path.join(tempDir, 'jobs.json')
   fs.writeFileSync(dryRunFile, '[{"title":"stale job"}]\n', 'utf8')
 
@@ -51,14 +76,30 @@ test('dry-run snapshot options keep public experience enrichment enabled by defa
   assert.equal(options.maxJobsToEnrich, null)
 })
 
+test('dry-run snapshot options respect provider overrides for public experience enrichment', async () => {
+  const runner = await loadDryRunRunner()
+
+  const options = runner.buildDryRunSnapshotOptions({
+    scraper: {
+      provider: {
+        dryRunEnrichPublicExperience: false,
+      },
+    },
+  })
+
+  assert.equal(options.enrichPublicExperience, false)
+  assert.equal(options.experienceEnrichmentConcurrency, 2)
+  assert.equal(options.maxJobsToEnrich, null)
+})
+
 test('dry-run runner snapshots recover missing experience from the official public job page', async () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-dry-run-enrichment-'))
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-enrichment-'))
   const dryRunFile = path.join(tempDir, 'jobs.json')
   const runner = await loadDryRunRunner()
   const originalFetch = globalThis.fetch
 
   globalThis.fetch = async (url) => {
-    assert.equal(url, 'https://careers.jobify.dev/jobs/cloud-engineer')
+    assert.equal(url, 'https://careers.jobverify.dev/jobs/cloud-engineer')
 
     return {
       ok: true,
@@ -95,9 +136,9 @@ test('dry-run runner snapshots recover missing experience from the official publ
         company: 'Example Corp',
         location: 'Hyderabad, India',
         city: 'Hyderabad',
-        link: 'https://careers.jobify.dev/jobs/cloud-engineer',
-        sourceUrl: 'https://careers.jobify.dev/jobs/cloud-engineer',
-        applyUrl: 'https://careers.jobify.dev/jobs/cloud-engineer',
+        link: 'https://careers.jobverify.dev/jobs/cloud-engineer',
+        sourceUrl: 'https://careers.jobverify.dev/jobs/cloud-engineer',
+        applyUrl: 'https://careers.jobverify.dev/jobs/cloud-engineer',
         experienceRequired: null,
       }],
     })
@@ -114,7 +155,7 @@ test('dry-run runner snapshots recover missing experience from the official publ
 })
 
 test('dry-run runner skips public-page refetch when the scraper already returns rich experience-backed job text', async () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-dry-run-rich-source-'))
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-rich-source-'))
   const dryRunFile = path.join(tempDir, 'jobs.json')
   const runner = await loadDryRunRunner()
   const originalFetch = globalThis.fetch
@@ -135,9 +176,9 @@ test('dry-run runner skips public-page refetch when the scraper already returns 
         company: 'Example Corp',
         location: 'Bengaluru, India',
         city: 'Bengaluru',
-        link: 'https://careers.jobify.dev/jobs/platform-engineer',
-        sourceUrl: 'https://careers.jobify.dev/jobs/platform-engineer',
-        applyUrl: 'https://careers.jobify.dev/jobs/platform-engineer',
+        link: 'https://careers.jobverify.dev/jobs/platform-engineer',
+        sourceUrl: 'https://careers.jobverify.dev/jobs/platform-engineer',
+        applyUrl: 'https://careers.jobverify.dev/jobs/platform-engineer',
         experienceRequired: '5-8 Years',
         jobDescription: `
           Role Objective: Build and evolve internal platform engineering systems that support order orchestration,
@@ -162,7 +203,7 @@ test('dry-run runner skips public-page refetch when the scraper already returns 
 })
 
 test('dry-run runner enriches every job in large sources by default', async () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-dry-run-limit-'))
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-limit-'))
   const dryRunFile = path.join(tempDir, 'jobs.json')
   const runner = await loadDryRunRunner()
   const originalFetch = globalThis.fetch
@@ -206,9 +247,9 @@ test('dry-run runner enriches every job in large sources by default', async () =
         company: 'Example Corp',
         location: 'Bengaluru, India',
         city: 'Bengaluru',
-        link: `https://careers.jobify.dev/jobs/platform-engineer-${index + 1}`,
-        sourceUrl: `https://careers.jobify.dev/jobs/platform-engineer-${index + 1}`,
-        applyUrl: `https://careers.jobify.dev/jobs/platform-engineer-${index + 1}`,
+        link: `https://careers.jobverify.dev/jobs/platform-engineer-${index + 1}`,
+        sourceUrl: `https://careers.jobverify.dev/jobs/platform-engineer-${index + 1}`,
+        applyUrl: `https://careers.jobverify.dev/jobs/platform-engineer-${index + 1}`,
         experienceRequired: null,
       })),
     })
@@ -220,6 +261,50 @@ test('dry-run runner enriches every job in large sources by default', async () =
     assert.equal(snapshot.length, 25)
     assert.equal(snapshot[0].experienceRequired, '4 years')
     assert.equal(snapshot[24].experienceRequired, '4 years')
+  } finally {
+    globalThis.fetch = originalFetch
+    fs.rmSync(tempDir, { recursive: true, force: true })
+  }
+})
+
+test('dry-run runner skips public-page refetch when the provider disables enrichment for structured results', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-provider-opt-out-'))
+  const dryRunFile = path.join(tempDir, 'jobs.json')
+  const runner = await loadDryRunRunner()
+  const originalFetch = globalThis.fetch
+  let fetchCount = 0
+
+  globalThis.fetch = async () => {
+    fetchCount += 1
+    throw new Error('provider override should skip dry-run public experience refetches')
+  }
+
+  try {
+    const result = await runner.runScraper({
+      name: 'provider-opt-out-source',
+      provider: {
+        adapter: 'script',
+        dryRunEnrichPublicExperience: false,
+      },
+      dryRunFile,
+      run: async () => [{
+        title: 'Relationship Manager',
+        company: 'Example Corp',
+        location: 'Pune, India',
+        city: 'Pune',
+        link: 'https://careers.jobverify.dev/jobs/relationship-manager',
+        sourceUrl: 'https://careers.jobverify.dev/jobs/relationship-manager',
+        applyUrl: 'https://careers.jobverify.dev/jobs/relationship-manager',
+        experienceRequired: '4-7 years',
+      }],
+    })
+
+    assert.equal(result.success, true)
+    assert.equal(fetchCount, 0)
+
+    const snapshot = JSON.parse(fs.readFileSync(dryRunFile, 'utf8'))
+    assert.equal(snapshot.length, 1)
+    assert.equal(snapshot[0].experienceRequired, '4-7 years')
   } finally {
     globalThis.fetch = originalFetch
     fs.rmSync(tempDir, { recursive: true, force: true })

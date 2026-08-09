@@ -158,6 +158,12 @@ const MAINTEC_JOBS_HTML = `
       <h2>Associate Engineers (Mechanical or Electrical)</h2>
       <a href="https://maintec.com/jobs/associate-engineers-mechanical-or-electrical/">More Details</a>
     </article>
+    <article class="awsm-job-item">
+      <h2>DB2 System programmer</h2>
+    </article>
+    <article class="awsm-job-item">
+      <h2>Mainframe DB2 DBA</h2>
+    </article>
     <div>India Office</div>
     <div>Bengaluru, Karnataka - 560043</div>
   </body>

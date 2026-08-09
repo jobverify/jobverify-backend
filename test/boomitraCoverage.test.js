@@ -9,13 +9,13 @@ import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const extensionPath = path.join(backendDir, 'scraper-support/providers/providerExtensions/boomitra.json')
-const csvPath = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const csvText = "company_name\nBoomitra\n"
 
 test('Boomitra exact provider extension covers only the literal CSV row', () => {
   assert.equal(existsSync(extensionPath), true)
   const provider = JSON.parse(readFileSync(extensionPath, 'utf8'))
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(csvPath, 'utf8'),
+    csvText: csvText,
     catalog: getScraperCatalog(),
   })
   const matches = report.matched.filter(({ companyName }) => companyName === 'Boomitra')

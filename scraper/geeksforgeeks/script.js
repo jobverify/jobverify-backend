@@ -22,7 +22,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const DEFAULT_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+  'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 

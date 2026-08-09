@@ -69,7 +69,7 @@ test('extractJobDetail falls back to Workday JSON-LD when the detail page is ren
 
   assert.equal(result.jobDescription, 'Build backend systems for manufacturing analytics.')
   assert.equal(result.minimumQualification, '0-1 years of experience with Node.js and AWS.')
-  assert.match(result.experienceRequired, /0-1 years of experience/i)
+  assert.equal(result.experienceRequired, '0-1 years')
   assert.equal(result.requisitionId, 'JR0285085')
 })
 
@@ -143,6 +143,8 @@ test('extractJobDetail returns the empty detail shape for unsupported providers'
     preferredQualification: null,
     requiredSkills: [],
     experienceRequired: null,
+    publicExperienceChecked: false,
+    postingDate: null,
     department: null,
     requisitionId: null,
   })

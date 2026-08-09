@@ -1,9 +1,9 @@
-export const PORTER_CATALOG = {
+﻿export const PORTER_CATALOG = {
   source: 'porter',
   companyName: 'Porter',
   officialBrandName: 'Porter',
   adapter: 'script',
-  modulePath: '../porter/script.js',
+  modulePath: '../../scraper/porter/script.js',
   companyCareerPage: 'https://porter.in/careers',
   companyDomain: 'porter.in',
   atsPlatform: 'darwinbox',
@@ -22,3 +22,4 @@ export const PORTER_CATALOG = {
 }
 
 export default PORTER_CATALOG
+

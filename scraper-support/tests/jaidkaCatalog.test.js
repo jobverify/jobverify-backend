@@ -65,7 +65,7 @@ test('Jaidka local catalog captures the verified no-public-jobs sentinel contrac
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://jaidka.in/')
   assert.equal(provider.companyDomain, 'jaidka.in')
-  assert.equal(provider.modulePath, '../../scraper/jaidka/script.js')
+  assert.match(provider.modulePath, /jaidka[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /jaidka[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Jaidka'), false)
 

@@ -86,23 +86,11 @@ test('Rephrase.ai sentinel returns [] only while the verified homepage stays job
   const rephraseAi = await loadModule()
   const requestedUrls = []
 
-  let currentUrl = rephraseAi.HOMEPAGE_URL
-  const fakePage = {
-    goto: async (url) => {
-      requestedUrls.push(url)
-      currentUrl = url
-    },
-    content: async () => {
-      if (currentUrl === rephraseAi.HOMEPAGE_URL) return homepageHtml
-      return notFoundHtml
-    },
-  }
-
   const jobs = await rephraseAi.createRephraseAiScraper().run({
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => fakePage,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return url === rephraseAi.HOMEPAGE_URL ? homepageHtml : notFoundHtml
+    },
   })
 
   assert.deepEqual(requestedUrls, [
@@ -119,29 +107,18 @@ test('Rephrase.ai sentinel fails closed when the homepage or missing-route assum
 
   await assert.rejects(
     rephraseAi.createRephraseAiScraper().run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        content: async () => '<html><title>Unexpected</title></html>',
-      }),
+      fetchText: async () => '<html><title>Unexpected</title></html>',
     }),
     /homepage no longer matches the verified public surface/i,
   )
 
-  let currentUrl = rephraseAi.HOMEPAGE_URL
   await assert.rejects(
     rephraseAi.createRephraseAiScraper().run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async (url) => {
-          currentUrl = url
-        },
-        content: async () => (currentUrl === rephraseAi.CAREERS_URL ? publicJobsHtml : homepageHtml),
-      }),
+      fetchText: async (url) => {
+        if (url === rephraseAi.HOMEPAGE_URL) return homepageHtml
+        if (url === rephraseAi.CAREERS_URL) return publicJobsHtml
+        return notFoundHtml
+      },
     }),
     /verified no-public-careers surface|public jobs links/i,
   )

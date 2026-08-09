@@ -174,7 +174,7 @@ test('Dixon Technologies scraper keeps the verified homepage and Darwinbox hando
   )
 })
 
-test('run maps verified Dixon Technologies Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Dixon Technologies Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createDixonTechnologiesScraper, HOMEPAGE_URL, OFFICIAL_CAREERS_URL } =
     await loadDixonTechnologiesModule()
   const scraper = createDixonTechnologiesScraper({

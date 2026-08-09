@@ -1,4 +1,4 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 16, 2026 that https://careers.infoedge.com/infoedge/jobslist is the live first-party InfoEdge jobs surface, that the public Zwayam search API at https://public.zwayam.com/jobs/search accepts TenantGroupId G1 with companyId MTU1Nzg= for careers.infoedge.com, that the public detail API at https://public.zwayam.com/jobs-service/v1/jobs/careersite is live with detail company id 15578, and that the verified search contract returned 303 live jobs including Lead UI Designer at the first-party detail route https://careers.infoedge.com/infoedge/jobview/lead-ui-designer-noida-2026071413401714.'
 
 export const INFOEDGE_CATALOG = {
@@ -6,7 +6,7 @@ export const INFOEDGE_CATALOG = {
   companyName: 'InfoEdge',
   officialBrandName: 'Info Edge India Ltd',
   adapter: 'script',
-  modulePath: '../infoedge/script.js',
+  modulePath: '../../scraper/infoedge/script.js',
   dryRunFile: 'infoedge/jobs.json',
   homepageUrl: 'https://www.infoedgeindia.com/',
   careersLandingUrl: 'https://careers.infoedge.com/infoedge/',
@@ -29,3 +29,4 @@ export const INFOEDGE_CATALOG = {
 }
 
 export default INFOEDGE_CATALOG
+

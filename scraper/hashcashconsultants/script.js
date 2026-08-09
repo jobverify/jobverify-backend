@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'hashcashconsultants'
 export const COMPANY = 'HashCash Consultants'
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'HashCash Consultants',
   adapter: 'script',
-  modulePath: '../hashcashconsultants/script.js',
+  modulePath: '../../scraper/hashcashconsultants/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-opportunities-page',
@@ -104,3 +104,4 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     scrapedAt: now(),
   }))
 }
+

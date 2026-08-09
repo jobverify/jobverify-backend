@@ -12,7 +12,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const APPLICATION_URL = 'mailto:careers@locobuzz.com'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const INDIA_LOCATION_PATTERN =
   /\b(bangalore|bengaluru|chennai|delhi|gurgaon|gurugram|hyderabad|india|kolkata|mumbai|noida|pune)\b/i
 

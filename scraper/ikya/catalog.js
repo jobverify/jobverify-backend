@@ -1,4 +1,4 @@
-export const IKYA_CATALOG = {
+﻿export const IKYA_CATALOG = {
   source: 'ikya',
   companyName: 'Ikya',
   officialBrandName: 'Ikya',
@@ -12,7 +12,7 @@ export const IKYA_CATALOG = {
   extractionStrategy: 'verified-empty-smartrecruiters-board+coming-soon-homepage-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  modulePath: '../ikya/script.js',
+  modulePath: '../../scraper/ikya/script.js',
   dryRunFile: 'ikya/jobs.json',
   verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
@@ -20,3 +20,4 @@ export const IKYA_CATALOG = {
 }
 
 export default IKYA_CATALOG
+

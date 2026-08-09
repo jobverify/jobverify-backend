@@ -372,6 +372,34 @@ test('Nutanix can recover with browser-backed pages when direct requests are blo
   assert.equal(jobs[1].title, 'Director of Field Marketing, India')
 })
 
+test('Nutanix aborts retries when the verified public surfaces remain blocked after fallback', async () => {
+  const nutanix = await loadNutanixModule()
+  const browserUrls = []
+
+  await assert.rejects(
+    nutanix.createNutanixScraper({
+      now: () => FIXED_SCRAPED_AT,
+    }).run({
+      fetchText: async () => {
+        throw new Error(`HTTP 403 for ${nutanix.OFFICIAL_CAREERS_URL}`)
+      },
+      fetchBrowserText: async (url) => {
+        browserUrls.push(url)
+        throw new Error(`HTTP 403 for ${url}`)
+      },
+    }),
+    (error) => {
+      assert.match(error.message, /Nutanix verified official careers page remains blocked/i)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      return true
+    },
+  )
+
+  assert.deepEqual(browserUrls, [nutanix.OFFICIAL_CAREERS_URL])
+})
+
 test('Nutanix fails closed when the public Jobvite bridge stops matching the verified surface', async () => {
   const nutanix = await loadNutanixModule()
 

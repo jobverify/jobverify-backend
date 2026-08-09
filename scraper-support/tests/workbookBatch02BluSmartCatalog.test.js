@@ -25,7 +25,7 @@ test('BluSmart is wired to a verified exact-name no-public-careers scraper inste
   assert.equal(provider.verifiedOn, '2026-07-30')
   assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.modulePath, /blusmart\.js$/)
+  assert.match(provider.modulePath, /[\\/]blusmart[\\/]script\.js$/i)
   assert.match(provider.verifiedSurfaceSummary, /Thursday, July 30, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /BluSmart tablets/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.blusmart\.in\/careers/i)

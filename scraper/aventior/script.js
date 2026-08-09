@@ -10,7 +10,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   "Verified on Saturday, August 1, 2026 that https://www.aventior.com/careers was the live Aventior careers page, that its Follow Us link still handed applicants to the public LinkedIn company page at https://www.linkedin.com/company/aventior/, and that the public LinkedIn jobs search at https://www.linkedin.com/jobs/aventior-jobs-worldwide?f_C=27234995 remained the matching company search surface even though the company page no longer rendered the older See jobs button. The current public jobs search returned 0 Aventior jobs in Worldwide, so this scraper validates those verified surfaces and writes an empty result set when no India jobs are publicly exposed."
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 
 const REQUIRED_CAREERS_SURFACE_PATTERNS = [
   /\bCareers At Aventior\b/i,

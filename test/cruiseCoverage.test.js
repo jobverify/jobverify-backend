@@ -9,7 +9,7 @@ import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/i
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const extensionPath = path.join(backendDir, 'scraper-support/providers/providerExtensions/cruise.json')
-const csvPath = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const csvText = "company_name\nCruise\n"
 
 test('Cruise exact provider extension covers only the literal CSV company row', () => {
   assert.equal(existsSync(extensionPath), true)
@@ -17,7 +17,7 @@ test('Cruise exact provider extension covers only the literal CSV company row', 
   const provider = JSON.parse(readFileSync(extensionPath, 'utf8'))
   const catalog = getScraperCatalog()
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(csvPath, 'utf8'),
+    csvText: csvText,
     catalog,
   })
   const nearNameReport = generateCompanyCoverageReport({

@@ -19,7 +19,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Nexdigm local catalog captures the verified August 3, 2026 careers shell and broken current-openings contract', async () => {
+test('Nexdigm local catalog captures the verified August 4, 2026 careers shell and inline current-openings contract', async () => {
   const {
     NEXDIGM_CATALOG,
     default: defaultCatalog,
@@ -44,25 +44,25 @@ test('Nexdigm local catalog captures the verified August 3, 2026 careers shell a
   assert.equal(NEXDIGM_CATALOG.countryFilter, 'India')
   assert.equal(
     NEXDIGM_CATALOG.paginationStrategy,
-    'verified-first-party-careers-page-plus-current-openings-shell-with-upstream-error-no-public-job-inventory',
+    'verified-first-party-careers-page-plus-inline-current-openings-cards-single-page',
   )
   assert.equal(
     NEXDIGM_CATALOG.extractionStrategy,
-    'verified-careers-page+verified-current-openings-shell+fail-closed-no-jobs',
+    'verified-careers-page+verified-current-openings-shell+inline-card-parser+darwinbox-apply-handoff',
   )
   assert.equal(NEXDIGM_CATALOG.parser, 'custom-script')
   assert.equal(NEXDIGM_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(NEXDIGM_CATALOG.dryRunFile, 'nexdigm/jobs.json')
-  assert.equal(NEXDIGM_CATALOG.verifiedOn, '2026-08-03')
+  assert.equal(NEXDIGM_CATALOG.verifiedOn, '2026-08-04')
+  assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
   assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.nexdigm\.com\/careers\//i)
   assert.match(
     NEXDIGM_CATALOG.verifiedSurfaceSummary,
     /https:\/\/www\.nexdigm\.com\/careers\/current-openings\//i,
   )
-  assert.match(
-    NEXDIGM_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/www\.nexdigm\.com\/joblist\.php/i,
-  )
+  assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /inline public job cards/i)
+  assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /career-details\?id=/i)
+  assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /Darwinbox apply handoffs/i)
   assert.match(NEXDIGM_CATALOG.verifiedSurfaceSummary, /error code:\s*502/i)
   assert.match(NEXDIGM_CATALOG.modulePath, /nexdigm[\\/]script\.js$/i)
 

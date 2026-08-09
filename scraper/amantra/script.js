@@ -19,7 +19,7 @@ export const VERIFIED_ROLE_URLS = [...PROVIDER_METADATA.verifiedRoleUrls]
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const INDIA_LOCATION_PATTERN = /^(.+?),\s*India$/i
 const WORKPLACE_TYPE_PATTERN = /^(On-site|Remote|Hybrid)$/i
 const EMPLOYMENT_TYPE_PATTERN = /^(Full-time|Part-time|Contract|Internship)$/i

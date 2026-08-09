@@ -1,8 +1,8 @@
-{
+﻿{
   "source": "talentsprint",
   "companyName": "TalentSprint",
   "adapter": "script",
-  "modulePath": "../talentsprint/script.js",
+  "modulePath": "../../scraper/talentsprint/script.js",
   "companyCareerPage": "https://talentsprint.com/careers/",
   "officialSiteUrl": "https://talentsprint.com/",
   "officialCareersHandoffUrl": "https://talentsprint.darwinbox.in/ms/candidate/careers",
@@ -20,3 +20,4 @@
   "verifiedSurfaceSummary": "Verified on Wednesday, August 5, 2026 that https://talentsprint.com/careers/ remains the live first-party TalentSprint careers page and exposes View Job Openings to the public TalentSprint Darwinbox handoff at https://talentsprint.darwinbox.in/ms/candidate/careers. The public Darwinbox listing API POST at /ms/candidateapi/job/alljobs?companyId=main returned HTTP 500 in both the August 1 dry run and the August 5 browser-session probe, so this provider is a fail-closed sentinel that returns zero jobs while continuing to validate the first-party page and handoff.",
   "dryRunFile": "talentsprint/jobs.json"
 }
+

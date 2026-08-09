@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'selectsys'
 export const COMPANY = 'Selectsys'
@@ -16,7 +16,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Selectsys',
   adapter: 'script',
-  modulePath: '../selectsys/script.js',
+  modulePath: '../../scraper/selectsys/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers-email-apply',
@@ -99,3 +99,4 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     }
   })
 }
+

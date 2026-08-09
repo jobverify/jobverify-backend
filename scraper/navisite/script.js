@@ -40,6 +40,18 @@ const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
+const buildBlockedCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'NaviSite verified careers surface remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Discover Opportunities at Navisite, Part of Accenture')
@@ -78,7 +90,14 @@ export const createNaviSiteScraper = () => ({
           throw error
         }
 
-        return browserTextFetcher(url)
+        try {
+          return await browserTextFetcher(url)
+        } catch (browserError) {
+          if (isBrowserFallbackError(browserError)) {
+            throw buildBlockedCareersSurfaceError(browserError)
+          }
+          throw browserError
+        }
       }
     }
 

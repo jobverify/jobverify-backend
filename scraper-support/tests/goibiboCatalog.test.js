@@ -42,10 +42,10 @@ test('Goibibo local catalog captures the verified broken first-party careers han
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     modulePath: goibiboModulePath,
-    verifiedOn: '2026-07-16',
-    verifiedSurfaceSummary: 'Verified on July 16, 2026 that the official Goibibo homepage still links job seekers to https://www.goibibo.com/careers/, but that first-party route currently serves an unavailable careers surface (observed as a broken 404/503-style handoff) and exposes no trustworthy public job listings.',
+    verifiedOn: '2026-08-07',
+    verifiedSurfaceSummary: 'Verified on Friday, August 7, 2026 that the official Goibibo homepage still links job seekers to https://www.goibibo.com/careers/, but that first-party route currently resolves only to an unavailable surface from this environment, observed as 404/503/504-style failures or request timeouts rather than a trustworthy public jobs listing page.',
     homepageUrl: 'https://www.goibibo.com/',
-    acceptedCareerPageStatuses: [404, 503],
+    acceptedCareerPageStatuses: [404, 503, 504],
   })
 
   assert.equal(goibibo.PROVIDER_METADATA.source, GOIBIBO_CATALOG.source)

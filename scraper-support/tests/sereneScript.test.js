@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-04T00:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
@@ -30,27 +30,22 @@ const jobsHtml = `
   </head>
   <body>
     <main>
-      <article class="job-card">
-        <h2>Bench Sales Recruiter</h2>
-        <p>Grow our staffing pipeline for US technology accounts.</p>
-        <a href="#">View Job</a>
-      </article>
-      <article class="job-card">
-        <h2>Talent Acquisition Associate</h2>
-        <p>Support hiring coordination and candidate engagement across client mandates.</p>
-        <a href="#">View Job</a>
-      </article>
-      <article class="job-card">
-        <h2>Resource Executive</h2>
-        <p>Advanced knowledge of Microsoft Office (Outlook, Excel, and Word) and the Internet.</p>
-        <p>Ability to communicate (written and verbal) effectively and professionally in a timely manner.</p>
-        <a href="#">View Job</a>
-      </article>
-      <article class="job-card">
-        <h2>US IT Recruiter</h2>
-        <p>We are looking for a driven and detail-oriented US Recruiter with 3-6 years of experience in recruitment for the US market.</p>
-        <a href="#">View Job</a>
-      </article>
+      <section class="job-card">
+        <h1 class="elementor-heading-title elementor-size-default">Bench Sales Recruiter</h1>
+        <a href="https://www.sereneinfosolutions.in/job/bench-sales-recruiter/">View Job</a>
+      </section>
+      <section class="job-card">
+        <h1 class="elementor-heading-title elementor-size-default">Talent Acquisition Associate</h1>
+        <a href="https://www.sereneinfosolutions.in/job/talent-acquisition-associate/">View Job</a>
+      </section>
+      <section class="job-card">
+        <h1 class="elementor-heading-title elementor-size-default">Resource Executive</h1>
+        <a href="https://www.sereneinfosolutions.in/job/resource-executive/">View Job</a>
+      </section>
+      <section class="job-card">
+        <h1 class="elementor-heading-title elementor-size-default">US IT Recruiter</h1>
+        <a href="https://www.sereneinfosolutions.in/job/us-it-recruiter/">View Job</a>
+      </section>
     </main>
   </body>
 </html>
@@ -78,6 +73,57 @@ const joinUsHtml = `
 </html>
 `
 
+const makeDetailHtml = ({
+  title,
+  slug,
+  locationSummary,
+  description,
+}) => `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>${title} - Serene Info Solutions</title>
+    <link rel="canonical" href="https://www.sereneinfosolutions.in/job/${slug}/">
+  </head>
+  <body>
+    <main>
+      <h1 class="elementor-heading-title elementor-size-default">${title}</h1>
+      <p>${locationSummary}</p>
+      <h2>Overview</h2>
+      <p>${description}</p>
+      <a href="https://www.sereneinfosolutions.in/join-us/">Apply Now</a>
+    </main>
+  </body>
+</html>
+`
+
+const detailPages = {
+  'https://www.sereneinfosolutions.in/job/bench-sales-recruiter/': makeDetailHtml({
+    title: 'Bench Sales Recruiter',
+    slug: 'bench-sales-recruiter',
+    locationSummary: 'Bengaluru, India',
+    description: 'Grow our staffing pipeline for US technology accounts.',
+  }),
+  'https://www.sereneinfosolutions.in/job/talent-acquisition-associate/': makeDetailHtml({
+    title: 'Talent Acquisition Associate',
+    slug: 'talent-acquisition-associate',
+    locationSummary: 'Hyderabad, India',
+    description: 'Support hiring coordination and candidate engagement across client mandates.',
+  }),
+  'https://www.sereneinfosolutions.in/job/resource-executive/': makeDetailHtml({
+    title: 'Resource Executive',
+    slug: 'resource-executive',
+    locationSummary: 'Chennai, India',
+    description: 'Advanced knowledge of Microsoft Office and strong communication skills.',
+  }),
+  'https://www.sereneinfosolutions.in/job/us-it-recruiter/': makeDetailHtml({
+    title: 'US IT Recruiter',
+    slug: 'us-it-recruiter',
+    locationSummary: 'Noida, India',
+    description: 'We are looking for a driven and detail-oriented US Recruiter with 3-6 years of experience in recruitment for the US market.',
+  }),
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/serene/script.js')
@@ -86,13 +132,13 @@ const loadModule = async () => {
   }
 }
 
-test('Serene helpers stay pinned to the verified careers page, jobs page, and shared application form', async () => {
+test('Serene helpers stay pinned to the verified careers page, jobs page, same-domain detail pages, and shared application form', async () => {
   const serene = await loadModule()
 
   assert.equal(serene.SOURCE, 'serene')
   assert.equal(serene.COMPANY_NAME, 'Serene')
   assert.equal(serene.OFFICIAL_BRAND_NAME, 'Serene Info Solutions Pvt. Ltd.')
-  assert.equal(serene.VERIFIED_ON, '2026-07-17')
+  assert.equal(serene.VERIFIED_ON, '2026-08-04')
   assert.equal(serene.CAREERS_URL, 'https://www.sereneinfosolutions.in/careers/')
   assert.equal(serene.JOBS_URL, 'https://www.sereneinfosolutions.in/jobs/')
   assert.equal(serene.APPLICATION_URL, 'https://www.sereneinfosolutions.in/join-us/')
@@ -108,36 +154,45 @@ test('Serene helpers stay pinned to the verified careers page, jobs page, and sh
     {
       slug: 'bench-sales-recruiter',
       title: 'Bench Sales Recruiter',
-      sourceUrl: 'https://www.sereneinfosolutions.in/jobs/#bench-sales-recruiter',
-      applyUrl: 'https://www.sereneinfosolutions.in/join-us/',
-      experienceRequired: null,
-      jobDescription: 'Grow our staffing pipeline for US technology accounts.',
+      detailUrl: 'https://www.sereneinfosolutions.in/job/bench-sales-recruiter/',
     },
     {
       slug: 'talent-acquisition-associate',
       title: 'Talent Acquisition Associate',
-      sourceUrl: 'https://www.sereneinfosolutions.in/jobs/#talent-acquisition-associate',
-      applyUrl: 'https://www.sereneinfosolutions.in/join-us/',
-      experienceRequired: null,
-      jobDescription: 'Support hiring coordination and candidate engagement across client mandates.',
+      detailUrl: 'https://www.sereneinfosolutions.in/job/talent-acquisition-associate/',
     },
     {
       slug: 'resource-executive',
       title: 'Resource Executive',
-      sourceUrl: 'https://www.sereneinfosolutions.in/jobs/#resource-executive',
-      applyUrl: 'https://www.sereneinfosolutions.in/join-us/',
-      experienceRequired: null,
-      jobDescription: 'Advanced knowledge of Microsoft Office (Outlook, Excel, and Word) and the Internet. Ability to communicate (written and verbal) effectively and professionally in a timely manner.',
+      detailUrl: 'https://www.sereneinfosolutions.in/job/resource-executive/',
     },
     {
       slug: 'us-it-recruiter',
       title: 'US IT Recruiter',
-      sourceUrl: 'https://www.sereneinfosolutions.in/jobs/#us-it-recruiter',
-      applyUrl: 'https://www.sereneinfosolutions.in/join-us/',
-      experienceRequired: '3-6 years',
-      jobDescription: 'We are looking for a driven and detail-oriented US Recruiter with 3-6 years of experience in recruitment for the US market.',
+      detailUrl: 'https://www.sereneinfosolutions.in/job/us-it-recruiter/',
     },
   ])
+
+  assert.equal(serene.hasOfficialJobDetailSignal(detailPages['https://www.sereneinfosolutions.in/job/bench-sales-recruiter/']), true)
+  assert.deepEqual(
+    serene.extractJobDetail(
+      detailPages['https://www.sereneinfosolutions.in/job/us-it-recruiter/'],
+      {
+        slug: 'us-it-recruiter',
+        title: 'US IT Recruiter',
+        detailUrl: 'https://www.sereneinfosolutions.in/job/us-it-recruiter/',
+      },
+    ),
+    {
+      slug: 'us-it-recruiter',
+      title: 'US IT Recruiter',
+      sourceUrl: 'https://www.sereneinfosolutions.in/job/us-it-recruiter/',
+      applyUrl: 'https://www.sereneinfosolutions.in/join-us/',
+      experienceRequired: '3-6 years',
+      jobDescription: 'Noida, India Overview We are looking for a driven and detail-oriented US Recruiter with 3-6 years of experience in recruitment for the US market.',
+      locationSummary: 'Noida, India',
+    },
+  )
 })
 
 test('Serene run validates the official careers flow before returning visible job listings', async () => {
@@ -152,6 +207,7 @@ test('Serene run validates the official careers flow before returning visible jo
       if (url === serene.CAREERS_URL) return careersHtml
       if (url === serene.JOBS_URL) return jobsHtml
       if (url === serene.APPLICATION_URL) return joinUsHtml
+      if (detailPages[url]) return detailPages[url]
       throw new Error(`Unexpected Serene URL: ${url}`)
     },
   })
@@ -160,18 +216,22 @@ test('Serene run validates the official careers flow before returning visible jo
     serene.CAREERS_URL,
     serene.JOBS_URL,
     serene.APPLICATION_URL,
+    'https://www.sereneinfosolutions.in/job/bench-sales-recruiter/',
+    'https://www.sereneinfosolutions.in/job/talent-acquisition-associate/',
+    'https://www.sereneinfosolutions.in/job/resource-executive/',
+    'https://www.sereneinfosolutions.in/job/us-it-recruiter/',
   ])
   assert.equal(jobs.length, 4)
   assert.deepEqual(jobs[0], {
     title: 'Bench Sales Recruiter',
     company: 'Serene',
     department: null,
-    location: 'India',
+    location: 'Bengaluru, India',
     city: null,
     country: 'India',
     jobId: 'bench-sales-recruiter',
     requisitionId: null,
-    sourceUrl: 'https://www.sereneinfosolutions.in/jobs/#bench-sales-recruiter',
+    sourceUrl: 'https://www.sereneinfosolutions.in/job/bench-sales-recruiter/',
     applyUrl: 'https://www.sereneinfosolutions.in/join-us/',
     employmentType: null,
     experienceRequired: null,
@@ -180,7 +240,7 @@ test('Serene run validates the official careers flow before returning visible jo
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: 'Grow our staffing pipeline for US technology accounts.',
+    jobDescription: 'Bengaluru, India Overview Grow our staffing pipeline for US technology accounts.',
     source: 'serene',
     link: 'https://www.sereneinfosolutions.in/join-us/',
     scrapedAt: FIXED_SCRAPED_AT,

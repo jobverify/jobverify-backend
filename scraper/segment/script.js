@@ -17,7 +17,7 @@ export const DETAIL_URL = 'https://jobs.twilio.com/api/pcsx/position_details'
 const REQUEST_HEADERS = {
   Accept: 'application/json, text/plain, */*',
   'Accept-Language': 'en-US,en;q=0.9',
-  'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+  'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
   'X-Requested-With': 'XMLHttpRequest',
   Referer: CAREERS_URL,
   Origin: 'https://jobs.twilio.com',

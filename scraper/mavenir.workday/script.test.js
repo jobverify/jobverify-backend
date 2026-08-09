@@ -51,7 +51,7 @@ test('buildScraperOptions keeps Mavenir on the verified careers handoff and Work
   assert.equal(options.baseUrl, 'https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'mavenir')
-  assert.match(options.scraperDir, /mavenir$/)
+  assert.match(options.scraperDir, /mavenir\.workday$/)
 })
 
 test('Mavenir verifies the homepage and careers handoff before delegating to the shared Workday runner', async () => {
@@ -83,7 +83,7 @@ test('Mavenir verifies the homepage and careers handoff before delegating to the
   assert.equal(receivedOptions.baseUrl, 'https://mavenir.wd1.myworkdayjobs.com/Mavenir_Careers')
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'mavenir')
-  assert.match(receivedOptions.scraperDir, /mavenir$/)
+  assert.match(receivedOptions.scraperDir, /mavenir\.workday$/)
 })
 
 test('run fails closed when the verified Mavenir homepage or Workday handoff changes', async () => {

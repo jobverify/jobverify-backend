@@ -130,7 +130,7 @@ export const getOrCreateReferralCodeForUser = async (userId) => {
   }
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const code = `JOBIFY${generateReferralToken()}`;
+    const code = `JOBVERIFY${generateReferralToken()}`;
     try {
       return await ReferralCode.create({
         owner: userId,
@@ -333,7 +333,7 @@ const finalizeVerifiedPurchase = async ({
     return {
       purchase,
       user: existingUser,
-      access: buildAccessSummary(existingUser),
+      access: buildAccessSummary(existingUser, now),
       idempotent: true,
     };
   }
@@ -360,7 +360,7 @@ const finalizeVerifiedPurchase = async ({
   return {
     purchase,
     user: updatedUser,
-    access: buildAccessSummary(updatedUser),
+    access: buildAccessSummary(updatedUser, now),
     idempotent: false,
   };
 };

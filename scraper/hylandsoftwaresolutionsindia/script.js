@@ -13,7 +13,7 @@ export const JOBS_SEARCH_URL = PROVIDER_METADATA.jobsSearchUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')

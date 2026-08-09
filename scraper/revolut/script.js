@@ -1,10 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  createOptimizedPage as defaultCreateOptimizedPage,
-  launchBrowser as defaultLaunchBrowser,
-} from '../../scraper-support/utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { enrichJobsWithPublicExperience } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
@@ -21,9 +18,11 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const POSITION_URL_LOCALE = 'en-IN'
 // Revolut's Cloudflare-protected detail pages intermittently fail under
-// parallel browser fetches, so keep the live enrichment path serialized.
+// parallel live detail fetches, so keep the enrichment path serialized.
 const DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY = 1
 const DEFAULT_NAVIGATION_TIMEOUT_MS = 120000
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -83,6 +82,29 @@ export const hasOfficialCareersSignal = (html) => {
     && /\bopen positions\b/i.test(source)
     && /Join the people creating a one-stop shop for financial freedom/i.test(source)
 }
+
+export const extractPositionsPayload = (html = '') => {
+  const match = String(html ?? '').match(
+    /<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i,
+  )
+  if (!match) return null
+
+  try {
+    const payload = JSON.parse(match[1])
+    return payload?.props?.pageProps?.positions ?? null
+  } catch {
+    return null
+  }
+}
+
+const defaultFetchText = (url, timeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS) => fetchTextWithRetry(url, {
+  headers: {
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'User-Agent': USER_AGENT,
+  },
+  label: 'revolut-text',
+  timeoutMs,
+})
 
 export const buildPositionDetailUrl = (jobId, title = null) => {
   const normalizedId = normalizeWhitespace(jobId)
@@ -152,82 +174,46 @@ export const createRevolutScraper = ({
   navigationTimeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS,
 } = {}) => ({
   async run({
-    launchBrowser = defaultLaunchBrowser,
-    createOptimizedPage = defaultCreateOptimizedPage,
+    fetchText = (url) => defaultFetchText(url, navigationTimeoutMs),
     fetchPublicJobText = null,
     now = defaultNow,
   } = {}) {
-    let browser
-
-    try {
-      browser = await launchBrowser()
-      const page = await createOptimizedPage(browser)
-
-      await page.goto(CAREERS_PAGE_URL, {
-        waitUntil: 'networkidle2',
-        timeout: navigationTimeoutMs,
-      })
-
-      const careersHtml = await page.content()
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Response is not the verified official Revolut careers page')
-      }
-
-      const positions = await page.evaluate(
-        () => globalThis.window?.__NEXT_DATA__?.props?.pageProps?.positions ?? null,
-      )
-
-      if (!Array.isArray(positions)) {
-        throw new Error('Revolut careers page no longer exposes the verified positions payload')
-      }
-
-      const indiaJobs = extractIndiaJobs(positions)
-      const selectedJobs = maxJobs ? indiaJobs.slice(0, maxJobs) : indiaJobs
-      const shouldEnrichPublicDetails =
-        typeof fetchPublicJobText === 'function'
-        || (
-          launchBrowser === defaultLaunchBrowser
-          && createOptimizedPage === defaultCreateOptimizedPage
-        )
-      const liveBrowserFetchPublicJobText = async (url) => {
-        const detailPage = await createOptimizedPage(browser)
-
-        try {
-          await detailPage.goto(url, {
-            waitUntil: 'networkidle2',
-            timeout: navigationTimeoutMs,
-          })
-          return await detailPage.content()
-        } finally {
-          await detailPage.close()
-        }
-      }
-      const jobsWithPublicDetails = shouldEnrichPublicDetails
-        ? await enrichJobsWithPublicExperience(selectedJobs, {
-            fetchText: typeof fetchPublicJobText === 'function'
-              ? fetchPublicJobText
-              : liveBrowserFetchPublicJobText,
-            useBrowserFallback: false,
-            concurrency: Math.min(
-              experienceEnrichmentConcurrency,
-              Math.max(1, selectedJobs.length),
-            ),
-          })
-        : selectedJobs
-
-      return jobsWithPublicDetails.map((job) => ({
-        ...job,
-        publicExperienceChecked: job.publicExperienceChecked === true,
-        source: SOURCE,
-        link: job.applyUrl,
-        scrapedAt: now(),
-        companyCareerPage: CAREERS_PAGE_URL,
-        companyDomain: PROVIDER_METADATA.companyDomain,
-        atsPlatform: PROVIDER_METADATA.atsPlatform,
-      }))
-    } finally {
-      if (browser) await browser.close()
+    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Response is not the verified official Revolut careers page')
     }
+
+    const positions = extractPositionsPayload(careersHtml)
+    if (!Array.isArray(positions)) {
+      throw new Error('Revolut careers page no longer exposes the verified positions payload')
+    }
+
+    const indiaJobs = extractIndiaJobs(positions)
+    const selectedJobs = maxJobs ? indiaJobs.slice(0, maxJobs) : indiaJobs
+    const detailTextFetcher = typeof fetchPublicJobText === 'function'
+      ? fetchPublicJobText
+      : fetchText
+    const jobsWithPublicDetails = selectedJobs.length > 0
+      ? await enrichJobsWithPublicExperience(selectedJobs, {
+          fetchText: detailTextFetcher,
+          useBrowserFallback: false,
+          concurrency: Math.min(
+            experienceEnrichmentConcurrency,
+            Math.max(1, selectedJobs.length),
+          ),
+        })
+      : selectedJobs
+
+    return jobsWithPublicDetails.map((job) => ({
+      ...job,
+      publicExperienceChecked: job.publicExperienceChecked === true,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt: now(),
+      companyCareerPage: CAREERS_PAGE_URL,
+      companyDomain: PROVIDER_METADATA.companyDomain,
+      atsPlatform: PROVIDER_METADATA.atsPlatform,
+    }))
   },
 })
 

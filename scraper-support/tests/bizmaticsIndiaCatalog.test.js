@@ -29,10 +29,10 @@ test('Bizmatics India local catalog captures the sold-domain shell with no trust
   assert.equal(provider.companyCareerPage, 'https://www.bizmatics.com/company/careers/')
   assert.equal(provider.companyDomain, 'bizmatics.com')
   assert.equal(provider.atsPlatform, 'official-company-careers-no-public-jobs')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-07')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /GoDaddy/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /sold-domain landing experience/i)
+  assert.match(provider.verifiedSurfaceSummary, /no alternate official jobs surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Bizmatics India'), false)
 })
 

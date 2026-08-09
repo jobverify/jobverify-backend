@@ -35,7 +35,7 @@ const FILTER_DEFINITIONS = new Map([
 const CONTROL_FIELDS = new Set(["limit", "sort", "cursor"]);
 const VALID_SORTS = new Set(["latest", "oldest", "popularity"]);
 const OBJECT_ID = /^[a-f\d]{24}$/iu;
-const DEFAULT_CURSOR_SECRET = "jobify-job-search-cursor-dev-secret";
+const DEFAULT_CURSOR_SECRET = "jobverify-job-search-cursor-dev-secret";
 
 export class SearchInputError extends Error {
   constructor(code, message, { limit = null, actual = null, maximum = null } = {}) {

@@ -157,6 +157,19 @@ test('resolveScraperTimeoutMs gives Workday adapters a shorter default budget', 
   assert.equal(resolveScraperTimeoutMs('45000', workdayScraper, null), 45000)
 })
 
+test('resolveScraperTimeoutMs honors provider timeout overrides before falling back to the Workday default', () => {
+  const workdayScraper = {
+    name: 'accenture',
+    provider: {
+      adapter: 'workday',
+      scraperTimeoutMs: 300000,
+    },
+  }
+
+  assert.equal(resolveScraperTimeoutMs(null, workdayScraper, null), 300000)
+  assert.equal(resolveScraperTimeoutMs(undefined, workdayScraper, '180000'), 300000)
+})
+
 test('resolveScraperRetryAttempts avoids multiplying the Workday source budget', () => {
   assert.equal(
     resolveScraperRetryAttempts({
@@ -182,7 +195,7 @@ test('isAuthoritativeEmptyScrape trusts only confirmed empty Workday results', (
   const confirmedEmpty = []
   Object.defineProperty(
     confirmedEmpty,
-    Symbol.for('jobify.workday.authoritative-empty'),
+    Symbol.for('jobverify.workday.authoritative-empty'),
     { value: true },
   )
 

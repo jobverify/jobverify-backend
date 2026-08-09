@@ -20,7 +20,7 @@ const INDIA_CITY = 'Noida'
 const INDIA_STATE = 'Uttar Pradesh'
 const INDIA_COUNTRY = 'India'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const defaultFetchText = (url) =>
   fetchTextWithRetry(url, {

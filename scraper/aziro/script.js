@@ -15,7 +15,7 @@ export const VERIFIED_ON = AZIRO_CATALOG.verifiedOn
 export const COMPANY_DOMAIN = AZIRO_CATALOG.companyDomain
 export const PROVIDER_METADATA = AZIRO_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

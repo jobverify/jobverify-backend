@@ -20,5 +20,5 @@ test('getScraperCatalog includes Mavenir on the verified homepage and Workday ha
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'mavenir.com')
-  assert.match(provider.modulePath, /mavenir[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /mavenir\.workday[\\/]script\.js$/i)
 })

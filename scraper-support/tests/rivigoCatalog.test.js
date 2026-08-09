@@ -34,29 +34,34 @@ test('Rivigo local catalog captures the verified empty-board first-party careers
   assert.equal(provider.companyName, 'Rivigo')
   assert.equal(provider.officialBrandName, 'Rivigo')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://www.rivigo.com/')
-  assert.equal(provider.companyCareerPage, 'https://careers-rivigo.flexiele.com/')
-  assert.equal(provider.officialFirstPartyJobsUrl, 'https://careers-rivigo.flexiele.com/')
+  assert.equal(provider.homepageUrl, 'https://mahindralogistics.com/b2b-express/')
+  assert.equal(provider.legacyHomepageUrl, 'https://www.rivigo.com/')
+  assert.equal(provider.redirectedHomepageUrl, 'https://mahindralogistics.com/b2b-express/')
+  assert.equal(provider.companyCareerPage, 'https://mahindralogistics.com/work-with-us/')
+  assert.equal(provider.officialFirstPartyJobsUrl, 'https://nectar.darwinbox.in/ms/candidate/careers')
   assert.equal(provider.companyDomain, 'rivigo.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-no-trustworthy-public-jobs')
+  assert.equal(provider.atsPlatform, 'verified-brand-redirect-with-parent-company-darwinbox-handoff')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-empty-board-validation')
+  assert.equal(provider.paginationStrategy, 'fail-closed-sentinel')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-empty-careers-board-return-empty',
+    'verified-brand-redirect+parent-company-careers-handoff+no-exact-company-public-jobs-sentinel',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.equal(provider.modulePath, rivigoModulePath)
   assert.match(provider.dryRunFile, /rivigo[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers-rivigo\.flexiele\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /No Requsitions Found/i)
-  assert.match(provider.verifiedSurfaceSummary, /Job Openings 0 - 0 of 0/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/mahindralogistics\.com\/b2b-express\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.rivigo\.com\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/mahindralogistics\.com\/work-with-us\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/nectar\.darwinbox\.in\/ms\/candidate\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /Mahindra Logistics and Subsidiaries/i)
+  assert.match(provider.verifiedSurfaceSummary, /Rivigo-specific public openings flow/i)
 
   assert.equal(rivigo.PROVIDER_METADATA.source, RIVIGO_CATALOG.source)
+  assert.equal(rivigo.PROVIDER_METADATA.redirectedHomepageUrl, RIVIGO_CATALOG.redirectedHomepageUrl)
   assert.equal(
     rivigo.PROVIDER_METADATA.officialFirstPartyJobsUrl,
     RIVIGO_CATALOG.officialFirstPartyJobsUrl,

@@ -4,7 +4,7 @@
  */
 
 // Key: lowercase raw variant → Value: canonical display name stored in DB.
-// To add a new city: add entries here AND mirror the value in Jobify-frontend/src/data/cities.js (same PR).
+// To add a new city: add entries here AND mirror the value in Jobverify-frontend/src/data/cities.js (same PR).
 export const CANONICAL_CITIES = {
   'airoli':         'Airoli',
   // Bangalore / Bengaluru

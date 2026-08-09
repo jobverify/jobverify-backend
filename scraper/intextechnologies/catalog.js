@@ -1,9 +1,9 @@
-export const INTEX_TECHNOLOGIES_CATALOG = {
+﻿export const INTEX_TECHNOLOGIES_CATALOG = {
   source: 'intextechnologies',
   companyName: 'Intex Technologies',
   officialBrandName: 'Intex Technologies',
   adapter: 'script',
-  modulePath: '../intextechnologies/script.js',
+  modulePath: '../../scraper/intextechnologies/script.js',
   companyCareerPage: 'https://www.intex.in/pages/careers',
   homepageUrl: 'https://www.intex.in/',
   officialCareersPageUrl: 'https://www.intex.in/pages/careers',
@@ -23,3 +23,4 @@ export const INTEX_TECHNOLOGIES_CATALOG = {
 }
 
 export default INTEX_TECHNOLOGIES_CATALOG
+

@@ -25,7 +25,7 @@ test('Bounce is wired to a verified exact-name no-public-careers scraper instead
   assert.equal(provider.verifiedOn, '2026-07-30')
   assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.modulePath, /bounce\.js$/)
+  assert.match(provider.modulePath, /[\\/]bounce[\\/]script\.js$/i)
   assert.match(provider.verifiedSurfaceSummary, /Thursday, July 30, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/bounceinfinity\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/bounce-v2\.bounceinfinity\.com\/about\.html/i)

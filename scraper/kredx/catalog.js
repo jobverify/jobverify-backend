@@ -1,9 +1,9 @@
-export const KREDX_CATALOG = {
+﻿export const KREDX_CATALOG = {
   source: 'kredx',
   companyName: 'KredX',
   officialBrandName: 'KredX',
   adapter: 'script',
-  modulePath: '../kredx/script.js',
+  modulePath: '../../scraper/kredx/script.js',
   dryRunFile: 'kredx/jobs.json',
   companyCareerPage: 'https://www.kredx.com/join-our-team',
   smartRecruitersBoardUrl: 'https://careers.smartrecruiters.com/Kredx',
@@ -27,3 +27,4 @@ export const KREDX_CATALOG = {
 }
 
 export default KREDX_CATALOG
+

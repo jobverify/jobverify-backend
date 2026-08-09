@@ -32,7 +32,7 @@ const assertHydratedCatalogLoadsScript = async (provider) => {
   assert.equal(typeof module.run, 'function')
 }
 
-test('Apps Associates catalog captures the verified first-party careers page without a public jobs listing surface', async () => {
+test('Apps Associates catalog captures the verified first-party careers page plus Oracle candidate experience jobs surface', async () => {
   const { APPS_ASSOCIATES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(APPS_ASSOCIATES_CATALOG)
 
@@ -42,19 +42,21 @@ test('Apps Associates catalog captures the verified first-party careers page wit
   assert.equal(provider.officialBrandName, 'Apps Associates')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://appsassociates.com/')
-  assert.equal(provider.companyCareerPage, 'https://appsassociates.com/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-no-public-jobs-catalog')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
+  assert.equal(provider.officialCareersPageUrl, 'https://appsassociates.com/careers/')
+  assert.equal(provider.companyCareerPage, 'https://appsassociates.com/jobs/')
+  assert.equal(provider.oracleCandidateExperienceUrl, 'https://appsassociates.com/jobs/')
+  assert.equal(provider.atsPlatform, 'oracle-candidate-experience')
+  assert.equal(provider.paginationStrategy, 'oracle-candidate-experience-india-search')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+job-openings-cta+online-application-faq+no-public-job-catalog',
+    'verified-first-party-careers-page+verified-oracle-candidate-experience-shell+oracle-listing-api+oracle-detail-api',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-07-26')
   assert.equal(provider.companyDomain, 'appsassociates.com')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /See Our Current Job Openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /online application/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs catalog/i)
+  assert.match(provider.verifiedSurfaceSummary, /Oracle Candidate Experience shell/i)
+  assert.match(provider.verifiedSurfaceSummary, /CX_9003/i)
+  assert.match(provider.verifiedSurfaceSummary, /29 India roles/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

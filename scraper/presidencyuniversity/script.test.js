@@ -4,15 +4,15 @@ import test from 'node:test'
 import {
   CAREERS_URL,
   COMPANY_NAME,
-  HRONE_CARD_SELECTOR,
   HRONE_VACANCIES_URL,
   SOURCE,
   createPresidencyUniversityScraper,
   extractHrOneJobs,
+  extractTrustedApplyPid,
   extractVacanciesBoardUrl,
+  extractVacancyCards,
   hasOfficialCareersSignal,
   isTrustedBoardPageUrl,
-  readRenderedHrOneCards,
 } from './script.js'
 
 const directHrOneBoardUrl =
@@ -29,7 +29,26 @@ const officialCareersHtml = `
       <section>
         <h2>Current vacancies</h2>
         <div class="vacancy-box">
+          <h3>Assistant Professor - CSE</h3>
+          <p>Job function: Education</p>
+          <p>Experience: 2 - 5</p>
+          <p>Number of openings: 100</p>
+          <p>Preferred work mode: Work from office</p>
+          <p>Job location: Bengaluru</p>
+          <a
+            class="download-button-link white-link"
+            href="https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=qeyloSzhxH2-qK4vv_WogQ&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037"
+            target="_blank"
+            rel="noopener"
+          >
+            Apply Here
+          </a>
+        </div>
+        <div class="vacancy-box">
           <h3>Dean - Research</h3>
+          <p>Job function: Administrative</p>
+          <p>Experience: 15 - 20</p>
+          <p>Number of openings: 1</p>
           <a
             class="download-button-link white-link"
             href="https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=TKkqq_e6uK0uBEsUkYg_mA&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037"
@@ -47,10 +66,10 @@ const officialCareersHtml = `
   </html>
 `
 
-const renderedCards = [
+const extractedCards = [
   {
     title: 'Assistant Professor - CSE',
-    requisitionId: 'RE0144',
+    requisitionId: 'qeyloSzhxH2-qK4vv_WogQ',
     jobFunction: 'Education',
     experience: '2 - 5',
     openings: '100',
@@ -61,26 +80,33 @@ const renderedCards = [
   },
   {
     title: 'Dean - Research',
-    requisitionId: 'RE0084',
+    requisitionId: 'TKkqq_e6uK0uBEsUkYg_mA',
     jobFunction: 'Administrative',
     experience: '15 - 20',
     openings: '1',
-    workMode: '-',
-    location: '-',
+    workMode: null,
+    location: null,
     applyUrl:
       'https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=TKkqq_e6uK0uBEsUkYg_mA&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037',
   },
 ]
 
-test('Presidency University pins the official careers handoff and normalizes HROne vacancies', () => {
+test('Presidency University pins the official careers handoff and parses inline trusted vacancy cards', () => {
   assert.equal(CAREERS_URL, 'https://presidencyuniversity.in/careers')
   assert.equal(HRONE_VACANCIES_URL, 'https://hr-1.in/b42a6e')
   assert.equal(hasOfficialCareersSignal(officialCareersHtml), true)
   assert.equal(extractVacanciesBoardUrl(officialCareersHtml), HRONE_VACANCIES_URL)
   assert.equal(isTrustedBoardPageUrl(directHrOneBoardUrl), true)
   assert.equal(isTrustedBoardPageUrl('https://example.com/jobs'), false)
+  assert.equal(
+    extractTrustedApplyPid(
+      'https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=qeyloSzhxH2-qK4vv_WogQ',
+    ),
+    'qeyloSzhxH2-qK4vv_WogQ',
+  )
 
-  assert.deepEqual(extractHrOneJobs(renderedCards), [
+  assert.deepEqual(extractVacancyCards(officialCareersHtml), extractedCards)
+  assert.deepEqual(extractHrOneJobs(extractedCards), [
     {
       title: 'Assistant Professor - CSE',
       company: 'Presidency University',
@@ -88,8 +114,8 @@ test('Presidency University pins the official careers handoff and normalizes HRO
       location: 'Bengaluru, India',
       city: 'Bengaluru',
       country: 'India',
-      jobId: 'RE0144',
-      requisitionId: 'RE0144',
+      jobId: 'qeyloSzhxH2-qK4vv_WogQ',
+      requisitionId: 'qeyloSzhxH2-qK4vv_WogQ',
       sourceUrl:
         'https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=qeyloSzhxH2-qK4vv_WogQ&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037',
       applyUrl:
@@ -111,8 +137,8 @@ test('Presidency University pins the official careers handoff and normalizes HRO
       location: null,
       city: null,
       country: 'India',
-      jobId: 'RE0084',
-      requisitionId: 'RE0084',
+      jobId: 'TKkqq_e6uK0uBEsUkYg_mA',
+      requisitionId: 'TKkqq_e6uK0uBEsUkYg_mA',
       sourceUrl:
         'https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=TKkqq_e6uK0uBEsUkYg_mA&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037',
       applyUrl:
@@ -134,7 +160,7 @@ test('extractHrOneJobs fails closed on untrusted apply links', () => {
   assert.throws(
     () => extractHrOneJobs([
       {
-        ...renderedCards[0],
+        ...extractedCards[0],
         applyUrl: 'https://example.com/apply',
       },
     ]),
@@ -142,158 +168,27 @@ test('extractHrOneJobs fails closed on untrusted apply links', () => {
   )
 })
 
-test('readRenderedHrOneCards combines rendered HROne job cards with popup-captured apply urls', async () => {
-  let popupIndex = 0
-  let pendingTargetResolver = null
-  const browserTargets = []
-  const fakeMainTarget = { id: 'main-target' }
-  const popupButtons = renderedCards.map(() => ({
-    async click() {
-      const currentIndex = popupIndex
-      popupIndex += 1
-      const popupTarget = {
-        opener: () => fakeMainTarget,
-        url: () => renderedCards[currentIndex].applyUrl,
-      }
-      browserTargets.push(popupTarget)
-      pendingTargetResolver?.(popupTarget)
-    },
-  }))
-
-  const page = {
-    async waitForFunction() {},
-    async evaluate() {
-      return false
-    },
-    async $$eval(selector) {
-      if (selector === '.content-box .cls-apply-btn') return renderedCards.length
-      if (selector === HRONE_CARD_SELECTOR) {
-        return renderedCards.map(({ applyUrl, ...card }) => card)
-      }
-      throw new Error(`Unexpected selector: ${selector}`)
-    },
-    async $$(selector) {
-      assert.equal(selector, '.content-box .cls-apply-btn')
-      return popupButtons
-    },
-    async bringToFront() {},
-    browser() {
-      return {
-        targets: () => browserTargets,
-        waitForTarget: async () => new Promise((resolve) => {
-          pendingTargetResolver = resolve
-        }),
-      }
-    },
-    target() {
-      return fakeMainTarget
-    },
-  }
-
-  const cards = await readRenderedHrOneCards(page)
-
-  assert.deepEqual(cards, renderedCards)
-})
-
-test('readRenderedHrOneCards does not leak popup wait rejections when an apply click fails', async () => {
-  let unhandledReason = null
-  const onUnhandledRejection = (reason) => {
-    unhandledReason = reason
-  }
-  const popupTimeoutError = new Error('Timed out after waiting 10000ms')
-  popupTimeoutError.name = 'TimeoutError'
-
-  process.once('unhandledRejection', onUnhandledRejection)
-
-  try {
-    const page = {
-      async waitForFunction() {},
-      async evaluate() {
-        return false
-      },
-      async $$eval(selector) {
-        if (selector === '.content-box .cls-apply-btn') return renderedCards.length
-        if (selector === HRONE_CARD_SELECTOR) {
-          return renderedCards.map(({ applyUrl, ...card }) => card)
-        }
-        throw new Error(`Unexpected selector: ${selector}`)
-      },
-      async $$(selector) {
-        assert.equal(selector, '.content-box .cls-apply-btn')
-        return [{
-          async click() {
-            throw new Error('Popup click failed')
-          },
-        }]
-      },
-      async bringToFront() {},
-      browser() {
-        return {
-          targets: () => [],
-          waitForTarget: async () => new Promise((_, reject) => {
-            setTimeout(() => reject(popupTimeoutError), 0)
-          }),
-        }
-      },
-      target() {
-        return { id: 'main-target' }
-      },
-    }
-
-    await assert.rejects(readRenderedHrOneCards(page), /Popup click failed/)
-    await new Promise((resolve) => setTimeout(resolve, 25))
-    assert.equal(unhandledReason, null)
-  } finally {
-    process.removeListener('unhandledRejection', onUnhandledRejection)
-  }
-})
-
-test('run validates the official Presidency University handoff and decorates rendered HROne roles', async () => {
+test('run validates the official Presidency University surface and decorates inline vacancies without browser hooks', async () => {
   const events = []
-  const page = {
-    async goto(url) {
-      events.push(`goto:${url}`)
-    },
-    async waitForSelector(selector) {
-      events.push(`wait:${selector}`)
-    },
-    url() {
-      return directHrOneBoardUrl
-    },
-  }
-  const browser = {
-    async close() {
-      events.push('close')
-    },
-  }
   const scraper = createPresidencyUniversityScraper({ maxJobs: 1 })
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
-      events.push(`careers:${url}`)
+      events.push(url)
       return officialCareersHtml
     },
-    launchBrowser: async () => browser,
-    createPage: async () => page,
-    readRenderedCards: async (receivedPage) => {
-      assert.equal(receivedPage, page)
-      events.push('read:cards')
-      return renderedCards
-    },
+    now: () => '2026-08-08T20:00:00.000Z',
   })
 
-  assert.deepEqual(events, [
-    `careers:${CAREERS_URL}`,
-    `goto:${HRONE_VACANCIES_URL}`,
-    `wait:${HRONE_CARD_SELECTOR}`,
-    'read:cards',
-    'close',
-  ])
+  assert.deepEqual(events, [CAREERS_URL])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, COMPANY_NAME)
   assert.equal(jobs[0].source, SOURCE)
-  assert.equal(jobs[0].link, renderedCards[0].applyUrl)
-  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+  assert.equal(
+    jobs[0].link,
+    'https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=qeyloSzhxH2-qK4vv_WogQ&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037',
+  )
+  assert.equal(jobs[0].scrapedAt, '2026-08-08T20:00:00.000Z')
 })
 
 test('run fails closed when the official careers page no longer matches the verified surface', async () => {
@@ -311,5 +206,12 @@ test('run fails closed when the official careers page no longer matches the veri
       fetchText: async () => officialCareersHtml.replace(HRONE_VACANCIES_URL, 'https://example.com/jobs'),
     }),
     /verified public HROne vacancies surface/i,
+  )
+
+  await assert.rejects(
+    scraper.run({
+      fetchText: async () => officialCareersHtml.replace(/vacancy-box/g, 'vacancy-card'),
+    }),
+    /verified official careers surface|trusted inline vacancy cards/i,
   )
 })

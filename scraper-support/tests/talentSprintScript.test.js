@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-25T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-05T00:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
@@ -31,7 +31,7 @@ test('TalentSprint pins the verified first-party careers page and Darwinbox hand
   assert.equal(talentsprint.SOURCE, 'talentsprint')
   assert.equal(talentsprint.COMPANY_NAME, 'TalentSprint')
   assert.equal(talentsprint.COMPANY_ID, 'main')
-  assert.equal(talentsprint.VERIFIED_ON, '2026-07-25')
+  assert.equal(talentsprint.VERIFIED_ON, '2026-08-05')
   assert.equal(talentsprint.OFFICIAL_SITE_URL, 'https://talentsprint.com/')
   assert.equal(talentsprint.CAREERS_PAGE_URL, 'https://talentsprint.com/careers/')
   assert.equal(talentsprint.DARWINBOX_ORIGIN, 'https://talentsprint.darwinbox.in')
@@ -41,26 +41,11 @@ test('TalentSprint pins the verified first-party careers page and Darwinbox hand
   assert.equal(talentsprint.extractDarwinboxHandoffUrl(careersHtml), talentsprint.OFFICIAL_CAREERS_HANDOFF_URL)
 })
 
-test('TalentSprint validates the first-party handoff before delegating to Darwinbox', async () => {
+test('TalentSprint validates the first-party handoff and stays fail-closed while the Darwinbox listing API remains unavailable', async () => {
   const talentsprint = await loadTalentSprintModule()
   const requestedUrls = []
-  const runCalls = []
-  const delegatedJobs = [{
-    title: 'Software Engineer',
-    company: 'TalentSprint',
-    location: 'Hyderabad, Telangana, India',
-    source: 'talentsprint',
-    link: 'https://talentsprint.darwinbox.in/ms/candidatev2/main/careers/jobDetails/123',
-  }]
-
   const scraper = talentsprint.createTalentSprintScraper({
     now: () => FIXED_SCRAPED_AT,
-    darwinboxScraper: {
-      run: async (options) => {
-        runCalls.push(options)
-        return delegatedJobs
-      },
-    },
   })
 
   const jobs = await scraper.run({
@@ -73,8 +58,7 @@ test('TalentSprint validates the first-party handoff before delegating to Darwin
   })
 
   assert.deepEqual(requestedUrls, [talentsprint.CAREERS_PAGE_URL])
-  assert.deepEqual(runCalls, [{ maxPages: 1, maxJobs: 1 }])
-  assert.deepEqual(jobs, [{ ...delegatedJobs[0], scrapedAt: FIXED_SCRAPED_AT }])
+  assert.deepEqual(jobs, [])
 })
 
 test('TalentSprint fails closed when its verified careers handoff changes', async () => {

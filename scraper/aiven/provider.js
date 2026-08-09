@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'aiven',
   companyName: 'Aiven',
   officialBrandName: 'Aiven',
   adapter: 'script',
-  modulePath: '../aiven/script.js',
+  modulePath: '../../scraper/aiven/script.js',
   companyCareerPage: 'https://aiven.io/careers/job',
   companyDomain: 'aiven.io',
   atsPlatform: 'first-party-job-pages',
@@ -19,3 +19,4 @@ export const provider = {
 }
 
 export default provider
+

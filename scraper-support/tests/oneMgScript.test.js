@@ -103,7 +103,7 @@ test('1mg scraper keeps the verified official Darwinbox handoff explicit and fai
   )
 })
 
-test('run maps verified 1mg Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified 1mg Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createOneMgScraper } = await loadOneMgModule()
   const scraper = createOneMgScraper({
     now: () => FIXED_SCRAPED_AT,

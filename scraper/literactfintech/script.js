@@ -63,7 +63,7 @@ export const fetchPage = async (url) => {
   const response = await fetch(url, {
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })

@@ -58,10 +58,11 @@ test('AVIZVA local catalog captures the verified first-party careers inventory a
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.verifiedSurfaceSummary, /Senior Python Engineer/i)
   assert.match(provider.verifiedSurfaceSummary, /Python Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Scrum Master/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Visual Product Design/i)
   assert.match(provider.verifiedSurfaceSummary, /avizva\.keka\.com/i)
 
   assertCatalogMatchesBacklogRow({

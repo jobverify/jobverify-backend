@@ -6,7 +6,7 @@ const FIXED_SCRAPED_AT = '2026-07-15T00:00:00.000Z'
 const officialCompanyPageHtml = `
   <html lang="en">
     <head>
-      <title>Home Page</title>
+      <title>Bajaj Finserv About Us</title>
     </head>
     <body>
       <nav>
@@ -14,14 +14,11 @@ const officialCompanyPageHtml = `
         <a href="https://bflcareers.peoplestrong.com/home">Careers</a>
       </nav>
       <main>
-        <h1>We are Bajaj Finserv</h1>
+        <h1>Bajaj Finserv serves crores of people</h1>
         <p>
-          The financial services arm of the Bajaj Group and the holding company for our many
-          financial services businesses, since 2007.
-        </p>
-        <p>
-          Through our joint ventures and subsidiaries, we operate across consumer finance, SME
-          finance, insurance, and wealth management products and services.
+          Bajaj Finserv is focused on continuous innovation through smart use of technology, data
+          and analytics to drive seamless, simplified and personalized experiences for its
+          customers.
         </p>
       </main>
     </body>
@@ -45,7 +42,7 @@ const samplePayload = {
   totalRecords: 1,
   response: [
     {
-      organizationUnitComplete: 'Bajaj Finance Limited>Technology>Engineering',
+      organizationUnitComplete: 'Bajaj Finserv Limited>Technology>Engineering',
       jobPostedDate: '2026-07-15',
       locationHierarchyComplete: 'India>Maharashtra>Pune>Pune',
       jobDetailUrl: 'https://bflcareers.peoplestrong.com/job/detail/JR00000001',
@@ -90,7 +87,7 @@ test('Bajaj Finserv scraper keeps the verified PeopleStrong handoff explicit and
   assert.equal(bajajFinserv.SOURCE, 'bajajfinserv')
   assert.equal(
     bajajFinserv.COMPANY_PAGE_URL,
-    'https://www.aboutbajajfinserv.com/',
+    'https://www.aboutbajajfinserv.com/about-us',
   )
   assert.equal(bajajFinserv.HOMEPAGE_URL, 'https://www.bajajfinserv.in/')
   assert.equal(bajajFinserv.PORTAL_ORIGIN, 'https://bflcareers.peoplestrong.com')
@@ -99,10 +96,10 @@ test('Bajaj Finserv scraper keeps the verified PeopleStrong handoff explicit and
     'https://bflcareers.peoplestrong.com/home',
   )
   assert.equal(bajajFinserv.JOB_LISTINGS_URL, 'https://bflcareers.peoplestrong.com/')
-  assert.equal(bajajFinserv.DEFAULT_PAGE_SIZE, 20)
+  assert.equal(bajajFinserv.DEFAULT_PAGE_SIZE, 99)
   assert.equal(
     bajajFinserv.buildApiUrl(),
-    'https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20',
+    'https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=99',
   )
   assert.equal(
     bajajFinserv.buildApiUrl({ offset: 20, limit: 10 }),

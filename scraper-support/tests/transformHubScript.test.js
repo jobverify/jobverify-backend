@@ -6,10 +6,18 @@ const FIXED_SCRAPED_AT = '2026-07-17T10:45:00.000Z'
 const careersPageHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Career with TransformHub | Award Winning Digital Solutions Company</title>
+  </head>
   <body>
     <main>
       <h1>Careers</h1>
-      <p>Build your career with us.</p>
+      <p>If You Can Understand Accountability , Join Us!</p>
+      <h2>Transforming Careers</h2>
+      <p>
+        If you are a curious, creative, and solution-driven individual, look through our
+        current hiring positions that best match your skills and interest.
+      </p>
       <h2>Current Openings</h2>
 
       <h3>DEVSECOPS - SENIOR ENGINEER</h3>
@@ -29,6 +37,7 @@ const careersPageHtml = `
       <p>Responsibilities: Deliver Zoho platform customizations for enterprise workflows.</p>
       <p>Skills: Deluge, Zoho Creator, CRM integrations.</p>
       <a href="#apply-now-zoho-developer">Apply Now</a>
+      <h2>Benefits of Working at TransformHub</h2>
     </main>
   </body>
 </html>
@@ -77,7 +86,7 @@ test('TransformHub extracts India-relevant inline job sections from the verified
       employmentType: null,
       experienceRequired: null,
       jobDescription:
-        'Responsibilities: Lead DevSecOps initiatives and secure delivery pipelines. Skills: Kubernetes, CI/CD, cloud security.',
+        'Responsibilities: Lead DevSecOps initiatives and secure delivery pipelines. Skills: Kubernetes, CI/CD, cloud security. Apply Now',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
@@ -102,7 +111,7 @@ test('TransformHub extracts India-relevant inline job sections from the verified
       employmentType: null,
       experienceRequired: null,
       jobDescription:
-        'Responsibilities: Deliver Zoho platform customizations for enterprise workflows. Skills: Deluge, Zoho Creator, CRM integrations.',
+        'Responsibilities: Deliver Zoho platform customizations for enterprise workflows. Skills: Deluge, Zoho Creator, CRM integrations. Apply Now',
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
@@ -155,13 +164,19 @@ test('TransformHub fails closed when the verified careers shell drifts or stops 
       fetchText: async () => `
         <!doctype html>
         <html>
+          <head>
+            <title>Career with TransformHub | Award Winning Digital Solutions Company</title>
+          </head>
           <body>
             <main>
               <h1>Careers</h1>
+              <p>If You Can Understand Accountability , Join Us!</p>
+              <h2>Transforming Careers</h2>
               <h2>Current Openings</h2>
               <h3>DATA ANALYST</h3>
               <p>Location: Vietnam</p>
               <a href="#apply-now-data-analyst">Apply Now</a>
+              <h2>Benefits of Working at TransformHub</h2>
             </main>
           </body>
         </html>

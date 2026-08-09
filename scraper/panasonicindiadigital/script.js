@@ -15,7 +15,7 @@ export const VERIFIED_ON = '2026-08-03'
 export const VERIFIED_SURFACE_SUMMARY =
   "Verified on Monday, August 3, 2026 that https://www.panasonic.com/in/ and https://www.panasonic.com/in/corporate.html were the live Panasonic India public surfaces reviewed for Panasonic India Digital, that both pages handed off to Panasonic's India careers site at https://www.panasoniccareersindia.in/, and that the India careers handoff currently failed with CERT_HAS_EXPIRED. Local repo evidence still does not establish that the broader Panasonic India jobs inventory is attributable specifically to the exact workbook entity Panasonic India Digital, so this company-specific scraper remains fail-closed and returns no jobs until an exact-name public openings contract is verified."
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 
 const TRUSTED_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,

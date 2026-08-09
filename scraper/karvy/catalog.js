@@ -1,4 +1,4 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on August 2, 2026 that the exact-name Karvy domain at https://www.karvy.com/ no longer serves a public employer surface and instead returns a non-job 403 response, that https://www.karvyonline.com/ is a live first-party Karvy Online financial-services site with a Join Us careers handoff to https://www.karvyonline.com/join-us/career/, and that the linked career page still shows stale resume-only copy instead of structured public job listings. There is no trustworthy public jobs surface for exact-name Karvy on the verified date.'
 
 export const KARVY_CATALOG = {
@@ -6,7 +6,7 @@ export const KARVY_CATALOG = {
   companyName: 'Karvy',
   officialBrandName: 'Karvy',
   adapter: 'script',
-  modulePath: '../karvy/script.js',
+  modulePath: '../../scraper/karvy/script.js',
   dryRunFile: 'karvy/jobs.json',
   homepageUrl: 'https://www.karvy.com/',
   parkedHomepageUrls: [
@@ -30,3 +30,4 @@ export const KARVY_CATALOG = {
 }
 
 export default KARVY_CATALOG
+

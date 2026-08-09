@@ -1,9 +1,9 @@
 version: "1"
 services:
   - type: web
-    name: Jobify-backend
+    name: jobverify-backend
     runtime: node
-    repo: https://github.com/LitenTechnologies/Jobify-backend
+    repo: https://github.com/jobverify/jobverify-backend
     region: oregon
     plan: free
     branch: main
@@ -27,7 +27,7 @@ services:
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_NAME
-        value: Jobify
+        value: Jobverify
       - key: BREVO_SENDER_EMAIL
         sync: false
       - key: GITHUB_PAT
@@ -36,3 +36,6 @@ services:
         sync: false
       - key: SCRAPER_CONCURRENCY
         sync: false
+      - key: WORKDAY_DETAIL_FETCH_CONCURRENCY
+        sync: false
+        

@@ -30,7 +30,7 @@ test('Eko local catalog captures the verified first-party no-public-careers surf
   assert.equal(provider.companyName, 'Eko')
   assert.equal(provider.officialBrandName, 'Eko Bharat Ventures Private Limited')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/eko/script.js')
+  assert.match(provider.modulePath, /eko[\\/]script\.js$/i)
   assert.equal(provider.companyCareerPage, 'https://eko.in/')
   assert.equal(provider.companyDomain, 'eko.in')
   assert.equal(provider.corporateHomepageUrl, 'https://about.eko.in/')

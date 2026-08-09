@@ -251,7 +251,7 @@ test('Aranca catalog entry points to the verified careers handoff and public job
       },
     ],
   )
-  assert.equal(provider?.modulePath, '../../scraper/aranca/script.js')
+  assert.match(provider?.modulePath || '', /[\\/]aranca[\\/]script\.js$/i)
   assert.equal(provider?.companyCareerPage, aranca.CAREERS_URL)
   assert.equal(provider?.companyDomain, 'aranca.com')
   assert.equal(provider?.atsPlatform, aranca.DISPOSITION)

@@ -8,7 +8,7 @@ import test from 'node:test'
 import { saveDryRunSnapshot } from '../scraper-support/utils/saveToDB.js'
 
 test('saveDryRunSnapshot enriches missing experience before writing dry-run jobs.json', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
 
   try {
@@ -48,7 +48,7 @@ test('saveDryRunSnapshot enriches missing experience before writing dry-run jobs
 })
 
 test('saveDryRunSnapshot can reuse a caller-provided browser fallback fetcher', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
 
   try {
@@ -86,7 +86,7 @@ test('saveDryRunSnapshot can reuse a caller-provided browser fallback fetcher', 
 })
 
 test('saveDryRunSnapshot marks public pages as checked even when experience stays unspecified', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
 
   try {
@@ -129,7 +129,7 @@ test('saveDryRunSnapshot marks public pages as checked even when experience stay
 })
 
 test('saveDryRunSnapshot keeps provider-supplied qualification evidence checked when the linked public page is only a generic shell', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
 
   try {
@@ -193,7 +193,7 @@ test('saveDryRunSnapshot keeps provider-supplied qualification evidence checked 
 })
 
 test('saveDryRunSnapshot recognizes split heading artifacts in provider-supplied public evidence before falling back to a generic shell', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
 
   try {
@@ -249,7 +249,7 @@ test('saveDryRunSnapshot recognizes split heading artifacts in provider-supplied
 })
 
 test('saveDryRunSnapshot treats expertise-led role descriptions as verified public evidence when no numeric experience is published', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
 
   try {
@@ -298,7 +298,7 @@ test('saveDryRunSnapshot treats expertise-led role descriptions as verified publ
 })
 
 test('saveDryRunSnapshot skips rewriting jobs.json when the normalized dry-run snapshot is unchanged', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
 
   try {
@@ -349,7 +349,7 @@ test('saveDryRunSnapshot skips rewriting jobs.json when the normalized dry-run s
 })
 
 test('saveDryRunSnapshot preserves the last good jobs.json when an atomic temp write fails with ENOSPC', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
   const originalContent = JSON.stringify([{ title: 'Last known good snapshot' }], null, 2)
 
@@ -401,7 +401,7 @@ test('saveDryRunSnapshot preserves the last good jobs.json when an atomic temp w
 })
 
 test('saveDryRunSnapshot can fall back to an in-place rewrite when atomic temp writes hit ENOSPC', async () => {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobify-dry-run-'))
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jobverify-dry-run-'))
   const outputPath = path.join(tempDir, 'jobs.json')
   const originalContent = JSON.stringify([{ title: 'Last known good snapshot' }], null, 2)
 

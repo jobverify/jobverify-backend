@@ -14,7 +14,7 @@ export const DARWINBOX_COMPANY_ID = 'main'
 export const DARWINBOX_ORIGIN = 'https://synamedia.darwinbox.com'
 export const OFFICIAL_CAREERS_URL = 'https://www.synamedia.com/careers/'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,

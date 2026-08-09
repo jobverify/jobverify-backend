@@ -69,7 +69,7 @@ test('Deutsche Telekom Digital Labs sentinel helpers stay pinned to the verified
   assert.equal(dtdl.COMPANY, 'Deutsche Telekom Digital Labs')
   assert.equal(dtdl.HOMEPAGE_URL, 'https://dtdl.in/')
   assert.equal(dtdl.TELEKOM_WORLDWIDE_URL, 'https://www.telekom.com/en/company/worldwide')
-  assert.equal(dtdl.VERIFIED_ON, '2026-07-17')
+  assert.equal(dtdl.VERIFIED_ON, '2026-08-01')
   assert.deepEqual(dtdl.CHECKED_ROUTE_URLS, [
     'https://dtdl.in/careers',
     'https://dtdl.in/jobs',

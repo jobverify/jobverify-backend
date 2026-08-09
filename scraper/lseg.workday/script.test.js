@@ -21,7 +21,7 @@ test('buildScraperOptions keeps LSEG on the verified official careers handoff an
   assert.equal(options.baseUrl, 'https://lseg.wd3.myworkdayjobs.com/Careers')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'lseg')
-  assert.match(options.scraperDir, /lseg$/)
+  assert.match(options.scraperDir, /lseg\.workday$/)
 })
 
 test('run delegates LSEG scraping to the shared Workday runner with the verified tenant options', async () => {
@@ -42,5 +42,5 @@ test('run delegates LSEG scraping to the shared Workday runner with the verified
   assert.equal(receivedOptions.baseUrl, 'https://lseg.wd3.myworkdayjobs.com/Careers')
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'lseg')
-  assert.match(receivedOptions.scraperDir, /lseg$/)
+  assert.match(receivedOptions.scraperDir, /lseg\.workday$/)
 })

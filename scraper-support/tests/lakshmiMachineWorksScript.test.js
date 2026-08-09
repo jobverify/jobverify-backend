@@ -115,6 +115,7 @@ test('Lakshmi Machine Works scraper validates the verified public surface and re
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
+    publicExperienceChecked: true,
     postingDate: '10-Jul-2026',
     closingDate: null,
     jobDescription: '<p><b>Purpose of the Role:</b> Support strategic purchasing.</p>',

@@ -49,10 +49,11 @@ test('Kumaran Systems local catalog captures the verified first-party careers pa
     'verified-first-party-careers-page+public-zoho-recruit-api+india-country-filter',
   )
   assert.equal(provider.companyDomain, 'kumaran.com')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /careers\.kumaran\.com/i)
-  assert.match(provider.verifiedSurfaceSummary, /QA Engineer - ETL & DWH/i)
+  assert.match(provider.verifiedSurfaceSummary, /Associate Product Manager - Interns/i)
+  assert.match(provider.verifiedSurfaceSummary, /QA Test Lead/i)
   assert.equal(kumaran.JOBS_API_URL, provider.jobsApiUrl)
 })
 

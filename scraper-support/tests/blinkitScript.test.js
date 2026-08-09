@@ -137,23 +137,27 @@ test('Blinkit returns no jobs only while the verified first-party zero-openings 
   assert.deepEqual(jobs, [])
 })
 
-test('Blinkit falls back to a browser-rendered zero-openings shell when the direct site responds with the official access-denied page', async () => {
+test('Blinkit treats the official access-denied page as an upstream soft failure without a browser fallback', async () => {
   const blinkit = await loadBlinkitModule()
 
-  const jobs = await blinkit.createBlinkitScraper().run({
-    fetchPage: async (url) => ({
-      status: 403,
-      url,
-      html: officialAccessDeniedHtml,
+  await assert.rejects(
+    blinkit.createBlinkitScraper().run({
+      fetchPage: async (url) => ({
+        status: 403,
+        url,
+        html: officialAccessDeniedHtml,
+      }),
+      fetchBrowserPage: async () => {
+        throw new Error('browser fallback should not be used')
+      },
     }),
-    fetchBrowserPage: async (url) => ({
-      status: 200,
-      url,
-      html: url === blinkit.HOMEPAGE_URL ? currentHomepageHtml : currentJobsShellHtml,
-    }),
-  })
-
-  assert.deepEqual(jobs, [])
+    (error) => {
+      assert.match(error.message, /official careers page is access denied/i)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      return true
+    },
+  )
 })
 
 test('Blinkit fails closed when the homepage or jobs shell changes materially', async () => {
@@ -216,11 +220,6 @@ test('Blinkit classifies the official Cloudflare access-denied page as an upstre
   await assert.rejects(
     blinkit.createBlinkitScraper().run({
       fetchPage: async (url) => ({
-        status: 403,
-        url,
-        html: officialAccessDeniedHtml,
-      }),
-      fetchBrowserPage: async (url) => ({
         status: 403,
         url,
         html: officialAccessDeniedHtml,

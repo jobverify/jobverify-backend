@@ -121,7 +121,7 @@ test('Leap Finance scraper keeps the verified exact-name careers API handoff exp
   )
 })
 
-test('run maps verified Leap Finance API jobs into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Leap Finance API jobs into Jobverify jobs and keeps only India roles', async () => {
   const { createLeapFinanceScraper } = await loadLeapFinanceModule()
   const scraper = createLeapFinanceScraper({
     now: () => FIXED_SCRAPED_AT,

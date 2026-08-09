@@ -97,7 +97,7 @@ test('Bajaj Markets scraper keeps the verified official Darwinbox handoff explic
   )
 })
 
-test('run maps Bajaj Markets Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps Bajaj Markets Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createBajajMarketsScraper } = await loadBajajMarketsModule()
   const scraper = createBajajMarketsScraper({
     now: () => FIXED_SCRAPED_AT,

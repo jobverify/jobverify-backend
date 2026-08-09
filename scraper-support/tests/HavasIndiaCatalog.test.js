@@ -55,15 +55,15 @@ test('Havas India local catalog captures the verified first-party careers handof
   assert.equal(HAVAS_INDIA_CATALOG.countryFilter, 'India')
   assert.equal(
     HAVAS_INDIA_CATALOG.paginationStrategy,
-    'verified-first-party-careers-page-plus-browser-session-workday-country-facet',
+    'verified-first-party-careers-page-plus-direct-workday-country-facet-api',
   )
   assert.equal(
     HAVAS_INDIA_CATALOG.extractionStrategy,
-    'verified-careers-page+verified-workday-board+browser-session-unfiltered-workday-jobs-api+india-country-facet+browser-session-filtered-workday-jobs-api',
+    'verified-careers-page+verified-workday-board+direct-unfiltered-workday-jobs-api+india-country-facet+direct-filtered-workday-jobs-api',
   )
   assert.equal(HAVAS_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(HAVAS_INDIA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(HAVAS_INDIA_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(HAVAS_INDIA_CATALOG.verifiedOn, '2026-08-08')
   assert.equal(HAVAS_INDIA_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/in\.havas\.com\/careers\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/rb\.gy\/5daebl/i)
@@ -75,9 +75,9 @@ test('Havas India local catalog captures the verified first-party careers handof
     VERIFIED_SURFACE_SUMMARY,
     /https:\/\/wd3\.myworkdaysite\.com\/wday\/cxs\/havas\/GroupExternalCareerSite\/jobs/i,
   )
-  assert.match(VERIFIED_SURFACE_SUMMARY, /\b53 India roles\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /\bHTTP 500\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /\bbrowser-session\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /\b51 India roles\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /\bAugust 8, 2026\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /\bdirect POST\b/i)
 })
 
 test('Havas India local catalog hydrates into coverage without needing an alias entry', async () => {
@@ -86,7 +86,7 @@ test('Havas India local catalog hydrates into coverage without needing an alias 
 
   assert.equal(provider.companyName, 'Havas India')
   assert.equal(provider.companyDomain, 'havas.com')
-  assert.match(provider.modulePath, /havasindia[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /havasindia\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /havasindia.workday[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({
@@ -112,7 +112,7 @@ test('getScraperCatalog includes Havas India as a verified Workday provider', ()
   assert.equal(provider.companyCareerPage, 'https://in.havas.com/careers/')
   assert.equal(provider.companyDomain, 'havas.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /havasindia[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /havasindia\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Havas India scraper without changing the runner contract', () => {

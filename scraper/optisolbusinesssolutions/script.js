@@ -245,14 +245,30 @@ export const createOptiSolBusinessSolutionsScraper = () => ({
 
 export const run = async (options = {}) => createOptiSolBusinessSolutionsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
-  const jobs = await run()
+export const persistScrapeResults = async ({
+  argv = process.argv,
+  runImpl = run,
+  saveToFileImpl,
+  saveToDBImpl,
+  outputFile = path.join(currentDir, 'jobs.json'),
+} = {}) => {
+  const jobs = await runImpl()
 
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
+  if (!saveToFileImpl || !saveToDBImpl) {
+    const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+    saveToFileImpl ??= saveToFile
+    saveToDBImpl ??= saveToDB
   }
+
+  if (argv.includes('--dry-run')) {
+    await saveToFileImpl(jobs, outputFile)
+    return jobs
+  }
+
+  await saveToDBImpl(jobs, SOURCE)
+  return jobs
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await persistScrapeResults()
 }

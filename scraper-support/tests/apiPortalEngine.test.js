@@ -86,8 +86,8 @@ test('Eightfold template uses a larger default page size to reduce deep paginati
   assert.equal(new URL(seenUrls[0]).searchParams.get('limit'), '50')
 })
 
-test('runApiPortalScraper falls back to browser-backed JSON for blocked Eightfold GET APIs', async () => {
-  const browserUrls = []
+test('runApiPortalScraper stays HTTP-only for blocked Eightfold GET APIs and returns the aggregate signal job', async () => {
+  let browserFallbackUsed = false
   const provider = expandApiPortalProviderTemplate({
     source: 'browser-eightfold',
     companyName: 'Browser Eightfold Corp',
@@ -106,48 +106,18 @@ test('runApiPortalScraper falls back to browser-backed JSON for blocked Eightfol
     fetchJson: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
-    fetchBrowserJson: async (url) => {
-      browserUrls.push(url)
-
-      if (url.includes('/api/pcsx/search')) {
-        return {
-          data: {
-            positions: [
-              {
-                id: 101,
-                displayJobId: 'REQ-101',
-                name: 'Platform Engineer',
-                locations: ['Bengaluru, Karnataka, India'],
-                department: 'Engineering',
-                postedTs: 1781481600,
-              },
-            ],
-            count: 1,
-          },
-        }
-      }
-
-      if (url.includes('/api/pcsx/position_details?position_id=101')) {
-        return {
-          data: {
-            publicUrl: 'https://browser-eightfold.example/careers/job/101',
-            jobDescription: '<p>Build platform services for India teams.</p>',
-          },
-        }
-      }
-
-      throw new Error(`Unexpected browser fallback URL: ${url}`)
+    fetchBrowserJson: async () => {
+      browserFallbackUsed = true
+      throw new Error('Browser fallback should not run in the API-only engine')
     },
   })
 
-  assert.equal(browserUrls.length, 2)
-  assert.equal(new URL(browserUrls[0]).searchParams.get('limit'), '50')
-  assert.match(browserUrls[0], /\/api\/pcsx\/search/)
-  assert.match(browserUrls[1], /position_id=101/)
+  assert.equal(browserFallbackUsed, false)
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Platform Engineer')
-  assert.equal(jobs[0].link, 'https://browser-eightfold.example/careers/job/101')
-  assert.match(jobs[0].jobDescription, /platform services/i)
+  assert.equal(jobs[0].title, 'Current openings at Browser Eightfold Corp')
+  assert.equal(jobs[0].link, 'https://browser-eightfold.example/careers')
+  assert.equal(jobs[0].jobId, 'browser-eightfold-current-openings')
+  assert.match(jobs[0].jobDescription, /Eightfold inventory API returned HTTP 403/i)
 })
 
 test('runApiPortalScraper returns an aggregate signal job when Eightfold inventory is hard-blocked', async () => {
@@ -167,9 +137,6 @@ test('runApiPortalScraper returns an aggregate signal job when Eightfold invento
   const jobs = await runApiPortalScraper({
     provider,
     fetchJson: async (url) => {
-      throw new Error(`HTTP 403 for ${url}`)
-    },
-    fetchBrowserJson: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
   })

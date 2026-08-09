@@ -12,7 +12,7 @@ export const CAREERS_URL = 'https://www.springboard.com/join-us/'
 export const GREENHOUSE_BOARD_URL = 'https://job-boards.greenhouse.io/springboard'
 export const GREENHOUSE_JOBS_API_URL = 'https://boards-api.greenhouse.io/v1/boards/springboard/jobs'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

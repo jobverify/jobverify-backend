@@ -26,5 +26,5 @@ test('Magnit Global local catalog captures the verified first-party Dayforce han
   assert.equal(provider.modulePath, modulePath)
   assert.equal(provider.verifiedOn, '2026-08-03')
   assert.match(provider.verifiedSurfaceSummary, /about\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Analyst, Accounts Payable/i)
+  assert.match(provider.verifiedSurfaceSummary, /System Administrator - ERP/i)
 })

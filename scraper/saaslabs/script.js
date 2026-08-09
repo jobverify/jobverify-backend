@@ -11,7 +11,7 @@ export const SOURCE = SAASLABS_CATALOG.source
 export const COMPANY = SAASLABS_CATALOG.companyName
 export const CAREERS_URL = SAASLABS_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const JOB_PATH_PATTERN = /\/saas-labs\/(\d+)\/?/i
 
 const normalizeWhitespace = (value) => String(value ?? '')

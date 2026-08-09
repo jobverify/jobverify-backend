@@ -34,7 +34,7 @@ test('buildScrapers exposes a runnable IMEG scraper without changing the runner 
 })
 
 test('IMEG local Workday config switches the shared runner onto the public jobs API with the lowercase India country facet', () => {
-  const config = loadConfig(path.join(testsDir, '../../scraper/imeg'))
+  const config = loadConfig(path.join(testsDir, '../../scraper/imeg.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
   assert.equal(

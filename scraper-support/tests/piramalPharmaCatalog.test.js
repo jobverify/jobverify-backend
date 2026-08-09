@@ -151,7 +151,7 @@ test('Piramal Pharma hydrated local catalog stays script-runner compatible for s
   assert.equal(provider.companyCareerPage, 'https://www.piramalpharma.com/careers')
   assert.equal(provider.companyDomain, 'piramalpharma.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /piramalpharma[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /piramalpharma\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /piramalpharma.workday[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
 })

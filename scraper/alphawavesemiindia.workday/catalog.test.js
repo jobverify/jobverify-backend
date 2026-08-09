@@ -20,5 +20,5 @@ test('Alphawave Semi India is runnable through the scraper provider catalog', ()
 
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
-  assert.match(scraper.dryRunFile, /alphawavesemiindia[\\/]jobs\.json$/)
+  assert.match(scraper.dryRunFile, /alphawavesemiindia\.workday[\\/]jobs\.json$/)
 })

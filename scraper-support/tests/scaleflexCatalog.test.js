@@ -58,7 +58,7 @@ test('Scaleflex local catalog captures the verified first-party no-public-jobs s
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.verifiedOn, '2026-07-17')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.dryRunFile, /scaleflex.workday[\\/]jobs\.json$/i)
+  assert.match(provider.dryRunFile, /scaleflex[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.scaleflex\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/portals\.scaleflex\.com\/s\/xJfYX5yl\/en\/home/i)

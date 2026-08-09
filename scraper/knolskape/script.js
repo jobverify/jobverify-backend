@@ -12,7 +12,7 @@ export const KEKA_CAREERS_URL = 'https://knolskape.keka.com/careers/'
 export const KEKA_PORTAL_INFO_URL = 'https://knolskape.keka.com/careers/api/organization/default/careerportalinfo'
 export const KEKA_ACTIVE_JOBS_API_URL = 'https://knolskape.keka.com/careers/api/jobs/default/active'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')

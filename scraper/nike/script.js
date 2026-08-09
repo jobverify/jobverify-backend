@@ -226,7 +226,7 @@ export const extractJobDetail = (html, listing = {}) => {
 const fetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify Nike scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify Nike scraper)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

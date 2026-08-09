@@ -11,30 +11,29 @@ import { buildScrapers, getScraperCatalog, hydrateProviderCatalogEntry } from '.
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const scraperDir = path.resolve(currentDir, '..', '..', 'scraper')
 const scriptModulePathFor = (source) => `../${source}/script.js`
+const hydratedScriptModulePathFor = (source) => path.join(scraperDir, source, 'script.js')
 const EXPECTED_ALIAS_MAP = {
   Cibil: 'transunioncibil',
 }
 const EXPECTED_NON_SENTINEL_PROVIDERS = {
   adpushup: {
-    modulePath: '../../scraper/adpushup/script.js',
     companyCareerPage: 'https://www.adpushup.com/careers/',
     companyDomain: 'adpushup.com',
     atsPlatform: 'verified-first-party-careers-empty-result',
     paginationStrategy: 'verified-careers-snapshot-empty-result',
     extractionStrategy: 'verified-first-party-careers-surface+zero-public-job-snapshot+return-empty',
-    verifiedOn: '2026-07-30',
+    verifiedOn: '2026-08-01',
     verifiedPublicJobCount: 0,
     verifiedIndiaJobCount: 0,
     verifiedSurfaceSummaryPattern: /Trusted by more than 300 publishers/i,
   },
   alaan: {
-    modulePath: '../../scraper/alaan/script.js',
     companyCareerPage: 'https://www.alaan.com/careers',
     companyDomain: 'alaan.com',
     atsPlatform: 'verified-first-party-careers-empty-result',
     paginationStrategy: 'verified-careers-snapshot-empty-result',
     extractionStrategy: 'verified-first-party-careers-surface+zero-public-job-snapshot+return-empty',
-    verifiedOn: '2026-07-30',
+    verifiedOn: '2026-08-01',
     verifiedPublicJobCount: 0,
     verifiedIndiaJobCount: 0,
     verifiedSurfaceSummaryPattern: /no trustworthy public job listings/i,
@@ -105,14 +104,13 @@ const EXPECTED_NON_SENTINEL_PROVIDERS = {
     verifiedSurfaceSummaryPattern: /public jobs board/i,
   },
   arivihan: {
-    modulePath: '../../scraper/arivihan/script.js',
     companyCareerPage: 'https://www.arivihan.com/about',
     companyDomain: 'arivihan.com',
     atsPlatform: 'official-company-site-no-public-careers',
     paginationStrategy: 'verified-homepage-plus-about-page-plus-missing-careers-route-validation',
     extractionStrategy:
       'verified-exact-name-homepage+verified-about-page+verified-missing-careers-route-return-empty',
-    verifiedOn: '2026-07-30',
+    verifiedOn: '2026-08-01',
     verifiedPublicJobCount: 0,
     verifiedIndiaJobCount: 0,
     verifiedSurfaceSummaryPattern: /Our Mission/i,
@@ -375,7 +373,7 @@ test('workbook batch 02 registers the expected providers and the scoped Cibil al
 
     if (Object.hasOwn(EXPECTED_NON_SENTINEL_PROVIDERS, provider.source)) {
       const expectedProvider = EXPECTED_NON_SENTINEL_PROVIDERS[provider.source]
-      assert.equal(provider.modulePath, expectedProvider.modulePath)
+      assert.equal(provider.modulePath, scriptModulePathFor(provider.source))
       assert.equal(provider.companyCareerPage, expectedProvider.companyCareerPage)
       assert.equal(provider.companyDomain, expectedProvider.companyDomain)
       assert.equal(provider.atsPlatform, expectedProvider.atsPlatform)
@@ -398,11 +396,11 @@ test('workbook batch 02 registers the expected providers and the scoped Cibil al
         )
       }
       if (expectedProvider.atsPlatform === 'verified-first-party-careers-empty-result') {
-        assert.equal(provider.originalModulePath, '../../scraper/workbookbatch04/verifiedCareersEmptyState.js')
+        assert.equal(provider.originalModulePath, '../workbookbatch04/verifiedCareersEmptyState.js')
       }
     } else {
       assert.equal(provider.modulePath, scriptModulePathFor(provider.source))
-      assert.equal(provider.originalModulePath, '../../scraper/workbookbatch02/failClosedSentinel.js')
+      assert.equal(provider.originalModulePath, '../workbookbatch02/failClosedSentinel.js')
       assert.equal(provider.companyCareerPage, undefined)
       assert.equal(provider.companyDomain, undefined)
       assert.equal(provider.atsPlatform, 'workbook-exact-name-sentinel')
@@ -454,8 +452,8 @@ test('workbook batch 02 active sentinel scrapers stay registered in the global c
   )
 
   for (const scraper of scrapers) {
-    assert.equal(scraper.provider.modulePath, scriptModulePathFor(scraper.name))
-    assert.equal(scraper.provider.originalModulePath, '../../scraper/workbookbatch02/failClosedSentinel.js')
+    assert.equal(scraper.provider.modulePath, hydratedScriptModulePathFor(scraper.name))
+    assert.equal(scraper.provider.originalModulePath, '../workbookbatch02/failClosedSentinel.js')
     assert.equal(scraper.provider.atsPlatform, 'workbook-exact-name-sentinel')
     assert.deepEqual(await scraper.run(), [])
   }

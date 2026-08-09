@@ -5,13 +5,13 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-const COMPANY_CSV_PATH = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const COMPANY_CSV_TEXT = "company_name\nTaxBuddy\n"
 
 test('TaxBuddy is covered exactly by its first-party fail-closed provider', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'taxbuddy')
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(COMPANY_CSV_PATH, 'utf8'),
+    csvText: COMPANY_CSV_TEXT,
     catalog,
   })
 

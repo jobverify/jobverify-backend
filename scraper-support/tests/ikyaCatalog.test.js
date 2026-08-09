@@ -44,7 +44,7 @@ test('Ikya local catalog captures the verified SmartRecruiters empty-board senti
   )
   assert.equal(IKYA_CATALOG.parser, 'custom-script')
   assert.equal(IKYA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(IKYA_CATALOG.modulePath, '../ikya/script.js')
+  assert.equal(IKYA_CATALOG.modulePath, '../../scraper/ikya/script.js')
   assert.equal(IKYA_CATALOG.dryRunFile, 'ikya/jobs.json')
   assert.equal(IKYA_CATALOG.verifiedOn, '2026-08-02')
   assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /careers\.smartrecruiters\.com\/Ikya1/i)

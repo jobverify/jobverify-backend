@@ -178,9 +178,13 @@ test('Way.com scraper run keeps only India jobs and adds scraper metadata', asyn
   const way = await loadModule()
 
   const jobs = await way.createWayDotComIndiaScraper({ maxJobs: 2 }).run({
-    browseCareersSurfaceImpl: async () => ({
-      careersHtml: careersShellHtml,
-      jobsJson: [
+    fetchText: async (url) => {
+      assert.equal(url, way.CAREERS_URL)
+      return careersShellHtml
+    },
+    fetchJson: async (url) => {
+      assert.equal(url, way.JOBS_JSON_URL)
+      return [
         {
           id: 11,
           title: 'App Store Acquisition Specialist',
@@ -203,8 +207,8 @@ test('Way.com scraper run keeps only India jobs and adds scraper metadata', asyn
           skills: [],
           date: '11-April-2025',
         },
-      ],
-    }),
+      ]
+    },
   })
 
   assert.equal(jobs.length, 1)
@@ -237,10 +241,8 @@ test('Way.com scraper fails closed when the official surface or detail route cha
 
   await assert.rejects(
     way.createWayDotComIndiaScraper().run({
-      browseCareersSurfaceImpl: async () => ({
-        careersHtml: '<main><h1>Careers</h1></main>',
-        listings: [],
-      }),
+      fetchText: async () => '<main><h1>Careers</h1></main>',
+      fetchJson: async () => [],
     }),
     /official careers surface/i,
   )

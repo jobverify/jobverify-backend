@@ -1,8 +1,8 @@
-export const IGT_SOLUTIONS_CATALOG = {
+﻿export const IGT_SOLUTIONS_CATALOG = {
   source: 'igtsolutions',
   companyName: 'IGT Solutions',
   adapter: 'script',
-  modulePath: '../igtsolutions/script.js',
+  modulePath: '../../scraper/igtsolutions/script.js',
   companyCareerPage: 'https://atain.com/careers/',
   companyDomain: 'atain.com',
   atsPlatform: 'official-company-site-no-public-careers',
@@ -17,3 +17,4 @@ export const IGT_SOLUTIONS_CATALOG = {
 }
 
 export default IGT_SOLUTIONS_CATALOG
+

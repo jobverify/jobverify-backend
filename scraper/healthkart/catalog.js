@@ -1,9 +1,9 @@
-export const HEALTHKART_CATALOG = {
+﻿export const HEALTHKART_CATALOG = {
   source: 'healthkart',
   companyName: 'HealthKart',
   officialBrandName: 'HealthKart',
   adapter: 'script',
-  modulePath: '../healthkart/script.js',
+  modulePath: '../../scraper/healthkart/script.js',
   companyCareerPage: 'https://www.healthkart.com/careers',
   companyDomain: 'healthkart.com',
   atsPlatform: 'official-company-site-no-public-careers',
@@ -19,3 +19,4 @@ export const HEALTHKART_CATALOG = {
 }
 
 export default HEALTHKART_CATALOG
+

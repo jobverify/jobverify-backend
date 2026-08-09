@@ -33,7 +33,7 @@ test('Lattice Semiconductor India catalog captures the verified first-party care
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.companyName, 'Lattice Semiconductor India')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.officialBrandName, 'Lattice Semiconductor')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.adapter, 'script')
-  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.modulePath, '../latticesemiconductorindia/script.js')
+  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.modulePath, '../../scraper/latticesemiconductorindia/script.js')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.dryRunFile, 'latticesemiconductorindia/jobs.json')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.homepageUrl, 'https://www.latticesemi.com/en')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.companyCareerPage, 'https://www.latticesemi.com/About/Jobs')

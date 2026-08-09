@@ -11,7 +11,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://www.zopper.com/about-us/careers was the live first-party Zopper careers page, that its See Open Positions CTA handed applicants to the public LinkedIn company jobs page at https://www.linkedin.com/company/zopper/jobs/, and that the public LinkedIn India jobs search at https://www.linkedin.com/jobs/search/?f_C=2760462&geoId=102713980 exposed current India roles including Relationship Manager (B2B Field Sales) - Bangalore and Business Development Manager, Bancassurance. This scraper validates those verified surfaces and returns jobs only from the public LinkedIn India jobs search.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 
 const REQUIRED_SURFACE_PATTERNS = [
   /\bEmpowering You to Soar Higher Every Day!?/i,

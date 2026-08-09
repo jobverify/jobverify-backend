@@ -66,7 +66,7 @@ test('BuyUcoin exports provider metadata for the verified first-party careers li
     companyName: 'BuyUcoin',
     officialBrandName: 'BuyUcoin',
     adapter: 'script',
-    modulePath: '../buyucoin/script.js',
+    modulePath: '../../scraper/buyucoin/script.js',
     homepageUrl: 'https://www.buyucoin.com/',
     companyCareerPage: 'https://www.buyucoin.com/career',
     atsPlatform: 'official-company-careers',

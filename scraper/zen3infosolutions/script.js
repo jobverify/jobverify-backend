@@ -21,7 +21,7 @@ export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://zen3.com/openings',
 ]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bwe(?:'|’)?re hiring\b/i,

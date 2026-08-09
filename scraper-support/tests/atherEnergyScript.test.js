@@ -78,6 +78,10 @@ test('run reports an API-only migration error when direct HTTP access to Ather c
       fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
       fetchBrowserText: async () => assert.fail('Ather Energy must not launch a browser'),
     }),
-    /ather energy API-only migration.*HTTP 403/i,
+    (error) => {
+      assert.match(error.message, /ather energy API-only migration.*HTTP 403/i)
+      assert.equal(error.abortRetries, true)
+      return true
+    },
   )
 })

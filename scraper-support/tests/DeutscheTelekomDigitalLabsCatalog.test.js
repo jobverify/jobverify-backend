@@ -26,7 +26,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Deutsche Telekom Digital Labs local catalog captures the verified affiliate page plus exact-name shell sentinel metadata', async () => {
+test('Deutsche Telekom Digital Labs local catalog captures the verified affiliate page plus exact-name modern shell sentinel metadata', async () => {
   const { DEUTSCHE_TELEKOM_DIGITAL_LABS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const dtdl = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(DEUTSCHE_TELEKOM_DIGITAL_LABS_CATALOG)
@@ -43,14 +43,15 @@ test('Deutsche Telekom Digital Labs local catalog captures the verified affiliat
   assert.equal(provider.atsPlatform, 'affiliate-page-plus-exact-name-shell-no-public-jobs')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'affiliate-page-plus-shell-validation')
-  assert.equal(provider.extractionStrategy, 'telekom-affiliate-page+exact-name-js-shell+common-route-validation-return-empty')
+  assert.equal(provider.extractionStrategy, 'telekom-affiliate-page+exact-name-legacy-or-modern-shell+common-route-validation-return-empty')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-01')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /deutschetelekomdigitallabs[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /DT Digital Labs in India is responsible for product development/i)
-  assert.match(provider.verifiedSurfaceSummary, /You need to enable JavaScript to run this app/i)
+  assert.match(provider.verifiedSurfaceSummary, /modern DTDL app shell/i)
+  assert.match(provider.verifiedSurfaceSummary, /canonical root at https:\/\/dtdl\.in\//i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Deutsche Telekom Digital Labs'), false)
 
   assert.equal(dtdl.PROVIDER_METADATA.source, DEUTSCHE_TELEKOM_DIGITAL_LABS_CATALOG.source)

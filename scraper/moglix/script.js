@@ -26,7 +26,7 @@ export const REQUEST_ENCRYPTION_KEY = '2e35f242a46d67eeb74aabc37d5e5d05'
 export const REQUEST_ENCRYPTION_HEADER = 'fe-req-encrypted'
 export const RESPONSE_ENCRYPTION_HEADER = 'fe-res-encrypted'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {

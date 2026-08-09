@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'appypie',
   companyName: 'Appy Pie',
   officialBrandName: 'Appy Pie',
   adapter: 'script',
-  modulePath: '../appypie/script.js',
+  modulePath: '../../scraper/appypie/script.js',
   homepageUrl: 'https://www.appypie.com/',
   companyCareerPage: 'https://careers.appypie.com/careers',
   atsPlatform: 'wordpress-simple-jobs',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

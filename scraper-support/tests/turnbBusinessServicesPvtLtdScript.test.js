@@ -91,6 +91,8 @@ test('TurnB validates the verified tabbed careers surface and keeps only India r
       closingDate: null,
       jobDescription: null,
       remoteStatus: null,
+      companyCareerPage: 'https://turnb.com/career',
+      atsPlatform: 'official-company-careers',
     },
   ])
 })

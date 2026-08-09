@@ -84,7 +84,7 @@ test('Smart Energy Water local catalog captures the verified SEW careers shell a
   assert.equal(provider.officialBrandName, 'SEW.AI')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.sew.ai/')
-  assert.equal(provider.companyCareerPage, 'https://www.sew.ai/careers')
+  assert.equal(provider.companyCareerPage, 'https://www.sew.ai/sew-career')
   assert.equal(provider.knownIndiaJobDetailUrl, 'https://www.sew.ai/careers/product-engineer-net')
   assert.equal(provider.companyDomain, 'sew.ai')
   assert.equal(provider.atsPlatform, 'first-party-careers-site-with-unenumerable-detail-pages')
@@ -97,7 +97,7 @@ test('Smart Energy Water local catalog captures the verified SEW careers shell a
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Join the SEW Mission/i)
+  assert.match(provider.verifiedSurfaceSummary, /SEW\.AI careers landing page/i)
   assert.match(provider.verifiedSurfaceSummary, /Product Engineer- \.Net/i)
   assert.match(provider.verifiedSurfaceSummary, /Noida \(India\)/i)
 

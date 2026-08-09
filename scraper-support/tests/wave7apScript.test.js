@@ -190,6 +190,7 @@ const wyzmindzHomepageHtml = `
     <h1>AI Powered Workflow Automation</h1>
     <p>SaaS CRM for Customer Service, Quality Audits, Automotive Dealers & BFSI Industry.</p>
     <h2>Get in touch</h2>
+    <p>3rd Floor, Survey # 19/3, Srinivasa Industrial Estate</p>
     <p>Thank you for your response. ✨</p>
   </body>
 </html>

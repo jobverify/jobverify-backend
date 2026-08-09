@@ -20,7 +20,7 @@ export const INDIA_JOBS_URL = PROVIDER_METADATA.indiaJobsPageUrl
 export const BASE_URL = 'https://careers.lupin.com'
 export const PAGE_SIZE = 25
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const MONTHS = {
   jan: '01',

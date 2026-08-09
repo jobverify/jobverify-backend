@@ -26,7 +26,7 @@ test('Amrutam is wired to a verified exact-name no-public-careers scraper instea
   assert.equal(provider.verifiedOn, '2026-07-30')
   assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.modulePath, /amrutam\.js$/)
+  assert.match(provider.modulePath, /[\\/]amrutam[\\/]script\.js$/i)
   assert.match(provider.verifiedSurfaceSummary, /Thursday, July 30, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/amrutam\.co\.in\/pages\/meet-the-team/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/amrutam\.co\.in\/pages\/our-story-the-journey-of-amrutam-1/i)

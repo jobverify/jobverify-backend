@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url'
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
+  '..',
+  'scraper',
   'netcontechnologies',
   'fixtures',
 )

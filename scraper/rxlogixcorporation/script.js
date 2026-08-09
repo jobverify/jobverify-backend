@@ -9,7 +9,7 @@ export const SOURCE = RX_LOGIX_CORPORATION_CATALOG.source
 export const COMPANY = RX_LOGIX_CORPORATION_CATALOG.companyName
 export const CAREERS_URL = RX_LOGIX_CORPORATION_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

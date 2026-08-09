@@ -17,7 +17,7 @@ export const VERIFIED_ON = THREE_PILLAR_GLOBAL_CATALOG.verifiedOn
 export const COMPANY_DOMAIN = THREE_PILLAR_GLOBAL_CATALOG.companyDomain
 export const PROVIDER_METADATA = THREE_PILLAR_GLOBAL_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -14,7 +14,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Unified Infotech',
   adapter: 'script',
-  modulePath: '../unifiedinfotech/script.js',
+  modulePath: '../../scraper/unifiedinfotech/script.js',
   homepageUrl: 'https://www.unifiedinfotech.net/',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
@@ -58,7 +58,7 @@ export const defaultFetchText = (url, {
 } = {}) => fetchTextWithRetry(url, {
   fetchImpl,
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
@@ -157,3 +157,4 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     await saveToDB(jobs, SOURCE)
   }
 }
+

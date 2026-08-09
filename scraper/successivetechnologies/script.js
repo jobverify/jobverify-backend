@@ -17,7 +17,7 @@ export const EXPECTED_PORTAL_SLUG = 'default'
 export const EXPECTED_PORTAL_DOMAIN = 'successivesoftware.keka.com'
 export const EXPECTED_PORTAL_NAME = 'Successive Technologies Pvt. Ltd.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

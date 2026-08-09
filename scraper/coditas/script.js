@@ -77,7 +77,7 @@ const fetchJson = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json,text/plain,*/*',
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyScraper/1.0)',
     },
   })
 

@@ -72,7 +72,7 @@ test('Itron India pins the verified official careers handoff and India Workday b
     source: 'itronindia',
     scraperDir: options.scraperDir,
   })
-  assert.match(options.scraperDir, /itronindia$/i)
+  assert.match(options.scraperDir, /itronindia\.workday$/i)
 })
 
 test('Itron India run verifies the official handoff chain and delegates to the shared Workday runner', async () => {

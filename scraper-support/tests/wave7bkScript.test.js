@@ -413,6 +413,7 @@ test('Satvat Infosol scraper extracts and dedupes the verified first-party openi
       postingDate: null,
       closingDate: null,
       jobDescription: 'Passed out in 2020/2021 are eligible to apply for Technical Support Trainee.',
+      publicExperienceChecked: true,
     },
     {
       title: 'Software Programmer/Developer',
@@ -433,6 +434,7 @@ test('Satvat Infosol scraper extracts and dedupes the verified first-party openi
       postingDate: null,
       closingDate: null,
       jobDescription: 'Develop software solutions for enterprise clients.',
+      publicExperienceChecked: true,
     },
     {
       title: 'Business Development Manager',
@@ -453,6 +455,7 @@ test('Satvat Infosol scraper extracts and dedupes the verified first-party openi
       postingDate: null,
       closingDate: null,
       jobDescription: 'Experience in IT Products Sales/Business Development.',
+      publicExperienceChecked: true,
     },
     {
       title: 'Flutter Developer',
@@ -473,6 +476,7 @@ test('Satvat Infosol scraper extracts and dedupes the verified first-party openi
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
     },
   ])
 

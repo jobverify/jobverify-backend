@@ -6,11 +6,11 @@ import { generateCompanyCoverageReport } from '../scraper-support/providers/comp
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 import { run } from '../scraper/katalon/script.js'
 
-const COMPANY_CSV_PATH = 'C:/Users/mohv/Downloads/indian_software_companies_500.csv'
+const COMPANY_CSV_TEXT = "company_name\nKatalon\n"
 
 test('Katalon resolves only to its exact-name official ATS provider', () => {
   const report = generateCompanyCoverageReport({
-    csvText: readFileSync(COMPANY_CSV_PATH, 'utf8'),
+    csvText: COMPANY_CSV_TEXT,
     catalog: getScraperCatalog(),
   })
   const nearNameReport = generateCompanyCoverageReport({

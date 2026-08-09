@@ -1,6 +1,7 @@
 const TRUTHY_ENV_PATTERN = /^(?:1|true|yes|on)$/i
 
 export const FALLBACK_PARALLEL_SCRAPER_CONCURRENCY = 1
+export const RECOMMENDED_LOCAL_DRY_RUN_CONCURRENCY = 2
 
 const isTruthyEnvFlag = (value) => TRUTHY_ENV_PATTERN.test(String(value ?? '').trim())
 const parsePositiveConcurrency = (value) => {
@@ -14,9 +15,9 @@ export const resolveConfiguredParallelScraperConcurrency = (
 ) => parsePositiveConcurrency(value) ?? fallbackConcurrency
 
 export const resolveRecommendedLocalDryRunConcurrency = (
-  value = process.env.SCRAPER_CONCURRENCY,
-  fallbackConcurrency = FALLBACK_PARALLEL_SCRAPER_CONCURRENCY,
-) => resolveConfiguredParallelScraperConcurrency(value, fallbackConcurrency)
+  value = process.env.SCRAPER_RECOMMENDED_LOCAL_DRY_RUN_CONCURRENCY,
+  fallbackConcurrency = RECOMMENDED_LOCAL_DRY_RUN_CONCURRENCY,
+) => parsePositiveConcurrency(value) ?? fallbackConcurrency
 
 export const resolveParallelWorkerConcurrency = ({
   requested = process.env.SCRAPER_CONCURRENCY,

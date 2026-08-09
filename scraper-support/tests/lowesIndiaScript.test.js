@@ -99,7 +99,7 @@ test("extractJobDetail reads Lowe's India job detail metadata and Workday apply 
   assert.equal(detail.requisitionId, 'JR-02563681')
   assert.equal(detail.department, 'Corporate')
   assert.equal(detail.employmentType, 'Probation')
-  assert.match(detail.experienceRequired, /minimum 3\+ Years of experience/i)
+  assert.equal(detail.experienceRequired, '5+ years')
   assert.match(detail.minimumQualification, /Bachelor/i)
   assert.equal(detail.preferredQualification, null)
   assert.equal(detail.postingDate, '2026-07-08')

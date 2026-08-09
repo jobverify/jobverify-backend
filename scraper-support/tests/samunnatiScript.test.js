@@ -158,7 +158,7 @@ test('Samunnati scraper keeps the verified first-party Darwinbox handoff explici
   )
 })
 
-test('run maps verified Samunnati Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Samunnati Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createSamunnatiScraper } = await loadSamunnatiModule()
   const scraper = createSamunnatiScraper({
     now: () => FIXED_SCRAPED_AT,

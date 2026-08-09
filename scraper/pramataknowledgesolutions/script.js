@@ -31,6 +31,24 @@ const isExpectedCareers403Error = (error, url) =>
   /HTTP 403/i.test(String(error?.message || error || ''))
   && String(url ?? '') === CAREERS_URL
 
+const buildBlockedCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Pramata Knowledge Solutions verified careers surface remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
+const buildMaterialSurfaceChangeError = () => {
+  const error = new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+  error.abortRetries = true
+  return error
+}
+
 export const hasVerifiedCloudflareChallengeSignal = (html = '') => {
   const page = String(html ?? '')
   return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
@@ -97,11 +115,15 @@ export const createPramataKnowledgeSolutionsScraper = () => ({
           return []
         }
 
-        throw new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+        if (Number(browserPage.status) === 403) {
+          throw buildBlockedCareersSurfaceError(new Error(`HTTP 403 for ${CAREERS_URL}`))
+        }
+
+        throw buildMaterialSurfaceChangeError()
       }
 
       if (!hasVerifiedCloudflareChallengeSignal(careersHtml)) {
-        throw new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+        throw buildMaterialSurfaceChangeError()
       }
 
       if (exposesStructuredPublicJobs(careersHtml)) {

@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -18,7 +18,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'gocomet.com',
   adapter: 'script',
   atsPlatform: 'keka-embed-api',
-  modulePath: '../gocomet/script.js',
+  modulePath: '../../scraper/gocomet/script.js',
   dryRunFile: 'gocomet/jobs.json',
 }
 
@@ -171,3 +171,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(0)
   }
 }
+

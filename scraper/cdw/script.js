@@ -55,6 +55,18 @@ const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
+const buildBlockedPublicSurfaceError = (surfaceLabel, error) => {
+  const upstreamError = new Error(
+    `CDW verified ${surfaceLabel} remains blocked after HTTP fallback`,
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
 const HAS_JOB_DETAIL_LINK_PATTERN = /href=["'][^"']*(?:\/jobs\/|\/search\/jobs\/)[^"']+/i
 
 export const hasOfficialSearchResultsSignal = (html = '') => {
@@ -178,7 +190,7 @@ export const createCdwScraper = ({
       return session.fetchText(url)
     })
 
-    const fetchPageText = async (url) => {
+    const fetchPageText = async (url, surfaceLabel) => {
       try {
         return await fetchText(url)
       } catch (error) {
@@ -186,12 +198,19 @@ export const createCdwScraper = ({
           throw error
         }
 
-        return browserTextFetcher(url)
+        try {
+          return await browserTextFetcher(url)
+        } catch (browserError) {
+          if (isBrowserFallbackError(browserError)) {
+            throw buildBlockedPublicSurfaceError(surfaceLabel, browserError)
+          }
+          throw browserError
+        }
       }
     }
 
     try {
-      const searchHtml = await fetchPageText(SEARCH_URL)
+      const searchHtml = await fetchPageText(SEARCH_URL, 'search results page')
       if (!hasOfficialSearchResultsSignal(searchHtml)) {
         throw new Error('CDW search results page no longer matches the verified first-party surface')
       }
@@ -199,7 +218,7 @@ export const createCdwScraper = ({
       const indiaSearchUrl = resolveIndiaSearchUrl(searchHtml)
       const indiaSearchHtml = indiaSearchUrl === SEARCH_URL
         ? searchHtml
-        : await fetchPageText(indiaSearchUrl)
+        : await fetchPageText(indiaSearchUrl, 'India search results page')
 
       if (!hasOfficialIndiaResultsSignal(indiaSearchHtml)) {
         throw new Error('CDW India results page no longer matches the verified first-party jobs surface')
@@ -212,7 +231,10 @@ export const createCdwScraper = ({
 
       const jobs = []
       for (const listing of listings) {
-        const detailHtml = await fetchPageText(listing.detailUrl)
+        const detailHtml = await fetchPageText(
+          listing.detailUrl,
+          `job detail page for ${listing.title || listing.detailUrl}`,
+        )
         const detail = extractDetail(detailHtml)
         const location = detail.location || listing.location
         if (!/, India$/i.test(location || '')) continue

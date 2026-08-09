@@ -73,19 +73,21 @@ test('Zeno Health validates the verified careers surface and returns [] while th
 
 test('Zeno Health rejects when the verified public careers surface markers disappear', async () => {
   const zenohealth = await loadZenoHealthModule()
+  const brokenHtml = `
+    <html>
+      <body>
+        <main>
+          <h1>Careers</h1>
+          <p>Apply to join our team.</p>
+        </main>
+      </body>
+    </html>
+  `
 
   await assert.rejects(
     zenohealth.run({
-      fetchHtml: async () => `
-        <html>
-          <body>
-            <main>
-              <h1>Careers</h1>
-              <p>Apply to join our team.</p>
-            </main>
-          </body>
-        </html>
-      `,
+      fetchHtml: async () => brokenHtml,
+      fetchBrowserHtml: async () => brokenHtml,
     }),
     /verified public careers surface changed/i,
   )
@@ -93,28 +95,30 @@ test('Zeno Health rejects when the verified public careers surface markers disap
 
 test('Zeno Health rejects when the LinkedIn openings handoff copy changes', async () => {
   const zenohealth = await loadZenoHealthModule()
+  const changedHandoffHtml = `
+    <html>
+      <body>
+        <main>
+          <section>
+            <p>
+              Helping the world is perhaps the most rewarding way to grow in your
+              career and life.
+            </p>
+            <h2>Work culture at Zeno Health</h2>
+            <h2>Join us.</h2>
+            <a href="https://in.linkedin.com/company/zeno-health">
+              Follow us on LinkedIn
+            </a>
+          </section>
+        </main>
+      </body>
+    </html>
+  `
 
   await assert.rejects(
     zenohealth.run({
-      fetchHtml: async () => `
-        <html>
-          <body>
-            <main>
-              <section>
-                <p>
-                  Helping the world is perhaps the most rewarding way to grow in your
-                  career and life.
-                </p>
-                <h2>Work culture at Zeno Health</h2>
-                <h2>Join us.</h2>
-                <a href="https://in.linkedin.com/company/zeno-health">
-                  Follow us on LinkedIn
-                </a>
-              </section>
-            </main>
-          </body>
-        </html>
-      `,
+      fetchHtml: async () => changedHandoffHtml,
+      fetchBrowserHtml: async () => changedHandoffHtml,
     }),
     /linkedin openings handoff changed/i,
   )
@@ -122,13 +126,15 @@ test('Zeno Health rejects when the LinkedIn openings handoff copy changes', asyn
 
 test('Zeno Health rejects when the careers surface starts exposing a first-party jobs inventory', async () => {
   const zenohealth = await loadZenoHealthModule()
+  const publicJobsHtml = `
+    ${VERIFIED_SURFACE_HTML}
+    <a href="/careers/openings/pharmacist">Pharmacist</a>
+  `
 
   await assert.rejects(
     zenohealth.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="/careers/openings/pharmacist">Pharmacist</a>
-      `,
+      fetchHtml: async () => publicJobsHtml,
+      fetchBrowserHtml: async () => publicJobsHtml,
     }),
     /public jobs surface/i,
   )
@@ -136,15 +142,17 @@ test('Zeno Health rejects when the careers surface starts exposing a first-party
 
 test('Zeno Health rejects when JobPosting markup appears on the verified careers surface', async () => {
   const zenohealth = await loadZenoHealthModule()
+  const jobPostingHtml = `
+    ${VERIFIED_SURFACE_HTML}
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"JobPosting","title":"Pharmacist"}
+    </script>
+  `
 
   await assert.rejects(
     zenohealth.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <script type="application/ld+json">
-          {"@context":"https://schema.org","@type":"JobPosting","title":"Pharmacist"}
-        </script>
-      `,
+      fetchHtml: async () => jobPostingHtml,
+      fetchBrowserHtml: async () => jobPostingHtml,
     }),
     /JobPosting markup/i,
   )

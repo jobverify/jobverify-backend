@@ -6,7 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'volvoericsson'
 export const COMPANY = 'Volvo-Ericsson'
 export const VOLVO_CAREERS_URL = 'https://www.volvogroup.com/en/careers.html'
-export const VOLVO_JOBS_URL = 'https://jobs.volvogroup.com/'
+export const VOLVO_JOBS_URL = 'https://jobs.volvogroup.com/en'
 export const ERICSSON_CAREERS_URL = 'https://jobs.ericsson.com/careers'
 export const OFFICIAL_CAREER_URLS = [
   VOLVO_CAREERS_URL,

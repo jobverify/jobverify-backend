@@ -15,7 +15,7 @@ test('getScraperCatalog includes Finastra as a Workday-backed script provider', 
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.companyCareerPage, 'https://www.finastra.com/careers/life-at-finastra')
   assert.equal(provider.companyDomain, 'finastra.com')
-  assert.match(provider.modulePath, /finastra[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /finastra\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Finastra scraper without changing the runner contract', () => {

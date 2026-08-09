@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'graygraphtechnologiesprivatelimited'
 export const COMPANY = 'Graygraph Technologies Private Limited'
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Graygraph Technologies',
   adapter: 'script',
-  modulePath: '../graygraphtechnologiesprivatelimited/script.js',
+  modulePath: '../../scraper/graygraphtechnologiesprivatelimited/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
@@ -95,3 +95,4 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     scrapedAt: now(),
   }))
 }
+

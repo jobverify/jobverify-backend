@@ -1,4 +1,4 @@
-export const SOURCE = 'eoxvantage'
+﻿export const SOURCE = 'eoxvantage'
 export const COMPANY = 'EOX Vantage'
 export const HOMEPAGE_URL = 'https://eoxvantage.com/'
 export const CAREERS_URL = 'https://eoxvantage.com/careers/'
@@ -6,21 +6,12 @@ export const CAREERS_URL = 'https://eoxvantage.com/careers/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const DEFAULT_TIMEOUT_MS = 120000
-
-let browserUtilsPromise
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
-  return browserUtilsPromise
-}
-
 export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   officialBrandName: 'EOX Vantage',
   adapter: 'script',
-  modulePath: '../eoxvantage/script.js',
+  modulePath: '../../scraper/eoxvantage/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers-no-public-openings',
@@ -61,24 +52,6 @@ const defaultFetchText = (url) => fetch(url, {
   return response.text()
 })
 
-const createBrowserTextFetcher = async () => {
-  const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    fetchText: async (url) => {
-      await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: DEFAULT_TIMEOUT_MS,
-      })
-      await page.waitForSelector('body', { timeout: DEFAULT_TIMEOUT_MS }).catch(() => null)
-      return page.content()
-    },
-    close: async () => browser.close(),
-  }
-}
-
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
@@ -98,34 +71,21 @@ export const extractOpenings = () => []
 const isIndiaLocation = (location) => /\bindia\b/i.test(String(location ?? ''))
 
 export const run = async ({
-  fetchText,
-  createTextFetcher = createBrowserTextFetcher,
+  fetchText = defaultFetchText,
 } = {}) => {
-  let textFetcher = null
-
-  try {
-    if (!fetchText) {
-      textFetcher = await createTextFetcher()
-      fetchText = textFetcher.fetchText
-    }
-
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('EOX Vantage verified first-party careers page changed materially')
-    }
-
-    return extractOpenings(careersHtml)
-      .filter((job) => isIndiaLocation(job.location))
-      .map((job) => ({
-        ...job,
-        company: COMPANY,
-        country: 'India',
-        link: job.applyUrl || job.sourceUrl,
-        source: SOURCE,
-      }))
-  } finally {
-    if (textFetcher) {
-      await textFetcher.close()
-    }
+  const careersHtml = await fetchText(CAREERS_URL)
+  if (!hasOfficialCareersSignal(careersHtml)) {
+    throw new Error('EOX Vantage verified first-party careers page changed materially')
   }
+
+  return extractOpenings(careersHtml)
+    .filter((job) => isIndiaLocation(job.location))
+    .map((job) => ({
+      ...job,
+      company: COMPANY,
+      country: 'India',
+      link: job.applyUrl || job.sourceUrl,
+      source: SOURCE,
+    }))
 }
+

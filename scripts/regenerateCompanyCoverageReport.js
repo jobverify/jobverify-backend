@@ -8,15 +8,9 @@ import { getDiskBackedScraperSources } from '../scraper-support/providers/source
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
-const repoDir = path.resolve(backendDir, '..')
 const scraperDir = path.join(backendDir, 'scraper')
 export const DEFAULT_BACKEND_REPORT_PATH = path.join(backendDir, 'company_coverage_report.json')
-export const DEFAULT_FRONTEND_REPORT_PATH = path.join(
-  repoDir,
-  'Jobify-frontend',
-  'public',
-  'company_coverage_report.json',
-)
+export const DEFAULT_FRONTEND_REPORT_PATH = null
 
 const buildReportFromScraperInventory = ({
   catalog,
@@ -62,7 +56,9 @@ export const regenerateCompanyCoverageReport = ({
   scraperDirectoryPath = scraperDir,
 } = {}) => {
   const resolvedBackendReportPath = path.resolve(backendReportPath)
-  const resolvedFrontendReportPath = path.resolve(frontendReportPath)
+  const resolvedFrontendReportPath = frontendReportPath
+    ? path.resolve(frontendReportPath)
+    : null
   const resolvedScraperDirectoryPath = path.resolve(scraperDirectoryPath)
   const resolvedCsvPath = csvPath ? path.resolve(csvPath) : null
   const report = resolvedCsvPath
@@ -78,7 +74,9 @@ export const regenerateCompanyCoverageReport = ({
 
   const serializedReport = `${JSON.stringify(report, null, 2)}\n`
   writeFileSync(resolvedBackendReportPath, serializedReport)
-  writeFileSync(resolvedFrontendReportPath, serializedReport)
+  if (resolvedFrontendReportPath) {
+    writeFileSync(resolvedFrontendReportPath, serializedReport)
+  }
 
   return {
     sourceType: resolvedCsvPath ? 'csv-file' : 'scraper-directory-inventory',

@@ -104,7 +104,7 @@ test('Pixxel scraper keeps the verified official Darwinbox handoff explicit and 
   )
 })
 
-test('run maps verified Pixxel Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Pixxel Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createPixxelScraper } = await loadPixxelModule()
   const scraper = createPixxelScraper({
     now: () => FIXED_SCRAPED_AT,

@@ -62,32 +62,22 @@ test('run returns no jobs when Canon India careers point to a currently inaccess
   assert.deepEqual(jobs, [])
 })
 
-test('run can recover Canon India pages with a browser-backed fetch when direct requests fail certificate validation', async () => {
+test('run returns no jobs when the Canon India external careers portal fails certificate validation', async () => {
   const canonIndia = await loadCanonIndiaModule()
-  const browserUrls = []
 
   const jobs = await canonIndia.createCanonIndiaScraper().run({
-    fetchPage: async () => {
-      throw new Error('fetch failed | unable to verify the first certificate')
-    },
-    fetchBrowserPage: async (url) => {
-      browserUrls.push(url)
-
+    fetchPage: async (url) => {
       if (url === canonIndia.CAREER_PAGE_URL) {
         return { status: 200, url, html: careerPageHtml }
       }
 
       if (url === canonIndia.EXTERNAL_PORTAL_URL) {
-        return { status: 403, url, html: 'No Access' }
+        throw new Error('fetch failed | unable to verify the first certificate')
       }
 
-      throw new Error(`Unexpected browser URL: ${url}`)
+      throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(browserUrls, [
-    canonIndia.CAREER_PAGE_URL,
-    canonIndia.EXTERNAL_PORTAL_URL,
-  ])
   assert.deepEqual(jobs, [])
 })

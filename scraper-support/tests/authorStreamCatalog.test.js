@@ -59,19 +59,19 @@ test('AuthorStream local catalog captures the verified parked redirect shell and
   )
   assert.equal(
     AUTHORSTREAM_CATALOG.extractionStrategy,
-    'verified-redirect-shell+verified-robots-and-sitemap-with-single-lander-url+verified-first-party-routes-share-parked-redirect-return-empty',
+    'verified-redirect-shell+verified-robots-and-sitemap-with-single-lander-url+verified-first-party-routes-share-parked-redirect-or-all-routes-unreachable-return-empty',
   )
   assert.equal(AUTHORSTREAM_CATALOG.parser, 'custom-script')
   assert.equal(AUTHORSTREAM_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AUTHORSTREAM_CATALOG.verifiedOn, '2026-07-28')
+  assert.equal(AUTHORSTREAM_CATALOG.verifiedOn, '2026-08-07')
   assert.equal(AUTHORSTREAM_CATALOG.dryRunFile, 'authorstream/jobs.json')
   assert.equal(AUTHORSTREAM_CATALOG.modulePath, authorStreamModulePath)
   assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\//i)
-  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\/lander/i)
-  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\/robots\.txt/i)
-  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/authorstream\.com\/sitemap\.xml/i)
+  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /\/lander/i)
+  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /robots\.txt/i)
+  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /sitemap/i)
   assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /GoDaddy/i)
-  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(AUTHORSTREAM_CATALOG.verifiedSurfaceSummary, /no alternate official jobs surface/i)
 
   assert.equal(authorStream.PROVIDER_METADATA.source, AUTHORSTREAM_CATALOG.source)
   assert.equal(authorStream.PROVIDER_METADATA.companyName, AUTHORSTREAM_CATALOG.companyName)

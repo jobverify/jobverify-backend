@@ -54,7 +54,7 @@ test("createOriginAllowlist matches configured origins exactly by default", () =
 
   assert.equal(allowlist.has("http://localhost:5173"), true);
   assert.equal(allowlist.has("http://127.0.0.1:4173"), false);
-  assert.equal(allowlist.has("https://app.jobify.test"), false);
+  assert.equal(allowlist.has("https://app.jobverify.test"), false);
 });
 
 test("createOriginAllowlist accepts loopback origin variants in development mode", () => {

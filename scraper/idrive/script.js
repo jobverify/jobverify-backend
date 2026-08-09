@@ -20,7 +20,7 @@ export const WIDGET_SETTINGS_URL = PROVIDER_METADATA.widgetSettingsUrl
 export const WIDGET_EMBED_INFO_URL = PROVIDER_METADATA.widgetEmbedInfoUrl
 export const WIDGET_EMBED_ID = PROVIDER_METADATA.widgetEmbedId
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const EMPLOYMENT_TYPE_TAGS = new Set([
   'Part-time',

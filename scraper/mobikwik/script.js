@@ -7,7 +7,7 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const SURFACE_TIMEOUT_MS = 30000
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 export const CAREERS_URL = 'https://www.mobikwik.com/careers'
 export const SOURCE = 'mobikwik'

@@ -16,7 +16,7 @@ const EXPIRED_TLS_PATTERNS = [
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyScraper/1.0)',
       Accept: 'text/html,application/xhtml+xml',
     },
     redirect: 'follow',

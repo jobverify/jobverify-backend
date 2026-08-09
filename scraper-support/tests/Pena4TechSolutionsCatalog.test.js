@@ -26,7 +26,7 @@ test('Pena4 Tech Solutions exports local provider metadata for the verified firs
     companyName: 'Pena4 Tech Solutions',
     officialBrandName: 'Pena4',
     adapter: 'script',
-    modulePath: '../pena4techsolutions/script.js',
+    modulePath: '../../scraper/pena4techsolutions/script.js',
     homepageUrl: 'https://www.pena4.com/',
     companyCareerPage: 'https://www.pena4.com/jobs.php',
     atsPlatform: 'official-first-party-jobs-page',

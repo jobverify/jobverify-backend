@@ -29,12 +29,12 @@ test('Ionic Trading catalog metadata captures the verified homepage-only no-jobs
   assert.equal(provider.paginationStrategy, 'verified-homepage-plus-adjacent-route-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-homepage-without-linked-public-careers+adjacent-routes-non-jobs-return-empty',
+    'verified-first-party-homepage-without-linked-public-careers+adjacent-routes-non-jobs-or-all-routes-unreachable-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'ionic.trade')
-  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.equal(provider.verifiedOn, '2026-08-07')
   assert.deepEqual(provider.adjacentRouteUrls, [
     'https://ionic.trade/about',
     'https://ionic.trade/careers',
@@ -43,11 +43,12 @@ test('Ionic Trading catalog metadata captures the verified homepage-only no-jobs
   ])
   assert.match(provider.modulePath, /ionictrading[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /ionictrading[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/ionic\.trade\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/dev\.api\.ionic\.trade\/docs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Solana Trading Infrastructure/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public careers or jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /documentation navigation/i)
+  assert.match(provider.verifiedSurfaceSummary, /Ionic marketing surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /authoritative empty result/i)
+  assert.match(provider.verifiedSurfaceSummary, /unreachable/i)
 })
 
 test('Ionic Trading exact-name backlog rows resolve from local provider metadata without shared registry edits', async () => {

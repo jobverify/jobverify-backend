@@ -25,36 +25,36 @@ import { runIndexManagement } from "./indexes.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(currentDir, "..", "..");
-const frontendDir = path.resolve(repoRoot, "Jobify-frontend");
-const backendDir = path.resolve(repoRoot, "Jobify-backend");
+const frontendDir = path.resolve(repoRoot, "Jobverify-frontend");
+const backendDir = path.resolve(repoRoot, "Jobverify-backend");
 const mongoBinaryCacheDir = path.resolve(repoRoot, "artifacts", "mongodb-binaries");
 
 process.env.MONGOMS_DOWNLOAD_DIR = process.env.MONGOMS_DOWNLOAD_DIR || mongoBinaryCacheDir;
 process.env.MONGOMS_PREFER_GLOBAL_PATH = "false";
 
-const FRONTEND_HOST = process.env.JOBIFY_FRONTEND_HOST || "127.0.0.1";
-const FRONTEND_PORT = Number(process.env.JOBIFY_FRONTEND_PORT || 4173);
-const BACKEND_HOST = process.env.JOBIFY_BACKEND_HOST || "127.0.0.1";
-const BACKEND_PORT = Number(process.env.JOBIFY_BACKEND_PORT || 5090);
+const FRONTEND_HOST = process.env.JOBVERIFY_FRONTEND_HOST || "127.0.0.1";
+const FRONTEND_PORT = Number(process.env.JOBVERIFY_FRONTEND_PORT || 4173);
+const BACKEND_HOST = process.env.JOBVERIFY_BACKEND_HOST || "127.0.0.1";
+const BACKEND_PORT = Number(process.env.JOBVERIFY_BACKEND_PORT || 5090);
 const FRONTEND_ORIGIN = `http://${FRONTEND_HOST}:${FRONTEND_PORT}`;
 const BACKEND_ORIGIN = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
-const TOTAL_JOBS = Number(process.env.JOBIFY_E2E_TOTAL_JOBS || 1800);
+const TOTAL_JOBS = Number(process.env.JOBVERIFY_E2E_TOTAL_JOBS || 1800);
 const E2E_EMAIL = normalizeEmailAddress(
-  process.env.JOBIFY_E2E_EMAIL || "student@example.com",
+  process.env.JOBVERIFY_E2E_EMAIL || "student@example.com",
 );
-const E2E_PASSWORD = process.env.JOBIFY_E2E_PASSWORD || "Password123A";
-const E2E_USER_NAME = process.env.JOBIFY_E2E_USER_NAME || "Jobify E2E User";
-const E2E_ADMIN_EMAIL = normalizeEmailAddress(process.env.JOBIFY_E2E_ADMIN_EMAIL || "");
-const E2E_ADMIN_PASSWORD = process.env.JOBIFY_E2E_ADMIN_PASSWORD || "";
-const E2E_ADMIN_NAME = process.env.JOBIFY_E2E_ADMIN_NAME || "Jobify E2E Admin";
-const AUDIT_COMPANY = process.env.JOBIFY_E2E_SENTINEL_COMPANY || "Audit Signal Labs";
-const AUDIT_TITLE = process.env.JOBIFY_E2E_SENTINEL_TITLE || "Audit Signal Frontend Intern";
+const E2E_PASSWORD = process.env.JOBVERIFY_E2E_PASSWORD || "Password123A";
+const E2E_USER_NAME = process.env.JOBVERIFY_E2E_USER_NAME || "Jobverify E2E User";
+const E2E_ADMIN_EMAIL = normalizeEmailAddress(process.env.JOBVERIFY_E2E_ADMIN_EMAIL || "");
+const E2E_ADMIN_PASSWORD = process.env.JOBVERIFY_E2E_ADMIN_PASSWORD || "";
+const E2E_ADMIN_NAME = process.env.JOBVERIFY_E2E_ADMIN_NAME || "Jobverify E2E Admin";
+const AUDIT_COMPANY = process.env.JOBVERIFY_E2E_SENTINEL_COMPANY || "Audit Signal Labs";
+const AUDIT_TITLE = process.env.JOBVERIFY_E2E_SENTINEL_TITLE || "Audit Signal Frontend Intern";
 const AUDIT_SOURCE_URL = "https://example.com/jobs/audit-signal-frontend-intern";
 const HEALTH_POLL_INTERVAL_MS = 500;
 const HEALTH_TIMEOUT_MS = 120_000;
 const STACK_SHUTDOWN_TIMEOUT_MS = 10_000;
 const STRONG_JWT_SECRET =
-  process.env.JOBIFY_E2E_JWT_SECRET || "12345678901234567890123456789012";
+  process.env.JOBVERIFY_E2E_JWT_SECRET || "12345678901234567890123456789012";
 
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const trackedChildren = [];
@@ -315,8 +315,8 @@ const seedLocalState = async () => {
     });
   }
 
-  const previousAck = process.env.JOBIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
-  process.env.JOBIFY_ACKNOWLEDGE_INDEX_MUTATIONS = "true";
+  const previousAck = process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
+  process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS = "true";
   try {
     await runIndexManagement({
       mode: "apply",
@@ -328,9 +328,9 @@ const seedLocalState = async () => {
     });
   } finally {
     if (previousAck == null) {
-      delete process.env.JOBIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
+      delete process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
     } else {
-      process.env.JOBIFY_ACKNOWLEDGE_INDEX_MUTATIONS = previousAck;
+      process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS = previousAck;
     }
   }
 
@@ -393,7 +393,7 @@ async function main() {
   await fs.mkdir(mongoBinaryCacheDir, { recursive: true });
   mongoServer = await MongoMemoryServer.create({
     instance: {
-      dbName: "jobify-local-e2e",
+      dbName: "jobverify-local-e2e",
       ip: BACKEND_HOST,
     },
     binary: {
@@ -416,7 +416,7 @@ async function main() {
 
   process.stdout.write(
     `${JSON.stringify({
-      event: "jobify_local_e2e_stack_ready",
+      event: "jobverify_local_e2e_stack_ready",
       frontendOrigin: FRONTEND_ORIGIN,
       backendOrigin: BACKEND_ORIGIN,
       seededEmail: E2E_EMAIL,

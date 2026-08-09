@@ -18,20 +18,21 @@ const careersHtml = `
   <body>
     <h1>Innovate and Succeed with Team Unified!</h1>
     <section class="openings">
-      <article class="job-card">
-        <h2>Senior React Developer</h2>
-        <p>Remote/Hybrid</p>
-        <p>Full Time</p>
-        <p>Kolkata / Pan India</p>
-        <a href="/careers/senior-react-developer">read more</a>
-      </article>
-      <article class="job-card">
-        <h2>Lead DevOps Engineer</h2>
-        <p>Remote</p>
-        <p>Full Time</p>
-        <p>Kolkata</p>
-        <a href="/careers/lead-devops-engineer">read more</a>
-      </article>
+      <h2>Explore Open Positions at Unified Infotech</h2>
+      <div>Remote/Hybrid</div>
+      <div>Full Time</div>
+      <div>Senior React Developer</div>
+      <div>Build modern front-end experiences for enterprise clients.</div>
+      <div>Exp (5+ years)</div>
+      <div>Kolkata / Pan India</div>
+      <a href="https://www.unifiedinfotech.net/career/senior-react-developer">read more</a>
+      <div>Remote/Hybrid</div>
+      <div>Full Time</div>
+      <div>Lead DevOps Engineer</div>
+      <div>Lead cloud delivery and CI/CD automation.</div>
+      <div>Exp (7+ years)</div>
+      <div>Kolkata</div>
+      <a href="https://www.unifiedinfotech.net/career/lead-devops-engineer">read more</a>
     </section>
     <button>Load More</button>
     <section>
@@ -39,6 +40,9 @@ const careersHtml = `
       <form action="/careers/apply">
         <input type="file" name="resume" />
       </form>
+    </section>
+    <section>
+      <h2>Ready to Embrace Digital Change?</h2>
     </section>
   </body>
 </html>
@@ -54,16 +58,20 @@ test('Unified Infotech validates the verified first-party careers page and extra
       location: 'Kolkata / Pan India',
       remoteType: 'Remote/Hybrid',
       employmentType: 'Full Time',
-      sourceUrl: 'https://www.unifiedinfotech.net/careers/senior-react-developer',
-      applyUrl: 'https://www.unifiedinfotech.net/careers/senior-react-developer',
+      sourceUrl: 'https://www.unifiedinfotech.net/career/senior-react-developer',
+      applyUrl: 'https://www.unifiedinfotech.net/career/senior-react-developer',
+      experienceRequired: '5+ years',
+      jobDescription: 'Build modern front-end experiences for enterprise clients.',
     },
     {
       title: 'Lead DevOps Engineer',
       location: 'Kolkata',
-      remoteType: 'Remote',
+      remoteType: 'Remote/Hybrid',
       employmentType: 'Full Time',
-      sourceUrl: 'https://www.unifiedinfotech.net/careers/lead-devops-engineer',
-      applyUrl: 'https://www.unifiedinfotech.net/careers/lead-devops-engineer',
+      sourceUrl: 'https://www.unifiedinfotech.net/career/lead-devops-engineer',
+      applyUrl: 'https://www.unifiedinfotech.net/career/lead-devops-engineer',
+      experienceRequired: '7+ years',
+      jobDescription: 'Lead cloud delivery and CI/CD automation.',
     },
   ])
 })
@@ -91,14 +99,14 @@ test('Unified Infotech run returns normalized jobs from the verified careers pag
         title: 'Senior React Developer',
         location: 'Kolkata / Pan India',
         remoteType: 'Remote/Hybrid',
-        link: 'https://www.unifiedinfotech.net/careers/senior-react-developer',
+        link: 'https://www.unifiedinfotech.net/career/senior-react-developer',
         source: 'unifiedinfotech',
       },
       {
         title: 'Lead DevOps Engineer',
         location: 'Kolkata',
-        remoteType: 'Remote',
-        link: 'https://www.unifiedinfotech.net/careers/lead-devops-engineer',
+        remoteType: 'Remote/Hybrid',
+        link: 'https://www.unifiedinfotech.net/career/lead-devops-engineer',
         source: 'unifiedinfotech',
       },
     ],

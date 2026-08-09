@@ -1,24 +1,24 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const faqHtml = `
+const acquisitionBlogHtml = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>Frequently asked questions | Arcadia</h1>
-    <p>What happened to Urjanet? Arcadia acquired Urjanet in 2022.</p>
-    <p>Urjanet is fully integrated — not a separate company or competitor.</p>
+    <h1>Arcadia acquires Urjanet</h1>
+    <p>Urjanet, the largest utility data provider in the world, is now part of Arcadia.</p>
+    <p>The Urjanet data network will significantly expand Arcadia's energy intelligence reach.</p>
   </body>
 </html>
 `
 
-const historyHtml = `
+const redirectPlatformHtml = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>Company history &amp; acquisitions</h1>
-    <p>Urjanet (2022, utility data automation)</p>
-    <p>Current status: Fully integrated. Urjanet is not a separate company or competitor.</p>
+    <h1>The most comprehensive energy data platform | Arcadia</h1>
+    <p>Power every decision with energy intelligence.</p>
+    <p>The Arcadia platform helps enterprises manage utility data at scale.</p>
   </body>
 </html>
 `
@@ -27,8 +27,9 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>Change the future of energy with us</h1>
-    <div>Arcadia careers</div>
+    <h1>Careers | Arcadia</h1>
+    <p>Change the future of energy with us.</p>
+    <a href="/jobs">View job openings</a>
   </body>
 </html>
 `
@@ -41,14 +42,19 @@ const loadModule = async () => {
   }
 }
 
-test('Urjanet Energy Solutions helpers stay pinned to the verified acquisition evidence', async () => {
+test('Urjanet Energy Solutions helpers stay pinned to the verified Arcadia acquisition evidence', async () => {
   const urjanet = await loadModule()
 
   assert.equal(urjanet.SOURCE, 'urjanetenergysolutions')
   assert.equal(urjanet.COMPANY, 'Urjanet Energy Solutions')
+  assert.equal(
+    urjanet.ACQUISITION_BLOG_URL,
+    'https://www.arcadia.com/blog/arcadia-acquires-urjanet',
+  )
+  assert.equal(urjanet.URJANET_REDIRECT_URL, 'https://www.urjanet.com/')
   assert.equal(urjanet.CAREERS_URL, 'https://www.arcadia.com/careers')
-  assert.equal(urjanet.hasAcquisitionFaqSignal(faqHtml), true)
-  assert.equal(urjanet.hasAcquisitionHistorySignal(historyHtml), true)
+  assert.equal(urjanet.hasAcquisitionBlogSignal(acquisitionBlogHtml), true)
+  assert.equal(urjanet.hasRedirectPlatformSignal(redirectPlatformHtml), true)
   assert.equal(urjanet.hasParentCareersSignal(careersHtml), true)
 })
 
@@ -59,8 +65,8 @@ test('Urjanet Energy Solutions run validates the acquisition evidence and stays 
   const jobs = await urjanet.createUrjanetEnergySolutionsScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === urjanet.FAQ_URL) return faqHtml
-      if (url === urjanet.HISTORY_URL) return historyHtml
+      if (url === urjanet.ACQUISITION_BLOG_URL) return acquisitionBlogHtml
+      if (url === urjanet.URJANET_REDIRECT_URL) return redirectPlatformHtml
       if (url === urjanet.CAREERS_URL) return careersHtml
       throw new Error(`Unexpected Urjanet URL: ${url}`)
     },
@@ -68,8 +74,8 @@ test('Urjanet Energy Solutions run validates the acquisition evidence and stays 
 
   assert.deepEqual(jobs, [])
   assert.deepEqual(requestedUrls, [
-    urjanet.FAQ_URL,
-    urjanet.HISTORY_URL,
+    urjanet.ACQUISITION_BLOG_URL,
+    urjanet.URJANET_REDIRECT_URL,
     urjanet.CAREERS_URL,
   ])
 })

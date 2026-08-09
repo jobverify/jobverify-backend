@@ -31,7 +31,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Garden Reach Shipbuilders local catalog captures the verified first-party careers contract and no-active-openings status on 2026-07-15', async () => {
+test('Garden Reach Shipbuilders local catalog captures the verified first-party careers contract and no-active-openings status on August 2, 2026', async () => {
   const { GARDEN_REACH_SHIPBUILDERS_CATALOG } = await loadCatalogModule()
   const gardenReachShipbuilders = await loadScraperModule()
   const provider = buildCatalogReadyProvider(GARDEN_REACH_SHIPBUILDERS_CATALOG)
@@ -56,17 +56,17 @@ test('Garden Reach Shipbuilders local catalog captures the verified first-party 
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /gardenreachshipbuilders[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grse\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grse\.in\/career\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobapply\.in\/grse2026\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobapply\.in\/grse2025\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobapply\.in\/grse2026\/?/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobapply\.in\/grse2025\/?/i)
   assert.match(provider.verifiedSurfaceSummary, /2026\/03\(O\)/i)
   assert.match(provider.verifiedSurfaceSummary, /2025\/08\(O\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /31st March 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /no active public openings remained on July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /March 31, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /no active public openings remained on August 2, 2026/i)
 
   assert.equal(gardenReachShipbuilders.PROVIDER_METADATA.source, provider.source)
   assert.equal(gardenReachShipbuilders.PROVIDER_METADATA.companyName, provider.companyName)

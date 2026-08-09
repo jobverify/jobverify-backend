@@ -292,6 +292,18 @@ const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
+const buildBlockedPublicSurfaceError = (surfaceLabel, error) => {
+  const upstreamError = new Error(
+    `Nutanix verified ${surfaceLabel} remains blocked after HTTP fallback`,
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
 export const createNutanixScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
@@ -311,7 +323,7 @@ export const createNutanixScraper = ({
       return session.fetchText(url)
     })
 
-    const fetchPageText = async (url) => {
+    const fetchPageText = async (url, surfaceLabel) => {
       try {
         return await fetchText(url)
       } catch (error) {
@@ -319,17 +331,24 @@ export const createNutanixScraper = ({
           throw error
         }
 
-        return browserTextFetcher(url)
+        try {
+          return await browserTextFetcher(url)
+        } catch (browserError) {
+          if (isBrowserFallbackError(browserError)) {
+            throw buildBlockedPublicSurfaceError(surfaceLabel, browserError)
+          }
+          throw browserError
+        }
       }
     }
 
     try {
-      const officialHtml = await fetchPageText(OFFICIAL_CAREERS_URL)
+      const officialHtml = await fetchPageText(OFFICIAL_CAREERS_URL, 'official careers page')
       if (!isCloudflareChallengePage(officialHtml) && !hasOfficialCareersSurfaceSignal(officialHtml)) {
         throw new Error('Nutanix verified official careers page no longer matches the trusted surface')
       }
 
-      const jobviteHomeHtml = await fetchPageText(JOBVITE_HOME_URL)
+      const jobviteHomeHtml = await fetchPageText(JOBVITE_HOME_URL, 'Jobvite home bridge')
       if (!hasJobviteHomeSignal(jobviteHomeHtml)) {
         throw new Error('Nutanix verified Jobvite home no longer matches the trusted public jobs bridge')
       }
@@ -338,7 +357,7 @@ export const createNutanixScraper = ({
         throw new Error('Nutanix Jobvite home no longer points back to the verified official current openings page')
       }
 
-      const listingsHtml = await fetchPageText(JOB_LISTINGS_URL)
+      const listingsHtml = await fetchPageText(JOB_LISTINGS_URL, 'Jobvite listings page')
       if (!hasJobListingsSignal(listingsHtml)) {
         throw new Error('Nutanix verified Jobvite listings no longer match the trusted public jobs surface')
       }
@@ -347,7 +366,7 @@ export const createNutanixScraper = ({
       const jobs = []
 
       for (const listing of listings) {
-        const detailHtml = await fetchPageText(listing.detailUrl)
+        const detailHtml = await fetchPageText(listing.detailUrl, `Jobvite detail page for ${listing.title || listing.jobId}`)
         jobs.push(extractJobDetail(detailHtml, listing))
       }
 

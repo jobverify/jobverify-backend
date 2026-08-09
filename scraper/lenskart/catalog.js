@@ -1,9 +1,9 @@
-export const LENSKART_CATALOG = {
+﻿export const LENSKART_CATALOG = {
   source: 'lenskart',
   companyName: 'Lenskart',
   officialBrandName: 'Lenskart',
   adapter: 'script',
-  modulePath: '../lenskart/script.js',
+  modulePath: '../../scraper/lenskart/script.js',
   dryRunFile: 'lenskart/jobs.json',
   companyCareerPage: 'https://careers.lenskart.com/',
   boardSlug: 'lenskart_ho',
@@ -24,3 +24,4 @@ export const LENSKART_CATALOG = {
 }
 
 export default LENSKART_CATALOG
+

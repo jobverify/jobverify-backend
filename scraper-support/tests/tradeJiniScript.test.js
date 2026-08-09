@@ -52,6 +52,7 @@ const OPEN_POSITIONS_SHELL_HTML = `
   </head>
   <body>
     <main>
+      <h4>Search</h4>
       <h4>Trader</h4>
       <h4>Investor</h4>
       <h4>Learn</h4>
@@ -59,6 +60,7 @@ const OPEN_POSITIONS_SHELL_HTML = `
       <h4>Updates</h4>
       <p>Let's power the journey for the top 1% of business leaders</p>
       <p>Trading Made Simple</p>
+      <p>Crafted with care</p>
       <h4>Attention Investors &amp; Disclaimer</h4>
     </main>
   </body>

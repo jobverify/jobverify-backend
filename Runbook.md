@@ -1,4 +1,4 @@
-# Jobify Backend Execution Guide
+# Jobverify Backend Execution Guide
 
 This guide explains how to install, configure, run, and operate the backend and scraper from this repository.
 
@@ -51,7 +51,7 @@ NODE_ENV=development
 SCRAPER_CONCURRENCY=3
 
 BREVO_API_KEY=<brevo-api-key>
-BREVO_SENDER_NAME=Jobify
+BREVO_SENDER_NAME=Jobverify
 BREVO_SENDER_EMAIL=<verified-sender-email>
 
 GITHUB_PAT=<optional-github-token>
@@ -62,8 +62,8 @@ Notes:
 
 - Keep real credentials out of documentation and commits.
 - `CORS_ORIGIN` is comma-separated. If `FRONTEND_ORIGIN` is not set, the first origin is used for email verification redirects.
-- `FRONTEND_ORIGIN` should be the browser origin of the frontend app, for example `https://jobify-frontend.onrender.com`.
-- `PUBLIC_API_ORIGIN` should be the public HTTPS origin of this backend service, for example `https://jobify-backend.onrender.com`.
+- `FRONTEND_ORIGIN` should be the browser origin of the frontend app, for example `https://jobverify-frontend.onrender.com`.
+- `PUBLIC_API_ORIGIN` should be the public HTTPS origin of this backend service, for example `https://jobverify-backend.onrender.com`.
 - `TRUST_PROXY` defaults to disabled. Set it to `1` only when the backend is behind exactly one trusted reverse proxy that overwrites `X-Forwarded-For`.
 - `GITHUB_PAT` and `GITHUB_REPO` are only needed for `POST /api/admin/scrape/trigger`.
 - Start new environments from `.env.example`.
@@ -97,7 +97,7 @@ curl.exe http://localhost:5000/
 Expected response:
 
 ```text
-Hello from the Jobify Backend!
+Hello from the Jobverify Backend!
 ```
 
 Dedicated health endpoint:

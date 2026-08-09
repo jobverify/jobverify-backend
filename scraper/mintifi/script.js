@@ -19,7 +19,7 @@ export const EXPECTED_IDENTIFIER = PROVIDER_METADATA.expectedKekaIdentifier
 export const EXPECTED_KEKA_DOMAIN = PROVIDER_METADATA.expectedKekaDomain
 export const EXPECTED_PORTAL_NAME = PROVIDER_METADATA.expectedPortalName
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

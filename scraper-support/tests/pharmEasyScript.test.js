@@ -122,7 +122,7 @@ test('PharmEasy scraper keeps the verified official Darwinbox handoff explicit a
   )
 })
 
-test('run maps verified PharmEasy Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified PharmEasy Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createPharmEasyScraper } = await loadPharmEasyModule()
   const scraper = createPharmEasyScraper({
     now: () => FIXED_SCRAPED_AT,

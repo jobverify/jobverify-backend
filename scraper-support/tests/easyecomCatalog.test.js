@@ -15,7 +15,7 @@ test('getScraperCatalog includes EasyEcom as an official careers script provider
   assert.equal(easyecom.atsPlatform, 'official-company-careers')
   assert.match(easyecom.companyCareerPage, /easyecom\.io\/careers/i)
   assert.equal(easyecom.companyDomain, 'easyecom.io')
-  assert.match(easyecom.modulePath, /\.\.\/easyecom\/script\.js$/i)
+  assert.match(easyecom.modulePath, /easyecom[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable EasyEcom scraper without changing the runner contract', () => {

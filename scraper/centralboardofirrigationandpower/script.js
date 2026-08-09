@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -17,7 +17,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'cbip.org',
   adapter: 'script',
   atsPlatform: 'official-company-homepage',
-  modulePath: '../centralboardofirrigationandpower/script.js',
+  modulePath: '../../scraper/centralboardofirrigationandpower/script.js',
   dryRunFile: 'centralboardofirrigationandpower/jobs.json',
   countryFilter: 'India',
   paginationStrategy: 'homepage-recruitment-placeholder',
@@ -182,3 +182,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

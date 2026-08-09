@@ -14,7 +14,7 @@ export const EXTERNAL_HANDOFF_URL = 'https://relanto.keka.com/careers/'
 export const EXPECTED_IDENTIFIER = '02b7fe40-b031-4feb-9965-e44257ddd8e5'
 export const EXPECTED_KEKA_DOMAIN = 'https://relanto.keka.com/careers/'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

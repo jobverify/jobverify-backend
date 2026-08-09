@@ -12,7 +12,7 @@ export const SOURCE = provider.source
 export const COMPANY = provider.companyName
 export const CAREERS_URL = provider.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

@@ -1,9 +1,9 @@
-export const KALEIDOFIN_CATALOG = {
+﻿export const KALEIDOFIN_CATALOG = {
   source: 'kaleidofin',
   companyName: 'Kaleidofin',
   officialBrandName: 'Kaleidofin',
   adapter: 'script',
-  modulePath: '../kaleidofin/script.js',
+  modulePath: '../../scraper/kaleidofin/script.js',
   dryRunFile: 'kaleidofin/jobs.json',
   companyCareerPage: 'https://www.kaleidofin.com/careers',
   verifiedSampleJobUrl: 'https://www.kaleidofin.com/careers/software-development-manager',
@@ -21,3 +21,4 @@ export const KALEIDOFIN_CATALOG = {
 }
 
 export default KALEIDOFIN_CATALOG
+

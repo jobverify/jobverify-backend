@@ -142,7 +142,7 @@ export const createGlobantScraper = ({
       timeoutMs: 25000,
     }),
     fetchText = (url) => fetchTextWithRetry(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)' },
       label: 'globant-target',
       timeoutMs: 25000,
     }),

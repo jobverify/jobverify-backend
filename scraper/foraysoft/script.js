@@ -18,7 +18,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://www.foraysoft.com/careers.html was the live first-party ForaySoft careers surface and that https://www.foraysoft.com/jobs/ plus https://www.foraysoft.com/jobs/?p=2 exposed a same-origin public jobs archive. The reviewed archive consisted of third-party placement roles such as Salesforce Support Engineer - Bezons, Tech Java Developer - Atos, Java Full Stack Developer - Xebia, SAP Consultant- KPMG, and D365, F&O Technical - Robert Bosch rather than trustworthy exact-company ForaySoft openings, and the visible Posted on markers were already stale on Saturday, July 25, 2026, with the newest reviewed archive dates still in September and October 2021. No trustworthy current exact-company public jobs contract was verified for ForaySoft, so this company-local scraper stays fail-closed and returns no jobs until a stable exact-company openings flow is verified.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const VERIFIED_ON_CUTOFF_ISO = '2026-07-25T00:00:00.000Z'
 
 const REQUIRED_CAREERS_PATTERNS = [

@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const SOURCE = 'omninossolutions'
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Omninos',
   adapter: 'script',
-  modulePath: '../omninossolutions/script.js',
+  modulePath: '../../scraper/omninossolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-role-cards',
@@ -109,3 +109,4 @@ export const runStandalone = async ({
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await runStandalone()
 }
+

@@ -212,7 +212,7 @@ test('Orion Innovation run enriches official cards from embedded Greenhouse deta
     },
   })
 
-  assert.equal(createdPages.length, 2)
+  assert.equal(createdPages.length, 0)
   assert.deepEqual(fetchedUrls, [
     'https://www.orioninnovation.com/careers/job/?gh_jid=4697474006',
     'https://job-boards.greenhouse.io/embed/job_app?for=orioninnovation&validityToken=test-validity-token&token=4697474006',

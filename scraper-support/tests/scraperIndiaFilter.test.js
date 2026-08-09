@@ -8,7 +8,7 @@ import { saveToFile } from '../utils/saveToDB.js'
 import { filterIndiaJobs } from '../utils/indiaLocationFilter.js'
 
 test('saveToFile keeps all India jobs and excludes non-India jobs', () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-india-filter-'))
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-india-filter-'))
   const filePath = path.join(tmpDir, 'jobs.json')
 
   saveToFile(
@@ -62,7 +62,7 @@ test('saveToFile keeps all India jobs and excludes non-India jobs', () => {
 })
 
 test('saveToFile keeps allowed city-only India locations', () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-india-filter-'))
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-india-filter-'))
   const filePath = path.join(tmpDir, 'jobs.json')
 
   saveToFile(
@@ -85,7 +85,7 @@ test('saveToFile keeps allowed city-only India locations', () => {
 })
 
 test('saveToFile writes normalized experience when it can be inferred from the scraped description', () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-india-filter-'))
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-india-filter-'))
   const filePath = path.join(tmpDir, 'jobs.json')
 
   saveToFile(
@@ -109,8 +109,8 @@ test('saveToFile writes normalized experience when it can be inferred from the s
   assert.equal(savedJobs[0].experienceRequired, '5+ years')
 })
 
-test('saveToFile writes explicit non-numeric experience requirements from the scraped description', () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobify-india-filter-'))
+test('saveToFile does not promote medium-confidence non-numeric experience prose into experienceRequired', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-india-filter-'))
   const filePath = path.join(tmpDir, 'jobs.json')
 
   saveToFile(
@@ -132,7 +132,7 @@ test('saveToFile writes explicit non-numeric experience requirements from the sc
   const savedJobs = JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
   assert.equal(savedJobs.length, 1)
-  assert.equal(savedJobs[0].experienceRequired, 'Hands-on experience in inside sales and lead generation')
+  assert.equal(savedJobs[0].experienceRequired, null)
 })
 
 test('filterIndiaJobs keeps city-only India jobs and plain remote jobs without requiring country', () => {

@@ -153,6 +153,7 @@ export const createZeonChargingScraper = ({
 } = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
+    extractRenderedJobs = null,
     now = () => new Date().toISOString(),
   } = {}) {
     const homepage = await fetchPage(LEGACY_HOMEPAGE_URL)
@@ -180,6 +181,12 @@ export const createZeonChargingScraper = ({
     }
 
     let jobs = hasOfficialCareersSignal(careersPage.html) ? extractJobCards(careersPage.html) : []
+    if (
+      jobs.length === 0
+      && typeof extractRenderedJobs === 'function'
+    ) {
+      jobs = await extractRenderedJobs({ careersPage, careersUrl: CAREERS_URL })
+    }
     if (jobs.length === 0) {
       throw new Error('Zeon Charging API-only scraper could not find jobs in the official careers response')
     }

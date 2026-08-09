@@ -133,7 +133,7 @@ test('normalizes the VSoft Bullhorn field list and builds the public first-party
   )
 })
 
-test('extractJobs keeps only India jobs and maps them to the normalized Jobify shape', () => {
+test('extractJobs keeps only India jobs and maps them to the normalized Jobverify shape', () => {
   const payload = {
     total: 2,
     start: 0,

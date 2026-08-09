@@ -21,7 +21,7 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, July 25, 2026 that https://bito.ai/careers/ was the live exact-name Bito careers page, that its open-roles section embedded the public Freshteam board at https://bito.freshteam.com/jobs, and that the board publicly exposed exactly one current opening: Account Executive, New Business (San Francisco Bay Area). The corresponding public Freshteam detail page visibly presented US preferred locations while hidden Freshteam list/schema metadata still referenced Pune, India, so this scraper validates that exact verified contract and extracts the public job conservatively from the visible detail page fields.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value = '') =>
   String(value)

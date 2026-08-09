@@ -19,7 +19,7 @@ import { TARGETED_OPENING_PROVIDERS } from './targetedOpeningProviders.js'
 const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
 export const DEFAULT_PROVIDER_EXTENSION_DIR = path.join(SUPPORT_PROVIDER_DIR, 'providerExtensions')
-const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
 const workdayCompanies = JSON.parse(
   readFileSync(path.resolve(currentDir, '../myworkday/companies.json'), 'utf-8'),
 )
@@ -332,22 +332,20 @@ export const getScraperCatalog = ({
   providerExtensionDir = DEFAULT_PROVIDER_EXTENSION_DIR,
   providerExtensions = loadProviderExtensions(providerExtensionDir),
 } = {}) => dedupeCatalogBySource([
-  ...workdayCompanies.map((item) => hydrateProviderCatalogEntry({
+  ...workdayCompanies.map((item) => ({
     ...item,
     adapter: 'workday',
   })),
-  ...customProviders.map((item) => hydrateProviderCatalogEntry(item)),
-  ...providerExtensions.map((item) => hydrateProviderCatalogEntry(item)),
-  ...wellfoundProviders.map((item) => hydrateProviderCatalogEntry(item)),
-  ...himalayasProviders.map((item) => hydrateProviderCatalogEntry(item)),
-  ...apiPortalProviders.map((item) => hydrateProviderCatalogEntry({
+  ...customProviders,
+  ...providerExtensions,
+  ...wellfoundProviders,
+  ...himalayasProviders,
+  ...apiPortalProviders.map((item) => ({
     ...item,
     adapter: 'apiPortal',
   })),
-  ...TARGETED_OPENING_PROVIDERS.map((item) => hydrateProviderCatalogEntry(
-    expandApiPortalProviderTemplate(item),
-  )),
-])
+  ...TARGETED_OPENING_PROVIDERS.map((item) => expandApiPortalProviderTemplate(item)),
+]).map((provider) => hydrateProviderCatalogEntry(provider))
 
 const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
@@ -459,7 +457,19 @@ const dedupeCatalogBySource = (providers = []) => {
   const providersBySource = new Map()
 
   for (const provider of providers) {
-    providersBySource.set(provider.source, provider)
+    const source = provider.source || provider.name
+    if (!source) continue
+
+    const existing = providersBySource.get(source)
+    if (!existing) {
+      providersBySource.set(source, provider)
+      continue
+    }
+
+    providersBySource.set(source, {
+      ...existing,
+      ...provider,
+    })
   }
 
   return [...providersBySource.values()]

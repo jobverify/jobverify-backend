@@ -26,7 +26,7 @@ const officialJobListingHtml = `
       <a href="mailto:Careers@homefirstindia.com">Careers@homefirstindia.com</a>
     </main>
     <script>
-      window.__JOBIFY_FIXTURE__ = {
+      window.__JOBVERIFY_FIXTURE__ = {
         "4118236341": {
           "b": {
             "JobList": [

@@ -70,7 +70,7 @@ test('extractJobsFromBundle maps the AETHRONE AEROSPACE careers bundle into cons
       sourceUrl: 'https://aethroneaerospace.com/career',
       applyUrl: 'https://aethroneaerospace.com/contact-us',
       employmentType: 'Internship',
-      experienceRequired: '4 to 6 months',
+      experienceRequired: null,
       minimumQualification: 'Engineering students starting from their 6th semester onwards.',
       preferredQualification: null,
       requiredSkills: [],

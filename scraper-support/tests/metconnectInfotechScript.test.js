@@ -15,6 +15,8 @@ const loadModule = async () => {
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
+  '..',
+  'scraper',
   'metconnectinfotech',
   'fixtures',
 )

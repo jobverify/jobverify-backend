@@ -6,7 +6,7 @@ export const VERIFIED_ON = '2026-07-30'
 export const CAREERS_URL = 'https://bhive.careers/jobs/'
 export const JOBS_API_URL = 'https://bhive.careers/wp-json/wp/v2/jobs'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const PAGE_SIZE = 100
 const INDIA_LOCATION_HINTS = [
   'india',

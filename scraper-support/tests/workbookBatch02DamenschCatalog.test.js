@@ -25,7 +25,7 @@ test('DaMENSCH is wired to a verified official-site no-public-careers scraper in
   assert.equal(provider.verifiedOn, '2026-07-30')
   assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.modulePath, /damensch\.js$/)
+  assert.match(provider.modulePath, /[\\/]damensch[\\/]script\.js$/i)
   assert.match(provider.verifiedSurfaceSummary, /Thursday, July 30, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.damensch\.com\/about-us/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.damensch\.com\/careers/i)

@@ -137,8 +137,8 @@ test('Cloudstrats Technologies run validates the careers page and returns normal
   const jobs = await cloudstrats.createCloudstratsTechnologiesScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
+    fetchText: async (url, options) => {
+      requestedUrls.push({ url, options })
       if (url === cloudstrats.CAREERS_URL) return careersHtml
       if (url === 'https://cloudstrats.ai/job/1/') return cloudEngineerDetailHtml
       if (url === 'https://cloudstrats.ai/job/2/') return managementTraineeDetailHtml
@@ -148,10 +148,10 @@ test('Cloudstrats Technologies run validates the careers page and returns normal
   })
 
   assert.deepEqual(requestedUrls, [
-    cloudstrats.CAREERS_URL,
-    'https://cloudstrats.ai/job/1/',
-    'https://cloudstrats.ai/job/2/',
-    'https://cloudstrats.ai/job/3/',
+    { url: cloudstrats.CAREERS_URL, options: { attempts: 1 } },
+    { url: 'https://cloudstrats.ai/job/1/', options: undefined },
+    { url: 'https://cloudstrats.ai/job/2/', options: undefined },
+    { url: 'https://cloudstrats.ai/job/3/', options: undefined },
   ])
   assert.deepEqual(
     jobs.map((job) => [job.title, job.location, job.jobId, job.applyUrl, job.employmentType, job.companyDomain]),
@@ -194,4 +194,35 @@ test('Cloudstrats Technologies fails closed when the verified careers page drift
     }),
     /verified Cloudstrats careers page/i,
   )
+})
+
+test('Cloudstrats Technologies aborts retries for verified careers connect timeouts', async () => {
+  const cloudstrats = await loadModule()
+  const requested = []
+  const timeoutError = new TypeError('fetch failed')
+  timeoutError.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: 'Connect Timeout Error (attempted address: cloudstrats.ai:443, timeout: 10000ms)',
+  }
+
+  await assert.rejects(
+    cloudstrats.createCloudstratsTechnologiesScraper().run({
+      fetchText: async (url, options) => {
+        requested.push({ url, options })
+        throw timeoutError
+      },
+    }),
+    (error) => {
+      assert.match(error.message, /Cloudstrats verified careers page timed out/i)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.failureKind, 'network_or_timeout')
+      return true
+    },
+  )
+
+  assert.deepEqual(requested, [
+    { url: cloudstrats.CAREERS_URL, options: { attempts: 1 } },
+  ])
 })

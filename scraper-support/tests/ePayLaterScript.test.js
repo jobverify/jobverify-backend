@@ -21,6 +21,8 @@ const homepageHtml = `
       }
     </script>
     <a href="careers.html" class="nav-link">Careers</a>
+    <a href="/supplier-login">Supplier Login</a>
+    <a href="/blog">Blog</a>
     <p>Get instant credit for your Kirana store/Retail business at zero cost and 0 processing fees.</p>
     <p>Increase your sales, profits and get access to the widest seller network in India with ePayLater.</p>
   </body>

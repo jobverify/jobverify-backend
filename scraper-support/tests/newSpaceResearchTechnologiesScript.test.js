@@ -127,6 +127,7 @@ test('extractJobDetail enriches a healthy detail page and falls back to the list
         'Prior experience of working in the UAV industry.',
         '1-2 years of experience in driving project coordination, PMO, or project execution workflows.',
       ].join(' '),
+      publicExperienceChecked: true,
       remoteStatus: 'On-site',
     },
   )
@@ -152,6 +153,7 @@ test('extractJobDetail enriches a healthy detail page and falls back to the list
       postingDate: null,
       closingDate: null,
       jobDescription: 'Talent management intern / project engineer.',
+      publicExperienceChecked: true,
       remoteStatus: 'On-site',
     },
   )

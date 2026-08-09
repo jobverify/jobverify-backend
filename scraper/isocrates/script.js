@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
@@ -22,7 +22,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'isocrates.com',
   adapter: 'script',
   atsPlatform: 'keka-embed-api',
-  modulePath: '../isocrates/script.js',
+  modulePath: '../../scraper/isocrates/script.js',
   dryRunFile: 'isocrates/jobs.json',
 }
 
@@ -61,8 +61,10 @@ export const extractDirectKekaBoardUrl = (html) =>
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution(?:™|â„¢)\s*<\/title>/i.test(rawHtml)
+  return /Global Leader in MADTECH Resource Planning and Execution/i.test(normalized)
+    && /<h1[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution/i.test(rawHtml)
     && /https:\/\/isocrates\.com\/careers\/?/i.test(rawHtml)
 }
 
@@ -301,3 +303,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (isDryRun) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   else await saveToDB(jobs, SOURCE)
 }
+

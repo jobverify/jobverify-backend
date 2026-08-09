@@ -8,6 +8,9 @@ const careersPageHtml = `
     </head>
     <body>
       <h1>Search our Job Opportunities at Ford Motor Company</h1>
+      <p>Search results.</p>
+      <a href="/search-jobs">Search Jobs</a>
+      <label>Job Category</label>
       <p>23 Results found</p>
       <p>Filtered by</p>
       <ul>

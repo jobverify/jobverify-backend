@@ -16,7 +16,7 @@ export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const PAGE_SIZE = 20
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

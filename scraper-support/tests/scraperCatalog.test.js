@@ -125,6 +125,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(accenture.companyCareerPage, /accenture\.com\/in-en\/careers/i)
   assert.equal(accenture.companyDomain, 'accenture.com')
   assert.match(accenture.baseUrl, /accenture\.wd103\.myworkdayjobs\.com\/AccentureCareers/i)
+  assert.equal(accenture.scraperTimeoutMs, 300000)
 
   assert.ok(adobe)
   assert.equal(adobe.adapter, 'script')
@@ -133,7 +134,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.equal(adobe.companyDomain, 'careers.adobe.com')
 
   assert.ok(browserstack)
-  assert.equal(browserstack.adapter, 'workday')
+  assert.equal(browserstack.adapter, 'script')
   assert.equal(browserstack.atsPlatform, 'workday')
   assert.match(browserstack.companyCareerPage, /browserstack\.com\/careers/i)
   assert.equal(browserstack.companyDomain, 'browserstack.com')
@@ -202,7 +203,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(dxc.baseUrl, /dxctechnology\.wd1\.myworkdayjobs\.com\/DXCJobs/i)
 
   assert.ok(f5)
-  assert.equal(f5.adapter, 'workday')
+  assert.equal(f5.adapter, 'script')
   assert.equal(f5.atsPlatform, 'workday')
   assert.match(f5.companyCareerPage, /f5\.com\/company\/careers/i)
   assert.equal(f5.companyDomain, 'f5.com')
@@ -664,6 +665,7 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.match(accenture.dryRunFile, /accenture.workday[\\/]jobs\.json$/)
   assert.equal(accenture.provider.source, 'accenture')
   assert.equal(accenture.provider.companyDomain, 'accenture.com')
+  assert.equal(accenture.provider.scraperTimeoutMs, 300000)
 
   assert.ok(adobe)
   assert.equal(typeof adobe.run, 'function')
@@ -1013,7 +1015,7 @@ test('hydrateProviderCatalogEntry prefers the official company career page when 
   assert.equal(provider.companyCareerPage, 'https://careers.example.com')
   assert.equal(provider.companyDomain, 'careers.example.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.dryRunFile, /myworkday[\\/]example-workday[\\/]jobs\.json$/)
+  assert.match(provider.dryRunFile, /example-workday\.workday[\\/]jobs\.json$/)
 })
 
 test('getScraperCatalog includes apiPortal providers with official metadata and config-driven dry-run files', () => {

@@ -17,9 +17,9 @@ const WORKDAY_JOBS_API_RETRY_ATTEMPTS = 2
 const WORKDAY_JOBS_API_RETRY_BASE_DELAY_MS = 1000
 const WORKDAY_HOST_FAILURE_THRESHOLD = 2
 const WORKDAY_HOST_CIRCUIT_COOLDOWN_MS = 5 * 60 * 1000
-const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobify.workday.authoritative-empty')
-const WORKDAY_DETAIL_FALLBACK = Symbol.for('jobify.workday.detail-fallback')
-const WORKDAY_DETAIL_FALLBACK_REASON = Symbol.for('jobify.workday.detail-fallback-reason')
+const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
+const WORKDAY_DETAIL_FALLBACK = Symbol.for('jobverify.workday.detail-fallback')
+const WORKDAY_DETAIL_FALLBACK_REASON = Symbol.for('jobverify.workday.detail-fallback-reason')
 const WORKDAY_COUNTRY_FACET_NORMALIZED = 'locationcountry'
 const WORKDAY_FETCH_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36'
 const WORKDAY_OUTAGE_TEXT_PATTERNS = [
@@ -1341,7 +1341,7 @@ const runWorkdayJobsApiScraper = async ({
         return createAuthoritativeWorkdayEmptyResult()
       }
 
-      console.log(`  [${source}] Scraping page ${pageNum} — ${jobsApiUrl} (offset ${offset})`)
+      console.log(`  [${source}] Scraping page ${pageNum} - ${jobsApiUrl} (offset ${offset})`)
       console.log(`  [${source}] Page ${pageNum}: ${jobs.length} India jobs`)
 
       const pageCandidates = []

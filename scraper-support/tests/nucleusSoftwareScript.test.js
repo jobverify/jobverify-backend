@@ -6,6 +6,12 @@ const officialCareersHtml = `
 <html lang="en">
   <head>
     <title>Careers at Nucleus Software: Join Our Dynamic Team of Innovators</title>
+    <meta
+      name="description"
+      content="Join Nucleus Software to lead innovation in lending and transaction banking. Explore rewarding fintech careers, professional growth, and a dynamic culture. Apply now!"
+    >
+    <link rel="canonical" href="https://www.nucleussoftware.com/careers/">
+    <meta property="og:site_name" content="Nucleus Software">
   </head>
   <body>
     <footer>Copyright © 2026 Nucleus Software Exports Ltd. All rights reserved.</footer>
@@ -84,7 +90,7 @@ test('Nucleus Software helper contract stays pinned to the verified careers page
   assert.equal(nucleusSoftware.SOURCE, 'nucleussoftware')
   assert.equal(nucleusSoftware.COMPANY, 'Nucleus Software')
   assert.equal(nucleusSoftware.OFFICIAL_BRAND_NAME, 'Nucleus Software Exports Ltd.')
-  assert.equal(nucleusSoftware.VERIFIED_ON, '2026-07-17')
+  assert.equal(nucleusSoftware.VERIFIED_ON, '2026-08-03')
   assert.equal(nucleusSoftware.HOMEPAGE_URL, 'https://www.nucleussoftware.com/')
   assert.equal(nucleusSoftware.CAREERS_URL, 'https://www.nucleussoftware.com/careers/')
   assert.equal(nucleusSoftware.CAREERS_PORTAL_URL, 'https://nucleussoftware.zohorecruit.in/jobs/Careers')
@@ -149,7 +155,7 @@ test('Nucleus Software run keeps only India jobs from the verified public feed a
   const requestedJsonUrls = []
 
   const jobs = await nucleusSoftware.createNucleusSoftwareScraper({
-    now: () => '2026-07-17T10:45:00.000Z',
+    now: () => '2026-08-03T10:45:00.000Z',
   }).run({
     fetchText: async (url) => {
       requestedTextUrls.push(url)
@@ -190,7 +196,7 @@ test('Nucleus Software run keeps only India jobs from the verified public feed a
       remoteStatus: 'On-site',
       source: 'nucleussoftware',
       link: 'https://nucleussoftware.zohorecruit.in/jobs/Careers/45488000015810540/Java-Production-Support-Engineer?source=CareerSite',
-      scrapedAt: '2026-07-17T10:45:00.000Z',
+      scrapedAt: '2026-08-03T10:45:00.000Z',
     },
     {
       title: 'Data Analyst Intern',
@@ -216,7 +222,7 @@ test('Nucleus Software run keeps only India jobs from the verified public feed a
       remoteStatus: 'Remote',
       source: 'nucleussoftware',
       link: 'https://nucleussoftware.zohorecruit.in/jobs/Careers/45488000015810541/Data-Analyst-Intern?source=CareerSite',
-      scrapedAt: '2026-07-17T10:45:00.000Z',
+      scrapedAt: '2026-08-03T10:45:00.000Z',
     },
   ])
 })

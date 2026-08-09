@@ -3,6 +3,8 @@ import test from 'node:test'
 
 import {
   buildRequestedSourceDirectoryNames,
+  decodePossiblyUtf16Text,
+  extractCompletedSourceDirectoryNamesFromPipelineLogText,
   isUncheckedMissingExperienceJob,
   prioritizeBackfillTargets,
   selectUncheckedMissingExperienceJobs,
@@ -89,5 +91,31 @@ test('selectUncheckedMissingExperienceJobs returns the first unchecked missing j
   assert.deepEqual(
     selectUncheckedMissingExperienceJobs(jobs).map((job) => job.title),
     ['first-unchecked', 'second-unchecked', 'third-unchecked'],
+  )
+})
+
+test('decodePossiblyUtf16Text reads PowerShell-style UTF-16LE pipeline logs', () => {
+  const raw = Buffer.from(
+    '\uFEFF\r\n> jobverify-backend@1.0.0 scrape:parallel:dry\r\n[runner] Progress: 17/4833 scrapers finished.\r\n',
+    'utf16le',
+  )
+
+  const decoded = decodePossiblyUtf16Text(raw)
+
+  assert.match(decoded, /> jobverify-backend@1\.0\.0 scrape:parallel:dry/)
+  assert.match(decoded, /\[runner\] Progress: 17\/4833 scrapers finished\./)
+})
+
+test('extractCompletedSourceDirectoryNamesFromPipelineLogText captures completed dry-run source directories', () => {
+  const logText = [
+    '  OK [amadeus] 34 India jobs -> C:\\repo\\jobverify-backend\\scraper\\amadeus.workday\\jobs.json',
+    '[runner] Progress: 1/4833 scrapers finished.',
+    '  OK [abb] 174 India jobs -> C:\\repo\\jobverify-backend\\scraper\\abb.workday\\jobs.json',
+    '  OK [abb] 174 India jobs -> C:\\repo\\jobverify-backend\\scraper\\abb.workday\\jobs.json',
+  ].join('\r\n')
+
+  assert.deepEqual(
+    extractCompletedSourceDirectoryNamesFromPipelineLogText(logText),
+    ['amadeus.workday', 'abb.workday'],
   )
 })

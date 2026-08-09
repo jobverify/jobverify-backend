@@ -1,12 +1,14 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREER_PAGE_URL = 'https://careers.amperecomputing.com/'
 export const SEARCH_URL = 'https://careers.amperecomputing.com/search/jobs'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -26,11 +28,6 @@ const normalizeWhitespace = (value) => {
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '').replace(/<[^>]+>/g, ' '),
 )
-
-const slugify = (value) => normalizeWhitespace(value)
-  ?.toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '') || null
 
 const parseLocation = (value) => {
   const location = normalizeWhitespace(value)
@@ -119,103 +116,64 @@ const normalizeEmploymentType = (value) => {
   return normalizeWhitespace(value)
 }
 
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
-
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: CAREER_PAGE_URL,
+  },
+  attempts: 1,
+  label: 'amperecomputing',
+  timeoutMs: 30000,
+})
 
 export const createAmpereComputingScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    let browserSession = null
+  async run({ fetchText = defaultFetchText } = {}) {
+    const searchHtml = await fetchText(SEARCH_URL)
+    const listings = extractSearchResults(searchHtml)
+    const jobs = []
 
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({
-          userAgent: 'Mozilla/5.0 (compatible; Jobify/1.0)',
-        })
-      }
+    for (const listing of listings) {
+      const detailHtml = await fetchText(listing.sourceUrl)
+      const detail = extractJsonLd(detailHtml) || {}
+      const parsedLocation = parseLocation(
+        detail.jobLocation?.address
+          ? [
+              detail.jobLocation.address.addressLocality,
+              detail.jobLocation.address.addressRegion,
+              detail.jobLocation.address.addressCountry,
+            ].filter(Boolean).join(', ')
+          : listing.location,
+      )
 
-      return browserSession
+      jobs.push({
+        title: normalizeWhitespace(detail.title) || listing.title,
+        company: 'Ampere Computing',
+        location: parsedLocation.location,
+        city: parsedLocation.city,
+        country: parsedLocation.country,
+        link: listing.sourceUrl,
+        applyUrl: listing.sourceUrl,
+        sourceUrl: listing.sourceUrl,
+        source: 'amperecomputing',
+        jobId: listing.jobId,
+        requisitionId: listing.jobId,
+        department: listing.category,
+        employmentType: normalizeEmploymentType(detail.employmentType),
+        experienceRequired: null,
+        postingDate: normalizeWhitespace(detail.datePosted),
+        closingDate: normalizeWhitespace(detail.validThrough),
+        jobDescription: stripTags(detail.description),
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        remoteStatus: 'On-site',
+        scrapedAt: new Date().toISOString(),
+      })
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
-    try {
-      const searchHtml = await fetchPageText(SEARCH_URL)
-      const listings = extractSearchResults(searchHtml)
-      const jobs = []
-
-      for (const listing of listings) {
-        const detailHtml = await fetchPageText(listing.sourceUrl)
-        const detail = extractJsonLd(detailHtml) || {}
-        const parsedLocation = parseLocation(
-          detail.jobLocation?.address
-            ? [
-                detail.jobLocation.address.addressLocality,
-                detail.jobLocation.address.addressRegion,
-                detail.jobLocation.address.addressCountry,
-              ].filter(Boolean).join(', ')
-            : listing.location,
-        )
-
-        jobs.push({
-          title: normalizeWhitespace(detail.title) || listing.title,
-          company: 'Ampere Computing',
-          location: parsedLocation.location,
-          city: parsedLocation.city,
-          country: parsedLocation.country,
-          link: listing.sourceUrl,
-          applyUrl: listing.sourceUrl,
-          sourceUrl: listing.sourceUrl,
-          source: 'amperecomputing',
-          jobId: listing.jobId,
-          requisitionId: listing.jobId,
-          department: listing.category,
-          employmentType: normalizeEmploymentType(detail.employmentType),
-          experienceRequired: null,
-          postingDate: normalizeWhitespace(detail.datePosted),
-          closingDate: normalizeWhitespace(detail.validThrough),
-          jobDescription: stripTags(detail.description),
-          minimumQualification: null,
-          preferredQualification: null,
-          requiredSkills: [],
-          remoteStatus: 'On-site',
-          scrapedAt: new Date().toISOString(),
-        })
-      }
-
-      return jobs
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
-    }
+    return jobs
   },
 })
 

@@ -37,7 +37,7 @@ export const getScraperSourceDirectoryName = (
 export const getDefaultScriptModulePath = (
   providerOrSource,
   options = {},
-) => `../${getScraperSourceDirectoryName(providerOrSource, options)}/script.js`
+) => `../../scraper/${getScraperSourceDirectoryName(providerOrSource, options)}/script.js`
 
 export const getDefaultDryRunRelativePath = (
   providerOrSource,

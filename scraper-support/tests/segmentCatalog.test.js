@@ -13,7 +13,7 @@ test('Segment is registered as a verified custom script provider on the Twilio j
   assert.equal(provider.companyCareerPage, 'https://jobs.twilio.com/careers')
   assert.equal(provider.companyDomain, 'jobs.twilio.com')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.modulePath, '../../scraper/segment/script.js')
+  assert.match(provider.modulePath, /segment[\\/]script\.js$/i)
   assert.equal(provider.verifiedOn, '2026-07-25')
   assert.match(provider.verifiedSurfaceSummary, /jobs\.twilio\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /Segment/i)

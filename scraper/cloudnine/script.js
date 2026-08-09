@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,7 +16,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'cloudninecare.com',
   adapter: 'script',
   atsPlatform: 'official-company-careers',
-  modulePath: '../cloudnine/script.js',
+  modulePath: '../../scraper/cloudnine/script.js',
   dryRunFile: 'cloudnine/jobs.json',
   paginationStrategy: 'homepage-plus-single-careers-page',
   extractionStrategy: 'verified-homepage-plus-resume-only-careers-page-return-empty',
@@ -152,3 +152,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

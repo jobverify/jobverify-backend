@@ -25,7 +25,7 @@ test('APISero is wired to a verified exact-name parent-redirect scraper instead 
   assert.equal(provider.verifiedOn, '2026-07-30')
   assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.modulePath, /apisero\.js$/)
+  assert.match(provider.modulePath, /[\\/]apisero[\\/]script\.js$/i)
   assert.match(provider.verifiedSurfaceSummary, /Thursday, July 30, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/apisero\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/apisero\.com\/careers/i)

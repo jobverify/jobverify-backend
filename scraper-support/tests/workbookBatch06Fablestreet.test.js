@@ -3,6 +3,10 @@ import test from 'node:test'
 
 const VERIFIED_SURFACE_HTML = `
   <html>
+    <head>
+      <title>About Us</title>
+      <link rel="canonical" href="https://www.fablestreet.com/pages/about-us" />
+    </head>
     <body>
       <main>
         <h1>About Us</h1>
@@ -51,7 +55,7 @@ test('Fablestreet validates the verified official public surface and returns [] 
   assert.equal(fablestreet.SOURCE, 'fablestreet')
   assert.equal(fablestreet.COMPANY, 'Fablestreet')
   assert.equal(fablestreet.OFFICIAL_BRAND, 'FableStreet')
-  assert.equal(fablestreet.VERIFIED_ON, '2026-07-25')
+  assert.equal(fablestreet.VERIFIED_ON, '2026-07-26')
   assert.equal(fablestreet.CAREERS_URL, 'https://www.fablestreet.com/pages/about-us')
   assert.equal(
     fablestreet.DISPOSITION,
@@ -59,7 +63,7 @@ test('Fablestreet validates the verified official public surface and returns [] 
   )
   assert.match(
     fablestreet.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/www\.fablestreet\.com\/pages\/about-us was the live exact-name FableStreet official public surface reviewed for workbook company Fablestreet/i,
+    /Verified on Sunday, July 26, 2026 that https:\/\/www\.fablestreet\.com\/pages\/about-us remained the live exact-name FableStreet official public surface reviewed for workbook company Fablestreet/i,
   )
   assert.match(fablestreet.VERIFIED_SURFACE_SUMMARY, /careers@fablestreet\.com/i)
   assert.match(
@@ -149,6 +153,6 @@ test('Fablestreet rejects when a same-origin jobs path or exact-company hiring c
         <p>Join the FableStreet team.</p>
       `,
     }),
-    /public jobs surface|exact-company hiring copy/i,
+    /exact-company hiring copy|public jobs surface/i,
   )
 })

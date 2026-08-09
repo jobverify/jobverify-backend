@@ -292,35 +292,26 @@ test('Gartner helpers keep the browser-rendered India jobs contract explicit', a
 test('Gartner run paginates browser-rendered listings until pages stop yielding new jobs', async () => {
   const gartner = await loadModule()
   const requestedUrls = []
-  let currentUrl = null
 
-  const fakePage = {
-    goto: async (url) => {
-      requestedUrls.push(url)
-      currentUrl = url
-      if (
-        url !== gartner.LISTINGS_URL
-        && url !== gartner.buildListingsUrl({ page: 2 })
-        && url !== gartner.buildListingsUrl({ page: 3 })
-        && !detailHtmlByUrl[url]
-      ) {
-        throw new Error(`Unexpected Gartner URL: ${url}`)
-      }
-    },
-    waitForSelector: async () => {},
-    content: async () => {
-      if (currentUrl === gartner.LISTINGS_URL) return listingsPageOneHtml
-      if (currentUrl === gartner.buildListingsUrl({ page: 2 })) return listingsPageTwoHtml
-      if (currentUrl === gartner.buildListingsUrl({ page: 3 })) return listingsPageTwoHtml
-      return detailHtmlByUrl[currentUrl]
-    },
-  }
+  const htmlByUrl = new Map([
+    [gartner.LISTINGS_URL, listingsPageOneHtml],
+    [gartner.buildListingsUrl({ page: 2 }), listingsPageTwoHtml],
+    [gartner.buildListingsUrl({ page: 3 }), listingsPageTwoHtml],
+    ...Object.entries(detailHtmlByUrl),
+  ])
 
   const jobs = await gartner.createGartnerScraper({
-    launchBrowser: async () => ({ close: async () => {} }),
-    createOptimizedPage: async () => fakePage,
     now: () => FIXED_SCRAPED_AT,
-  }).run()
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      const html = htmlByUrl.get(url)
+      if (!html) {
+        throw new Error(`Unexpected Gartner URL: ${url}`)
+      }
+      return html
+    },
+  })
 
   assert.deepEqual(requestedUrls, [
     gartner.LISTINGS_URL,
@@ -356,36 +347,23 @@ test('Gartner fails closed when the listings or detail contract drifts', async (
   const gartner = await loadModule()
 
   await assert.rejects(
-    gartner.createGartnerScraper({
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        waitForSelector: async () => {},
-        content: async () => '<html><body><h1>Jobs</h1></body></html>',
-      }),
-    }).run(),
+    gartner.createGartnerScraper().run({
+      fetchText: async () => '<html><body><h1>Jobs</h1></body></html>',
+    }),
     /listings page no longer matches/i,
   )
 
-  let currentUrl = null
   await assert.rejects(
-    gartner.createGartnerScraper({
-      launchBrowser: async () => ({ close: async () => {} }),
-      createOptimizedPage: async () => ({
-        goto: async (url) => {
-          currentUrl = url
-        },
-        waitForSelector: async () => {},
-        content: async () => {
-          if (currentUrl === gartner.LISTINGS_URL) return listingsPageOneHtml
-          if (currentUrl === gartner.buildListingsUrl({ page: 2 })) return listingsPageTwoHtml
-          if (currentUrl === gartner.buildListingsUrl({ page: 3 })) return listingsPageTwoHtml
-          return detailHtmlByUrl[
-            'https://jobs.gartner.com/jobs/job/112284-consultant-applications-infrastructure-and-security-modernization/'
-          ].replace('Apply Now', 'Join Talent Community')
-        },
-      }),
-    }).run(),
+    gartner.createGartnerScraper().run({
+      fetchText: async (url) => {
+        if (url === gartner.LISTINGS_URL) return listingsPageOneHtml
+        if (url === gartner.buildListingsUrl({ page: 2 })) return listingsPageTwoHtml
+        if (url === gartner.buildListingsUrl({ page: 3 })) return listingsPageTwoHtml
+        return detailHtmlByUrl[
+          'https://jobs.gartner.com/jobs/job/112284-consultant-applications-infrastructure-and-security-modernization/'
+        ].replace('Apply Now', 'Join Talent Community')
+      },
+    }),
     /job detail no longer matches/i,
   )
 })

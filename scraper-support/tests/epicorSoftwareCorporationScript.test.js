@@ -14,6 +14,7 @@ const careersHtml = `
     <h1>We're Truly a Team. We Win as One.</h1>
     <a href="https://epicorsoftware.wd5.myworkdayjobs.com/epicorjobs">Search Jobs</a>
     <a href="https://jobs.epicor.com">jobs.epicor.com</a>
+    <a href="/en-us/company/contact/">Contact Us</a>
   </body>
 </html>
 `

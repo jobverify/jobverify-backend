@@ -83,7 +83,7 @@ test('Discord local catalog captures the verified first-party careers page and t
   )
   assert.match(DISCORD_CATALOG.verifiedSurfaceSummary, /Regulatory Counsel, APAC/i)
 
-  assert.equal(hydratedProvider.modulePath, '../../scraper/discord/script.js')
+  assert.match(hydratedProvider.modulePath, /discord[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Discord'), false)
 
   assert.equal(discord.PROVIDER_METADATA.source, DISCORD_CATALOG.source)

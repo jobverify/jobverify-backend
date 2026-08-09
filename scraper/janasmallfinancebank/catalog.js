@@ -1,4 +1,4 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Sunday, July 26, 2026 that https://www.jana.bank.in/about-us/careers-hm/ remains the live first-party Jana Small Finance Bank careers route, that it still links to https://www.jana.bank.in/index.php/career/current-openings, and that the linked current-openings surface now resolves to a branded no-public-jobs 404 page instead of a trustworthy public job board.'
 
 export const JANA_SMALL_FINANCE_BANK_CATALOG = {
@@ -6,7 +6,7 @@ export const JANA_SMALL_FINANCE_BANK_CATALOG = {
   companyName: 'Jana Small Finance Bank',
   officialBrandName: 'Jana Small Finance Bank',
   adapter: 'script',
-  modulePath: '../janasmallfinancebank/script.js',
+  modulePath: '../../scraper/janasmallfinancebank/script.js',
   homepageUrl: 'https://www.jana.bank.in/',
   companyCareerPage: 'https://www.jana.bank.in/about-us/careers-hm/',
   currentOpeningsPageUrl: 'https://www.jana.bank.in/index.php/career/current-openings',
@@ -23,3 +23,4 @@ export const JANA_SMALL_FINANCE_BANK_CATALOG = {
 }
 
 export default JANA_SMALL_FINANCE_BANK_CATALOG
+

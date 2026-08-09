@@ -18,7 +18,7 @@ export const EXPECTED_PORTAL_SLUG = 'default'
 export const EXPECTED_PORTAL_DOMAIN = '7edge.keka.com'
 export const EXPECTED_COMPANY_WEBSITE = 'https://www.7edge.com'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

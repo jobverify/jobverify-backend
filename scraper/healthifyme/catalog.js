@@ -1,9 +1,9 @@
-export const HEALTHIFYME_CATALOG = {
+﻿export const HEALTHIFYME_CATALOG = {
   source: 'healthifyme',
   companyName: 'HealthifyMe',
   officialBrandName: 'HealthifyMe Wellness Private Limited',
   adapter: 'script',
-  modulePath: '../healthifyme/script.js',
+  modulePath: '../../scraper/healthifyme/script.js',
   companyCareerPage: 'https://www.healthifyme.com/careers/',
   companyDomain: 'healthifyme.com',
   atsPlatform: 'darwinbox',
@@ -22,3 +22,4 @@ export const HEALTHIFYME_CATALOG = {
 }
 
 export default HEALTHIFYME_CATALOG
+

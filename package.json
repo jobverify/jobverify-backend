@@ -1,5 +1,5 @@
 {
-  "name": "jobify-backend",
+  "name": "jobverify-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -42,16 +42,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LitenTechnologies/Jobify-backend.git"
+    "url": "git+https://github.com/LitenTechnologies/Jobverify-backend.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/LitenTechnologies/Jobify-backend/issues"
+    "url": "https://github.com/LitenTechnologies/Jobverify-backend/issues"
   },
-  "homepage": "https://github.com/LitenTechnologies/Jobify-backend#readme",
+  "homepage": "https://github.com/LitenTechnologies/Jobverify-backend#readme",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",

@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { finalizeDirectRunnerExit } from '../runner.js'
+import {
+  finalizeDirectRunnerExit,
+  formatParallelProgressLog,
+} from '../runner.js'
+
+test('parallel progress log converts its timestamp to IST', () => {
+  const timestamp = new Date('2026-08-08T13:24:52.341Z')
+
+  assert.equal(
+    formatParallelProgressLog(140, 4833, timestamp),
+    '[2026-08-08 -- 18:54:52.341 IST] [runner] Progress: 140/4833 scrapers finished.',
+  )
+})
 
 test('finalizeDirectRunnerExit forces a clean zero exit when no failure was recorded', () => {
   let capturedCode = null

@@ -21,7 +21,7 @@ test('getScraperCatalog includes Revature on the verified official homepage hand
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'revature.com')
-  assert.match(provider.modulePath, /revature[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /revature\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers exposes a runnable Revature scraper and exact CSV coverage works without aliases', () => {

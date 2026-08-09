@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
@@ -158,6 +157,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -186,75 +186,45 @@ export const createBackyardCreatorsScraper = ({ now = () => new Date().toISOStri
   async run({
     fetchText = defaultFetchText,
     fetchPage = defaultFetchPage,
-    fetchBrowserPage,
     now: overrideNow,
   } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
+    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    if (!hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('Backyard Creators verified official homepage no longer matches the known first-party surface')
     }
 
-    const browserPageFetcher = fetchBrowserPage || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchPage(url)
-    })
-
-    try {
-      let homepageHtml = await fetchText(HOMEPAGE_URL)
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
-        homepageHtml = (await browserPageFetcher(HOMEPAGE_URL)).html
-      }
-
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
-        throw new Error('Backyard Creators verified official homepage no longer matches the known first-party surface')
-      }
-
-      const careersPage = await fetchPage(CAREERS_URL)
-      if (careersPage.status === 404 && !isLegacyCareersLinkedHomepage(homepageHtml)) {
-        return []
-      }
-
-      let careersHtml = careersPage.status === 200
-        ? careersPage.html
-        : null
-
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        careersHtml = (await browserPageFetcher(CAREERS_URL)).html
-      }
-
-      if (
-        !isLegacyCareersLinkedHomepage(homepageHtml)
-        && isHomepageShellWithoutPublicCareers(careersHtml)
-      ) {
-        return []
-      }
-
-      const jobs = extractPublicJobs(careersHtml)
-
-      return jobs.map((job) => normalizeScrapedJob({
-        ...job,
-        source: SOURCE,
-        companyCareerPage: CAREERS_URL,
-        companyDomain: COMPANY_DOMAIN,
-        atsPlatform: 'official-company-careers',
-        scrapedAt: (overrideNow || now)(),
-      }, {
-        companyName: COMPANY,
-        companyCareerPage: CAREERS_URL,
-        companyDomain: COMPANY_DOMAIN,
-        atsPlatform: 'official-company-careers',
-        countryFilter: 'India',
-      }))
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (careersPage.status === 404 && !isLegacyCareersLinkedHomepage(homepageHtml)) {
+      return []
     }
+
+    const careersHtml = careersPage.status === 200
+      ? careersPage.html
+      : null
+
+    if (
+      !isLegacyCareersLinkedHomepage(homepageHtml)
+      && isHomepageShellWithoutPublicCareers(careersHtml)
+    ) {
+      return []
+    }
+
+    const jobs = extractPublicJobs(careersHtml)
+
+    return jobs.map((job) => normalizeScrapedJob({
+      ...job,
+      source: SOURCE,
+      companyCareerPage: CAREERS_URL,
+      companyDomain: COMPANY_DOMAIN,
+      atsPlatform: 'official-company-careers',
+      scrapedAt: (overrideNow || now)(),
+    }, {
+      companyName: COMPANY,
+      companyCareerPage: CAREERS_URL,
+      companyDomain: COMPANY_DOMAIN,
+      atsPlatform: 'official-company-careers',
+      countryFilter: 'India',
+    }))
   },
 })
 

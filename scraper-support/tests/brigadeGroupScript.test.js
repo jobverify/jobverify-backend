@@ -117,7 +117,7 @@ test('Brigade Group scraper keeps the verified official careers handoff explicit
   )
 })
 
-test('run maps verified Brigade Group Darwinbox listings into Jobify jobs and keeps only India roles', async () => {
+test('run maps verified Brigade Group Darwinbox listings into Jobverify jobs and keeps only India roles', async () => {
   const { createBrigadeGroupScraper } = await loadBrigadeGroupModule()
   const scraper = createBrigadeGroupScraper({
     now: () => FIXED_SCRAPED_AT,

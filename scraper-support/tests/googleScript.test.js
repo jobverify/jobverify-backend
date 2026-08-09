@@ -34,63 +34,79 @@ const detailHtml = (title, years) => `
   </html>
 `
 
-test('Google scraper paginates with next links and enriches canonical detail URLs without a second browser page', async () => {
+const listingCardHtml = ({ title, location, href, minimumQualification }) => `
+  <li class="lLd3Je" ssk="1">
+    <div class="sMn82b">
+      <h3 class="QJPWVe">${title}</h3>
+      <div class="op1BBf">
+        <span class="RP7SMd">
+          <span>Google</span>
+        </span>
+        <span class="pwO9Dc vo5qdf">
+          <span class="r0wTof ">${location}</span>
+        </span>
+      </div>
+      <div class="Xsxa1e">
+        <h4>Minimum qualifications</h4>
+        <ul>
+          <li>${minimumQualification}</li>
+          <li>Experience with distributed systems</li>
+        </ul>
+      </div>
+      <div class="VfPpkd-LgbsSe">
+        <a class="WpHeLc VfPpkd-mRLv6 VfPpkd-RLmnJb" href="${href}" aria-label="Learn more about ${title}"></a>
+      </div>
+    </div>
+  </li>
+`
+
+const listingPageHtml = ({ cards, nextUrl }) => `
+  <html>
+    <body>
+      <ul class="spHGqe">
+        ${cards.join('\n')}
+      </ul>
+      ${nextUrl ? `<a class="WpHeLc VfPpkd-mRLv6" href="${nextUrl.replace(/&/g, '&amp;')}" aria-label="Go to next page" rel="no-follow"></a>` : ''}
+    </body>
+  </html>
+`
+
+test('Google scraper paginates raw HTML listing pages and enriches canonical detail URLs', async () => {
   const google = await loadGoogleModule()
   const pageData = {
-    [PAGE_ONE_URL]: {
-      jobs: [
-        {
+    [PAGE_ONE_URL]: listingPageHtml({
+      cards: [
+        listingCardHtml({
           title: 'Software Engineer',
-          company: 'Google',
           location: 'Bengaluru, Karnataka, India',
-          link: FIRST_JOB_URL,
-        },
+          href: 'jobs/results/123456789012345678-software-engineer?location=India',
+          minimumQualification: '5 years of software development experience',
+        }),
       ],
       nextUrl: PAGE_TWO_URL,
-    },
-    [PAGE_TWO_URL]: {
-      jobs: [
-        {
+    }),
+    [PAGE_TWO_URL]: listingPageHtml({
+      cards: [
+        listingCardHtml({
           title: 'Software Engineer',
-          company: 'Google',
           location: 'Bengaluru, Karnataka, India',
-          link: FIRST_JOB_URL,
-        },
-        {
+          href: 'jobs/results/123456789012345678-software-engineer?location=India',
+          minimumQualification: '5 years of software development experience',
+        }),
+        listingCardHtml({
           title: 'Data Engineer',
-          company: 'Google',
           location: 'Hyderabad, Telangana, India',
-          link: SECOND_JOB_URL,
-        },
+          href: 'jobs/results/234567890123456789-data-engineer?location=India',
+          minimumQualification: '4 years of data engineering experience',
+        }),
       ],
       nextUrl: null,
-    },
+    }),
   }
   const requestedDetails = []
-  let browserClosed = false
-  let currentUrl = PAGE_ONE_URL
-
-  const fakeBrowser = {
-    close: async () => {
-      browserClosed = true
-    },
-  }
-  const fakePage = {
-    async goto(url) {
-      currentUrl = url
-    },
-    async waitForSelector() {},
-    async $$eval() {
-      return pageData[currentUrl].jobs
-    },
-    async evaluate() {
-      return pageData[currentUrl].nextUrl
-    },
-  }
 
   const jobs = await google.createGoogleScraper().run({
-    launchBrowserImpl: async () => fakeBrowser,
-    createOptimizedPageImpl: async () => fakePage,
+    fetchListingsText: async (url) => pageData[url],
     fetchText: async (url) => {
       requestedDetails.push(url)
       if (url === FIRST_CANONICAL_URL) {
@@ -129,5 +145,52 @@ test('Google scraper paginates with next links and enriches canonical detail URL
   assert.match(jobs[0].jobDescription, /Software Engineer builds core systems/i)
   assert.match(jobs[0].experienceRequired, /5 years/i)
   assert.equal(jobs[0].scrapedAt, '2026-08-01T12:34:56.000Z')
-  assert.equal(browserClosed, true)
+})
+
+test('Google scraper falls back to listing-card qualifications when a detail fetch fails', async () => {
+  const google = await loadGoogleModule()
+
+  const jobs = await google.createGoogleScraper().run({
+    fetchListingsText: async () => listingPageHtml({
+      cards: [
+        listingCardHtml({
+          title: 'Site Reliability Engineer',
+          location: 'Remote, India',
+          href: 'jobs/results/345678901234567890-site-reliability-engineer?location=India',
+          minimumQualification: '6 years of site reliability engineering experience',
+        }),
+      ],
+      nextUrl: null,
+    }),
+    fetchText: async () => {
+      throw new Error('detail page blocked')
+    },
+    now: () => '2026-08-02T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].city, 'Remote')
+  assert.match(jobs[0].minimumQualification, /6 years of site reliability engineering experience/i)
+  assert.match(jobs[0].experienceRequired, /6 years/i)
+})
+
+test('Google helpers extract cards and next-page URLs from server-rendered HTML', async () => {
+  const google = await loadGoogleModule()
+  const html = listingPageHtml({
+    cards: [
+      listingCardHtml({
+        title: 'Network Engineer',
+        location: 'Mumbai, Maharashtra, India',
+        href: 'jobs/results/456789012345678901-network-engineer?location=India',
+        minimumQualification: '3 years of networking experience',
+      }),
+    ],
+    nextUrl: PAGE_TWO_URL,
+  })
+
+  const cards = google.extractGoogleListingCards(html, PAGE_ONE_URL)
+  assert.equal(cards.length, 1)
+  assert.equal(cards[0].title, 'Network Engineer')
+  assert.equal(cards[0].link, 'https://www.google.com/about/careers/applications/jobs/results/456789012345678901-network-engineer')
+  assert.equal(google.extractGoogleNextPageUrl(html, PAGE_ONE_URL), PAGE_TWO_URL)
 })

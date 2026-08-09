@@ -34,7 +34,7 @@ test('Polymed local catalog captures the careers-form and stale-job-opening no-p
   assert.equal(POLYMED_CATALOG.companyName, 'Polymed')
   assert.equal(POLYMED_CATALOG.officialBrandName, 'Poly Medicure Limited')
   assert.equal(POLYMED_CATALOG.adapter, 'script')
-  assert.equal(POLYMED_CATALOG.modulePath, '../polymed/script.js')
+  assert.equal(POLYMED_CATALOG.modulePath, '../../scraper/polymed/script.js')
   assert.equal(POLYMED_CATALOG.dryRunFile, 'polymed/jobs.json')
   assert.equal(POLYMED_CATALOG.homepageUrl, 'https://www.polymedicure.com/')
   assert.equal(POLYMED_CATALOG.companyCareerPage, 'https://www.polymedicure.com/careers/')

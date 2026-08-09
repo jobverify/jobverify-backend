@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'ValueFirst',
   adapter: 'script',
-  modulePath: '../valuefirstdigitalmedia/script.js',
+  modulePath: '../../scraper/valuefirstdigitalmedia/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-role-pages',
@@ -125,3 +125,4 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     await saveToDB(jobs, SOURCE)
   }
 }
+

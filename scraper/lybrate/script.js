@@ -18,7 +18,7 @@ export const JOBS_PAGE_URL = PROVIDER_METADATA.jobsPageUrl
 export const ABOUT_PAGE_URL = PROVIDER_METADATA.aboutPageUrl
 export const JOBS_API_URL = PROVIDER_METADATA.embeddedJobsApiUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

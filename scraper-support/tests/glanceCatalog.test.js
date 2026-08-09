@@ -50,7 +50,7 @@ test('Glance local catalog captures the verified first-party careers page plus G
   )
   assert.equal(GLANCE_CATALOG.parser, 'custom-script')
   assert.equal(GLANCE_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(GLANCE_CATALOG.modulePath, '../glance/script.js')
+  assert.equal(GLANCE_CATALOG.modulePath, '../../scraper/glance/script.js')
   assert.equal(GLANCE_CATALOG.dryRunFile, 'glance/jobs.json')
   assert.equal(GLANCE_CATALOG.verifiedOn, '2026-07-16')
   assert.match(GLANCE_CATALOG.verifiedSurfaceSummary, /__NEXT_DATA__/i)

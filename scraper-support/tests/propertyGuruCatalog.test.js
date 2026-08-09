@@ -146,7 +146,7 @@ test('PropertyGuru hydrated local catalog stays script-runner compatible for sha
   assert.equal(provider.companyCareerPage, 'https://www.propertygurugroup.com/careers/')
   assert.equal(provider.companyDomain, 'propertygurugroup.com')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.match(provider.modulePath, /propertyguru[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /propertyguru\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /propertyguru.workday[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
 })

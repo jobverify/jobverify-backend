@@ -17,7 +17,7 @@ export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 export const VERIFIED_INDIA_JOB_URLS = PROVIDER_METADATA.verifiedIndiaJobUrls
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const PAGE_SIZE = 20
 
 const decodeHtmlEntities = (value) => String(value ?? '')

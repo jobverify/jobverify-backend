@@ -124,7 +124,7 @@ const API_PORTAL_TEMPLATES = {
       method: 'GET',
       headers: {
         Accept: 'application/json, text/plain, */*',
-        'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
         'X-Requested-With': 'XMLHttpRequest',
       },
     },

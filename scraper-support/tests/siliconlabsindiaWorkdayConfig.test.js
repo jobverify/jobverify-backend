@@ -8,7 +8,7 @@ import { loadConfig } from '../utils/loadConfig.js'
 const testsDir = path.dirname(fileURLToPath(import.meta.url))
 
 test('Silicon Labs India Workday local config uses the jobs API against the public tenant', () => {
-  const config = loadConfig(path.join(testsDir, '../../scraper/siliconlabsindia'))
+  const config = loadConfig(path.join(testsDir, '../../scraper/siliconlabsindia.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
   assert.equal(

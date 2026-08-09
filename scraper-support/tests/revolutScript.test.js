@@ -3,7 +3,7 @@ import test from 'node:test'
 
 const FIXED_SCRAPED_AT = '2026-07-17T12:00:00.000Z'
 
-const careersHtml = `
+const careersHtmlShell = `
 <!doctype html>
 <html lang="en">
   <head>
@@ -58,6 +58,20 @@ const positions = [
     is_featured: false,
   },
 ]
+
+const buildCareersHtmlWithPositions = (pagePositions) => careersHtmlShell.replace(
+  '</body>',
+  `  <script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+    props: {
+      pageProps: {
+        positions: pagePositions,
+      },
+    },
+  })}</script>
+  </body>`,
+)
+
+const careersHtml = buildCareersHtmlWithPositions(positions)
 
 const strategyOperationsManagerDetailHtml = `
 <!doctype html>
@@ -140,6 +154,7 @@ test('Revolut scraper stays pinned to the verified first-party careers page and 
   )
   assert.equal(revolut.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(revolut.hasOfficialCareersSignal('<html><title>Careers</title></html>'), false)
+  assert.deepEqual(revolut.extractPositionsPayload(careersHtml), positions)
 })
 
 test('Revolut extracts India jobs from the verified first-party Next.js payload and normalizes remote status', async () => {
@@ -195,39 +210,28 @@ test('Revolut extracts India jobs from the verified first-party Next.js payload 
 
 test('Revolut run validates the official careers surface, reads the embedded positions payload, and decorates India jobs', async () => {
   const revolut = await loadModule()
-  const events = []
-
-  const fakePage = {
-    goto: async (url, options) => {
-      events.push(['goto', url, options.waitUntil])
-    },
-    content: async () => {
-      events.push(['content'])
-      return careersHtml
-    },
-    evaluate: async () => {
-      events.push(['evaluate'])
-      return positions
-    },
-  }
+  const requestedUrls = []
+  const requestedDetailUrls = []
 
   const jobs = await revolut.createRevolutScraper({
     now: () => FIXED_SCRAPED_AT,
     maxJobs: 1,
   }).run({
-    launchBrowser: async () => ({
-      close: async () => {
-        events.push(['close'])
-      },
-    }),
-    createOptimizedPage: async () => fakePage,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return careersHtml
+    },
+    fetchPublicJobText: async (url) => {
+      requestedDetailUrls.push(url)
+      return ''
+    },
   })
 
-  assert.deepEqual(events, [
-    ['goto', 'https://www.revolut.com/en-IN/careers/', 'networkidle2'],
-    ['content'],
-    ['evaluate'],
-    ['close'],
+  assert.deepEqual(requestedUrls, [
+    'https://www.revolut.com/en-IN/careers/',
+  ])
+  assert.deepEqual(requestedDetailUrls, [
+    'https://www.revolut.com/en-IN/careers/position/business-development-manager-financial-partnerships-666ce819-a63a-4642-98c8-66c88af9c63a/',
   ])
   assert.deepEqual(jobs, [
     {
@@ -251,6 +255,7 @@ test('Revolut run validates the official careers surface, reads the embedded pos
       closingDate: null,
       jobDescription: null,
       remoteStatus: 'Hybrid',
+      description: null,
       publicExperienceChecked: false,
       source: 'revolut',
       link: 'https://www.revolut.com/en-IN/careers/apply/666ce819-a63a-4642-98c8-66c88af9c63a/',
@@ -278,14 +283,7 @@ test('Revolut run enriches blank listing descriptions from the official detail p
   const jobs = await revolut.createRevolutScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => ({
-      goto: async () => {},
-      content: async () => careersHtml,
-      evaluate: async () => positionsWithBlankDescription,
-    }),
+    fetchText: async () => buildCareersHtmlWithPositions(positionsWithBlankDescription),
     fetchPublicJobText: async (url) => {
       requestedDetailUrls.push(url)
       return strategyOperationsManagerDetailHtml
@@ -315,14 +313,7 @@ test('Revolut run preserves verified-missing detail evidence when the official d
   const jobs = await revolut.createRevolutScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    launchBrowser: async () => ({
-      close: async () => {},
-    }),
-    createOptimizedPage: async () => ({
-      goto: async () => {},
-      content: async () => careersHtml,
-      evaluate: async () => positionsWithBlankDescription,
-    }),
+    fetchText: async () => buildCareersHtmlWithPositions(positionsWithBlankDescription),
     fetchPublicJobText: async () => businessComplianceManagerDetailHtml,
   })
 
@@ -336,28 +327,14 @@ test('Revolut fails closed when the careers page markers or embedded positions p
 
   await assert.rejects(
     revolut.createRevolutScraper().run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        content: async () => '<html><head><title>Careers</title></head><body>Open roles</body></html>',
-        evaluate: async () => positions,
-      }),
+      fetchText: async () => '<html><head><title>Careers</title></head><body>Open roles</body></html>',
     }),
     /official Revolut careers page/i,
   )
 
   await assert.rejects(
     revolut.createRevolutScraper().run({
-      launchBrowser: async () => ({
-        close: async () => {},
-      }),
-      createOptimizedPage: async () => ({
-        goto: async () => {},
-        content: async () => careersHtml,
-        evaluate: async () => null,
-      }),
+      fetchText: async () => careersHtmlShell,
     }),
     /positions payload/i,
   )

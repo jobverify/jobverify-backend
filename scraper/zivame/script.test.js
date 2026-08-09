@@ -61,17 +61,17 @@ test('Zivame returns [] while the live homepage points to a Cloudflare-blocked c
 
   const requestedUrls = []
   const jobs = await zivame.createZivameScraper().run({
-    fetchBrowserPage: async (url) => {
-      assert.equal(url, zivame.HOMEPAGE_URL)
-      return {
-        status: 200,
-        url,
-        html: HOMEPAGE_HTML,
-        errorMessage: '',
-      }
-    },
     fetchPage: async (url) => {
       requestedUrls.push(url)
+
+      if (url === zivame.HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url,
+          html: HOMEPAGE_HTML,
+          errorMessage: '',
+        }
+      }
 
       if (url === zivame.CAREERS_URL) {
         return {
@@ -96,6 +96,7 @@ test('Zivame returns [] while the live homepage points to a Cloudflare-blocked c
   })
 
   assert.deepEqual(requestedUrls, [
+    zivame.HOMEPAGE_URL,
     zivame.CAREERS_URL,
     zivame.LEGACY_CAREERS_URL,
   ])
@@ -108,13 +109,16 @@ test('Zivame fails closed when the current careers route or legacy host no longe
 
   await assert.rejects(
     zivame.createZivameScraper().run({
-      fetchBrowserPage: async (url) => ({
-        status: 200,
-        url,
-        html: HOMEPAGE_HTML,
-        errorMessage: '',
-      }),
       fetchPage: async (url) => {
+        if (url === zivame.HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url,
+            html: HOMEPAGE_HTML,
+            errorMessage: '',
+          }
+        }
+
         if (url === zivame.CAREERS_URL) {
           return {
             status: 200,
@@ -137,13 +141,16 @@ test('Zivame fails closed when the current careers route or legacy host no longe
 
   await assert.rejects(
     zivame.createZivameScraper().run({
-      fetchBrowserPage: async (url) => ({
-        status: 200,
-        url,
-        html: HOMEPAGE_HTML,
-        errorMessage: '',
-      }),
       fetchPage: async (url) => {
+        if (url === zivame.HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url,
+            html: HOMEPAGE_HTML,
+            errorMessage: '',
+          }
+        }
+
         if (url === zivame.CAREERS_URL) {
           return {
             status: 403,

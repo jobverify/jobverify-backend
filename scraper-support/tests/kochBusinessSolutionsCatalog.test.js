@@ -22,13 +22,20 @@ const SEARCH_HTML = `
     <head><title>Job Search | Koch</title></head>
     <body>
       <a href="https://koch.avature.net/en_US/careers/SearchJobs?732=26082375&tags=rm.kcm.web.kcm-004">View open roles</a>
-      <a href="https://koch.avature.net/en_US/careers/JobDetail/Data-Analyst/190822">Data Analyst</a>
-      <span class="article__header__text__location">Bangalore, Karnataka, India</span>
-      <span class="article__header__text__subtitle">Koch</span>
-      <a href="https://koch.avature.net/en_US/careers/JobDetail/Business-Process-Analyst/190608">Business Process Analyst</a>
-      <span class="article__header__text__location">Bengaluru, Karnataka, India</span>
-      <span class="article__header__text__subtitle">Koch</span>
-      <a href="https://koch.avature.net/en_US/careers/SearchJobs/?3_85_3=26082375&3_85_3_format=1077&jobRecordsPerPage=6&jobOffset=6">2</a>
+      <article class="article article--result">
+        <h3 class="article__header__text__title">
+          <a href="https://koch.avature.net/en_US/careers/JobDetail/Data-Analyst/190822">Data Analyst</a>
+        </h3>
+        <div class="article__content__field__label">Location:</div>
+        <div class="article__content__field__value">Bangalore, Karnataka, India</div>
+      </article>
+      <article class="article article--result">
+        <h3 class="article__header__text__title">
+          <a href="https://koch.avature.net/en_US/careers/JobDetail/Business-Process-Analyst/190608">Business Process Analyst</a>
+        </h3>
+        <div class="article__content__field__label">Location:</div>
+        <div class="article__content__field__value">Bengaluru, Karnataka, India</div>
+      </article>
     </body>
   </html>
 `

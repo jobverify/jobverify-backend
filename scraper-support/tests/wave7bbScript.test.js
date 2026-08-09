@@ -25,6 +25,9 @@ const nuventoCareersHubHtml = `
 const nuventoIndiaCareersHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta property="og:site_name" content="Nuvento" />
+  </head>
   <body>
     <h2>Nuvento - India</h2>
     <p>For all the enquiries and resume submission please email to naseeba.parvin@nuvento.com</p>

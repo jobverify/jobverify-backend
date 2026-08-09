@@ -11,7 +11,7 @@ export const SOURCE = MODEL_N_CATALOG.source
 export const COMPANY = MODEL_N_CATALOG.companyName
 export const CAREERS_URL = MODEL_N_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')

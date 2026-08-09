@@ -23,7 +23,7 @@ test('getScraperCatalog includes The Indian Public School on the official career
   )
   assert.equal(provider.parser, 'workday')
   assert.equal(provider.companyDomain, 'theindianpublicschool.org')
-  assert.match(provider.modulePath, /theindianpublicschool[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /theindianpublicschool\.workday[\\/]script\.js$/i)
 })
 
 test('buildScrapers and company coverage resolve The Indian Public School (TIPS) to the theindianpublicschool source', () => {

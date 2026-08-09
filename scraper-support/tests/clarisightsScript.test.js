@@ -112,7 +112,7 @@ test('Clarisights run validates the official careers page and returns only liste
       requiredSkills: [],
       postingDate: '2026-07-14T00:00:00.000Z',
       closingDate: null,
-      jobDescription: '<p>Build metrics infrastructure.</p>',
+      jobDescription: 'Build metrics infrastructure.',
       source: 'clarisights',
       link: 'https://jobs.ashbyhq.com/clarisights/clr-1/application',
       scrapedAt: '2026-07-14T00:00:00.000Z',

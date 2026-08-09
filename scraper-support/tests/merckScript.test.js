@@ -185,7 +185,7 @@ test('run keeps Merck on the official India Phenom lane and enriches jobs with S
     'https://performancemanager12.successfactors.eu/career?company=merckgroup&career_job_req_id=900001&career_ns=job_listing',
   )
   assert.equal(jobs[0].postingDate, '2026-07-02')
-  assert.match(jobs[0].experienceRequired, /5\+ years of experience/i)
+  assert.match(jobs[0].experienceRequired, /5\+ years/i)
   assert.match(jobs[0].minimumQualification, /Bachelor degree/i)
   assert.match(jobs[0].jobDescription, /accelerate pharmaceutical discovery/i)
 })

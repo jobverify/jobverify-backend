@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import VANTA_CATALOG from './catalog.js'
 
@@ -14,6 +14,8 @@ export const VERIFIED_ON = VANTA_CATALOG.verifiedOn
 export const PROVIDER_METADATA = VANTA_CATALOG
 
 const PAGINATION_PARAM = '9a22bd08_page'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -159,82 +161,51 @@ export const extractJobsFromRenderedPageHtml = (html = '') =>
 
 const buildPageUrl = (pageNumber) =>
   pageNumber > 1 ? `${CAREERS_URL}?${PAGINATION_PARAM}=${pageNumber}` : CAREERS_URL
-
-const waitForRenderedCards = async (page) => {
-  await page.waitForFunction(
-    () => {
-      const titleNodes = [...document.querySelectorAll('[fs-text-element="job-title"]')]
-      const titles = titleNodes
-        .map((node) => node.textContent?.trim())
-        .filter(Boolean)
-
-      return titles.some((title) => title !== 'Loading...')
-        || document.body.innerText.includes('No open position found')
-    },
-    { timeout: 20000 },
-  )
-}
-
-const fetchRenderedPageHtml = async (page, pageNumber) => {
-  const url = buildPageUrl(pageNumber)
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
-  await waitForRenderedCards(page)
-  return page.content()
-}
+const defaultFetchPageHtml = (pageNumber) => fetchTextWithRetry(buildPageUrl(pageNumber), {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 30000,
+})
 
 export const createVantaScraper = ({
   maxPages = 5,
 } = {}) => ({
   async run({
-    fetchPageHtml,
+    fetchPageHtml = defaultFetchPageHtml,
     now = () => new Date().toISOString(),
   } = {}) {
     const seenPages = new Set()
     const collectedJobs = []
-    let browser = null
-    let page = null
+    let pageNumber = 1
 
-    const loadPageHtml = fetchPageHtml || (async (pageNumber) => {
-      if (!browser) {
-        browser = await launchBrowser()
-        page = await createOptimizedPage(browser)
+    while (Number.isInteger(pageNumber) && pageNumber > 0 && !seenPages.has(pageNumber)) {
+      if (seenPages.size >= maxPages) {
+        throw new Error('Vanta careers pagination exceeded maxPages')
       }
 
-      return fetchRenderedPageHtml(page, pageNumber)
-    })
+      seenPages.add(pageNumber)
+      const html = await fetchPageHtml(pageNumber)
 
-    try {
-      let pageNumber = 1
-
-      while (Number.isInteger(pageNumber) && pageNumber > 0 && !seenPages.has(pageNumber)) {
-        if (seenPages.size >= maxPages) {
-          throw new Error('Vanta careers pagination exceeded maxPages')
-        }
-
-        seenPages.add(pageNumber)
-        const html = await loadPageHtml(pageNumber)
-
-        if (pageNumber === 1 && !hasVerifiedCareersPageSignal(html)) {
-          throw new Error('Verified Vanta careers page changed materially')
-        }
-
-        if (hasNoOpenPositionSignal(html)) {
-          break
-        }
-
-        const pageJobs = extractJobsFromRenderedPageHtml(html)
-        collectedJobs.push(...pageJobs)
-
-        const nextPageNumber = extractNextPageNumber(html)
-        if (!Number.isInteger(nextPageNumber)) {
-          break
-        }
-
-        pageNumber = nextPageNumber
+      if (pageNumber === 1 && !hasVerifiedCareersPageSignal(html)) {
+        throw new Error('Verified Vanta careers page changed materially')
       }
-    } finally {
-      await page?.close().catch(() => {})
-      await browser?.close().catch(() => {})
+
+      if (hasNoOpenPositionSignal(html)) {
+        break
+      }
+
+      const pageJobs = extractJobsFromRenderedPageHtml(html)
+      collectedJobs.push(...pageJobs)
+
+      const nextPageNumber = extractNextPageNumber(html)
+      if (!Number.isInteger(nextPageNumber)) {
+        break
+      }
+
+      pageNumber = nextPageNumber
     }
 
     const uniqueJobs = [...new Map(collectedJobs.map((job) => [job.jobId, job])).values()]

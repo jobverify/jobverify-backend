@@ -46,7 +46,7 @@ test('SentinelOne pins the official sentinellabs Greenhouse jobs endpoint', asyn
   )
 })
 
-test('SentinelOne maps only India Greenhouse jobs to complete Jobify records', async () => {
+test('SentinelOne maps only India Greenhouse jobs to complete Jobverify records', async () => {
   const { extractIndiaJobsFromGreenhousePayload } = await loadModule()
 
   const jobs = extractIndiaJobsFromGreenhousePayload(

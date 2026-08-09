@@ -11,7 +11,7 @@ export const EXPECTED_PORTAL_DOMAIN = 'urbanpiper.keka.com'
 export const EXPECTED_PORTAL_NAME = 'UrbanPiper'
 export const EXPECTED_COMPANY_WEBSITE = 'https://www.urbanpiper.com/'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify/1.0)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

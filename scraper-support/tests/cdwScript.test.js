@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { withRetry } from '../utils/retry.js'
+
 const searchHtml = `
 <!doctype html>
 <html>
@@ -202,4 +204,38 @@ test('CDW still accepts legacy article-based India result cards when the first-p
       location: 'Bengaluru, India',
     },
   ])
+})
+
+test('CDW aborts outer retries when the verified search surface remains blocked after HTTP fallback', async () => {
+  const cdw = await loadModule()
+  let browserAttempts = 0
+
+  await assert.rejects(
+    withRetry(
+      () => cdw.createCdwScraper().run({
+        fetchText: async () => {
+          throw new Error(`HTTP 403 for ${cdw.SEARCH_URL}`)
+        },
+        fetchBrowserText: async () => {
+          browserAttempts += 1
+          throw new Error(`HTTP 403 for ${cdw.SEARCH_URL}`)
+        },
+      }),
+      {
+        attempts: 2,
+        baseDelayMs: 1,
+        label: 'outer-cdw',
+      },
+    ),
+    (error) => {
+      assert.match(
+        error.message,
+        /\[outer-cdw\] Retry aborted after attempt 1\/2\. Last error: CDW verified search results page remains blocked after HTTP fallback/,
+      )
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.equal(browserAttempts, 1)
 })

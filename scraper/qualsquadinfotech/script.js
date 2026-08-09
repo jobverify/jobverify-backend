@@ -16,7 +16,7 @@ export const CANDIDATE_ROUTE_URLS = QUALSQUAD_INFOTECH_CATALOG.candidateRouteUrl
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = (url) =>
+const defaultFetchText = (url, options = {}) =>
   fetchTextWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -24,6 +24,7 @@ const defaultFetchText = (url) =>
     },
     label: SOURCE,
     timeoutMs: 15000,
+    ...options,
   })
 
 export const isTrustedUnavailableFailure = (error) => {
@@ -69,7 +70,7 @@ export const run = async ({ fetchText = defaultFetchText, fetchBrowserText } = {
   try {
     for (const url of CANDIDATE_ROUTE_URLS) {
       try {
-        const html = await fetchText(url)
+        const html = await fetchText(url, { attempts: 1 })
         if (hasPublicJobsSurfaceSignal(html)) {
           throw new Error('Qualsquad Infotech now exposes a public jobs surface')
         }

@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'agilentindia',
   companyName: 'Agilent India',
   officialBrandName: 'Agilent',
   adapter: 'script',
-  modulePath: '../agilentindia.workday/script.js',
+  modulePath: '../../scraper/agilentindia.workday/script.js',
   companyCareerPage: 'https://careers.agilent.com/',
   indiaLocationPage: 'https://careers.agilent.com/locations/asia-pacific/india/',
   experiencedWorkdayPage: 'https://agilent.wd5.myworkdayjobs.com/Agilent_Careers',
@@ -25,3 +25,4 @@ export const provider = {
 }
 
 export default provider
+

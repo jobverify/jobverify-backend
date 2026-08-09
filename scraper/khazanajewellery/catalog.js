@@ -1,9 +1,9 @@
-export const KHAZANA_JEWELLERY_CATALOG = {
+﻿export const KHAZANA_JEWELLERY_CATALOG = {
   source: 'khazanajewellery',
   companyName: 'Khazana Jewellery',
   officialBrandName: 'Khazana Jewellery',
   adapter: 'script',
-  modulePath: '../khazanajewellery/script.js',
+  modulePath: '../../scraper/khazanajewellery/script.js',
   dryRunFile: 'khazanajewellery/jobs.json',
   homepageUrl: 'https://www.khazanajewellery.com/',
   companyCareerPage: 'https://www.khazanajewellery.com/careers?page_id=33',
@@ -22,3 +22,4 @@ export const KHAZANA_JEWELLERY_CATALOG = {
 }
 
 export default KHAZANA_JEWELLERY_CATALOG
+

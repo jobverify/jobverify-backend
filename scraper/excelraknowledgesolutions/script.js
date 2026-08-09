@@ -17,14 +17,6 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const DEFAULT_TIMEOUT_MS = 120000
-
-let browserUtilsPromise
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../../scraper-support/utils/browser.js')
-  return browserUtilsPromise
-}
 
 const INDIA_CITY_PATTERN = /\b(hyderabad|bengaluru|bangalore|mumbai|pune|chennai|noida|gurugram|gurgaon|delhi)\b/i
 
@@ -163,68 +155,34 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createBrowserTextFetcher = async () => {
-  const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    fetchText: async (url) => {
-      await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: DEFAULT_TIMEOUT_MS,
-      })
-      await page.waitForSelector('body', { timeout: DEFAULT_TIMEOUT_MS }).catch(() => null)
-      return page.content()
-    },
-    close: async () => browser.close(),
-  }
-}
-
 export const createExcelraKnowledgeSolutionsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({
-    fetchText,
-    createTextFetcher = createBrowserTextFetcher,
-  } = {}) {
-    let textFetcher = null
-
-    try {
-      if (!fetchText) {
-        textFetcher = await createTextFetcher()
-        fetchText = textFetcher.fetchText
-      }
-
-      const careersHtml = await fetchText(CAREERS_URL)
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Excelra Knowledge Solutions verified first-party careers page no longer matches the trusted contract')
-      }
-
-      const jobs = extractVisibleJobCards(careersHtml)
-        .filter((job) => isIndiaLocation(job.location))
-        .map((job) => ({
-          ...job,
-          company: COMPANY,
-          country: 'India',
-          remoteStatus: null,
-          jobDescription: buildJobDescription(job),
-          source: SOURCE,
-          link: job.applyUrl,
-          scrapedAt: now(),
-        }))
-        .sort((left, right) => left.title.localeCompare(right.title))
-
-      return jobs
-    } finally {
-      if (textFetcher) {
-        await textFetcher.close()
-      }
+  async run({ fetchText = defaultFetchText } = {}) {
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Excelra Knowledge Solutions verified first-party careers page no longer matches the trusted contract')
     }
+
+    const jobs = extractVisibleJobCards(careersHtml)
+      .filter((job) => isIndiaLocation(job.location))
+      .map((job) => ({
+        ...job,
+        company: COMPANY,
+        country: 'India',
+        remoteStatus: null,
+        jobDescription: buildJobDescription(job),
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt: now(),
+      }))
+      .sort((left, right) => left.title.localeCompare(right.title))
+
+    return jobs
   },
 })
 
-export const run = async (options = {}) => createExcelraKnowledgeSolutionsScraper().run(options)
+export const run = async (options = {}) => createExcelraKnowledgeSolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

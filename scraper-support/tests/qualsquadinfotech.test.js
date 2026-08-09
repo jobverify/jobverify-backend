@@ -31,6 +31,7 @@ test('Qualsquad catalog records the unresolved first-party domain sentinel state
 
 test('Qualsquad sentinel returns [] only while the candidate first-party domains stay unresolved or absent', async () => {
   const qualsquad = await loadScript()
+  const requested = []
 
   assert.equal(
     qualsquad.isTrustedUnavailableFailure(new Error("getaddrinfo ENOTFOUND www.qualsquadinfotech.com")),
@@ -50,7 +51,8 @@ test('Qualsquad sentinel returns [] only while the candidate first-party domains
   )
 
   const jobs = await qualsquad.run({
-    fetchText: async () => {
+    fetchText: async (url, options) => {
+      requested.push({ url, options })
       throw new Error('fetch failed | Connect Timeout Error (attempted address: www.qualsquad.com:443, timeout: 10000ms)')
     },
     fetchBrowserText: async () => {
@@ -58,6 +60,10 @@ test('Qualsquad sentinel returns [] only while the candidate first-party domains
     },
   })
 
+  assert.deepEqual(
+    requested,
+    qualsquad.CANDIDATE_ROUTE_URLS.map((url) => ({ url, options: { attempts: 1 } })),
+  )
   assert.deepEqual(jobs, [])
 
   await assert.rejects(

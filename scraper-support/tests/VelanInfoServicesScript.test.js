@@ -1,22 +1,41 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+const overviewHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>Career Opportunities</h1>
+    <h2>Current Openings</h2>
+    <p>Build Your Dream Career with Velan</p>
+    <a href="https://www.velaninfo.com/jobs">View Jobs</a>
+  </body>
+</html>
+`
+
 const jobsHtml = `
 <!doctype html>
 <html lang="en">
   <body>
     <h1>Join Our Team</h1>
     <h2>Current Openings</h2>
-    <h2>Accounting Job Openings</h2>
+    <p>careers@velaninfo.com</p>
     <h3>Senior Accountant (JOB ID: VIS-FS-ARI-MRF-062026-52029) - 1 Position</h3>
-    <p>Quick books, Bill.com, Good Communication is a Must. | Experience: 7+ Years | Location: Coimbatore</p>
-    <p>Posted on: 19-06-2026</p>
+    <ul>
+      <li>Quick books, Bill.com, Good Communication is a Must.</li>
+      <li>Experience: 7+ Years</li>
+      <li>Location: Coimbatore</li>
+    </ul>
+    <p class="cpst">Posted on: 19-06-2026</p>
     <a href="https://www.velaninfo.com/apply/senior-accountant">Apply Now</a>
 
-    <h2>BPO/KPO Job Openings</h2>
     <h3>Process Executive (JOB ID: 072026-62028) - 8 Positions</h3>
-    <p>Basic computer knowledge and problem-solving abilities. | Experience: 0 to 1 Year | Location: Coimbatore</p>
-    <p>Posted on: 10-07-2026</p>
+    <ul>
+      <li>Basic computer knowledge and problem-solving abilities.</li>
+      <li>Experience: 0 to 1 Year</li>
+      <li>Location: Coimbatore</li>
+    </ul>
+    <p class="cpst">Posted on: 10-07-2026</p>
     <a href="https://www.velaninfo.com/apply/process-executive">Apply Now</a>
   </body>
 </html>
@@ -37,6 +56,7 @@ test('Velan Info Services validates the first-party openings page and extracts j
   assert.equal(velan.COMPANY, 'Velan Info Services')
   assert.equal(velan.JOBS_URL, 'https://www.velaninfo.com/jobs')
   assert.equal(velan.VERIFIED_ON, '2026-07-18')
+  assert.equal(velan.hasOfficialCareersSignal(overviewHtml), true)
   assert.equal(velan.hasOfficialJobsSignal(jobsHtml), true)
 
   const jobs = velan.extractJobs(jobsHtml)
@@ -44,6 +64,7 @@ test('Velan Info Services validates the first-party openings page and extracts j
   assert.equal(jobs[0].title, 'Senior Accountant')
   assert.equal(jobs[0].jobId, 'VIS-FS-ARI-MRF-062026-52029')
   assert.equal(jobs[0].location, 'Coimbatore, India')
+  assert.equal(jobs[0].jobDescription, 'Quick books, Bill.com, Good Communication is a Must.')
   assert.equal(jobs[1].title, 'Process Executive')
   assert.equal(jobs[1].jobId, '072026-62028')
 })
@@ -57,12 +78,13 @@ test('Velan Info Services run decorates extracted first-party openings', async (
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
+      if (url === velan.OVERVIEW_URL) return overviewHtml
       if (url === velan.JOBS_URL) return jobsHtml
       throw new Error(`Unexpected Velan URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [velan.JOBS_URL])
+  assert.deepEqual(requestedUrls, [velan.OVERVIEW_URL, velan.JOBS_URL])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'velaninfoservices')
   assert.equal(jobs[0].scrapedAt, '2026-07-18T00:00:00.000Z')
@@ -76,6 +98,6 @@ test('Velan Info Services fails closed when the verified openings page drifts', 
     velan.createVelanInfoServicesScraper().run({
       fetchText: async () => '<html><body>Unexpected</body></html>',
     }),
-    /verified first-party current openings page/i,
+    /trusted current openings surface|verified first-party current openings page/i,
   )
 })

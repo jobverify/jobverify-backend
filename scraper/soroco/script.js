@@ -16,7 +16,7 @@ export const VERIFIED_ON = SOROCO_CATALOG.verifiedOn
 export const COMPANY_DOMAIN = SOROCO_CATALOG.companyDomain
 export const PROVIDER_METADATA = SOROCO_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')

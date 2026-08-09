@@ -160,14 +160,17 @@ test('run fetches the Skillate jobs page and decorates the shared runner fields 
 
   const requested = []
   const jobs = await nurturefarm.createNurtureFarmScraper().run({
-    fetchText: async (url) => {
-      requested.push(url)
+    fetchText: async (url, options) => {
+      requested.push({ url, options })
       if (url === nurturefarm.CAREERS_URL) return JOIN_US_HTML
       return CAREERS_HTML
     },
   })
 
-  assert.deepEqual(requested, ['https://nurture.farm/join-us-2/', 'https://nurture.skillate.com/'])
+  assert.deepEqual(requested, [
+    { url: 'https://nurture.farm/join-us-2/', options: undefined },
+    { url: 'https://nurture.skillate.com/', options: { attempts: 1 } },
+  ])
   assert.equal(jobs.length, 6)
   assert.equal(jobs[0].company, 'Nurture.Farm')
   assert.equal(jobs[0].source, 'nurturefarm')
@@ -189,14 +192,17 @@ test('run falls back to the verified August 4, 2026 Skillate snapshot when the b
   }
 
   const jobs = await nurturefarm.createNurtureFarmScraper().run({
-    fetchText: async (url) => {
-      requested.push(url)
+    fetchText: async (url, options) => {
+      requested.push({ url, options })
       if (url === nurturefarm.CAREERS_URL) return JOIN_US_HTML
       throw timeoutError
     },
   })
 
-  assert.deepEqual(requested, ['https://nurture.farm/join-us-2/', 'https://nurture.skillate.com/'])
+  assert.deepEqual(requested, [
+    { url: 'https://nurture.farm/join-us-2/', options: undefined },
+    { url: 'https://nurture.skillate.com/', options: { attempts: 1 } },
+  ])
   assert.equal(jobs.length, 6)
   assert.equal(jobs[0].title, 'Zonal Commercial Lead')
   assert.equal(jobs[0].link, 'https://nurture.skillate.com/jobs/zonal-commercial-lead')

@@ -20,5 +20,5 @@ test('getScraperCatalog includes Chegg on the verified official jobs page and Wo
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'chegg.com')
-  assert.match(provider.modulePath, /chegg[\\/]script\.js$/i)
+  assert.match(provider.modulePath, /chegg\.workday[\\/]script\.js$/i)
 })

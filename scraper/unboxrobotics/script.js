@@ -9,7 +9,7 @@ const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://unboxrobotics.keka.com/careers'
 const COMPANY_NAME = 'Unbox Robotics'
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

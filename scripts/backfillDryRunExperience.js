@@ -22,7 +22,46 @@ const findArgValue = (name) => {
   return direct ? direct.slice(prefix.length) : null
 }
 
+const hasFlagArg = (name) => process.argv.includes(name)
+
 const normalizeRequestedSource = (value) => String(value ?? '').trim().toLowerCase()
+
+export const decodePossiblyUtf16Text = (buffer) => {
+  const bytes = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer ?? '')
+  if (bytes.length === 0) return ''
+
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) {
+    return bytes.subarray(2).toString('utf16le')
+  }
+
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) {
+    const swapped = Buffer.allocUnsafe(Math.max(0, bytes.length - 2))
+    for (let index = 2; index + 1 < bytes.length; index += 2) {
+      swapped[index - 2] = bytes[index + 1]
+      swapped[index - 1] = bytes[index]
+    }
+    return swapped.toString('utf16le')
+  }
+
+  const utf8 = bytes.toString('utf8')
+  if (utf8.includes('\u0000')) {
+    return bytes.toString('utf16le')
+  }
+
+  return utf8
+}
+
+export const extractCompletedSourceDirectoryNamesFromPipelineLogText = (value = '') => {
+  const matches = String(value ?? '').matchAll(
+    /jobverify-backend\\scraper\\([^\\\r\n]+)\\jobs\.json/gi,
+  )
+
+  return [...new Set(
+    [...matches]
+      .map((match) => normalizeRequestedSource(match[1]))
+      .filter(Boolean),
+  )]
+}
 
 export const parseRequestedSourceFilter = (value = '') => new Set(
   String(value || '')
@@ -112,6 +151,9 @@ export const prioritizeBackfillTargets = (
 const sourceFilter = parseRequestedSourceFilter(
   String(findArgValue('--source') || '')
 )
+const pipelineLogPathArg = String(findArgValue('--pipeline-log') || '').trim()
+const pipelineLogPath = pipelineLogPathArg ? path.resolve(pipelineLogPathArg) : null
+const auditOnly = hasFlagArg('--audit-only')
 const requestedSourceDirectoryOrder = sourceFilter.size === 0
   ? []
   : buildRequestedSourceDirectoryOrder(sourceFilter)
@@ -146,6 +188,16 @@ export const isUncheckedMissingExperienceJob = (job = {}) => (
   && job?.publicExperienceChecked !== true
 )
 
+const countVerifiedMissingExperience = (jobs = []) => jobs.reduce(
+  (count, job) => count + (
+    !String(job?.experienceRequired || '').trim()
+    && job?.publicExperienceChecked === true
+      ? 1
+      : 0
+  ),
+  0,
+)
+
 const summarizeUncheckedMissingExperience = (jobs = []) => jobs.reduce(
   (count, job) => count + (isUncheckedMissingExperienceJob(job) ? 1 : 0),
   0,
@@ -171,9 +223,26 @@ const loadJobs = async (jobsPath) => {
   return Array.isArray(parsed) ? parsed : []
 }
 
-const collectTargets = async () => {
+const loadCompletedSourceDirectoriesFromPipelineLog = async (logPath) => {
+  const raw = await fs.readFile(logPath)
+  return new Set(extractCompletedSourceDirectoryNamesFromPipelineLogText(
+    decodePossiblyUtf16Text(raw),
+  ))
+}
+
+const collectTargets = async ({ includeVerifiedMissing = false } = {}) => {
+  const completedSourceDirectories = pipelineLogPath
+    ? await loadCompletedSourceDirectoriesFromPipelineLog(pipelineLogPath)
+    : null
   const entries = (await fs.readdir(scraperDir, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory() && shouldProcessSource(entry.name))
+    .filter((entry) => (
+      entry.isDirectory()
+      && shouldProcessSource(entry.name)
+      && (
+        completedSourceDirectories == null
+        || completedSourceDirectories.has(normalizeRequestedSource(entry.name))
+      )
+    ))
     .sort((left, right) => left.name.localeCompare(right.name, 'en'))
 
   const targets = []
@@ -185,7 +254,8 @@ const collectTargets = async () => {
 
       const missingBefore = summarizeMissingExperience(jobs)
       const uncheckedMissingBefore = summarizeUncheckedMissingExperience(jobs)
-      if (uncheckedMissingBefore === 0) continue
+      const verifiedMissingBefore = countVerifiedMissingExperience(jobs)
+      if ((includeVerifiedMissing ? missingBefore : uncheckedMissingBefore) === 0) continue
       const jobsFileSize = (await fs.stat(jobsPath)).size
 
       targets.push({
@@ -194,6 +264,7 @@ const collectTargets = async () => {
         jobs,
         totalJobs: jobs.length,
         missingBefore,
+        verifiedMissingBefore,
         uncheckedMissingBefore,
         jobsFileSize,
       })
@@ -290,16 +361,53 @@ const processTarget = async (target) => {
 }
 
 async function main() {
-  const targets = await collectTargets()
+  const targets = await collectTargets({ includeVerifiedMissing: auditOnly })
   const results = []
   let cursor = 0
   let completedSources = 0
   let completedMissingBefore = 0
   let completedMissingAfter = 0
 
+  if (auditOnly) {
+    const summary = targets.reduce((accumulator, target) => {
+      accumulator.auditedSources += 1
+      accumulator.totalJobs += target.totalJobs
+      accumulator.missingBefore += target.missingBefore
+      accumulator.verifiedMissingBefore += target.verifiedMissingBefore
+      accumulator.uncheckedMissingBefore += target.uncheckedMissingBefore
+      return accumulator
+    }, {
+      auditedSources: 0,
+      totalJobs: 0,
+      missingBefore: 0,
+      verifiedMissingBefore: 0,
+      uncheckedMissingBefore: 0,
+    })
+
+    console.log(JSON.stringify({
+      event: 'audit-summary',
+      scraperDir,
+      pipelineLogPath,
+      auditedSources: summary.auditedSources,
+      totalJobs: summary.totalJobs,
+      missingBefore: summary.missingBefore,
+      verifiedMissingBefore: summary.verifiedMissingBefore,
+      uncheckedMissingBefore: summary.uncheckedMissingBefore,
+      results: targets.slice(0, 50).map((target) => ({
+        source: target.source,
+        totalJobs: target.totalJobs,
+        missingBefore: target.missingBefore,
+        verifiedMissingBefore: target.verifiedMissingBefore,
+        uncheckedMissingBefore: target.uncheckedMissingBefore,
+      })),
+    }, null, 2))
+    return
+  }
+
   console.log(JSON.stringify({
     event: 'start',
     scraperDir,
+    pipelineLogPath,
     fileConcurrency,
     experienceEnrichmentConcurrency,
     browserFallbackMode,

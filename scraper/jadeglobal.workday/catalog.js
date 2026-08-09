@@ -1,9 +1,9 @@
-export const JADE_GLOBAL_CATALOG = {
+﻿export const JADE_GLOBAL_CATALOG = {
   source: 'jadeglobal',
   companyName: 'Jade Global',
   officialBrandName: 'Jade Global',
   adapter: 'script',
-  modulePath: '../jadeglobal.workday/script.js',
+  modulePath: '../../scraper/jadeglobal.workday/script.js',
   dryRunFile: 'jadeglobal.workday/jobs.json',
   companyCareerPage: 'https://www.jadeglobal.com/careers',
   workdayBoardUrl: 'https://jadeglobal.wd5.myworkdayjobs.com/Jade_Careers',
@@ -22,3 +22,4 @@ export const JADE_GLOBAL_CATALOG = {
 }
 
 export default JADE_GLOBAL_CATALOG
+

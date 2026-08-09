@@ -52,8 +52,8 @@ test('verified ESDS listing cards remain usable when detail routes now hand off 
   assert.equal(hasOfficialCareersSignal(careersHtml), true)
   assert.equal(hasOfficialJobDetailSignal(darwinboxShellHtml), false)
 
-  const detailUrl = buildDetailUrl('a688b3b568300f')
   const requestedUrls = []
+  const requestedListingPages = []
   const scraper = createEsdsScraper({
     maxJobs: 1,
     now: () => '2026-08-02T00:00:00.000Z',
@@ -64,13 +64,37 @@ test('verified ESDS listing cards remain usable when detail routes now hand off 
       requestedUrls.push(url)
 
       if (url === CAREERS_URL) return careersHtml
-      if (url === detailUrl) return darwinboxShellHtml
 
       throw new Error(`Unexpected URL: ${url}`)
     },
+    fetchListingPage: async (request) => {
+      requestedListingPages.push(request)
+      return {
+        job_counts: 1,
+        data: [
+          {
+            id: 'a688b3b568300f',
+            title: 'Data Center Project Manager',
+            department_name: 'Data Center',
+            locations: 'Kolkata, Delhi, India',
+            country: 'India',
+            emp_type_name: 'Full Time',
+            experience: '8-10',
+            posted_on: '2026-07-31',
+          },
+        ],
+      }
+    },
   })
 
-  assert.deepEqual(requestedUrls, [CAREERS_URL, detailUrl])
+  assert.deepEqual(requestedUrls, [CAREERS_URL])
+  assert.deepEqual(requestedListingPages, [
+    {
+      page: 1,
+      pageSize: 10,
+      companyId: 'main',
+    },
+  ])
   assert.deepEqual(
     jobs.map((job) => ({
       title: job.title,
@@ -92,14 +116,14 @@ test('verified ESDS listing cards remain usable when detail routes now hand off 
         title: 'Data Center Project Manager',
         company: 'ESDS',
         department: 'Data Center',
-        location: 'Kolkata, Delhi',
+        location: 'Kolkata, Delhi, India',
         city: 'Kolkata',
-        sourceUrl: detailUrl,
-        applyUrl: detailUrl,
+        sourceUrl: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a688b3b568300f',
+        applyUrl: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a688b3b568300f',
         employmentType: 'Full Time',
         experienceRequired: '8-10',
         postingDate: '2026-07-31',
-        link: detailUrl,
+        link: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a688b3b568300f',
         source: 'esds',
         scrapedAt: '2026-08-02T00:00:00.000Z',
       },

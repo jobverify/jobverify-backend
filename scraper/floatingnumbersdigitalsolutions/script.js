@@ -10,7 +10,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = PROVIDER_METADATA.source
 export const HOMEPAGE_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {

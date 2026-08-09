@@ -4,7 +4,7 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Presidency University is registered against the official careers page and public HROne board', () => {
+test('Presidency University is registered against the official careers page and inline trusted vacancy cards', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'presidencyuniversity')
 
   assert.ok(provider)
@@ -13,10 +13,10 @@ test('Presidency University is registered against the official careers page and 
   assert.equal(provider.atsPlatform, 'hrone')
   assert.equal(provider.companyCareerPage, 'https://presidencyuniversity.in/careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-page-plus-hrone-show-more')
+  assert.equal(provider.paginationStrategy, 'single-official-careers-page-inline-vacancy-cards')
   assert.equal(
     provider.extractionStrategy,
-    'official-careers-handoff+hrone-rendered-listings+captured-apply-links',
+    'official-careers-page-html-vacancy-cards+trusted-hrone-apply-links',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'presidencyuniversity.in')

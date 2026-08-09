@@ -1,11 +1,11 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on August 1, 2026 that https://aravind.org/ remains the live official Aravind Eye Care System homepage, that https://aravind.org/careers/ remains the first-party careers page published in https://aravind.org/page-sitemap.xml, and that the careers page still exposes first-party WP Job Manager feeds at https://aravind.org/jm-ajax/get_listings/ and https://aravind.org/wp-json/wp/v2/job-listings. Those public feeds currently return no live listings, so the scraper treats the verified empty feed state as zero open roles instead of a surface failure.'
 
 export const ARAVIND_EYE_CARE_SYSTEM_CATALOG = {
   source: 'aravindeyecaresystem',
   companyName: 'Aravind Eye Care System',
   adapter: 'script',
-  modulePath: '../aravindeyecaresystem/script.js',
+  modulePath: '../../scraper/aravindeyecaresystem/script.js',
   companyCareerPage: 'https://aravind.org/careers/',
   homepageUrl: 'https://aravind.org/',
   pageSitemapUrl: 'https://aravind.org/page-sitemap.xml',
@@ -24,3 +24,4 @@ export const ARAVIND_EYE_CARE_SYSTEM_CATALOG = {
 }
 
 export default ARAVIND_EYE_CARE_SYSTEM_CATALOG
+

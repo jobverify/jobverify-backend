@@ -1,9 +1,9 @@
-export const KALE_LOGISTICS_CATALOG = {
+﻿export const KALE_LOGISTICS_CATALOG = {
   source: 'kalelogistics',
   companyName: 'Kale Logistics',
   officialBrandName: 'Kalé Logistics Solutions',
   adapter: 'script',
-  modulePath: '../kalelogistics/script.js',
+  modulePath: '../../scraper/kalelogistics/script.js',
   dryRunFile: 'kalelogistics/jobs.json',
   homepageUrl: 'https://www.kalelogistics.com/',
   companyCareerPage: 'https://www.kalelogistics.com/careers',
@@ -24,3 +24,4 @@ export const KALE_LOGISTICS_CATALOG = {
 }
 
 export default KALE_LOGISTICS_CATALOG
+

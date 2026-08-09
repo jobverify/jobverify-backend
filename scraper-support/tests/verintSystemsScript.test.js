@@ -23,18 +23,13 @@ const candidateExperienceHtml = `
 <!doctype html>
 <html lang="en" dir="ltr">
   <head>
-    <title>Verint Careers</title>
-    <base href="/hcmUI/CandidateExperience/en/sites/CX" />
-    <script>
-      window.CX_CONFIG = {
-        app: {
-          apiBaseUrl: 'https://fa-epcb-saasfaprod1.fa.ocs.oraclecloud.com:443',
-          siteNumber: 'CX'
-        }
-      }
-    </script>
+    <title>Verint</title>
+    <base href="/hcmUI/CandidateExperience/en/sites/CX/" />
+    <meta property="og:title" content="Verint Careers" />
+    <meta property="og:description" content="JOIN OUR TEAM" />
   </head>
   <body>
+    <div data-apibaseurl="https://fa-epcb-saasfaprod1.fa.ocs.oraclecloud.com:443" data-sitenumber="CX"></div>
     <div id="jobSearchPage">Search Verint jobs</div>
   </body>
 </html>
@@ -248,7 +243,7 @@ test('Verint Systems fails closed when the verified first-party or Oracle shell 
     verint.createVerintSystemsScraper({
       fetchText: async (url) => {
         if (url === verint.CAREERS_URL) return officialCareersHtml
-        return candidateExperienceHtml.replace("siteNumber: 'CX'", "siteNumber: 'CX_2'")
+        return candidateExperienceHtml.replace('data-sitenumber="CX"', 'data-sitenumber="CX_2"')
       },
       fetchJson: async () => listingPayload,
     }).run(),

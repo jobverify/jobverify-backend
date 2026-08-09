@@ -130,13 +130,11 @@ test('Gadgeon scraper runs through the browser-backed page collector and decorat
   const requestedUrls = []
 
   const jobs = await createGadgeonScraper({ maxJobs: 1 }).run({
-    collectPageDataImpl: async (_page, url) => {
+    collectPageDataImpl: async (url) => {
       requestedUrls.push(url)
       assert.equal(url, CAREERS_PAGE_URL)
       return listingPageData
     },
-    launchBrowserImpl: async () => ({ close: async () => {} }),
-    createOptimizedPageImpl: async () => ({}),
   })
 
   assert.deepEqual(requestedUrls, [CAREERS_PAGE_URL])
@@ -159,8 +157,6 @@ test('Gadgeon scraper rejects careers pages that no longer match the verified pu
         jobs: [],
         links: [],
       }),
-      launchBrowserImpl: async () => ({ close: async () => {} }),
-      createOptimizedPageImpl: async () => ({}),
     }),
     /verified public careers surface/i,
   )

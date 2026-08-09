@@ -13,7 +13,7 @@ export const CAREERS_PORTAL_URL = 'https://jobs.fasal.co/jobs/Careers'
 export const CAREERS_API_URL =
   'https://jobs.fasal.co/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')

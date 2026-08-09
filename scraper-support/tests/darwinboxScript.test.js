@@ -84,7 +84,6 @@ test('createDarwinboxScraper supports customer-hosted Darwinbox origins without 
       postingDate: '28-Jul-2025',
       closingDate: null,
       jobDescription: '<p>Back end developer with some experience in front end development</p>',
-      publicExperienceChecked: false,
     },
   ])
 })
@@ -112,7 +111,6 @@ test('extractSearchResults keeps India jobs from the Darwinbox listings payload 
     postingDate: '23-Jun-2026',
     closingDate: null,
     jobDescription: jobs[0].jobDescription,
-    publicExperienceChecked: false,
   })
   assert.match(jobs[0].jobDescription, /<p/i)
 })
@@ -182,15 +180,105 @@ test('run paginates Darwinbox listing pages through an injected page fetcher and
   )
 })
 
-test('run posts directly to the Darwinbox candidate API when no page fetcher is injected', async () => {
+test('run seeds the Darwinbox candidate API with the public all-jobs cookie before posting listings', async () => {
   const requests = []
+  const seededCookie = '__cf_bm=seeded-cloudflare-cookie'
   const apiOnlyScraper = createDarwinboxScraper({
-    fetchImpl: async (url, options) => {
+    fetchImpl: async (url, options = {}) => {
       requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        assert.equal(url, 'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs')
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [`${seededCookie}; Path=/; Domain=darwinbox.in; HttpOnly`],
+          },
+          text: async () => '<!doctype html><html><body>Darwinbox - </body></html>',
+        }
+      }
+
+      assert.equal(url, 'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
+      assert.equal(options.method, 'POST')
+      assert.equal(options.headers.cookie, seededCookie)
+
       return {
         ok: true,
         status: 200,
-        headers: { get: () => 'application/json' },
+        headers: {
+          get: (name) => (String(name).toLowerCase() === 'content-type' ? 'application/json' : null),
+          getSetCookie: () => [],
+        },
+        json: async () => ({
+          status: 'success',
+          job_counts: 1,
+          data: [
+            {
+              id: 'dbx-cookie-001',
+              title: 'Platform Engineer',
+              department_name: 'Engineering',
+              locations: 'Hyderabad, Telangana, India',
+              country: 'India',
+              emp_type_name: 'Full-time',
+              experience: '3 - 5 Years',
+              posted_on: '08-Aug-2026',
+              jd: '<p>Build the platform.</p>',
+            },
+          ],
+        }),
+      }
+    },
+  })
+
+  const jobs = await apiOnlyScraper.run({ maxPages: 1 })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'dbx-cookie-001')
+  assert.deepEqual(
+    requests.map(({ url, options = {} }) => ({
+      method: options.method || 'GET',
+      url,
+    })),
+    [
+      {
+        method: 'GET',
+        url: 'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      },
+      {
+        method: 'POST',
+        url: 'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+      },
+    ],
+  )
+})
+
+test('run seeds the public all-jobs shell before posting to the Darwinbox candidate API when no page fetcher is injected', async () => {
+  const requests = []
+  const apiOnlyScraper = createDarwinboxScraper({
+    fetchImpl: async (url, options = {}) => {
+      requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [],
+          },
+          text: async () => '<!doctype html><html><body>Darwinbox - </body></html>',
+        }
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: () => 'application/json',
+          getSetCookie: () => [],
+        },
         json: async () => ({
           status: 'success',
           job_counts: 1,
@@ -216,21 +304,285 @@ test('run posts directly to the Darwinbox candidate API when no page fetcher is 
 
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].jobId, 'dbx-api-001')
-  assert.equal(requests.length, 1)
+  assert.equal(requests.length, 2)
   assert.equal(
     requests[0].url,
+    'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
+  assert.equal(requests[0].options.method, 'GET')
+  assert.equal(
+    requests[1].url,
     'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
   )
-  assert.equal(requests[0].options.method, 'POST')
-  assert.deepEqual(JSON.parse(requests[0].options.body), {
+  assert.equal(requests[1].options.method, 'POST')
+  assert.deepEqual(JSON.parse(requests[1].options.body), {
     companyId: 'main',
     sort_option: 'new',
     limit: 10,
     page: 1,
   })
-  assert.equal(requests[0].options.headers.Origin, 'https://dbx.darwinbox.in')
+  assert.deepEqual(
+    Object.keys(requests[1].options.headers),
+    ['User-Agent', 'Accept', 'Content-Type', 'Origin', 'Referer'],
+  )
+  assert.equal(requests[1].options.headers.Origin, 'https://dbx.darwinbox.in')
   assert.equal(
-    requests[0].options.headers.Referer,
+    requests[1].options.headers.Referer,
     'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  )
+})
+
+test('run uses the current global fetch binding when the native fetch implementation is injected', async () => {
+  const originalFetch = globalThis.fetch
+  const requests = []
+
+  try {
+    globalThis.fetch = async function mockedGlobalFetch(url, options = {}) {
+      assert.equal(this, globalThis)
+      requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => ['__cf_bm=global-fetch-cookie; Path=/; Domain=darwinbox.in; HttpOnly'],
+          },
+          text: async () => '<!doctype html><html><body>Darwinbox - </body></html>',
+        }
+      }
+
+      assert.equal(options.headers.cookie, '__cf_bm=global-fetch-cookie')
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name) => (String(name).toLowerCase() === 'content-type' ? 'application/json' : null),
+          getSetCookie: () => [],
+        },
+        json: async () => ({
+          status: 'success',
+          job_counts: 1,
+          data: [
+            {
+              id: 'dbx-global-fetch-001',
+              title: 'Platform Engineer',
+              department_name: 'Engineering',
+              locations: 'Hyderabad, Telangana, India',
+              country: 'India',
+              emp_type_name: 'Full-time',
+              experience: '3 - 5 Years',
+              posted_on: '08-Aug-2026',
+              jd: '<p>Build the platform.</p>',
+            },
+          ],
+        }),
+      }
+    }
+
+    const apiOnlyScraper = createDarwinboxScraper({
+      fetchImpl: globalThis.fetch,
+    })
+
+    const jobs = await apiOnlyScraper.run({ maxPages: 1 })
+
+    assert.equal(jobs.length, 1)
+    assert.equal(jobs[0].jobId, 'dbx-global-fetch-001')
+    assert.equal(requests.length, 2)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('run refreshes the public all-jobs cookie before each Darwinbox listings page request', async () => {
+  const requests = []
+  let seedCount = 0
+  const apiOnlyScraper = createDarwinboxScraper({
+    fetchImpl: async (url, options = {}) => {
+      requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        seedCount += 1
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [`__cf_bm=page-cookie-${seedCount}; Path=/; Domain=darwinbox.in; HttpOnly`],
+          },
+          text: async () => '<!doctype html><html><body>Darwinbox - </body></html>',
+        }
+      }
+
+      const payload = JSON.parse(options.body)
+      assert.equal(
+        options.headers.cookie,
+        `__cf_bm=page-cookie-${payload.page}`,
+      )
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name) => (String(name).toLowerCase() === 'content-type' ? 'application/json' : null),
+          getSetCookie: () => [],
+        },
+        json: async () => ({
+          status: 'success',
+          job_counts: 11,
+          data: payload.page === 1
+            ? [
+                {
+                  id: 'dbx-page-001',
+                  title: 'Platform Engineer',
+                  department_name: 'Engineering',
+                  locations: 'Hyderabad, Telangana, India',
+                  country: 'India',
+                  emp_type_name: 'Full-time',
+                  experience: '3 - 5 Years',
+                  posted_on: '08-Aug-2026',
+                  jd: '<p>Build the platform.</p>',
+                },
+              ]
+            : [
+                {
+                  id: 'dbx-page-002',
+                  title: 'Site Reliability Engineer',
+                  department_name: 'Engineering',
+                  locations: 'Pune, Maharashtra, India',
+                  country: 'India',
+                  emp_type_name: 'Full-time',
+                  experience: '4 - 6 Years',
+                  posted_on: '09-Aug-2026',
+                  jd: '<p>Keep the platform healthy.</p>',
+                },
+              ],
+        }),
+      }
+    },
+  })
+
+  const jobs = await apiOnlyScraper.run({ maxPages: 2 })
+
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(
+    requests.map(({ url, options = {} }) => ({
+      method: options.method || 'GET',
+      url,
+    })),
+    [
+      {
+        method: 'GET',
+        url: 'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      },
+      {
+        method: 'POST',
+        url: 'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+      },
+      {
+        method: 'GET',
+        url: 'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      },
+      {
+        method: 'POST',
+        url: 'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+      },
+    ],
+  )
+})
+
+test('run retries a Darwinbox listings page once with a fresh public cookie after a transient 403', async () => {
+  const requests = []
+  let seedCount = 0
+  let postCount = 0
+  const apiOnlyScraper = createDarwinboxScraper({
+    fetchImpl: async (url, options = {}) => {
+      requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        seedCount += 1
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [`__cf_bm=retry-cookie-${seedCount}; Path=/; Domain=darwinbox.in; HttpOnly`],
+          },
+          text: async () => '<!doctype html><html><body>Darwinbox - </body></html>',
+        }
+      }
+
+      postCount += 1
+      assert.equal(options.headers.cookie, `__cf_bm=retry-cookie-${postCount}`)
+
+      if (postCount === 1) {
+        return {
+          ok: false,
+          status: 403,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [],
+          },
+          text: async () => '<html><title>Forbidden</title></html>',
+        }
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name) => (String(name).toLowerCase() === 'content-type' ? 'application/json' : null),
+          getSetCookie: () => [],
+        },
+        json: async () => ({
+          status: 'success',
+          job_counts: 1,
+          data: [
+            {
+              id: 'dbx-retry-001',
+              title: 'Platform Engineer',
+              department_name: 'Engineering',
+              locations: 'Hyderabad, Telangana, India',
+              country: 'India',
+              emp_type_name: 'Full-time',
+              experience: '3 - 5 Years',
+              posted_on: '09-Aug-2026',
+              jd: '<p>Build the platform.</p>',
+            },
+          ],
+        }),
+      }
+    },
+  })
+
+  const jobs = await apiOnlyScraper.run({ maxPages: 1 })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'dbx-retry-001')
+  assert.deepEqual(
+    requests.map(({ url, options = {} }) => ({
+      method: options.method || 'GET',
+      url,
+    })),
+    [
+      {
+        method: 'GET',
+        url: 'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      },
+      {
+        method: 'POST',
+        url: 'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+      },
+      {
+        method: 'GET',
+        url: 'https://dbx.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      },
+      {
+        method: 'POST',
+        url: 'https://dbx.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+      },
+    ],
   )
 })

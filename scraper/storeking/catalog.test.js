@@ -14,10 +14,10 @@ test('Store King is registered as a verified first-party no-public-careers senti
   assert.equal(provider.companyCareerPage, 'https://storeking.in/contact')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-and-missing-careers-routes')
+  assert.equal(provider.paginationStrategy, 'about-contact-and-missing-careers-routes')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-page-careers-contact-handoff+verified-contact-page-job-seeker-form+missing-public-careers-routes',
+    'verified-about-page-careers-contact-handoff+verified-contact-page-job-seeker-form+missing-public-careers-routes',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

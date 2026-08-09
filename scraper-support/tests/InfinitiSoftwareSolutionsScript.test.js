@@ -9,28 +9,78 @@ const careersHtml = `
   </head>
   <body>
     <h1>Dream Bold. Fly Higher. With Infiniti.</h1>
-    <h2>Explore Job Opportunities</h2>
-    <section class="job">
-      <h2>Customer Success Manager</h2>
-      <p>Build long-term customer relationships by driving product adoption, ensuring client success, identifying growth opportunities, and delivering exceptional experiences that create lasting business value.</p>
-      <p>10+ Years</p>
-      <p>Chennai</p>
-      <a href="https://app.goodfit.so/apply/CUSTOMER-SUCCESS">Apply</a>
-    </section>
-    <section class="job">
-      <h2>Security Compliance Lead</h2>
-      <p>Responsible for managing the organization’s security, risk, and compliance programs, ensuring adherence to standards like SOC 2, ISO 27001, PCI DSS, and GDPR.</p>
-      <p>1 - 3 Years</p>
-      <p>Chennai</p>
-      <a href="https://app.goodfit.so/apply/SECURITY-COMPLIANCE">Apply</a>
-    </section>
-    <section class="job">
-      <h2>London Partnerships Lead</h2>
-      <p>Grow our UK travel partnerships.</p>
-      <p>8+ Years</p>
-      <p>London</p>
-      <a href="https://app.goodfit.so/apply/LONDON-PARTNERSHIPS">Apply</a>
-    </section>
+    <h2 class="elementor-heading-title elementor-size-default">Explore Job Opportunities</h2>
+    <div class="elementor-element elementor-element-1ed8fbe e-con-full e-flex e-con e-child">
+      <div class="elementor-widget elementor-widget-heading">
+        <div class="elementor-widget-container">
+          <h2 class="elementor-heading-title elementor-size-default">Customer Success Manager</h2>
+        </div>
+      </div>
+      <div class="elementor-element elementor-widget elementor-widget-text-editor">
+        <div class="elementor-widget-container">
+          <p>Build long-term customer relationships by driving product adoption, ensuring client success, identifying growth opportunities, and delivering exceptional experiences that create lasting business value.</p>
+        </div>
+      </div>
+      <div class="elementor-icon-box-title"><span>10+ Years</span></div>
+      <div class="elementor-icon-box-title"><span>Chennai</span></div>
+      <div class="elementor-button-wrapper">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="https://app.goodfit.so/apply/CUSTOMER-SUCCESS">Apply</a>
+      </div>
+    </div>
+    <div class="elementor-element elementor-element-622041d e-con-full e-flex e-con e-child">
+      <div class="elementor-widget elementor-widget-heading">
+        <div class="elementor-widget-container">
+          <h2 class="elementor-heading-title elementor-size-default">Security Compliance Lead</h2>
+        </div>
+      </div>
+      <div class="elementor-element elementor-widget elementor-widget-text-editor">
+        <div class="elementor-widget-container">
+          <div>
+            <div>Responsible for managing the organizationâ€™s security, risk, and compliance programs, ensuring adherence to standards like SOC 2, ISO 27001, PCI DSS, and GDPR.</div>
+          </div>
+        </div>
+      </div>
+      <div class="elementor-icon-box-title"><span>1 - 3 Years</span></div>
+      <div class="elementor-icon-box-title"><span>Chennai</span></div>
+      <div class="elementor-button-wrapper">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="https://app.goodfit.so/apply/SECURITY-COMPLIANCE">Apply</a>
+      </div>
+    </div>
+    <div class="elementor-element elementor-element-87f879c e-con-full e-flex e-con e-child">
+      <div class="elementor-widget elementor-widget-heading">
+        <div class="elementor-widget-container">
+          <h2 class="elementor-heading-title elementor-size-default">Sales Executive</h2>
+        </div>
+      </div>
+      <div class="elementor-element elementor-widget elementor-widget-text-editor">
+        <div class="elementor-widget-container">
+          Drive business growth by building strong client relationships, identifying new opportunities, and delivering impactful SaaS solutions through consultative selling and strategic engagement.
+        </div>
+      </div>
+      <div class="elementor-icon-box-title"><span>3 - 6 Years</span></div>
+      <div class="elementor-icon-box-title"><span>Mumbai</span></div>
+      <div class="elementor-button-wrapper">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="https://v2.app.goodfit.so/jobs/infiniti-solutions/Sales-Executive?id=019e25b9-c372-7634-a220-babd2373919c">Apply</a>
+      </div>
+    </div>
+    <div class="elementor-element elementor-element-foreign e-con-full e-flex e-con e-child">
+      <div class="elementor-widget elementor-widget-heading">
+        <div class="elementor-widget-container">
+          <h2 class="elementor-heading-title elementor-size-default">London Partnerships Lead</h2>
+        </div>
+      </div>
+      <div class="elementor-element elementor-widget elementor-widget-text-editor">
+        <div class="elementor-widget-container">
+          <p>Grow our UK travel partnerships.</p>
+        </div>
+      </div>
+      <div class="elementor-icon-box-title"><span>8+ Years</span></div>
+      <div class="elementor-icon-box-title"><span>London</span></div>
+      <div class="elementor-button-wrapper">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="https://app.goodfit.so/apply/LONDON-PARTNERSHIPS">Apply</a>
+      </div>
+    </div>
+    <h2 class="elementor-heading-title elementor-size-default">Life at Infiniti</h2>
   </body>
 </html>
 `
@@ -94,7 +144,29 @@ test('Infiniti Software Solutions helpers stay pinned to the verified first-part
       postingDate: null,
       closingDate: null,
       jobDescription:
-        'Responsible for managing the organization’s security, risk, and compliance programs, ensuring adherence to standards like SOC 2, ISO 27001, PCI DSS, and GDPR.',
+        'Responsible for managing the organizationâ€™s security, risk, and compliance programs, ensuring adherence to standards like SOC 2, ISO 27001, PCI DSS, and GDPR.',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Sales Executive',
+      company: 'Infiniti Software Solutions',
+      department: null,
+      location: 'Mumbai, India',
+      city: 'Mumbai',
+      country: 'India',
+      jobId: 'Sales-Executive',
+      requisitionId: 'Sales-Executive',
+      sourceUrl: 'https://v2.app.goodfit.so/jobs/infiniti-solutions/Sales-Executive?id=019e25b9-c372-7634-a220-babd2373919c',
+      applyUrl: 'https://v2.app.goodfit.so/jobs/infiniti-solutions/Sales-Executive?id=019e25b9-c372-7634-a220-babd2373919c',
+      employmentType: null,
+      experienceRequired: '3 - 6 Years',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription:
+        'Drive business growth by building strong client relationships, identifying new opportunities, and delivering impactful SaaS solutions through consultative selling and strategic engagement.',
       remoteStatus: 'On-site',
     },
   ])

@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'logelite'
 export const COMPANY = 'Logelite'
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Logelite',
   adapter: 'script',
-  modulePath: '../logelite/script.js',
+  modulePath: '../../scraper/logelite/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
@@ -143,3 +143,4 @@ export const createLogeliteScraper = () => ({
 })
 
 export const run = async (options = {}) => createLogeliteScraper().run(options)
+

@@ -7,7 +7,7 @@ import test from 'node:test'
 import { syncCompanyCoverageReportsFromScraper } from '../scripts/syncCompanyCoverageReportsFromScraper.js'
 
 test('syncCompanyCoverageReportsFromScraper writes coverage only and removes obsolete frontend lists', () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobify-company-coverage-sync-'))
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-company-coverage-sync-'))
 
   try {
     const backendReportPath = path.join(tempDir, 'company_coverage_report.json')

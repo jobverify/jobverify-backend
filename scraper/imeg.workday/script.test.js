@@ -43,7 +43,7 @@ test('buildScraperOptions keeps IMEG on the verified official careers handoff an
   assert.equal(options.baseUrl, 'https://wd1.myworkdaysite.com/recruiting/imeg/Imeg_Careers')
   assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(options.source, 'imeg')
-  assert.match(options.scraperDir, /imeg$/)
+  assert.match(options.scraperDir, /imeg\.workday$/)
 })
 
 test('IMEG verifies the official careers handoff before delegating to the shared Workday runner', async () => {
@@ -70,7 +70,7 @@ test('IMEG verifies the official careers handoff before delegating to the shared
   assert.equal(receivedOptions.baseUrl, 'https://wd1.myworkdaysite.com/recruiting/imeg/Imeg_Careers')
   assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(receivedOptions.source, 'imeg')
-  assert.match(receivedOptions.scraperDir, /imeg$/)
+  assert.match(receivedOptions.scraperDir, /imeg\.workday$/)
 })
 
 test('run fails closed when the official IMEG careers handoff changes', async () => {

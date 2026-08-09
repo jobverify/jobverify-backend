@@ -19,7 +19,7 @@ export const OPEN_ROLES_SECTION_ID = 'open-roles-section'
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const CAREERS_BUNDLE_SCRIPT_PATTERN =
   /<script[^>]+src=["']([^"']*\/_next\/static\/chunks\/pages\/careers-[^"']+\.js)["'][^>]*>/i
 const LEENA_PYJAMAHR_ROLE_OBJECT_PATTERN =

@@ -12,7 +12,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const CURRENT_OPENINGS_URL = PROVIDER_METADATA.companyCareerPage
 export const APPLICATION_URL = 'mailto:apply@ceipal.com'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const INDIA_CITY_PATTERN =
   /\b(ahmedabad|bengaluru|bangalore|chennai|delhi|gurgaon|gurugram|hyderabad|kolkata|mumbai|noida|pune)\b/i
 

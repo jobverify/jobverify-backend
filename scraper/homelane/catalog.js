@@ -1,4 +1,4 @@
-export const HOMELANE_CATALOG = {
+﻿export const HOMELANE_CATALOG = {
   source: 'homelane',
   companyName: 'HomeLane',
   officialBrandName: 'HomeLane',
@@ -15,8 +15,9 @@ export const HOMELANE_CATALOG = {
   verifiedPublicPostingCount: 15,
   verifiedSurfaceSummary:
     'Verified on Saturday, July 25, 2026 that https://sentinel.homelane.com/jobs is the live first-party public HomeLane jobs index and that it server-renders 15 open roles with stable detail routes such as /jobs/HL_20. Verified those detail pages expose public role metadata and first-party apply links under /apply/<id>.',
-  modulePath: '../homelane/script.js',
+  modulePath: '../../scraper/homelane/script.js',
   dryRunFile: 'homelane/jobs.json',
 }
 
 export default HOMELANE_CATALOG
+

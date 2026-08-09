@@ -19,7 +19,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('iVistec Partners India Private Limited local catalog captures the verified no-careers sentinel contract', async () => {
+test('iVistec Partners India Private Limited local catalog captures the verified no-careers sentinel contract on August 2, 2026', async () => {
   const { IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG, default: defaultCatalog } =
     await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG)
@@ -39,9 +39,9 @@ test('iVistec Partners India Private Limited local catalog captures the verified
     provider.extractionStrategy,
     'verified-homepage+verified-about+verified-contact+no-first-party-careers-surface',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-02')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Noida, India/i)
+  assert.match(provider.verifiedSurfaceSummary, /Noida office/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 })
 

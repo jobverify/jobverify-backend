@@ -1,9 +1,9 @@
-export const JOYALUKKAS_CATALOG = {
+﻿export const JOYALUKKAS_CATALOG = {
   source: 'joyalukkas',
   companyName: 'Joyalukkas',
   officialBrandName: 'Joyalukkas',
   adapter: 'script',
-  modulePath: '../joyalukkas/script.js',
+  modulePath: '../../scraper/joyalukkas/script.js',
   dryRunFile: 'joyalukkas/jobs.json',
   homepageUrl: 'https://www.joyalukkas.com/',
   companyCareerPage: 'https://b2b.joyalukkas.com/contact',
@@ -23,3 +23,4 @@ export const JOYALUKKAS_CATALOG = {
 }
 
 export default JOYALUKKAS_CATALOG
+

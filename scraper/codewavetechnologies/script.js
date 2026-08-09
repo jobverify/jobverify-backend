@@ -10,7 +10,7 @@ export const COMPANY = CODEWAVE_TECHNOLOGIES_CATALOG.companyName
 export const CAREERS_URL = CODEWAVE_TECHNOLOGIES_CATALOG.companyCareerPage
 export const VERIFIED_ON = CODEWAVE_TECHNOLOGIES_CATALOG.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

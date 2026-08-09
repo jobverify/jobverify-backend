@@ -485,6 +485,7 @@ test('Mastek fails closed when the verified official careers handoff disappears'
   await assert.rejects(
     mastek.createMastekScraper().run({
       fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
+      fetchBrowserText: async () => '<html><body><h1>Unexpected</h1></body></html>',
     }),
     /verified official Mastek careers page|official Mastek jobs page/i,
   )

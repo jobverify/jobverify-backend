@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'raybusinesstechnologies',
   companyName: 'Ray Business Technologies',
   officialBrandName: 'Ray Business Technologies Pvt. Ltd.',
   adapter: 'script',
-  modulePath: '../raybusinesstechnologies/script.js',
+  modulePath: '../../scraper/raybusinesstechnologies/script.js',
   homepageUrl: 'https://raybiztech.com/',
   companyCareerPage: 'https://raybiztech.com/about-us/careers/current-openings',
   atsPlatform: 'official-company-careers',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

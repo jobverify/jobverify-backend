@@ -14,7 +14,7 @@ export const LEVER_API_URL = SONATYPE_CATALOG.leverApiUrl
 export const COMPANY_DOMAIN = SONATYPE_CATALOG.companyDomain
 export const PROVIDER_METADATA = SONATYPE_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

@@ -158,7 +158,6 @@ test('Dynatrace scraper verifies the contradictory first-party India surface and
     dynatrace.BENGALURU_LOCATION_URL,
     dynatrace.LOCATIONS_OVERVIEW_URL,
     dynatrace.MUMBAI_LOCATION_URL,
-    dynatrace.OFFICIAL_OFFICE_LOCATIONS_URL,
   ].sort())
   assert.deepEqual(jobs, [])
 })
