@@ -20,9 +20,9 @@ export const NUCLEUS_SOFTWARE_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'nucleussoftware.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.nucleussoftware.com/careers/ is the live first-party careers page for Nucleus Software and links Open Positions / Explore opportunities / Search Job Opportunities to the branded Zoho board at https://nucleussoftware.zohorecruit.in/jobs/Careers. The companion public feed at https://nucleussoftware.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite returned 42 public jobs, including 30 India jobs such as Java Production Support Engineer and Technical Lead - Power BI.',
+    'Verified on Monday, August 3, 2026 that https://www.nucleussoftware.com/careers/ is the live first-party careers page for Nucleus Software and still links Open Positions / Explore opportunities / Search Job Opportunities to the branded Zoho board at https://nucleussoftware.zohorecruit.in/jobs/Careers. The companion public feed at https://nucleussoftware.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite returned 40 public jobs on the verified date, including 29 India jobs such as Account Management - Manager, Technical Lead - Power BI, and Senior Manager Sales in Noida.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

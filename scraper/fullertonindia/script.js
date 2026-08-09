@@ -199,16 +199,16 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTagsToText(page)
 
-  return /<title>\s*SMFG India Credit: Leading Financial Company for Loans\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*SMFG India Credit: Leading Financial Company for Loans\s*<\/title>/i.test(page)
     && /\bSMFG India Credit\b/i.test(text)
-    && /href=["']https:\/\/www\.smfgindiacredit\.com\/careers\.aspx["']/i.test(page)
+    && /href=["'](?:https:\/\/www\.smfgindiacredit\.com)?\/careers\.aspx["']/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTagsToText(page)
 
-  return /<title>\s*SMFG India Credit Careers - Current Job Openings & Employee Testimonials\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*SMFG India Credit Careers - Current Job Openings &(?:amp;)? Employee Testimonials\s*<\/title>/i.test(page)
     && /Careers - SMFG India Credit/i.test(text)
     && /Explore Jobs/i.test(text)
     && /Upload Your Profile/i.test(text)
@@ -315,7 +315,7 @@ export const createFullertonIndiaScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    const homepage = await fetchPage(REDIRECTED_HOMEPAGE_URL)
     if (
       homepage.status !== 200
       || homepage.url !== REDIRECTED_HOMEPAGE_URL
@@ -370,7 +370,7 @@ export const createFullertonIndiaScraper = ({
 export const run = async (options = {}) => createFullertonIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

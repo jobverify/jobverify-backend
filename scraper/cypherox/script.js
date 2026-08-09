@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import CYPHEROX_CATALOG from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const MIN_VERIFIED_JOB_GRAPH_COUNT = 2
 
 const normalizeWhitespace = (value) => {
@@ -161,7 +161,7 @@ export const createCypheroxScraper = ({
 export const run = async (options = {}) => createCypheroxScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

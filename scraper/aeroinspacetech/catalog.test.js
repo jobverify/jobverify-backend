@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('Aeroin SpaceTech is registered against its official site', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'aeroinspacetech')

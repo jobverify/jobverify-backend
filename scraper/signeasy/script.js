@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SIGNEASY_CATALOG from './catalog.js'
 
@@ -54,8 +54,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return title === 'careers at signeasy | signeasy'
     && text.includes('join our tribe')
-    && text.includes('at signeasy, we are on a mission')
-    && text.includes('apply now')
+    && (text.includes('apply now') || text.includes('apply here'))
     && text.includes('our principles')
     && text.includes('perks and benefits')
 }
@@ -89,7 +88,7 @@ export const createSigneasyScraper = () => ({
 export const run = async (options = {}) => createSigneasyScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

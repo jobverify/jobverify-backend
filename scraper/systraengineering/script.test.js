@@ -380,6 +380,36 @@ test('run verifies the official SYSTRA surfaces, posts the first-party India fil
   assert.equal(jobs[1].jobId, '9896')
 })
 
+test('run overlaps SYSTRA detail page fetches so large India batches do not time out sequentially', async () => {
+  const systra = await loadModule()
+  let activeDetails = 0
+  let maxActiveDetails = 0
+
+  const jobs = await systra.createSystraEngineeringScraper({ maxPages: 2 }).run({
+    fetchText: async (url) => {
+      if (url === systra.HOMEPAGE_URL) return homepageHtml
+      if (url === systra.CAREERS_URL) return careersHtml
+      if (
+        url === 'https://www.systra.com/en/job-offers/sr-planning-monitoring-expert-k2-mumbai-en-9757/'
+        || url === 'https://www.systra.com/en/job-offers/senior-contract-management-specialist_bid-position-en-9896/'
+      ) {
+        activeDetails += 1
+        maxActiveDetails = Math.max(maxActiveDetails, activeDetails)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        activeDetails -= 1
+        return url.includes('9757') ? detailHtmlOne : detailHtmlTwo
+      }
+
+      throw new Error(`Unexpected HTML URL: ${url}`)
+    },
+    fetchJson: async () => listingPayloadCombined,
+    now: () => '2026-07-13T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.ok(maxActiveDetails > 1, `expected overlapping detail fetches, saw max concurrency ${maxActiveDetails}`)
+})
+
 test('run fails closed when the verified official SYSTRA careers page loses the first-party jobs config', async () => {
   const systra = await loadModule()
 

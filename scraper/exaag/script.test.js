@@ -140,6 +140,102 @@ test('extractIndiaJobs returns only Bangalore jobs from the official EXA AG arch
   ])
 })
 
+const currentCareersHtml = `
+  <html>
+    <head>
+      <title>Jobs Archive - EXA AG</title>
+    </head>
+    <body>
+      <main>
+        <h2>Join EXA AG</h2>
+        <h2>Open Positions</h2>
+
+        <h3>Heidelberg<br><span>Germany</span></h3>
+        <article>
+          <span>SAP FI/CO Senior Consultant (m/f/d)</span>
+          <ul>
+            <li>July 2026,</li>
+            <li>fulltime,</li>
+            <li>hybrid</li>
+          </ul>
+          <a href="https://exa-ag.com/career/jobs/sap-fi-co-senior-consultant/">Details</a>
+        </article>
+
+        <h3>Bangalore<br><span>India</span></h3>
+        <article>
+          <span>SAP ABAP/RAP/BTP Consultant (m/f/d)</span>
+          <ul>
+            <li>July 2026,</li>
+            <li>fulltime,</li>
+            <li>hybrid</li>
+          </ul>
+          <a href="https://exa-ag.com/career/jobs/sap-abap-technical-consultant/">Details</a>
+        </article>
+        <article>
+          <span>Finance Solution Architect (m/f/d)</span>
+          <ul>
+            <li>July 2026,</li>
+            <li>fulltime,</li>
+            <li>hybrid</li>
+          </ul>
+          <a href="https://exa-ag.com/career/jobs/finance-solution-architect/">Details</a>
+        </article>
+
+        <h3>Remote<br><span>Americas</span></h3>
+        <p>Contact EXA Experts</p>
+      </main>
+    </body>
+  </html>
+`
+
+test('extractIndiaJobs accepts the current EXA AG Bangalore heading and stops before the Remote Americas section', () => {
+  assert.equal(hasOfficialExaAgJobsPageShape(currentCareersHtml), true)
+  assert.deepEqual(extractIndiaJobs(currentCareersHtml), [
+    {
+      title: 'SAP ABAP/RAP/BTP Consultant (m/f/d)',
+      company: 'EXA AG',
+      department: null,
+      location: 'Bangalore, India',
+      city: 'Bangalore',
+      country: 'India',
+      jobId: 'sap-abap-technical-consultant',
+      requisitionId: 'sap-abap-technical-consultant',
+      sourceUrl: 'https://exa-ag.com/career/jobs/sap-abap-technical-consultant/',
+      applyUrl: 'https://exa-ag.com/career/jobs/sap-abap-technical-consultant/',
+      employmentType: 'Full-time',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      remoteStatus: 'Hybrid',
+    },
+    {
+      title: 'Finance Solution Architect (m/f/d)',
+      company: 'EXA AG',
+      department: null,
+      location: 'Bangalore, India',
+      city: 'Bangalore',
+      country: 'India',
+      jobId: 'finance-solution-architect',
+      requisitionId: 'finance-solution-architect',
+      sourceUrl: 'https://exa-ag.com/career/jobs/finance-solution-architect/',
+      applyUrl: 'https://exa-ag.com/career/jobs/finance-solution-architect/',
+      employmentType: 'Full-time',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      remoteStatus: 'Hybrid',
+    },
+  ])
+})
+
 test('run validates the official EXA AG archive before returning jobs', async () => {
   const requests = []
   const jobs = await createExaAgScraper().run({

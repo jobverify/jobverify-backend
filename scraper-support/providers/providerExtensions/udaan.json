@@ -1,0 +1,22 @@
+{
+  "source": "udaan",
+  "companyName": "Udaan",
+  "officialBrandName": "udaan",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../udaan/script.js",
+  "dryRunFile": "udaan/jobs.json",
+  "companyCareerPage": "https://udaan.com/",
+  "companyDomain": "udaan.com",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "official-site-without-careers-or-ats-feed-sentinel",
+  "extractionStrategy": "official-first-party-site-without-public-job-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://udaan.com/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://udaan.com/ is udaan's official first-party site. Its public navigation exposes Download App, Login, About us, Newsroom, and Contact us, but no careers page, public job listings, or official ATS feed. This exact-name provider therefore fails closed and returns no jobs until udaan publishes a verifiable official hiring surface."
+}

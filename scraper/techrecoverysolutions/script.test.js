@@ -62,8 +62,32 @@ const contactHtml = `
 
 const missingRouteHtml = `
   <html>
-    <head><title>Not Found</title></head>
-    <body><h1>404</h1></body>
+    <head><title>Page not found &#8211; Techcovery</title></head>
+    <body>
+      <nav>
+        <a href="https://techcovery.in/">HOME</a>
+        <a href="https://techcovery.in/about-us/">WHY TECHCOVERY?</a>
+        <a href="https://techcovery.in/contact/">CONTACT US</a>
+      </nav>
+      <h1>Page not found</h1>
+    </body>
+  </html>
+`
+
+const aboutHtmlWithSpacingDrift = `
+  <html>
+    <head>
+      <title>About Us &#8211; Techcovery</title>
+      <link rel="canonical" href="https://techcovery.in/about-us/" />
+    </head>
+    <body>
+      <h1>About Us</h1>
+      <p>
+        Techcovery has expertise in enterprise consulting and training in niche digital technologies.
+        We work closely with various organizations to fulfill needs for upskilling and reskilling the
+        workforce to take on more advanced work in various technologies .
+      </p>
+    </body>
   </html>
 `
 
@@ -88,7 +112,16 @@ test('Techcovery Solutions sentinel validates the verified first-party no-jobs s
     'https://techcovery.in/current-openings/',
   ])
   assert.equal(techcovery.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(
+    techcovery.isVerifiedHomepagePage({
+      status: 500,
+      url: techcovery.HOMEPAGE_URL,
+      html: homepageHtml,
+    }),
+    true,
+  )
   assert.equal(techcovery.hasOfficialAboutSignal(aboutHtml), true)
+  assert.equal(techcovery.hasOfficialAboutSignal(aboutHtmlWithSpacingDrift), true)
   assert.equal(techcovery.hasOfficialContactSignal(contactHtml), true)
   assert.equal(techcovery.hasUnexpectedPublicJobsSignal(homepageHtml), false)
   assert.equal(
@@ -110,7 +143,7 @@ test('Techcovery Solutions sentinel returns no jobs while the verified first-par
       requestedUrls.push(url)
 
       if (url === techcovery.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
+        return { status: 500, url, html: homepageHtml }
       }
 
       if (url === techcovery.ABOUT_URL) {

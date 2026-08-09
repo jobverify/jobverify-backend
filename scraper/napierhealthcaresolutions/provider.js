@@ -1,11 +1,11 @@
-export const provider = {
+﻿export const provider = {
   source: 'napierhealthcaresolutions',
   companyName: 'Napier Healthcare Solutions',
   officialBrandName: 'Napier',
   adapter: 'script',
-  modulePath: '../napierhealthcaresolutions/script.js',
-  homepageUrl: 'https://www.napierhealthcare.com/v2/',
-  companyCareerPage: 'https://www.napierhealthcare.com/v2/careers/',
+  modulePath: '../../scraper/napierhealthcaresolutions/script.js',
+  homepageUrl: 'http://www.napierhealthcare.com/v2/',
+  companyCareerPage: 'http://www.napierhealthcare.com/v2/careers/',
   atsPlatform: 'official-careers-marketing-page-no-live-public-openings',
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-careers-page-validation',
@@ -13,10 +13,11 @@ export const provider = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'napierhealthcare.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.napierhealthcare.com/v2/careers/ remained the live first-party Napier careers page, exposed the VIEW ALL OPENINGS call-to-action and resume-submission marketing copy, but did not expose any live same-domain public opening cards or role-detail links. Historical search-engine snippets for older Napier category pages were no longer reproducible on the live site, so this provider stays fail-closed until Napier publishes a trustworthy public jobs surface again.',
+    'Verified on Monday, August 3, 2026 that the Napier /v2/ first-party site is currently reachable over http://www.napierhealthcare.com/v2/ and http://www.napierhealthcare.com/v2/careers/ because the corresponding https certificate is expired. The live careers page still exposed the VIEW ALL OPENINGS and current openings marketing copy, but did not expose any live same-domain public opening cards or role-detail links. This provider now validates the reachable http first-party careers page and stays fail-closed until Napier publishes a trustworthy public jobs surface again.',
   dryRunFile: 'napierhealthcaresolutions/jobs.json',
 }
 
 export default provider
+

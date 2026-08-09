@@ -2,7 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { JUMIO_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -33,6 +34,79 @@ const normalizeArray = (value) =>
   (Array.isArray(value) ? value : [value])
     .map((item) => normalizeWhitespace(item))
     .filter(Boolean)
+
+const extractVisibleText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|\/section)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<div\b[^>]*>/gi, '\n')
+    .replace(/<section\b[^>]*>/gi, '\n')
+    .replace(/<h[1-6]\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const isUnavailableGreenhouseDetailPage = (html = '') => {
+  const visibleText = extractVisibleText(html)?.toLowerCase() || ''
+
+  return visibleText.includes('current openings at jumio')
+    && visibleText.includes('create a job alert')
+    && !visibleText.includes('apply for this job')
+}
+
+const extractGreenhouseDetailDescription = (html = '') => {
+  if (isUnavailableGreenhouseDetailPage(html)) {
+    return null
+  }
+
+  const visibleText = extractVisibleText(html)
+  if (!visibleText) return null
+
+  const beforeApply = visibleText.split(/apply for this job/i)[0]?.trim() || ''
+  if (!beforeApply) return null
+
+  return normalizeWhitespace(
+    beforeApply
+      .replace(/^Back to jobs\s*/i, '')
+      .replace(/\bApply\b\s*/i, '')
+      .trim(),
+  )
+}
+
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+export const enrichJumioJobFromDetailPage = (job, detailHtml = '') => {
+  const unavailableDetail = isUnavailableGreenhouseDetailPage(detailHtml)
+  const jobDescription = extractGreenhouseDetailDescription(detailHtml) || job.jobDescription || null
+  const experienceRequired = inferExperienceFromDescription(jobDescription)
+
+  return {
+    ...job,
+    jobDescription,
+    experienceRequired: experienceRequired || job.experienceRequired || null,
+    publicExperienceChecked: unavailableDetail || Boolean(jobDescription),
+  }
+}
 
 const getWorkplaceTypeValue = (job = {}) => {
   const entry = (Array.isArray(job?.metadata) ? job.metadata : []).find(
@@ -214,14 +288,22 @@ export const createJumioScraper = ({
       scrapedAt: now(),
     })
 
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const selectedJobs = Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+
+    return Promise.all(selectedJobs.map(async (job) => {
+      try {
+        return enrichJumioJobFromDetailPage(job, await fetchText(job.sourceUrl))
+      } catch {
+        return job
+      }
+    }))
   },
 })
 
 export const run = async (options = {}) => createJumioScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

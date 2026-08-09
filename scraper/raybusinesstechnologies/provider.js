@@ -1,22 +1,23 @@
-export const provider = {
+﻿export const provider = {
   source: 'raybusinesstechnologies',
   companyName: 'Ray Business Technologies',
   officialBrandName: 'Ray Business Technologies Pvt. Ltd.',
   adapter: 'script',
-  modulePath: '../raybusinesstechnologies/script.js',
+  modulePath: '../../scraper/raybusinesstechnologies/script.js',
   homepageUrl: 'https://raybiztech.com/',
   companyCareerPage: 'https://raybiztech.com/about-us/careers/current-openings',
-  atsPlatform: 'first-party-careers-shell-without-public-openings',
+  atsPlatform: 'official-company-careers',
   countryFilter: 'India',
-  paginationStrategy: 'fail-closed-no-trustworthy-public-listings',
-  extractionStrategy: 'verified-first-party-careers-shell+no-accessibly-rendered-public-openings+fail-closed-sentinel',
+  paginationStrategy: 'single-page-accordion-list',
+  extractionStrategy: 'verified-first-party-careers-page+public-accordion-openings+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'raybiztech.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://raybiztech.com/about-us/careers/current-openings was the live first-party Ray Business Technologies careers shell, but the fetched public HTML only exposed the employer branding copy and the Current Openings shell without any accessibly rendered job cards, titles, or apply links. Because no trustworthy public openings listing was fetchable from the verified exact-name first-party surface, this provider remains fail-closed.',
+    'Verified on Tuesday, August 4, 2026 that https://raybiztech.com/about-us/careers/current-openings is the live first-party Ray Business Technologies careers page and that its public accordion markup now exposes accessible opening titles and descriptions directly in the fetched HTML. The public surface includes current India openings such as Senior AI/ML Engineer, Dotnet Developer, HR Executive, and Boomi Developer, while also listing at least one explicit US-only role. This scraper validates the exact first-party page shell, extracts the public accordion openings, and returns only conservative India-eligible jobs.',
   dryRunFile: 'raybusinesstechnologies/jobs.json',
 }
 
 export default provider
+

@@ -1,19 +1,27 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'quantboxresearch'
 export const COMPANY = 'Quantbox Research'
-export const CAREERS_URL = 'https://www.quantboxresearch.com/'
+export const OFFICIAL_BRAND_NAME = 'Quantbox'
+export const VERIFIED_ON = '2026-08-04'
+export const CAREERS_URL = 'https://www.quantboxresearch.com/careers'
+export const GREENHOUSE_BOARD_URL = 'https://job-boards.eu.greenhouse.io/quantboxresearchpte'
+export const GREENHOUSE_JOBS_API_URL = 'https://boards-api.greenhouse.io/v1/boards/quantboxresearchpte/jobs'
+export const GREENHOUSE_JOBS_API_WITH_CONTENT_URL = `${GREENHOUSE_JOBS_API_URL}?content=true`
+export const GREENHOUSE_JOB_BASE_URL = `${GREENHOUSE_BOARD_URL}/jobs`
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtml = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&nbsp;/gi, ' ')
   .replace(/&#39;|&apos;|&#x27;|&#8217;|&rsquo;/gi, "'")
   .replace(/&#8220;|&#8221;|&ldquo;|&rdquo;/gi, '"')
@@ -22,13 +30,26 @@ const decodeHtml = (value) => String(value ?? '')
   .replace(/&gt;/gi, '>')
   .replace(/&ndash;|&#8211;|&#x2013;/gi, '-')
   .replace(/&mdash;|&#8212;|&#x2014;/gi, '-')
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/[\u2013\u2014]/g, '-')
+
+const decodeRepeatedHtmlEntities = (value, maxPasses = 4) => {
+  let current = String(value ?? '')
+
+  for (let index = 0; index < maxPasses; index += 1) {
+    const decoded = decodeHtml(current)
+    if (decoded === current) break
+    current = decoded
+  }
+
+  return current
+}
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
-  const normalized = decodeHtml(value)
+  const normalized = decodeRepeatedHtmlEntities(value)
     .replace(/\u00a0/g, ' ')
-    .replace(/[â€â€“â€”]/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -38,12 +59,30 @@ const normalizeWhitespace = (value) => {
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '')
     .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<\/(p|div|li|ul|ol|h[1-6])>/gi, ' ')
-    .replace(/<li\b[^>]*>/gi, ' ')
+    .replace(/<\/(p|div|li|ul|ol|h[1-6]|section)>/gi, ' ')
+    .replace(/<(p|div|li|ul|ol|h[1-6]|section)\b[^>]*>/gi, ' ')
     .replace(/<[^>]+>/g, ' '),
 )
 
-const buildJobUrl = (value) => new URL(String(value ?? ''), CAREERS_URL).toString()
+const normalizeVisibleText = (value) => stripTags(value)?.toLowerCase() || ''
+
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1] ?? '')
+}
+
+const normalizeDate = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const isoPrefixMatch = normalized.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (isoPrefixMatch) {
+    return isoPrefixMatch[1]
+  }
+
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? normalized : parsed.toISOString().slice(0, 10)
+}
 
 const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
@@ -51,82 +90,116 @@ const extractCity = (location) => {
   return normalizeCity(normalized.split(',')[0] || normalized)
 }
 
-const isIndiaLocation = (location) => /\bIndia\b/i.test(String(location ?? ''))
+const extractIndiaLocationSegment = (location) => {
+  const normalized = normalizeWhitespace(location)
+  if (!normalized) return null
 
-const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+  const segments = normalized
+    .split(';')
+    .map((segment) => normalizeWhitespace(segment))
+    .filter(Boolean)
+
+  if (segments.length === 0) {
+    return /\bindia\b/i.test(normalized) ? normalized : null
+  }
+
+  return segments.find((segment) => /\bindia\b/i.test(segment)) || null
+}
+
+const extractIndiaOfficeLocation = (job = {}) => {
+  const officeLocations = Array.isArray(job?.offices)
+    ? job.offices
+      .map((office) => extractIndiaLocationSegment(office?.location))
+      .filter(Boolean)
+    : []
+
+  return officeLocations[0] || extractIndiaLocationSegment(job?.location?.name)
+}
+
+const extractListItems = (value) => [...decodeRepeatedHtmlEntities(String(value ?? '')).matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
-const extractSections = (html) => [...String(html ?? '').matchAll(
-  /<span class="panel-title">([\s\S]*?)<\/span>[\s\S]*?<div class="panel-body[^"]*">([\s\S]*?)<\/div>/gi,
-)]
-  .map((match) => ({
-    title: normalizeWhitespace(match[1]),
-    text: stripTags(match[2]),
-    items: extractListItems(match[2]),
-  }))
-  .filter((section) => section.title && section.text)
+export const isIndiaJob = (job = {}) => Boolean(extractIndiaOfficeLocation(job))
 
-const buildJobDescription = (summary, sections) => normalizeWhitespace([
-  summary,
-  ...sections.map((section) => `${section.title} ${section.text}`),
-].filter(Boolean).join(' '))
+export const normalizeGreenhouseJobUrl = (value, jobId) => {
+  const normalizedJobId = normalizeWhitespace(jobId)
+  if (!normalizedJobId) return null
 
-export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
+  try {
+    const url = new URL(String(value ?? ''))
+    const normalizedHost = url.hostname.replace(/^www\./i, '').toLowerCase()
+    const normalizedPathname = url.pathname.replace(/\/+$/, '')
+    const expectedPathname = `/quantboxresearchpte/jobs/${normalizedJobId}`
 
-  return /<title[^>]*>\s*Quantbox Research\s*<\/title>/i.test(page)
-    && /<link[^>]+rel="canonical"[^>]+href="https:\/\/www\.quantboxresearch\.com\/"/i.test(page)
-    && /class="s123-page-header[^"]*">\s*Jobs\s*<\/h2>/i.test(page)
-    && /data-module-type="jobs"|class="s123-module[^"]*s123-module-jobs"/i.test(page)
+    if (normalizedHost !== 'job-boards.eu.greenhouse.io') return null
+    if (normalizedPathname !== expectedPathname) return null
+
+    return `${GREENHOUSE_JOB_BASE_URL}/${normalizedJobId}`
+  } catch {
+    return null
+  }
 }
 
-export const extractJobCards = (html) => [...String(html ?? '').matchAll(
-  /<div class="job-item[\s\S]*?<a class="jobsApplyBtn btn btn-primary"[\s\S]*?>\s*Apply Now\s*<\/a>\s*<\/div>/gi,
-)]
-  .map((match) => {
-    const cardHtml = match[0]
-    const titleMatch = cardHtml.match(/<h4 class="job-title">\s*<a href="([^"]+)"[^>]*>\s*([\s\S]*?)\s*<\/a>\s*<\/h4>/i)
-    const subtitleValues = [...cardHtml.matchAll(/<span class="section_small_text">([\s\S]*?)<\/span>/gi)]
-      .map((subtitleMatch) => normalizeWhitespace(subtitleMatch[1]))
-      .filter(Boolean)
-    const summary = stripTags(
-      cardHtml.match(/<div class="responsive-handler[^"]*main-description-text">([\s\S]*?)<\/div>/i)?.[1] || null,
-    )
-    const sections = extractSections(cardHtml)
-    const requirements = sections.find((section) => /requirements/i.test(section.title))
-    const href = titleMatch?.[1] || null
-    const title = normalizeWhitespace(titleMatch?.[2] || null)
-    const location = subtitleValues[0] || null
-    const requisitionId = subtitleValues[1] || null
+export const hasOfficialCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeVisibleText(page)
+  const title = extractTitle(page)
 
-    if (!href || !title || !location || !requisitionId) return null
+  return title === 'Careers - Quantbox'
+    && normalized.includes('build what markets need next.')
+    && normalized.includes('see open roles')
+    && normalized.includes('current openings are listed below.')
+    && normalized.includes("stay connected for what's next")
+    && normalized.includes('quantbox recruiting messages will come through our official channels.')
+    && page.includes(GREENHOUSE_BOARD_URL)
+}
 
-    const sourceUrl = buildJobUrl(href)
+export const extractJobsFromGreenhousePayload = (payload = {}) => {
+  const jobs = Array.isArray(payload?.jobs) ? payload.jobs : null
+  if (!jobs) {
+    throw new Error('Quantbox Research Greenhouse jobs API response no longer matches the expected payload')
+  }
 
-    return {
-      title,
-      company: COMPANY,
-      department: null,
-      location,
-      city: extractCity(location),
-      country: isIndiaLocation(location) ? 'India' : location,
-      jobId: requisitionId,
-      requisitionId,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: requirements?.items || [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: buildJobDescription(summary, sections),
-      remoteStatus: 'On-site',
-    }
-  })
-  .filter(Boolean)
+  return jobs
+    .filter(isIndiaJob)
+    .map((job) => {
+      const title = normalizeWhitespace(job?.title)
+      const location = extractIndiaOfficeLocation(job)
+      const sourceUrl = normalizeGreenhouseJobUrl(job?.absolute_url, job?.id)
+      const companyName = normalizeWhitespace(job?.company_name)
+      const jobDescription = stripTags(decodeRepeatedHtmlEntities(job?.content))
+
+      if (companyName && companyName.toLowerCase() !== COMPANY.toLowerCase()) {
+        throw new Error('Quantbox Research Greenhouse jobs API no longer maps to the verified company identity')
+      }
+
+      if (!title || !location || !sourceUrl) {
+        throw new Error('Quantbox Research Greenhouse payload no longer exposes the verified public job detail URLs')
+      }
+
+      return {
+        title,
+        company: COMPANY,
+        department: normalizeWhitespace(job?.departments?.[0]?.name),
+        location,
+        city: extractCity(location),
+        country: 'India',
+        jobId: String(job?.id ?? ''),
+        requisitionId: normalizeWhitespace(job?.requisition_id),
+        sourceUrl,
+        applyUrl: sourceUrl,
+        employmentType: null,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: extractListItems(job?.content),
+        postingDate: normalizeDate(job?.first_published || job?.updated_at),
+        closingDate: normalizeDate(job?.application_deadline),
+        jobDescription,
+      }
+    })
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -137,34 +210,39 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    Referer: GREENHOUSE_BOARD_URL,
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
 export const createQuantboxResearchScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
+    const careersHtml = await fetchText(CAREERS_URL)
 
-    if (!hasOfficialCareersSignal(homepageHtml)) {
-      throw new Error('Quantbox Research homepage no longer matches the verified first-party public jobs surface')
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Quantbox Research careers page no longer matches the verified first-party public jobs surface')
     }
 
-    const jobs = extractJobCards(homepageHtml)
-    if (jobs.length === 0) {
-      throw new Error('Quantbox Research homepage no longer exposes the verified public job cards')
-    }
+    const jobs = extractJobsFromGreenhousePayload(await fetchJson(GREENHOUSE_JOBS_API_WITH_CONTENT_URL))
 
-    return jobs
-      .filter((job) => isIndiaLocation(job.location))
-      .map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: new Date().toISOString(),
-      }))
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 
 export const run = async (options = {}) => createQuantboxResearchScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

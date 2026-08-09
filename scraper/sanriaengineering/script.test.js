@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
+import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
 const loadSanriaModule = async () => {
   try {

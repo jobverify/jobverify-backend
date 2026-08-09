@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -82,9 +82,11 @@ const inferRemoteStatusFromDetail = (html) => {
 const extractTitleFromDetail = (html) => {
   const page = String(html ?? '')
   const jobHeadingTitle = page.match(/<div class="job__heading">[\s\S]*?<h1[^>]*>([\s\S]*?)<\/h1>/i)
-  if (jobHeadingTitle) return stripTags(jobHeadingTitle[1])
+  if (jobHeadingTitle) return normalizeWhitespace(decodeRepeatedHtmlEntities(stripTags(jobHeadingTitle[1])))
 
-  return stripTags((page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [])[1])
+  return normalizeWhitespace(
+    decodeRepeatedHtmlEntities(stripTags((page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [])[1])),
+  )
 }
 
 export const buildJobDetailUrl = (jobId) => {
@@ -277,7 +279,7 @@ export const createClumioScraper = ({
 export const run = async (options = {}) => createClumioScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

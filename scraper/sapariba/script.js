@@ -43,6 +43,15 @@ const defaultFetchPage = async (url) => {
 
 const sameUrl = (left, right) => String(left ?? '').replace(/\/$/, '') === String(right ?? '').replace(/\/$/, '')
 
+const isTrustedSapCareersRedirect = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    return url.hostname === 'jobs.sap.com' && url.pathname === '/'
+  } catch {
+    return false
+  }
+}
+
 export const hasGenericSapCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
   const title = (extractTitle(html) || '').toLowerCase()
@@ -62,7 +71,7 @@ export const createSapAribaScraper = () => ({
 
     if (
       careersPage.status !== 200
-      || !sameUrl(careersPage.url, CAREERS_URL)
+      || (!sameUrl(careersPage.url, CAREERS_URL) && !isTrustedSapCareersRedirect(careersPage.url))
       || !hasGenericSapCareersSignal(careersPage.html)
     ) {
       throw new Error('SAP generic careers surface no longer matches the trusted first-party baseline')
@@ -79,7 +88,7 @@ export const createSapAribaScraper = () => ({
 export const run = async (options = {}) => createSapAribaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

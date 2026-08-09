@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { ENDURANCE_CATALOG } from './catalog.js'
 
@@ -254,6 +254,31 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isDeterministicHttpBlock = (error) =>
+  /HTTP\s+(?:401|403|404|410|451)\b/i.test(String(error?.message ?? error ?? ''))
+
+const wrapApiOnlyFetchError = (url, error) => {
+  const wrapped = new Error(
+    `Endurance API-only migration could not fetch ${url}: ${error?.message ?? error}`,
+    { cause: error },
+  )
+
+  for (const key of ['abortRetries', 'softFailure', 'upstreamOutage', 'failureKind', 'localTimeout', 'retryDelayMs']) {
+    if (error?.[key] != null) {
+      wrapped[key] = error[key]
+    }
+  }
+
+  if (wrapped.abortRetries !== true && isDeterministicHttpBlock(error)) {
+    wrapped.abortRetries = true
+    wrapped.softFailure ??= true
+    wrapped.upstreamOutage ??= true
+    wrapped.failureKind ??= 'network_or_timeout'
+  }
+
+  return wrapped
+}
+
 export const createEnduranceScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
@@ -261,54 +286,62 @@ export const createEnduranceScraper = ({
   async run({
     fetchText = defaultFetchText,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Endurance verified official homepage no longer matches the first-party contract')
+    const fetchApiOnlyText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        throw wrapApiOnlyFetchError(url, error)
+      }
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Endurance verified first-party careers page no longer matches the official contract')
-    }
-
-    const careersJobPortalUrl = extractJobPortalUrl(careersHtml)
-    if (careersJobPortalUrl && ![JOB_PORTAL_URL, ALTERNATE_JOB_PORTAL_URL].includes(careersJobPortalUrl)) {
-      throw new Error('Endurance verified first-party careers page no longer exposes the official job portal handoff')
-    }
-
-    const jobPortalHtml = await fetchText(JOB_PORTAL_URL)
-    if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
-      throw new Error('Endurance verified job portal no longer matches the first-party public jobs surface')
-    }
-
-    const listings = extractJobCards(jobPortalHtml)
-    const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
-    const jobs = []
-
-    for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      if (!hasOfficialJobDetailSignal(detailHtml)) {
-        throw new Error('Endurance verified first-party job detail no longer matches the public apply surface')
+      const homepageHtml = await fetchApiOnlyText(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Endurance verified official homepage no longer matches the first-party contract')
       }
 
-      const detail = extractJobDetail(detailHtml, listing)
+      const careersHtml = await fetchApiOnlyText(CAREERS_URL)
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Endurance verified first-party careers page no longer matches the official contract')
+      }
 
-      jobs.push({
-        ...detail,
-        source: SOURCE,
-        link: detail.applyUrl || detail.sourceUrl,
-        scrapedAt: now(),
-      })
-    }
+      const careersJobPortalUrl = extractJobPortalUrl(careersHtml)
+      if (careersJobPortalUrl && ![JOB_PORTAL_URL, ALTERNATE_JOB_PORTAL_URL].includes(careersJobPortalUrl)) {
+        throw new Error('Endurance verified first-party careers page no longer exposes the official job portal handoff')
+      }
 
-    return jobs
+      const jobPortalHtml = await fetchApiOnlyText(JOB_PORTAL_URL)
+      if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
+        throw new Error('Endurance verified job portal no longer matches the first-party public jobs surface')
+      }
+
+      const listings = extractJobCards(jobPortalHtml)
+      const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
+      const jobs = []
+
+      for (const listing of selectedListings) {
+        const detailHtml = await fetchApiOnlyText(listing.sourceUrl)
+        if (!hasOfficialJobDetailSignal(detailHtml)) {
+          throw new Error('Endurance verified first-party job detail no longer matches the public apply surface')
+        }
+
+        const detail = extractJobDetail(detailHtml, listing)
+
+        jobs.push({
+          ...detail,
+          source: SOURCE,
+          link: detail.applyUrl || detail.sourceUrl,
+          scrapedAt: now(),
+        })
+      }
+
+      return jobs
   },
 })
 
 export const run = async (options = {}) => createEnduranceScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

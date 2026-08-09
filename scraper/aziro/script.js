@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import AZIRO_CATALOG from './catalog.js'
 
@@ -15,7 +15,7 @@ export const VERIFIED_ON = AZIRO_CATALOG.verifiedOn
 export const COMPANY_DOMAIN = AZIRO_CATALOG.companyDomain
 export const PROVIDER_METADATA = AZIRO_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -111,7 +111,7 @@ export const createAziroScraper = ({ now = () => new Date().toISOString() } = {}
 export const run = async (options = {}) => createAziroScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

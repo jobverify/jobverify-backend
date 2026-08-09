@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.in10stech.com/careers is the live first-party Intense Technologies careers page, that it embeds window.khConfig plus https://intense.keka.com/careers/api/embedjobs/js/fcf90e1b-bb0a-4d66-b896-6b0de9cf0dce on the official domain, and that https://intense.keka.com/careers/api/organization/default/careerportalinfo plus https://intense.keka.com/careers/api/embedjobs/default/active/fcf90e1b-bb0a-4d66-b896-6b0de9cf0dce returned the public Intense Technologies portal with active India vacancies.'
+  'Verified on Sunday, August 2, 2026 that https://www.in10stech.com/careers remains the live first-party Intense Technologies careers page, that it still embeds window.khConfig plus https://intense.keka.com/careers/api/embedjobs/js/fcf90e1b-bb0a-4d66-b896-6b0de9cf0dce on the official domain, and that https://intense.keka.com/careers/api/organization/default/careerportalinfo plus https://intense.keka.com/careers/api/embedjobs/default/active/fcf90e1b-bb0a-4d66-b896-6b0de9cf0dce returned the public Intense Technologies portal with 1 active India opening, Template Designer Lead.'
 
 export const INTENSE_TECHNOLOGIES_CATALOG = {
   source: 'intensetechnologies',
@@ -24,7 +24,7 @@ export const INTENSE_TECHNOLOGIES_CATALOG = {
     'verified-first-party-careers-page+inline-window-khConfig+keka-careerportalinfo+active-keka-embed-api+jobdetails+applyjob',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'intensetechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

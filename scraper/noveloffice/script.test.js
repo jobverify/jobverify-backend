@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const HOMEPAGE_HTML = `
   <html>
@@ -13,6 +13,7 @@ const HOMEPAGE_HTML = `
     <body>
       <a href="mailto:officeenquiry@noveloffice.in">officeenquiry@noveloffice.in</a>
       <p class="section-title">Want to join us?</p>
+      <p>Explore our careers page and discover opportunities to grow with us.</p>
       <p>Think you're a fit? Apply now and show us what you've got.</p>
       <script>
         window.location.href = "https://noveloffice.in/careers?src=internal";

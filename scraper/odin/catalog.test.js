@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('Odin is registered against the public Ashby board contract', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'odin')

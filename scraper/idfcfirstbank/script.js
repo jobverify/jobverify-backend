@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,17 +13,22 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&#xa0;|&#xA0;|&#160;|&nbsp;/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
 export const hasOfficialCareersHomeSignal = (html) => {
+  const rawPage = String(html ?? '')
   const page = normalizeWhitespace(html)
 
   return page.includes('Join IDFC FIRST Bank and Build a World-Class Bank')
     && page.includes('Build a world-class Bank with us!')
     && page.includes('Our Banking Verticals')
     && page.includes('Explore Jobs by Experience')
-    && page.includes('/in/en/jointalentcommunity')
+    && /\/in\/en\/jointalentcommunity/i.test(rawPage)
 }
 
 export const hasZeroJobSignal = (html) => {
@@ -37,11 +42,12 @@ export const hasZeroJobSignal = (html) => {
 }
 
 export const hasRetailBankingSignal = (html) => {
+  const rawPage = String(html ?? '')
   const page = normalizeWhitespace(html)
 
   return page.includes('Join Retail Banking at IDFC FIRST Bank')
     && page.includes('Explore jobs in Retail Banking')
-    && page.includes('/in/en/jointalentcommunity')
+    && /\/in\/en\/jointalentcommunity/i.test(rawPage)
 }
 
 export const hasTalentCommunitySignal = (html) => {
@@ -109,7 +115,7 @@ export const createIdfcFirstBankScraper = () => ({
 export const run = async (options = {}) => createIdfcFirstBankScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -277,3 +277,21 @@ test('Sybrox run fails closed when the official first-party surface drifts', asy
     /official careers page/i,
   )
 })
+
+test('Sybrox returns an empty result when the current first-party host is DNS-unresolved', async () => {
+  const sybrox = await loadSybroxModule()
+  assert.ok(sybrox, 'Expected scraper module at ./script.js')
+
+  const jobs = await sybrox.createSybroxScraper().run({
+    fetchPage: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'ENOTFOUND',
+        message: 'getaddrinfo ENOTFOUND sybrox.com',
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

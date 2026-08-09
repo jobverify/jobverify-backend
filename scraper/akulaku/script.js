@@ -102,6 +102,16 @@ export const hasOfficialJobsBoardSignal = (html = '') => {
     && (/beisen/i.test(normalized) || /beisen\.com/i.test(rawHtml))
 }
 
+export const hasMaintenanceBoardSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return extractTitle(rawHtml) === 'Document'
+    && normalized.includes('System Upgrade Maintenance')
+    && /系统升级维护中/.test(rawHtml)
+    && (/beisen/i.test(normalized) || /stf\.bstatics\.com\/update/i.test(rawHtml))
+}
+
 export const hasJobListingsPageSignal = (html = '') =>
   /全部职位/i.test(extractTitle(html) || '')
   && hasOfficialJobsBoardSignal(html)
@@ -301,7 +311,21 @@ export const createAkulakuScraper = ({
 
     const boardHomePage = await fetchPage(OFFICIAL_JOBS_BOARD_URL)
 
-    if (Number(boardHomePage.status) !== 200 || !hasOfficialJobsBoardSignal(boardHomePage.html)) {
+    if (Number(boardHomePage.status) !== 200) {
+      throw new Error('Akulaku verified official jobs board no longer matches the public surface')
+    }
+
+    if (hasMaintenanceBoardSignal(boardHomePage.html)) {
+      const maintenanceListingsPage = await fetchPage(JOB_LISTINGS_URL)
+
+      if (Number(maintenanceListingsPage.status) !== 200 || !hasMaintenanceBoardSignal(maintenanceListingsPage.html)) {
+        throw new Error('Akulaku verified maintenance board surface changed materially')
+      }
+
+      return []
+    }
+
+    if (!hasOfficialJobsBoardSignal(boardHomePage.html)) {
       throw new Error('Akulaku verified official jobs board no longer matches the public surface')
     }
 
@@ -353,7 +377,7 @@ export const createAkulakuScraper = ({
 export const run = async (options = {}) => createAkulakuScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { CANONICAL_CITIES } from '../utils/cities.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -48,13 +48,24 @@ const slugify = (value) => normalizeWhitespace(value)
 
 const extractField = (sectionHtml, label) => {
   const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const match = sectionHtml.match(
+  const headingValueMatch = sectionHtml.match(
     new RegExp(
-      `<h[1-6][^>]*>\\s*${escapedLabel}\\s*<\\/h[1-6]>\\s*<p[^>]*>([\\s\\S]*?)<\\/p>`,
+      `<h[1-6][^>]*>[\\s\\S]*?${escapedLabel}[\\s\\S]*?<\\/h[1-6]>\\s*<(?:div|p)[^>]*>([\\s\\S]*?)<\\/(?:div|p)>`,
       'i',
     ),
   )
-  return stripTags(match?.[1])
+  if (headingValueMatch) {
+    return stripTags(headingValueMatch[1])
+  }
+
+  const inlineValueMatch = sectionHtml.match(
+    new RegExp(
+      `<(?:div|p|li)[^>]*>\\s*${escapedLabel}\\s*:?(?:\\s|&nbsp;)+([\\s\\S]*?)<\\/(?:div|p|li)>`,
+      'i',
+    ),
+  )
+
+  return stripTags(inlineValueMatch?.[1])
 }
 
 const normalizeLocation = (value) => {
@@ -200,7 +211,7 @@ export const createJyotiCncAutomationScraper = () => ({
 export const run = async (options = {}) => createJyotiCncAutomationScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,4 +1,9 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'balajitelefilms'
 export const COMPANY = 'Balaji Telefilms'
@@ -32,8 +37,11 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /zohorecruit/i,
 ]
 
+const stripHtmlComments = (value) =>
+  String(value ?? '').replace(/<!--[\s\S]*?-->/g, ' ')
+
 const normalizeWhitespace = (value) =>
-  String(value ?? '')
+  stripHtmlComments(value)
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
@@ -45,22 +53,40 @@ const normalizeWhitespace = (value) =>
 
 const normalizeText = (value) => normalizeWhitespace(value).toLowerCase()
 
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
 const defaultFetchPage = async (url) => {
-  const html = await fetchTextWithRetry(url, {
+  const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    label: SOURCE,
-    timeoutMs: 15000,
+    redirect: 'follow',
+    signal: createTimeoutSignal(15000),
   })
 
   return {
-    status: 200,
-    url,
-    html,
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
   }
 }
+
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const extractApplicationEmail = (html) => {
   const match = String(html ?? '').match(
@@ -74,21 +100,22 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /<title>\s*Balaji Telefilms\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/www\.balajitelefilms\.com\/career-opportunity\.php["']/i.test(page)
+  return /<title>\s*Balaji Telefilms(?:\s+Limited\s*:\s*Television,\s*Motion Pictures)?\s*<\/title>/i.test(page)
+    && hasVerifiedCareersLink(page)
     && normalized.includes('balaji telefilms')
 }
 
 export const hasVerifiedCareersLink = (html) =>
-  /href=["']https:\/\/www\.balajitelefilms\.com\/career-opportunity\.php["']/i.test(String(html ?? ''))
+  /href=["'](?:https:\/\/www\.balajitelefilms\.com\/)?career-opportunity\.php["']/i.test(String(html ?? ''))
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /<title>\s*Career Opportunities\s*\|\s*Balaji Telefilms\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.balajitelefilms\.com\/career-opportunity\.php["']/i.test(page)
-    && normalized.includes('career opportunities')
+  return /<title>\s*Balaji Telefilms(?:\s+Limited\s*:\s*Television,\s*Motion Pictures)?\s*<\/title>/i.test(page)
+    && hasVerifiedCareersLink(page)
+    && normalized.includes('for a career with balaji telefilms ltd')
+    && normalized.includes('careers@balajitelefilms.com')
 }
 
 export const hasEmailOnlyCareersSignal = (html) => {
@@ -99,58 +126,111 @@ export const hasEmailOnlyCareersSignal = (html) => {
 }
 
 export const hasUnexpectedPublicJobsSignal = (html) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(stripHtmlComments(html)))
 
 export const isVerifiedMissingRoute = ({ status, html }) => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
   return status === 404
-    && /<title>\s*404 Not Found\s*<\/title>/i.test(page)
-    && normalized.includes('not found')
-    && normalized.includes('the requested url was not found on this server')
+    && (
+      (
+        /<title>\s*404 Not Found\s*<\/title>/i.test(page)
+        && normalized.includes('not found')
+        && normalized.includes('the requested url was not found on this server')
+      )
+      || (
+        /id=["']sk-loader["']/i.test(page)
+        && /_skz_pid/i.test(page)
+      )
+    )
 }
 
 export const createBalajiTelefilmsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Balaji Telefilms verified official homepage no longer matches the known first-party surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (!hasVerifiedCareersLink(homepage.html)) {
-      throw new Error('Balaji Telefilms homepage no longer links to the verified first-party careers page')
-    }
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
 
-    if (hasUnexpectedPublicJobsSignal(homepage.html)) {
-      throw new Error('Balaji Telefilms homepage now appears to expose a public jobs surface')
-    }
+    const fetchVerifiedPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('Balaji Telefilms verified first-party careers surface no longer matches the known public page')
-    }
-
-    if (!hasEmailOnlyCareersSignal(careersPage.html)) {
-      throw new Error('Balaji Telefilms verified email-only careers surface changed')
-    }
-
-    if (hasUnexpectedPublicJobsSignal(careersPage.html)) {
-      throw new Error('Balaji Telefilms verified email-only careers surface drifted to a public jobs surface')
-    }
-
-    for (const missingRouteUrl of MISSING_ROUTE_URLS) {
-      const missingRoute = await fetchPage(missingRouteUrl)
-
-      if (!isVerifiedMissingRoute(missingRoute)) {
-        throw new Error('Balaji Telefilms missing jobs routes changed materially')
+        return browserPageFetcher(url)
       }
     }
 
-    return []
+    try {
+      const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Balaji Telefilms verified official homepage no longer matches the known first-party surface')
+      }
+
+      if (!hasVerifiedCareersLink(homepage.html)) {
+        throw new Error('Balaji Telefilms homepage no longer links to the verified first-party careers page')
+      }
+
+      if (hasUnexpectedPublicJobsSignal(homepage.html)) {
+        throw new Error('Balaji Telefilms homepage now appears to expose a public jobs surface')
+      }
+
+      const careersPage = await fetchVerifiedPage(CAREERS_URL)
+
+      if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+        throw new Error('Balaji Telefilms verified first-party careers surface no longer matches the known public page')
+      }
+
+      if (!hasEmailOnlyCareersSignal(careersPage.html)) {
+        throw new Error('Balaji Telefilms verified email-only careers surface changed')
+      }
+
+      if (hasUnexpectedPublicJobsSignal(careersPage.html)) {
+        throw new Error('Balaji Telefilms verified email-only careers surface drifted to a public jobs surface')
+      }
+
+      for (const missingRouteUrl of MISSING_ROUTE_URLS) {
+        const missingRoute = await fetchVerifiedPage(missingRouteUrl)
+
+        if (!isVerifiedMissingRoute(missingRoute)) {
+          throw new Error('Balaji Telefilms missing jobs routes changed materially')
+        }
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createBalajiTelefilmsScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

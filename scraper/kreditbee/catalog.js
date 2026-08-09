@@ -1,9 +1,9 @@
-export const KREDITBEE_CATALOG = {
+﻿export const KREDITBEE_CATALOG = {
   source: 'kreditbee',
   companyName: 'KreditBee',
   officialBrandName: 'KreditBee',
   adapter: 'script',
-  modulePath: '../kreditbee/script.js',
+  modulePath: '../../scraper/kreditbee/script.js',
   dryRunFile: 'kreditbee/jobs.json',
   homepageUrl: 'https://www.kreditbee.in/',
   companyCareerPage: 'https://www.kreditbee.in/careers',
@@ -26,3 +26,4 @@ export const KREDITBEE_CATALOG = {
 }
 
 export default KREDITBEE_CATALOG
+

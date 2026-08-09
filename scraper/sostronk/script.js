@@ -33,6 +33,9 @@ export const hasOfficialChangelogSignal = (html = '') => {
     && normalized.includes('www.sostronk.com')
 }
 
+export const isExpectedBlockedSurface = ({ errorKind, status } = {}) =>
+  status == null && (errorKind === 'timeout' || errorKind === 'tls')
+
 export const isExpectedTimedOutSurface = ({ errorKind, status } = {}) =>
   errorKind === 'timeout' && status == null
 
@@ -58,12 +61,14 @@ const defaultProbeUrl = async (url) => {
       errorKind: null,
     }
   } catch (error) {
-    const message = String(error?.message ?? '')
-    const errorKind = /timed out|timeout|abort/i.test(message)
+    const errorCode = String(error?.cause?.code ?? '')
+    const message = String(error?.cause?.message ?? error?.message ?? '')
+    const normalized = `${errorCode} ${message}`.toLowerCase()
+    const errorKind = /timed out|timeout|abort/i.test(normalized)
       ? 'timeout'
-      : /enotfound|could not resolve host/i.test(message)
+      : /enotfound|could not resolve host|getaddrinfo/i.test(normalized)
         ? 'dns'
-        : /certificate|ssl|tls/i.test(message)
+        : /certificate|ssl|tls|secure tls connection/i.test(normalized) || errorCode === 'ECONNRESET'
           ? 'tls'
           : 'network'
 
@@ -83,7 +88,15 @@ export const createSostronkScraper = () => ({
     for (const url of FIRST_PARTY_TIMEOUT_URLS) {
       const result = await probeUrl(url)
 
-      if (isExpectedTimedOutSurface(result)) continue
+      if (url === CHANGELOG_URL) {
+        if (Number(result?.status) === 200 && hasOfficialChangelogSignal(result?.html)) {
+          continue
+        }
+
+        throw new Error('Sostronk verified branded changelog surface changed materially')
+      }
+
+      if (isExpectedBlockedSurface(result)) continue
 
       if (isUnexpectedReachableSurface(result)) {
         if (url.includes('/careers') || url.includes('/jobs') || hasPublicJobsSignal(result.html)) {
@@ -93,7 +106,7 @@ export const createSostronkScraper = () => ({
         throw new Error('Sostronk official first-party route changed materially and must be re-verified')
       }
 
-      throw new Error('Sostronk verified timed-out surface changed materially')
+      throw new Error('Sostronk verified blocked first-party surface changed materially')
     }
 
     return []
@@ -103,7 +116,7 @@ export const createSostronkScraper = () => ({
 export const run = async (options = {}) => createSostronkScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

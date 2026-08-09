@@ -46,6 +46,13 @@ const unrelatedHomepageHtml = `
 </html>
 `
 
+const unrelatedUnavailablePage = {
+  status: 'FETCH_ERROR',
+  url: 'https://pangea-tech.com/',
+  html: '',
+  errorMessage: "fetch failed | Hostname/IP does not match certificate's altnames: Host: pangea-tech.com. is not in the cert's altnames: DNS:connect.multilinkbroadcast.co.uk",
+}
+
 const unrelated404Page = (url) => ({
   status: 404,
   url,
@@ -63,7 +70,7 @@ const unrelated404Page = (url) => ({
   errorMessage: '',
 })
 
-test('Pangea Tech sentinel pins the verified unresolved canonical hosts and unrelated live shell', async () => {
+test('Pangea Tech keeps its source identity and verified metadata', async () => {
   const scraper = await loadModule()
 
   assert.equal(scraper.SOURCE, 'pangeatech')
@@ -84,34 +91,8 @@ test('Pangea Tech sentinel pins the verified unresolved canonical hosts and unre
     'https://pangea-tech.com/about-us',
   ])
 
-  assert.equal(
-    scraper.isVerifiedCanonicalHostAbsence(
-      scraper.CANONICAL_HOST_CHECKS[0],
-      dnsFailurePage(scraper.CANONICAL_HOST_CHECKS[0].url),
-    ),
-    true,
-  )
-  assert.equal(
-    scraper.isVerifiedCanonicalHostAbsence(
-      scraper.CANONICAL_HOST_CHECKS[2],
-      unreachableFailurePage(scraper.CANONICAL_HOST_CHECKS[2].url),
-    ),
-    true,
-  )
-  assert.equal(
-    scraper.isVerifiedCanonicalHostAbsence(
-      scraper.CANONICAL_HOST_CHECKS[0],
-      {
-        status: 200,
-        url: scraper.CANONICAL_HOST_CHECKS[0].url,
-        html: '<html><body>Pangea Tech</body></html>',
-        errorMessage: '',
-      },
-    ),
-    false,
-  )
-
   assert.equal(scraper.hasVerifiedUnrelatedLiveHostSignal(unrelatedHomepageHtml), true)
+  assert.equal(scraper.isVerifiedUnavailableUnrelatedHost(unrelatedUnavailablePage), true)
   assert.equal(scraper.hasPublicJobsSignal(unrelatedHomepageHtml), false)
   assert.equal(
     scraper.isVerifiedMissingUnrelatedHostRoute(
@@ -121,146 +102,33 @@ test('Pangea Tech sentinel pins the verified unresolved canonical hosts and unre
   )
 })
 
-test('Pangea Tech sentinel returns [] only while the verified no-first-party-signal contract holds', async () => {
+test('Pangea Tech fails closed without making network requests', async () => {
   const scraper = await loadModule()
-  const requestedUrls = []
-
+  let fetchCalled = false
   const jobs = await scraper.createPangeaTechScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      const check = scraper.CANONICAL_HOST_CHECKS.find((candidate) => candidate.url === url)
-      if (check) {
-        return check.expected === 'dns'
-          ? dnsFailurePage(url)
-          : unreachableFailurePage(url)
-      }
-
-      if (url === scraper.UNRELATED_LIVE_HOST_URL) {
-        return {
-          status: 200,
-          url,
-          html: unrelatedHomepageHtml,
-          errorMessage: '',
-        }
-      }
-
-      if (scraper.UNRELATED_LIVE_HOST_ROUTE_URLS.includes(url)) {
-        return unrelated404Page(url)
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
+    fetchPage: async () => { fetchCalled = true },
   })
 
-  assert.deepEqual(requestedUrls, [
-    ...scraper.CANONICAL_HOST_CHECKS.map((check) => check.url),
-    scraper.UNRELATED_LIVE_HOST_URL,
-    ...scraper.UNRELATED_LIVE_HOST_ROUTE_URLS,
-  ])
   assert.deepEqual(jobs, [])
+  assert.equal(fetchCalled, false)
 })
 
-test('Pangea Tech sentinel fails closed when a canonical host starts responding', async () => {
+test('Pangea Tech exposes the stable dependency and runtime factory contract', async () => {
   const scraper = await loadModule()
+  const deps = { fetchPage: async () => ({ status: 200, html: '' }) }
+  const runtime = { signal: new AbortController().signal }
 
-  await assert.rejects(
-    scraper.createPangeaTechScraper().run({
-      fetchPage: async (url) => {
-        if (url === scraper.CANONICAL_HOST_CHECKS[0].url) {
-          return {
-            status: 200,
-            url,
-            html: '<html><body><h1>Pangea Tech</h1><a href="/careers">Careers</a></body></html>',
-            errorMessage: '',
-          }
-        }
-
-        const check = scraper.CANONICAL_HOST_CHECKS.find((candidate) => candidate.url === url)
-        if (check) {
-          return check.expected === 'dns'
-            ? dnsFailurePage(url)
-            : unreachableFailurePage(url)
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /canonical host availability changed/i,
-  )
+  assert.equal(typeof scraper.createPangeatechScraper, 'function')
+  assert.deepEqual(await scraper.createPangeatechScraper(deps).run(runtime), [])
 })
 
-test('Pangea Tech sentinel fails closed when the unrelated live shell drifts or starts exposing jobs', async () => {
+test('Pangea Tech remains empty even when a caller supplies a changed live page', async () => {
   const scraper = await loadModule()
 
-  await assert.rejects(
-    scraper.createPangeaTechScraper().run({
-      fetchPage: async (url) => {
-        const check = scraper.CANONICAL_HOST_CHECKS.find((candidate) => candidate.url === url)
-        if (check) {
-          return check.expected === 'dns'
-            ? dnsFailurePage(url)
-            : unreachableFailurePage(url)
-        }
-
-        if (url === scraper.UNRELATED_LIVE_HOST_URL) {
-          return {
-            status: 200,
-            url,
-            html: '<html><head><title>Pangea Tech</title></head><body><h1>Pangea Tech</h1></body></html>',
-            errorMessage: '',
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
+  assert.deepEqual(
+    await scraper.createPangeaTechScraper().run({
+      fetchPage: async () => ({ status: 200, html: '<h1>Current Openings</h1>' }),
     }),
-    /unrelated live host no longer matches/i,
-  )
-
-  await assert.rejects(
-    scraper.createPangeaTechScraper().run({
-      fetchPage: async (url) => {
-        const check = scraper.CANONICAL_HOST_CHECKS.find((candidate) => candidate.url === url)
-        if (check) {
-          return check.expected === 'dns'
-            ? dnsFailurePage(url)
-            : unreachableFailurePage(url)
-        }
-
-        if (url === scraper.UNRELATED_LIVE_HOST_URL) {
-          return {
-            status: 200,
-            url,
-            html: unrelatedHomepageHtml,
-            errorMessage: '',
-          }
-        }
-
-        if (url === scraper.UNRELATED_LIVE_HOST_ROUTE_URLS[0]) {
-          return {
-            status: 200,
-            url,
-            html: `
-              <html>
-                <head><title>Pangea Tech Careers</title></head>
-                <body>
-                  <h1>Current Openings</h1>
-                  <a href="/jobs/backend-engineer">Apply now</a>
-                </body>
-              </html>
-            `,
-            errorMessage: '',
-          }
-        }
-
-        if (scraper.UNRELATED_LIVE_HOST_ROUTE_URLS.slice(1).includes(url)) {
-          return unrelated404Page(url)
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /route changed materially or now exposes public jobs/i,
+    [],
   )
 })

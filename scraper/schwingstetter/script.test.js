@@ -27,6 +27,24 @@ const careersHtml = `
 </html>
 `
 
+const liveishCareersHtml = `
+<!doctype html>
+<html lang="de">
+  <head>
+    <title>Ausbildung & Karriere</title>
+  </head>
+  <body>
+    <main>
+      <h2>Ausbildung & Karriere</h2>
+      <p>Weltweit beschäftigen wir mehr als 3.000 Mitarbeiter.</p>
+      <p>Finden Sie Ihren Job auf unserer Stellenbörse.</p>
+      <p>bewerbung@schwing.de</p>
+      <a href="https://schwing-stetter.com/de_de/unternehmen/ausbildung-karriere/stetter/stellenboerse.html">Stetter Stellenbörse</a>
+    </main>
+  </body>
+</html>
+`
+
 const stetterBoardHtml = `
 <!doctype html>
 <html lang="de">
@@ -61,6 +79,7 @@ test('Schwing Stetter scraper recognizes the verified official careers shell and
     'https://schwing-stetter.com/de_de/unternehmen/ausbildung-karriere/stetter/stellenboerse.html',
   )
   assert.equal(schwingStetter.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(schwingStetter.hasOfficialCareersSignal(liveishCareersHtml), true)
   assert.equal(schwingStetter.hasOfficialStetterBoardSignal(stetterBoardHtml), true)
   assert.equal(schwingStetter.pageExposesPublicJobListings(stetterBoardHtml), false)
   assert.equal(

@@ -74,12 +74,13 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasVerifiedCareersShellSignal = (bundleJs) => {
   const rawJs = String(bundleJs ?? '')
+  const normalized = normalizeWhitespace(rawJs)
 
-  return rawJs.includes('children:"CAREER"')
-    && rawJs.includes('BE A PART OF THE ORGANISATION AND BUILD TOGETHER!')
-    && rawJs.includes('Ready to create impact?')
-    && rawJs.includes('href:"https://forms.gle/DKxYTAfrgm6z9cmw5"')
-    && rawJs.includes('children:"APPLY"')
+  return rawJs.includes('https://forms.gle/DKxYTAfrgm6z9cmw5')
+    && /BE A PART OF THE ORGANISATION AND BUILD TOGETHER!/i.test(normalized)
+    && /Ready to create impact\?/i.test(normalized)
+    && /\bCAREER\b/i.test(normalized)
+    && /\bAPPLY\b/i.test(normalized)
 }
 
 export const hasPublicJobSignal = (content) =>
@@ -124,7 +125,7 @@ export const createInvoxelTechnologiesScraper = () => ({
 export const run = async (options = {}) => createInvoxelTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

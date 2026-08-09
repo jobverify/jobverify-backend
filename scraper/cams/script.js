@@ -19,7 +19,7 @@ export const validateNoOpeningsPage = (html) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
@@ -47,7 +47,7 @@ export const createCamsScraper = () => ({
 export const run = async () => createCamsScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running CAMS scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

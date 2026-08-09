@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -64,7 +64,7 @@ const defaultFetchText = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Yellow Train School\s*<\/title>/i.test(page)
+  return /<title>\s*Yellow Train(?: School)?\s*<\/title>/i.test(page)
     && /href=["']\/about-yellow-train["']/i.test(page)
     && /href=["']\/recruitment["']/i.test(page)
     && /href=["']\/contact-us["']/i.test(page)
@@ -80,7 +80,7 @@ export const hasOfficialAboutSignal = (html) => {
 export const hasOfficialRecruitmentSignal = (html) => {
   const page = String(html ?? '')
   return page.includes(OPENINGS_SENTENCE)
-    && /minimum commitment of two years/i.test(page)
+    && /(?:minimum commitment of two years|commitment of minimum two years)/i.test(page)
     && new RegExp(APPLY_EMAIL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(page)
 }
 
@@ -164,7 +164,7 @@ export const createYellowTrainSchoolScraper = ({
 export const run = async (options = {}) => createYellowTrainSchoolScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

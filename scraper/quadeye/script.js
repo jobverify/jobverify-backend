@@ -117,7 +117,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && text.includes("If you have any questions or don't see a role that fits your profile, write to us at")
     && text.includes('career@quadeye.com')
     && text.includes('We are looking for enthusiastic candidates for below profiles!')
-    && /href=["']https:\/\/www\.quadeye\.com\/careers\/["'][^>]*>\s*Check All The Openings\s*<\/a>/i.test(page)
+    && /href=["']https:\/\/www\.quadeye\.com\/careers\/["'][^>]*>\s*(?:<span>\s*)?Check All The Openings(?:\s*<\/span>)?\s*<\/a>/i.test(page)
     && /site:"https:\/\/quadeye\.zohorecruit\.in"/i.test(page)
     && /source:"CareerSite"/i.test(page)
     && /empty_job_msg:"No current Openings"/i.test(page)
@@ -126,8 +126,9 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 export const hasOfficialPortalSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Jobs at Careers\s*<\/title>/i.test(page)
+  return /<title>\s*Jobs at (?:Careers|PeoplePlus)\s*<\/title>/i.test(page)
     && /meta\s+property=["']og:url["']\s+content=["']https:\/\/quadeye\.zohorecruit\.in\/jobs\/Careers\/?["']/i.test(page)
+    && /meta\s+property=["']og:site_name["']\s+content=["']Quadeye["']/i.test(page)
     && /<input\b(?=[^>]*\bid=["']pageJson["'])[^>]*>/i.test(page)
     && /<input\b(?=[^>]*\bid=["']moduleMeta["'])[^>]*>/i.test(page)
     && /<input\b(?=[^>]*\bid=["']jobs["'])[^>]*>/i.test(page)
@@ -266,7 +267,7 @@ export const createQuadEyeScraper = ({
 export const run = async (options = {}) => createQuadEyeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

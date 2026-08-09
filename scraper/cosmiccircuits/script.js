@@ -1,7 +1,8 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,7 +17,7 @@ export const PROVIDER_CONFIG = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../cosmiccircuits/script.js',
+  modulePath: '../../scraper/cosmiccircuits/script.js',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-parent-company-careers',
   countryFilter: 'India',
@@ -37,12 +38,28 @@ const WORKDAY_HANDOFF_PATTERN = /https:\/\/cadence\.wd1\.myworkdayjobs\.com\/Ext
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const isBlockedParentCareersError = (error) =>
+  /HTTP (?:403|429)\b|timed out|timeout|fetch failed|could not connect|err_failed/i
+    .test(String(error?.message ?? error ?? ''))
+
+const buildBlockedParentCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Cosmic Circuits verified Cadence parent careers surface remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
 
 export const extractWorkdayHandoffUrls = (html) => {
   const matches = String(html ?? '').match(WORKDAY_HANDOFF_PATTERN) || []
@@ -62,29 +79,47 @@ export const hasCosmicCircuitsBrandSignal = (html) =>
   COSMIC_BRAND_PATTERN.test(String(html ?? ''))
 
 export const createCosmicCircuitsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    const textFetcher = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
+    })
 
-    if (!hasOfficialParentCareersSignal(careersHtml)) {
-      throw new Error('Cosmic Circuits verified Cadence parent careers surface changed')
+    try {
+      let careersHtml
+      try {
+        careersHtml = await textFetcher.fetchText(CAREERS_URL)
+      } catch (error) {
+        if (isBlockedParentCareersError(error)) {
+          throw buildBlockedParentCareersSurfaceError(error)
+        }
+        throw error
+      }
+
+      if (!hasOfficialParentCareersSignal(careersHtml)) {
+        throw new Error('Cosmic Circuits verified Cadence parent careers surface changed')
+      }
+
+      if (extractWorkdayHandoffUrls(careersHtml).length === 0) {
+        throw new Error('Cosmic Circuits verified Cadence careers handoff changed')
+      }
+
+      if (hasCosmicCircuitsBrandSignal(careersHtml)) {
+        throw new Error('Cosmic Circuits brand-specific jobs surface detected on the Cadence careers page')
+      }
+
+      return []
+    } finally {
+      await textFetcher.close()
     }
-
-    if (extractWorkdayHandoffUrls(careersHtml).length === 0) {
-      throw new Error('Cosmic Circuits verified Cadence careers handoff changed')
-    }
-
-    if (hasCosmicCircuitsBrandSignal(careersHtml)) {
-      throw new Error('Cosmic Circuits brand-specific jobs surface detected on the Cadence careers page')
-    }
-
-    return []
   },
 })
 
 export const run = async (options = {}) => createCosmicCircuitsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
@@ -94,3 +129,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

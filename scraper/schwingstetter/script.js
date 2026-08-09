@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -23,19 +23,29 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const normalizeGermanComparable = (value) => normalizeWhitespace(value)
+  .toLowerCase()
+  .replace(/ä/g, 'ae')
+  .replace(/ö/g, 'oe')
+  .replace(/ü/g, 'ue')
+  .replace(/ß/g, 'ss')
+
 const includesAll = (value, fragments) => {
-  const normalized = normalizeWhitespace(value).toLowerCase()
-  return fragments.every((fragment) => normalized.includes(fragment))
+  const normalized = normalizeGermanComparable(value)
+  return fragments.every((fragment) => normalized.includes(normalizeGermanComparable(fragment)))
 }
 
 export const hasOfficialCareersSignal = (html) =>
-  includesAll(html, [
-    'ausbildung & karriere',
-    'weltweit beschaeftigen wir mehr als 3.000 mitarbeiter',
-    'finden sie ihren job auf unserer stellenboerse',
-    'bewerbung@schwing.de',
-    'stetter stellenboerse',
-  ])
+  (() => {
+    const normalized = normalizeGermanComparable(html)
+
+    return normalized.includes(normalizeGermanComparable('ausbildung & karriere'))
+      && normalized.includes(normalizeGermanComparable('weltweit beschaeftigen wir mehr als 3.000 mitarbeiter'))
+      && normalized.includes(normalizeGermanComparable('finden sie ihren job auf unserer stellenboerse'))
+      && normalized.includes('bewerbung@schwing.de')
+      && normalized.includes(normalizeGermanComparable('stetter'))
+      && normalized.includes(normalizeGermanComparable('stellenboerse'))
+  })()
 
 export const hasOfficialStetterBoardSignal = (html) =>
   includesAll(html, [
@@ -100,7 +110,7 @@ export const createSchwingStetterScraper = () => ({
 export const run = async (options = {}) => createSchwingStetterScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

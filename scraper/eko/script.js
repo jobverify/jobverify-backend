@@ -133,11 +133,18 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCorporateHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const metaDescription =
+    rawHtml.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    || rawHtml.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    || ''
+  const descriptionHaystack = normalizeWhitespace(`${metaDescription} ${rawHtml}`) || ''
 
   return /<title>\s*Eko \| Financial Infrastructure for Micro-Entrepreneurs\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('Financial infrastructure for micro-entrepreneurs across the developing world')
-    && normalized.includes('Eko builds fintech infrastructure enabling micro-entrepreneurs, enterprises, and financial institutions to deliver digital financial services at scale.')
+    && (
+      /Financial infrastructure for micro-entrepreneurs across the developing world/i.test(rawHtml)
+      || descriptionHaystack.includes('Financial infrastructure for micro-entrepreneurs across the developing world')
+    )
+    && descriptionHaystack.includes('Eko builds fintech infrastructure enabling micro-entrepreneurs, enterprises, and financial institutions to deliver digital financial services at scale.')
 }
 
 export const hasOfficialRobotsTxtSignal = (content) => {
@@ -252,7 +259,7 @@ export const createEkoScraper = () => ({
 export const run = async (options = {}) => createEkoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

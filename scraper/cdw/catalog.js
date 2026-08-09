@@ -15,12 +15,12 @@ export const CDW_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'server-rendered-search-results-plus-detail-pages',
   extractionStrategy:
-    'verified-search-results-page+server-rendered-india-job-cards+detail-pages',
+    'verified-search-results-page+india-country-filter-results+detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.cdwjobs.com/search/jobs was the live first-party CDW Job Search Results page, that it server-rendered Country India (5 jobs), and that public India detail pages included roles such as Senior Data Engineer-2 in Hyderabad and Data Engineer(Consultant)-1 in Chennai.',
+    'Verified on Saturday, August 1, 2026 that https://www.cdwjobs.com/search/jobs remained the live first-party CDW Job Search Results page, that the Country India filter linked to https://www.cdwjobs.com/search/jobs/in/country/india with 4 open jobs, and that public India detail pages included Senior Consultant-QA in Bangalore and Senior Data Engineer-2 in Hyderabad.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'cdw/jobs.json',
 }

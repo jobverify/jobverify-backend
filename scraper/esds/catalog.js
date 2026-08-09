@@ -12,20 +12,24 @@ export const ESDS_CATALOG = {
   officialHomepageUrl: 'https://www.esds.co.in/',
   officialCareersLandingUrl: 'https://www.esds.co.in/careers/',
   companyCareerPage: 'https://www.esds.co.in/careers/',
+  officialCareersHandoffUrl: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/home',
+  darwinboxOrigin: 'https://esds.darwinbox.in',
+  darwinboxCompanyId: 'main',
+  publicAllJobsUrl: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   officialJobDetailExampleUrl: 'https://www.esds.co.in/career-details/a688746f77752a',
   darwinboxApplyHandoffUrlExample:
     'https://esds.darwinbox.in/ms/candidate/candidate/login?redirect=%2Fms%2Fcandidate%2Fcareers%2Fa688746f77752a___apply%3D1',
-  atsPlatform: 'first-party-careers-page-plus-darwinbox-apply-handoff',
+  atsPlatform: 'darwinbox',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-careers-page-html',
+  paginationStrategy: 'verified-first-party-careers-page-plus-darwinbox-browser-session-pagination',
   extractionStrategy:
-    'verified-first-party-careers-page-html+first-party-job-detail-html+darwinbox-apply-handoff',
+    'verified-first-party-careers-page-html+darwinbox-browser-session-listing-api+job-id-intersection',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'esds.co.in',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.esds.co.in/ is the live ESDS homepage, that the public jobs listing surface is the first-party careers page at https://www.esds.co.in/careers/, and that first-party detail routes such as https://www.esds.co.in/career-details/a688746f77752a expose full job metadata and a Darwinbox apply handoff at https://esds.darwinbox.in/ms/candidate/candidate/login?redirect=%2Fms%2Fcandidate%2Fcareers%2Fa688746f77752a___apply%3D1. Verified visible roles including Head of Engineering and Python Engineer. The direct Darwinbox listing API at https://esds.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main returned 403 during verification, so this scraper uses the verified first-party HTML listing and detail pages.',
+    'Verified on Sunday, August 2, 2026 that https://www.esds.co.in/ is the live ESDS homepage, that https://www.esds.co.in/careers/ still exposes the public first-party ESDS job cards, and that those first-party job IDs match the live ESDS Darwinbox public portal at https://esds.darwinbox.in/ms/candidatev2/main/careers/allJobs. First-party detail routes such as https://www.esds.co.in/career-details/a688746f77752a now boot into the Darwinbox candidate surface instead of the older HTML detail table, so this scraper verifies the ESDS careers page and then intersects the visible first-party job IDs with the live Darwinbox browser-session listing results. Verified visible roles included Data Center Project Manager and Compliance Specialist.',
   dryRunFile: 'esds/jobs.json',
 }
 

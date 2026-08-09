@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { SHUTTERFLY_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -41,6 +41,23 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 20000,
 })
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(20000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
 
 export const hasOfficialOverviewSignal = (html = '') => {
   const page = String(html ?? '')
@@ -90,9 +107,21 @@ export const hasIndiaJobsSignal = (html = '') => {
     || /\bGurugram\b/i.test(text)
 }
 
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const text = normalizeWhitespace(html)
+  const url = String(page?.url ?? '')
+
+  return Number(page?.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
+    && /shutterflycareers\.ttcportals\.com/i.test(url)
+}
+
 export const createShutterflyIndiaScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
   } = {}) {
     const overviewHtml = await fetchText(OVERVIEW_URL)
     if (hasIndiaJobsSignal(overviewHtml)) {
@@ -102,20 +131,26 @@ export const createShutterflyIndiaScraper = () => ({
       throw new Error('Shutterfly India verified official overview page no longer matches the trusted first-party surface')
     }
 
-    const careersHomeHtml = await fetchText(CAREERS_ENTRY_URL)
-    if (hasIndiaJobsSignal(careersHomeHtml)) {
+    const careersEntryPage = await fetchPage(CAREERS_ENTRY_URL)
+    if (hasIndiaJobsSignal(careersEntryPage.html)) {
       throw new Error('Shutterfly India surface now appears to expose public India jobs')
     }
-    if (!hasOfficialCareersHomeSignal(careersHomeHtml)) {
-      throw new Error('Shutterfly India verified Shutterfly careers home no longer matches the trusted first-party surface')
+    if (
+      !hasVerifiedCloudflareChallengeSignal(careersEntryPage)
+      && !hasOfficialCareersHomeSignal(careersEntryPage.html)
+    ) {
+      throw new Error('Shutterfly India verified careers entry page no longer matches the trusted first-party or challenge surface')
     }
 
-    const searchResultsHtml = await fetchText(SEARCH_RESULTS_URL)
-    if (hasIndiaJobsSignal(searchResultsHtml)) {
+    const searchResultsPage = await fetchPage(SEARCH_RESULTS_URL)
+    if (hasIndiaJobsSignal(searchResultsPage.html)) {
       throw new Error('Shutterfly India surface now appears to expose public India jobs')
     }
-    if (!hasOfficialSearchResultsSignal(searchResultsHtml)) {
-      throw new Error('Shutterfly India verified all-jobs page no longer matches the trusted first-party surface')
+    if (
+      !hasVerifiedCloudflareChallengeSignal(searchResultsPage)
+      && !hasOfficialSearchResultsSignal(searchResultsPage.html)
+    ) {
+      throw new Error('Shutterfly India verified search results page no longer matches the trusted first-party or challenge surface')
     }
 
     return []
@@ -125,7 +160,7 @@ export const createShutterflyIndiaScraper = () => ({
 export const run = async (options = {}) => createShutterflyIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

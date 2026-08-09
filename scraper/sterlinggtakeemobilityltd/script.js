@@ -76,19 +76,38 @@ export const defaultFetchPage = async (url, {
   fetchImpl = fetch,
   timeoutMs = 15000,
 } = {}) => {
-  const response = await fetchImpl(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-    signal: createTimeoutSignal(timeoutMs),
-  })
+  const fetchPageOnce = async (targetUrl) => {
+    const response = await fetchImpl(targetUrl, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: createTimeoutSignal(timeoutMs),
+    })
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  }
+
+  try {
+    return await fetchPageOnce(url)
+  } catch (error) {
+    const fallbackUrl = String(url || '').replace(/^https:/i, 'http:')
+    const errorCode = String(error?.cause?.code || error?.code || '')
+
+    if (
+      fallbackUrl !== url
+      && /sterlinggtake\.com/i.test(String(url || ''))
+      && errorCode === 'ERR_TLS_CERT_ALTNAME_INVALID'
+    ) {
+      return fetchPageOnce(fallbackUrl)
+    }
+
+    throw error
   }
 }
 
@@ -137,7 +156,7 @@ export const createSterlingGtakeEmobilityLtdScraper = () => ({
 export const run = async (options = {}) => createSterlingGtakeEmobilityLtdScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

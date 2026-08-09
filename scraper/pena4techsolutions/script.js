@@ -1,13 +1,18 @@
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 export const SOURCE = 'pena4techsolutions'
 export const COMPANY = 'Pena4 Tech Solutions'
 export const JOBS_URL = 'https://www.pena4.com/jobs.php'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   officialBrandName: 'Pena4',
   adapter: 'script',
-  modulePath: '../pena4techsolutions/script.js',
+  modulePath: '../../scraper/pena4techsolutions/script.js',
   homepageUrl: 'https://www.pena4.com/',
   companyCareerPage: JOBS_URL,
   atsPlatform: 'official-first-party-jobs-page',
@@ -17,16 +22,27 @@ export const PROVIDER_METADATA = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'pena4.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.pena4.com/jobs.php was the live first-party Pena4 jobs page, that it publicly exposed the Inpatient Medical Coder listing alongside region-specific vacancy messaging, and that the page included a first-party application form plus outbound Indeed and LinkedIn job links.',
+    'Verified on Tuesday, August 4, 2026 that https://www.pena4.com/jobs.php was the live first-party Pena4 jobs page, that it publicly exposed the Inpatient Medical Coder listing while older Pena4 job cards remained only inside commented HTML, and that the page included a first-party application form plus outbound Indeed and LinkedIn job links.',
   dryRunFile: 'pena4techsolutions/jobs.json',
 }
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
+const stripHtmlComments = (value) => String(value ?? '').replace(/<!--[\s\S]*?-->/g, ' ')
+const stripHtml = (value) => normalizeWhitespace(String(value ?? '').replace(/<[^>]+>/g, ' '))
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const hasOfficialJobsPageSignal = (html) => {
-  const page = String(html ?? '')
+  const page = stripHtmlComments(html)
 
   return /<title>\s*Jobs at Pena4 \| Join Our Team\s*<\/title>/i.test(page)
     && /Submit your resume and become a part of our team/i.test(page)
@@ -36,13 +52,18 @@ export const hasOfficialJobsPageSignal = (html) => {
 }
 
 export const extractJobCards = (html) => {
-  const page = String(html ?? '')
+  const page = stripHtmlComments(html)
   const cards = []
 
-  for (const match of page.matchAll(/<section class="job-card">([\s\S]*?)<\/section>/gi)) {
-    const section = match[1]
-    const title = normalizeWhitespace(section.match(/<h3>(.*?)<\/h3>/i)?.[1])
-    const description = normalizeWhitespace(section.match(/Description:\s*([^<]+)/i)?.[1])
+  for (const match of page.matchAll(/<h3>(.*?)<\/h3>[\s\S]{0,1200}?<div class="job-desc">([\s\S]*?)<\/div>/gi)) {
+    const section = match[0]
+    const title = stripHtml(match[1])
+    const descriptionHtml = match[2]
+    const description = stripHtml(
+      descriptionHtml.match(/<span>\s*Description:\s*<\/span>\s*&nbsp;\s*([\s\S]*?)<\/p>/i)?.[1]
+        || descriptionHtml.match(/Description:\s*([^<]+)/i)?.[1]
+        || '',
+    )
 
     if (!title || !description) continue
 
@@ -60,7 +81,7 @@ export const extractJobCards = (html) => {
   return cards
 }
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const page = await fetchText(JOBS_URL)
 
   if (!hasOfficialJobsPageSignal(page)) {
@@ -81,3 +102,4 @@ export const run = async ({ fetchText, now = () => new Date().toISOString() } = 
     scrapedAt: now(),
   }))
 }
+

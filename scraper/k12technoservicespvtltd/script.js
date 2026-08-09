@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,9 +28,9 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
   .replace(/&ndash;|&#8211;/gi, '-')
-  .replace(/&#174;/gi, '®')
+  .replace(/&#174;/gi, 'Â®')
 
 const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/<[^>]+>/g, ' ')
@@ -46,10 +46,21 @@ const slugify = (value) => normalizeWhitespace(value)
 const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const buildMailtoUrl = (title) =>
-  `mailto:careers@orchids.edu.in?subject=${encodeURIComponent(`Application – ${title} – [Your Name]`)}`
+  `mailto:careers@orchids.edu.in?subject=${encodeURIComponent(`Application \u2013 ${title} \u2013 [Your Name]`)}`
 
 const extractRoleListItems = (html) => {
-  const rolesSection = String(html ?? '').match(
+  const page = String(html ?? '')
+  const currentRoleLabels = [...page.matchAll(
+    /<span\b[^>]*class=["'][^"']*we-are-hiring_openRolesLabel[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi,
+  )]
+    .map((match) => normalizeWhitespace(match[1]))
+    .filter(Boolean)
+
+  if (currentRoleLabels.length > 0) {
+    return currentRoleLabels
+  }
+
+  const rolesSection = page.match(
     /<h[1-6][^>]*>\s*Open Roles\s*<\/h[1-6]>([\s\S]*?)(?=<h[1-6][^>]*>\s*Campus Locations\s*<\/h[1-6]>)/i,
   )?.[1]
 
@@ -60,7 +71,7 @@ const extractRoleListItems = (html) => {
 
 const extractRoleOptions = (html) => {
   const selectHtml = String(html ?? '').match(
-    /<label[^>]*>\s*Role applying for\s*<\/label>[\s\S]*?<select[^>]*>([\s\S]*?)<\/select>/i,
+    /<label[^>]*>\s*Role applying for(?:\s*\*)?\s*<\/label>[\s\S]*?<select[^>]*>([\s\S]*?)<\/select>/i,
   )?.[1]
 
   return [...String(selectHtml ?? '').matchAll(/<option[^>]*>([\s\S]*?)<\/option>/gi)]
@@ -94,13 +105,23 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*ORCHIDS The International School: Best CBSE and ICSE Schools in India\s*<\/title>/i.test(page)
-    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']ORCHIDS The International School["']/i.test(page)
+  return /<meta[^>]+property=["']og:site_name["'][^>]+content=["']ORCHIDS The International School["']/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.orchidsinternationalschool\.com\/["']/i.test(page)
-    && /<a[^>]+href=["']\/we-are-hiring["'][^>]*>\s*We'?re Hiring\s*<\/a>/i.test(page)
-    && text.includes('110+ campuses across India')
-    && text.includes('Nurturing young minds since 1994')
+    && /href=["'][^"']*\/we-are-hiring["']/i.test(page)
+    && text.includes('ORCHIDS The International School')
     && text.includes('info@orchids.edu.in')
+    && (
+      (
+        text.includes('Admissions 2026-27')
+        && text.includes("We're Hiring")
+        && text.includes('Eduvate AI')
+        && text.includes('Day & Boarding Schools')
+      )
+      || (
+        text.includes('110+ campuses across India')
+        && text.includes('Nurturing young minds since 1994')
+      )
+    )
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -109,8 +130,7 @@ export const hasOfficialCareersSignal = (html) => {
   const roleItems = extractRoleListItems(page)
   const roleOptions = extractRoleOptions(page)
 
-  return /<title>\s*We Are Hiring\s*\|\s*Orchids International School\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.orchidsinternationalschool\.com\/we-are-hiring["']/i.test(page)
+  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.orchidsinternationalschool\.com\/we-are-hiring["']/i.test(page)
     && text.includes("Orchids is one of India's leading school networks.")
     && text.includes('Tap a role to email us')
     && text.includes('Apply for the campus nearest to you.')
@@ -118,7 +138,7 @@ export const hasOfficialCareersSignal = (html) => {
     && text.includes('Immediate openings available.')
     && text.includes('careers@orchids.edu.in')
     && text.includes('Online application form')
-    && text.includes('Copyright @2026 | K12 Techno Services Pvt. Ltd. ®')
+    && text.includes('Copyright @2026 | K12 Techno Services Pvt. Ltd.')
     && roleItems.length === 5
     && roleOptions.length === 5
 }
@@ -205,7 +225,7 @@ export const createK12TechnoServicesScraper = ({ now = () => new Date().toISOStr
 export const run = async (options = {}) => createK12TechnoServicesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

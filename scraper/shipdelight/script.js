@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import SHIPDELIGHT_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -21,8 +21,13 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = String(value)
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&#038;|&amp;/gi, '&')
+    .replace(/&#0*39;|&apos;|&rsquo;|&lsquo;|&#8217;|&#8216;|&#x27;/gi, "'")
+    .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/[\u2018\u2019]/g, "'")
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -50,8 +55,9 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return extractTitle(page) === 'Join Our Team: Careers'
     && text.includes('unleash your career with shipdelight')
+    && text.includes("shipdelight's people first culture")
     && text.includes('current job openings')
-    && text.includes('shipdelight logistics technologies pvt ltd.')
+    && text.includes('our mission is to lead a logistics revolution powered by smart technology for modern bharat.')
 }
 
 export const hasVerifiedEmptyOpeningsSignal = (html = '') =>
@@ -78,7 +84,7 @@ export const createShipdelightScraper = () => ({
 export const run = async (options = {}) => createShipdelightScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

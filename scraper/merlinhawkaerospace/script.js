@@ -53,6 +53,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#8211;/gi, '-')
+  .replace(/â€“|â€”/g, '-')
   .replace(/[–—]/g, '-')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
@@ -170,7 +171,7 @@ export const createMerlinhawkAerospaceScraper = () => ({
 export const run = async (options = {}) => createMerlinhawkAerospaceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

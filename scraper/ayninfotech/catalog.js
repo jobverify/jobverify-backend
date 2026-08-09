@@ -17,9 +17,9 @@ export const AYN_INFOTECH_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'ayninfotech.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-07',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that the exact first-party domain https://www.ayninfotech.com/ no longer exposed a trustworthy company careers surface and instead redirected outside the company domain to account.umbrellainabox.com with unrelated slot-style storefront content, so the local contract is a fail-closed sentinel only.',
+    'Verified on Friday, August 7, 2026 that the exact first-party domain https://www.ayninfotech.com/ and the common careers routes all redirected outside the company domain to https://www.bigskyworldview.org/ with unrelated Big Sky Worldview Forum content, so the local contract remains a fail-closed sentinel only.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'ayninfotech/jobs.json',
 }

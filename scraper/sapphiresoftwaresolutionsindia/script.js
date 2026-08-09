@@ -12,7 +12,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -102,7 +102,7 @@ export const createSapphireSoftwareSolutionsIndiaScraper = ({
 export const run = async (options = {}) => createSapphireSoftwareSolutionsIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

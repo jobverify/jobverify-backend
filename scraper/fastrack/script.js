@@ -19,6 +19,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<[^>]+>/g, ' ')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -60,6 +61,17 @@ export const hasOfficialHomepageSignal = (page = {}) => {
     && normalized.includes('ABOUT FASTRACK')
     && normalized.includes('FASTRACK CATEGORIES')
   }
+
+export const hasBlockedHomepageSignal = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(html)
+
+  return Number(page?.status) === 403
+    && normalizeUrl(getFinalUrl(page, HOMEPAGE_URL)) === normalizeUrl(HOMEPAGE_URL)
+    && /<title[^>]*>\s*Attention Required!\s*\|\s*Cloudflare\s*<\/title>/i.test(html)
+    && normalized.includes('Please enable cookies.')
+    && normalized.includes('You are unable to access fastrack.in')
+}
 
 export const extractCareersHandoffUrl = (html = '') => extractAnchorUrls(html, HOMEPAGE_URL)
   .find((entry) => entry.text === 'Careers')
@@ -135,11 +147,14 @@ const defaultFetchPage = async (url) => {
 export const createFastrackScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepagePage = await fetchPage(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepagePage)) {
+    const hasHomepageSignal = hasOfficialHomepageSignal(homepagePage)
+    const hasHomepageBlockSignal = hasBlockedHomepageSignal(homepagePage)
+
+    if (!hasHomepageSignal && !hasHomepageBlockSignal) {
       throw new Error('Fastrack homepage no longer matches the verified official first-party surface')
     }
 
-    if (extractCareersHandoffUrl(homepagePage.html) !== CAREERS_HANDOFF_URL) {
+    if (hasHomepageSignal && extractCareersHandoffUrl(homepagePage.html) !== CAREERS_HANDOFF_URL) {
       throw new Error('Fastrack homepage no longer links to the verified careers handoff')
     }
 
@@ -173,7 +188,7 @@ export const createFastrackScraper = () => ({
 export const run = async (options = {}) => createFastrackScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

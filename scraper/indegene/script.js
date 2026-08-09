@@ -1,7 +1,9 @@
+import http from 'http'
+import https from 'https'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -13,6 +15,8 @@ export const COMPANY_NAME = 'Indegene'
 
 const DEFAULT_LOCALE = 'en_GB'
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 20000
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
 
 const INDIA_STATE_CODES = {
   AN: 'Andaman and Nicobar Islands',
@@ -126,6 +130,96 @@ const isIndiaRecord = (record = {}) => {
 
 const buildLocation = (state) => state ? `${state}, India` : 'India'
 
+// On August 4, 2026 the public careers host served an expired certificate
+// in this worker, so keep a source-local transport for the official search
+// shell and jobs API.
+const requestIndegeneText = (
+  url,
+  {
+    method = 'GET',
+    headers = {},
+    body = null,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+    redirectsRemaining = 5,
+  } = {},
+) => new Promise((resolve, reject) => {
+  let urlObject
+
+  try {
+    urlObject = new URL(url)
+  } catch (error) {
+    reject(error)
+    return
+  }
+
+  const requestHeaders = {
+    'Accept-Encoding': 'identity',
+    ...headers,
+  }
+  const bodyText = body == null ? null : String(body)
+  if (bodyText != null && requestHeaders['Content-Length'] == null && requestHeaders['content-length'] == null) {
+    requestHeaders['Content-Length'] = Buffer.byteLength(bodyText)
+  }
+
+  const transport = urlObject.protocol === 'http:' ? http : https
+  const request = transport.request(urlObject, {
+    method,
+    headers: requestHeaders,
+    rejectUnauthorized: urlObject.protocol === 'https:' ? false : undefined,
+  }, (response) => {
+    const status = Number(response.statusCode || 0)
+    const location = response.headers.location
+
+    if (location && REDIRECT_STATUSES.has(status)) {
+      response.resume()
+
+      if (redirectsRemaining <= 0) {
+        reject(new Error(`Too many redirects for ${urlObject}`))
+        return
+      }
+
+      const nextMethod = status === 303 ? 'GET' : method
+      const nextBody = status === 303 ? null : bodyText
+      const nextUrl = new URL(location, urlObject).toString()
+      requestIndegeneText(nextUrl, {
+        method: nextMethod,
+        headers,
+        body: nextBody,
+        timeoutMs,
+        redirectsRemaining: redirectsRemaining - 1,
+      }).then(resolve, reject)
+      return
+    }
+
+    const chunks = []
+    response.on('data', (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+    })
+    response.on('end', () => {
+      const text = Buffer.concat(chunks).toString('utf8')
+      if (status < 200 || status >= 300) {
+        reject(new Error(`HTTP ${status} for ${urlObject}`))
+        return
+      }
+
+      resolve({
+        status,
+        text,
+        headers: response.headers,
+      })
+    })
+  })
+
+  request.setTimeout(timeoutMs, () => {
+    request.destroy(new Error(`HTTP timeout after ${timeoutMs}ms for ${urlObject}`))
+  })
+  request.on('error', reject)
+  if (bodyText != null) {
+    request.write(bodyText)
+  }
+  request.end()
+})
+
 export const buildSearchRequestPayload = (pageNumber = 0) => ({
   keywords: '',
   locale: DEFAULT_LOCALE,
@@ -178,52 +272,45 @@ export const extractSearchResults = (payload) => {
         postingDate: normalizeWhitespace(record.unifiedStandardStart),
         closingDate: normalizeWhitespace(record.unifiedStandardEnd),
         jobDescription: null,
+        publicExperienceChecked: true,
       }
     })
     .filter(Boolean)
 }
 
-const fetchJson = async (url, options = {}) => {
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json,text/plain,*/*',
-      ...(options.headers || {}),
-    },
-    body: options.body,
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.json()
-}
+const fetchJson = async (url, options = {}) => JSON.parse(
+  (
+    await requestIndegeneText(url, {
+      method: options.method || 'GET',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'application/json,text/plain,*/*',
+        ...(options.headers || {}),
+      },
+      body: options.body,
+    })
+  ).text,
+)
 
 export const extractCsrfToken = (html) => normalizeWhitespace(
   extractFirst(/"X-CSRF-Token"\s*:\s*"([^"]+)"/i, html),
 )
 
 const fetchSearchPageSession = async () => {
-  const response = await fetch(SEARCH_PAGE_URL, {
+  const response = await requestIndegeneText(SEARCH_PAGE_URL, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${SEARCH_PAGE_URL}`)
-  }
-
-  const html = await response.text()
+  const html = response.text
   const csrfToken = extractCsrfToken(html)
-  const cookieHeader = response.headers.getSetCookie
-    ? response.headers.getSetCookie()
-      .map((value) => value.split(';', 1)[0])
-      .join('; ')
-    : null
+  const setCookieHeader = response.headers['set-cookie']
+  const cookieHeader = (Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader])
+    .filter(Boolean)
+    .map((value) => String(value).split(';', 1)[0])
+    .join('; ') || null
 
   if (!csrfToken) {
     throw new Error('Missing Indegene search CSRF token')
@@ -295,7 +382,7 @@ export const createIndegeneScraper = ({
 export const run = async (options = {}) => createIndegeneScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Indegene scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

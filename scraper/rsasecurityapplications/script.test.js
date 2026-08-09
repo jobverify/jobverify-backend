@@ -263,12 +263,19 @@ const careersHtml = `
   <!doctype html>
   <html lang="en-US">
     <head>
-      <title>RSA Careers</title>
+      <title>RSA Careers: Join the Identity Security Leader Today</title>
     </head>
     <body>
       <main>
-        <h1>Secure your future.</h1>
-        <p>Explore open roles and take the first step toward a career with RSA. Apply today!</p>
+        <section>
+          <h2>Our Culture</h2>
+          <p>Rewards, Benefits, and Growth</p>
+          <p>RSA Values</p>
+        </section>
+        <section>
+          <h1>Join RSA to build your career</h1>
+          <p>and secure the most secure.</p>
+        </section>
         <a href="https://ats.rippling.com/rsa-security/jobs">Explore</a>
         <a href="https://ats.rippling.com/rsa-security/jobs">Explore open roles</a>
       </main>

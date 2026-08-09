@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import {
   fetchJsonWithRetry,
   fetchTextWithRetry,
-} from '../utils/fetch.js'
+} from '../../scraper-support/utils/fetch.js'
 
 import CORNERSTONE_ONDEMAND_CATALOG from './catalog.js'
 
@@ -45,11 +45,26 @@ const normalizeWhitespace = (value) => {
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
 
+export const hasOfficialCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
+
+  return /<title>\s*Careers at Cornerstone\s*\|\s*Grow Your Future with Us\s*<\/title>/i.test(page)
+    && text.includes('Careers View open job opportunities.')
+    && text.includes('Search Open Positions')
+    && page.includes(OFFICIAL_JOBS_BOARD_URL)
+}
+
 const buildHeaders = (token) => ({
   'User-Agent': USER_AGENT,
   Accept: 'application/json, text/plain, */*',
   Authorization: `Bearer ${token}`,
 })
+
+const unwrapDetailPayload = (detail = {}) =>
+  detail?.data && typeof detail.data === 'object'
+    ? detail.data
+    : detail
 
 const isIndiaLocation = (location = {}) => {
   const rawValue = normalizeWhitespace([
@@ -72,10 +87,11 @@ const extractLocationCity = (location = {}) =>
   )
 
 const extractLocations = (requisition, detail) => {
+  const normalizedDetail = unwrapDetailPayload(detail)
   const detailLocations = [
-    detail?.primaryLocation,
-    ...(Array.isArray(detail?.additionalLocations) ? detail.additionalLocations : []),
-  ]
+    normalizedDetail?.primaryLocation,
+    ...(Array.isArray(normalizedDetail?.additionalLocations) ? normalizedDetail.additionalLocations : []),
+  ].filter(Boolean)
   const searchLocations = Array.isArray(requisition?.locations) ? requisition.locations : []
   const selectedLocations = detailLocations.length > 0 ? detailLocations : searchLocations
 
@@ -88,8 +104,8 @@ const extractLocations = (requisition, detail) => {
 }
 
 const resolveJobDescription = (detail) =>
-  normalizeWhitespace(detail?.externalDescription)
-  || normalizeWhitespace(detail?.jobAd)
+  normalizeWhitespace(unwrapDetailPayload(detail)?.externalDescription)
+  || normalizeWhitespace(unwrapDetailPayload(detail)?.jobAd)
   || null
 
 export const buildSearchRequest = ({
@@ -145,15 +161,16 @@ const buildSearchApiUrl = (context) =>
   new URL('rec-job-search/external/jobs', context?.endpoints?.cloud || 'https://us-galaxy.api.csod.com/').toString()
 
 const mapRequisitionToJob = (requisition, detail = {}) => {
+  const normalizedDetail = unwrapDetailPayload(detail)
   const jobId = normalizeWhitespace(requisition?.requisitionId)
-  const requisitionId = normalizeWhitespace(detail?.ref || requisition?.ref || requisition?.requisitionId)
+  const requisitionId = normalizeWhitespace(normalizedDetail?.ref || requisition?.ref || requisition?.requisitionId)
   const locations = extractLocations(requisition, detail)
   const applyUrl = buildJobUrl(jobId)
 
   if (locations.length === 0) return null
 
   return {
-    title: normalizeWhitespace(detail?.displayTitle || requisition?.displayJobTitle),
+    title: normalizeWhitespace(normalizedDetail?.displayTitle || requisition?.displayJobTitle),
     company: COMPANY,
     department: null,
     location: `${locations.join(', ')}, India`,
@@ -255,7 +272,18 @@ export const createCornerstoneOnDemandScraper = ({
     const now = options.now || (() => new Date().toISOString())
 
     const homePageHtml = await fetchText(CAREER_PAGE_URL)
-    const context = extractContextFromHomePage(homePageHtml)
+    if (!hasOfficialCareersSignal(homePageHtml)) {
+      throw new Error('Cornerstone OnDemand careers page no longer matches the verified first-party handoff surface')
+    }
+
+    let context
+    try {
+      context = extractContextFromHomePage(homePageHtml)
+    } catch {
+      const jobsBoardHtml = await fetchText(OFFICIAL_JOBS_BOARD_URL)
+      context = extractContextFromHomePage(jobsBoardHtml)
+    }
+
     const searchApiUrl = buildSearchApiUrl(context)
     const requisitions = await fetchAllRequisitions({
       fetchJson,
@@ -298,7 +326,7 @@ export const createCornerstoneOnDemandScraper = ({
 export const run = async (options = {}) => createCornerstoneOnDemandScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

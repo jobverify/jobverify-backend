@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { SAMUNNATI_CATALOG } from './catalog.js'
 
@@ -23,7 +23,7 @@ export const VERIFIED_ON = SAMUNNATI_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = SAMUNNATI_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = SAMUNNATI_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -40,6 +40,8 @@ const normalizeWhitespace = (value) => {
     .replace(/&amp;/gi, '&')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
     .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/[’‘]/g, "'")
+    .replace(/[“”]/g, '"')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -64,9 +66,9 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
+  const title = extractTitle(page)
 
-  return extractTitle(page) === "Home - Samunnati - India's Largest Agri Enterprise"
-    && text.includes("india's agri enterprise")
+  return /^home - samunnati - india's largest agri enterprise$/i.test(title || '')
     && text.includes('work with us.')
     && text.includes('careers@samunnati.com')
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
@@ -75,8 +77,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
 export const hasOfficialAboutSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
+  const title = extractTitle(page)
 
-  return extractTitle(page) === "About Us - Samunnati - India's Largest Agri Enterprise"
+  return /^about us - samunnati - india's largest agri enterprise$/i.test(title || '')
     && text.includes('samunnati 2.0')
     && text.includes('join the movement: empowering growth with samunnati')
     && text.includes('careers@samunnati.com')
@@ -131,7 +134,7 @@ export const createSamunnatiScraper = ({
 export const run = async (options = {}) => createSamunnatiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

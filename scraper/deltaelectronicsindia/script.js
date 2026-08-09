@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREER_PAGE_URL = 'https://www.deltaelectronicsindia.com/en-IN/career/Jobs-Application'
 
@@ -15,7 +15,7 @@ export const validateNoOpeningsPage = (html) => {
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
     Accept: 'text/html,application/xhtml+xml',
   },
   label: 'deltaelectronicsindia',

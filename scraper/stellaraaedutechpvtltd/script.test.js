@@ -45,11 +45,13 @@ const companyPageHtml = `
       <title>Stellaraa | LinkedIn</title>
       <meta
         name="description"
-        content="Stellaraa | 5,927 followers on LinkedIn. Education | Empowering Education through Innovation"
+        content="Stellaraa | 5,995 followers on LinkedIn. Where education meets innovation | Empowering Education through Innovation"
       />
     </head>
     <body>
-      <code id="flagshipOrganizationTracking" style="display: none"><!--{"organization":{"objectUrn":"urn:li:organization:104439273"}}--></code>
+      <code id="flagshipOrganizationTracking" style="display: none"><!--{"organization":{"objectUrn":"urn:li:organization:104439273"},"module":"COMPANY_OVERVIEW_PAGE","viewerUrn":0}--></code>
+      <h3>Bengaluru, Karnataka <span>5,995 followers</span></h3>
+      <dd>51-200 employees</dd>
       <a
         class="link-no-visited-state hover:no-underline"
         data-tracking-control-name="about_website"
@@ -57,6 +59,18 @@ const companyPageHtml = `
       >
         Website
       </a>
+      <script type="application/ld+json">
+        {
+          "@context": "http://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "slogan": "Where education meets innovation",
+              "sameAs": "https://www.stellaraa.com/"
+            }
+          ]
+        }
+      </script>
       <a
         href="https://www.linkedin.com/jobs/stellaraa-jobs-worldwide?f_C=104439273&amp;trk=top-card_top-card-primary-button-top-card-primary-cta"
       >

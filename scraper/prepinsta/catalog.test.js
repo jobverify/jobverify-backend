@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('PrepInsta is registered against the verified first-party careers page without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'prepinsta')
@@ -25,6 +25,11 @@ test('PrepInsta is registered against the verified first-party careers page with
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'prepinsta.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
   assert.match(provider.modulePath, /prepinsta[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Prepinsta'), false)
 })

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import RAJA_SOFTWARE_LABS_CATALOG from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) =>
   String(value ?? '')
@@ -35,7 +35,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const text = stripTags(html)
-  return text.includes('Current Openings')
+  return /<h1[^>]*>\s*Current Openings\s*<\/h1>/i.test(String(html ?? ''))
     && text.includes('To apply for a specific job')
     && /careers@rajasoftwarelabs\.com/i.test(text)
 }
@@ -50,9 +50,12 @@ const buildAbsoluteUrl = (href) => {
 
 export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => {
   const jobs = []
+  const openingsListHtml = String(html ?? '').match(
+    /To apply for a specific job[\s\S]*?<ul>([\s\S]*?)<\/ul>/i,
+  )?.[1] ?? ''
   const pattern = /<li>\s*<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>\s*<\/li>/gi
 
-  for (const match of String(html ?? '').matchAll(pattern)) {
+  for (const match of openingsListHtml.matchAll(pattern)) {
     const applyUrl = buildAbsoluteUrl(match[1])
     const title = normalizeWhitespace(match[2])
     if (!applyUrl || !title) continue
@@ -69,6 +72,7 @@ export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => 
       experienceRequired: null,
       requiredSkills: [],
       jobDescription: null,
+      publicExperienceChecked: true,
       source: SOURCE,
       link: applyUrl,
       scrapedAt,
@@ -97,7 +101,7 @@ export const createRajaSoftwareLabsScraper = ({
 export const run = async (options = {}) => createRajaSoftwareLabsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

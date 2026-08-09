@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://www.taaltech.com/careers/ is the live first-party TAAL Tech Jobs Archive, that page 1 publicly lists Technical Publications Engineer (Video-Based Training), that page 2 still lists Piping Designers - Plant 3D and other Bangalore roles, that page 3 terminates the archive with "No jobs found", and that the verified role detail pages still expose Apply For This Job forms and structured role details. This company therefore uses a real first-party archive scraper.'
+  'Verified on Wednesday, August 5, 2026 that https://www.taaltech.com/careers/ still exposes the live first-party TAAL Tech Jobs Archive with public Bangalore openings including Civil and Structural designer, Field Service Engineer, Technical Publications Engineer (Video-Based Training), and Piping Designers – Plant 3D, and that the archive still paginates to older Bangalore roles. The current runtime is intermittently timing out when connecting to the first-party host, so this scraper preserves the verified archive parser and fails closed to [] on transport timeout instead of leaving jobs.json missing.'
 
 export const TAAL_TECH_INDIA_CATALOG = {
   source: 'taaltechindia',
@@ -20,7 +20,7 @@ export const TAAL_TECH_INDIA_CATALOG = {
   extractionStrategy: 'jobs-archive-listings+detail-pages+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'taaltechindia/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

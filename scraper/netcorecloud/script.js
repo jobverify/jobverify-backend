@@ -16,7 +16,7 @@ export const VERIFIED_ON = NETCORE_CLOUD_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = NETCORE_CLOUD_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = NETCORE_CLOUD_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOB_PATTERNS = [
   /\bapply now\b/i,
@@ -55,20 +55,18 @@ const normalizeWhitespace = (value) => {
 export const hasVerifiedNetcoreCareersSignal = (html = '') => {
   const text = (normalizeWhitespace(html) || '').toLowerCase()
 
-  return text.includes("we've got big plans - and you can join us on our journey")
-    && text.includes('a great place to work for 6 years in a row')
-    && text.includes('view job openings')
-    && text.includes('sales')
-    && text.includes('engineering')
-    && text.includes('customer success')
+  return text.includes('careers - netcore')
+    && (
+      text.includes('join the community shaping the future of agentic marketing here')
+      || text.includes('netcore cloud is now netcore.ai')
+    )
+    && text.includes('please wait while you are redirected to the right page')
 }
 
 export const hasVerifiedNetcoreRedirectShellSignal = (html = '') => {
   const text = (normalizeWhitespace(html) || '').toLowerCase()
 
-  return text.includes('careers list - netcore cloud')
-    && text.includes('compliance and recognition accolades')
-    && text.includes('netcore cloud pvt. ltd.')
+  return text.includes('careers list - netcore')
     && text.includes('please wait while you are redirected to the right page')
 }
 
@@ -157,7 +155,7 @@ export const createNetcoreCloudScraper = () => ({
 export const run = async (options = {}) => createNetcoreCloudScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

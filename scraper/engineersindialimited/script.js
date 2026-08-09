@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -127,7 +127,7 @@ export const createEngineersIndiaLimitedScraper = () => ({
 export const run = async (options = {}) => createEngineersIndiaLimitedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Engineers India Limited scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

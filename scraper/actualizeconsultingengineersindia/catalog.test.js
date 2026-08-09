@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('Actualize Consulting Engineers India is registered against its Zoho public careers feed', () => {
   const provider = getScraperCatalog().find(

@@ -1,0 +1,22 @@
+{
+  "source": "lidolearning",
+  "companyName": "Lido Learning",
+  "officialBrandName": "LIDO",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../lidolearning/script.js",
+  "dryRunFile": "lidolearning/jobs.json",
+  "companyCareerPage": "https://www.lidolearning.com/",
+  "companyDomain": "lidolearning.com",
+  "atsPlatform": "official-first-party-site-no-verified-careers-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "no-verified-official-careers-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.lidolearning.com/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.lidolearning.com/ is Lido Learning's first-party surface. No official public careers page or enumerable ATS jobs feed was verified for the exact CSV company name, so this provider fails closed and returns no jobs rather than using third-party listings or another Lido organization."
+}

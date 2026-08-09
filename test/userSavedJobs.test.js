@@ -4,6 +4,8 @@ import test from "node:test";
 import Job from "../src/models/Job.js";
 import User from "../src/models/User.js";
 
+const PUBLIC_SCOPE_NOW_PLACEHOLDER = "__PUBLIC_SCOPE_NOW__";
+
 const createResponseDouble = () => {
   const result = {
     statusCode: 200,
@@ -21,6 +23,36 @@ const createResponseDouble = () => {
   return result;
 };
 
+const normalizePublishedDateScope = (value) => {
+  if (value instanceof Date) return PUBLIC_SCOPE_NOW_PLACEHOLDER;
+  if (Array.isArray(value)) return value.map(normalizePublishedDateScope);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        normalizePublishedDateScope(nestedValue),
+      ]),
+    );
+  }
+  return value;
+};
+
+const assertHasPublishedDateScope = (scope) => {
+  const lowerBound = scope?.$expr?.$lte?.[0]?.$ifNull?.[1];
+  const upperBound = scope?.$expr?.$lte?.[1];
+
+  assert.ok(lowerBound instanceof Date);
+  assert.ok(upperBound instanceof Date);
+  assert.equal(lowerBound.getTime(), upperBound.getTime());
+  assert.equal(JSON.stringify(scope).includes("$$NOW"), false);
+  assert.deepEqual(normalizePublishedDateScope(scope.$expr), {
+    $lte: [
+      { $ifNull: ["$postedAt", PUBLIC_SCOPE_NOW_PLACEHOLDER] },
+      PUBLIC_SCOPE_NOW_PLACEHOLDER,
+    ],
+  });
+};
+
 test("user schema stores saved job references", () => {
   const savedJobsPath = User.schema.path("savedJobs");
 
@@ -28,6 +60,44 @@ test("user schema stores saved job references", () => {
   assert.equal(savedJobsPath.instance, "Array");
   assert.equal(savedJobsPath.caster.instance, "ObjectId");
   assert.equal(savedJobsPath.caster.options.ref, "Job");
+});
+
+test("user routes expose protected saved job endpoints", async () => {
+  const originalJwtSecret = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = originalJwtSecret || "x".repeat(32);
+
+  try {
+    const { default: router } = await import("../src/routes/userRoutes.js");
+
+    const listLayer = router.stack.find(
+      (layer) => layer.route?.path === "/saved-jobs" && layer.route.methods.get,
+    );
+    assert.ok(listLayer);
+    assert.equal(listLayer.route.stack[0].name, "protect");
+    assert.equal(listLayer.route.stack.at(-1).name, "getSavedJobs");
+
+    const saveLayer = router.stack.find(
+      (layer) => layer.route?.path === "/saved-jobs/:jobId" && layer.route.methods.post,
+    );
+    assert.ok(saveLayer);
+    assert.equal(saveLayer.route.stack[0].name, "protect");
+    assert.equal(
+      saveLayer.route.stack.filter((layer) => layer.method === "post").at(-1)?.name,
+      "saveJob",
+    );
+
+    const removeLayer = router.stack.find(
+      (layer) => layer.route?.path === "/saved-jobs/:jobId" && layer.route.methods.delete,
+    );
+    assert.ok(removeLayer);
+    assert.equal(removeLayer.route.stack[0].name, "protect");
+    assert.equal(
+      removeLayer.route.stack.filter((layer) => layer.method === "delete").at(-1)?.name,
+      "removeSavedJob",
+    );
+  } finally {
+    process.env.JWT_SECRET = originalJwtSecret;
+  }
 });
 
 test("getUserProfile reports saved job count in the profile overview", async () => {
@@ -89,6 +159,33 @@ test("getSavedJobs drops unavailable saved jobs and returns a consistent count",
     assert.deepEqual(res.body.data, []);
     assert.equal(res.body.profileOverview.savedJobs, 0);
     assert.deepEqual(user.savedJobs, []);
+  } finally {
+    User.findById = originalFindById;
+    Job.find = originalJobFind;
+  }
+});
+
+test("getSavedJobs excludes future-posted jobs from the saved-jobs view", async () => {
+  const { getSavedJobs } = await import("../src/controllers/userController.js");
+  const originalFindById = User.findById;
+  const originalJobFind = Job.find;
+  let capturedFilter = null;
+
+  const user = {
+    _id: "user-1",
+    savedJobs: ["507f191e810c19729de860ea"],
+    async save() { return this; },
+  };
+  User.findById = () => ({ select: async () => user });
+  Job.find = (filter) => {
+    capturedFilter = filter;
+    return [];
+  };
+
+  try {
+    await getSavedJobs({ user: { _id: "user-1" } }, createResponseDouble());
+
+    assertHasPublishedDateScope(capturedFilter);
   } finally {
     User.findById = originalFindById;
     Job.find = originalJobFind;

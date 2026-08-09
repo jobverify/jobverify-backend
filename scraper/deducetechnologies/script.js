@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,10 +11,14 @@ export const CAREERS_URL = 'https://www.deducetechnologies.com/careers'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-const OFFICIAL_TITLE_PATTERN = /<title>\s*Deduce\s*-\s*Maps and Location Content\s*<\/title>/i
+const OFFICIAL_TITLE_PATTERN =
+  /<title>\s*Deduce\s*(?:-|&mdash;|&#8212;|\u2014)\s*AI-Powered Maps\s*&(?:amp;)?\s*Location Intelligence(?: Platform)?\s*<\/title>/i
 const OFFICIAL_DESCRIPTION_PATTERN =
-  /<meta[^>]+name=["']description["'][^>]+content=["'][^"']*\bDeduce\b[^"']*(?:mapping|geospatial|location intelligence)[^"']*["']/i
-const OFFICIAL_SOCIAL_PATTERN = /@deducetechnologies/i
+  /<meta[^>]+name=["']description["'][^>]+content=["'][^"']*\bDeduce\b[^"']*(?:AI-powered|mapping|geospatial|location intelligence|navigation)[^"']*["']/i
+const OFFICIAL_CANONICAL_PATTERN =
+  /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.deducetechnologies\.com\/["']/i
+const OFFICIAL_OG_DESCRIPTION_PATTERN =
+  /<meta[^>]+property=["']og:description["'][^>]+content=["'][^"']*\bDeduce Technologies\b[^"']*(?:maps|geospatial|computer vision|location intelligence)[^"']*["']/i
 const BUNDLE_SRC_PATTERN = /<script[^>]+type=["']module["'][^>]+src=["']([^"']*\/assets\/index-[^"']+\.js)["']/i
 
 const CAREERS_ROUTE_PATTERN = /(?:title|label|children):"Careers"|link:"\/careers"|path:"\/Careers"/i
@@ -41,7 +45,8 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return OFFICIAL_TITLE_PATTERN.test(page)
     && OFFICIAL_DESCRIPTION_PATTERN.test(page)
-    && OFFICIAL_SOCIAL_PATTERN.test(page)
+    && OFFICIAL_CANONICAL_PATTERN.test(page)
+    && OFFICIAL_OG_DESCRIPTION_PATTERN.test(page)
     && Boolean(extractBundleUrl(page))
 }
 
@@ -92,7 +97,7 @@ export const createDeduceTechnologiesScraper = () => ({
 export const run = async (options = {}) => createDeduceTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

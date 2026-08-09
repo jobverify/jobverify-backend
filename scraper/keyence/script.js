@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,7 +16,7 @@ const USER_AGENT =
 const OFFICIAL_CAREERS_PATTERNS = [
   /KEYENCE India(?:\s*[–-]\s*|&ndash;)\s*Careers/i,
   /added-value for our customers/i,
-  /forms\.office\.com\/r\/NvMRr292Pt/i,
+  />\s*Recruitment\s*</i,
 ]
 
 const PUBLIC_JOB_SIGNAL_PATTERN =
@@ -83,7 +83,7 @@ export const createKeyenceScraper = () => ({
 export const run = async (options = {}) => createKeyenceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

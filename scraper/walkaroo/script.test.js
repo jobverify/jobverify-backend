@@ -13,11 +13,11 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Walkaroo - Men's, Women's & Kid's Footwear | India's No.1 PU Brand – Walkaroo Footwear</title>
+    <title>Walkaroo - Men's, Women's & Kid's Footwear | India's No.1 PU Brand - Walkaroo Footwear</title>
   </head>
   <body>
     <nav>
-      <a href="https://www.walkaroo.in/pages/about-us">About Us</a>
+      <a href="/pages/about-us">About Us</a>
       <a href="https://www.walkaroo.in/pages/contact-us">Contact Us</a>
     </nav>
     <main>
@@ -33,7 +33,7 @@ const aboutHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Walkaroo | Comfort-Driven Footwear for Every Step – Walkaroo Footwear</title>
+    <title>About Walkaroo | Comfort-Driven Footwear for Every Step - Walkaroo Footwear</title>
   </head>
   <body>
     <main>
@@ -52,7 +52,7 @@ const contactHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Walkaroo Help Desk | Contact Us for Product or Order Support – Walkaroo Footwear</title>
+    <title>Walkaroo Help Desk | Contact Us for Product or Order Support - Walkaroo Footwear</title>
   </head>
   <body>
     <main>
@@ -75,11 +75,7 @@ const careersHtml = `
     <title>Careers</title>
   </head>
   <body>
-    <main>
-      <h1>Careers</h1>
-      <p>walkaroo</p>
-      <p>Powered by Zappyhire</p>
-    </main>
+    <main><h1>Careers</h1></main>
   </body>
 </html>
 `

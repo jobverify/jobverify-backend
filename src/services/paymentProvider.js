@@ -90,7 +90,7 @@ const createRazorpayProvider = () => ({
         amount: data.amount,
         currency: data.currency,
         keyId,
-        name: "Jobify",
+        name: "Jobverify",
         description: `${planConfig.name} access`,
       },
     };

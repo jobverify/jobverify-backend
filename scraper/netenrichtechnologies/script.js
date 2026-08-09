@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -39,6 +39,21 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
 
 const isIndiaLocation = (value) => /\bindia\b/i.test(String(value ?? ''))
 
+const normalizeIndiaListingLocation = (value, countryHint = null) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  if (isIndiaLocation(normalized)) {
+    return normalized
+  }
+
+  if (/india/i.test(String(countryHint ?? ''))) {
+    return `${normalized}, India`
+  }
+
+  return normalized
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   return /Careers\s+at\s+Netenrich/i.test(page) && /Open\s+Positions/i.test(page)
@@ -46,18 +61,41 @@ export const hasOfficialCareersSignal = (html) => {
 
 export const extractListingCards = (html) => {
   const page = String(html ?? '')
-  const matches = [...page.matchAll(
+  const legacyMatches = [...page.matchAll(
     /<article[^>]*>\s*<h3>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*([^<]+?)\s*<\/a>\s*<\/h3>\s*<p>\s*([^<]+?)\s*<\/p>\s*<p>\s*([^<]+?)\s*<\/p>\s*<\/article>/gi,
   )]
 
-  return matches
+  const liveMatches = [...page.matchAll(
+    /<div class="join-team-filter-inr"[^>]*data-country="([^"]+)"[^>]*>([\s\S]*?)(?=<div class="join-team-filter-inr"|$)/gi,
+  )]
+
+  const listings = [
+    ...legacyMatches
     .map((match) => ({
       title: normalizeWhitespace(match[2]),
       location: normalizeWhitespace(match[4]),
       sourceUrl: toAbsoluteUrl(match[1]),
       workModel: normalizeWhitespace(match[3]),
     }))
+    .filter((item) => item.title && item.location && item.sourceUrl && isIndiaLocation(item.location)),
+    ...liveMatches.map((match) => {
+      const country = normalizeWhitespace(match[1])
+      const blockHtml = String(match[2] ?? '')
+      const title = normalizeWhitespace(blockHtml.match(/<h6[^>]*>\s*([\s\S]*?)\s*<\/h6>/i)?.[1])
+      const workModel = normalizeWhitespace(blockHtml.match(/join-team-wrk-type[^>]*>\s*<p>\s*([\s\S]*?)\s*<\/p>/i)?.[1])
+      const location = normalizeIndiaListingLocation(
+        blockHtml.match(/join-team-location[^>]*>\s*<p>\s*([\s\S]*?)\s*<\/p>/i)?.[1],
+        country,
+      )
+      const sourceUrl = toAbsoluteUrl(blockHtml.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1])
+
+      return { title, location, sourceUrl, workModel }
+    }),
+  ]
+
+  return listings
     .filter((item) => item.title && item.location && item.sourceUrl && isIndiaLocation(item.location))
+    .filter((item, index, all) => all.findIndex((candidate) => candidate.sourceUrl === item.sourceUrl) === index)
 }
 
 const extractFirst = (pattern, html) => normalizeWhitespace(String(html ?? '').match(pattern)?.[1] ?? null)
@@ -72,15 +110,36 @@ const extractCity = (location) => {
   return normalized.split(/[\/,]/)[0]?.trim() || null
 }
 
-const extractExperience = (html) =>
-  extractFirst(/Experience:\s*([^<\n]+?Years?)\s+(?:[A-Z][a-z]+|India|Hyderabad)/i, html)
-  || extractFirst(/Experience:\s*([^<\n]+)/i, html)
+const extractExperience = (html) => {
+  const normalizedSnippet = normalizeWhitespace(String(html ?? '').match(/Experience:[\s\S]{0,160}/i)?.[0] ?? null)
+  const directMatch = normalizedSnippet?.match(/Experience:\s*([0-9+.\-– ]+\s*Years?)/i)?.[1]
+
+  return normalizeWhitespace(directMatch)
+    || extractFirst(/Experience:\s*([^<\n]+?Years?)\s+(?:[A-Z][a-z]+|India|Hyderabad)/i, html)
+    || extractFirst(/Experience:\s*([^<\n]+)/i, html)
+}
 
 const extractContactEmail = (html) =>
   String(html ?? '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? null
 
+const extractDetailBody = (html) =>
+  String(html ?? '').match(
+    /<h[23][^>]*>\s*(?:Job Role|Job Summary)\s*:?\s*<\/h[23]>([\s\S]*?)(?=<a[^>]+href=["']#form["']|<form\b|$)/i,
+  )?.[1] ?? String(html ?? '')
+
+const extractRelevantSkills = (html) => {
+  const page = String(html ?? '')
+  const sectionMatches = [...page.matchAll(
+    /<h[23][^>]*>[\s\S]*?(?:Requirements|Key Responsibilities)[\s\S]*?<\/h[23]>\s*([\s\S]*?<ul[\s\S]*?<\/ul>)/gi,
+  )]
+
+  const skills = sectionMatches.flatMap((match) => extractListItems(match[1]))
+  return skills.length > 0 ? skills : extractListItems(extractDetailBody(page))
+}
+
 export const extractJobDetail = (html, listing = {}) => {
   const page = String(html ?? '')
+  const detailBody = extractDetailBody(page)
   const title = extractFirst(/<h1[^>]*>\s*([^<]+?)\s*<\/h1>/i, page) || listing.title || null
   const location = listing.location || extractFirst(/Experience:\s*[^<\n]+?\s+([^<\n]+)$/im, page) || 'India'
   const city = extractCity(location)
@@ -96,10 +155,10 @@ export const extractJobDetail = (html, listing = {}) => {
     employmentType: listing.workModel,
     experienceRequired: extractExperience(page),
     department: null,
-    jobDescription: stripTags(page.match(/<h2>\s*(?:Job Role|Job Summary)\s*<\/h2>([\s\S]*?)<h2/i)?.[1] ?? page),
+    jobDescription: stripTags(detailBody),
     minimumQualification: null,
     preferredQualification: null,
-    requiredSkills: extractListItems(page),
+    requiredSkills: extractRelevantSkills(page),
     postingDate: null,
     closingDate: null,
     sourceUrl: listing.sourceUrl || null,
@@ -109,7 +168,7 @@ export const extractJobDetail = (html, listing = {}) => {
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'netenrichtechnologies',
@@ -151,7 +210,7 @@ export const createNetenrichTechnologiesScraper = () => ({
 export const run = async (options = {}) => createNetenrichTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

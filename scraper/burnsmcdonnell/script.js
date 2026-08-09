@@ -1,3 +1,5 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import https from 'node:https'
 
 export const CAREER_PAGE_URL = 'https://burnsmcd.jobs/locations/ind/jobs/'
@@ -12,6 +14,7 @@ export const REQUEST_HEADERS = {
 
 const COMPANY = 'Burns & McDonnell'
 const SOURCE = 'burnsmcdonnell'
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const slugifySegment = (value) =>
   String(value || '')
@@ -74,6 +77,24 @@ const fetchJsonWithHttps = (url, { headers = {} } = {}) =>
     request.on('error', reject)
   })
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const fetchJsonWithRetry = async (url, { headers = {}, attempts = 3 } = {}) => {
+  let lastError = null
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchJsonWithHttps(url, { headers })
+    } catch (error) {
+      lastError = error
+      if (attempt === attempts) break
+      await sleep(attempt * 1000)
+    }
+  }
+
+  throw lastError
+}
+
 export const mapBurnsJob = (job) => {
   const jobUrl = buildJobUrl(job)
   if (!jobUrl) return null
@@ -97,12 +118,13 @@ export const mapBurnsJob = (job) => {
     postingDate: job.date_new || job.date_updated || null,
     closingDate: null,
     jobDescription: job.description || null,
+    publicExperienceChecked: true,
     remoteStatus: Array.isArray(job.on_sites) && job.on_sites.includes(0) ? 'On-site' : null,
   }
 }
 
 export const createBurnsMcDonnellScraper = () => ({
-  async run({ fetchJson = fetchJsonWithHttps } = {}) {
+  async run({ fetchJson = fetchJsonWithRetry } = {}) {
     const jobs = []
     let page = 1
 
@@ -132,3 +154,15 @@ export const createBurnsMcDonnellScraper = () => ({
 })
 
 export const run = async () => createBurnsMcDonnellScraper().run()
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

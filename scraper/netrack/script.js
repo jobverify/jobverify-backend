@@ -18,6 +18,13 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CONTACT_URL = PROVIDER_METADATA.contactUrl
 export const TEAM_URL = PROVIDER_METADATA.teamUrl
 export const BLOCKED_ROUTE_URLS = [...PROVIDER_METADATA.blockedRouteUrls]
+export const INFORMATIONAL_ROUTE_URLS = [HOMEPAGE_URL, CONTACT_URL, TEAM_URL]
+export const MISSING_ROUTE_URLS = BLOCKED_ROUTE_URLS.filter((url) => !INFORMATIONAL_ROUTE_URLS.includes(url))
+export const VERIFIED_ROUTE_TITLES = {
+  [HOMEPAGE_URL]: 'Netrack | Server Enclosures | Network Enclosures | Server Racks',
+  [CONTACT_URL]: 'Contact | Netrack | quiet server cabinet Manufacturers',
+  [TEAM_URL]: 'Netrack Team | Server enclosures manufacturers',
+}
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -74,29 +81,53 @@ const defaultFetchPage = async (url) => {
 export const hasPublicJobsSignal = (html = '') =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
-export const hasVerifiedBlockedSurface = (page = {}) => {
+export const hasVerifiedInformationalSurface = (page = {}, { expectedUrl, expectedTitle } = {}) => {
   const rawHtml = String(page.html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return Number(page.status) === 403
-    && extractTitle(rawHtml) === 'Access Denied'
-    && normalized.includes('Access Denied')
-    && normalized.includes("You don't have permission to access")
-    && /errors\.edgesuite\.net/i.test(rawHtml)
+  return Number(page.status) === 200
+    && String(page.url ?? '') === String(expectedUrl ?? '')
+    && extractTitle(rawHtml) === String(expectedTitle ?? '')
+    && normalized.includes('Netrack')
+    && !hasPublicJobsSignal(rawHtml)
+}
+
+export const hasVerifiedMissingJobsRoute = (page = {}, expectedUrl) => {
+  const rawHtml = String(page.html ?? '')
+
+  return Number(page.status) === 404
+    && String(page.url ?? '') === String(expectedUrl ?? '')
+    && extractTitle(rawHtml) === ''
+    && normalizeWhitespace(rawHtml) === ''
     && !hasPublicJobsSignal(rawHtml)
 }
 
 export const createNetrackScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    for (const url of BLOCKED_ROUTE_URLS) {
+    for (const url of INFORMATIONAL_ROUTE_URLS) {
       const page = await fetchPage(url)
 
       if (hasPublicJobsSignal(page.html)) {
         throw new Error(`Netrack blocked first-party route now appears to expose public jobs: ${url}`)
       }
 
-      if (!hasVerifiedBlockedSurface(page)) {
-        throw new Error(`Netrack blocked first-party surface changed: ${url}`)
+      if (!hasVerifiedInformationalSurface(page, {
+        expectedUrl: url,
+        expectedTitle: VERIFIED_ROUTE_TITLES[url],
+      })) {
+        throw new Error(`Netrack first-party informational surface changed: ${url}`)
+      }
+    }
+
+    for (const url of MISSING_ROUTE_URLS) {
+      const page = await fetchPage(url)
+
+      if (hasPublicJobsSignal(page.html)) {
+        throw new Error(`Netrack blocked first-party route now appears to expose public jobs: ${url}`)
+      }
+
+      if (!hasVerifiedMissingJobsRoute(page, url)) {
+        throw new Error(`Netrack missing careers route changed: ${url}`)
       }
     }
 
@@ -107,7 +138,7 @@ export const createNetrackScraper = () => ({
 export const run = async (options = {}) => createNetrackScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-
 import { KHAZANA_JEWELLERY_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -17,7 +15,7 @@ export const CAREERS_APPLY_EMAIL = PROVIDER_METADATA.careersApplyEmail
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bopen positions?\b/i,
@@ -78,14 +76,22 @@ export const hasKhazanaCareersSignal = (html = '') => {
     && text.includes(CAREERS_APPLY_EMAIL)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  const html = await response.text()
+  if (response.ok || response.status === 403) {
+    return html
+  }
+
+  throw new Error(`HTTP ${response.status} for ${url}`)
+}
 
 export const createKhazanaJewelleryScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
@@ -110,7 +116,7 @@ export const createKhazanaJewelleryScraper = () => ({
 export const run = async (options = {}) => createKhazanaJewelleryScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

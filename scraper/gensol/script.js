@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const HOMEPAGE_URL = 'https://www.gensol.in/'
 export const CAREERS_URL = 'https://www.gensol.in/careers'
@@ -18,7 +18,7 @@ const MISSING_ROUTE_PATTERNS = [
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'gensol',

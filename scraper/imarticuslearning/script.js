@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { IMARTICUS_LEARNING_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -26,7 +28,6 @@ const PUBLIC_JOB_PATTERNS = [
   /\bopen positions?\b/i,
   /\bcurrent openings?\b/i,
   /\bjob description\b/i,
-  /\bcareer opportunities\b/i,
   /\bjobposting\b/i,
   /"@type"\s*:\s*"JobPosting"/i,
   /boards\.greenhouse\.io/i,
@@ -35,10 +36,11 @@ const PUBLIC_JOB_PATTERNS = [
   /ashbyhq\.com/i,
   /myworkdayjobs/i,
   /workdayjobs/i,
-  /smartrecruiters/i,
-  /jobvite/i,
   /breezy\.hr/i,
-  /darwinbox/i,
+  /careers\.smartrecruiters\.com/i,
+  /jobs\.smartrecruiters\.com/i,
+  /jobs\.jobvite\.com/i,
+  /darwinbox\.(?:com|in)\/career/i,
 ]
 
 const decodeHtmlEntities = (value) => String(value ?? '')
@@ -71,17 +73,19 @@ const toAbsoluteUrl = (value, baseUrl = HOMEPAGE_URL) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    redirect: 'follow',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  attempts: 1,
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
-  return response.text()
-}
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const extractCareerPageUrl = (html) => {
   for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
@@ -97,26 +101,27 @@ export const extractCareerPageUrl = (html) => {
 }
 
 export const hasVerifiedHomepageSignals = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*Job Oriented Courses for Freshers & Executives \| Imarticus Learning\s*<\/title>/i.test(page)
-    && normalized.includes('Real Learning that delivers your career goals')
-    && normalized.includes('3,500+ hiring partners')
-    && normalized.includes('Imarticus Learning')
-    && extractCareerPageUrl(page) === CAREERS_URL
+  return normalized.includes('Real Learning that delivers your career goals')
+    && normalized.includes('Unmatched Outcomes from job-ready, certification, and executive programs')
+    && normalized.includes("ISFB - India's First Finance Focused School")
+    && normalized.includes('All Programs')
 }
 
 export const hasVerifiedCareerServicesSignals = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Build your dream career with Imarticus Rise\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/imarticus\.org\/building-careers-of-the-future-with-imarticus-rise\/["']/i.test(page)
-    && normalized.includes('Building Careers Of The Future')
-    && normalized.includes('Benefit From A Global Network Of 3500+ Hiring Partners')
-    && normalized.includes("We're passionate about building meaningful careers that create an impact.")
-    && normalized.includes('Imarticus Rise')
+  return hasVerifiedHomepageSignals(page)
+    || (
+      /<title>\s*Build your dream career with Imarticus Rise\s*<\/title>/i.test(page)
+      && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/imarticus\.org\/building-careers-of-the-future-with-imarticus-rise\/["']/i.test(page)
+      && normalized.includes('Building Careers Of The Future')
+      && normalized.includes('Benefit From A Global Network Of 3500+ Hiring Partners')
+      && normalized.includes("We're passionate about building meaningful careers that create an impact.")
+      && normalized.includes('Imarticus Rise')
+    )
 }
 
 export const hasPublicEmployerJobSignals = (html) => {
@@ -127,31 +132,70 @@ export const hasPublicEmployerJobSignals = (html) => {
 }
 
 export const createImarticusLearningScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasVerifiedHomepageSignals(homepageHtml)) {
-      throw new Error('Imarticus Learning verified homepage no longer matches the known first-party surface')
-    }
-    if (hasPublicEmployerJobSignals(homepageHtml)) {
-      throw new Error('Imarticus Learning homepage now appears to expose a public jobs surface')
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (hasPublicEmployerJobSignals(careersHtml)) {
-      throw new Error('Imarticus Learning careers page now appears to expose a public jobs surface')
-    }
-    if (!hasVerifiedCareerServicesSignals(careersHtml)) {
-      throw new Error('Imarticus Learning verified career services page no longer matches the known first-party surface')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      const page = await session.fetchPage(url)
+
+      if (![200, 304].includes(page.status)) {
+        throw new Error(`HTTP ${page.status} for ${url}`)
+      }
+
+      return page.html
+    })
+
+    const fetchTextWithBrowserFallback = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    return []
+    try {
+      const homepageHtml = await fetchTextWithBrowserFallback(HOMEPAGE_URL)
+      if (!hasVerifiedHomepageSignals(homepageHtml)) {
+        throw new Error('Imarticus Learning verified homepage no longer matches the known first-party surface')
+      }
+      if (hasPublicEmployerJobSignals(homepageHtml)) {
+        throw new Error('Imarticus Learning homepage now appears to expose a public jobs surface')
+      }
+
+      const careersHtml = await fetchTextWithBrowserFallback(CAREERS_URL)
+      if (hasPublicEmployerJobSignals(careersHtml)) {
+        throw new Error('Imarticus Learning careers page now appears to expose a public jobs surface')
+      }
+      if (!hasVerifiedCareerServicesSignals(careersHtml)) {
+        throw new Error('Imarticus Learning verified career services page no longer matches the known first-party surface')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createImarticusLearningScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -183,7 +183,7 @@ export const hasOfficialCareersLandingSignal = (html) => {
   const text = stripTags(page) || ''
 
   return /<title>\s*Join the COSGrid Team: Build a Brighter Digital Future\s*<\/title>/i.test(page)
-    && /<h1>\s*Join the COSGrid Team\s*<\/h1>/i.test(page)
+    && /<h1[^>]*>\s*(?:Join the COSGrid Team|Join Our Team)\s*<\/h1>/i.test(page)
     && /Take a look at our latest job opportunities/i.test(text)
     && /ng-reflect-router-link=["']openings["']/i.test(page)
     && /mailto:careers@cosgrid\.com/i.test(page)
@@ -194,22 +194,29 @@ export const extractSearchResults = (html) => {
     throw new Error('COSGrid verified openings page no longer matches the trusted first-party surface')
   }
 
-  const matches = [...String(html ?? '').matchAll(
-    /<div class="single-career-container[\s\S]*?<p class="fw-bold fs-6">([\s\S]*?)<\/p>[\s\S]*?<p class="fs-6">([\s\S]*?)<\/p>[\s\S]*?<p class="fs-6">([\s\S]*?)<\/p>[\s\S]*?ng-reflect-router-link="([^"]+)"/gi,
+  const cards = [...String(html ?? '').matchAll(
+    /<div[^>]*class="[^"]*\bsingle-career-container\b[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/gi,
   )]
+    .map((match) => match[1])
+    .filter(Boolean)
 
-  if (matches.length === 0) {
-    throw new Error('COSGrid verified openings page no longer exposes public job cards')
-  }
-
-  return matches.map((match) => {
-    const title = normalizeWhitespace(match[1])
-    const department = normalizeWhitespace(match[2])
-    const employmentType = titleCaseEmploymentType(match[3])
-    const slug = normalizeWhitespace(match[4])
+  const listings = cards.map((cardHtml) => {
+    const title = stripTags(
+      cardHtml.match(/<p[^>]*class="[^"]*\bfw-bold\b[^"]*\bfs-6\b[^"]*"[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? null,
+    )
+    const textFields = [...cardHtml.matchAll(/<p[^>]*class="(?![^"]*\bfw-bold\b)[^"]*\bfs-6\b[^"]*"[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map((match) => stripTags(match[1]))
+      .filter(Boolean)
+    const department = textFields[0] || null
+    const employmentType = titleCaseEmploymentType(textFields[1] || null)
+    const slug = normalizeWhitespace(
+      cardHtml.match(/ng-reflect-router-link="([^"]+)"/i)?.[1]
+        ?? cardHtml.match(/routerLink="([^"]+)"/i)?.[1]
+        ?? null,
+    )
 
     if (!title || !department || !employmentType || !slug) {
-      throw new Error('COSGrid verified openings cards changed shape')
+      return null
     }
 
     return {
@@ -219,21 +226,34 @@ export const extractSearchResults = (html) => {
       slug,
       sourceUrl: `${OPENINGS_URL}/${slug}`,
     }
-  })
+  }).filter(Boolean)
+
+  if (listings.length === 0) {
+    throw new Error('COSGrid verified openings page no longer exposes public job cards')
+  }
+
+  return listings
 }
 
 export const extractJobDetail = (html, { sourceUrl, fallbackListing } = {}) => {
   const page = String(html ?? '')
   const header = extractHeader(page)
+  const text = stripTags(page) || ''
+  const jobPosting = extractJobPostingNode(page)
+  const resolvedTitle = normalizeWhitespace(jobPosting?.title ?? header.title ?? fallbackListing?.title)
+  const resolvedDepartment = header.department ?? fallbackListing?.department ?? null
 
-  if (!header.title || !header.department || !/COSGrid Networks is a leading networking and cybersecurity products company\./i.test(page)) {
+  if (
+    !resolvedTitle
+    || !resolvedDepartment
+    || !/COSGrid Networks is a leading networking and cybersecurity products company/i.test(text)
+  ) {
     throw new Error('COSGrid verified detail surface no longer matches the trusted first-party job page')
   }
 
   const requiredSkills = extractSectionItems(page, 'Required Skills')
   const requirements = extractSectionItems(page, 'Requirements')
   const metadata = extractLocationAndEmployment(page)
-  const jobPosting = extractJobPostingNode(page)
   const jsonLocation = jobPosting?.jobLocation?.address?.addressLocality ?? null
   const country = normalizeCountry(
     jobPosting?.applicantLocationRequirements?.name
@@ -250,8 +270,8 @@ export const extractJobDetail = (html, { sourceUrl, fallbackListing } = {}) => {
   ])
 
   return {
-    title: normalizeWhitespace(jobPosting?.title ?? header.title ?? fallbackListing?.title),
-    department: header.department ?? fallbackListing?.department ?? null,
+    title: resolvedTitle,
+    department: resolvedDepartment,
     employmentType: titleCaseEmploymentType(jobPosting?.employmentType ?? fallbackListing?.employmentType ?? metadata.employmentType),
     location,
     city: normalizeWhitespace(jsonLocation ?? metadata.city),
@@ -293,7 +313,17 @@ export const createCosgridNetworksScraper = ({ now = () => new Date().toISOStrin
     const jobs = []
 
     for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      let detailHtml = null
+
+      try {
+        detailHtml = await fetchText(listing.sourceUrl)
+      } catch (error) {
+        if (/HTTP 404/i.test(String(error?.message ?? error))) {
+          continue
+        }
+
+        throw error
+      }
 
       try {
         const detail = extractJobDetail(detailHtml, {
@@ -331,7 +361,7 @@ export const createCosgridNetworksScraper = ({ now = () => new Date().toISOStrin
 export const run = async (options = {}) => createCosgridNetworksScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

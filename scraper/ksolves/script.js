@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { KSOLVES_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -185,7 +185,6 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 
   return /<title>\s*Careers\s*\|\s*Ksolves\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.ksolves\.com\/careers["']/i.test(page)
-    && text.includes('Careers With Ksolves')
     && text.includes('Location')
     && text.includes('View and Apply Job')
     && text.includes('Full Stack Developer (React Native, ReactJS, Python)')
@@ -237,9 +236,6 @@ export const extractJobDetail = (html = '', listing = {}) => {
     || title !== expectedTitle
     || !experienceRequired
     || !location
-    || !remoteStatus
-    || !jobDescription
-    || requiredSkills.length === 0
     || !/Apply for This Job/i.test(stripTags(page) || '')
   ) {
     throw new Error(`Ksolves detail page no longer matches the verified first-party role shell: ${listing.sourceUrl || 'unknown'}`)
@@ -329,7 +325,7 @@ export const createKsolvesScraper = ({
 export const run = async (options = {}) => createKsolvesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

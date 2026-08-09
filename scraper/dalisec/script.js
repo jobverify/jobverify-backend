@@ -1,21 +1,20 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import DALISEC_CATALOG from './catalog.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const SOURCE = 'dalisec'
-export const COMPANY = 'Dalisec'
-export const HOMEPAGE_URL = 'https://dalisec.com/'
-export const SITEMAP_URL = 'https://dalisec.com/sitemap-index.xml'
-export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
-  'https://dalisec.com/careers',
-  'https://dalisec.com/career',
-  'https://dalisec.com/jobs',
-  'https://dalisec.com/join-us',
-  'https://dalisec.com/openings',
-  'https://dalisec.com/current-openings',
-  'https://dalisec.com/work-with-us',
-]
+export const PROVIDER_METADATA = DALISEC_CATALOG
+export const SOURCE = PROVIDER_METADATA.source
+export const COMPANY = PROVIDER_METADATA.companyName
+export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
+export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
+export const SITEMAP_URL = PROVIDER_METADATA.sitemapUrl
+export const NO_PUBLIC_CAREERS_ROUTE_URLS = [...PROVIDER_METADATA.checkedCareersRouteUrls]
+export const UNTRUSTWORTHY_EDGE_ERROR_STATUS_CODE = 526
 
 const PLACEHOLDER_SITEMAP_LOC = 'https://www.yourdomain.tld/sitemap-0.xml'
 
@@ -216,6 +215,16 @@ export const hasVerifiedBundleSignal = (bundleText) => {
 export const hasBundleJobsSignal = (bundleText) =>
   BUNDLE_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(bundleText ?? '')))
 
+export const isVerifiedCloudflareEdgeErrorPage = (page = {}) => {
+  const rawText = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(rawText).toLowerCase()
+
+  return Number(page?.status) === UNTRUSTWORTHY_EDGE_ERROR_STATUS_CODE
+    && /error code[:\s]+526/i.test(rawText)
+    && normalized.includes('invalid ssl certificate')
+    && !hasPublicJobsSignal(rawText)
+}
+
 export const isVerifiedMissingCareersRoute = (page = {}, homepageScriptPaths = []) => {
   const rawHtml = String(page?.html ?? '')
   const routeScriptPaths = extractFirstPartyScriptPaths(rawHtml)
@@ -235,6 +244,9 @@ export const createDalisecScraper = () => ({
     fetchText = defaultFetchText,
   } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (isVerifiedCloudflareEdgeErrorPage(homepage)) {
+      return []
+    }
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Dalisec verified official homepage no longer matches the known first-party surface')
     }
@@ -278,7 +290,7 @@ export const createDalisecScraper = () => ({
 export const run = async (options = {}) => createDalisecScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

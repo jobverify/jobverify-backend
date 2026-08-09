@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { ENOAH_ISOLUTION_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -54,12 +54,11 @@ export const hasZeroOpeningsSignal = (html = '') => {
 }
 
 export const hasTrustworthyPublicJobsSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = normalizeWhitespace(page).toLowerCase()
+  const text = normalizeWhitespace(html).toLowerCase()
 
   return /\bapply now\b/.test(text)
-    || /class=["'][^"']*job[_-]listing/i.test(page)
-    || /class=["'][^"']*job-card/i.test(page)
+    || /\bread more\b/.test(text)
+    || (/\bexperience\b/.test(text) && /\bcurrent job opportunities\b/.test(text) && !/\bno job openings\b/.test(text))
 }
 
 export const createENoahISolutionScraper = () => ({
@@ -90,7 +89,7 @@ export const createENoahISolutionScraper = () => ({
 export const run = async (options = {}) => createENoahISolutionScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

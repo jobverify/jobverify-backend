@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'volansys',
   companyName: 'Volansys Technologies',
   officialBrandName: 'VOLANSYS',
   adapter: 'script',
-  modulePath: '../volansys/script.js',
+  modulePath: '../../scraper/volansys/script.js',
   homepageUrl: 'https://www.volansys.com/',
   companyCareerPage: 'https://www.volansys.com/be-vigilant/',
   parentCareersPage: 'https://recruitment.acldigital.com/Default.aspx',
@@ -21,3 +21,4 @@ export const provider = {
 }
 
 export default provider
+

@@ -3,7 +3,7 @@ import path from 'node:path'
 import zlib from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { SIFY_TECHNOLOGIES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -24,6 +24,11 @@ export const DETAIL_API_URL = PROVIDER_METADATA.detailApiUrl
 const TALLITE_SECRET = 'T@MiCr097124!iCR'
 const TALLITE_IV = Buffer.from('1234567891234567', 'utf8')
 const TALLITE_KEY = crypto.createHash('sha256').update(TALLITE_SECRET, 'utf8').digest()
+const TALLITE_PUBLIC_GEO_CONTEXT = {
+  ip: '122.234.345.11',
+  region: 'IN',
+  bu: '',
+}
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -34,6 +39,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
+  .replace(/[\u2018\u2019]/g, "'")
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -62,14 +68,32 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
+const buildTallitePublicHeaders = () => {
+  const timestamp = String(Date.now())
+  const { ip, region, bu } = TALLITE_PUBLIC_GEO_CONTEXT
+  const hash = crypto.createHash('sha512')
+    .update(`${timestamp}${ip}${region}${TALLITE_SECRET}`, 'utf8')
+    .digest('hex')
+
+  return {
+    ip,
+    region,
+    hash,
+    lngId: '1',
+    timestamp,
+    bu,
+  }
+}
+
 const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json;charset=UTF-8',
     Origin: 'https://sifycareer.tallite.com',
     Referer: JOBS_PAGE_URL,
+    ...buildTallitePublicHeaders(),
     ...(options.headers ?? {}),
   },
   label: SOURCE,
@@ -151,9 +175,9 @@ export const hasOfficialAboutPageSignal = (html = '') => {
   const text = normalizeWhitespace(page)
 
   return /<title>\s*About us\s*\|\s*Sify Technologies\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/sifycareer\.tallite\.com\/["'][^>]*>\s*Careers\s*</i.test(page)
+    && /href=["']https:\/\/sifycareer\.tallite\.com(?:\/jobs)?\/?["']/i.test(page)
     && text.includes('Driving Business Transformation Across Industries')
-    && text.includes("India's only organically grown ICT company")
+    && /India['’]s only organically grown ICT company/i.test(text)
 }
 
 export const buildListRequestPayload = ({
@@ -383,7 +407,7 @@ export const createSifyTechnologiesScraper = ({
 export const run = async (options = {}) => createSifyTechnologiesScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

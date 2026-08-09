@@ -12,7 +12,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const LEGACY_HOMEPAGE_URL = PROVIDER_METADATA.legacyHomepageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const defaultProbe = async (url) => {
   try {
@@ -59,7 +59,7 @@ export const createCNSIScraper = () => ({
 export const run = async (options = {}) => createCNSIScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

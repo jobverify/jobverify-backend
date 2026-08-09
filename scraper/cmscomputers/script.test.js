@@ -5,9 +5,11 @@ import {
   CAREERS_PAGE_URL,
   FOUNTAIN_BOARD_URL,
   buildFountainOpeningsApiUrl,
+  buildFountainPortalApplicationFormUrl,
   createCmsComputersScraper,
   extractFountainApiJobs,
   extractFountainJobs,
+  extractFountainPortalJob,
   hasCmsCareersSignal,
 } from './script.js'
 
@@ -82,6 +84,24 @@ const fountainApiPayload = {
   current_city: 'Chennai',
 }
 
+const fountainPortalPayload = {
+  status: 200,
+  payload: {
+    funnel: {
+      title: 'Chennai - AM - Talent Acquisition Blue Collar',
+      position_description_html: '<p>Lead blue-collar hiring in Chennai.</p><p>5+ years of experience in talent acquisition.</p>',
+    },
+  },
+}
+
+const fountainPortalNotApproved = {
+  status: 401,
+  payload: {
+    message: 'Funnel not approved',
+  },
+  bodyText: '{"message":"Funnel not approved"}',
+}
+
 test('validates CMS Info Systems careers page with its official Fountain board link', () => {
   assert.equal(CAREERS_PAGE_URL, 'https://www.cms.com/careers')
   assert.equal(
@@ -142,6 +162,10 @@ test('extractFountainApiJobs keeps and normalizes public Fountain API India open
     buildFountainOpeningsApiUrl(1),
     'https://ap-1.fountain.com/internal_api/career_site/openings?career_site%5Baccount_slug%5D=cms&career_site%5Bbrand_id%5D=a9218256-8fbf-40ab-936b-49ff5ff7c900&career_site%5Bis_jobs_from_current_location%5D=true&page=1&radius=any&sort_by=distance&category=any&compensation_type=any&location=current_location&locale=en-US',
   )
+  assert.equal(
+    buildFountainPortalApplicationFormUrl('833d27a7-65b8-4839-a56e-2d42bcd8e2e0'),
+    'https://ap-1.fountain.com/internal_api/portal/cms/application_forms/new?funnel_id=833d27a7-65b8-4839-a56e-2d42bcd8e2e0&try_new_ui=true&brand_id=a9218256-8fbf-40ab-936b-49ff5ff7c900',
+  )
   assert.deepEqual(extractFountainApiJobs(fountainApiPayload), [
     {
       title: 'Chennai - AM - Talent Acquisition Blue Collar',
@@ -186,6 +210,50 @@ test('extractFountainApiJobs keeps and normalizes public Fountain API India open
   ])
 })
 
+test('extractFountainApiJobs does not mistake a role prefix for an India city', () => {
+  const [job] = extractFountainApiJobs({
+    openings: [{
+      id: 'role-without-city',
+      title: 'Assistant Manager - Operations',
+      location: 'Karnataka',
+      apply_url: 'https://ap-1.fountain.com/cms/apply/assistant-manager-operations',
+    }],
+    current_city: 'Chennai',
+  })
+
+  assert.equal(job.city, null)
+  assert.equal(job.location, 'Karnataka, India')
+})
+
+test('extractFountainPortalJob enriches approved public Fountain application forms', () => {
+  const job = extractFountainApiJobs(fountainApiPayload)[0]
+
+  assert.deepEqual(extractFountainPortalJob(job, fountainPortalPayload), {
+    ...job,
+    title: 'Chennai - AM - Talent Acquisition Blue Collar',
+    jobDescription: 'Lead blue-collar hiring in Chennai. 5+ years of experience in talent acquisition.',
+    experienceRequired: '5+ years',
+    publicExperienceChecked: true,
+  })
+})
+
+test('extractFountainPortalJob marks unapproved public Fountain funnels as checked-missing', () => {
+  const job = extractFountainApiJobs({
+    openings: [{
+      id: 'b3c81450-e11f-478b-a94d-c765abb85792',
+      title: 'Assistant Manager - Field Services SLM - Navi Mumbai - Belapur',
+      location: 'Belapur - Navi Mumbai (Corporate)',
+      apply_url: 'https://ap-1.fountain.com/cms/apply/assistant-manager-field-services-slm',
+    }],
+    current_city: null,
+  })[0]
+
+  assert.deepEqual(extractFountainPortalJob(job, fountainPortalNotApproved), {
+    ...job,
+    publicExperienceChecked: true,
+  })
+})
+
 test('run validates CMS before loading the public Fountain openings API and adds scraper metadata', async () => {
   const events = []
   const scraper = createCmsComputersScraper({ maxJobs: 1 })
@@ -199,6 +267,10 @@ test('run validates CMS before loading the public Fountain openings API and adds
       events.push(`api:${url}`)
       return fountainApiPayload
     },
+    fetchPortalForm: async (jobId) => {
+      events.push(`portal:${jobId}`)
+      return fountainPortalPayload
+    },
     launchBrowser: async () => {
       throw new Error('Browser should not be launched for CMS Fountain API parsing')
     },
@@ -207,10 +279,14 @@ test('run validates CMS before loading the public Fountain openings API and adds
   assert.deepEqual(events, [
     `cms:${CAREERS_PAGE_URL}`,
     `api:${buildFountainOpeningsApiUrl(1)}`,
+    'portal:833d27a7-65b8-4839-a56e-2d42bcd8e2e0',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'cmscomputers')
   assert.equal(jobs[0].link, fountainApiPayload.openings[0].apply_url)
+  assert.equal(jobs[0].experienceRequired, '5+ years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[0].jobDescription, 'Lead blue-collar hiring in Chennai. 5+ years of experience in talent acquisition.')
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 

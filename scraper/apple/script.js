@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -75,6 +76,34 @@ const extractHydrationPayload = (html) => {
   }
 
   return JSON.parse(JSON.parse(`"${encoded}"`))
+}
+
+const buildMergedDescription = (...parts) => {
+  const normalizedParts = parts
+    .map((value) => normalizeDescription(value))
+    .filter(Boolean)
+
+  return normalizedParts.length > 0 ? normalizedParts.join('\n\n') : null
+}
+
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const results = new Array(items.length)
+  const limit = Math.max(1, Number(concurrency) || 1)
+  let nextIndex = 0
+
+  const worker = async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
+  )
+
+  return results
 }
 
 const formatLocationEntry = (location) => {
@@ -195,6 +224,36 @@ export const extractSearchResults = (html) => {
   }).filter(Boolean)
 }
 
+export const extractJobDetail = (html) => {
+  const jobsData = extractHydrationPayload(html)?.loaderData?.jobDetails?.jobsData ?? {}
+  const localizedPosting = jobsData?.localizations?.en_US?.posting ?? {}
+  const minimumQualification = normalizeDescription(
+    localizedPosting.minimumQualifications || jobsData.minimumQualifications,
+  )
+  const preferredQualification = normalizeDescription(
+    localizedPosting.preferredQualifications || jobsData.preferredQualifications,
+  )
+  const jobDescription = buildMergedDescription(
+    localizedPosting.jobSummary || jobsData.jobSummary,
+    localizedPosting.description || jobsData.description,
+    localizedPosting.responsibilities || jobsData.responsibilities,
+  )
+  const { experienceProfile } = extractJobFilterSignals({
+    minimumQualification,
+    preferredQualification,
+    jobDescription,
+  })
+
+  return {
+    minimumQualification,
+    preferredQualification,
+    experienceRequired: experienceProfile?.confidence === 'high'
+      ? normalizeWhitespace(experienceProfile.evidence)
+      : null,
+    jobDescription,
+  }
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -213,6 +272,7 @@ const defaultFetchText = async (url) => {
 export const createAppleScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
+  detailConcurrency = Number.isInteger(config.detailConcurrency) ? config.detailConcurrency : 8,
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
@@ -223,20 +283,46 @@ export const createAppleScraper = ({
       const html = await fetchText(buildSearchUrl({ page }))
       const listings = extractSearchResults(html)
       const summary = extractPaginationSummary(html)
+      const freshListings = []
 
       for (const job of listings) {
         if (seenJobIds.has(job.jobId)) continue
         seenJobIds.add(job.jobId)
-        jobs.push({
-          ...job,
-          source: 'apple',
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
+        freshListings.push(job)
+      }
 
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
+      const remainingJobs = maxJobs == null
+        ? freshListings.length
+        : Math.max(0, maxJobs - jobs.length)
+      const selectedListings = freshListings.slice(0, remainingJobs)
+      const hydratedJobs = await mapWithConcurrency(
+        selectedListings,
+        detailConcurrency,
+        async (job) => {
+          const detail = job.sourceUrl
+            ? extractJobDetail(await fetchText(job.sourceUrl))
+            : {
+                minimumQualification: null,
+                preferredQualification: null,
+                experienceRequired: null,
+                jobDescription: null,
+              }
+
+          return {
+            ...job,
+            ...detail,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            source: 'apple',
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: new Date().toISOString(),
+          }
+        },
+      )
+
+      jobs.push(...hydratedJobs)
+
+      if (maxJobs && jobs.length >= maxJobs) {
+        return jobs
       }
 
       if (!summary.hasNext) {
@@ -251,7 +337,7 @@ export const createAppleScraper = ({
 export const run = async () => createAppleScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Apple scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

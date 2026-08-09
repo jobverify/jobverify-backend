@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -152,7 +152,7 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<h1[^>]*>\s*Career\s*<\/h1>/i.test(page)
+  return /<title[^>]*>\s*Career\b[\s\S]*?<\/title>/i.test(page)
     && /Current Openings/i.test(page)
     && /(wp-job-openings|awsm-job-listings)/i.test(page)
 }
@@ -269,7 +269,7 @@ export const createXponentAiScraper = ({
 export const run = async (options = {}) => createXponentAiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

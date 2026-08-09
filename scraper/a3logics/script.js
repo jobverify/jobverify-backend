@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { A3LOGICS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -17,7 +17,7 @@ export const EXPECTED_PORTAL_SLUG = 'default'
 export const EXPECTED_PORTAL_DOMAIN = 'a3logics.keka.com'
 export const EXPECTED_PORTAL_NAME = 'A3LOGICS'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -242,7 +242,7 @@ export const createA3logicsScraper = ({
 export const run = async (options = {}) => createA3logicsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

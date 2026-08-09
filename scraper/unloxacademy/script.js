@@ -46,6 +46,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
+  .replace(/[\u2018\u2019]/g, "'")
   .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
@@ -159,8 +160,17 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
   const rawHtml = String(page.html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /og:url["'][^>]+content=["']https:\/\/unloxacademy\.com\/404["']/i.test(rawHtml)
-    && normalized.includes('launching soon')
+  return /<title[^>]*>\s*unloxacademy\.com\s*<\/title>/i.test(rawHtml)
+    && (
+      /og:url["'][^>]+content=["']https:\/\/unloxacademy\.com\/404["']/i.test(rawHtml)
+      || normalized.includes('page not found')
+    )
+    && (
+      normalized.includes('launching soon')
+      || normalized.includes("we can’t seem to find the page you're looking for")
+      || normalized.includes("we can’t seem to find the page you’re looking for")
+      || normalized.includes("we can't seem to find the page you're looking for")
+    )
     && normalized.includes('go to home page')
     && !hasPublicJobsSignal(rawHtml)
 }
@@ -201,8 +211,8 @@ export const createUnloxAcademyScraper = () => ({
 
 export const run = async (options = {}) => createUnloxAcademyScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

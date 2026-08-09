@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -93,6 +94,23 @@ export const buildRequestHeaders = ({ authorizationToken } = {}) => {
   }
 }
 
+export const extractBundleScriptUrl = (html, baseUrl = CAREER_PAGE_URL) => {
+  for (const match of String(html ?? '').matchAll(/<script[^>]+src=["']([^"']*\/static\/js\/main[^"']+\.js)["'][^>]*>/gi)) {
+    try {
+      return new URL(match[1], baseUrl).toString()
+    } catch {
+      continue
+    }
+  }
+
+  return null
+}
+
+export const extractAuthorizationToken = (bundleJs) =>
+  normalizeWhitespace(
+    String(bundleJs ?? '').match(/authorizationToken\s*:\s*["']([^"']+)["']/i)?.[1] ?? null,
+  )
+
 export const extractSearchResults = (payload) =>
   unwrapRecords(payload)
     .map((record) => {
@@ -144,13 +162,49 @@ const defaultFetchJson = async (url, options = {}) => {
   return response.json()
 }
 
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    Accept: 'text/html,application/javascript,text/javascript;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+const resolveAuthorizationToken = async ({
+  authorizationToken,
+  fetchText = defaultFetchText,
+}) => {
+  const normalizedToken = normalizeWhitespace(authorizationToken)
+  if (normalizedToken) {
+    return normalizedToken
+  }
+
+  const careerPageHtml = await fetchText(CAREER_PAGE_URL)
+  const bundleUrl = extractBundleScriptUrl(careerPageHtml, CAREER_PAGE_URL)
+  if (!bundleUrl) {
+    throw new Error('BCE Global Tech public careers bundle URL could not be discovered')
+  }
+
+  const bundleJs = await fetchText(bundleUrl)
+  const discoveredToken = extractAuthorizationToken(bundleJs)
+  if (!discoveredToken) {
+    throw new Error('BCE Global Tech public careers bundle no longer exposes an authorizationToken')
+  }
+
+  return discoveredToken
+}
+
 export const createBceGlobalTechScraper = ({
   authorizationToken = process.env.BCE_GLOBAL_TECH_AUTHORIZATION_TOKEN,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchJson = defaultFetchJson, authorizationToken: overrideToken } = {}) {
-    const headers = buildRequestHeaders({
+  async run({ fetchJson = defaultFetchJson, fetchText = defaultFetchText, authorizationToken: overrideToken } = {}) {
+    const resolvedToken = await resolveAuthorizationToken({
       authorizationToken: overrideToken || authorizationToken,
+      fetchText,
+    })
+    const headers = buildRequestHeaders({
+      authorizationToken: resolvedToken,
     })
     const listings = extractSearchResults(await fetchJson(JOBS_API_URL, { headers }))
     const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
@@ -167,7 +221,7 @@ export const createBceGlobalTechScraper = ({
 export const run = async (options = {}) => createBceGlobalTechScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running BCE Global Tech scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

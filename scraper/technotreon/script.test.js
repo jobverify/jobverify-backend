@@ -203,3 +203,43 @@ test('run fails closed when the verified first-party careers surface changes', a
     /verified official careers page/i,
   )
 })
+
+test('run returns jobs when the homepage transport fails but the verified careers page remains reachable', async () => {
+  const technotreon = await loadTechnotreonModule()
+
+  const jobs = await technotreon.createTechnotreonScraper().run({
+    fetchText: async (url) => {
+      if (url === technotreon.HOMEPAGE_URL) {
+        const error = new TypeError('fetch failed')
+        error.cause = {
+          code: 'ENOTFOUND',
+          message: 'getaddrinfo ENOTFOUND technotreon.in',
+        }
+        throw error
+      }
+
+      return careersHtml
+    },
+    now: () => '2026-08-05T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 4)
+  assert.equal(jobs[0].scrapedAt, '2026-08-05T00:00:00.000Z')
+})
+
+test('run returns [] when the Technotreon careers surface times out in the current runtime', async () => {
+  const technotreon = await loadTechnotreonModule()
+
+  const jobs = await technotreon.createTechnotreonScraper().run({
+    fetchText: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'UND_ERR_CONNECT_TIMEOUT',
+        message: 'Connect Timeout Error (attempted address: technotreon.in:443, timeout: 10000ms)',
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

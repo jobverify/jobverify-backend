@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'specindia',
   companyName: 'SPEC INDIA',
   officialBrandName: 'SPEC INDIA',
   adapter: 'script',
-  modulePath: '../specindia/script.js',
+  modulePath: '../../scraper/specindia/script.js',
   homepageUrl: 'https://www.spec-india.com/',
   companyCareerPage: 'https://www.spec-india.com/career/',
   atsPlatform: 'official-company-careers',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

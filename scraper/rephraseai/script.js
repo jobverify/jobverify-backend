@@ -1,10 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  createOptimizedPage as defaultCreateOptimizedPage,
-  launchBrowser as defaultLaunchBrowser,
-} from '../utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import REPHRASE_AI_CATALOG from './catalog.js'
 
@@ -21,6 +18,17 @@ export const ABOUT_URL = PROVIDER_METADATA.aboutPageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_URL = PROVIDER_METADATA.jobsPageUrl
 export const COMMON_ROUTE_URLS = [ABOUT_URL, CAREERS_URL, JOBS_URL]
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'User-Agent': USER_AGENT,
+  },
+  label: 'rephraseai-text',
+  timeoutMs: 30000,
+})
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -84,47 +92,33 @@ const assertNoSuspiciousLinks = (html, routeLabel, routeUrl) => {
 }
 
 export const createRephraseAiScraper = () => ({
-  async run({
-    launchBrowser = defaultLaunchBrowser,
-    createOptimizedPage = defaultCreateOptimizedPage,
-  } = {}) {
-    let browser
+  async run({ fetchText = defaultFetchText } = {}) {
+    const homepageHtml = await fetchText(HOMEPAGE_URL)
 
-    try {
-      browser = await launchBrowser()
-      const page = await createOptimizedPage(browser)
-
-      await page.goto(HOMEPAGE_URL, { waitUntil: 'networkidle2' })
-      const homepageHtml = await page.content()
-
-      if (!hasHomepageSignal(homepageHtml)) {
-        throw new Error('Rephrase.ai homepage no longer matches the verified public surface')
-      }
-
-      assertNoSuspiciousLinks(homepageHtml, 'Rephrase.ai homepage', HOMEPAGE_URL)
-
-      for (const routeUrl of COMMON_ROUTE_URLS) {
-        await page.goto(routeUrl, { waitUntil: 'networkidle2' })
-        const routeHtml = await page.content()
-
-        if (!hasNotFoundSignal(routeHtml)) {
-          throw new Error(`${routeUrl} no longer matches the verified no-public-careers surface`)
-        }
-
-        assertNoSuspiciousLinks(routeHtml, routeUrl, routeUrl)
-      }
-
-      return []
-    } finally {
-      if (browser) await browser.close()
+    if (!hasHomepageSignal(homepageHtml)) {
+      throw new Error('Rephrase.ai homepage no longer matches the verified public surface')
     }
+
+    assertNoSuspiciousLinks(homepageHtml, 'Rephrase.ai homepage', HOMEPAGE_URL)
+
+    for (const routeUrl of COMMON_ROUTE_URLS) {
+      const routeHtml = await fetchText(routeUrl)
+
+      if (!hasNotFoundSignal(routeHtml)) {
+        throw new Error(`${routeUrl} no longer matches the verified no-public-careers surface`)
+      }
+
+      assertNoSuspiciousLinks(routeHtml, routeUrl, routeUrl)
+    }
+
+    return []
   },
 })
 
 export const run = async (options = {}) => createRephraseAiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

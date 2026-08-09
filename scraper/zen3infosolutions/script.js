@@ -21,7 +21,7 @@ export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://zen3.com/openings',
 ]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bwe(?:'|’)?re hiring\b/i,
@@ -51,21 +51,30 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+export const extractMainBundleAssetPath = (html = '') =>
+  String(html).match(/<script[^>]+src=["']([^"']*\/static\/js\/main\.[^"']+\.js)["']/i)?.[1] ?? null
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
   return /<title>\s*Zen3\s*<\/title>/i.test(page)
-    && /Who are we\?/i.test(text)
-    && /travel solutions company/i.test(text)
-    && /hyderabad,\s*india/i.test(text)
+    && /You need to enable JavaScript to run this app\./i.test(text)
+    && extractMainBundleAssetPath(page) !== null
 }
 
 export const hasPublicJobsSignal = (html = '') =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
-export const isVerifiedMissingCareerRoute = (page = {}) =>
-  Number(page?.status) === 404 && /<title>\s*404 Not Found\s*<\/title>/i.test(String(page?.html ?? ''))
+export const hasVerifiedBundleIdentity = (bundleText = '') =>
+  /react/i.test(String(bundleText))
+    && !hasPublicJobsSignal(bundleText)
+
+export const isVerifiedCareerShell = (page = {}, homepageHtml = '', bundleAssetPath = null) =>
+  Number(page?.status) === 200
+  && hasOfficialHomepageSignal(page?.html)
+  && extractMainBundleAssetPath(page?.html ?? '') === bundleAssetPath
+  && normalizeWhitespace(page?.html ?? '') === normalizeWhitespace(homepageHtml)
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -94,9 +103,19 @@ export const createZen3InfoSolutionsScraper = () => ({
       throw new Error('Zen3 Info Solutions homepage now appears to expose a public jobs surface')
     }
 
+    const bundleAssetPath = extractMainBundleAssetPath(homepage.html)
+    if (!bundleAssetPath) {
+      throw new Error('Zen3 Info Solutions homepage no longer exposes the verified client bundle')
+    }
+
+    const bundlePage = await fetchPage(new URL(bundleAssetPath, HOMEPAGE_URL).toString())
+    if (bundlePage.status !== 200 || !hasVerifiedBundleIdentity(bundlePage.html)) {
+      throw new Error('Zen3 Info Solutions client bundle changed materially or now exposes public job signals')
+    }
+
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareerRoute(routePage)) {
+      if (!isVerifiedCareerShell(routePage, homepage.html, bundleAssetPath)) {
         throw new Error(`Zen3 Info Solutions verified no-public-careers surface changed: ${routePage.url || routeUrl}`)
       }
     }
@@ -107,8 +126,8 @@ export const createZen3InfoSolutionsScraper = () => ({
 
 export const run = async (options = {}) => createZen3InfoSolutionsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

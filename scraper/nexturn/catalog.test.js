@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('NexTurn is registered against its verified first-party careers page and same-domain detail pages', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'nexturn')
@@ -22,6 +22,13 @@ test('NexTurn is registered against its verified first-party careers page and sa
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'nexturn.com')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedPublicJobCount, 63)
+  assert.equal(provider.verifiedIndiaJobCount, 63)
+  assert.equal(provider.verifiedSampleJobTitle, 'Staff Backend Engineer')
+  assert.equal(provider.verifiedSampleJobUrl, 'https://nexturn.com/job/staff-backend-engineer/')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/65\.0\.158\.166\//i)
   assert.match(provider.modulePath, /nexturn[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'NexTurn'), false)
 })

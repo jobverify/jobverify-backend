@@ -18,9 +18,9 @@ export const SAAMA_TECHNOLOGIES_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'saama.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.saama.com/about/company/careers/ remained the exact first-party Saama careers page, handed applicants to https://jobs.jobvite.com/saama/, and that the public Jobvite board exposed India openings including Senior Site Reliability Engineer, Statistical Programmer, and Inside Sales Associate.',
+    'Verified on Tuesday, August 4, 2026 that https://www.saama.com/about/company/careers/ remains the first-party Saama careers page and now embeds the public Jobvite handoff through the on-page jv-careersite widget for https://jobs.jobvite.com/saama/. The public Jobvite board is live and exposes India openings including Senior Site Reliability Engineer in Chennai, Statistical Programmer across 3 locations, and Junior Accountant - Accounts Payable (India) in Hinjewadi, Pune.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

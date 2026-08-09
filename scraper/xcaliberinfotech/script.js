@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,17 +13,50 @@ export const COMPANY_DOMAIN = 'xcaliberinfotech.com'
 export const ATS_PLATFORM = 'sucuri-blocked-first-party-careers-shell'
 export const VERIFIED_ON = '2026-07-18'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const REQUEST_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+}
 
-const defaultFetchText = (url) =>
-  fetchTextWithRetry(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    label: `${SOURCE}-html`,
-    timeoutMs: 15000,
+const createManualFetchSignal = () =>
+  typeof AbortSignal?.timeout === 'function'
+    ? AbortSignal.timeout(15000)
+    : undefined
+
+const fetchTextWithCapturedHttpBody = async (url) => {
+  const response = await fetch(url, {
+    headers: REQUEST_HEADERS,
+    redirect: 'manual',
+    signal: createManualFetchSignal(),
   })
+  const html = await response.text()
+
+  if (response.ok) {
+    return html
+  }
+
+  const error = new Error(`HTTP ${response.status} for ${url}`)
+  error.status = response.status
+  error.responseBody = html
+  throw error
+}
+
+const defaultFetchText = async (url) => {
+  try {
+    return await fetchTextWithRetry(url, {
+      headers: REQUEST_HEADERS,
+      label: `${SOURCE}-html`,
+      timeoutMs: 15000,
+    })
+  } catch (error) {
+    if (!hasHttpStatus(error, 307)) {
+      throw error
+    }
+
+    return fetchTextWithCapturedHttpBody(url)
+  }
+}
 
 export const hasVerifiedBlockedCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -32,9 +65,47 @@ export const hasVerifiedBlockedCareersSignal = (html = '') => {
     && /sucuri_cloudproxy_js/i.test(page)
 }
 
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) {
+      return current
+    }
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasHttpStatus = (error, status) =>
+  Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
+
+const hasVerifiedBlockedCareersError = (error) =>
+  Boolean(
+    findErrorInChain(
+      error,
+      (candidate) =>
+        Number(candidate?.status) === 307
+        && hasVerifiedBlockedCareersSignal(candidate?.responseBody),
+    ),
+  )
+
 export const createXcaliberInfotechScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (hasVerifiedBlockedCareersError(error)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!hasVerifiedBlockedCareersSignal(careersHtml)) {
       throw new Error('Xcaliber Infotech verified first-party careers shell changed materially and no longer matches the blocked public surface')
     }
@@ -46,7 +117,7 @@ export const createXcaliberInfotechScraper = () => ({
 export const run = async (options = {}) => createXcaliberInfotechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

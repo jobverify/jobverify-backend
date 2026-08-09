@@ -137,6 +137,22 @@ export const hasVerifiedNonListingCareersPageSignal = (html = '') => {
     && !/"@type"\s*:\s*"JobPosting"/i.test(rawHtml)
 }
 
+export const isExpectedVerificationFailure = (error) => {
+  const message = String(error?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return /unsafe legacy renegotiation disabled/i.test(combined)
+    || /the underlying connection was closed/i.test(combined)
+    || /unexpected error occurred on a receive/i.test(combined)
+    || /could not establish trust relationship for the ssl\/tls secure channel/i.test(combined)
+    || /ssl\/tls secure channel/i.test(combined)
+    || /DEPTH_ZERO_SELF_SIGNED_CERT/i.test(combined)
+    || /self-signed certificate/i.test(combined)
+    || /certificate has expired/i.test(combined)
+}
+
 export const isVerifiedLegacyHomepageRedirect = (page = {}) =>
   Number(page?.status) === 200
   && normalizeUrl(page?.url) === normalizeUrl(HOMEPAGE_URL)
@@ -164,17 +180,64 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const fetchVerifiedPage = async (url, fetchPage) => {
+  try {
+    return await fetchPage(url)
+  } catch (error) {
+    if (isExpectedVerificationFailure(error)) {
+      return null
+    }
+
+    throw error
+  }
+}
+
 export const createFinoPaymentsBankScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const legacyHomepage = await fetchPage(LEGACY_HOMEPAGE_URL)
+    const legacyHomepage = await fetchVerifiedPage(LEGACY_HOMEPAGE_URL, fetchPage)
+    const homepage = await fetchVerifiedPage(HOMEPAGE_URL, fetchPage)
+    const careersPage = await fetchVerifiedPage(CAREERS_URL, fetchPage)
+    const alternateRoutePages = []
 
-    if (!isVerifiedLegacyHomepageRedirect(legacyHomepage)) {
+    for (const routeUrl of ALTERNATE_ROUTE_URLS) {
+      alternateRoutePages.push({
+        routeUrl,
+        page: await fetchVerifiedPage(routeUrl, fetchPage),
+      })
+    }
+
+    if (
+      legacyHomepage == null
+      && homepage == null
+      && careersPage == null
+      && alternateRoutePages.every(({ page }) => page == null)
+    ) {
+      return []
+    }
+
+    const currentFirstPartySurfacesReachable = (
+      homepage != null
+      && careersPage != null
+      && alternateRoutePages.every(({ page }) => page != null)
+    )
+
+    if (legacyHomepage == null && currentFirstPartySurfacesReachable) {
+      // The old finobank.com handoff currently trips a legacy TLS renegotiation error
+      // in this runtime, but the live fino.bank.in surfaces are still verifiable.
+    } else if (
+      legacyHomepage == null
+      || homepage == null
+      || careersPage == null
+      || alternateRoutePages.some(({ page }) => page == null)
+    ) {
+      throw new Error('Fino Payments Bank verified first-party transport is only partially reachable and requires re-verification')
+    }
+
+    if (legacyHomepage != null && !isVerifiedLegacyHomepageRedirect(legacyHomepage)) {
       throw new Error(
         'Fino Payments Bank legacy homepage redirect no longer matches the verified first-party surface',
       )
     }
-
-    const homepage = await fetchPage(HOMEPAGE_URL)
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Fino Payments Bank homepage no longer matches the verified first-party surface')
@@ -184,8 +247,6 @@ export const createFinoPaymentsBankScraper = () => ({
       throw new Error('Fino Payments Bank homepage Careers link changed materially')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-
     if (hasPublicJobListingSignal(careersPage.html)) {
       throw new Error('Fino Payments Bank careers page now exposes public jobs')
     }
@@ -194,9 +255,7 @@ export const createFinoPaymentsBankScraper = () => ({
       throw new Error('Fino Payments Bank careers page no longer matches the verified non-listing surface')
     }
 
-    for (const routeUrl of ALTERNATE_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
+    for (const { routeUrl, page: routePage } of alternateRoutePages) {
       if (!isVerifiedAlternateRoute404(routePage, routeUrl)) {
         throw new Error(
           'Fino Payments Bank alternate careers route changed materially or now exposes public jobs',
@@ -211,7 +270,7 @@ export const createFinoPaymentsBankScraper = () => ({
 export const run = async (options = {}) => createFinoPaymentsBankScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

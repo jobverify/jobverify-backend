@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 import { NAVI_CATALOG } from './catalog.js'
 
@@ -112,6 +113,25 @@ const formatExperience = (experience = {}) => {
   return null
 }
 
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
 const buildPublicJobUrl = (jobIdObfuscated) =>
   jobIdObfuscated ? `${ORIGIN}/job/publicjobs/${jobIdObfuscated}` : null
 
@@ -161,6 +181,7 @@ export const extractPublicJobs = (payload = {}) =>
       const location = extractPrimaryLocation(record?.Location)
       const sourceUrl = buildPublicJobUrl(normalizeWhitespace(record?.JobIdObfuscated))
       const orgId = normalizeWhitespace(record?.OrgDetails?.OrgID)
+      const jobDescription = stripTags(record?.JobDescV2)
 
       if (!title || !location || !sourceUrl) return null
       if (!/\bindia\b/i.test(location)) return null
@@ -178,7 +199,7 @@ export const extractPublicJobs = (payload = {}) =>
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeWhitespace(record?.JobTypeV2) || null,
-        experienceRequired: formatExperience(record?.Experience),
+        experienceRequired: formatExperience(record?.Experience) || inferExperienceFromDescription(jobDescription),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: Array.isArray(record?.Skills)
@@ -186,7 +207,8 @@ export const extractPublicJobs = (payload = {}) =>
           : [],
         postingDate: normalizeWhitespace(record?.PublishedDate),
         closingDate: normalizeWhitespace(record?.ExpiryDates?.CAREERPAGE),
-        jobDescription: stripTags(record?.JobDescV2),
+        jobDescription,
+        publicExperienceChecked: Boolean(jobDescription),
       }
     })
     .filter(Boolean)
@@ -272,7 +294,7 @@ export const createNaviScraper = ({
 export const run = async (options = {}) => createNaviScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -12,14 +12,14 @@ export const INSPIREDGE_IT_SOLUTIONS_CATALOG = {
   companyCareerPage: 'https://inspiredgeit.com/jobs/',
   atsPlatform: 'official-first-party-jobs-archive',
   countryFilter: 'India',
-  paginationStrategy: 'single-archive-page',
-  extractionStrategy: 'first-party-job-cards',
+  paginationStrategy: 'verified-first-party-archive-pagination',
+  extractionStrategy: 'paginated-first-party-job-cards+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'inspiredgeit.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://inspiredgeit.com/jobs/ is the live first-party Inspiredge jobs archive and that it publicly exposes job cards including Telecom Analyst, Python Developer, and Cisco IPT - T2 with on-page Apply Now links and India-relevant locations such as Remote and Hyderabad.',
+    'Verified on Sunday, August 2, 2026 that https://inspiredgeit.com/jobs/ is the live first-party Inspiredge jobs archive, that the current Simple Job Board list view spans five non-empty archive pages with 66 public role pages in total, and that the current India-relevant openings include titles such as Telecom Analyst, AI Engineer, and Technical Lead with on-page Apply Now links and locations including Remote, Hyderabad, and Visakhapatnam.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

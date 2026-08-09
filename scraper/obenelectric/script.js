@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import OBEN_ELECTRIC_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -74,8 +74,11 @@ const hasInputWithId = (html, id) =>
 
 export const hasOfficialAboutPageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const hasVerifiedTitle = /<title>\s*About Us\s*(?:[-|]\s*Oben Electric)?\s*<\/title>/i.test(page)
 
-  return /Be a part of the future at Oben Electric/i.test(page)
+  return hasVerifiedTitle
+    && /Oben Electric/i.test(normalized)
     && /Explore Careers/i.test(page)
     && /https:\/\/careers\.obenelectric\.com\/jobs\/Careers/i.test(page)
 }
@@ -252,7 +255,7 @@ export const createObenElectricScraper = ({
 export const run = async (options = {}) => createObenElectricScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

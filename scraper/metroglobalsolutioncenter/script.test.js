@@ -60,15 +60,16 @@ const CAREERS_HTML = `
     <title>Careers | METRO GSC IN</title>
     <meta
       name="description"
-      content="At METRO GSC India, you matter. Shape our future and your career- together with us."
+      content="At METRO GSC India, you'll help build the future of METRO from the inside out."
     />
   </head>
   <body>
     <main>
       <h1>Careers</h1>
-      <p>At METRO GSC India, you matter. Shape our future and your career- together with us.</p>
-      <a href="/careers/our-employer-promise">Our Employer Promise</a>
-      <a href="/careers/working-at-mgsc-india">Working at MGSC India</a>
+      <p>At METRO GSC India, you'll help build the future of METRO from the inside out.</p>
+      <a href="/careers/why-join-us">Why Join Us</a>
+      <a href="/careers/people-of-mgsc-india">People of MGSC India</a>
+      <a href="/careers/career-development">Career Development</a>
       <a href="/careers/jobs">Jobs</a>
     </main>
   </body>
@@ -374,7 +375,11 @@ test('Metro Global Solution Center extracts India jobs from the verified paginat
   )
   assert.match(jobs[0].jobDescription, /Build modern full-stack services\./)
   assert.match(jobs[0].minimumQualification, /5\+ years of experience/i)
+  assert.equal(jobs[0].experienceRequired, '5+ years')
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.deepEqual(jobs[0].requiredSkills, ['5+ years of experience', 'JavaScript and cloud engineering'])
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
 test('Metro Global Solution Center run() validates the route chain, paginates the jobs API, filters non-India entries, and returns catalog-ready jobs', async () => {
@@ -424,6 +429,8 @@ test('Metro Global Solution Center run() validates the route chain, paginates th
       atsPlatform: job.atsPlatform,
       link: job.link,
       scrapedAt: job.scrapedAt,
+      experienceRequired: job.experienceRequired,
+      publicExperienceChecked: job.publicExperienceChecked,
     })),
     [
       {
@@ -433,9 +440,11 @@ test('Metro Global Solution Center run() validates the route chain, paginates th
         companyCareerPage: JOBS_URL,
         companyDomain: COMPANY_DOMAIN,
         atsPlatform: 'official-company-careers',
-        link:
+      link:
           'https://jobs.smartrecruiters.com/METROMAKRO/744000137129495-sr-full-stack-engineer?oga=true&utm_source=external%20careers',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        experienceRequired: '5+ years',
+        publicExperienceChecked: true,
       },
       {
         title: 'Group Manager - Transitions',
@@ -447,6 +456,8 @@ test('Metro Global Solution Center run() validates the route chain, paginates th
         link:
           'https://jobs.smartrecruiters.com/METROMAKRO/744000137128765-group-manager-transitions?oga=true&utm_source=external%20careers',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        experienceRequired: null,
+        publicExperienceChecked: true,
       },
     ],
   )

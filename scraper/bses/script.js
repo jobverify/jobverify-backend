@@ -18,25 +18,24 @@ const PUBLIC_JOBS_SIGNAL_PATTERN =
 export const hasOfficialBsesPageShape = (html) => {
   const page = String(html || '')
   const normalized = normalizeWhitespace(page)
+  const hasBrplSurface =
+    BRPL_LINK_PATTERN.test(page)
+    || /BSES Rajdhani Power (?:Ltd|Limited)/i.test(normalized)
+  const hasByplSurface =
+    BYPL_LINK_PATTERN.test(page)
+    || /BSES Yamuna Power (?:Ltd|Limited)/i.test(normalized)
 
   return /<title>\s*BSES\s*<\/title>/i.test(page)
     && /Home\s*-\s*BSES/i.test(page)
-    && (
-      BRPL_LINK_PATTERN.test(page)
-      || (/BSES Rajdhani Power (?:Ltd|Limited)/i.test(normalized) && /\/web\/brpl\/home/i.test(page))
-    )
-    && (
-      BYPL_LINK_PATTERN.test(page)
-      || (/BSES Yamuna Power (?:Ltd|Limited)/i.test(normalized) && /\/web\/bypl\/home/i.test(page))
-    )
-    && /New Delhi/i.test(normalized)
+    && hasBrplSurface
+    && hasByplSurface
     && !PUBLIC_JOBS_SIGNAL_PATTERN.test(normalized)
 }
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

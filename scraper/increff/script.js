@@ -1,8 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -141,7 +141,7 @@ export const createIncreffScraper = ({
 export const run = async () => createIncreffScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 
   if (process.argv.includes('--dry-run')) {

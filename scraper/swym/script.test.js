@@ -43,7 +43,7 @@ const careersHtml = `
       <title>Careers at Swym | Join Our Remote-First eCommerce Team</title>
       <meta
         name="description"
-        content="Join Swym's remote-first team building innovative eCommerce solutions. Competitive compensation, flexible PTO, health benefits, and a culture of growth."
+        content="Join Swym's remote-first team building innovative eCommerce solutions. Competitive compensation, flexible time off, health insurance, and a culture of growth."
       />
       <link href="https://www.getswym.com/careers" rel="canonical" />
       <script type="application/ld+json">
@@ -58,9 +58,10 @@ const careersHtml = `
     <body>
       <main>
         <h1>Come win with us</h1>
-        <p>We’re a remote-first company with team members all over the world.</p>
+        <p>We're a remote-first company with team members all over the world.</p>
         <h4>Competitive compensation</h4>
-        <p>Flexible PTO and health benefits help our global team grow.</p>
+        <p>Flexible time off plus 20 days of PTO help our global team grow.</p>
+        <p>Health &amp; wellness starts with health insurance for your family.</p>
         <a href="https://wellfound.com/company/swym/jobs" target="_blank">View Current Openings</a>
       </main>
     </body>
@@ -76,8 +77,8 @@ const jobs404Html = `
     </head>
     <body>
       <main>
-        <h1>We’ve looked everywhere!</h1>
-        <p>Just like a favorite item that’s gone out of stock, this page is currently unavailable.</p>
+        <h1>We've looked everywhere!</h1>
+        <p>Just like a favorite item that's gone out of stock, this page is currently unavailable.</p>
         <a href="/">Go to Homepage</a>
       </main>
       <div class="utility-page-content">

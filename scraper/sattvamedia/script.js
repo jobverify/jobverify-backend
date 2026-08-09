@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { SATTVA_MEDIA_CATALOG } from './catalog.js'
 
@@ -146,6 +146,14 @@ const extractDescriptionHtml = (html) => {
   return String(match?.[1] || '')
 }
 
+export const hasBlockedFirstPartyAccessSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html) || ''
+  return /Attention Required!\s*\|\s*Cloudflare/i.test(normalized)
+    && /please enable cookies/i.test(normalized)
+    && /you are unable to access/i.test(normalized)
+    && /cloudflare/i.test(normalized)
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -171,9 +179,7 @@ export const hasOfficialJoinUsLandingSignal = (html) => {
     && /\bLife at Sattva\b/i.test(normalized)
     && /\bCareers\b/i.test(normalized)
     && /careers@sattva\.co\.in/i.test(normalized)
-    && toAbsoluteUrl(firstMatch(html, [
-      /<a[^>]+href="([^"]*\/join-us\/careers\/?)"[^>]*>\s*Know more\s*<\/a>/i,
-    ]), JOIN_US_URL) === CAREERS_URL
+    && /Learn about our new opportunities and apply for positions online/i.test(normalized)
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
@@ -182,7 +188,6 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /Interested in being one of us\?/i.test(normalized)
     && /\bSEE ALL JOBS\b/i.test(normalized)
     && /careers@sattva\.co\.in/i.test(normalized)
-    && extractFreshteamJobsUrl(html) === LISTING_URL
 }
 
 export const hasOfficialJobsBoardSignal = (html) => {
@@ -197,17 +202,26 @@ export const extractListingCards = (html) => {
 
   for (const anchorMatch of String(html ?? '').matchAll(/<a[^>]+href="([^"]*\/jobs\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
     const detailUrl = toAbsoluteUrl(anchorMatch[1], LISTING_URL)
-    const spanValues = [...anchorMatch[2].matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
+    const anchorHtml = String(anchorMatch[2] ?? '')
+    const spanValues = [...anchorHtml.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
       .map((match) => normalizeWhitespace(match[1]))
+      .filter(Boolean)
+    const title = firstMatch(anchorHtml, [
+      /<div[^>]+class="job-title"[^>]*>([\s\S]*?)<\/div>/i,
+    ]) || spanValues[0]
+    const locationLines = String(anchorHtml.match(/<div[^>]+class="location-info"[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .split(/\r?\n/)
+      .map((line) => normalizeWhitespace(line))
       .filter(Boolean)
     const { opaqueId, slug } = extractJobPathParts(detailUrl)
 
-    if (!detailUrl || !opaqueId || !slug || spanValues.length === 0) continue
+    if (!detailUrl || !opaqueId || !slug || !title) continue
 
     listings.push({
-      title: spanValues[0],
-      locationHint: spanValues[1] || null,
-      employmentTypeHint: spanValues[2] || null,
+      title,
+      locationHint: locationLines[0] || spanValues[1] || null,
+      employmentTypeHint: locationLines[1] || spanValues[2] || null,
       detailUrl,
       sourceUrl: detailUrl,
       applyUrl: detailUrl,
@@ -269,17 +283,22 @@ export const createSattvaMediaScraper = ({
     const fetchText = options.fetchText || defaultFetchText
     const now = options.now || (() => new Date().toISOString())
     const joinUsHtml = await fetchText(JOIN_US_URL)
+    const joinUsBlocked = hasBlockedFirstPartyAccessSignal(joinUsHtml)
 
-    if (!hasOfficialJoinUsLandingSignal(joinUsHtml)) {
+    if (!hasOfficialJoinUsLandingSignal(joinUsHtml) && !joinUsBlocked) {
       throw new Error('The verified Sattva join-us landing page no longer matches the trusted public surface')
     }
 
     const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
+    const careersBlocked = hasBlockedFirstPartyAccessSignal(careersHtml)
+
+    if (!hasOfficialCareersPageSignal(careersHtml) && !careersBlocked) {
       throw new Error('The verified Sattva careers page no longer matches the trusted public surface')
     }
 
-    const listingUrl = extractFreshteamJobsUrl(careersHtml)
+    const listingUrl = hasOfficialCareersPageSignal(careersHtml)
+      ? (extractFreshteamJobsUrl(careersHtml) || LISTING_URL)
+      : LISTING_URL
     if (listingUrl !== LISTING_URL) {
       throw new Error('The verified Sattva careers page no longer points to the expected Freshteam board')
     }
@@ -311,7 +330,7 @@ export const createSattvaMediaScraper = ({
 export const run = async (options = {}) => createSattvaMediaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

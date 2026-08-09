@@ -22,6 +22,17 @@ const homepageHtml = `
   </html>
 `
 
+const homepageWithoutTrailingSlashHtml = `
+  <!doctype html>
+  <html lang="en">
+    <body>
+      <h1>ELEATION</h1>
+      <p>CAD-CAE Training &amp; CAE Services</p>
+      <a href="https://eleation.com/career">Career</a>
+    </body>
+  </html>
+`
+
 const careersHtml = `
   <!doctype html>
   <html lang="en">
@@ -47,12 +58,25 @@ const placementProcedureHtml = `
   </html>
 `
 
+const updatedPlacementProcedureHtml = `
+  <!doctype html>
+  <html lang="en">
+    <body>
+      <h1>Placement Procedure | ELEATION Career</h1>
+      <p>Submit your placement enquiry from the career page.</p>
+      <p>Based on current requirements, shortlisted candidates may be considered for suitable roles related to technical training and engineering projects.</p>
+    </body>
+  </html>
+`
+
 test('validates the verified official ELEATION public surfaces and returns no structured jobs', async () => {
   const requestedUrls = []
 
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(hasOfficialHomepageSignal(homepageWithoutTrailingSlashHtml), true)
   assert.equal(hasApplicationOnlyCareersSignal(careersHtml), true)
   assert.equal(hasPlacementProcedureSignal(placementProcedureHtml), true)
+  assert.equal(hasPlacementProcedureSignal(updatedPlacementProcedureHtml), true)
 
   const jobs = await createEleationScraper().run({
     fetchText: async (url) => {

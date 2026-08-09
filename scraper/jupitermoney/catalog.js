@@ -1,9 +1,9 @@
-export const JUPITER_MONEY_CATALOG = {
+﻿export const JUPITER_MONEY_CATALOG = {
   source: 'jupitermoney',
   companyName: 'Jupiter Money',
   officialBrandName: 'Jupiter Money',
   adapter: 'script',
-  modulePath: '../jupitermoney/script.js',
+  modulePath: '../../scraper/jupitermoney/script.js',
   dryRunFile: 'jupitermoney/jobs.json',
   homepageUrl: 'https://jupiter.money/',
   aboutPageUrl: 'https://jupiter.money/about-us/',
@@ -27,3 +27,4 @@ export const JUPITER_MONEY_CATALOG = {
 }
 
 export default JUPITER_MONEY_CATALOG
+

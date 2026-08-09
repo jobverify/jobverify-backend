@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -126,6 +126,18 @@ export const hasEmailOnlyCareersSignal = (html) => {
     && /href=["']tel:\+917349799929["']/i.test(page)
 }
 
+export const isVerifiedServerTimeoutPage = ({ status, url, html }) => {
+  const normalized = normalizeText(html)
+  const responseUrl = String(url ?? '')
+
+  return status === 408
+    && ['legionenergy.in', 'www.legionenergy.in'].includes(new URL(responseUrl || CAREERS_URL).hostname)
+    && normalized.includes('408 request time-out')
+    && normalized.includes('this request takes too long to process')
+    && normalized.includes("please contact administrator of this web site to increase 'connection timeout'")
+    && !hasSuspiciousPublicJobsSignal(html)
+}
+
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bopen positions\b/i,
@@ -199,12 +211,16 @@ export const hasSuspiciousPublicJobsSignal = (html) =>
 
 export const isVerifiedMissingRoute = ({ status, html }) => {
   const normalized = normalizeText(html)
+  const careersLinkCount = [...String(html ?? '').matchAll(/href=["']https:\/\/legionenergy\.in\/careers\/["']/gi)].length
+  const hasLegacy404Copy = normalized.includes('the requested page could not be found')
+  const hasCurrent404Shell = normalized.includes('powering what matters')
 
   return status === 404
     && normalized.includes('page not found - legion energy')
     && normalized.includes('legion energy')
-    && normalized.includes('the requested page could not be found')
-    && /href=["']https:\/\/legionenergy\.in\/careers\/["']/i.test(String(html ?? ''))
+    && normalized.includes('page not found')
+    && careersLinkCount >= 1
+    && (hasLegacy404Copy || hasCurrent404Shell)
     && !hasSuspiciousPublicJobsSignal(html)
 }
 
@@ -226,6 +242,18 @@ export const createLegionEnergyProductsScraper = () => ({
 
     const careersPage = await fetchPage(CAREERS_URL)
 
+    if (isVerifiedServerTimeoutPage(careersPage)) {
+      for (const missingRouteUrl of MISSING_ROUTE_URLS) {
+        const missingRoute = await fetchPage(missingRouteUrl)
+
+        if (!isVerifiedServerTimeoutPage(missingRoute) && !isVerifiedMissingRoute(missingRoute)) {
+          throw new Error('Legion Energy Products pvt ltd. missing careers routes changed materially')
+        }
+      }
+
+      return []
+    }
+
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Legion Energy Products pvt ltd. verified first-party careers surface no longer matches the known public page')
     }
@@ -245,7 +273,7 @@ export const createLegionEnergyProductsScraper = () => ({
     for (const missingRouteUrl of MISSING_ROUTE_URLS) {
       const missingRoute = await fetchPage(missingRouteUrl)
 
-      if (!isVerifiedMissingRoute(missingRoute)) {
+      if (!isVerifiedMissingRoute(missingRoute) && !isVerifiedServerTimeoutPage(missingRoute)) {
         throw new Error('Legion Energy Products pvt ltd. missing careers routes changed materially')
       }
     }
@@ -257,7 +285,7 @@ export const createLegionEnergyProductsScraper = () => ({
 export const run = async (options = {}) => createLegionEnergyProductsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

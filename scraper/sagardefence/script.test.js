@@ -45,6 +45,23 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers &#8211; Sagar Defence Engineering | Unmanned Systems</title>
+  </head>
+  <body>
+    <main>
+      <h1>Careers</h1>
+      <p>SDE provides a challenging and conducive work environment.</p>
+      <p>At SDE, we truly believe that the strength of a company lies in its human resources and we take it as our responsibility to look after the career development of our employees.</p>
+      <p>Then send us your resume and goals to careers@sagardefence.com. If we think there's a fit, it won't be long before you hear from us.</p>
+    </main>
+  </body>
+</html>
+`
+
 const contactHtml = `
 <!doctype html>
 <html lang="en">
@@ -75,6 +92,15 @@ test('Sagar Defence scraper validates the verified homepage, email-only careers 
   assert.equal(sagar.hasOfficialContactSignal(contactHtml), true)
   assert.equal(sagar.extractApplicationEmail(careersHtml), 'careers@sagardefence.com')
   assert.equal(sagar.hasUnexpectedPublicJobsSignal(careersHtml), false)
+})
+
+test('Sagar Defence scraper recognizes the current live careers page as the same email-only public surface', async () => {
+  const sagar = await loadModule()
+  assert.ok(sagar, 'Sagar Defence scraper module should load')
+
+  assert.equal(sagar.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.equal(sagar.extractApplicationEmail(currentCareersHtml), 'careers@sagardefence.com')
+  assert.equal(sagar.hasUnexpectedPublicJobsSignal(currentCareersHtml), false)
 })
 
 test('Sagar Defence scraper returns no jobs while the verified careers surface remains email-only', async () => {

@@ -1,0 +1,22 @@
+{
+  "source": "nuro",
+  "companyName": "Nuro",
+  "officialBrandName": "Nuro",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../nuro/script.js",
+  "dryRunFile": "nuro/jobs.json",
+  "companyCareerPage": "https://www.nuro.ai/careers",
+  "companyDomain": "nuro.ai",
+  "atsPlatform": "official-first-party-careers-page-fail-closed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.nuro.ai/careers",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.nuro.ai/careers is Nuro's first-party careers page and exposes an Open Roles interface with individual careersitem links. This repository does not have a verified stable public jobs-feed contract for that surface, so the exact-name provider fails closed and returns no jobs until the feed can be verified."
+}

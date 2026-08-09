@@ -76,19 +76,19 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  return /<title>\s*iBall\s*[-|–]\s*Electronics\s*&?\s*Peripherals\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('designed for excellence')
-    && normalized.includes('since 2001')
+  return /<title>\s*iBall\s*(?:-|&ndash;|&#8211;|\u2013)\s*Electronics\s*&(?:amp;)?\s*Peripherals\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('our range')
+    && normalized.includes('upgrade your digital lifestyle')
     && normalized.includes('about iball')
     && normalized.includes('news center')
-    && normalized.includes('careers')
+    && normalized.includes('service centers')
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  return /<title>\s*About Us\s*[-|–]\s*iBall\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*About Us\s*(?:-|&ndash;|&#8211;|\u2013)\s*iBall\s*<\/title>/i.test(rawHtml)
     && normalized.includes('about iball')
     && normalized.includes('commitment to india')
     && normalized.includes('corporate office')
@@ -141,7 +141,7 @@ export const createIBallScraper = () => ({
 export const run = async (options = {}) => createIBallScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

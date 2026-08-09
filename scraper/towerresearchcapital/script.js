@@ -2,8 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { TOWER_RESEARCH_CAPITAL_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -20,6 +21,8 @@ export const PROVIDER_METADATA = TOWER_RESEARCH_CAPITAL_CATALOG
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const GROUPED_LOCATION_LABEL_REGEX = /^(?:\d+\s+locations?|multiple locations|various locations)$/i
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -73,10 +76,41 @@ const extractMetadataValue = (job, fieldName) => {
   return normalizeWhitespace(value)
 }
 
+const extractOffices = (job = {}) => (Array.isArray(job?.offices) ? job.offices : [])
+
 const extractOfficeLocations = (job = {}) =>
-  (Array.isArray(job?.offices) ? job.offices : [])
+  extractOffices(job)
     .map((office) => normalizeWhitespace(office?.location))
     .filter(Boolean)
+
+const isGroupedLocationLabel = (value) => GROUPED_LOCATION_LABEL_REGEX.test(normalizeWhitespace(value) || '')
+
+const normalizeLocationKey = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  return normalizeCity(normalized)?.toLowerCase() || normalized.toLowerCase()
+}
+
+const findMatchingOffice = (job = {}, primaryLocation) => {
+  const normalizedPrimary = normalizeWhitespace(primaryLocation)?.toLowerCase()
+  if (!normalizedPrimary) return null
+
+  return extractOffices(job).find((office) => {
+    const officeName = normalizeWhitespace(office?.name)?.toLowerCase()
+    const officeLocationCity = normalizeWhitespace(office?.location)?.split(',')[0]?.trim().toLowerCase()
+
+    return officeName === normalizedPrimary || officeLocationCity === normalizedPrimary
+  }) || null
+}
+
+const isDirectIndiaLocation = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return false
+  if (/(?:^|,\s*)India(?:$|[\s,)(-])/i.test(normalized)) return true
+
+  return Boolean(getValidIndiaCityForJob({ location: normalized, locations: [normalized] }))
+}
 
 const looksLikeIndiaLocation = (value, officeLocations = []) => {
   const normalized = normalizeWhitespace(value)
@@ -86,15 +120,58 @@ const looksLikeIndiaLocation = (value, officeLocations = []) => {
   return Boolean(getValidIndiaCityForJob({ location: normalized, locations: officeLocations }))
 }
 
+const isExplicitForeignPrimaryLocation = (job = {}, primaryLocation) => {
+  const normalizedPrimary = normalizeWhitespace(primaryLocation)
+  if (!normalizedPrimary || isGroupedLocationLabel(normalizedPrimary) || isDirectIndiaLocation(normalizedPrimary)) {
+    return false
+  }
+
+  const matchingOffice = findMatchingOffice(job, normalizedPrimary)
+  if (!matchingOffice) return false
+
+  return !isDirectIndiaLocation(matchingOffice.location || matchingOffice.name)
+}
+
 const chooseIndiaLocation = (job = {}) => {
   const primaryLocation = normalizeWhitespace(job?.location?.name)
   const officeLocations = extractOfficeLocations(job)
-  const officeIndiaLocation = officeLocations.find((value) => looksLikeIndiaLocation(value, officeLocations))
+  const officeIndiaLocation = officeLocations.find((value) => isDirectIndiaLocation(value))
   const countryMetadata = extractMetadataValue(job, 'Country')
+  const normalizedCountryMetadata = countryMetadata?.toLowerCase()
 
+  if (isExplicitForeignPrimaryLocation(job, primaryLocation) && normalizedCountryMetadata !== 'india') {
+    return null
+  }
+
+  if (primaryLocation && isDirectIndiaLocation(primaryLocation)) {
+    if (!officeIndiaLocation) return primaryLocation
+
+    const officeIndiaCityKey = normalizeLocationKey(
+      normalizeWhitespace(officeIndiaLocation)?.split(',')[0]?.trim(),
+    )
+    return officeIndiaCityKey === normalizeLocationKey(primaryLocation)
+      ? officeIndiaLocation
+      : `${primaryLocation}, India`
+  }
+
+  if (primaryLocation && !isGroupedLocationLabel(primaryLocation) && officeIndiaLocation) {
+    const officeIndiaCityKey = normalizeLocationKey(
+      normalizeWhitespace(officeIndiaLocation)?.split(',')[0]?.trim(),
+    )
+    return officeIndiaCityKey === normalizeLocationKey(primaryLocation)
+      ? officeIndiaLocation
+      : `${primaryLocation}, India`
+  }
+
+  if (
+    primaryLocation
+    && !isGroupedLocationLabel(primaryLocation)
+    && looksLikeIndiaLocation(primaryLocation, officeLocations)
+  ) {
+    return primaryLocation
+  }
   if (officeIndiaLocation) return officeIndiaLocation
-  if (primaryLocation && looksLikeIndiaLocation(primaryLocation, officeLocations)) return primaryLocation
-  if (countryMetadata?.toLowerCase() === 'india') return primaryLocation || 'India'
+  if (normalizedCountryMetadata === 'india') return primaryLocation || 'India'
 
   return null
 }
@@ -127,10 +204,12 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasOfficialCareersLandingSignal = (html) => {
   const page = String(html ?? '')
+  const text = normalizeWhitespace(page)?.toLowerCase() || ''
 
   return /<title>\s*Careers - Tower Research Capital\s*<\/title>/i.test(page)
-    && /Build Your Career at Tower/i.test(page)
-    && /Explore Open Roles/i.test(page)
+    && text.includes('build your career at tower')
+    && text.includes('continuous investment in top trading and engineering talent is our not-so-secret sauce.')
+    && text.includes('explore our open roles and move one step closer to reaching your full potential.')
 }
 
 export const hasVerifiedRolesPageSignal = (html) => {
@@ -223,14 +302,18 @@ export const extractIndiaJobsFromGreenhousePayload = (
     })
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  const page = await fetchPageWithRetry(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    label: SOURCE,
+    timeoutMs: 20000,
+  })
+
+  return page.html
+}
 
 const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   method: options.method,
@@ -273,8 +356,8 @@ export const createTowerResearchCapitalScraper = ({
 
 export const run = async (options = {}) => createTowerResearchCapitalScraper(options).run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

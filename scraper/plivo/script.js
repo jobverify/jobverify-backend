@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { PLIVO_CATALOG } from './catalog.js'
 
@@ -15,7 +15,7 @@ export const OFFICIAL_BRAND_NAME = PLIVO_CATALOG.officialBrandName
 export const HOMEPAGE_URL = PLIVO_CATALOG.homepageUrl
 export const CAREERS_URL = PLIVO_CATALOG.companyCareerPage
 export const LEVER_BOARD_URL = PLIVO_CATALOG.officialLeverBoardUrl
-export const LEVER_API_URL = PLIVO_CATALOG.leverApiUrl
+export const LEVER_API_URL = 'https://api.lever.co/v0/postings/plivo?mode=json'
 export const VERIFIED_ON = PLIVO_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PLIVO_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = PLIVO_CATALOG
@@ -121,15 +121,32 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const text = normalizeText(rawHtml)
 
-  return extractTitle(rawHtml) === 'Plivo'
-    && /Job openings at Plivo/i.test(rawHtml)
-    && text.includes('location type')
+  const hasVerifiedTitle = extractTitle(rawHtml) === 'Plivo'
+  const hasVerifiedBranding = /Job openings at Plivo/i.test(rawHtml)
+  const hasLegacyLayout = text.includes('location type')
     && text.includes('team')
     && text.includes('work type')
-  }
+  const hasCurrentEmptyLayout = hasEmptyLeverBoardSignal(rawHtml)
+    && text.includes('plivo home page')
+    && text.includes('privacy notice')
+    && text.includes('artificial intelligence (ai) tools')
+    && text.includes('jobs powered by')
+
+  return hasVerifiedTitle
+    && hasVerifiedBranding
+    && (hasLegacyLayout || hasCurrentEmptyLayout)
+}
 
 export const hasEmptyLeverBoardSignal = (html = '') =>
   /No job postings currently open\.\s*Check back later!/i.test(String(html ?? ''))
+
+export const hasMissingLeverBoardSignal = ({ status, html = '', url = LEVER_BOARD_URL } = {}) => {
+  const rawHtml = String(html ?? '')
+
+  return Number(status) === 404
+    && extractTitle(rawHtml) === 'Not found - 404 error'
+    && normalizeWhitespace(url) === LEVER_BOARD_URL
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -139,6 +156,21 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: DEFAULT_JSON_HEADERS,
@@ -194,6 +226,7 @@ export const createPlivoScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchPage = defaultFetchPage,
   } = {}) {
     const jobsPageHtml = await fetchText(CAREERS_URL)
 
@@ -211,14 +244,22 @@ export const createPlivoScraper = ({
       throw new Error('Plivo jobs bundle no longer exposes the verified Lever API')
     }
 
-    const leverBoardHtml = await fetchText(LEVER_BOARD_URL)
-    if (!hasOfficialLeverBoardSignal(leverBoardHtml)) {
+    const leverBoardPage = await fetchPage(LEVER_BOARD_URL)
+    const leverBoardHtml = leverBoardPage?.html || ''
+    const hasVerifiedEmptyLeverBoard = hasOfficialLeverBoardSignal(leverBoardHtml)
+    const hasVerifiedMissingLeverBoard = hasMissingLeverBoardSignal(leverBoardPage)
+
+    if (!hasVerifiedEmptyLeverBoard && !hasVerifiedMissingLeverBoard) {
       throw new Error('Plivo verified public Lever board changed materially')
     }
 
     const leverJobs = extractLeverJobs(await fetchJson(LEVER_API_URL))
-    if (leverJobs.length === 0 && !hasEmptyLeverBoardSignal(leverBoardHtml)) {
-      throw new Error('Plivo verified public Lever board no longer matches the live empty-board state')
+    if (leverJobs.length === 0 && !hasEmptyLeverBoardSignal(leverBoardHtml) && !hasVerifiedMissingLeverBoard) {
+      throw new Error('Plivo verified public Lever board no longer matches the live no-openings state')
+    }
+
+    if (leverJobs.length > 0 && hasVerifiedMissingLeverBoard) {
+      throw new Error('Plivo Lever board is missing while the Lever API still exposes jobs')
     }
 
     const selectedJobs = maxJobs ? leverJobs.slice(0, maxJobs) : leverJobs
@@ -239,7 +280,7 @@ export const createPlivoScraper = ({
 export const run = async (options = {}) => createPlivoScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

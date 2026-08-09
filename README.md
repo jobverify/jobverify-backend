@@ -1,8 +1,8 @@
-# Jobify Backend
+# Jobverify Backend
 
-## Release: 26.07.03
+## Test Release: 26.07.04
 
-Express and MongoDB backend for Jobify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
+Express and MongoDB backend for Jobverify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
 ## Tech Stack
 
@@ -15,7 +15,7 @@ Express and MongoDB backend for Jobify, with a separate scraper runtime that col
 ## Repository Layout
 
 ```text
-Jobify-backend/
+Jobverify-backend/
 |-- src/                  Application source code
 |   |-- controllers/      Route handlers
 |   |-- middleware/       Auth, CSRF, validation, error handling
@@ -39,7 +39,7 @@ Jobify-backend/
 ## Testing Conventions
 
 - Backend API and service tests live in `test/`.
-- Shared scraper engine, fixture-based regression tests, and legacy scraper tests live in `scraper/tests/`.
+- Shared scraper engine, fixture-based regression tests, and legacy scraper tests live in `scraper-support/tests/`.
 - New scraper-specific tests can stay next to the scraper as `scraper/<company>/script.test.js`.
 - Avoid reintroducing a top-level `tests/` folder. Keep backend tests in `test/` and scraper test assets under `scraper/`.
 
@@ -70,6 +70,71 @@ npm run dev
 npm run lint
 npm run coverage:companies
 npm run scrape:dry
+npm run scrape:csv -- --parallel --dry-run
 ```
 
+## Scraper company coverage
+
+`company_coverage_report.json` is the authoritative inventory of cataloged,
+disk-backed scraper providers. Refresh it after adding or removing a scraper:
+
+```bash
+npm run coverage:companies:sync
+```
+
+The refresh removes obsolete frontend coverage artifacts. `npm run
+coverage:companies -- <csv>` only evaluates an external backlog against the
+catalog and aliases; it does not refresh the scraper inventory.
+
+To run only the companies listed in `../new_Companies.csv`, use:
+
+```bash
+npm run scrape:csv -- --parallel --dry-run
+```
+
+You can also point the command at a different CSV:
+
+```bash
+npm run scrape:csv -- ../path/to/company-list.csv --parallel --dry-run
+```
+
+## Public job API abuse protection
+
+Jobverify keeps public job discovery open without requiring login. `GET /api/jobs`, `GET|POST /api/jobs/search`, and `GET /api/jobs/:id` are the guarded anonymous discovery routes. Job metadata, landing-page statistics, live hiring companies, and the SEO feed remain public and continue to rely on the existing coarse IP limits.
+
+The in-memory abuse guard watches for rapid distinct page walking and bursts of distinct job-detail reads, then returns JSON-only throttling responses before the controllers do expensive database work. This is designed to be lightweight enough for Render Free and does not require Redis or another managed store.
+
+The public discovery protection uses these environment variables:
+
+- `PUBLIC_JOB_ABUSE_PAGE_WALK_WINDOW_MS=60000`
+- `PUBLIC_JOB_ABUSE_PAGE_WALK_LIMIT=30`
+- `PUBLIC_JOB_ABUSE_DETAIL_WINDOW_MS=60000`
+- `PUBLIC_JOB_ABUSE_DETAIL_LIMIT=90`
+- `PUBLIC_JOB_ABUSE_VIOLATION_WINDOW_MS=900000`
+- `PUBLIC_JOB_ABUSE_VIOLATION_LIMIT=5`
+- `PUBLIC_JOB_ABUSE_BLOCK_MS=900000`
+- `PUBLIC_JOB_ABUSE_MAX_RECORDS=5000`
+
+Operational notes:
+
+- Public throttles return `429` with `Retry-After`, `Cache-Control: no-store`, and `error: "rate_limited"`.
+- Repeated violations return temporary `403` responses with the same cache and retry headers plus `error: "access_denied"`.
+- Set `TRUST_PROXY` correctly in Render so Express uses the real client IP instead of the load balancer hop.
+- On Render Free, the abuse store is process-local, so counters can reset after a restart or free-tier spin-down. That is expected for this phase.
+- A Cloudflare WAF or rate-limit rule can be added later as a separate manual production step, but this repository does not assume that Cloudflare protection is already configured.
+
 For full setup, environment variables, and operational steps, see [RUNBOOK.md](./RUNBOOK.md).
+## WhatsApp alerts
+
+- `WHATSAPP_PROVIDER` selects `mock` or `meta`
+- `WHATSAPP_ENABLED=true` enables live delivery
+- `WHATSAPP_DEFAULT_COUNTRY_CODE=IN` normalizes local 10-digit mobile numbers
+- `WHATSAPP_RETRY_COUNT` and `WHATSAPP_RETRY_DELAY_MS` control bounded retries
+- `WHATSAPP_SEND_TIMEOUT_MS` bounds each provider attempt and aborts Meta sends that overrun that limit
+- `WHATSAPP_CLAIM_TTL_MS` controls how long a claimed delivery row stays owned before recovery may reclaim it
+- `WHATSAPP_ALLOW_LEGACY_QUEUE_RECLAIM=false` keeps pre-lease `queued + lastAttemptAt` rows fenced off by default during mixed-version rollouts
+
+Legacy reclaim rollout note:
+
+- Leave `WHATSAPP_ALLOW_LEGACY_QUEUE_RECLAIM=false` while any older backend worker that still uses `queued + lastAttemptAt` ownership might be alive.
+- After older workers are drained, operators can temporarily set the flag to any accepted true value (`1`, `true`, `yes`, `on`) to recover stranded legacy rows, then return it to `false`.

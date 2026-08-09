@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -17,7 +17,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: OFFICIAL_BRAND_NAME,
   adapter: 'script',
-  modulePath: '../absolute/script.js',
+  modulePath: '../../scraper/absolute/script.js',
   companyCareerPage: CAREERS_URL,
   officialCareersHandoffUrl: JOB_BOARD_URL,
   atsPlatform: 'jobvite',
@@ -125,9 +125,16 @@ const buildDetailUrl = (jobviteId) => DETAIL_URL_PATTERN.replace('{jobvite_id}',
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasLegacyOrCurrentHeroSignal =
+    /Absolute Security Cyber Resilience Platform/i.test(normalized)
+    || (
+      /Detect\.\s*Remediate\.\s*Rehydrate\.\s*Recover\.\s*Autonomously\b/i.test(normalized)
+      && /THE AUTONOMOUS CYBER RESILIENCE PLATFORM/i.test(normalized)
+      && /We Stop Downtime/i.test(normalized)
+    )
 
   return /<title>\s*Stop Downtime (?:&|&amp;) Business Disruption \| Absolute Security\s*<\/title>/i.test(page)
-    && /Absolute Security Cyber Resilience Platform/i.test(normalized)
+    && hasLegacyOrCurrentHeroSignal
     && /href=["'](?:https:\/\/www\.absolute\.com)?\/company\/careers\/?["']/i.test(page)
     && /Absolute Security/i.test(normalized)
 }
@@ -352,7 +359,7 @@ export const createAbsoluteScraper = ({
 export const run = async (options = {}) => createAbsoluteScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
@@ -362,3 +369,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

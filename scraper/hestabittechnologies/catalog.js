@@ -13,15 +13,15 @@ export const HESTABIT_TECHNOLOGIES_CATALOG = {
   companyDomain: 'hestabit.com',
   atsPlatform: 'first-party-careers-page-third-party-google-forms-handoff',
   countryFilter: 'India',
-  paginationStrategy: 'fail-closed-single-page',
-  extractionStrategy: 'verified-first-party-role-teasers+verified-google-forms-handoff+fail-closed-sentinel',
+  paginationStrategy: 'single-first-party-careers-page',
+  extractionStrategy: 'verified-first-party-role-teasers+shared-google-forms-apply-handoff',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.hestabit.com/career is the live first-party HestaBit careers page and that it exposes role teasers such as Senior PHP Developer, Associate PHP Developer, and Senior Graphic Designer. Every visible apply action on that page hands applicants to docs.google.com Google Forms rather than a trustworthy first-party or trusted public jobs board, so this local provider intentionally fails closed and returns an empty array until Hestabit publishes a trustworthy public jobs surface.',
+    'Verified on August 2, 2026 that https://www.hestabit.com/career is the live first-party HestaBit careers page and that it publicly exposes role teasers for Senior PHP Developer, Associate PHP Developer, and Senior Graphic Designer. The visible apply actions currently hand applicants to the shared Google Forms URL at https://docs.google.com/forms/d/e/1FAIpQLSfXioSOGYzPIXMVe9as38gl_tS_ZmQM3ETDoSokRaAwOJOK_w/viewform, so this provider now scrapes the first-party role teasers and preserves the verified third-party apply handoff.',
   modulePath: path.resolve(currentDir, 'script.js'),
-  dryRunFile: path.join(currentDir, 'jobs.json'),
+  dryRunFile: 'hestabittechnologies/jobs.json',
 }
 
 export default HESTABIT_TECHNOLOGIES_CATALOG

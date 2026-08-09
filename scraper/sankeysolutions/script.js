@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SANKEY_SOLUTIONS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -12,7 +12,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -151,7 +151,7 @@ export const createSankeySolutionsScraper = ({
 export const run = async (options = {}) => createSankeySolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

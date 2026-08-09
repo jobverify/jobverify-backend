@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-
 import { DEAL_SHARE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -108,7 +106,6 @@ export const hasAboutHubSignal = (html = '') => {
     && normalized.includes('Careers')
     && normalized.includes('Media')
     && normalized.includes('Contact')
-    && normalized.includes('Mass Market for Mass India, Online')
     && normalized.includes('Watch Our Story')
     && normalized.includes('Crafting extraordinarily simple tech solutions')
     && normalized.includes('Our Impact in numbers')
@@ -133,15 +130,23 @@ export const hasCareersSpaNoJobsSignal = (html = '') => {
     && extractSuspiciousJobLinks(html).length === 0
 }
 
-const clickCareersLink = async (page) => {
-  await page.click('a[href="/careers"], a[href="https://about.dealshare.in/careers"]')
+export const hasAboutHubShellSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<title>\s*DealShare\s*<\/title>/i.test(page)
+    && /<div id="root"><\/div>/i.test(page)
+    && /<script[^>]+src="\/assets\/index-[^"]+\.js"/i.test(page)
+    && /<link[^>]+href="\/assets\/index-[^"]+\.css"/i.test(page)
 }
+
+const extractJavascriptAssetUrls = (html = '', baseUrl = ABOUT_HUB_URL) => [...String(html ?? '').matchAll(
+  /<script[^>]+src="([^"]+\.js)"[^>]*><\/script>/gi,
+)]
+  .map((match) => new URL(match[1], baseUrl).toString())
 
 export const createDealShareScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
-    launchBrowser: launchBrowserImpl = launchBrowser,
-    createOptimizedPage: createOptimizedPageImpl = createOptimizedPage,
   } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasHomepageSignal(homepage.html)) {
@@ -153,52 +158,48 @@ export const createDealShareScraper = () => ({
       throw new Error('DealShare direct careers route no longer matches the verified access-denied state')
     }
 
-    const browser = await launchBrowserImpl()
-
-    try {
-      const page = await createOptimizedPageImpl(browser)
-
-      await page.goto(ABOUT_HUB_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
-      if (typeof page.waitForTimeout === 'function') {
-        await page.waitForTimeout(2500)
-      }
-
-      const aboutHubHtml = await page.content()
-      if (!hasAboutHubSignal(aboutHubHtml)) {
-        throw new Error('DealShare about hub no longer matches the verified public surface')
-      }
-
-      await clickCareersLink(page)
-      if (typeof page.waitForTimeout === 'function') {
-        await page.waitForTimeout(2500)
-      }
-
-      if (typeof page.url === 'function' && page.url() !== CAREERS_SPA_URL) {
-        throw new Error('DealShare careers SPA route no longer matches the verified client-side route')
-      }
-
-      const careersHtml = await page.content()
-      const suspiciousLinks = extractSuspiciousJobLinks(careersHtml)
-
-      if (suspiciousLinks.length > 0) {
-        throw new Error(`DealShare careers page now exposes public jobs links: ${suspiciousLinks.join(', ')}`)
-      }
-
-      if (!hasCareersSpaNoJobsSignal(careersHtml)) {
-        throw new Error('DealShare careers page no longer matches the verified no-openings surface')
-      }
-
-      return []
-    } finally {
-      await browser.close()
+    const aboutHubShell = await fetchPage(ABOUT_HUB_URL)
+    if (aboutHubShell.status !== 200 || !hasAboutHubShellSignal(aboutHubShell.html)) {
+      throw new Error('DealShare about hub no longer matches the verified public SPA shell')
     }
+
+    const javascriptAssets = extractJavascriptAssetUrls(aboutHubShell.html)
+    if (javascriptAssets.length === 0) {
+      throw new Error('DealShare about hub no longer exposes the verified client bundle')
+    }
+
+    const bundleTexts = await Promise.all(
+      javascriptAssets.map(async (url) => {
+        const asset = await fetchPage(url)
+        if (asset.status !== 200 || !asset.html) {
+          throw new Error(`DealShare client bundle is unavailable: ${url}`)
+        }
+        return asset.html
+      }),
+    )
+    const careersText = bundleTexts.join('\n')
+
+    if (!hasAboutHubSignal(careersText)) {
+      throw new Error('DealShare about hub no longer matches the verified public surface')
+    }
+
+    const suspiciousLinks = extractSuspiciousJobLinks(careersText)
+    if (suspiciousLinks.length > 0) {
+      throw new Error(`DealShare careers page now exposes public jobs links: ${suspiciousLinks.join(', ')}`)
+    }
+
+    if (!hasCareersSpaNoJobsSignal(careersText)) {
+      throw new Error('DealShare careers page no longer matches the verified no-openings surface')
+    }
+
+    return []
   },
 })
 
 export const run = async (options = {}) => createDealShareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

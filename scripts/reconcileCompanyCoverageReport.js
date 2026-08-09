@@ -2,20 +2,13 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
-const repoDir = path.resolve(backendDir, '..')
 
 const backendReportPath = path.join(backendDir, 'company_coverage_report.json')
-const frontendReportPath = path.join(
-  repoDir,
-  'Jobify-frontend',
-  'public',
-  'company_coverage_report.json',
-)
 
 const escapeCsvValue = (value) => {
   const text = String(value ?? '')
@@ -36,6 +29,9 @@ const buildCsvFromExistingReport = () => {
 }
 
 const inputCsvPath = process.argv[2] ? path.resolve(process.cwd(), process.argv[2]) : null
+const outputFrontendReportPath = process.argv[3]
+  ? path.resolve(process.cwd(), process.argv[3])
+  : null
 const csvText = inputCsvPath
   ? readFileSync(inputCsvPath, 'utf8')
   : buildCsvFromExistingReport()
@@ -47,12 +43,14 @@ const report = generateCompanyCoverageReport({
 
 const serializedReport = `${JSON.stringify(report, null, 2)}\n`
 writeFileSync(backendReportPath, serializedReport)
-writeFileSync(frontendReportPath, serializedReport)
+if (outputFrontendReportPath) {
+  writeFileSync(outputFrontendReportPath, serializedReport)
+}
 
 console.log(JSON.stringify({
   source: inputCsvPath || backendReportPath,
   backendReportPath,
-  frontendReportPath,
+  frontendReportPath: outputFrontendReportPath,
   totalRows: report.totalRows,
   candidateRows: report.candidateRows,
   matchedCount: report.matchedCount,

@@ -31,7 +31,7 @@ const homepageHtml = `
       <h1>#1 Digital Marketing Company</h1>
       <p>#AllRound Digital Marketing for 350+ Companies Pan India</p>
       <p>We collaborate with ambitious brands and people; we'd love to build something great together.</p>
-      <p>sales@ipop.in | +91 963 272 4344 | 08031 404 407</p>
+      <p>sales@ipopi.in | +91 963 272 4344 | 08031 404 407</p>
       <p>Corporate Office 42/10, 11th Main, Padmanabhanagar, Bangalore, Karnataka 560070</p>
       <p>Delivery Office #4575, Second Floor, High Tension Double Rd, Vijay Nagar 2nd Stage, Mysuru, Karnataka 570017</p>
       <a href="https://www.ipopi.in/terms-and-conditions.php">T &amp; C</a>
@@ -57,10 +57,14 @@ const privacyHtml = `
 const termsHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Terms and Conditions - Ipopi Ads</title>
+  </head>
   <body>
+    <p>Last updated: June 13, 2024</p>
     <h2>Terms and Conditions</h2>
-    <p>Company (referred to as either "the Company", "We", "Us" or "Our" in this Agreement) refers to Ipopi Ads, #4575, Second Floor, High Tension Double Rd, Vijay Nagar 2nd Stage, Mysuru, Karnataka 570017.</p>
-    <p>Website refers to Ipopi Ads, accessible from https://www.ipopi.in/</p>
+    <p><strong>Country</strong> refers to: Kerala, India</p>
+    <p><strong>Company</strong> (referred to as either "the Company", "We", "Us" or "Our" in this Agreement) refers to Ipopi Ads, #4575, Second Floor, High Tension Double Rd, Vijay Nagar 2nd Stage, Mysuru, Karnataka 570017.</p>
     <p>If you have any questions about these Terms and Conditions, You can contact us: info@ipopi.in</p>
     <p>&copy; 2024 ipopi Ads. All rights reserved.</p>
   </body>
@@ -71,7 +75,7 @@ const blogHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Ipopi Ads Blog</title>
+    <title>Ipopi Ads Blog -</title>
   </head>
   <body>
     <nav>
@@ -79,6 +83,7 @@ const blogHtml = `
       <a href="https://www.ipopi.in/blog/">Our Blog</a>
     </nav>
     <h1>Ipopi Ads Blog</h1>
+    <h2>Latest Posts</h2>
     <p>Digital marketing insights, automotive growth stories, and campaign updates.</p>
   </body>
 </html>
@@ -136,6 +141,7 @@ test('Ipopi Ads sentinel recognizes the verified domain bridge, legal pages, sit
 
   assert.equal(ipopi.SOURCE, 'ipopiads')
   assert.equal(ipopi.COMPANY, 'Ipopi Ads')
+  assert.equal(ipopi.VERIFIED_ON, '2026-08-07')
   assert.equal(ipopi.LEGACY_COMPANY_URL, 'https://ipopiads.com')
   assert.equal(ipopi.HOMEPAGE_URL, 'https://www.ipopi.in/')
   assert.equal(ipopi.PRIVACY_URL, 'https://www.ipopi.in/privacy-policy.php')

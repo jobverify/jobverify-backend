@@ -13,17 +13,18 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Terraeagle | Autonomous drone solutions</title>
+    <title>Home - Terraeagle</title>
   </head>
   <body>
     <header>
       <a href="https://terraeagle.com/">Home</a>
       <a href="https://terraeagle.com/about-terraeagle/">About</a>
-      <a href="https://terraeagle.com/jobs/">Careers</a>
+      <a href="https://terraeagle.com/careers/">Careers</a>
     </header>
     <main>
       <h1>Terraeagle</h1>
-      <p>Autonomous drone and geospatial intelligence solutions.</p>
+      <p>Zero Trust Network Access</p>
+      <p>OT Security</p>
     </main>
   </body>
 </html>
@@ -33,12 +34,13 @@ const aboutHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Terraeagle</title>
+    <title>About Terraeagle - Terraeagle</title>
   </head>
   <body>
     <main>
       <h1>About Terraeagle</h1>
-      <p>Leadership in drone operations and digital mapping.</p>
+      <p>Zero Trust Network Access</p>
+      <p>Cyber Risk and Insurance</p>
     </main>
   </body>
 </html>
@@ -53,17 +55,17 @@ const careersHtml = `
   <body>
     <main>
       <h1>Careers</h1>
-      <p>Build the future of aerial intelligence with Terraeagle.</p>
-      <div>[awsmjobs]</div>
+      <p>Zero Trust Network Access</p>
+      <p>OT Security</p>
     </main>
   </body>
 </html>
 `
 
 const brokenJobsRoute = {
-  status: 404,
-  url: 'https://terraeagle.com/jobs/',
-  html: '<html><body><h1>404</h1><p>Page not found</p></body></html>',
+  status: 200,
+  url: 'https://terraeagle.com/404-error/',
+  html: '<html><head><title>404 - Terraeagle</title></head><body><h1>404</h1><p>Page not found</p></body></html>',
 }
 
 const publicJobsCareersHtml = `

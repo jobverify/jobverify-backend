@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { ARKA_FINCAP_CATALOG } from './catalog.js'
 
@@ -100,13 +101,17 @@ const normalizeLocation = (record = {}) => {
 const hasInputWithId = (html, id) =>
   new RegExp(`<input\\b(?=[^>]*\\bid=["']${id}["'])[^>]*>`, 'i').test(String(html ?? ''))
 
+const hasArkaCareersHref = (html, hrefPath) =>
+  new RegExp(`<a\\b[^>]*\\bhref=["'](?:https://www\\.arkafincap\\.com)?${hrefPath}["'][^>]*>`, 'i')
+    .test(String(html ?? ''))
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>[\s\S]*Arka Fincap[\s\S]*(?:&#8211;|–|-)[\s\S]*Expert Financial Solutions[\s\S]*Services[\s\S]*<\/title>/i.test(
+  return /<title>[\s\S]*Arka Fincap[\s\S]*(?:&#8211;|&ndash;|â€“|\u2013|-)[\s\S]*Expert Financial Solutions[\s\S]*Services[\s\S]*<\/title>/i.test(
     page,
   )
-    && /https:\/\/www\.arkafincap\.com\/life-at-arka/i.test(page)
+    && hasArkaCareersHref(page, '/life-at-arka')
     && /https:\/\/arkafincap\.zohorecruit\.in\/jobs\/Careers/i.test(page)
     && />\s*(?:Careers|Life at Arka|Job Openings)\s*</i.test(page)
 }
@@ -114,9 +119,10 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>[\s\S]*Life at Arka[\s\S]*(?:&#8211;|–|-)[\s\S]*Work Culture,\s*Careers\s*&(?:amp;)?\s*Growth[\s\S]*<\/title>/i.test(
+  return /<title>[\s\S]*Life at Arka[\s\S]*(?:&#8211;|&ndash;|â€“|\u2013|-)[\s\S]*Work Culture,\s*Careers\s*&(?:amp;)?\s*Growth[\s\S]*<\/title>/i.test(
     page,
   )
+    && hasArkaCareersHref(page, '/life-at-arka')
     && /https:\/\/arkafincap\.zohorecruit\.in\/jobs\/Careers/i.test(page)
     && /Our Culture/i.test(page)
     && /Why Join Us\?/i.test(page)
@@ -204,50 +210,115 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
+const parseBrowserJson = (rawText, url) => {
+  try {
+    return JSON.parse(String(rawText ?? '').trim())
+  } catch (error) {
+    throw new Error(`Arka Fincap browser JSON fallback returned invalid JSON for ${url}: ${error.message}`)
+  }
+}
+
 export const createArkaFincapScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
     fetchJson = defaultFetchJson,
+    fetchBrowserJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Response is not the verified official Arka Fincap homepage')
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersPageSignal(careersPageHtml)) {
-      throw new Error('Response is not the verified official Arka Fincap careers page')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const browserJsonFetcher = fetchBrowserJson || (async (url) => {
+      const session = await getBrowserSession()
+      const rawText = await session.fetchText(url)
+      return parseBrowserJson(rawText, url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
-    if (!hasOfficialPortalSignal(portalHtml)) {
-      throw new Error('Response is not the verified official Arka Fincap careers portal')
+    const fetchPageJson = async (url) => {
+      try {
+        return await fetchJson(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserJsonFetcher(url)
+      }
     }
 
-    const payload = await fetchJson(CAREERS_API_URL)
-    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
-      throw new Error('Arka Fincap public jobs API no longer returns the verified success payload')
+    try {
+      const homepageHtml = await fetchPageText(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Response is not the verified official Arka Fincap homepage')
+      }
+
+      const careersPageHtml = await fetchPageText(CAREERS_PAGE_URL)
+      if (!hasOfficialCareersPageSignal(careersPageHtml)) {
+        throw new Error('Response is not the verified official Arka Fincap careers page')
+      }
+
+      const portalHtml = await fetchPageText(CAREERS_PORTAL_URL)
+      if (!hasOfficialPortalSignal(portalHtml)) {
+        throw new Error('Response is not the verified official Arka Fincap careers portal')
+      }
+
+      const payload = await fetchPageJson(CAREERS_API_URL)
+      if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
+        throw new Error('Arka Fincap public jobs API no longer returns the verified success payload')
+      }
+
+      const jobs = extractIndiaJobs(payload)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    const jobs = extractIndiaJobs(payload)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
   },
 })
 
 export const run = async (options = {}) => createArkaFincapScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

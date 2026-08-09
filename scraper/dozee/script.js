@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import DOZEE_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -163,13 +163,16 @@ export const extractLeverBoardUrl = (html = '') => {
 export const hasOfficialLeverBoardSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
+  const hasLeverFooterBranding =
+    text.includes('jobs powered by')
+    && /alt=["']Lever logo["']|lever-logo-/i.test(page)
 
   return text.includes('dozee')
     && text.includes('location type')
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
+    && hasLeverFooterBranding
     && /https:\/\/jobs\.lever\.co\/dozee\/[a-z0-9-]+/i.test(page)
 }
 
@@ -275,7 +278,7 @@ export const createDozeeScraper = ({
 export const run = async (options = {}) => createDozeeScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

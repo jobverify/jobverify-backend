@@ -17,9 +17,9 @@ export const ZIMETRICS_TECHNOLOGIES_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'zimetrics.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://zimetrics.com/career/ remained the live first-party Zimetrics careers page, that the page exposed a visible "We are Hiring!" section with repeated inline role cards for Full Stack Engineer (Node & React) | Immediate Joiner in Pune, and that each public Apply Now button jumped to the first-party #frmsub application anchor on the same page. The local scraper therefore dedupes identical cards and emits the unique visible India role.',
+    'Verified on Saturday, August 1, 2026 that https://zimetrics.com/career/ remained the live first-party Zimetrics careers page, that the page exposed a visible "We are Hiring!" section with repeated responsive inline role cards for Full Stack Engineer (Node & React) | Immediate Joiner in Pune, and that the public application handoff still resolved to the first-party #frmsub anchor on the same page. The local scraper therefore dedupes identical cards across the repeated responsive shells and emits the unique visible India role.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'zimetricstechnologies/jobs.json',
 }

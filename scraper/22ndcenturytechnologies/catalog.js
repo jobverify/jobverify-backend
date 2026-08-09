@@ -16,9 +16,9 @@ export const TWENTY_SECOND_CENTURY_TECHNOLOGIES_CATALOG = {
   extractionStrategy: 'verified-first-party-current-openings-contract-page+region-job-table+first-party-apply-links',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.tscti.com/career/state_il was a live first-party 22nd Century Technologies current-openings page for the State of Illinois contract. The verified page publicly exposed region-based job tables with first-party Apply Now links and role labels including Basic Clerical, Accounting Assistant, Accounting Lead, Telephone Operator, Data Entry I, Data Entry II, Data Entry Ill, Lead Worker, Light Industrial, and Others.',
+    'Verified on Saturday, August 1, 2026 that https://www.tscti.com/career/state_il remained the live first-party 22nd Century Technologies current-openings page for the State of Illinois contract. The verified page publicly exposed region-based fieldset tables with Apply Now links, including current mailto apply targets for roles such as Basic Clerical and Accounting Assistant.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { TECHOUTS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const STATE_CODE_TO_NAME = {
   TG: 'Telangana',
 }
@@ -127,7 +127,7 @@ export const createTechoutsScraper = ({
 export const run = async (options = {}) => createTechoutsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -14,9 +14,9 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNALS = [
-  'megha engineering & infrastructures ltd (meil)',
+  'know about meil',
   'touching lives through engineering',
-  'meil is a $5bn multi-sector infrastructure company from india taking giant strides globally.',
+  'megha engineering & infrastructures ltd (meil) is a $5bn multi-sector infrastructure company from india taking giant strides globally.',
 ]
 
 const CAREERS_SIGNALS = [
@@ -66,6 +66,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
   return HOMEPAGE_SIGNALS.every((signal) => normalized.includes(signal))
+    && /href=["'][^"']*\/careers["']/i.test(String(html ?? ''))
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -95,7 +96,7 @@ export const createMeghaEngineeringScraper = () => ({
 export const run = async (options = {}) => createMeghaEngineeringScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

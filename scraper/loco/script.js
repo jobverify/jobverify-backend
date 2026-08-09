@@ -97,9 +97,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Loco:\s*Free Online Gaming,\s*Esports Tournaments\s*&\s*Live Streaming\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Loco:\s*Free Online Gaming,\s*Esports Tournaments\s*&(?:amp;|#038;)?\s*Live Streaming\s*<\/title>/i.test(page)
     && normalized.includes('Loco: Free Online Gaming, Esports Tournaments & Live Streaming')
-    && normalized.includes('Watch gaming streams, discover tournaments, and connect with creators.')
+    && /static\.loco\.gg\/next-assets/i.test(page)
   }
 
 export const hasTermsOfUseSignal = (html = '') => {
@@ -175,7 +175,7 @@ export const createLocoScraper = () => ({
 export const run = async (options = {}) => createLocoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

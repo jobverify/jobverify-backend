@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,9 +12,6 @@ export const JOBS_URL = 'https://remunance.com/jobs/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const BROWSER_TIMEOUT_MS = 60000
-const MAX_LOAD_MORE_CLICKS = 20
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -110,57 +106,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const shouldUseBrowserFallback = (error) =>
-  /HTTP 403\b/i.test(String(error?.message ?? ''))
-
-const createBrowserFetchSession = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  const goto = async (url) => {
-    const response = await page.goto(url, {
-      waitUntil: 'domcontentloaded',
-      timeout: BROWSER_TIMEOUT_MS,
-    })
-
-    if (!response?.ok()) {
-      throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-    }
-  }
-
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      await goto(url)
-      return page.content()
-    },
-    fetchExpandedListingHtml: async (url = JOBS_URL) => {
-      await goto(url)
-      await page.waitForSelector('.awsm-job-listing-item', {
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      for (let clickIndex = 0; clickIndex < MAX_LOAD_MORE_CLICKS; clickIndex += 1) {
-        const loadMoreButton = await page.$('.awsm-load-more-btn')
-        if (!loadMoreButton) break
-
-        const beforeCount = await page.$$eval('.awsm-job-listing-item', (items) => items.length)
-        await loadMoreButton.click()
-
-        try {
-          await page.waitForFunction(
-            (count) => document.querySelectorAll('.awsm-job-listing-item').length > count,
-            { timeout: 5000 },
-            beforeCount,
-          )
-        } catch {
-          break
-        }
-      }
-
-      return page.content()
-    },
-  }
-}
+  /HTTP (?:403|429)\b/i.test(String(error?.message ?? ''))
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -355,31 +301,15 @@ export const createRemunanceServicesPvtLtdScraper = () => ({
     fetchBrowserListingHtml,
     now = () => new Date().toISOString(),
   } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession()
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const browserListingFetcher = fetchBrowserListingHtml || (async () => {
-      const session = await getBrowserSession()
-      return session.fetchExpandedListingHtml(JOBS_URL)
-    })
+    const browserTextFetcher = typeof fetchBrowserText === 'function' ? fetchBrowserText : null
+    const browserListingFetcher =
+      typeof fetchBrowserListingHtml === 'function' ? fetchBrowserListingHtml : null
 
     const fetchPageText = async (url) => {
       try {
         return await fetchText(url)
       } catch (error) {
-        if (!shouldUseBrowserFallback(error)) {
+        if (!browserTextFetcher || !shouldUseBrowserFallback(error)) {
           throw error
         }
 
@@ -387,44 +317,50 @@ export const createRemunanceServicesPvtLtdScraper = () => ({
       }
     }
 
-    try {
-      const homepageHtml = await fetchPageText(HOMEPAGE_URL)
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
-        throw new Error('Remunance homepage no longer matches the verified first-party company surface')
-      }
+    const fetchListingHtml = async () => {
+      try {
+        return await fetchText(JOBS_URL)
+      } catch (error) {
+        if (!browserListingFetcher || !shouldUseBrowserFallback(error)) {
+          throw error
+        }
 
-      const listingHtml = await browserListingFetcher()
-      const listings = extractJobCards(listingHtml)
-      const jobs = []
-
-      for (const listing of listings) {
-        const detailHtml = await fetchPageText(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-          companyCareerPage: JOBS_URL,
-          companyDomain: 'remunance.com',
-          atsPlatform: 'wp-job-openings',
-        })
-      }
-
-      return jobs
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
+        return browserListingFetcher()
       }
     }
+
+    const homepageHtml = await fetchPageText(HOMEPAGE_URL)
+    if (!hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('Remunance homepage no longer matches the verified first-party company surface')
+    }
+
+    const listingHtml = await fetchListingHtml()
+    const listings = extractJobCards(listingHtml)
+    const jobs = []
+
+    for (const listing of listings) {
+      const detailHtml = await fetchPageText(listing.sourceUrl)
+      const detail = extractJobDetail(detailHtml, listing)
+
+      jobs.push({
+        ...detail,
+        source: SOURCE,
+        link: detail.applyUrl || detail.sourceUrl,
+        scrapedAt: now(),
+        companyCareerPage: JOBS_URL,
+        companyDomain: 'remunance.com',
+        atsPlatform: 'wp-job-openings',
+      })
+    }
+
+    return jobs
   },
 })
 
 export const run = async (options = {}) => createRemunanceServicesPvtLtdScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

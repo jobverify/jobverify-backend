@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -60,10 +60,20 @@ export const hasOfficialHomepageSignal = (html = '') => {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return extractTitle(page) === 'LG Soft India Private Limited'
-    && /<base href="\/ms\/candidate\/">/i.test(page)
-    && /<app-root\b/i.test(page)
-    && /\/ms\/bot\/candidateweb\/assets\/bot\.js/i.test(page)
+  return (
+    (
+      extractTitle(page) === 'LG Soft India Private Limited'
+      && /<base href="\/ms\/candidate\/">/i.test(page)
+      && /<app-root\b/i.test(page)
+      && /\/ms\/bot\/candidateweb\/assets\/bot\.js/i.test(page)
+    )
+    || (
+      /<base href="\/ms\/candidatev2\/">/i.test(page)
+      && /<app-root\b/i.test(page)
+      && /db-components\.esm\.js/i.test(page)
+      && /https:\/\/challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/i.test(page)
+    )
+  )
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -120,7 +130,7 @@ export const {
 } = darwinboxScraper
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

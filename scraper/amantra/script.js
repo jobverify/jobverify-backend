@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { AMANTRA_CATALOG } from './catalog.js'
 
@@ -19,7 +19,7 @@ export const VERIFIED_ROLE_URLS = [...PROVIDER_METADATA.verifiedRoleUrls]
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const INDIA_LOCATION_PATTERN = /^(.+?),\s*India$/i
 const WORKPLACE_TYPE_PATTERN = /^(On-site|Remote|Hybrid)$/i
 const EMPLOYMENT_TYPE_PATTERN = /^(Full-time|Part-time|Contract|Internship)$/i
@@ -414,7 +414,7 @@ export const createAmantraScraper = ({
 export const run = async (options = {}) => createAmantraScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

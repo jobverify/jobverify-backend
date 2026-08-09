@@ -96,7 +96,7 @@ test('Poshmark scraper fails closed when the official careers flow changes or op
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified greenhouse board/i,
+    /verified official careers surface|verified greenhouse board/i,
   )
 
   await assert.rejects(

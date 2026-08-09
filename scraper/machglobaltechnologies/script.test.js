@@ -237,6 +237,7 @@ test('Mach Global Technologies scraper extracts the six verified public openings
     postingDate: null,
     closingDate: null,
     jobDescription: 'Develop high-integrity embedded software for safety-critical aerospace applications. Work on real-time systems, RTOS integration, and DO-178C certified software.',
+    publicExperienceChecked: true,
     remoteStatus: null,
   })
 
@@ -300,6 +301,7 @@ test('Mach Global Technologies scraper runs end to end and fails closed on drift
   assert.equal(jobs[0].companyCareerPage, CAREERS_URL)
   assert.equal(jobs[0].companyDomain, 'machglobaltech.com')
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 
   await assert.rejects(
     createMachGlobalTechnologiesScraper().run({

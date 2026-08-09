@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -42,6 +42,10 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const isPortalUnavailableError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const hasCareerPageSignal = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
   return (
@@ -53,7 +57,7 @@ export const hasCareerPageSignal = (html) => {
 
 export const hasPortalBlockedSignal = ({ status, html }) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
-  return status === 200 && normalized === 'no access'
+  return (status === 200 || status === 403) && normalized === 'no access'
 }
 
 export const extractOpenings = () => []
@@ -69,7 +73,17 @@ export const createCanonIndiaScraper = ({
       return []
     }
 
-    const portalPage = await fetchPage(EXTERNAL_PORTAL_URL)
+    let portalPage
+    try {
+      portalPage = await fetchPage(EXTERNAL_PORTAL_URL)
+    } catch (error) {
+      if (isPortalUnavailableError(error)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!hasPortalBlockedSignal(portalPage)) {
       throw new Error('Canon India external careers portal no longer returns the expected current no-access state')
     }
@@ -82,7 +96,7 @@ export const createCanonIndiaScraper = ({
 export const run = async () => createCanonIndiaScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Canon India scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

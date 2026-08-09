@@ -1,6 +1,11 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG } from './catalog.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG.source
 export const HOMEPAGE_URL = IVISTEC_PARTNERS_INDIA_PRIVATE_LIMITED_CATALOG.homepageUrl
@@ -52,8 +57,8 @@ export const hasOfficialContactSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Contact Us')
     && normalized.includes('Vistec Partners')
-    && normalized.includes('Noida, India')
-    && normalized.includes('contact@vistecpartners.com')
+    && (normalized.includes('Noida, India') || normalized.includes('A-43, Ground Floor Sector-63') || normalized.includes('NOIDA UP 201301'))
+    && (normalized.includes('contact@vistecpartners.com') || normalized.includes('info@vistecpartners.com'))
 }
 
 export const hasNoPublicCareersSignal = (html = '') => {
@@ -101,3 +106,14 @@ export const createIvistecPartnersIndiaPrivateLimitedScraper = () => ({
 
 export const run = async (options = {}) => createIvistecPartnersIndiaPrivateLimitedScraper().run(options)
 
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

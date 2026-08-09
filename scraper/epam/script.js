@@ -1,8 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -63,6 +64,22 @@ const getDepartment = (record = {}) => {
 const getDescription = (record = {}) =>
   normalizeWhitespace(record.text) || normalizeWhitespace(record.description)
 
+const normalizeExperienceEvidence = (value) => normalizeWhitespace(value)
+  ?.replace(
+    /(\d+(?:\.\d+)?)\s+to\s+(\d+(?:\.\d+)?)\s+(years?|months?)/i,
+    (_, minimum, maximum, unit) => `${minimum}-${maximum} ${unit.toLowerCase()}`,
+  )
+
+const extractExperienceRequired = ({ title, jobDescription }) => (
+  normalizeExperienceEvidence(
+    extractJobFilterSignals({
+      title,
+      jobDescription,
+      experienceRequired: null,
+    }).experienceProfile?.evidence,
+  ) || null
+)
+
 const buildAbsoluteUrl = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -98,7 +115,10 @@ export const extractSearchResults = (payload) =>
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: null,
-        experienceRequired: null,
+        experienceRequired: extractExperienceRequired({
+          title,
+          jobDescription: getDescription(record),
+        }),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: Array.isArray(record.skills)
@@ -162,7 +182,7 @@ export const createEpamScraper = ({
 export const run = async () => createEpamScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running EPAM scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -43,6 +43,9 @@ const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /\bopen positions\b/i,
   /\bopen roles\b/i,
   /\bcurrent openings\b/i,
+]
+
+const PUBLIC_BOARD_URL_PATTERNS = [
   /\bjobs\.lever\.co\b/i,
   /\bboards\.greenhouse\.io\b/i,
   /\bmyworkdayjobs\b/i,
@@ -81,19 +84,31 @@ const defaultFetchPage = async (url) => {
 const getFinalUrl = (page, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
 
 export const hasPublicJobSignal = (html = '') =>
-  PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+  PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalizeWhitespace(html)))
+  || [...String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["']/gi)]
+    .some((match) => PUBLIC_BOARD_URL_PATTERNS.some((pattern) => pattern.test(match[1])))
 
 export const extractParentCareersUrlFromHomepage = (html = '') => {
   const match = /href=["'](https:\/\/www\.dreamsports\.group\/careers\/?)["']/i.exec(String(html ?? ''))
   return match?.[1] ?? null
 }
 
+export const hasHomepageCareersEntrySignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const linkedCareersUrl = extractParentCareersUrlFromHomepage(rawHtml)
+
+  return linkedCareersUrl === LINKED_CAREERS_URL
+    || /role=["']link["'][^>]*>[\s\S]{0,200}?\bCareers\b[\s\S]{0,200}?<\/(?:div|button)>/i.test(rawHtml)
+}
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*India's Biggest Fantasy Sports Platform: Play for Free\. Win Big\.\s*<\/title>/i.test(rawHtml)
+  return /India's Biggest Fantasy Sports Platform: Play for Free\. Win Big\./i.test(normalized)
     && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.dream11\.com\/["']/i.test(rawHtml)
-    && extractParentCareersUrlFromHomepage(rawHtml) === LINKED_CAREERS_URL
+    && /\bSporta Technologies Private Limited\b/i.test(normalized)
+    && hasHomepageCareersEntrySignal(rawHtml)
 }
 
 export const isVerifiedDream11RedirectedNoTrustRoute = (page = {}, requestedUrl) =>
@@ -110,12 +125,11 @@ export const hasParentCareersLandingSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*DreamSports\s*<\/title>/i.test(rawHtml)
+  return /\bDreamSports\b/i.test(rawHtml)
     && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.dreamsports\.group\/careers["']/i.test(rawHtml)
     && /\bLIFE AT DREAM SPORTS\b/i.test(normalized)
     && /Game On\.\s*Build Big\./i.test(normalized)
-    && /\bSoftware Development Engineer II - ML Platform,\s*Dream11\b/i.test(normalized)
-    && /\bResearch Scientist,\s*Dream11\b/i.test(normalized)
+    && /Solving real problems across sports,\s*technology,\s*and financial empowerment\./i.test(normalized)
     && /\bSporta Technologies Pvt Ltd\b/i.test(normalized)
     && !hasPublicJobSignal(rawHtml)
 }
@@ -126,7 +140,6 @@ export const createDream11Scraper = () => ({
     if (
       homepage.status !== 200
       || !hasOfficialHomepageSignal(homepage.html)
-      || extractParentCareersUrlFromHomepage(homepage.html) !== LINKED_CAREERS_URL
     ) {
       throw new Error('Dream11 verified official Dream11 homepage no longer matches the known public surface')
     }
@@ -169,7 +182,7 @@ export const createDream11Scraper = () => ({
 export const run = async (options = {}) => createDream11Scraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

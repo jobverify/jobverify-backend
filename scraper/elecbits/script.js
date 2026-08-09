@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -37,6 +37,11 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1])
+}
+
 const slugify = (value) => normalizeWhitespace(value)
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -70,42 +75,60 @@ const titleFromHref = (href) => {
 }
 
 export const hasOfficialHomepageSignal = (html) => {
-  const page = String(html ?? '')
-  return /elecbits/i.test(page)
-    && /careers/i.test(page)
-    && /Azoox Technologies Private Limited/i.test(page)
+  const rawHtml = String(html ?? '')
+  const normalized = stripTags(rawHtml)
+  const title = extractTitle(rawHtml)
+
+  return /href=["'][^"']*\/careers\/?["']/i.test(rawHtml)
+    && (
+      title === 'Electronics Manufacturing and Supply Chain Solutions Elecbits'
+      || /elecbits/i.test(title)
+    )
+    && (
+      /Azoox Technologies Private Limited/i.test(rawHtml)
+      || /Elecbits is your Full-Stack Electronics Partner/i.test(normalized)
+      || /Electronics Manufacturing and Supply Chain Solutions/i.test(normalized)
+    )
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
-  return /Download JD/i.test(page)
-    && /wp-content\/uploads\/[^"']+\.pdf/i.test(page)
+  const rawHtml = String(html ?? '')
+  const normalized = stripTags(rawHtml)
+
+  return extractTitle(rawHtml) === 'Careers - Elecbits'
+    && /Shape India's future with hardware/i.test(normalized)
+    && /Join the Team/i.test(normalized)
+    && /https:\/\/elecbits\.in\/elecbits-jd-[^"'\s<]+\/?/i.test(rawHtml)
 }
 
 export const extractPublicListings = (html) => {
   const page = String(html ?? '')
   const jobs = []
+  const seenUrls = new Set()
 
-  for (const match of page.matchAll(/<a\b[^>]*href="([^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+  for (const match of page.matchAll(/<a\b[^>]*href="(https:\/\/elecbits\.in\/elecbits-jd-[^"]+\/?)"[^>]*>[\s\S]*?<\/a>/gi)) {
     const sourceUrl = buildAbsoluteUrl(match[1], CAREERS_URL)
-    const anchorText = stripTags(match[2])
-    const nearbyHeadings = [...page
-      .slice(Math.max(0, match.index - 1200), match.index)
-      .matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
+    if (!sourceUrl || seenUrls.has(sourceUrl)) continue
+
+    const lookback = page.slice(Math.max(0, match.index - 1600), match.index)
+    const nearbyHeadings = [...lookback.matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
     const visibleTitle = nearbyHeadings.length
       ? stripTags(nearbyHeadings[nearbyHeadings.length - 1][1])
       : null
-    const title = anchorText && !/^download jd$/i.test(anchorText)
-      ? anchorText
-      : (visibleTitle || titleFromHref(match[1]))
+    const visibleLocation = [...lookback.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)]
+      .map((item) => stripTags(item[1]))
+      .filter(Boolean)
+      .pop()
+    const title = visibleTitle || titleFromHref(match[1])
 
     if (!sourceUrl || !title) continue
+    seenUrls.add(sourceUrl)
 
     jobs.push({
       title,
       company: COMPANY,
       department: null,
-      location: 'India',
+      location: visibleLocation || 'India',
       city: null,
       country: 'India',
       jobId: slugify(title),
@@ -159,7 +182,7 @@ export const createElecbitsScraper = () => ({
 export const run = async (options = {}) => createElecbitsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Elecbits scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

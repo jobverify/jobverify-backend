@@ -49,28 +49,34 @@ const openingsHtml = `
   <body>
     <main>
       <h1>Career Opportunities</h1>
+      <p>Location</p>
+      <div class="dealers">
+        <span class="elementor-button-text">Chennai</span>
+        <span data-toggle="premium-modal" data-target="#premium-modal-101" class="premium-modal-trigger-text">
+          <h6 class="job-title">Design Engineer</h6>
+        </span>
+        <p class="job-exp"><b>4 to 6 years</b><br>Posted on July 10, 2026</p>
+      </div>
 
-      <article class="job-opening">
-        <h3>Design Engineer</h3>
-        <ul>
-          <li>Location</li>
-          <li>Chennai</li>
-          <li>Date Posted</li>
-          <li>July 10, 2026</li>
-        </ul>
-        <a href="mailto:careers.wheelsindia.com">Apply Now</a>
-      </article>
+      <div id="premium-modal-101">
+        <p class="job-heading"><b>Job Description</b></p>
+        <p>Design and development of wheel systems for automotive programs.</p>
+        <div class="applynow"><a href="mailto:careers.wheelsindia.com">Apply Now</a></div>
+      </div>
 
-      <article class="job-opening">
-        <h3>Quality Engineer</h3>
-        <ul>
-          <li>Location</li>
-          <li>Sriperumbudur, Tamil Nadu</li>
-          <li>Date Posted</li>
-          <li>July 8, 2026</li>
-        </ul>
-        <a href="mailto:careers.wheelsindia.com">Apply Now</a>
-      </article>
+      <div class="dealers">
+        <span class="elementor-button-text">Sriperumbudur, Tamil Nadu</span>
+        <span data-toggle="premium-modal" data-target="#premium-modal-102" class="premium-modal-trigger-text">
+          <h6 class="job-title">Quality Engineer</h6>
+        </span>
+        <p class="job-exp"><b>3 to 5 years</b><br>Posted on July 8, 2026</p>
+      </div>
+
+      <div id="premium-modal-102">
+        <p class="job-heading"><b>Job Description</b></p>
+        <p>Drive plant quality systems, audits, and customer complaint resolution.</p>
+        <div class="applynow"><a href="mailto:careers.wheelsindia.com">Apply Now</a></div>
+      </div>
     </main>
   </body>
 </html>

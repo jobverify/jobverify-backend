@@ -22,9 +22,9 @@ export const LUMAX_INDUSTRIES_CATALOG = {
     'verified-listed-company-page+verified-current-openings-page+verified-work-with-us-page+no-live-public-job-cards-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://www.lumaxworld.in/lumaxindustries/index.html is the exact first-party Lumax Industries Limited company page, while the official careers surfaces at https://www.lumaxworld.in/current-openings.html and https://www.lumaxworld.in/work-with-us.html exposed no trustworthy public job listings. The current-openings page rendered only an empty openings shell with commented historical vacancy markup, and the work-with-us page exposed a general resume form and springboard email handoff rather than structured public jobs, so this exact-name provider is a fail-closed sentinel that returns no jobs until live first-party listings appear.',
+    'Verified on Monday, August 3, 2026 that https://www.lumaxworld.in/lumaxindustries/index.html remained the exact first-party Lumax Industries Limited company page, while the official careers surfaces at https://www.lumaxworld.in/current-openings.html and https://www.lumaxworld.in/work-with-us.html still exposed no trustworthy public job listings. The current-openings page rendered only an empty openings shell with commented historical vacancy markup, and the work-with-us page still exposed the springboard@lumaxmail.com resume handoff and formvalidate_workwithus_lumax.php resume form without structured public jobs, so this exact-name provider remains a fail-closed sentinel that returns no jobs until live first-party listings appear.',
 }
 
 export default LUMAX_INDUSTRIES_CATALOG

@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,11 +13,16 @@ const SOURCE = 'engati'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
+const extractTitle = (html = '') =>
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() || null
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /engati/i.test(page)
-    && /careers/i.test(page)
-    && /engati\.ai\/careers/i.test(page)
+  const title = extractTitle(page)
+
+  return /Engati/i.test(title || '')
+    && /AI-native Customer eXperience|Drive Revenue Growth across your Customer eXperience lifecycle/i.test(page)
+    && /href=["']https:\/\/www\.engati\.(?:ai|com)\/careers\/?["']/i.test(page)
 }
 
 export const hasCareersShellSignal = (html) => {
@@ -29,6 +34,11 @@ export const hasCareersShellSignal = (html) => {
 }
 
 export const hasNoJobsSignal = (html) => /No items found\./i.test(String(html ?? ''))
+
+export const hasVisibleOpeningsSignal = (html) => {
+  const page = String(html ?? '')
+  return /apply-job-wrapper[\s\S]*w-dyn-item/i.test(page)
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -47,7 +57,7 @@ export const createEngatiScraper = () => ({
     }
 
     const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasCareersShellSignal(careersHtml) || !hasNoJobsSignal(careersHtml)) {
+    if (!hasCareersShellSignal(careersHtml) || !hasNoJobsSignal(careersHtml) || hasVisibleOpeningsSignal(careersHtml)) {
       throw new Error('Engati careers page no longer matches the verified official empty-state public surface')
     }
 
@@ -58,7 +68,7 @@ export const createEngatiScraper = () => ({
 export const run = async (options = {}) => createEngatiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Engati scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

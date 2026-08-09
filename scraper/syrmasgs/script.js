@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SYRMA_SGS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -10,7 +9,6 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const BROWSER_TIMEOUT_MS = 60000
 
 export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
@@ -98,6 +96,24 @@ const extractTitle = (html = '') => normalizeWhitespace(
   String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
 )
 
+const extractJobCardTitle = (html = '') => {
+  const cardHtml = String(html ?? '')
+  const headingTitle = normalizeWhitespace(
+    cardHtml.match(
+      /<h[1-6]\b[^>]*class=["'][^"']*\bawsm-job-post-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h[1-6]>/i,
+    )?.[1],
+  )
+
+  if (headingTitle) {
+    return headingTitle
+  }
+
+  const text = normalizeWhitespace(cardHtml)
+  if (!text) return null
+
+  return normalizeWhitespace(text.replace(/\bMore Details\b/i, ''))
+}
+
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -105,36 +121,12 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const isFallbackError = (error) =>
-  /HTTP 403|timed out|timeout|und_err_connect_timeout|connect timeout|could not connect|fetch failed/i
-    .test(String(error?.message ?? error ?? ''))
-
-const createBrowserFetchSession = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
-
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
-
-      return page.content()
-    },
-  }
-}
-
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -240,13 +232,21 @@ const toJobId = (title, sourceUrl) => {
 }
 
 export const extractOfficialJobsUrl = (html = '') => {
-  const explicitUrl = String(html ?? '').match(/https:\/\/syrmasgs\.com\/job-openings\/?/i)?.[0]
-  if (explicitUrl) {
-    return explicitUrl.endsWith('/') ? explicitUrl : `${explicitUrl}/`
-  }
+  const hrefs = [...String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)]
+    .map((match) => toAbsoluteUrl(match[1]))
+    .filter(Boolean)
 
-  const relativeHref = String(html ?? '').match(/href=["']([^"']*job-openings\/?)["']/i)?.[1]
-  return normalizeDetailUrl(relativeHref)?.replace('/jobs/', '/job-openings/') ?? toAbsoluteUrl(relativeHref)
+  const officialJobsUrl = hrefs.find((href) => {
+    try {
+      const parsed = new URL(href)
+      return parsed.hostname.replace(/^www\./i, '').toLowerCase() === COMPANY_DOMAIN
+        && /^\/job-openings\/?$/i.test(parsed.pathname)
+    } catch {
+      return false
+    }
+  })
+
+  return officialJobsUrl ?? null
 }
 
 export const hasOfficialLifeAtSignal = (html = '') => {
@@ -271,7 +271,7 @@ export const extractJobCards = (html = '') => {
     const text = normalizeWhitespace(match[2])
     if (!text || !/More Details/i.test(text)) continue
 
-    const title = normalizeWhitespace(text.replace(/\bMore Details\b/i, ''))
+    const title = extractJobCardTitle(match[2])
     if (!title) continue
 
     const jobId = toJobId(title, sourceUrl)
@@ -372,43 +372,15 @@ export const extractJobDetail = (html, listing = {}) => {
 export const createSyrmaSgsScraper = () => ({
   async run({
     fetchText = defaultFetchText,
-    fetchBrowserText,
     now = () => new Date().toISOString(),
   } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession()
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
-    try {
-      const lifeAtHtml = await fetchPageText(LIFE_AT_URL)
+    {
+      const lifeAtHtml = await fetchText(LIFE_AT_URL)
       if (!hasOfficialLifeAtSignal(lifeAtHtml)) {
         throw new Error('The verified Syrma SGS life-at careers page changed materially')
       }
 
-      const jobsHtml = await fetchPageText(JOBS_URL)
+      const jobsHtml = await fetchText(JOBS_URL)
       if (!hasOfficialJobsPageSignal(jobsHtml)) {
         throw new Error('The verified Syrma SGS jobs archive changed materially')
       }
@@ -417,7 +389,7 @@ export const createSyrmaSgsScraper = () => ({
       const jobs = []
 
       for (const card of cards) {
-        const detailHtml = await fetchPageText(card.sourceUrl)
+        const detailHtml = await fetchText(card.sourceUrl)
         const detail = extractJobDetail(detailHtml, card)
 
         jobs.push({
@@ -432,10 +404,6 @@ export const createSyrmaSgsScraper = () => ({
       }
 
       return jobs
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
     }
   },
 })
@@ -443,7 +411,7 @@ export const createSyrmaSgsScraper = () => ({
 export const run = async (options = {}) => createSyrmaSgsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

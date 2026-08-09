@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -82,15 +82,22 @@ const getCurrentDateIso = (date = new Date()) => {
 }
 
 export const hasHomepageSignal = (html) =>
-  /<a[^>]+href=["']https:\/\/www\.isro\.gov\.in\/Careers\.html["']/i.test(String(html ?? ''))
+  /<a[^>]+href=["'](?:https:\/\/www\.isro\.gov\.in\/)?Careers\.html["']/i.test(String(html ?? ''))
+  || /CAREERS[\s\S]{0,160}prestigious space agency/i.test(String(html ?? ''))
 
 export const hasCareersPageSignal = (html) => {
   const page = String(html ?? '')
-  return /About Current Opportunities/i.test(page)
-    && /Current opportunities/i.test(page)
-    && /View All Current Opportunities/i.test(page)
-    && /CurrentOpportunities\.html/i.test(page)
-    && /ViewAllOpportunities\.html/i.test(page)
+  return /Current opportunities/i.test(page)
+    && (
+      /View All Current Opportunities/i.test(page)
+      || /CurrentOpportunities\.html/i.test(page)
+      || /CareerOpportunities\.html/i.test(page)
+      || /Recruitment Notice/i.test(page)
+    )
+    && (
+      /ViewAllOpportunities\.html/i.test(page)
+      || /Read more/i.test(page)
+    )
 }
 
 export const hasCurrentOpportunitiesSignal = (html) =>
@@ -283,7 +290,7 @@ export const createIsroScraper = (options = {}) => {
 export const run = async (options = {}) => createIsroScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -17,12 +17,6 @@ export const RESUME_SUBMIT_URL =
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const HOMEPAGE_SIGNALS = [
-  '<title>home | j m baxi</title>',
-  'j m baxi group, founded in 1916',
-  "here's to creating opportunities!",
-]
-
 const CAREERS_PAGE_SIGNALS = [
   '<title>careers | j m baxi</title>',
   'harboring talent, fostering careers',
@@ -30,16 +24,7 @@ const CAREERS_PAGE_SIGNALS = [
   'job search',
 ]
 
-const JOB_SEARCH_PAGE_SIGNALS = [
-  '<title>job search | j m baxi</title>',
-  'land your dream job!',
-  'select department engineering',
-  'select location navi mumbai',
-  RESUME_SUBMIT_URL,
-]
-
 const JOB_LIST_SHELL_SIGNALS = [
-  '<title>job search | j m baxi</title>',
   'explore your future with j m baxi group',
   'thanks for checking out our job openings',
   "var home_department = 'engineering'",
@@ -52,7 +37,7 @@ const normalizeWhitespace = (value) =>
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
-    .replace(/&#39;|&apos;|&rsquo;|&lsquo;|’|‘/gi, "'")
+    .replace(/&#39;|&apos;|&rsquo;|&lsquo;|â€™|â€˜|’|‘/gi, "'")
     .replace(/&quot;/gi, '"')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -116,13 +101,52 @@ const coercePageResponse = (page, url) => {
   }
 }
 
-export const hasOfficialHomepageSignal = (html) => hasAllSignals(html, HOMEPAGE_SIGNALS)
+export const hasOfficialHomepageSignal = (html) => {
+  const page = normalizePage(html)
+
+  return page.includes('home | j m baxi')
+    && (
+      page.includes('welcome to j m baxi group')
+      || page.includes('j m baxi group, founded in 1916')
+      || page.includes('founded in 1916')
+    )
+    && (
+      page.includes('creating opportunities')
+      || page.includes("india's maritime and trade landscape")
+    )
+}
 
 export const hasCareersPageSignal = (html) => hasAllSignals(html, CAREERS_PAGE_SIGNALS)
 
-export const hasJobSearchPageSignal = (html) => hasAllSignals(html, JOB_SEARCH_PAGE_SIGNALS)
+export const hasJobSearchPageSignal = (html) => {
+  const page = normalizePage(html)
 
-export const hasJobListShellSignal = (html) => hasAllSignals(html, JOB_LIST_SHELL_SIGNALS)
+  return page.includes('job search | j m baxi')
+    && page.includes('land your dream job')
+    && page.includes('select department')
+    && (
+      page.includes('select department engineering')
+      || page.includes('select department operations')
+      || page.includes('find your dream job')
+    )
+    && (
+      page.includes('select location navi mumbai')
+      || page.includes('find your dream job')
+      || page.includes('j m baxi prides itself')
+    )
+}
+
+export const hasJobListShellSignal = (html) => {
+  const raw = String(html ?? '').toLowerCase()
+  const page = normalizePage(html)
+
+  return (
+    raw.includes('<title>job search | j m baxi</title>')
+    || raw.includes('<title>job list | j m baxi</title>')
+    || page.includes('job search | j m baxi')
+    || page.includes('job list | j m baxi')
+  ) && hasAllSignals(html, JOB_LIST_SHELL_SIGNALS)
+}
 
 export const buildJobListRequestBody = ({
   searchByText = '',
@@ -189,7 +213,7 @@ export const createJmBaxiHeavyScraper = () => ({
 export const run = async (options = {}) => createJmBaxiHeavyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

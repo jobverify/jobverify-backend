@@ -96,8 +96,16 @@ export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return normalized.includes('careers')
-    && normalized.includes('send your resume and your goals to careers@sagardefence.com')
-    && normalized.includes('next-generation defence systems')
+    && normalized.includes('careers@sagardefence.com')
+    && (
+      normalized.includes('send your resume and your goals to careers@sagardefence.com')
+      || normalized.includes("send us your resume and goals to careers@sagardefence.com")
+    )
+    && (
+      normalized.includes('next-generation defence systems')
+      || normalized.includes('challenging and conducive work environment')
+      || normalized.includes('strength of a company lies in its human resources')
+    )
 }
 
 export const hasOfficialContactSignal = (html) => {
@@ -184,7 +192,7 @@ export const createSagarDefenceScraper = () => ({
 export const run = async (options = {}) => createSagarDefenceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

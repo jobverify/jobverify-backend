@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SOMANY_CERAMICS_CATALOG } from './catalog.js'
 
@@ -11,7 +11,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const CARD_PATTERN =
-  /Designation[\s\S]{0,500}?<h3[^>]*>\s*([^<]+?)\s*<\/h3>[\s\S]{0,300}?Job Location[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,300}?Work Type[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,500}?<a[^>]+href=["'](https:\/\/v2\.app\.goodfit\.so\/jobs\/[^"']+)["'][^>]*>\s*Know More\s*<\/a>/gi
+  /Designation[\s\S]{0,500}?<h3[^>]*>\s*([^<]+?)\s*<\/h3>[\s\S]{0,300}?Job Location[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,300}?Work Type[\s\S]{0,200}?(?:<p[^>]*>|<div[^>]*>|<span[^>]*>)\s*([^<]+?)\s*(?:<\/p>|<\/div>|<\/span>)[\s\S]{0,500}?<a[^>]+href=["'](https:\/\/v2\.app\.goodfit\.so\/jobs\/[^"']+)["'][^>]*>[\s\S]{0,300}?Know More[\s\S]{0,300}?<\/a>/gi
 
 export const PROVIDER_METADATA = SOMANY_CERAMICS_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -174,7 +174,7 @@ export const createSomanyCeramicsScraper = () => ({
 export const run = async (options = {}) => createSomanyCeramicsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,22 +1,24 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { isIndiaJob as isIndiaJobInScope } from '../utils/indiaLocationFilter.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { isIndiaJob as isIndiaJobInScope } from '../../scraper-support/utils/indiaLocationFilter.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREERS_URL = 'https://flydocs.aero/vacancies/'
+export const CAREERS_PORTAL_URL = 'https://flydocs.zohorecruit.in/jobs/Careers?source=CareerSite'
+export const CAREERS_API_URL =
+  'https://flydocs.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite'
 export const COMPANY = 'flydocs'
 export const SOURCE = 'flydocs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 const DETAIL_URL_REGEX = /^https:\/\/flydocs\.zohorecruit\.in\/jobs\/Careers\/(\d+)\/[^?\s]+(?:\?[^"\s<>]*)?$/i
-const SHORTLINK_URL_REGEX = /^https:\/\/zrec\.in\/[^?\s]+(?:\?[^"\s<>]*)?$/i
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -37,7 +39,8 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
-const stripTags = (value) => String(value ?? '').replace(/<[^>]+>/g, ' ')
+const hasInputWithId = (html, id) =>
+  new RegExp(`<input\\b(?=[^>]*\\bid=["']${id}["'])[^>]*>`, 'i').test(String(html ?? ''))
 
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)?.toLowerCase()
@@ -49,141 +52,107 @@ const normalizeEmploymentType = (value) => {
   return normalizeWhitespace(value)
 }
 
-const inferCity = (location) => {
-  const primaryToken = String(location ?? '').split(',')[0]?.split('/')[0]?.trim()
-  return normalizeCity(primaryToken) || normalizeCity(location) || null
+const isPublishedRecord = (record = {}) => record.Publish !== false
+
+const isUnlockedRecord = (record = {}) => {
+  if (record.Locked === true || record.Is_Locked === true) return false
+  const status = normalizeWhitespace(
+    record.Job_Opening_Status || record.Status || record.Job_Status || record.Record_Status,
+  )?.toLowerCase()
+  return status !== 'locked'
 }
 
-const inferCountry = (location, city) => {
-  if (/india/i.test(String(location ?? ''))) return 'India'
-  if (city && isIndiaJobInScope({ location, city })) return 'India'
-  return null
-}
-
-const extractParagraphs = (blockHtml) => Array.from(String(blockHtml ?? '').matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi))
-  .map((match) => normalizeWhitespace(stripTags(match[1])))
-  .filter(Boolean)
-
-const extractField = (blockHtml, label) => {
-  const value = extractParagraphs(blockHtml)
-    .find((paragraph) => new RegExp(`^${label}\\s*:`, 'i').test(paragraph))
-
-  return normalizeWhitespace(value?.replace(new RegExp(`^${label}\\s*:`, 'i'), ''))
-}
-
-const extractDescription = (blockHtml) => {
-  const paragraphs = extractParagraphs(blockHtml)
-
-  return paragraphs.find((value) => !/^(location|department|employment type)\s*:/i.test(value)) || null
-}
-
-const extractBlocks = (html) => {
-  const articleBlocks = Array.from(String(html ?? '').matchAll(/<article\b[^>]*>[\s\S]*?<\/article>/gi))
-    .map((match) => match[0])
-
-  return articleBlocks
-}
-
-const extractHref = (blockHtml) =>
-  normalizeWhitespace(blockHtml.match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1])
-
-const extractTitle = (blockHtml) =>
-  normalizeWhitespace(stripTags(blockHtml.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1]))
-
-export const hasOfficialCareersSignal = (html) => {
+export const hasOfficialPortalSignal = (html = '') => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
-  return /flydocs/i.test(page)
-    && /vacanc(?:y|ies)/i.test(page)
-    && /https:\/\/flydocs\.aero\/vacancies\/?/i.test(page)
-    && (/https:\/\/flydocs\.zohorecruit\.in\/jobs\/Careers/i.test(page) || /https:\/\/zrec\.in\//i.test(page))
+  return /<title>\s*Jobs at Careers\s*<\/title>/i.test(page)
+    && hasInputWithId(page, 'pageJson')
+    && hasInputWithId(page, 'moduleMeta')
+    && hasInputWithId(page, 'jobs')
+    && /page_id\s*=\s*['"]61915000000214664['"]/i.test(page)
+    && normalized.includes('"company_name":"flydocs"')
+    && normalized.includes('"list_url":"https://flydocs.zohorecruit.in/jobs/careers"')
+    && normalized.includes('"page_name":"careers"')
 }
 
-const defaultFetchText = (url) =>
-  fetchTextWithRetry(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    label: SOURCE,
-    timeoutMs: 15000,
-  })
+export const extractIndiaJobs = (payload) => (Array.isArray(payload?.data) ? payload.data : [])
+  .filter((record) => isPublishedRecord(record) && isUnlockedRecord(record))
+  .map((record) => {
+    const title = normalizeWhitespace(record.Posting_Title || record.Job_Opening_Name)
+    const city = normalizeCity(normalizeWhitespace(record.City)) || normalizeWhitespace(record.City)
+    const state = normalizeWhitespace(record.State)
+    const country = normalizeWhitespace(record.Country)
+    const jobId = normalizeWhitespace(record.id)
+    const sourceUrl = normalizeWhitespace(record.$url)
+    const location = [city, state, country].filter(Boolean).join(', ') || null
 
-const defaultResolveJobUrl = async (url) => {
-  if (DETAIL_URL_REGEX.test(url)) return url
-  if (!SHORTLINK_URL_REGEX.test(url)) return null
+    if (!title || !jobId || !sourceUrl || !DETAIL_URL_REGEX.test(sourceUrl)) return null
 
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  return response.ok && DETAIL_URL_REGEX.test(response.url) ? response.url : null
-}
-
-export const extractIndiaJobs = async (html, { resolveJobUrl = defaultResolveJobUrl } = {}) => {
-  const jobs = []
-  const seenJobIds = new Set()
-
-  for (const blockHtml of extractBlocks(html)) {
-    const title = extractTitle(blockHtml)
-    const sourceHref = extractHref(blockHtml)
-    if (!title || !sourceHref) continue
-
-    const sourceUrl = DETAIL_URL_REGEX.test(sourceHref) ? sourceHref : await resolveJobUrl(sourceHref)
-    const jobId = normalizeWhitespace(sourceUrl?.match(DETAIL_URL_REGEX)?.[1])
-    if (!sourceUrl || !jobId || seenJobIds.has(jobId)) continue
-
-    const location = extractField(blockHtml, 'Location')
-    const city = inferCity(location)
-    const country = inferCountry(location, city)
     const job = {
       title,
       company: COMPANY,
-      department: extractField(blockHtml, 'Department'),
+      department: normalizeWhitespace(record.Department),
       location,
       city,
+      state,
       country,
       jobId,
       requisitionId: jobId,
       sourceUrl,
       applyUrl: sourceUrl,
-      employmentType: normalizeEmploymentType(extractField(blockHtml, 'Employment Type')),
-      experienceRequired: null,
+      employmentType: normalizeEmploymentType(record.Job_Type),
+      experienceRequired: normalizeWhitespace(record.Work_Experience),
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: null,
+      postingDate: normalizeWhitespace(record.Date_Opened),
       closingDate: null,
-      jobDescription: extractDescription(blockHtml),
+      jobDescription: normalizeWhitespace(record.Job_Description),
+      remoteStatus: /^(yes|true)$/i.test(String(record.Remote_Job ?? '')) ? 'Remote' : 'On-site',
     }
 
-    if (!job.location || !isIndiaJobInScope(job)) continue
+    return isIndiaJobInScope(job) ? job : null
+  })
+  .filter(Boolean)
 
-    seenJobIds.add(jobId)
-    jobs.push(job)
-  }
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: `${SOURCE}-html`,
+  timeoutMs: 15000,
+})
 
-  return jobs
-}
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+  },
+  label: `${SOURCE}-json`,
+  timeoutMs: 15000,
+})
 
 export const createFlydocsScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
-    resolveJobUrl = defaultResolveJobUrl,
+    fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Response is not the verified official Flydocs vacancies page')
+    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
+    if (!hasOfficialPortalSignal(portalHtml)) {
+      throw new Error('Response is not the verified official Flydocs careers portal')
     }
 
-    const jobs = await extractIndiaJobs(careersHtml, { resolveJobUrl })
+    const payload = await fetchJson(CAREERS_API_URL)
+    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
+      throw new Error('Flydocs public jobs API no longer returns the verified success payload')
+    }
+
+    const jobs = extractIndiaJobs(payload)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
     return selectedJobs.map((job) => ({
@@ -195,10 +164,10 @@ export const createFlydocsScraper = ({
   },
 })
 
-export const run = async (options = {}) => createFlydocsScraper().run(options)
+export const run = async (options = {}) => createFlydocsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Flydocs scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -18,9 +18,9 @@ export const NXTGEN_DATACENTER_CLOUD_TECHNOLOGIES_CATALOG = {
     'verified-first-party-careers-page+visible-featured-job-cards+same-page-apply-modals+pdf-detail-links',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://nxtgen.co.in/careers remained the live first-party NxtGen careers page, exposed a Featured Jobs block with same-page apply modals and downloadable PDF detail assets, and listed Customer Life Cycle Manager, Customer Relationship Manager, Network Architect, and Priority Support Consultant - Compute in Bengaluru.',
+    'Verified on Tuesday, August 4, 2026 that direct probes to https://nxtgen.co.in/ and https://nxtgen.co.in/careers timed out from this environment instead of returning a reachable first-party jobs surface. The last known trustworthy NxtGen careers contract remains the same Featured Jobs page with same-page apply modals and downloadable PDF detail assets that previously listed Customer Life Cycle Manager, Customer Relationship Manager, Network Architect, and Priority Support Consultant - Compute in Bengaluru, so the scraper now returns an empty verified sentinel result when the host stays timed out.',
   dryRunFile: 'nxtgendatacentercloudtechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

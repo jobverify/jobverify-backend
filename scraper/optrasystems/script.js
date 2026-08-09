@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import OPTRA_SYSTEMS_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -14,7 +14,7 @@ export const WWW_DOMAIN_URL = PROVIDER_METADATA.exactNameWwwDomainUrl
 export const PORTFOLIO_URL = PROVIDER_METADATA.officialPortfolioReferenceUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOB_PATTERNS = [
   /\bapply now\b/i,
@@ -127,7 +127,7 @@ export const createOptraSystemsScraper = () => ({
 export const run = async (options = {}) => createOptraSystemsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

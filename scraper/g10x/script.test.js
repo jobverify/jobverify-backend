@@ -59,6 +59,7 @@ const CAREERS_HTML = `
     <section>
       <h1>Let's GROW together</h1>
       <p>We move fast, think bold, and never settle for ordinary.</p>
+      <p>If you're ready to grow your skills, G10X is ready to grow with you.</p>
     </section>
     <section>
       <h2>Why G10X</h2>

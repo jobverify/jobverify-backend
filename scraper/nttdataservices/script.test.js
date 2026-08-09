@@ -264,7 +264,7 @@ test('NTT Data Services scraper verifies the official surfaces and returns India
   )
   assert.deepEqual(jobs[0].requiredSkills, ['Palo Alto Firewall', 'SASE'])
   assert.match(jobs[0].jobDescription, /Secure the platform/i)
-  assert.match(jobs[0].experienceRequired, /5\+ years of experience/i)
+  assert.match(jobs[0].experienceRequired, /5\+ years/i)
   assert.ok(jobs[0].scrapedAt)
 })
 

@@ -15,12 +15,12 @@ export const CALPION_SOFTWARE_TECHNOLOGIES_CATALOG = {
   atsPlatform: 'official-first-party-career-cards',
   countryFilter: 'India',
   paginationStrategy: 'single-career-page',
-  extractionStrategy: 'career-card-listing',
+  extractionStrategy: 'webflow-career-card-listing-plus-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.calpion.com/career was the live first-party Calpion careers page and that it publicly exposed first-party career cards with Apply Now links for roles including Lead - AWS, Marketing Coordinator, and Process Associate - Charge Entry.',
+    'Verified on Saturday, August 1, 2026 that https://www.calpion.com/career was the live first-party Calpion careers page, that it publicly exposed Webflow career cards with Apply Now links for roles including Lead - Full Stack Software Developer, AI/ML Developer, and Quality Manager Medical Coding, and that the linked first-party detail pages still exposed structured role metadata such as job title and Bengaluru/Bangalore locations.',
   dryRunFile: 'calpionsoftwaretechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

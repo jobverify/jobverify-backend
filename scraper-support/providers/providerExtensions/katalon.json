@@ -1,0 +1,23 @@
+{
+  "source": "katalon",
+  "companyName": "Katalon",
+  "officialBrandName": "Katalon, Inc.",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../katalon/script.js",
+  "dryRunFile": "katalon/jobs.json",
+  "companyCareerPage": "https://katalon.com/careers",
+  "companyDomain": "katalon.com",
+  "atsPlatform": "teamtailor-branded-official-careers",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-official-ats-page-sentinel",
+  "extractionStrategy": "verified-official-ats-without-enumerable-india-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 9,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://katalon.com/careers",
+  "officialAtsPageUrl": "https://careers.katalon.com/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://katalon.com/careers is Katalon's first-party careers page and links to its branded Teamtailor board at https://careers.katalon.com/. The public board currently lists nine Vietnam openings and no India openings, so this exact-name provider fails closed until the official ATS exposes enumerable India roles."
+}

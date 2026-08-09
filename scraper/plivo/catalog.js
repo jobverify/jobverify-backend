@@ -20,12 +20,12 @@ export const PLIVO_CATALOG = {
   countryFilter: 'Global',
   paginationStrategy: 'official-jobs-shell-validation-plus-lever-api',
   extractionStrategy:
-    'verified-first-party-jobs-page+verified-jobs-bundle-lever-fetch+live-empty-lever-board',
+    'verified-first-party-jobs-page+verified-jobs-bundle-lever-fetch+empty-lever-api+allow-missing-lever-board',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-07',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.plivo.com/jobs/ is the live official Plivo jobs page, that its Astro JobsPage client bundle fetches the public Lever API at https://api.lever.co/v0/postings/plivo?mode=json, and that the corresponding public Lever board at https://jobs.lever.co/plivo is live but currently states "No job postings currently open. Check back later!" The first-party Plivo page still renders stale "03 open positions" shell copy, while the live Lever API returned [] on the verified date.',
+    'Verified on Friday, August 7, 2026 that https://www.plivo.com/jobs/ is still the live official Plivo jobs page, that its current Astro JobsPage client bundle at https://www.plivo.com/_astro/JobsPage.DH20V3RG.js still fetches the public Lever API at https://api.lever.co/v0/postings/plivo?mode=json, and that the live Lever API returned [] on the verified date. Also verified that the legacy public Lever board URL https://jobs.lever.co/plivo now resolves to a Lever-branded 404 page titled "Not found - 404 error" instead of the earlier empty-board layout, while the first-party Plivo page still renders stale "03 open positions" shell copy with no public job records.',
 }
 
 export default PLIVO_CATALOG

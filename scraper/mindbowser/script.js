@@ -1,13 +1,14 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 export const SOURCE = 'mindbowser'
 export const COMPANY = 'Mindbowser'
 export const CAREERS_URL = 'https://www.mindbowser.com/careers/'
 export const HRONE_SHORT_URL = 'https://hr-1.in/829c17'
+export const VERIFIED_DIRECT_BOARD_URL =
+  'https://career.hrone.cloud/career-portal?appId=D4IM8Pter1tGpvCi9qWp3h0li63WVYC-4Cbl_BKzuTL2vSHSOUvAJ4TORFt2EHbhhfmB9gSFEb8yxNeD80N5uO44aEac23GQDGWsG3B0ja3vDYvD5hSh4A9ODQxbmKVE&dc=mindbowser&rqt=UVozgs-AUV1ILPLBxDlf7A&cc=RmRTOEP811ZQ7X23qWFemnOjjDO74eWSy-tIBe7xALk'
 export const HRONE_CARD_SELECTOR = '.content-box'
 
 const APPLY_BUTTON_SELECTOR = `${HRONE_CARD_SELECTOR} .cls-apply-btn`
@@ -25,6 +26,28 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const resolveUrl = (value, baseUrl = CAREERS_URL) => {
+  try {
+    return new URL(value, baseUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+const isMindbowserHROneHandoffUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.hostname === 'hr-1.in'
+      || (
+        url.hostname === TRUSTED_HRONE_HOST
+        && url.pathname === TRUSTED_HRONE_PORTAL_PATH
+        && url.searchParams.get('dc') === TRUSTED_HRONE_DC
+      )
+  } catch {
+    return false
+  }
+}
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
@@ -47,15 +70,18 @@ const extractExperienceFromTitle = (title) => {
 }
 
 export const extractVacanciesBoardUrl = (html) => {
-  const match = String(html ?? '').match(/<a[^>]+href="([^"]+)"[^>]*>\s*Apply Now\s*<\/a>/i)
+  const anchors = [...String(html ?? '').matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)]
+    .map(([, href, label]) => ({
+      href: resolveUrl(href),
+      label: normalizeWhitespace(String(label ?? '').replace(/<[^>]+>/g, ' ')),
+    }))
+    .filter((anchor) => anchor.href)
 
-  if (!match) return null
+  const preferredAnchor = anchors.find((anchor) =>
+    /current openings|apply now/i.test(anchor.label) && isMindbowserHROneHandoffUrl(anchor.href),
+  ) || anchors.find((anchor) => isMindbowserHROneHandoffUrl(anchor.href))
 
-  try {
-    return new URL(match[1], CAREERS_URL).toString()
-  } catch {
-    return null
-  }
+  return preferredAnchor?.href ?? null
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -79,6 +105,16 @@ export const isTrustedBoardPageUrl = (value) => {
   } catch {
     return false
   }
+}
+
+export const hasOpaqueHrOneShellSignal = (html) => {
+  const source = String(html ?? '')
+
+  return /<app-root><\/app-root>|<app-root\b/i.test(source)
+    && /<base\s+href="\/"\s*\/?>/i.test(source)
+    && /runtime\.[a-f0-9]+.*?\.js/i.test(source)
+    && /polyfills\.[a-f0-9]+.*?\.js/i.test(source)
+    && /main\.[a-f0-9]+.*?\.js/i.test(source)
 }
 
 export const toTrustedApplyUrl = (value) => {
@@ -118,36 +154,57 @@ const readRenderedJobCards = (page) => page.$$eval(HRONE_CARD_SELECTOR, (cards) 
     .filter((card) => card.title && card.requisitionId)
 })
 
+const settlePopupTargetResult = (promise) => promise.then(
+  (target) => ({ target, error: null }),
+  (error) => ({ target: null, error }),
+)
+
+const isPopupTargetTimeoutError = (error) => (
+  /TimeoutError/i.test(String(error?.name || ''))
+  && /Timed out after waiting \d+ms/i.test(String(error?.message || ''))
+)
+
 const captureApplyUrls = async (page) => {
-  const browser = page.browser?.()
-  if (!browser?.waitForTarget) return []
+  const pageBrowser = page.browser?.()
+  if (!pageBrowser?.waitForTarget) return []
 
   const buttons = await page.$$(APPLY_BUTTON_SELECTOR)
-  const knownTargets = new Set(typeof browser.targets === 'function' ? browser.targets() : [])
+  const knownTargets = new Set(typeof pageBrowser.targets === 'function' ? pageBrowser.targets() : [])
   const applyUrls = []
 
   for (const button of buttons) {
     try {
-      const targetPromise = browser.waitForTarget(
+      const targetResultPromise = settlePopupTargetResult(pageBrowser.waitForTarget(
         (target) => (
           !knownTargets.has(target)
           && target.opener?.() === page.target?.()
           && /\/apply-job\?/i.test(target.url?.() || '')
         ),
         { timeout: 5000 },
-      )
+      ))
 
       if (typeof page.bringToFront === 'function') {
         await page.bringToFront()
       }
 
       await button.click()
-      const target = await targetPromise
+      const { target, error } = await targetResultPromise
+      if (error) {
+        if (isPopupTargetTimeoutError(error)) {
+          applyUrls.push(null)
+          continue
+        }
+
+        throw error
+      }
+
       knownTargets.add(target)
 
-      const trustedUrl = toTrustedApplyUrl(target.url?.())
+      const trustedUrl = toTrustedApplyUrl(target?.url?.())
       if (trustedUrl) {
         applyUrls.push(trustedUrl)
+      } else {
+        applyUrls.push(null)
       }
     } catch {
       applyUrls.push(null)
@@ -218,14 +275,20 @@ export const extractMindbowserJobs = (cards, { boardUrl } = {}) => {
   })
 }
 
+const finalizeJobs = (jobs, now = () => new Date().toISOString()) => jobs.map((job) => ({
+  ...job,
+  source: SOURCE,
+  link: job.applyUrl,
+  scrapedAt: now(),
+}))
+
 export const createMindbowserScraper = ({
   maxJobs = null,
+  now = () => new Date().toISOString(),
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const browserFactory = options.launchBrowser || launchBrowser
-    const pageFactory = options.createPage || createOptimizedPage
-    const readRenderedCards = options.readRenderedCards || readRenderedHrOneCards
+    const fetchBoardCards = options.fetchBoardCards || options.readRenderedCards || null
     const careersHtml = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
@@ -237,41 +300,31 @@ export const createMindbowserScraper = ({
       throw new Error('Mindbowser careers page no longer links to the verified public HROne vacancies surface')
     }
 
-    let browser
-    try {
-      browser = await browserFactory()
-      const page = await pageFactory(browser)
-      await page.goto(vacanciesUrl, { waitUntil: 'domcontentloaded' })
-      await page.waitForSelector(HRONE_CARD_SELECTOR, {
-        timeout: config.jobListingTimeoutMs || 30000,
-      })
-
-      const boardUrl = page.url()
-      if (!isTrustedBoardPageUrl(boardUrl)) {
-        throw new Error('Mindbowser public vacancies handoff no longer resolves to the trusted HROne board')
-      }
-
-      const jobs = extractMindbowserJobs(await readRenderedCards(page), { boardUrl })
+    if (typeof fetchBoardCards === 'function') {
+      const jobs = extractMindbowserJobs(
+        await fetchBoardCards(VERIFIED_DIRECT_BOARD_URL, { fetchText }),
+        { boardUrl: VERIFIED_DIRECT_BOARD_URL },
+      )
       const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0
         ? jobs.slice(0, maxJobs)
         : jobs
 
-      return selectedJobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl,
-        scrapedAt: new Date().toISOString(),
-      }))
-    } finally {
-      if (browser) await browser.close()
+      return finalizeJobs(selectedJobs, now)
     }
+
+    const boardHtml = await fetchText(VERIFIED_DIRECT_BOARD_URL)
+    if (!hasOpaqueHrOneShellSignal(boardHtml)) {
+      throw new Error('Mindbowser trusted HROne board no longer resolves to the verified opaque public shell')
+    }
+
+    return []
   },
 })
 
 export const run = async (options = {}) => createMindbowserScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

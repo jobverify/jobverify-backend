@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { WINMAN_SOFTWARE_CATALOG } from './catalog.js'
 
@@ -30,6 +30,7 @@ const decodeHtml = (value) => String(value ?? '')
 
 const normalizeWhitespace = (value) => decodeHtml(String(value ?? ''))
   .replace(/\u00a0/g, ' ')
+  .replace(/[\u2013\u2014]/g, '-')
   .replace(/<br\s*\/?>/gi, '\n')
   .replace(/<\/(li|p|div|tr|td|th|h[1-6]|ul|ol)>/gi, '\n')
   .replace(/<[^>]+>/g, ' ')
@@ -62,12 +63,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const lowerNormalized = normalized.toLowerCase()
 
-  return /<title[^>]*>\s*Careers for Experience Candidates\s*-\s*Winman Software\s*<\/title>/i.test(page)
+  return lowerNormalized.includes('careers for experience candidates - winman software')
     && page.includes('experienced_table')
-    && normalized.includes('Opportunities For Experienced Candidates')
-    && normalized.includes('Senior Accountant')
-    && normalized.includes('Electrical Maintenance Supervisor')
+    && lowerNormalized.includes('designation and job profile')
+    && lowerNormalized.includes('apply now')
+    && lowerNormalized.includes('senior accountant')
+    && lowerNormalized.includes('electrical maintenance supervisor')
     && page.includes(APPLY_URL)
 }
 
@@ -140,7 +143,7 @@ export const createWinmanSoftwareScraper = ({
 export const run = async (options = {}) => createWinmanSoftwareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

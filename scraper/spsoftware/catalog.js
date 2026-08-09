@@ -18,9 +18,9 @@ export const SP_SOFTWARE_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'spsoftglobal.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.spsoftglobal.com/career was the live first-party SPSoft careers route, that the company-local Angular bundle at https://www.spsoftglobal.com/app-career-career-module.js exposed the public jobs contract, and that the verified bundle listed India openings including #001582 Java Developer and #001585 .NET Developer in Hyderabad with the first-party application mailbox careers@spsoftglobal.com.',
+    'Verified on Tuesday, August 4, 2026 that https://www.spsoftglobal.com/career remained the live first-party SPSoft careers route, that the route now returns the company SPA shell with app-root plus runtime.js and main.js, that the legacy company-local Angular bundle at https://www.spsoftglobal.com/app-career-career-module.js still exposes the public jobs contract, and that the verified bundle listed India openings including #001582 Java Developer and #001585 .NET Developer in Hyderabad with the first-party application mailbox careers@spsoftglobal.com.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

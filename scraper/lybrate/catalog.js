@@ -21,9 +21,10 @@ export const LYBRATE_CATALOG = {
   extractionStrategy: 'verified-first-party-jobs-page+dead-embedded-api+return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-04',
+  verifiedPublicPostingCount: 0,
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://www.lybrate.com/about sends its hiring CTA to the first-party page at https://www.lybrate.com/jobs, that the jobs page still embeds the public Lever URL https://api.lever.co/v0/postings/lybrate?group=team&mode=json, and that the embedded API now returns {"ok":false,"error":"Document not found"} instead of live openings. The same first-party jobs page also exposes doctor-directory footer links such as Dentist in Delhi, so there is no trustworthy live public Lybrate jobs surface to scrape at this time and this provider fails closed with an empty result set.',
+    'Verified on Tuesday, August 4, 2026 that https://www.lybrate.com/about still sends its hiring CTA to the first-party page at https://www.lybrate.com/jobs, but that the jobs route is now misconfigured into a first-party redirect loop: https://www.lybrate.com/jobs returns HTTP 301 with Location: https://www.lybrate.com/jobs while https://www.lybrate.com/jobs/ returns HTTP 308 with Location: /jobs. Verified that the embedded Lever URL https://api.lever.co/v0/postings/lybrate?group=team&mode=json still returns HTTP 404 with {"ok":false,"error":"Document not found"}. There is no trustworthy live public Lybrate jobs surface to scrape at this time, so this provider now treats that self-redirecting jobs route plus the dead Lever response as the authoritative empty public state.',
 }
 
 export default LYBRATE_CATALOG

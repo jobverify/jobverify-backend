@@ -14,11 +14,11 @@ const loadInnsparkModule = async () => {
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const careersHtml = fs.readFileSync(
-  path.join(currentDir, '../tests/fixtures/innspark/careers.html'),
+  path.join(currentDir, '../../scraper-support/tests/fixtures/innspark/careers.html'),
   'utf8',
 )
 const applyHtml = fs.readFileSync(
-  path.join(currentDir, '../tests/fixtures/innspark/apply.html'),
+  path.join(currentDir, '../../scraper-support/tests/fixtures/innspark/apply.html'),
   'utf8',
 )
 

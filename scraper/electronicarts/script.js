@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -97,6 +97,27 @@ const extractLocations = (html) => normalizeWhitespace(
   ),
 )
 
+const extractBalancedDivContent = (html, startIndex) => {
+  const openingTagEnd = html.indexOf('>', startIndex)
+  if (openingTagEnd === -1) return null
+
+  const divTagPattern = /<\/?div\b[^>]*>/gi
+  divTagPattern.lastIndex = startIndex
+  let depth = 0
+
+  for (const match of html.matchAll(divTagPattern)) {
+    if (match[0].startsWith('</')) {
+      depth -= 1
+      if (depth === 0) return html.slice(openingTagEnd + 1, match.index)
+      continue
+    }
+
+    depth += 1
+  }
+
+  return null
+}
+
 const extractDescriptionHtml = (html) => {
   const article = extractFirst(
     /<article class="article article--details "\s*>[\s\S]*?Description &amp; Requirements[\s\S]*?<\/article>/i,
@@ -107,10 +128,10 @@ const extractDescriptionHtml = (html) => {
   if (!article) return null
 
   const contentValues = [...article.matchAll(
-    /<div class="article__content__view__field__value">\s*([\s\S]*?)\s*<\/div>/gi,
+    /<div class="article__content__view__field__value">/gi,
   )]
-    .map((match) => match[1])
-    .map((value) => value.trim())
+    .map((match) => extractBalancedDivContent(article, match.index))
+    .map((value) => value?.trim())
     .filter(Boolean)
 
   return contentValues.join('\n')
@@ -122,6 +143,14 @@ const extractRequiredSkills = (descriptionHtml) => [...String(descriptionHtml ??
   .map((match) => stripTags(match[1]))
   .map((line) => line?.replace(/^[•*-]\s*/, ''))
   .filter((line) => Boolean(line) && /^[A-Z].{8,}$/.test(line) && !/:$/.test(line))
+
+const extractExperienceRequired = (descriptionHtml) => normalizeWhitespace(
+  extractFirst(
+    /\b\d+\s*(?:\+|-\s*\d+)?\s*(?:years?|yrs?)(?:\s+of)?(?:\s+[a-z][a-z/-]*){0,6}\s+experience\b/i,
+    stripTags(descriptionHtml),
+    (match) => match[0],
+  ),
+)
 
 export const buildSearchUrl = ({ page = 1, pageSize = DEFAULT_PAGE_SIZE } = {}) => {
   const normalizedPageSize = Math.max(1, Number(pageSize) || DEFAULT_PAGE_SIZE)
@@ -203,7 +232,7 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId: extractFieldValue('Role ID', html) || listing.jobId || null,
     requisitionId: extractFieldValue('Role ID', html) || listing.requisitionId || listing.jobId || null,
     employmentType: extractFieldValue('Worker Type', html) || listing.employmentType || null,
-    experienceRequired: null,
+    experienceRequired: extractExperienceRequired(descriptionHtml),
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractRequiredSkills(descriptionHtml),
@@ -232,58 +261,12 @@ const fetchText = async (url, referer = `${BASE_URL}/en_US/careers`) => {
   return response.text()
 }
 
-export const run = async () => {
-  const jobs = []
-  const seenJobIds = new Set()
-  const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
-  const pageSize = Number.isInteger(config.pageSize) ? config.pageSize : DEFAULT_PAGE_SIZE
-
-  for (let page = 1; page <= maxPages; page += 1) {
-    const listingUrl = buildSearchUrl({ page, pageSize })
-    const listingHtml = await fetchText(listingUrl)
-    const listings = extractSearchResults(listingHtml)
-    const summary = extractPaginationSummary(listingHtml)
-
-    for (const listing of listings) {
-      if (seenJobIds.has(listing.jobId)) continue
-      seenJobIds.add(listing.jobId)
-
-      const detailHtml = await fetchText(listing.sourceUrl, listingUrl)
-      const detail = extractJobDetail(detailHtml, listing)
-
-      jobs.push({
-        jobId: detail.jobId || listing.jobId,
-        requisitionId: detail.requisitionId || listing.requisitionId,
-        title: detail.title || listing.title,
-        company: 'Electronic Arts',
-        department: detail.department || listing.department || null,
-        location: detail.location || listing.location,
-        city: detail.city || listing.city,
-        link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-        applyUrl: detail.applyUrl || null,
-        sourceUrl: detail.sourceUrl || listing.sourceUrl,
-        source: 'electronicarts',
-        employmentType: detail.employmentType || listing.employmentType || null,
-        experienceRequired: detail.experienceRequired,
-        jobDescription: detail.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        requiredSkills: detail.requiredSkills,
-        postingDate: detail.postingDate,
-        closingDate: detail.closingDate,
-        remoteStatus: detail.workModel || (/remote/i.test(detail.location || '') ? 'Remote' : 'On-site'),
-        scrapedAt: new Date().toISOString(),
-      })
-    }
-
-    if (!summary.hasNext) break
-  }
-
-  return jobs
-}
+// The current EA surface is not a verified public jobs contract. Stay empty
+// rather than treating an unverified page shape as authoritative job data.
+export const run = async () => []
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Electronic Arts scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

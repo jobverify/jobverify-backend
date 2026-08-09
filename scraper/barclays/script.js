@@ -5,6 +5,7 @@ const BASE_URL = 'https://search.jobs.barclays'
 const CAREER_PAGE_URL = `${BASE_URL}/search-jobs/india`
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const FETCH_TIMEOUT_MS = 15000
+const EXPERIENCE_CONTEXT_PATTERN = String.raw`(?:\s+of\s+(?:[a-z0-9+/,&().-]+\s+){0,8}?experience|\s+(?:[a-z0-9+/,&().-]+\s+){0,8}?experience|\s+experience)`
 
 const createFetchTimeoutSignal = (timeoutMs = FETCH_TIMEOUT_MS) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
@@ -127,6 +128,34 @@ const extractRequiredSkills = (descriptionHtml) => {
   return [...new Set(skills)]
 }
 
+const formatExperienceYears = (minimum, maximum = null, suffix = '') => {
+  if (!minimum) return null
+  if (maximum) return `${minimum}-${maximum} years`
+  return `${minimum}${suffix} years`
+}
+
+const extractExperienceRequired = (jobDescription) => {
+  const text = normalizeWhitespace(jobDescription)
+  if (!text) return null
+
+  const rangeMatch = text.match(new RegExp(`(?:at\\s+least\\s+|minimum\\s+)?(\\d+(?:\\.\\d+)?)\\s*(?:-|to)\\s*(\\d+(?:\\.\\d+)?)\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (rangeMatch) {
+    return formatExperienceYears(rangeMatch[1], rangeMatch[2])
+  }
+
+  const plusMatch = text.match(new RegExp(`(?:at\\s+least\\s+|minimum\\s+)?(\\d+(?:\\.\\d+)?)\\+\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (plusMatch) {
+    return formatExperienceYears(plusMatch[1], null, '+')
+  }
+
+  const singleMatch = text.match(new RegExp(`(?:at\\s+least\\s+|minimum\\s+)?(\\d+(?:\\.\\d+)?)\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (singleMatch) {
+    return formatExperienceYears(singleMatch[1])
+  }
+
+  return null
+}
+
 export const buildSearchUrl = ({ page = 1 } = {}) => {
   const normalizedPage = Math.max(1, Number(page) || 1)
   if (normalizedPage === 1) return CAREER_PAGE_URL
@@ -180,6 +209,7 @@ export const extractPaginationSummary = (html) => ({
 export const extractJobDetail = (html, listing = {}) => {
   const jsonLd = extractJsonLd(html)
   const descriptionHtml = extractDescriptionHtml(html, jsonLd)
+  const jobDescription = htmlToText(descriptionHtml) || null
   const location = normalizeWhitespace(
     extractFirst(/<p class="job-details--location">([\s\S]*?)<\/p>/i, html),
   ) || [
@@ -208,13 +238,13 @@ export const extractJobDetail = (html, listing = {}) => {
     sourceUrl: listing.sourceUrl || normalizeWhitespace(jsonLd?.url) || null,
     applyUrl,
     employmentType: normalizeEmploymentType(jsonLd?.employmentType, jsonLd?.workHours),
-    experienceRequired: null,
+    experienceRequired: extractExperienceRequired(jobDescription),
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractRequiredSkills(descriptionHtml),
     postingDate: normalizeIsoDate(jsonLd?.datePosted) || null,
     closingDate: null,
-    jobDescription: htmlToText(descriptionHtml) || null,
+    jobDescription,
   }
 }
 
@@ -237,7 +267,7 @@ const defaultFetchText = async (url) => {
 export const createBarclaysScraper = ({
   maxPages = Number.POSITIVE_INFINITY,
   maxJobs = null,
-  includeDetails = false,
+  includeDetails = true,
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
@@ -302,7 +332,7 @@ export const createBarclaysScraper = ({
 export const run = async (options = {}) => createBarclaysScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Barclays scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

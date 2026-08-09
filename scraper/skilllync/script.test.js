@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  ACCEPTED_UNAVAILABLE_STATUSES,
   CAREERS_URL,
   COMPANY,
   JOBS_URL,
@@ -10,6 +11,7 @@ import {
   hasOfficialCareersSignal,
   hasOfficialJobsPageSignal,
   hasRenderedPublicJobCards,
+  isVerifiedUnavailablePage,
 } from './script.js'
 
 const careersHtml = `
@@ -51,15 +53,35 @@ const publicJobsHtml = `
   </html>
 `
 
+const unavailableHtml = `
+  <html>
+    <head>
+      <title>503 Service Temporarily Unavailable</title>
+    </head>
+    <body>
+      <center><h1>503 Service Temporarily Unavailable</h1></center>
+    </body>
+  </html>
+`
+
 test('Skill-Lync sentinel stays pinned to the first-party careers page and current-openings shell', () => {
   assert.equal(SOURCE, 'skilllync')
   assert.equal(COMPANY, 'Skill-Lync')
   assert.equal(CAREERS_URL, 'https://www.skill-lync.com/careers')
   assert.equal(JOBS_URL, 'https://skill-lync.com/careers/jobs')
+  assert.deepEqual(ACCEPTED_UNAVAILABLE_STATUSES, [503])
   assert.equal(hasOfficialCareersSignal(careersHtml), true)
   assert.equal(hasOfficialJobsPageSignal(jobsShellHtml), true)
   assert.equal(hasRenderedPublicJobCards(jobsShellHtml), false)
   assert.equal(hasRenderedPublicJobCards(publicJobsHtml), true)
+  assert.equal(
+    isVerifiedUnavailablePage({
+      status: 503,
+      url: CAREERS_URL,
+      html: unavailableHtml,
+    }),
+    true,
+  )
 })
 
 test('run returns an empty list when Skill-Lync exposes only a current-openings shell without rendered public jobs', async () => {
@@ -87,6 +109,26 @@ test('run returns an empty list when Skill-Lync exposes only a current-openings 
       }
 
       throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [CAREERS_URL, JOBS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('run returns an empty list when both official Skill-Lync pages match the verified temporary-unavailable 503 shell', async () => {
+  const requestedUrls = []
+  const scraper = createSkillLyncScraper()
+
+  const jobs = await scraper.run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      return {
+        status: 503,
+        url,
+        html: unavailableHtml,
+      }
     },
   })
 

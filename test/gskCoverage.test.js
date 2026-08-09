@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
+
+test('GSK resolves through an exact-name first-party provider', () => {
+  const report = generateCompanyCoverageReport({
+    csvText: 'company_name\nGSK\n',
+    catalog: getScraperCatalog(),
+  })
+
+  assert.equal(report.matchedCount, 1)
+  assert.equal(report.unmatchedCount, 0)
+  assert.deepEqual(
+    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
+    [['GSK', 'gsk', 'GSK']],
+  )
+})

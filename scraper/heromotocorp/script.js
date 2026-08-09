@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { HERO_MOTO_CORP_CATALOG } from './catalog.js'
 
 export const PROVIDER_METADATA = HERO_MOTO_CORP_CATALOG
@@ -17,6 +19,30 @@ export const DEFAULT_LOCALE = 'en_GB'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+
+const HERO_SECTION_HEADINGS = new Set([
+  'function',
+  'pay band',
+  'role',
+  'a purpose driven role for you',
+  'a day in the life',
+  'academic qualification & experience',
+  'technical skills/knowledge',
+  'behavioural skills',
+  'what will it be like to work for hero',
+  'about hero',
+])
+
+const HERO_DESCRIPTION_SECTION_ORDER = [
+  'Function',
+  'Pay Band',
+  'Role',
+  'A purpose driven role for you',
+  'A Day in the life',
+  'Academic Qualification & Experience',
+  'Technical Skills/Knowledge',
+  'Behavioural Skills',
+]
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -47,6 +73,187 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const extractBalancedElementInnerHtml = (html, startPattern, tagName) => {
+  const page = String(html ?? '')
+  const match = startPattern.exec(page)
+
+  if (!match) return null
+
+  const contentStart = match.index + match[0].length
+  const tokenPattern = new RegExp(`<${tagName}\\b[^>]*>|</${tagName}\\s*>`, 'gi')
+  tokenPattern.lastIndex = contentStart
+
+  let depth = 1
+  let tokenMatch = tokenPattern.exec(page)
+
+  while (tokenMatch) {
+    if (tokenMatch[0].toLowerCase().startsWith(`</${tagName}`)) {
+      depth -= 1
+      if (depth === 0) {
+        return page.slice(contentStart, tokenMatch.index)
+      }
+    } else {
+      depth += 1
+    }
+
+    tokenMatch = tokenPattern.exec(page)
+  }
+
+  return null
+}
+
+const extractJobDescriptionHtml = (html) => {
+  for (const [pattern, tagName] of [
+    [
+      /<span\b(?=[^>]*itemprop=["']description["'])(?=[^>]*class=["'][^"']*\bjobdescription\b[^"']*["'])[^>]*>/i,
+      'span',
+    ],
+    [
+      /<span\b(?=[^>]*class=["'][^"']*\bjobdescription\b[^"']*["'])[^>]*>/i,
+      'span',
+    ],
+    [
+      /<div\b(?=[^>]*class=["'][^"']*\bjobdescription\b[^"']*["'])[^>]*>/i,
+      'div',
+    ],
+  ]) {
+    const extracted = extractBalancedElementInnerHtml(html, pattern, tagName)
+    if (extracted) return extracted
+  }
+
+  return null
+}
+
+const extractTextLines = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<br\b[^>]*\/?>/gi, '\n')
+  .replace(/<\/(p|div|li|h[1-6]|ul|ol)>/gi, '\n')
+  .replace(/<li\b[^>]*>/gi, '\n- ')
+  .replace(/<p\b[^>]*>/gi, '\n')
+  .replace(/<div\b[^>]*>/gi, '\n')
+  .replace(/<h[1-6]\b[^>]*>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\r/g, '\n')
+  .split('\n')
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
+const normalizeSectionHeading = (value) => normalizeWhitespace(value)?.toLowerCase() || null
+
+const extractHeroSections = (descriptionHtml) => {
+  const sections = new Map()
+  let currentSectionKey = null
+
+  for (const line of extractTextLines(descriptionHtml)) {
+    const sectionKey = normalizeSectionHeading(line)
+
+    if (sectionKey && HERO_SECTION_HEADINGS.has(sectionKey)) {
+      currentSectionKey = sectionKey
+      if (!sections.has(sectionKey)) sections.set(sectionKey, [])
+      continue
+    }
+
+    if (currentSectionKey) {
+      sections.get(currentSectionKey).push(line)
+    }
+  }
+
+  return sections
+}
+
+const getHeroSectionLines = (sections, heading) =>
+  sections.get(normalizeSectionHeading(heading)) || []
+
+const getHeroSectionText = (sections, heading) =>
+  normalizeWhitespace(getHeroSectionLines(sections, heading).join(' '))
+
+const buildHeroDescription = (sections, descriptionHtml) => {
+  const parts = HERO_DESCRIPTION_SECTION_ORDER
+    .map((heading) => {
+      const text = getHeroSectionText(sections, heading)
+      return text ? `${heading} ${text}` : null
+    })
+    .filter(Boolean)
+
+  return parts.length > 0 ? normalizeWhitespace(parts.join(' ')) : stripTags(descriptionHtml)
+}
+
+const formatExperienceEvidence = (experienceProfile, evidence) => {
+  if (!experienceProfile || !evidence) return null
+
+  if (experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0) {
+    return 'No experience required'
+  }
+
+  if (Number.isFinite(experienceProfile.minimumYears) && Number.isFinite(experienceProfile.maximumYears)) {
+    return experienceProfile.minimumYears === experienceProfile.maximumYears
+      ? `${experienceProfile.minimumYears} years`
+      : `${experienceProfile.minimumYears}-${experienceProfile.maximumYears} years`
+  }
+
+  if (Number.isFinite(experienceProfile.minimumYears) && experienceProfile.isOpenEnded) {
+    return `${experienceProfile.minimumYears}+ years`
+  }
+
+  return evidence
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s*\+\s*/g, '+')
+    .replace(/\byears?\b/i, 'years')
+}
+
+const inferExperienceFromText = (text) => {
+  const normalized = normalizeWhitespace(text)
+  if (!normalized) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return formatExperienceEvidence(experienceProfile, evidence)
+}
+
+const extractExperienceFromSections = (sections, fallbackDescription) => {
+  const academicText = getHeroSectionText(sections, 'Academic Qualification & Experience')
+  if (academicText) {
+    const academicExperience = inferExperienceFromText(academicText)
+    if (academicExperience) return academicExperience
+  }
+
+  const candidateText = normalizeWhitespace([
+    getHeroSectionText(sections, 'Role'),
+    getHeroSectionText(sections, 'A purpose driven role for you'),
+    getHeroSectionText(sections, 'A Day in the life'),
+    academicText,
+    getHeroSectionText(sections, 'Technical Skills/Knowledge'),
+    getHeroSectionText(sections, 'Behavioural Skills'),
+  ].filter(Boolean).join(' '))
+
+  return inferExperienceFromText(candidateText || fallbackDescription)
+}
+
+const extractMinimumQualification = (sections) => {
+  const academicLines = getHeroSectionLines(sections, 'Academic Qualification & Experience')
+  const qualificationLines = academicLines.filter((line) => !inferExperienceFromText(line))
+
+  return normalizeWhitespace(qualificationLines.join(' ')) || null
+}
+
+const extractRequiredSkillsFromSections = (sections, descriptionHtml) => {
+  const listItems = extractListItems(descriptionHtml)
+  if (listItems.length > 0) return listItems
+
+  return [
+    ...getHeroSectionLines(sections, 'Technical Skills/Knowledge'),
+    ...getHeroSectionLines(sections, 'Behavioural Skills'),
+  ]
+}
+
 const toAbsoluteUrl = (value) => {
   try {
     return new URL(decodeHtmlEntities(value), BASE_URL).toString()
@@ -60,12 +267,40 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   return match ? transform(match) : null
 }
 
-export const extractOfficialJobsBoardUrl = (html = '') => normalizeWhitespace(
-  extractFirst(
-    /href=["'](https:\/\/jobs\.heromotocorp\.com\/viewalljobs\/?)["']/i,
-    html,
-  ),
-)
+const normalizePathname = (pathname) => pathname === '/' ? '/' : pathname.replace(/\/+$/, '/')
+
+export const isOfficialJobsBoardUrl = (value) => {
+  try {
+    const url = new URL(decodeHtmlEntities(value), BASE_URL)
+    const pathname = normalizePathname(url.pathname)
+
+    return url.hostname === new URL(BASE_URL).hostname
+      && (
+        pathname === '/viewalljobs/'
+        || (
+          pathname === '/search/'
+          && url.searchParams.get('createNewAlert') === 'false'
+          && url.searchParams.get('q') === ''
+        )
+      )
+  } catch {
+    return false
+  }
+}
+
+export const extractOfficialJobsBoardUrl = (html = '') => {
+  for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const absoluteUrl = toAbsoluteUrl(match[1])
+    const text = stripTags(match[2])?.toLowerCase() || ''
+
+    if (!absoluteUrl || !isOfficialJobsBoardUrl(absoluteUrl)) continue
+    if (!text.includes('join us') && !text.includes('view all jobs')) continue
+
+    return absoluteUrl
+  }
+
+  return null
+}
 
 export const hasOfficialHeroMotoCorpCareersSignals = (html = '') => {
   const page = String(html ?? '')
@@ -206,16 +441,11 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
   .filter(Boolean)
 
 export const extractJobDetail = (html, listing = {}) => {
-  const descriptionHtml = extractFirst(
-    /itemprop=["']description["'][^>]*>\s*<span\b[^>]*class=["'][^"']*\bjobdescription\b[^"']*["'][^>]*>([\s\S]*?)<\/span>\s*<\/span>/i,
-    html,
-  ) || extractFirst(
-    /<span\b[^>]*class=["'][^"']*\bjobdescription\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
-    html,
-  ) || extractFirst(
-    /<div\b[^>]*class=["'][^"']*\bjobdescription\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    html,
-  )
+  const descriptionHtml = extractJobDescriptionHtml(html)
+  const sections = extractHeroSections(descriptionHtml)
+  const jobDescription = buildHeroDescription(sections, descriptionHtml)
+  const experienceRequired = extractExperienceFromSections(sections, jobDescription)
+  const minimumQualification = extractMinimumQualification(sections)
 
   const applyPath = normalizeWhitespace(
     extractFirst(
@@ -239,37 +469,32 @@ export const extractJobDetail = (html, listing = {}) => {
     requisitionId: listing.requisitionId || jobId,
     sourceUrl: listing.sourceUrl || null,
     employmentType: 'Full-time',
-    experienceRequired: null,
-    minimumQualification: null,
+    experienceRequired,
+    publicExperienceChecked: Boolean(descriptionHtml),
+    minimumQualification,
     preferredQualification: null,
-    requiredSkills: extractListItems(descriptionHtml),
+    requiredSkills: extractRequiredSkillsFromSections(sections, descriptionHtml),
     postingDate: normalizeWhitespace(
       extractFirst(/itemprop=["']datePosted["'][^>]*content=["']([^"']+)["']/i, html),
     ) || listing.postingDate || null,
     closingDate: normalizeWhitespace(
       extractFirst(/itemprop=["']validThrough["'][^>]*content=["']([^"']+)["']/i, html),
     ) || null,
-    jobDescription: stripTags(descriptionHtml),
+    jobDescription,
     applyUrl:
       toAbsoluteUrl(applyPath)
       || (jobId ? toAbsoluteUrl(`/talentcommunity/apply/${jobId}/?locale=${DEFAULT_LOCALE}`) : null),
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const createHeroMotoCorpScraper = () => ({
   async run({
@@ -285,18 +510,23 @@ export const createHeroMotoCorpScraper = () => ({
 
     const categoryDiscoveryHtml = await fetchText(VIEW_ALL_JOBS_URL)
     const categoryUrls = extractCategoryUrls(categoryDiscoveryHtml)
+    const listingSources = categoryUrls.length > 0 ? categoryUrls : [VIEW_ALL_JOBS_URL]
     const jobs = []
     const seenJobIds = new Set()
 
-    for (const categoryUrl of categoryUrls) {
+    for (const categoryUrl of listingSources) {
       let startRow = 0
       let pageNumber = 1
 
       while (pageNumber <= maxCategoryPages) {
         const categoryPageUrl = buildCategoryPageUrl(categoryUrl, startRow)
-        const listingHtml = await fetchText(categoryPageUrl)
+        const listingHtml =
+          categoryUrls.length === 0 && categoryUrl === VIEW_ALL_JOBS_URL && pageNumber === 1
+            ? categoryDiscoveryHtml
+            : await fetchText(categoryPageUrl)
         const listings = extractSearchResults(listingHtml)
         const summary = extractResultsSummary(listingHtml)
+        const jobsBeforePage = jobs.length
 
         if (listings.length === 0) break
 
@@ -321,6 +551,7 @@ export const createHeroMotoCorpScraper = () => ({
             source: SOURCE,
             employmentType: detail.employmentType,
             experienceRequired: detail.experienceRequired,
+            publicExperienceChecked: detail.publicExperienceChecked,
             jobDescription: detail.jobDescription,
             minimumQualification: detail.minimumQualification,
             preferredQualification: detail.preferredQualification,
@@ -335,7 +566,9 @@ export const createHeroMotoCorpScraper = () => ({
           }
         }
 
-        if (!summary.totalPages || pageNumber >= summary.totalPages) break
+        if (summary.totalPages && pageNumber >= summary.totalPages) break
+        if (!summary.totalPages && jobs.length === jobsBeforePage) break
+        if (!summary.totalPages && listings.length === 0) break
         startRow += summary.pageSize || listings.length
         pageNumber += 1
       }
@@ -349,7 +582,7 @@ export const run = async (options = {}) => createHeroMotoCorpScraper().run(optio
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const currentDir = path.dirname(fileURLToPath(import.meta.url))
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

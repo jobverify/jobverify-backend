@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -22,6 +22,7 @@ const decodeHtmlEntities = (value) => {
       .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
       .replace(/&ndash;|&#8211;/gi, '-')
       .replace(/&mdash;|&#8212;/gi, '-')
+      .replace(/&bull;|&#8226;/gi, '•')
       .replace(/&amp;/gi, '&')
       .replace(/&lt;/gi, '<')
       .replace(/&gt;/gi, '>')
@@ -56,6 +57,8 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   return match ? transform(match) : null
 }
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const toAbsoluteUrl = (value) => {
   if (!value) return null
   try {
@@ -74,6 +77,38 @@ const extractTagListItems = (html) => [...String(html ?? '').matchAll(
 const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
+
+const decodeEmbeddedJsonString = (value) => decodeHtmlEntities(String(value ?? ''))
+  .replace(/\\u([0-9a-f]{4})/gi, (_, code) => String.fromCharCode(Number.parseInt(code, 16)))
+  .replace(/\\r\\n|\\n|\\r/g, ' ')
+  .replace(/\\t/g, ' ')
+  .replace(/\\"/g, '"')
+  .replace(/\\\//g, '/')
+
+const extractEmbeddedSectionHtml = (html, sectionKey, nextKeys = []) => {
+  const nextPattern = nextKeys.map(escapeRegex).join('|')
+  if (!nextPattern) return null
+
+  const match = String(html ?? '').match(
+    new RegExp(
+      `&#34;${escapeRegex(sectionKey)}&#34;:\\{[\\s\\S]*?&#34;body&#34;:&#34;([\\s\\S]*?)&#34;\\},&#34;(?:${nextPattern})&#34;:`,
+      'i',
+    ),
+  )
+
+  return match ? decodeEmbeddedJsonString(match[1]) : null
+}
+
+const extractParagraphBulletItems = (html) => [...decodeEmbeddedJsonString(html).matchAll(
+  /<(?:p|div)\b[^>]*>\s*(?:•|-)\s*([\s\S]*?)<\/(?:p|div)>/gi,
+)]
+  .map((match) => stripTags(match[1]))
+  .filter(Boolean)
+
+const extractSectionItems = (html) => [...new Set([
+  ...extractListItems(html),
+  ...extractParagraphBulletItems(html),
+])]
 
 const extractJsonLdJobPosting = (html) => {
   const scripts = [...String(html ?? '').matchAll(
@@ -111,6 +146,20 @@ const extractApplyUrl = (html) => toAbsoluteUrl(
     html,
   ),
 )
+  || toAbsoluteUrl(
+    decodeEmbeddedJsonString(
+      extractFirst(
+        /&#34;primaryCta&#34;:\{[\s\S]*?&#34;ctaLinkUrl&#34;:&#34;([\s\S]*?)&#34;,[\s\S]*?&#34;ctaOpenLinkInNewTab&#34;/i,
+        html,
+      ),
+    ),
+  )
+  || toAbsoluteUrl(
+    extractFirst(
+      /<a class="sr-only" href="([^"]+)">\s*Apply now/i,
+      html,
+    ),
+  )
 
 const extractLocationFromJsonLd = (jobPosting = {}) => {
   const address = jobPosting?.jobLocation?.address || {}
@@ -167,10 +216,36 @@ export const normalizeJobListing = (job = {}) => ({
 export const extractJobDetail = (html, listing = {}) => {
   const jobPosting = extractJsonLdJobPosting(html)
   const tagItems = extractTagListItems(html)
-  const descriptionHtml = extractDescriptionHtml(html) || null
+  const descriptionHtml = extractDescriptionHtml(html)
+    || extractEmbeddedSectionHtml(html, 'jobDescriptionSection', [
+      'qualificationDescriptionSection',
+      'additionalInformationSection',
+      'companyDetailsSection',
+      'primaryCta',
+    ])
+    || null
   const qualificationsHtml = extractSectionHtml(html, 'Qualifications')
+    || extractEmbeddedSectionHtml(html, 'qualificationDescriptionSection', [
+      'additionalInformationSection',
+      'companyDetailsSection',
+      'primaryCta',
+    ])
   const additionalInfoHtml = extractSectionHtml(html, 'Additional Information')
+    || extractEmbeddedSectionHtml(html, 'additionalInformationSection', [
+      'companyDetailsSection',
+      'primaryCta',
+    ])
   const locationFromJsonLd = extractLocationFromJsonLd(jobPosting)
+  const minimumQualification = stripTags(qualificationsHtml)
+  const preferredQualification = stripTags(additionalInfoHtml)
+  const requiredSkills = extractSectionItems(qualificationsHtml)
+  const jobDescription = stripTags(descriptionHtml) || normalizeWhitespace(jobPosting?.description)
+  const publicExperienceChecked = Boolean(
+    jobDescription
+    || minimumQualification
+    || preferredQualification
+    || requiredSkills.length > 0,
+  )
 
   return {
     title: normalizeWhitespace(
@@ -184,14 +259,15 @@ export const extractJobDetail = (html, listing = {}) => {
     country: locationFromJsonLd.country || listing.country || 'India',
     employmentType: tagItems[2] || normalizeWhitespace(jobPosting?.employmentType) || listing.employmentType || null,
     experienceRequired: listing.experienceRequired || null,
-    minimumQualification: stripTags(qualificationsHtml),
-    preferredQualification: stripTags(additionalInfoHtml),
-    requiredSkills: extractListItems(qualificationsHtml),
+    minimumQualification,
+    preferredQualification,
+    requiredSkills,
     postingDate: normalizeWhitespace(jobPosting?.datePosted) || listing.postingDate || null,
     closingDate: normalizeWhitespace(jobPosting?.validThrough) || null,
     applyUrl: extractApplyUrl(html) || listing.applyUrl || null,
     sourceUrl: listing.sourceUrl || null,
-    jobDescription: stripTags(descriptionHtml),
+    jobDescription,
+    publicExperienceChecked,
   }
 }
 
@@ -288,7 +364,7 @@ export const createPublicisSapientScraper = () => ({
 export const run = async () => createPublicisSapientScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Publicis Sapient scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -133,14 +133,12 @@ test('Envestnet scraper runs through listing and detail pages and decorates fina
   ])
 
   const jobs = await createEnvestnetScraper({ maxJobs: 1 }).run({
-    collectPageDataImpl: async (_page, url) => {
+    collectPageDataImpl: async (url) => {
       requestedUrls.push(url)
       const pageData = pageMap.get(url)
       if (!pageData) throw new Error(`Unexpected URL: ${url}`)
       return pageData
     },
-    launchBrowserImpl: async () => ({ close: async () => {} }),
-    createOptimizedPageImpl: async () => ({}),
   })
 
   assert.deepEqual(requestedUrls, [
@@ -153,32 +151,50 @@ test('Envestnet scraper runs through listing and detail pages and decorates fina
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 
-test('Envestnet default page collector works with optimized pages that omit waitForTimeout', async () => {
+test('Envestnet run can use direct HTML fetches to build listing and detail page data', async () => {
   const envestnet = await loadModule()
   assert.ok(envestnet, 'Envestnet scraper module should load')
 
   const { createEnvestnetScraper, INDIA_SEARCH_URL } = envestnet
   const requestedUrls = []
-  const fakePages = [
-    {
-      goto: async (url) => {
-        requestedUrls.push(url)
-      },
-      waitForSelector: async () => {},
-      evaluate: async () => listingPageData,
-    },
-    {
-      goto: async (url) => {
-        requestedUrls.push(url)
-      },
-      waitForSelector: async () => {},
-      evaluate: async () => detailPageData,
-    },
-  ]
+
+  const htmlByUrl = new Map([
+    [INDIA_SEARCH_URL, `
+      <html>
+        <head><title>India Careers</title></head>
+        <body>
+          Job Search Results
+          Showing 1-2 of 2 result(s)
+          Set up job alerts
+          <a href="https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii">Data Privacy Advisor II</a>
+          <a href="https://careers.envestnet.com/jobs/17961049-senior-enterprise-applications-engineer-zscaler">Senior Enterprise Applications Engineer - ZScaler</a>
+        </body>
+      </html>
+    `],
+    ['https://careers.envestnet.com/jobs/17868789-data-privacy-advisor-ii', `
+      <html>
+        <head><title>Data Privacy Advisor II in Trivandrum, KL, India</title></head>
+        <body>
+          Location: Trivandrum, KL, India
+          Date Posted: Jul 7, 2026
+          Description
+          The primary work location for this role is Trivandrum with a hybrid work model.
+          About Envestnet
+          Envestnet is an adaptive WealthTech company.
+          Apply Now
+          <a href="javascript: CareerSite.Apply.launchApplicantJob(17868789, );">Apply Now</a>
+        </body>
+      </html>
+    `],
+  ])
 
   const jobs = await createEnvestnetScraper({ maxJobs: 1 }).run({
-    launchBrowserImpl: async () => ({ close: async () => {} }),
-    createOptimizedPageImpl: async () => fakePages.shift(),
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      const html = htmlByUrl.get(url)
+      if (!html) throw new Error(`Unexpected URL: ${url}`)
+      return html
+    },
   })
 
   assert.deepEqual(requestedUrls, [
@@ -202,8 +218,6 @@ test('Envestnet scraper rejects unsupported listing or detail page changes', asy
         text: 'Open roles',
         links: [],
       }),
-      launchBrowserImpl: async () => ({ close: async () => {} }),
-      createOptimizedPageImpl: async () => ({}),
     }),
     /verified public surface/i,
   )

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -30,12 +30,22 @@ export const hasVerifiedCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /<title>\s*Careers\s*\|\s*CAMP Systems\s*<\/title>/i.test(page)
+  return (/<title>\s*Careers\s*\|\s*CAMP Systems\s*<\/title>/i.test(page)
+    || /<title>\s*Careers\s*<\/title>/i.test(page))
     && text.includes('careers')
     && text.includes('innovative, forward-thinkers wanted')
-    && text.includes('leading provider of aviation software and services')
-    && text.includes('saas products power the business of aviation worldwide')
-    && text.includes('find opportunities')
+    && (
+      text.includes('leading provider of aviation software and services')
+      || text.includes('saas company delivering groundbreaking aircraft health management solutions')
+    )
+    && (
+      text.includes('saas products power the business of aviation worldwide')
+      || text.includes('market data to the business aviation industry worldwide')
+    )
+    && (
+      text.includes('find opportunities')
+      || text.includes('talented and passionate people')
+    )
   }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -62,7 +72,7 @@ export const createCampSystemsInternationalIncScraper = () => ({
 export const run = async (options = {}) => createCampSystemsInternationalIncScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

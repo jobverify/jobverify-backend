@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { KISSFLOW_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -45,7 +45,7 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' '),
-)
+)?.replace(/\s+([,.;:!?])/g, '$1') || null
 
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
@@ -78,7 +78,7 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   const text = stripTags(page) || ''
 
   return /<title>\s*Careers\s*-\s*Kissflow\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/careers\.kissflow\.com\/["']/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/careers\.kissflow\.com\/?["']/i.test(page)
     && /https:\/\/kissflow\.com\//i.test(page)
     && text.includes('Get Jobs')
     && text.includes('Open Positions')
@@ -102,16 +102,17 @@ export const extractListingCards = (html = '') => {
     collection.findIndex((candidate) => candidate.sourceUrl === card.sourceUrl) === index)
 }
 
-const extractJobDescription = (html = '') => stripTags(
-  extractFirst(
-    html,
-    /Job Description:\s*<\/span>\s*<\/h6>\s*<p>([\s\S]*?)<\/p>/i,
-  ),
-)
+const extractJobDescription = (html = '') => {
+  const section = String(html ?? '').match(
+    /Job Description:\s*<\/span>\s*<\/h6>([\s\S]*?)(?:<h[1-6][^>]*>\s*(?:<[^>]+>\s*)*Applicant Details(?:\s*<\/[^>]+>)*\s*<\/h[1-6]>|<div[^>]+id=["']apply["'][^>]*>|<form[^>]+id=["']career-app-form["'][^>]*>|<\/main>)/i,
+  )?.[1]
+
+  return stripTags(section)
+}
 
 const extractRequiredSkills = (html = '') => {
   const section = String(html ?? '').match(
-    /<h6[^>]*>\s*Required Skills\s*<\/h6>([\s\S]*?)(?:<h6[^>]*>\s*Applicant Details\s*<\/h6>|<\/main>)/i,
+    /<h[1-6][^>]*>\s*(?:<[^>]+>\s*)*Required Skills(?:\s*<\/[^>]+>)*\s*<\/h[1-6]>([\s\S]*?)(?:<h[1-6][^>]*>\s*(?:<[^>]+>\s*)*Applicant Details(?:\s*<\/[^>]+>)*\s*<\/h[1-6]>|<div[^>]+id=["']apply["'][^>]*>|<form[^>]+id=["']career-app-form["'][^>]*>|<\/main>)/i,
   )?.[1]
 
   return [...String(section ?? '').matchAll(/<li>([\s\S]*?)<\/li>/gi)]
@@ -233,7 +234,7 @@ export const createKissflowScraper = ({
 export const run = async (options = {}) => createKissflowScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

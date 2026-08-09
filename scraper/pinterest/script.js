@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import PINTEREST_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -77,14 +77,17 @@ export const isCloudflareInterstitial = (html = '') => {
     && normalized.includes('enable javascript and cookies to continue')
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return response.text()
+}
 
 const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: {
@@ -204,7 +207,7 @@ export const createPinterestScraper = ({
 export const run = async (options = {}) => createPinterestScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

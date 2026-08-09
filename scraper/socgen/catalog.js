@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that the live SocGen public jobs surface is still the official Societe Generale ' +
-  'careers page at https://careers.societegenerale.com/en/Technical/all-job-offers, which displayed "688 offre(s)" ' +
-  'on the verified date and included India listings such as "Product owner - Payments" in Bangalore, India and ' +
+  'Verified on Monday, July 27, 2026 that the live SocGen public jobs surface is still the official Societe Generale ' +
+  'careers page at https://careers.societegenerale.com/en/Technical/all-job-offers, which displayed "702 offre(s)" ' +
+  'on the verified date and included India listings such as "Senior Analyst" in Bangalore, India and ' +
   '"Delivery Manager" in Chennai, India. The public detail pages continue to hand applicants to Taleo apply links on socgen.taleo.net.'
 
 export const SOCGEN_CATALOG = {
@@ -16,8 +16,8 @@ export const SOCGEN_CATALOG = {
   adapter: 'script',
   dryRunFile: 'socgen/jobs.json',
   companyCareerPage: 'https://careers.societegenerale.com/en/Technical/all-job-offers',
-  verifiedLiveOfferCount: 688,
-  verifiedIndiaSampleTitle: 'Product owner - Payments',
+  verifiedLiveOfferCount: 702,
+  verifiedIndiaSampleTitle: 'Senior Analyst',
   atsPlatform: 'oracle-taleo',
   countryFilter: 'India',
   paginationStrategy: 'single-public-listing-page-plus-detail-pages',
@@ -25,7 +25,7 @@ export const SOCGEN_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'careers.societegenerale.com',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-07-27',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   modulePath: path.join(currentDir, 'script.js'),
 }

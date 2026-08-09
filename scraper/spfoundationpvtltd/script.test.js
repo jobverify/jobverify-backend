@@ -37,15 +37,16 @@ const contactHtml = `
 <html lang="en-US">
   <head>
     <title>Contact - SP Foundation</title>
-    <meta name="description" content="Plot No. 284/1,2 &amp; 3 GIDC Estate, Makarpura, Vadodara ? 390010, Gujarat ? India. Landline: +91 265 2658894, e-mail: mili.patel@spfoundation.in" />
+    <meta name="description" content="Plot No. 284/1,2 &amp; 3 GIDC Estate, Makarpura, Vadodara - 390010, Gujarat - India. Landline: +91 265 2658894, e-mail: mili.patel@spfoundation.in" />
     <meta property="og:site_name" content="SP Foundation" />
   </head>
   <body>
     <main>
       <h1>Contact</h1>
-      <p>Plot No. 284/1,2 &amp; 3 GIDC Estate, Makarpura, Vadodara ? 390010, Gujarat ? India.</p>
+      <p>Plot No. 284/1,2 &amp; 3 GIDC Estate, Makarpura, Vadodara - 390010, Gujarat - India.</p>
       <a href="mailto:info@spfoundation.in">info@spfoundation.in</a>
       <p>mili.patel@spfoundation.in</p>
+      <p>MONDAY - SATURDAY : 9:00AM TO 6:00PM</p>
       <form aria-label="Contact form"></form>
       <p>Copyright 2022 by SP Foundation</p>
     </main>

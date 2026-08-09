@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -85,6 +86,26 @@ const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>(
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
 export const extractSearchResults = (html) => [...String(html ?? '').matchAll(/<tr\b[^>]*class=["'][^"']*data-row[^"']*["'][^>]*>([\s\S]*?)<\/tr>/gi)]
   .map((match) => {
     const row = match[1]
@@ -117,6 +138,12 @@ export const extractPaginationSummary = (html) => ({
 
 export const extractJobDetail = (html, listing = {}) => {
   const descriptionHtml = extractFirst(/itemprop=["']description["'][^>]*>([\s\S]*?)<\/span>/i, html)
+  const jobDescription = stripTags(descriptionHtml)
+  const experienceRequired = (
+    extractLabelValue(html, 'Work experience:')
+    || inferExperienceFromDescription(jobDescription)
+    || null
+  )
   const title = normalizeWhitespace(
     extractFirst(/<(?:h1|span)\b[^>]*itemprop=["']title["'][^>]*>([\s\S]*?)<\/(?:h1|span)>/i, html),
   ) || listing.title || null
@@ -129,8 +156,9 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId: listing.jobId || extractJobIdFromUrl(listing.sourceUrl),
     requisitionId: extractLabelValue(html, 'Requisition ID:') || listing.requisitionId || null,
     employmentType: extractLabelValue(html, 'Type of position:') || null,
-    experienceRequired: extractLabelValue(html, 'Work experience:') || null,
-    jobDescription: stripTags(descriptionHtml),
+    experienceRequired,
+    jobDescription,
+    publicExperienceChecked: Boolean(jobDescription || experienceRequired),
     requiredSkills: extractListItems(descriptionHtml),
     postingDate: normalizeWhitespace(
       extractFirst(/<meta\b[^>]*itemprop=["']datePosted["'][^>]*content=["']([^"']+)["']/i, html),
@@ -145,7 +173,7 @@ export const extractJobDetail = (html, listing = {}) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify Firstsource scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify Firstsource scraper)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

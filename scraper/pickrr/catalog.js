@@ -20,9 +20,9 @@ export const PICKRR_CATALOG = {
     'verified-homepage+verified-life-at-pickrr-page+verified-sitemap+verified-careers-404-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://pickrr.com/ is the live official Pickrr homepage, that https://pickrr.com/life-at-pickrr/ is the official first-party "Life at Pickrr" careers-branded page with a resume submission form but no trustworthy public job listings, that https://pickrr.com/sitemap.xml exposes the life-at-pickrr route but not a public careers route, and that https://pickrr.com/careers resolves to the first-party "Page Not Found - Pickrr" page.',
+    'Verified on Tuesday, August 4, 2026 that https://pickrr.com/ is the live official Pickrr homepage, that https://pickrr.com/life-at-pickrr/ is still the official first-party "Life at Pickrr" careers-branded page with a resume submission form but no trustworthy public job listings, that https://pickrr.com/sitemap.xml exposes the life-at-pickrr route but not a public careers route, and that https://pickrr.com/careers resolves to the first-party "Page Not Found - Pickrr" page.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'pickrr/jobs.json',
 }

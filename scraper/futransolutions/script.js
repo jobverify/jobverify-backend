@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { FUTRAN_SOLUTIONS_CATALOG } from './catalog.js'
 
@@ -36,13 +36,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasVerifiedCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const normalized = normalizeWhitespace(page).toLowerCase()
 
   return /<title>\s*Get Hired by Futran Solutions\s*\|\s*Explore Openings\s*<\/title>/i.test(page)
-    && normalized.includes('ALWAYS BE')
-    && normalized.includes('Careers')
-    && normalized.includes('Submit Your Profile')
-    && normalized.includes('Futran Solutions is an Equal Opportunity Employer')
+    && normalized.includes('careers')
+    && normalized.includes('futran solutions is an equal opportunity employer')
 }
 
 export const hasPublicJobListingSignal = (html = '') => /data-job-id=|Open Roles|Current Openings|Apply now/i.test(
@@ -70,7 +68,7 @@ export const createFutranSolutionsScraper = () => ({
 export const run = async (options = {}) => createFutranSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

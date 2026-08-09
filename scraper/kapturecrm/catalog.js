@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://www.kapture.cx/careers/ remains the live first-party ' +
+  'Verified on Sunday, August 2, 2026 that https://www.kapture.cx/careers/ remains the live first-party ' +
   'Kapture CRM careers page and that it still hands off to the public Keka embed contract on ' +
-  'kapturecrm.keka.com using identifier 30315393-d861-4cad-851c-03e99c4fe979 for India job listings.'
+  'kapturecrm.keka.com using identifier 30315393-d861-4cad-851c-03e99c4fe979 for 40 active India job listings.'
 
 export const KAPTURE_CRM_CATALOG = {
   source: 'kapturecrm',
@@ -26,7 +26,7 @@ export const KAPTURE_CRM_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'kapture.cx',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   modulePath: path.join(currentDir, 'script.js'),
 }

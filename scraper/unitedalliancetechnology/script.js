@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import UNITED_ALLIANCE_TECHNOLOGY_CATALOG from './catalog.js'
 
@@ -24,6 +25,15 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) => {
+  const message = String(error?.message || error || '').toLowerCase()
+  return message.includes('fetch failed')
+    || message.includes('timed out')
+    || message.includes('timeout')
+    || message.includes('could not connect')
+    || message.includes('und_err_connect_timeout')
+}
+
 export const isExpectedDomainResolutionFailure = (error) => {
   const message = String(error?.message || error || '').toLowerCase()
   return message.includes('could not resolve host')
@@ -33,7 +43,7 @@ export const isExpectedDomainResolutionFailure = (error) => {
   }
 
 export const createUnitedAllianceTechnologyScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
     try {
       await fetchText(OFFICIAL_CAREERS_URL)
     } catch (error) {
@@ -41,7 +51,38 @@ export const createUnitedAllianceTechnologyScraper = () => ({
         return []
       }
 
-      throw error
+      if (!isBrowserFallbackError(error)) {
+        throw error
+      }
+
+      let browserSession = null
+
+      const getBrowserSession = async () => {
+        if (!browserSession) {
+          browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+        }
+
+        return browserSession
+      }
+
+      const browserTextFetcher = fetchBrowserText || (async (url) => {
+        const session = await getBrowserSession()
+        return session.fetchText(url)
+      })
+
+      try {
+        await browserTextFetcher(OFFICIAL_CAREERS_URL)
+      } catch (browserError) {
+        if (isExpectedDomainResolutionFailure(browserError)) {
+          return []
+        }
+
+        throw browserError
+      } finally {
+        if (browserSession) {
+          await browserSession.close()
+        }
+      }
     }
 
     throw new Error('United Alliance Technology exact-name first-party domain became reachable and needs a dedicated scraper')
@@ -51,7 +92,7 @@ export const createUnitedAllianceTechnologyScraper = () => ({
 export const run = async (options = {}) => createUnitedAllianceTechnologyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

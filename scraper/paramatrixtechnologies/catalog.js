@@ -19,9 +19,9 @@ export const PARAMATRIX_TECHNOLOGIES_CATALOG = {
   normalizationProfile: 'engineering-default',
   companyDomain: 'paramatrix.com',
   dryRunFile: 'paramatrixtechnologies/jobs.json',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-25',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.paramatrix.com/careers was the live first-party Paramatrix Technologies careers page, that it advertised "Be a part of our talent network", and that it exposed inline Apply actions for listed roles such as Java Developer (Java 21, Microservices, Springboot) through first-party modal forms rather than separate public job detail URLs.',
+    'Verified on Saturday, July 25, 2026 that https://www.paramatrix.com/careers was the live first-party Paramatrix Technologies careers page, that it advertised "Be a part of our talent network", and that it exposed inline Apply actions for listed roles such as AI Engineer (Gen AI, RAG, Agentic AI, LLM) and IT Recruiter through first-party modal forms rather than separate public job detail URLs.',
 }
 
 export default PARAMATRIX_TECHNOLOGIES_CATALOG

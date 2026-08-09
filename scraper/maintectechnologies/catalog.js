@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://maintec.com/jobs/ is the live first-party Maintec jobs archive and that it publicly exposes role cards including CICS System programmer and Associate Engineers (Mechanical or Electrical). The representative CICS detail page currently requires US Eastern hours, while the Associate Engineers detail page now says "This role is no longer available." and the archive cards themselves publish no trustworthy India-localized metadata, so this local provider stays fail-closed until Maintec exposes explicit India job metadata on the first-party archive.'
+  'Verified on Monday, August 3, 2026 that https://maintec.com/jobs/ is the live first-party Maintec jobs archive and that its current first-party detail set includes CICS System programmer, DB2 System programmer, and Mainframe DB2 DBA. The CICS and DB2 detail pages currently require US Eastern hours, the Mainframe DB2 DBA detail page still omits trustworthy India-localized job metadata, and the archive itself exposes no explicit India location fields, so this local provider stays fail-closed until Maintec publishes trustworthy India job metadata on the first-party archive.'
 
 export const MAINTEC_TECHNOLOGIES_CATALOG = {
   source: 'maintectechnologies',
@@ -21,7 +21,7 @@ export const MAINTEC_TECHNOLOGIES_CATALOG = {
     'verified-jobs-archive+us-hours-or-expired-detail-pages+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedPublicJobCount: 0,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'maintectechnologies/jobs.json',

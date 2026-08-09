@@ -19,9 +19,9 @@ export const FOCUS_SOFTNET_CATALOG = {
   normalizationProfile: 'engineering-default',
   companyDomain: 'focussoftnet.com',
   dryRunFile: 'focussoftnet/jobs.json',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.focussoftnet.com/careers was the live first-party Focus Softnet careers page. The page exposed the Join Our Global Team shell, inline role cards for Sales Consultant - CRM/ERP/HCM and Content Writer - CRM/ERP/HCM, and the shared Apply for Career form on the same first-party surface.',
+    'Verified on Sunday, August 2, 2026 that https://www.focussoftnet.com/careers was the live first-party Focus Softnet careers page. The page exposed the Join Our Global Team shell, inline role cards for Sales Consultant - CRM/ERP/HCM and Social Media Specialist, and the shared Apply for Career form on the same first-party surface.',
 }
 
 export default FOCUS_SOFTNET_CATALOG

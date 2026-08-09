@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { IMPRESSICO_BUSINESS_SOLUTIONS_CATALOG } from './catalog.js'
 
@@ -77,10 +78,12 @@ const extractPositionOptions = (html) => [...String(html ?? '').matchAll(/<optio
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  return /Current Job Openings/i.test(page)
+  return /<title>\s*Impressico\s*-\s*Career\s*\|\s*Current Openings\s*<\/title>/i.test(page)
+    && /Current Openings/i.test(page)
     && /career-block/i.test(page)
-    && /Customer Success Manager/i.test(page)
     && /Apply Now/i.test(page)
+    && /rel=["']modal:open["']/i.test(page)
+    && /No\.\s*Of\s*Openings/i.test(page)
     && /<select[^>]*>/i.test(page)
 }
 
@@ -125,9 +128,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const createImpressicoBusinessSolutionsScraper = ({
   maxJobs = null,
@@ -135,52 +143,64 @@ export const createImpressicoBusinessSolutionsScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const textFetcher = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+      shouldUseBrowserFallback,
+    })
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Impressico Business Solutions verified Impressico careers surface no longer matches the public contract')
+    try {
+      const careersHtml = await textFetcher.fetchText(CAREERS_URL)
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Impressico Business Solutions verified Impressico careers surface no longer matches the public contract')
+      }
+
+      const cards = extractCareerBlocks(careersHtml)
+      if (cards.length === 0) {
+        throw new Error('Impressico Business Solutions verified openings surface no longer exposes the expected career blocks')
+      }
+
+      const jobs = cards.map((card) => ({
+        title: card.title,
+        company: COMPANY,
+        department: null,
+        location: card.location,
+        city: extractPrimaryCity(card.location),
+        country: 'India',
+        jobId: card.jobId,
+        requisitionId: card.jobId,
+        sourceUrl: card.modalId ? `${CAREERS_URL}#${card.modalId}` : CAREERS_URL,
+        applyUrl: CAREERS_URL,
+        employmentType: null,
+        experienceRequired: card.experienceRequired,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: card.requiredSkills,
+        postingDate: null,
+        closingDate: null,
+        jobDescription: card.jobDescription,
+        openings: card.openings,
+        remoteStatus: null,
+        source: SOURCE,
+        link: CAREERS_URL,
+        scrapedAt: now(),
+      }))
+
+      return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    } finally {
+      await textFetcher.close()
     }
-
-    const cards = extractCareerBlocks(careersHtml)
-    if (cards.length === 0) {
-      throw new Error('Impressico Business Solutions verified openings surface no longer exposes the expected career blocks')
-    }
-
-    const jobs = cards.map((card) => ({
-      title: card.title,
-      company: COMPANY,
-      department: null,
-      location: card.location,
-      city: extractPrimaryCity(card.location),
-      country: 'India',
-      jobId: card.jobId,
-      requisitionId: card.jobId,
-      sourceUrl: card.modalId ? `${CAREERS_URL}#${card.modalId}` : CAREERS_URL,
-      applyUrl: CAREERS_URL,
-      employmentType: null,
-      experienceRequired: card.experienceRequired,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: card.requiredSkills,
-      postingDate: null,
-      closingDate: null,
-      jobDescription: card.jobDescription,
-      openings: card.openings,
-      remoteStatus: null,
-      source: SOURCE,
-      link: CAREERS_URL,
-      scrapedAt: now(),
-    }))
-
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
   },
 })
 
 export const run = async (options = {}) => createImpressicoBusinessSolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

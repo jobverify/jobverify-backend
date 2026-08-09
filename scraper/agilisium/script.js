@@ -23,8 +23,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const normalizeSearchText = (value) => normalizeWhitespace(value).toLowerCase()
+
 const extractTitle = (html = '') =>
   normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+
+const includesAnyText = (text, fragments) => fragments.some((fragment) => text.includes(fragment))
+
+const includesAnyRaw = (page, fragments) => fragments.some((fragment) => page.includes(fragment))
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
@@ -44,22 +50,32 @@ const defaultFetchText = async (url) => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
+  const text = normalizeSearchText(page)
 
   return extractTitle(page) === 'Careers at Agilisium | Life Sciences AI & Data Jobs'
-    && text.includes('Explore open roles across engineering, consulting, and data science.')
-    && text.includes('EXPLORE OPEN ROLES')
+    && includesAnyText(text, [
+      'explore open roles',
+      'view current openings',
+      'see job openings',
+    ])
+    && text.includes('explore open roles')
     && page.includes(BOARD_URL)
 }
 
 export const hasVerifiedBoardSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
 
   return extractTitle(page) === 'Jobs at Agilisium'
-    && text.includes('Everyone at Agilisium is free to explore and work the way you want. Come join us!')
     && page.includes(BOARD_URL)
-  }
+    && includesAnyRaw(page, ['id="meta"', "id='meta'"])
+    && page.includes('list_url')
+    && includesAnyRaw(page, [
+      '"page_name":"Careers"',
+      '"page_name":"careers"',
+      'page_name":"Careers',
+      'page_name":"careers',
+    ])
+}
 
 export const createAgilisiumScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
@@ -80,7 +96,7 @@ export const createAgilisiumScraper = () => ({
 export const run = async (options = {}) => createAgilisiumScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

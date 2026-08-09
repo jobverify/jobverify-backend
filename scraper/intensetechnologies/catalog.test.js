@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 import INTENSE_TECHNOLOGIES_CATALOG, { VERIFIED_SURFACE_SUMMARY } from './catalog.js'
 
 test('Intense Technologies catalog metadata captures the verified first-party Keka-backed careers surface without aliases', () => {
@@ -30,7 +30,7 @@ test('Intense Technologies catalog metadata captures the verified first-party Ke
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.parser, 'custom-script')
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.companyDomain, 'in10stech.com')
-  assert.equal(INTENSE_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(INTENSE_TECHNOLOGIES_CATALOG.verifiedOn, '2026-08-02')
   assert.equal(INTENSE_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(INTENSE_TECHNOLOGIES_CATALOG.modulePath, /intensetechnologies[\\/]script\.js$/i)
 })

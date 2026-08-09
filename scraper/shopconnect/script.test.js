@@ -64,6 +64,39 @@ const missingRoutePage = {
   `,
 }
 
+const liveLikeMissingRoutePage = {
+  status: 404,
+  url: 'https://www.shopconnect.in/careers',
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title>Page not found &#8211; Shopconnect</title>
+      </head>
+      <body>
+        <h1>This page could not be found!</h1>
+        <p>We are sorry. But the page you are looking for is not available.</p>
+      </body>
+    </html>
+  `,
+}
+
+const blockedRoutePage = {
+  status: 406,
+  url: 'https://www.shopconnect.in/careers',
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title>Not Acceptable!</title>
+      </head>
+      <body>
+        <h1>Not Acceptable!</h1>
+      </body>
+    </html>
+  `,
+}
+
 const publicJobsPage = {
   status: 200,
   url: 'https://www.shopconnect.in/careers',
@@ -113,6 +146,7 @@ test('Shopconnect sentinel recognizes the verified homepage, sitemap chain, empt
   assert.equal(shopconnect.sitemapHasCareerLikeUrl(pageSitemapXml), false)
   assert.equal(shopconnect.isVerifiedEmptyWordPressSearchResult(emptySearchJson), true)
   assert.equal(shopconnect.isVerifiedMissingCareerRoute(missingRoutePage), true)
+  assert.equal(shopconnect.isVerifiedMissingCareerRoute(liveLikeMissingRoutePage), true)
 })
 
 test('Shopconnect sentinel returns no jobs only while the verified public surface exposes no careers board', async () => {
@@ -133,6 +167,34 @@ test('Shopconnect sentinel returns no jobs only while the verified public surfac
   })
 
   assert.deepEqual(requestedUrls, [
+    shopconnect.HOMEPAGE_URL,
+    shopconnect.SITEMAP_URL,
+    shopconnect.PAGE_SITEMAP_URL,
+    ...shopconnect.WORDPRESS_SEARCH_URLS,
+    ...shopconnect.NO_PUBLIC_CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Shopconnect sentinel can recover with a browser-backed fetch when direct requests only return 406 block pages', async () => {
+  const shopconnect = await loadShopconnectModule()
+  assert.ok(shopconnect, 'Expected scraper module at ./script.js')
+
+  const browserUrls = []
+  const jobs = await shopconnect.createShopconnectScraper().run({
+    fetchPage: async (url) => ({ ...blockedRoutePage, url }),
+    fetchBrowserPage: async (url) => {
+      browserUrls.push(url)
+      if (url === shopconnect.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === shopconnect.SITEMAP_URL) return { status: 200, url, html: sitemapIndexXml }
+      if (url === shopconnect.PAGE_SITEMAP_URL) return { status: 200, url, html: pageSitemapXml }
+      if (shopconnect.WORDPRESS_SEARCH_URLS.includes(url)) return { status: 200, url, html: emptySearchJson }
+      if (shopconnect.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) return { ...missingRoutePage, url }
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
     shopconnect.HOMEPAGE_URL,
     shopconnect.SITEMAP_URL,
     shopconnect.PAGE_SITEMAP_URL,

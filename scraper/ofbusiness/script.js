@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { OF_BUSINESS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -98,7 +98,7 @@ export const hasOfficialCareersHomeSignal = (html) => {
 
 export const extractPaginationQueryParam = (html) => {
   const match = String(html ?? '').match(
-    /https:\/\/www\.ofbcareers\.com\/categories\?([^="'&\s]+)=2/i,
+    /https:\/\/www\.ofbcareers\.com\/categories\?([^="'&\s]+)=\d+/i,
   )
 
   return match?.[1] ?? null
@@ -106,13 +106,14 @@ export const extractPaginationQueryParam = (html) => {
 
 export const hasOfficialCategoriesSignal = (html) => {
   const page = String(html ?? '')
+  const text = stripTags(page) || ''
 
-  return /<title>\s*OfBusiness Careers \| Explore High-Growth roles with us\s*<\/title>/i.test(page)
-    && /Filter by Job Function/i.test(page)
-    && /Filter by Location/i.test(page)
-    && /Didn'?t find a role that suits you\?/i.test(page)
-    && /career@ofbusiness\.in/i.test(page)
-    && /earlycareers@ofbusiness\.in/i.test(page)
+  return /<title>\s*OfBusiness Careers \| Explore High-Growth roles with us(?:\s+\d+\/\d+)?\s*<\/title>/i.test(page)
+    && text.includes('Filter by Job Function')
+    && text.includes('Filter by Location')
+    && text.includes("Didn't find a role that suits you?")
+    && text.includes('career@ofbusiness.in')
+    && text.includes('earlycareers@ofbusiness.in')
 }
 
 export const parseWixWarmupData = (html) => {
@@ -165,6 +166,13 @@ export const buildCategoriesPageUrl = (page) => {
 
   return `${CATEGORIES_URL}?${PAGINATION_QUERY_PARAM}=${page}`
 }
+
+const hasVerifiedJobPayload = (job) =>
+  Boolean(
+    normalizeWhitespace(job?.jobTitle)
+    && normalizeWhitespace(job?.location)
+    && normalizeWhitespace(job?.['link-jobs-jobTitle']),
+  )
 
 export const normalizeOfBusinessJob = (job, categories = {}) => {
   const location = normalizeWhitespace(job?.location)
@@ -254,26 +262,33 @@ export const createOfBusinessScraper = ({
 
     const categories = Object.fromEntries(aggregatedCategories.entries())
     const scrapedAt = now()
+    const normalizedJobs = Array.from(aggregatedJobs.values())
+      .filter((job) => hasVerifiedJobPayload(job))
+      .map((job) => {
+        const normalized = normalizeOfBusinessJob(job, categories)
+        return {
+          ...normalized,
+          source: SOURCE,
+          link: normalized.applyUrl,
+          companyCareerPage: CATEGORIES_URL,
+          companyDomain: OF_BUSINESS_CATALOG.companyDomain,
+          atsPlatform: OF_BUSINESS_CATALOG.atsPlatform,
+          scrapedAt,
+        }
+      })
 
-    return Array.from(aggregatedJobs.values()).map((job) => {
-      const normalized = normalizeOfBusinessJob(job, categories)
-      return {
-        ...normalized,
-        source: SOURCE,
-        link: normalized.applyUrl,
-        companyCareerPage: CATEGORIES_URL,
-        companyDomain: OF_BUSINESS_CATALOG.companyDomain,
-        atsPlatform: OF_BUSINESS_CATALOG.atsPlatform,
-        scrapedAt,
-      }
-    })
+    if (normalizedJobs.length === 0) {
+      throw new Error('OfBusiness warmup data no longer exposes any verified public job payloads')
+    }
+
+    return normalizedJobs
   },
 })
 
 export const run = async (options = {}) => createOfBusinessScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

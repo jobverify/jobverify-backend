@@ -1,0 +1,22 @@
+{
+  "source": "waymo",
+  "companyName": "Waymo",
+  "officialBrandName": "Waymo",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../waymo/script.js",
+  "dryRunFile": "waymo/jobs.json",
+  "companyCareerPage": "https://careers.withwaymo.com/jobs/search",
+  "companyDomain": "waymo.com",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-stable-public-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 405,
+  "verifiedIndiaJobCount": 8,
+  "officialCareersPageUrl": "https://careers.withwaymo.com/jobs/search",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://careers.withwaymo.com/jobs/search is Waymo's first-party careers surface and lists India openings. The Clinch-rendered surface does not expose a stable, verified public extraction contract in this repository, so this exact-name provider fails closed and returns no jobs until that contract is verified."
+}

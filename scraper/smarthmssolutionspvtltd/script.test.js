@@ -37,6 +37,35 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>SmartHMS: Best Hospital Management System | HMIS | HIS | EMR | LIS | LIMS</title>
+</head>
+<body>
+  <section>
+    <h2>Get in touch</h2>
+    <p>Office Address: Smart HMS # 29, Deck Office, Sushma Infinium, Chandigarh - Delhi NH - 22, Zirakpur, Punjab India - 140603</p>
+    <p>Phone: +91 9988276278</p>
+    <p>Email: info@smarthms.in</p>
+  </section>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/services">Services</a>
+    <a href="/features">Offer Features</a>
+    <a href="/modules">Modules</a>
+    <a href="/contact">Contact</a>
+  </nav>
+  <main>
+    <h1>About us</h1>
+    <p>Smart HMS is a fully-integrated, Hospital Information System Solution.</p>
+    <p>Smart Hospital Management System (HMS) or Lab information system (LIS) or Hospital Information System (HIS).</p>
+  </main>
+</body>
+</html>
+`
+
 const sitemapXml = `
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -91,6 +120,12 @@ test('SmartHMS & Solutions Pvt Ltd sentinel recognizes the verified first-party 
     }),
     true,
   )
+})
+
+test('SmartHMS & Solutions Pvt Ltd accepts the current informational homepage shell', async () => {
+  const smartHms = await loadModule()
+
+  assert.equal(smartHms.hasOfficialHomepageSignal(currentHomepageHtml), true)
 })
 
 test('SmartHMS & Solutions Pvt Ltd sentinel returns no jobs only while the verified first-party no-careers surface remains unchanged', async () => {

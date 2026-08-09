@@ -107,14 +107,13 @@ const defaultFetchJson = async (url) => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml) || ''
 
   return extractTitle(rawHtml) === 'Grow your Business | Get Instant Credit upto 25Lacs at 0% Interest | Buynow Paylater - ePayLater'
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.epaylater\.in\/["']/i.test(rawHtml)
     && /href=["']careers\.html["'][^>]*class=["'][^"']*nav-link/i.test(rawHtml)
     && /https:\/\/www\.linkedin\.com\/company\/epaylater\//i.test(rawHtml)
-    && normalized.includes('Get instant credit for your Kirana store/Retail business at zero cost and 0 processing fees.')
-    && normalized.includes('Increase your sales, profits and get access to the widest seller network in India with ePayLater.')
+    && /Supplier Login/i.test(rawHtml)
+    && /Blog/i.test(rawHtml)
 }
 
 export const hasVerifiedCareersPageSignal = (html = '') => {
@@ -392,7 +391,7 @@ export const createEPayLaterScraper = ({
 export const run = async (options = {}) => createEPayLaterScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

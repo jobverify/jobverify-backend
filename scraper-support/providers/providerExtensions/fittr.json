@@ -1,0 +1,22 @@
+{
+  "source": "fittr",
+  "companyName": "Fittr",
+  "officialBrandName": "FITTR",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../fittr/script.js",
+  "dryRunFile": "fittr/jobs.json",
+  "companyCareerPage": "https://www.fittr.com/become-a-coach/",
+  "companyDomain": "fittr.com",
+  "atsPlatform": "official-first-party-coach-application-no-employee-listing-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-sentinel",
+  "extractionStrategy": "verified-first-party-surface-without-enumerable-employee-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.fittr.com/become-a-coach/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that FITTR's official domain exposes a coach application form at https://www.fittr.com/become-a-coach/ but no trustworthy enumerable employee job listings or official ATS feed. Coach onboarding is not treated as an employee vacancy, so this literal-name provider fails closed and returns no jobs until an official employee listing surface is published."
+}

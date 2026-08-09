@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -35,26 +36,83 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP 403|timed out|timeout|fetch failed|could not connect|err_failed/i
+    .test(String(error?.message ?? error ?? ''))
+
+const buildBlockedCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Enerparc Energy verified careers page remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
 export const createEnerparcEnergyScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Enerparc Energy careers page no longer matches the verified official careers surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (!hasNoPublicListingsSignal(careersHtml)) {
-      throw new Error('Enerparc Energy careers page no longer matches the verified official no-public-listings surface')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchVerifiedText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    return []
+    try {
+      let careersHtml
+      try {
+        careersHtml = await fetchVerifiedText(CAREERS_URL)
+      } catch (error) {
+        if (isBrowserFallbackError(error)) {
+          throw buildBlockedCareersSurfaceError(error)
+        }
+        throw error
+      }
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Enerparc Energy careers page no longer matches the verified official careers surface')
+      }
+
+      if (!hasNoPublicListingsSignal(careersHtml)) {
+        throw new Error('Enerparc Energy careers page no longer matches the verified official no-public-listings surface')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createEnerparcEnergyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Enerparc Energy scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

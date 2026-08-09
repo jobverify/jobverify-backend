@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -14,6 +14,37 @@ export const CONTACT_URL = 'https://www.sttelemediagdc.com/contact'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const HOMEPAGE_SIGNAL_PATTERNS = [
+  /\bbest data centre colocation services provider in india\b/i,
+  /\bbuilt for ai\b/i,
+  /\bservices\b/i,
+  /\blocations\b/i,
+  /\bcareers\b/i,
+]
+
+const ABOUT_SIGNAL_PATTERNS = [
+  /\babout the company\b/i,
+  /\bwhy stt gdc india\b/i,
+  /\bour leadership\b/i,
+  /\bdiversity and inclusion\b/i,
+  /\baccreditation\b/i,
+]
+
+const CAREERS_SIGNAL_PATTERNS = [
+  /\bcareers\b/i,
+  /\bgrow your career with us\b/i,
+  /\bshaping a better digital world\b/i,
+  /\bjob enquiries and applications\b/i,
+  /\bwrite to us below\b/i,
+]
+
+const CONTACT_SIGNAL_PATTERNS = [
+  /\bcontact us\b/i,
+  /\blet us know how we can help you\b/i,
+  /\bhow can we help you\??\b/i,
+  /\bst telemedia global data centres\b/i,
+]
 
 const PUBLIC_JOB_LISTING_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -53,6 +84,11 @@ const normalizeText = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/\s+/g, ' ')
   .trim()
 
+const hasAllPatterns = (html, patterns) => {
+  const normalized = normalizeText(html)
+  return patterns.every((pattern) => pattern.test(normalized))
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -62,45 +98,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const hasOfficialHomepageSignal = (html) => {
-  const normalized = normalizeText(html)
+export const hasOfficialHomepageSignal = (html) => hasAllPatterns(html, HOMEPAGE_SIGNAL_PATTERNS)
 
-  return normalized.includes('Contact')
-    && normalized.includes('Careers')
-    && normalized.includes("STT GDC India Inaugurates Rajasthan's First AI-Ready Data Centre")
-    && normalized.includes('At the Core of Highly secure')
-    && normalized.includes('Accelerate the growth of your business')
-    && normalized.includes('10 Data centres in India')
-}
+export const hasOfficialAboutSignal = (html) => hasAllPatterns(html, ABOUT_SIGNAL_PATTERNS)
 
-export const hasOfficialAboutSignal = (html) => {
-  const normalized = normalizeText(html)
+export const hasOfficialCareersSignal = (html) => hasAllPatterns(html, CAREERS_SIGNAL_PATTERNS)
 
-  return normalized.includes('The foundation of a smarter, more sustainable digital future')
-    && normalized.includes("As one of the world's fastest-growing data centre providers")
-    && normalized.includes('power a sustainable digital future')
-    && normalized.includes('offer scalable and secure, world-class data centre solutions and services')
-    && normalized.includes('STT GDC commenced operations')
-}
-
-export const hasOfficialCareersSignal = (html) => {
-  const normalized = normalizeText(html)
-
-  return normalized.includes('Shape a better digital world')
-    && normalized.includes('If you are looking to grow your career while shaping a better digital world, we want to hear from you.')
-    && normalized.includes('For job enquiries and applications, please write to us below.')
-    && normalized.includes('STT Global Data Centres India Private Limited')
-    && normalized.includes('contact@sttelemediagdc.in')
-}
-
-export const hasOfficialContactSignal = (html) => {
-  const normalized = normalizeText(html)
-
-  return normalized.includes('Contact Us')
-    && normalized.includes('Let us know how we can help you')
-    && normalized.includes('How Can We Help You?')
-    && normalized.includes('ST Telemedia Global Data Centres')
-}
+export const hasOfficialContactSignal = (html) => hasAllPatterns(html, CONTACT_SIGNAL_PATTERNS)
 
 export const extractEmailApplyHandoff = (html) => {
   const match = decodeHtmlEntities(String(html ?? '')).match(EMAIL_PATTERN)
@@ -147,7 +151,7 @@ export const createSttGlobalDataCentresIndiaScraper = () => ({
 export const run = async (options = {}) => createSttGlobalDataCentresIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

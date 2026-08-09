@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -90,11 +90,34 @@ const parseLocation = (value) => {
     }
   }
 
-  const parts = normalized.split('/').map((part) => normalizeWhitespace(part)).filter(Boolean)
   return {
     location: /india/i.test(normalized) ? normalized : `${normalized}, India`,
-    city: parts[0] || normalized,
+    city: normalized,
   }
+}
+
+const locationIncludesCity = (location, city) => {
+  const normalizedLocation = normalizeWhitespace(location)?.toLowerCase()
+  const normalizedCity = normalizeWhitespace(city)?.toLowerCase()
+
+  if (!normalizedLocation || !normalizedCity) return false
+  return normalizedLocation.includes(normalizedCity)
+}
+
+const isConfidentialLocation = (location) =>
+  /\bconfidential\b/i.test(normalizeWhitespace(location) || '')
+
+const resolveCity = ({ visibleLocation, schema }) => {
+  if (isConfidentialLocation(visibleLocation.location)) {
+    return schema?.city || visibleLocation.city
+  }
+
+  if (!visibleLocation.city) return schema?.city || null
+  if (!schema?.city) return visibleLocation.city
+
+  return locationIncludesCity(visibleLocation.location, schema.city)
+    ? schema.city
+    : visibleLocation.city
 }
 
 export const hasOfficialCareersSurface = (html) => {
@@ -102,27 +125,33 @@ export const hasOfficialCareersSurface = (html) => {
 
   return /<title>\s*Careers\s*\|\s*SecureLayer7\s*<\/title>/i.test(page)
     && /Open roles for pentesters, researchers, engagement leads, and engineers at SecureLayer7/i.test(page)
-    && /Roles open right now\./i.test(page)
-    && /Apply opens the role on sechire\.net/i.test(page)
+    && /https:\/\/sechire\.net\/jobs\//i.test(page)
+    && hasPositionsPayload(page)
 }
+
+const findPositionsPayloadMatch = (page) =>
+  page.match(/\\"positions\\":(\[[\s\S]*?\]),\\"emptyStateMessage\\"/)
+  || page.match(/"positions":(\[[\s\S]*?\]),"emptyStateMessage"/)
+
+const hasPositionsPayload = (page) => Boolean(findPositionsPayloadMatch(page))
 
 const extractPositionsJson = (html) => {
   const page = String(html ?? '')
-  const escapedMatch = page.match(/\\"positions\\":(\[[\s\S]*?\]),\\"emptyStateMessage\\"/)
-  if (escapedMatch) {
-    const normalizedPayload = escapedMatch[1]
+  const payloadMatch = findPositionsPayloadMatch(page)
+
+  if (!payloadMatch) {
+    throw new Error('SecureLayer7 careers page no longer exposes the verified embedded positions payload')
+  }
+
+  if (payloadMatch[0].startsWith('\\"positions\\"')) {
+    const normalizedPayload = payloadMatch[1]
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, '\\')
 
     return JSON.parse(normalizedPayload)
   }
 
-  const directMatch = page.match(/"positions":(\[[\s\S]*?\]),"emptyStateMessage"/)
-  if (!directMatch) {
-    throw new Error('SecureLayer7 careers page no longer exposes the verified embedded positions payload')
-  }
-
-  return JSON.parse(directMatch[1])
+  return JSON.parse(payloadMatch[1])
 }
 
 const extractJobPostingMetadata = (html) => {
@@ -194,7 +223,7 @@ export const extractOpenPositions = (html) => {
       company: COMPANY,
       department: normalizeWhitespace(position?.department),
       location: visibleLocation.location,
-      city: schema?.city || visibleLocation.city,
+      city: resolveCity({ visibleLocation, schema }),
       state: schema?.state || null,
       country: 'India',
       jobId,
@@ -245,7 +274,7 @@ export const createSecureLayer7TechnologiesScraper = () => ({
 export const run = async (options = {}) => createSecureLayer7TechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

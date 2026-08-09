@@ -16,9 +16,9 @@ export const ARESS_SOFTWARE_AND_EDUCATION_TECHNOLOGIES_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+division-job-cards+same-page-details-handoff',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.aress.com/careers/ was the live first-party Aress Software careers page and that it publicly exposed a Current Openings section with division-specific availability. The verified first-party page listed a Business Development opening for Digital Marketing Executive with Location: Nashik, Experience: 1-3 Years, and Jobcode: Digital Marketing Executive - Hiring 2026, while several other divisions displayed No jobs available.',
+    'Verified on Saturday, August 1, 2026 that https://www.aress.com/careers/ remained the live first-party Aress Software careers page and that it publicly exposed a Current Openings accordion with division-specific availability. The verified first-party page still listed a Business Development opening for Digital Marketing Executive with Location: Nashik, Experience: 1-3 Years, and Jobcode: Digital Marketing Executive - Hiring 2026, while several other divisions displayed No jobs available.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

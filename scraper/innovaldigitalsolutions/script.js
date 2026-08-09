@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { INNOVAL_DIGITAL_SOLUTIONS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -27,12 +27,12 @@ export const hasVerifiedCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /<title>\s*Innoval Digital Solutions\s*\|\s*Company\s*<\/title>/i.test(page)
+  return /<title>\s*About Innoval Digital Solutions\s*\|\s*SAP Compliance Experts\s*\|\s*Innoval Digital Solutions\s*<\/title>/i.test(page)
     && text.includes('company')
     && text.includes('careers')
-    && text.includes("we're hiring across engineering, quality assurance, and digital delivery teams")
-    && text.includes('see open roles and apply')
-    && text.includes('grow with ivl')
+    && text.includes('life @ ivl')
+    && text.includes('enterprise intelligent solutions on sap btp')
+    && text.includes('sap btp certified cmmi l5')
   }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -59,7 +59,7 @@ export const createInnovalDigitalSolutionsScraper = () => ({
 export const run = async (options = {}) => createInnovalDigitalSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

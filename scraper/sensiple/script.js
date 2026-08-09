@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SENSIPLE_CATALOG from './catalog.js'
 
@@ -14,7 +14,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -80,7 +80,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractJobsApiUrl = (html = '') =>
   normalizeWhitespace(
-    String(html ?? '').match(/fetch\('([^']*admin-ajax\.php\?action=get_jobs_secure)'/i)?.[1],
+    String(html ?? '').match(/fetch\(\s*(['"])([^'"]*admin-ajax\.php\?action=get_jobs_secure)\1/i)?.[2],
   )
 
 export const normalizeJobPayload = (job = {}, { scrapedAt } = {}) => {
@@ -163,7 +163,7 @@ export const createSensipleScraper = ({
 export const run = async (options = {}) => createSensipleScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

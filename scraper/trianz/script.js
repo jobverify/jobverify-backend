@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -58,6 +58,14 @@ export const hasIndiaHandoffSignal = (html) => {
   )
 }
 
+export const hasRecruitShellSignal = (html) => {
+  const raw = String(html ?? '')
+  return /<title>\s*Trianz - Careers\s*<\/title>/i.test(raw)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']career opportunity for Leaders in Product Engineering, Hybrid Cloud Consulting, IT infrastructure services, managed services and IT security consulting\.["']/i.test(raw)
+    && /<base[^>]+href=["']\/trianz\/["']/i.test(raw)
+    && /<script[^>]+src=/i.test(raw)
+}
+
 export const hasUnreachableRecruitSignal = ({ status, html }) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
@@ -98,7 +106,7 @@ export const createTrianzScraper = ({
 
     try {
       const recruitPage = await fetchPage(INDIA_HANDOFF_URL)
-      if (hasUnreachableRecruitSignal(recruitPage)) {
+      if (hasUnreachableRecruitSignal(recruitPage) || hasRecruitShellSignal(recruitPage.html)) {
         return maxJobs ? [].slice(0, maxJobs) : []
       }
 
@@ -115,8 +123,8 @@ export const createTrianzScraper = ({
 
 export const run = async () => createTrianzScraper().run()
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Trianz scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

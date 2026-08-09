@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { OMPRIME_TECHNOLOGY_PRIVATE_LIMITED_CATALOG } from './catalog.js'
 
@@ -12,7 +12,8 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -107,7 +108,7 @@ export const createOmprimeTechnologyPrivateLimitedScraper = () => ({
 export const run = async (options = {}) => createOmprimeTechnologyPrivateLimitedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

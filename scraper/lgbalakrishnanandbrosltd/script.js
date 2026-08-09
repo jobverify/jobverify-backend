@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -31,6 +31,12 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
 const stripTags = (value) => normalizeWhitespace(
   decodeHtmlEntities(String(value ?? '')).replace(/<[^>]+>/g, ' '),
 )
+
+const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractListItems = (html = '') => [...String(html ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
+  .map((match) => stripTags(match[1]))
+  .filter(Boolean)
 
 const buildAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   const normalized = normalizeWhitespace(value)
@@ -80,6 +86,20 @@ const extractDivBlock = (html, startIndex) => {
 
   return null
 }
+
+const extractListValuesAfterHeading = (html, heading) => {
+  const match = String(html ?? '').match(
+    new RegExp(
+      `<h[56][^>]*>\\s*${escapeRegExp(heading)}\\s*<\\/h[56]>\\s*<\\/li>\\s*<ul[^>]*>([\\s\\S]*?)<\\/ul>`,
+      'i',
+    ),
+  )
+
+  if (!match) return []
+  return extractListItems(match[1])
+}
+
+const normalizeExperience = (value) => normalizeWhitespace(value)?.replace(/\byears?\b/gi, 'years') || null
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -169,6 +189,63 @@ export const extractPublicJobs = (html) => {
   return jobs
 }
 
+export const extractPublicJobDetail = (html) => {
+  const qualifications = extractListValuesAfterHeading(html, 'Qualifications')
+  const requiredExperience = extractListValuesAfterHeading(html, 'Required Experience')[0] || null
+  const descriptionMatch = String(html ?? '').match(
+    /<h5>\s*Description\s*:\s*<\/h5>[\s\S]*?<div[^>]*>\s*<ul>([\s\S]*?)<\/ul>/i,
+  )
+
+  return {
+    experienceRequired: normalizeExperience(requiredExperience),
+    minimumQualification: qualifications.join(', ') || null,
+    jobDescription: descriptionMatch
+      ? extractListItems(descriptionMatch[1]).join(' ') || null
+      : null,
+  }
+}
+
+const enrichJobWithDetail = (job, detail) => ({
+  ...job,
+  experienceRequired: detail.experienceRequired || job.experienceRequired,
+  minimumQualification: detail.minimumQualification || job.minimumQualification,
+  jobDescription: detail.jobDescription || job.jobDescription,
+})
+
+const resolveHttpStatus = (error) => {
+  const directStatus = Number(error?.status)
+  if (Number.isFinite(directStatus)) return directStatus
+
+  const causeStatus = Number(error?.cause?.status)
+  if (Number.isFinite(causeStatus)) return causeStatus
+
+  return null
+}
+
+const isUnavailableJobDetailError = (error) => {
+  const status = resolveHttpStatus(error)
+  return status === 400 || status === 404
+}
+
+export const enrichPublicJobs = async (jobs, fetchText = defaultFetchText) => {
+  const enrichedJobs = await Promise.all(
+    jobs.map(async (job) => {
+      try {
+        const detail = extractPublicJobDetail(await fetchText(job.applyUrl))
+        return enrichJobWithDetail(job, detail)
+      } catch (error) {
+        if (isUnavailableJobDetailError(error)) {
+          return null
+        }
+
+        throw error
+      }
+    }),
+  )
+
+  return enrichedJobs.filter(Boolean)
+}
+
 export const createLgbalakrishnanAndBrosLtdScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
@@ -177,7 +254,10 @@ export const createLgbalakrishnanAndBrosLtdScraper = ({ now = () => new Date().t
     }
 
     const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
+    const jobs = await enrichPublicJobs(extractPublicJobs(careersHtml), fetchText)
+    if (jobs.length === 0) {
+      throw new Error('L.G.Balakrishnan & Bros Ltd careers portal no longer exposes any live public job apply pages')
+    }
 
     return jobs.map((job) => ({
       ...job,
@@ -194,7 +274,7 @@ export const createLgbalakrishnanAndBrosLtdScraper = ({ now = () => new Date().t
 export const run = async (options = {}) => createLgbalakrishnanAndBrosLtdScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

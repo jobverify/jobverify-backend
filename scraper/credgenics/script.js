@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,6 +22,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/[\u2018\u2019]/g, "'")
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
 
@@ -149,7 +150,7 @@ export const createCredgenicsScraper = () => ({
 export const run = async (options = {}) => createCredgenicsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

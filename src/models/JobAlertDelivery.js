@@ -24,9 +24,29 @@ const JobAlertDeliverySchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["queued", "sent", "failed", "skipped"],
+      enum: ["queued", "processing", "sent", "failed", "skipped"],
       default: "queued",
       index: true,
+    },
+    attemptCount: {
+      type: Number,
+      default: 0,
+    },
+    lastAttemptAt: {
+      type: Date,
+      default: null,
+    },
+    claimToken: {
+      type: String,
+      default: null,
+    },
+    claimExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    providerName: {
+      type: String,
+      default: null,
     },
     reason: {
       type: String,
@@ -40,6 +60,16 @@ const JobAlertDeliverySchema = new Schema(
       type: Date,
       default: null,
     },
+    payloadPreview: {
+      type: String,
+      default: null,
+    },
+    jobSnapshot: {
+      title: { type: String, default: null },
+      company: { type: String, default: null },
+      location: { type: String, default: null },
+      jobUrl: { type: String, default: null },
+    },
   },
   {
     timestamps: true,
@@ -50,6 +80,12 @@ const JobAlertDeliverySchema = new Schema(
 JobAlertDeliverySchema.index(
   { user: 1, job: 1, channel: 1 },
   { unique: true },
+);
+JobAlertDeliverySchema.index(
+  { channel: 1, status: 1, createdAt: 1 },
+);
+JobAlertDeliverySchema.index(
+  { channel: 1, status: 1, claimExpiresAt: 1, createdAt: 1 },
 );
 
 JobAlertDeliverySchema.set("toJSON", {

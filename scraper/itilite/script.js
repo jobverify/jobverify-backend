@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { ITILITE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -96,10 +96,12 @@ export const pageHasOfficialItiliteSignals = (html) => {
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
   return /<title>\s*Careers at ITILITE India \| Join Our Team\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.itilite\.com\/in\/careers["']/i.test(page)
-    && normalized.includes('join the #itilite revolution')
     && normalized.includes('view jobs')
     && normalized.includes('open positions at itilite')
+    && (
+      normalized.includes('join the #itilite revolution')
+      || normalized.includes('500+ 5-star g2 reviews')
+    )
     && /car_job-card/i.test(page)
     && /linkedin\.com\/jobs\/view\/\d+/i.test(page)
   }
@@ -143,6 +145,7 @@ export const extractJobsFromCareersPage = (html) => {
       postingDate: null,
       closingDate: null,
       jobDescription: `Official ITILITE India careers page lists ${title} in ${locationData.location}. Apply via LinkedIn.`,
+      publicExperienceChecked: true,
     })
   }
 
@@ -179,7 +182,7 @@ export const createItiliteScraper = ({
 export const run = async (options = {}) => createItiliteScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

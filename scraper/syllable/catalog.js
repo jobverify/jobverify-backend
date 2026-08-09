@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, July 17, 2026 that the official Syllable AI careers page at https://syllable.ai/careers linked directly to the public Rippling board at https://ats.rippling.com/syllable-corporation/jobs, and that the live board exposed a Software Engineer II opening with a public detail page on ats.rippling.com for Syllable Corporation in Mountain View, CA. No India openings were verified on the public board on the verified date, so the exact provider currently returns [] after validating the linked jobs surface.'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Wednesday, August 5, 2026 that the official Syllable AI careers page at https://syllable.ai/careers still links directly to the public Rippling board at https://ats.rippling.com/syllable-corporation/jobs, and that the live board still exposes a Software Engineer II opening with a public detail page on ats.rippling.com for Syllable Corporation in Mountain View, CA. No India openings were verified on the public board on the verified date, so the exact provider currently returns [] after validating the linked jobs surface.'
 
 export const SYLLABLE_CATALOG = {
   source: 'syllable',
@@ -22,7 +22,7 @@ export const SYLLABLE_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+verified-rippling-board-page+india-job-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'syllable/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

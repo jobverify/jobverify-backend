@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { JUPITER_CATALOG } from './catalog.js'
 
@@ -212,39 +213,73 @@ export const createJupiterScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, maxJobs: overrideMaxJobs, now: overrideNow } = {}) {
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersSignal(careersPageHtml)) {
-      throw new Error('Jupiter verified first-party careers page no longer matches the known handoff surface')
+  async run({
+    fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
+    maxJobs: overrideMaxJobs,
+    now: overrideNow,
+  } = {}) {
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText,
+      fetchJson,
+      fetchBrowserText,
+      fetchBrowserJson,
+      userAgent: USER_AGENT,
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 12000,
+        ignoreHTTPSErrors: true,
+      },
+    })
+
+    try {
+      let careersPageHtml
+      try {
+        careersPageHtml = await fetchText(CAREERS_PAGE_URL)
+      } catch {
+        careersPageHtml = await browserFallback.fetchTextInBrowser(CAREERS_PAGE_URL)
+      }
+
+      if (!hasOfficialCareersSignal(careersPageHtml)) {
+        careersPageHtml = await browserFallback.fetchTextInBrowser(CAREERS_PAGE_URL)
+      }
+
+      if (!hasOfficialCareersSignal(careersPageHtml)) {
+        throw new Error('Jupiter verified first-party careers page no longer matches the known handoff surface')
+      }
+
+      const [careerPortalInfo, activeJobsPayload] = await Promise.all([
+        browserFallback.fetchJson(CAREER_PORTAL_INFO_URL),
+        browserFallback.fetchJson(ACTIVE_JOBS_URL),
+      ])
+
+      if (!hasCareerPortalInfoSignal(careerPortalInfo)) {
+        throw new Error('Jupiter verified Keka career portal info no longer matches the known public surface')
+      }
+
+      const jobs = extractIndiaJobsFromActivePayload(activeJobsPayload)
+      const limit = Number.isInteger(overrideMaxJobs) ? overrideMaxJobs : maxJobs
+      const selectedJobs = limit ? jobs.slice(0, limit) : jobs
+      const scrapedAt = normalizeScrapedAt((overrideNow || now)())
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt,
+      }))
+    } finally {
+      await browserFallback.close()
     }
-
-    const [careerPortalInfo, activeJobsPayload] = await Promise.all([
-      fetchJson(CAREER_PORTAL_INFO_URL),
-      fetchJson(ACTIVE_JOBS_URL),
-    ])
-
-    if (!hasCareerPortalInfoSignal(careerPortalInfo)) {
-      throw new Error('Jupiter verified Keka career portal info no longer matches the known public surface')
-    }
-
-    const jobs = extractIndiaJobsFromActivePayload(activeJobsPayload)
-    const limit = Number.isInteger(overrideMaxJobs) ? overrideMaxJobs : maxJobs
-    const selectedJobs = limit ? jobs.slice(0, limit) : jobs
-    const scrapedAt = normalizeScrapedAt((overrideNow || now)())
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt,
-    }))
   },
 })
 
 export const run = async (options = {}) => createJupiterScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

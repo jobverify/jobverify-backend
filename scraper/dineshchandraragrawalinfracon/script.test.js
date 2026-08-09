@@ -18,6 +18,25 @@ const HOMEPAGE_HTML = `
   </html>
 `
 
+const CURRENT_HOMEPAGE_HTML = `
+  <html>
+    <head>
+      <title>DRA | We build future - Dineshchandra R. Agrawal Infracon Pvt. Ltd.</title>
+    </head>
+    <body>
+      <p>Our Vision for better tomorrow</p>
+      <h1>DINESHCHANDRA R. AGRAWAL INFRACON PVT. LTD.</h1>
+      <h2>About Dineshchandra R. Agrawal Infracon Pvt. Ltd.</h2>
+      <p>
+        The fundamental premise of the Company is built on integrity, commitment to quality and excellence.
+      </p>
+      <a href="https://www.draipl.com/about-us.html">View More</a>
+      <a href="careers.html">Careers</a>
+      <a href="mailto:info@draipl.com">info@draipl.com</a>
+    </body>
+  </html>
+`
+
 const CAREERS_URL = 'https://www.draipl.com/careers.html'
 
 const CAREERS_HTML = `
@@ -160,6 +179,34 @@ const CAREERS_HTML = `
   </html>
 `
 
+const CURRENT_CAREERS_HTML = CAREERS_HTML
+  .replace('<h1>Careers</h1>', '<h2 class="page-title">Careers</h2>')
+  .replace(
+    'Currently, we are looking for applicants for the following positions.',
+    'Currently, we are looking for applicants for the following<br>positions.',
+  )
+  .replace(
+    'Description: BE / B.Tech in Civil Engg. 15-20 yrs Exp. In Large Building / Pr-Engineered Buildings and having knowledge of Electo â€“ Mechanical items etc.',
+    'Description: BE / B.Tech in Civil Engg. 15-20<br>yrs Exp. In Large Building / Pr-Engineered Buildings and having<br>knowledge of Electo â€“ Mechanical items etc.',
+  )
+  .replace(
+    'Position: BIM (Building Information Modelling) Expert',
+    'Position: BIM (Building Information Modelling)<br>Expert',
+  )
+  .replace(
+    'Position: Personal Assistant to Executive Director',
+    'Position: Personal Assistant to Executive<br>Director',
+  )
+  .replaceAll(
+    'Experience: 8 Years + with BE or 12 Years + with Diploma',
+    'Experience: 8 Years + with BE or 12 Years + with<br>Diploma',
+  )
+  .replaceAll('<p>Position:', '<p><strong>Position:</strong> ')
+  .replaceAll('<p>Experience:', '<p><strong>Experience:</strong> ')
+  .replaceAll('<p>Location:', '<p><strong>Location:</strong> ')
+  .replaceAll('<p>Description:', '<p><strong>Description:</strong> ')
+  .replaceAll(`href="${CAREERS_URL}"`, 'href="#test-modal" class="popup-modal"')
+
 const EXPECTED_TITLES = [
   'Project Manager',
   'Sr. Engineer',
@@ -194,6 +241,7 @@ test('DRA Infracon scraper constants stay pinned to the verified first-party hom
   assert.equal(dra.HOMEPAGE_URL, 'https://www.draipl.com/')
   assert.equal(dra.CAREERS_URL, CAREERS_URL)
   assert.equal(dra.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(dra.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
   assert.equal(dra.hasOfficialCareersSignal(CAREERS_HTML), true)
 })
 
@@ -230,6 +278,17 @@ test('DRA Infracon extracts the verified public first-party openings from the ca
   assert.equal(jobs[6].location, 'Head Office')
   assert.equal(jobs[8].city, 'Ahmedabad')
   assert.equal(jobs.at(-1)?.title, 'Personal Assistant to Executive Director')
+})
+
+test('DRA Infracon extracts the current careers layout with inline strong labels', async () => {
+  const dra = await loadModule()
+
+  const jobs = dra.extractPublicListings(CURRENT_CAREERS_HTML)
+
+  assert.equal(jobs.length, EXPECTED_TITLES.length)
+  assert.deepEqual(jobs.map((job) => job.title), EXPECTED_TITLES)
+  assert.equal(jobs[0].experienceRequired, '15 - 20 Years')
+  assert.equal(jobs[0].location, 'Tezpur - Assam')
 })
 
 test('DRA Infracon run verifies the homepage handoff and decorates public jobs for persistence', async () => {

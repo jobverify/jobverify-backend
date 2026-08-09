@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { GARTNER_CATALOG } from './catalog.js'
 
@@ -73,9 +72,20 @@ const extractFirst = (pattern, value) => {
 
 const extractCity = (location) => normalizeText(String(location ?? '').split(',')[0])
 
-const waitForBody = async (page) => {
-  if (typeof page.waitForSelector !== 'function') return
-  await page.waitForSelector('body', { timeout: 30000 }).catch(() => null)
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.text()
 }
 
 export const buildListingsUrl = ({ page = 1 } = {}) => {
@@ -205,82 +215,63 @@ export const extractJobDetail = (html = '', listing = {}) => {
 }
 
 export const createGartnerScraper = ({
-  launchBrowser: launchBrowserImpl = launchBrowser,
-  createOptimizedPage: createOptimizedPageImpl = createOptimizedPage,
   now = () => new Date().toISOString(),
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run() {
-    const browser = await launchBrowserImpl()
+  async run({
+    fetchText = defaultFetchText,
+  } = {}) {
+    const listings = []
+    const seenJobIds = new Set()
 
-    try {
-      const page = await createOptimizedPageImpl(browser)
-      const listings = []
-      const seenJobIds = new Set()
-
-      for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-        const url = buildListingsUrl({ page: pageNumber })
-        await page.goto(url, {
-          waitUntil: 'domcontentloaded',
-          timeout: DEFAULT_TIMEOUT_MS,
-        })
-        await waitForBody(page)
-
-        const html = await page.content()
-        if (!hasListingsPageSignal(html)) {
-          throw new Error('Gartner listings page no longer matches the verified India jobs surface')
-        }
-
-        const pageListings = extractSearchResults(html)
-        if (pageListings.length === 0) break
-
-        let newListings = 0
-        for (const listing of pageListings) {
-          if (seenJobIds.has(listing.jobId)) continue
-          seenJobIds.add(listing.jobId)
-          listings.push(listing)
-          newListings += 1
-        }
-
-        if (newListings === 0) break
-        if (Number.isInteger(maxJobs) && maxJobs > 0 && listings.length >= maxJobs) break
+    for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+      const url = buildListingsUrl({ page: pageNumber })
+      const html = await fetchText(url)
+      if (!hasListingsPageSignal(html)) {
+        throw new Error('Gartner listings page no longer matches the verified India jobs surface')
       }
 
-      const limitedListings = Number.isInteger(maxJobs) && maxJobs > 0
-        ? listings.slice(0, maxJobs)
-        : listings
+      const pageListings = extractSearchResults(html)
+      if (pageListings.length === 0) break
 
-      const jobs = []
-      for (const listing of limitedListings) {
-        await page.goto(listing.sourceUrl, {
-          waitUntil: 'domcontentloaded',
-          timeout: DEFAULT_TIMEOUT_MS,
-        })
-        await waitForBody(page)
-
-        const html = await page.content()
-        const detail = extractJobDetail(html, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
+      let newListings = 0
+      for (const listing of pageListings) {
+        if (seenJobIds.has(listing.jobId)) continue
+        seenJobIds.add(listing.jobId)
+        listings.push(listing)
+        newListings += 1
       }
 
-      return jobs
-    } finally {
-      await browser.close()
+      if (newListings === 0) break
+      if (Number.isInteger(maxJobs) && maxJobs > 0 && listings.length >= maxJobs) break
     }
+
+    const limitedListings = Number.isInteger(maxJobs) && maxJobs > 0
+      ? listings.slice(0, maxJobs)
+      : listings
+
+    const jobs = []
+    for (const listing of limitedListings) {
+      const html = await fetchText(listing.sourceUrl)
+      const detail = extractJobDetail(html, listing)
+
+      jobs.push({
+        ...detail,
+        source: SOURCE,
+        link: detail.applyUrl || detail.sourceUrl,
+        scrapedAt: now(),
+      })
+    }
+
+    return jobs
   },
 })
 
 export const run = async (options = {}) => createGartnerScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

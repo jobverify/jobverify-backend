@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const SOURCE = 'srmgroupofcompanies'
 const COMPANY = 'SRM Group of Companies'
 const CAREERS_PAGE_URL = 'https://www.srmtech.com/careers/'
 
-test('SRM Group of Companies is registered as a verified SRM-affiliated Zoho Recruit login-wall sentinel without aliases', () => {
+test('SRM Group of Companies is registered as a verified SRM Group sentinel that stops on the SRM Technologies-branded public board mismatch', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
   assert.ok(provider, 'Expected SRM Group of Companies provider to be registered in customProviders.json')
@@ -20,12 +20,12 @@ test('SRM Group of Companies is registered as a verified SRM-affiliated Zoho Rec
     'https://www.srmtech.com/who-we-are/',
     'https://careers.srmtech.com/jobs/Careers',
   ])
-  assert.equal(provider.atsPlatform, 'zoho-recruit-login-wall')
+  assert.equal(provider.atsPlatform, 'zoho-recruit-exact-brand-mismatch')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'redirect-chain-validation')
+  assert.equal(provider.paginationStrategy, 'group-surface-plus-public-srm-tech-board-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-srm-group-surface-plus-non-public-zoho-handoff-return-empty',
+    'verified-srm-group-surface+verified-srm-tech-careers-page+public-srm-tech-board-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

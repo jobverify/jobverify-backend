@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import { ONIDA_CATALOG } from './catalog.js'
 
@@ -16,7 +16,7 @@ export const HOMEPAGE_URL = ONIDA_CATALOG.officialHomepageUrl
 export const LIFE_AT_ONIDA_URL = ONIDA_CATALOG.companyCareerPage
 export const BLOCKED_CAREERS_ROUTE_URLS = [...ONIDA_CATALOG.blockedCareersRouteUrls]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -169,7 +169,7 @@ export const createOnidaScraper = () => ({
 export const run = async (options = {}) => createOnidaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,0 +1,23 @@
+{
+  "source": "dassaultaviationindia",
+  "companyName": "Dassault Aviation India",
+  "officialBrandName": "Dassault Aviation",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../dassaultaviationindia/script.js",
+  "dryRunFile": "dassaultaviationindia/jobs.json",
+  "companyCareerPage": "https://www.dassault-aviation.com/en/group/careers/",
+  "companyDomain": "dassault-aviation.com",
+  "atsPlatform": "talentsoft-official-dassault-aviation-careers",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-page-india-sentinel",
+  "extractionStrategy": "official-careers-page+official-ats+no-verified-india-openings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 3,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.dassault-aviation.com/en/group/careers/",
+  "officialAtsUrl": "https://carriere.dassault-aviation.com/job/list-of-jobs.aspx?lcid=1036&showSearchUrl=1",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that Dassault Aviation's first-party careers page links to its official Talentsoft careers site. The public current openings shown on the first-party page are outside India, and no verified public India opening for the exact CSV company name Dassault Aviation India was available. This exact-name provider fails closed rather than returning global Dassault Aviation or third-party roles."
+}

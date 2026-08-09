@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import SENSEHQ_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -19,6 +19,8 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_BOARD_URL = PROVIDER_METADATA.verifiedJobsPageUrl
+
+const stripHtmlComments = (value) => String(value ?? '').replace(/<!--[\s\S]*?-->/g, '')
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -152,9 +154,9 @@ const buildExperienceRequired = (record = {}) => {
 }
 
 export const hasVerifiedJobsBoardSignal = (html = '') => {
-  const page = String(html ?? '')
+  const page = stripHtmlComments(html)
 
-  return /<title>\s*Job openings at Sense HQ\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Job openings at Sense HQ\s*<\/title>/i.test(page)
     && /Job openings at Sense HQ/i.test(page)
     && /id=["']__NEXT_DATA__["']/i.test(page)
 }
@@ -164,10 +166,15 @@ export const buildJobUrl = (jobId) =>
 
 export const extractBoardJobs = (html = '') => {
   const payload = extractNextDataPayload(html)
-  const jobs = payload?.props?.pageProps?.jobsData?.jobs
+  const jobsData = payload?.props?.pageProps?.jobsData
+  const jobs = Array.isArray(jobsData?.rows)
+    ? jobsData.rows
+    : Array.isArray(jobsData?.jobs)
+      ? jobsData.jobs
+      : null
 
   if (!Array.isArray(jobs)) {
-    throw new Error('Verified SenseHQ jobs payload no longer exposes the expected jobs array')
+    throw new Error('Verified SenseHQ jobs payload no longer exposes the expected jobs array or rows array')
   }
 
   return jobs
@@ -246,7 +253,7 @@ export const createSensehqScraper = ({
 export const run = async (options = {}) => createSensehqScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

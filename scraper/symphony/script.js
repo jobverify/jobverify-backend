@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SYMPHONY_CATALOG from './catalog.js'
 
@@ -15,7 +15,7 @@ export const CAREERS_PAGE_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -41,9 +41,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('current openings')
+  return normalized.includes('current openings - grow your career with extraordinary symphony team')
     && normalized.includes('grow your career with our extraordinary symphony team')
-    && normalized.includes('write to us with your resume at careers@symphonylimited.com')
     && normalized.includes('there are no current openings. please check this space later.')
 }
 
@@ -71,7 +70,7 @@ export const createSymphonyScraper = () => ({
 export const run = async (options = {}) => createSymphonyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

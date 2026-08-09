@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { MOL_INFORMATION_PROCESSING_SERVICES_INDIA_CATALOG } from './catalog.js'
 
@@ -87,12 +87,16 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 export const hasOfficialMolItCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page) || ''
+  const title = extractTitle(page)
 
-  return extractTitle(page) === 'Careers at MOL-IT'
+  return ['Careers at MOL-IT', 'MOL IT | Careers @ MOL IT'].includes(title)
     && text.includes('Careers at MOL-IT')
     && text.includes('Join Our Team')
     && text.includes('Current Vacancies')
-    && text.includes('Find your next role and grow with us.')
+    && (
+      text.includes('Find your next role and grow with us.')
+      || text.includes('Reimagine Your Future')
+    )
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
@@ -147,7 +151,7 @@ export const createMolInformationProcessingServicesIndiaScraper = ({
 export const run = async (options = {}) => createMolInformationProcessingServicesIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

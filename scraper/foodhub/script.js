@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -90,21 +90,25 @@ const isUnlockedRecord = (record = {}) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
   return /<title>\s*Foodhub\b[\s\S]*<\/title>/i.test(page)
     && /meta property=["']og:url["'] content=["']https:\/\/global\.foodhub\.com\/["']/i.test(page)
     && /meta property=["']og:site_name["'] content=["']Foodhub["']/i.test(page)
-    && /href=["']https:\/\/foodhubcareers\.com\/["']/i.test(page)
+    && /href=["']https:\/\/foodhubcareers\.com\/?["']/i.test(page)
+    && normalized.includes('foodhub - order eat enjoy')
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
-  return /<title>\s*Careers at Foodhub\s*<\/title>/i.test(page)
-    && /meta property=["']og:url["'] content=["']https:\/\/foodhubcareers\.com\/["']/i.test(page)
-    && /href=["']https:\/\/jobs\.foodhubcareers\.com\/jobs\/Careers["']/i.test(page)
-    && /APPLY FOR JOBS/i.test(page)
-    && /View All Openings/i.test(page)
+  return /<title>\s*Foodhub Careers \| Work With Us, We Are Fun, Innovative & Successful\s*<\/title>/i.test(page)
+    && normalized.includes('work with us')
+    && normalized.includes('apply for jobs')
+    && normalized.includes('view all openings')
+    && normalized.includes('why foodhub?')
+    && normalized.includes('testimonials')
 }
 
 export const hasOfficialPortalSignal = (html) => {
@@ -248,7 +252,7 @@ export const createFoodhubScraper = ({
 export const run = async () => createFoodhubScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Foodhub scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

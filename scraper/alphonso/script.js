@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { extractAshbyJobs } from '../uipath/script.js'
 import {
   fetchJsonWithRetry,
-} from '../utils/fetch.js'
+} from '../../scraper-support/utils/fetch.js'
 import ALPHONSO_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -146,7 +146,7 @@ export const createAlphonsoScraper = ({
 export const run = async (options = {}) => createAlphonsoScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,10 +1,17 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'neptuneretailsolutions'
 export const COMPANY = 'Neptune Retail Solutions'
+export const VERIFIED_ON = '2026-08-03'
 export const LEGACY_QUOTIENT_URL = 'https://www.quotient.com/'
 export const HOMEPAGE_URL = 'https://neptuneretailsolutions.com/'
 export const ABOUT_URL = 'https://neptuneretailsolutions.com/about-us/'
+export const FIELD_JOBS_HANDOFF_URL = 'https://neptuneretailsolutions.pinpointhq.com/'
 export const FIELD_JOBS_URL = 'https://neptuneretailsolutions.pinpointhq.com/jobs'
 export const FIELD_JOBS_RSS_URL = 'https://neptuneretailsolutions.pinpointhq.com/jobs.rss'
 export const CORPORATE_JOBS_URL = 'https://neptuneretailsolutions.bamboohr.com/careers'
@@ -71,6 +78,20 @@ const isPinpointJobUrl = (value) => {
   }
 }
 
+const isPinpointCareerSurfaceUrl = (value) => {
+  try {
+    const parsed = new URL(value || FIELD_JOBS_HANDOFF_URL)
+    if (parsed.hostname.toLowerCase() !== 'neptuneretailsolutions.pinpointhq.com') {
+      return false
+    }
+
+    const pathname = parsed.pathname.replace(/\/+$/, '') || '/'
+    return pathname === '/' || pathname === '/jobs'
+  } catch {
+    return false
+  }
+}
+
 export const hasOfficialNeptuneHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
@@ -89,8 +110,12 @@ export const hasOfficialAboutUsSignal = (html) => {
 }
 
 export const aboutPageLinksToOfficialJobSurfaces = (html) => {
-  const page = String(html ?? '')
-  return page.includes(FIELD_JOBS_URL) && page.includes(CORPORATE_JOBS_URL)
+  const links = [...String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)]
+    .map((match) => normalizeUrl(match[1], ABOUT_URL))
+    .filter(Boolean)
+
+  return links.some((url) => isPinpointCareerSurfaceUrl(url))
+    && links.includes(CORPORATE_JOBS_URL)
 }
 
 export const extractFieldFeedItems = (feedXml) =>
@@ -196,3 +221,15 @@ export const createNeptuneRetailSolutionsScraper = () => ({
 })
 
 export const run = async (options = {}) => createNeptuneRetailSolutionsScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

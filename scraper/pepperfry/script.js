@@ -1,11 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { launchBrowser, createOptimizedPage } from '../utils/browser.js'
-
 import { PEPPERFRY_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PUBLIC_JOB_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -67,16 +67,29 @@ const matchesExpectedUrl = (value, expected) => {
 }
 
 export const pageExposesPublicJobListings = (html = '') =>
-  PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+  extractCareerListings(html).length > 0
+  || PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const hasOfficialHomepageSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const normalized = normalizeWhitespace(html)
 
-  return /Buy Furniture & Home Decor Online/i.test(page)
-    && normalized.includes("Buy Furniture Online at Pepperfry- India's All-in-One Furniture Solution for Your Needs")
-    && normalized.includes('Corporate Governance')
+  const hasCurrentHomepageVariant = normalized.includes('Buy Furniture & Home Decor Online')
+    && normalized.includes('Track Your Order')
+    && normalized.includes('Find a Store')
     && normalized.includes('Pepperfry in the News')
+
+  const hasLegacyHomepageVariant = normalized.includes('Buy Furniture & Home Decor Online')
+    && normalized.includes('Browse All Categories')
+    && normalized.includes('Partner With Us')
+    && normalized.includes('Check Out Bonhomie, Our Blog')
+
+  const hasCommerceHomepageVariant = normalized.includes('Online Furniture Shopping Store')
+    && normalized.includes('Online Furniture Shopping Store')
+    && normalized.includes('Track Your Order')
+    && normalized.includes('Find a Store')
+    && normalized.includes('Pepperfry in the News')
+
+  return hasCurrentHomepageVariant || hasLegacyHomepageVariant || hasCommerceHomepageVariant
 }
 
 export const extractVerifiedCareersPageUrl = (html = '') => {
@@ -87,86 +100,126 @@ export const extractVerifiedCareersPageUrl = (html = '') => {
   return match?.[0] || null
 }
 
-export const hasMissingCareersSurfaceSignal = (html = '') => {
+export const hasNoPublicCareersFallbackSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('404-Soul Not Found')
-    && normalized.includes('Page Also Not Found')
-    && normalized.includes('GO BACK & RETRY')
+  const hasCommerceFallbackVariant = normalized.includes('Online Furniture Shopping Store')
+    && normalized.includes('Track Your Order')
+    && normalized.includes('Find a Store')
+    && normalized.includes('Sell on pepperfry')
+
+  const hasLegacyFallbackVariant = normalized.includes('Online Furniture Shopping Store')
+    && normalized.includes('Browse All Categories')
+    && normalized.includes('Partner With Us')
+    && normalized.includes('Check Out Bonhomie, Our Blog')
+
+  return hasCommerceFallbackVariant || hasLegacyFallbackVariant
 }
 
-const createBrowserPageFetcher = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
+const normalizeLocation = (value = '') => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean)
+  return parts.join(', ') || null
+}
+
+const extractCity = (location) => {
+  const parts = String(location ?? '').split(',').map((part) => part.trim()).filter(Boolean)
+  return parts.length === 1 ? parts[0] : null
+}
+
+const buildJobId = (applyUrl) => {
+  try {
+    return new URL(applyUrl).pathname.split('/').filter(Boolean).pop() || applyUrl
+  } catch {
+    return applyUrl
+  }
+}
+
+export const extractCareerListings = (html = '') => [...String(html ?? '').matchAll(
+  /<span[^>]*class=["'][^"']*crpg-opn-listitem-ttl[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<span[^>]*class=["'][^"']*crpg-opn-listitem-location[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<a[^>]*href=["'](https:\/\/trendsys\.darwinbox\.in\/ms\/candidate\/careers\/[^"']+)["'][^>]*>/gi,
+)].map((match) => ({
+  title: normalizeWhitespace(match[1]),
+  location: normalizeLocation(match[2]),
+  applyUrl: match[3],
+})).filter((listing) => listing.title && listing.location && listing.applyUrl)
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
+    },
+    redirect: 'follow',
+  })
 
   return {
-    fetchPage: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: 45000,
-      })
-      await page.waitForSelector('body', { timeout: 10000 }).catch(() => null)
-
-      return {
-        status: response?.status?.() ?? 200,
-        url: page.url(),
-        html: await page.content(),
-      }
-    },
-    close: async () => browser.close(),
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
   }
 }
 
 export const createPepperfryScraper = () => ({
-  async run({ fetchPage } = {}) {
-    let browserContext = null
-
-    try {
-      if (!fetchPage) {
-        browserContext = await createBrowserPageFetcher()
-        fetchPage = browserContext.fetchPage
-      }
-
-      const homepage = await fetchPage(HOMEPAGE_URL)
-      if (
-        Number(homepage.status) !== 200
-        || !matchesExpectedUrl(homepage.url, HOMEPAGE_URL)
-        || !hasOfficialHomepageSignal(homepage.html)
-      ) {
-        throw new Error('Pepperfry verified official homepage changed materially')
-      }
-
-      const verifiedCareersPageUrl = extractVerifiedCareersPageUrl(homepage.html)
-      if (!matchesExpectedUrl(verifiedCareersPageUrl, CAREERS_PAGE_URL)) {
-        throw new Error('Pepperfry verified homepage careers handoff changed materially')
-      }
-
-      const careersPage = await fetchPage(CAREERS_PAGE_URL)
-
-      if (pageExposesPublicJobListings(careersPage.html)) {
-        throw new Error('Pepperfry careers surface now appears to expose public jobs')
-      }
-
-      if (
-        matchesExpectedUrl(careersPage.url, CAREERS_PAGE_URL)
-        && hasMissingCareersSurfaceSignal(careersPage.html)
-      ) {
-        return []
-      }
-
-      throw new Error('Pepperfry verified missing careers surface changed materially')
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (
+      Number(homepage.status) !== 200
+      || !matchesExpectedUrl(homepage.url, HOMEPAGE_URL)
+      || !hasOfficialHomepageSignal(homepage.html)
+    ) {
+      throw new Error('Pepperfry verified official homepage changed materially')
     }
+
+    const verifiedCareersPageUrl = extractVerifiedCareersPageUrl(homepage.html)
+    if (!matchesExpectedUrl(verifiedCareersPageUrl, CAREERS_PAGE_URL)) {
+      throw new Error('Pepperfry verified homepage careers handoff changed materially')
+    }
+
+    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    const listings = extractCareerListings(careersPage.html)
+    if (
+      Number(careersPage.status) !== 200
+      || !matchesExpectedUrl(careersPage.url, CAREERS_PAGE_URL)
+      || listings.length === 0
+    ) {
+      throw new Error('Pepperfry verified first-party careers listings changed materially')
+    }
+
+    return listings.map((listing) => {
+      const location = `${listing.location}, India`
+
+      return {
+        title: listing.title,
+        company: COMPANY,
+        department: null,
+        location,
+        city: extractCity(listing.location),
+        country: 'India',
+        jobId: buildJobId(listing.applyUrl),
+        requisitionId: buildJobId(listing.applyUrl),
+        sourceUrl: listing.applyUrl,
+        applyUrl: listing.applyUrl,
+        employmentType: null,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription: `Pepperfry current openings listing. Location: ${listing.location}. Apply via Darwinbox.`,
+        publicExperienceChecked: true,
+        remoteStatus: 'On-site',
+      }
+    })
   },
 })
 
 export const run = async (options = {}) => createPepperfryScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { THRYVE_DIGITAL_CATALOG } from './catalog.js'
 
@@ -13,6 +13,7 @@ const config = loadConfig(currentDir)
 export const PROVIDER_METADATA = THRYVE_DIGITAL_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
+export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const OFFICIAL_CAREERS_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffUrl
 export const DARWINBOX_ORIGIN = PROVIDER_METADATA.darwinboxOrigin
@@ -22,7 +23,7 @@ export const PUBLIC_PORTAL_URL =
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY,
@@ -56,11 +57,11 @@ export const hasOfficialThryveDigitalCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return normalized.includes('Thryve Digital is currently in the process of rebranding itself to "enGen Global"')
-    && normalized.includes('Prospective candidates can explore job openings here')
-    && normalized.includes('Join our Global Team of Information Technology Specialists')
-    && normalized.includes('Global Collaboration – Integrity – Strong Principles')
-    && normalized.includes('Click here to explore opportunities')
+  return /<title>\s*Careers\s*<\/title>/i.test(page)
+    && normalized.includes('An enGenious career, rooted in India.')
+    && normalized.includes('Our Employee Value Proposition')
+    && normalized.includes('CULTURE WE ARE BUILDING TOGETHER')
+    && normalized.includes('CLICK HERE TO JOIN US')
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
@@ -104,8 +105,8 @@ export const createThryveDigitalScraper = ({
 
 export const run = async (options = {}) => createThryveDigitalScraper(options).run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

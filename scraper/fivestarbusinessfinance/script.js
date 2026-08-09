@@ -53,9 +53,16 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, '-')
+  .replace(/&#038;|&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+
 const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-  return normalizeWhitespace(match?.[1]) || null
+  return normalizeWhitespace(decodeHtmlEntities(match?.[1])) || null
 }
 
 const extractLinks = (html = '') => (
@@ -180,7 +187,7 @@ export const createFiveStarBusinessFinanceScraper = () => ({
 export const run = async (options = {}) => createFiveStarBusinessFinanceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

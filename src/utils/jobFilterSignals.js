@@ -22,6 +22,14 @@ const NUMBER_WORDS = new Map([
   ["ten", 10],
   ["eleven", 11],
   ["twelve", 12],
+  ["thirteen", 13],
+  ["fourteen", 14],
+  ["fifteen", 15],
+  ["sixteen", 16],
+  ["seventeen", 17],
+  ["eighteen", 18],
+  ["nineteen", 19],
+  ["twenty", 20],
 ]);
 
 const EXPERIENCE_UI_MIN = 0;
@@ -158,24 +166,291 @@ const ROLE_DOMAIN_RULES = [
   },
 ];
 
+const decodeHtmlEntitiesOnce = (value = "") => String(value)
+  .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+    const codePoint = Number.parseInt(hex, 16);
+    return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : "";
+  })
+  .replace(/&#(\d+);/g, (_, decimal) => {
+    const codePoint = Number.parseInt(decimal, 10);
+    return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : "";
+  })
+  .replace(/&nbsp;/gi, " ")
+  .replace(/&amp;/gi, "&")
+  .replace(/&quot;/gi, "\"")
+  .replace(/&#39;|&apos;/gi, "'")
+  .replace(/&lt;/gi, "<")
+  .replace(/&gt;/gi, ">");
+
+const decodeHtmlEntities = (value = "") => {
+  let decoded = String(value);
+  for (let index = 0; index < 3; index += 1) {
+    const next = decodeHtmlEntitiesOnce(decoded);
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded;
+};
+
+const stripHtmlToText = (value = "") => String(value)
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+  .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, " ")
+  .replace(/<!--[\s\S]*?-->/g, " ")
+  .replace(/<![^>]*>/g, " ")
+  .replace(/<\/?[A-Za-z][A-Za-z0-9:-]*\b[^>]*>/g, " ");
+
+const repairSplitExperienceRangeDigits = (value = "") => String(value).replace(
+  /(\d{1,2})\s*(?:-|to|~)\s*(\d)\s+(\d)(?=(?:\s+[A-Za-z]|$))/gi,
+  (match, minimumValue, maximumTens, maximumOnes, offset, sourceText) => {
+    const prefix = sourceText.slice(Math.max(0, offset - 100), offset);
+    if (!/\b(?:experience|exp\.?|years?\s+of\s+experience|required qualifications?|qualifications?)\b/i.test(prefix)) {
+      return match;
+    }
+
+    return `${minimumValue}-${maximumTens}${maximumOnes}`;
+  },
+);
+
 const normalizeText = (value) =>
-  String(value || "")
+  repairSplitExperienceRangeDigits(
+    stripHtmlToText(decodeHtmlEntities(value || ""))
     .replace(/\r\n?/g, "\n")
     .replace(/\u00a0/g, " ")
+    .replace(/[\u2019\u2018]/g, "'")
+    .replace(/[\u2013\u2014\u2212]/g, "-")
+    .replace(/[’‘]/g, "'")
     .replace(/[–—−]/g, "-")
+    .replace(/\bm(?:iniumum|inumum)\b/gi, "minimum")
+    .replace(/\b(years?|months?|yrs?)['’`]+(?=\s)/gi, "$1 ")
+    .replace(/\b(years?|months?|yrs?)\.(?=\s)/gi, "$1 ")
+    .replace(/\b(years?|months?|yrs?)['â€™`]*(?=(?:experience|exp\.?)\b)/gi, "$1 ")
+    .replace(/(\d+(?:\.\d+)?)(years?|months?|yrs?)(?=(?:experience|exp\.?))/gi, "$1 $2 ")
+    .replace(/(\d+(?:\.\d+)?)\s*\?\s*(\d+(?:\.\d+)?)(?=\s*(?:months?|years?|yrs?)\b)/g, "$1-$2")
+    .replace(/\b(experience|exp\.?)(?=(?:in|with|of|for)\b)/gi, "$1 ")
+    .replace(/\by\s+ear(s)?\b/gi, (match, pluralSuffix) => (pluralSuffix ? "years" : "year"))
+    .replace(/\b(years?|months?|yrs?)(?=o\b)/gi, "$1 "),
+  )
     .replace(/\s+/g, " ")
     .trim();
 
 const unique = (values = []) => [...new Set(values.filter(Boolean))];
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const NON_NUMERIC_EXPERIENCE_CONTEXT_EXCLUSION_PATTERN = /\b(?:customer|candidate|employee|guest|post-booking|real[- ]world|user)\s+experience\b|\bexperience\s+(?:charter|platform|the\s+world|the\s+perfect\s+blend)\b|\bwork\s+experience\s*\(in\s+years\)\b|\byears?\s+of\s+profitability\b|\bhistory\s+spanning\s+over\b|\bretained\s+for\s+a\s+period\b|\bannual\s+ctc\b|\bupload\s+cv\b/i;
+const NON_NUMERIC_EXPERIENCE_REQUIREMENT_CONTEXT_PATTERN = /\b(?:requirements?|role requirements?|qualifications?|required skills?|preferred qualifications?|must-haves?|what you(?:'ll| will)\s+bring|who we are looking for|experience\s*[:\-])\b/i;
+const NON_NUMERIC_EXPERIENCE_PATTERNS = [
+  {
+    pattern: /\b((?:prior|previous|relevant|strong|extensive|demonstrated|demonstrable|proven|hands[- ]on|solid|significant|practical|professional)\s+(?:[a-z-]+\s+){0,2}experience\s+(?:in|with|as|of|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b[^.]{0,140})/i,
+    requiresRequirementContext: false,
+  },
+  {
+    pattern: /\b((?:prior|previous|relevant|strong|extensive|demonstrated|demonstrable|proven|hands[- ]on|solid|significant|practical|professional)\s+(?:[a-z-]+\s+){0,2}experience\s+(?:preferred|required|desired)\b[^.]{0,120})/i,
+    requiresRequirementContext: false,
+  },
+  {
+    pattern: /\b((?:experience|exp\.?)\s+(?:in|with|as|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b[^.]{0,140})/i,
+    requiresRequirementContext: true,
+  },
+];
+const LATE_SECTIONED_EXPERIENCE_PATTERN = /\b(?:qualifications?|required qualifications?|preferred qualifications?|specific qualifications?|key qualifications?|required skills|must-haves?|what you(?:'ll| will)\s+bring|who we are looking for|direct responsibilities|job position)\b[\s\S]{0,320}?\b(?:at[\s-]*least|min(?:imum)?(?:\s+of)?|more than|over|>=|>|around|about)?\s*\d+(?:\.\d+)?(?:\s*(?:\+|plus|(?:-|to|~)\s*\d+(?:\.\d+)?))?\s*(?:months?|years?|yrs?|yr)\b(?:\s+[^.]{0,120}?\bexperience\b)?/i;
+const LATE_MINIMUM_EXPERIENCE_PATTERN = /\b(?:at[\s-]*least|min(?:imum)?(?:\s+of)?|required|preferred)\s*\d+(?:\.\d+)?(?:\s*(?:\+|plus|(?:-|to|~)\s*\d+(?:\.\d+)?))?\s*(?:months?|years?|yrs?|yr)\b[^.]{0,120}?\bexperience\b/i;
+const LATE_RANGED_EXPERIENCE_PATTERN = /\b\d+(?:\.\d+)?\s*(?:months?|years?|yrs?|yr)\s*(?:-|to|~)\s*\d+(?:\.\d+)?\s*(?:months?|years?|yrs?|yr)\b[^.]{0,80}?\bexperience\b|\b\d+(?:\.\d+)?\s*(?:-|to|~)\s*\d+(?:\.\d+)?\s*(?:months?|years?|yrs?|yr)\b[^.]{0,80}?\bexperience\b/i;
+const LATE_EXACT_EXPERIENCE_PATTERN = /\b(?:experience|required skills|must-haves?|what you(?:'ll| will)\s+bring|who we are looking for|direct responsibilities|job position)\b[\s\S]{0,220}?\b\d+(?:\.\d+)?\s*(?:\+|plus)?\s*(?:months?|years?|yrs?|yr)\b(?:\s+of\s+[^.]{0,120}?\bexperience\b|\s+experience\b)?/i;
+const hasLateExplicitExperienceRequirement = (value = "") => (
+  (
+    (
+      /\b(?:years?\s+of\s+experience\s+required|experience\s+required|required experience|required work experience|minimum experience(?:\s+requirement)?)\b/i.test(value)
+      && /\b(?:\d+(?:\.\d+)?(?:\s*(?:\+|plus|(?:-|to|~)\s*\d+(?:\.\d+)?))?|no experience|freshers?)\b/i.test(value)
+    )
+    || (
+      /\bexperience\s*[:\-]\b/i.test(value)
+      && /\b(?:\d+(?:\.\d+)?(?:\s*(?:\+|plus|(?:-|to|~)\s*\d+(?:\.\d+)?))?\s*(?:months?|years?|yrs?|yr)\b|no experience|freshers?)\b/i.test(value)
+    )
+  )
+  || LATE_SECTIONED_EXPERIENCE_PATTERN.test(value)
+  || LATE_MINIMUM_EXPERIENCE_PATTERN.test(value)
+  || LATE_RANGED_EXPERIENCE_PATTERN.test(value)
+  || LATE_EXACT_EXPERIENCE_PATTERN.test(value)
+);
+
+const normalizeNonNumericExperienceEvidence = (value = "") => normalizeText(value)
+  ?.replace(/^(?:qualifications?|required skills|good to have|responsibilities?|role requirements?)\s*[:\-]?\s*/i, "")
+  .replace(/[;:,.\s]+$/g, "")
+  || null;
+
+const extractNonNumericExperienceEvidence = (value = "") => {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+
+  for (const { pattern, requiresRequirementContext } of NON_NUMERIC_EXPERIENCE_PATTERNS) {
+    const match = pattern.exec(normalized);
+    if (!match) continue;
+
+    const candidate = normalizeNonNumericExperienceEvidence(match[1]);
+    if (!candidate || candidate.length < 24) continue;
+    if (NON_NUMERIC_EXPERIENCE_CONTEXT_EXCLUSION_PATTERN.test(candidate)) continue;
+    if (requiresRequirementContext) {
+      const prefix = normalized.slice(Math.max(0, match.index - 120), match.index);
+      if (!NON_NUMERIC_EXPERIENCE_REQUIREMENT_CONTEXT_PATTERN.test(prefix)) continue;
+    }
+
+    return candidate;
+  }
+
+  return null;
+};
+
+const stripTrailingCompanyNarrative = (value = "", company = "") => {
+  const normalized = normalizeText(value);
+  if (!normalized) return normalized;
+
+  const normalizedCompany = normalizeText(company);
+  const markers = [
+    normalizedCompany ? new RegExp(`\\babout\\s+${escapeRegex(normalizedCompany)}\\b`, "i") : null,
+    /\babout\s+[a-z0-9&.' -]{2,60}\b(?=\s+for\s+(?:over|more than)\s+\d+(?:\.\d+)?\s*(?:years?|yrs?)\b)/i,
+    /\blearn more about us\b/i,
+    /\babout us\b/i,
+    /\bwho we are\b/i,
+    /\bour social impact\b/i,
+  ].filter(Boolean);
+
+  let cutoffIndex = null;
+  for (const pattern of markers) {
+    const match = pattern.exec(normalized);
+    if (!match || match.index < 120) continue;
+    const trailingSegment = normalized.slice(match.index);
+    if (hasLateExplicitExperienceRequirement(trailingSegment)) continue;
+    cutoffIndex = cutoffIndex == null ? match.index : Math.min(cutoffIndex, match.index);
+  }
+
+  return cutoffIndex == null
+    ? normalized
+    : normalized.slice(0, cutoffIndex).trim();
+};
+
+const ENTRY_LEVEL_CUE_PATTERN = /\b(?:entry[- ]level|new grad(?:uate)?s?|freshers?|fresh graduates?|recent graduates?|campus (?:hiring|recruitment)|graduate(?:\s+(?:engineer|trainee|associate|developer|programme?|program|hiring|role|scheme|opportunity))|trainee|apprentice)\b/i;
+
+export const hasEntryLevelCue = (value = "") => ENTRY_LEVEL_CUE_PATTERN.test(String(value || ""));
+export const extractEntryLevelCue = (value = "") => String(value || "").match(ENTRY_LEVEL_CUE_PATTERN)?.[0] ?? null;
 
 const clampWorkArrangement = (value) =>
   WORK_ARRANGEMENT_OPTIONS.includes(value) ? value : "Not specified";
 
 const normalizeNumberWords = (value) => value.replace(
-  /\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/gi,
+  /\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/gi,
   (match) => String(NUMBER_WORDS.get(match.toLowerCase())),
 );
+
+const normalizeExperienceNumberForms = (value = "") => normalizeNumberWords(String(value || ""))
+  .replace(/\[\s*(\d+(?:\.\d+)?)\s*\](?=\s*(?:months?|years?|yrs?)\b)/gi, "$1")
+  .replace(
+    /\b(\d+(?:\.\d+)?)\s*\(\s*(\d+(?:\.\d+)?)\s*\)(?=\s*(?:\+|plus|\b(?:months?|years?|yrs?)\b|(?:-|to)\b))/gi,
+    (match, primaryValue, parenthesizedValue) => parenthesizedValue || primaryValue,
+  );
+
+const formatExperienceYears = (value, { openEnded = false } = {}) => {
+  const numericValue = Number.parseFloat(value);
+  if (!Number.isFinite(numericValue)) return null;
+
+  const normalizedValue = Number.isInteger(numericValue)
+    ? String(numericValue)
+    : String(numericValue).replace(/(?:\.0+|(\.\d*?)0+)$/, "$1");
+  const unit = numericValue === 1 && !openEnded ? "year" : "years";
+
+  return `${normalizedValue}${openEnded ? "+" : ""} ${unit}`;
+};
+
+const formatExperienceValue = (value) => {
+  const numericValue = Number.parseFloat(value);
+  if (!Number.isFinite(numericValue)) return null;
+
+  return Number.isInteger(numericValue)
+    ? String(numericValue)
+    : String(numericValue).replace(/(?:\.0+|(\.\d*?)0+)$/, "$1");
+};
+
+const normalizeExperienceUnit = (value) => {
+  const normalized = String(value || "").toLowerCase();
+  if (/^yrs?$/.test(normalized) || /^years?$/.test(normalized)) return "years";
+  if (/^months?$/.test(normalized)) return "months";
+  return normalized;
+};
+
+const formatExperienceBoundary = (value, unit) => {
+  const numericValue = Number.parseFloat(value);
+  if (!Number.isFinite(numericValue)) return null;
+
+  const normalizedValue = Number.isInteger(numericValue)
+    ? String(numericValue)
+    : String(numericValue).replace(/(?:\.0+|(\.\d*?)0+)$/, "$1");
+  const normalizedUnit = normalizeExperienceUnit(unit);
+  const singularUnit = normalizedUnit === "months" ? "month" : "year";
+  const pluralUnit = normalizedUnit === "months" ? "months" : "years";
+
+  return `${normalizedValue} ${numericValue === 1 ? singularUnit : pluralUnit}`;
+};
+
+const formatExperienceValueWithUnit = (value, unit, { openEnded = false } = {}) => {
+  const numericValue = Number.parseFloat(value);
+  if (!Number.isFinite(numericValue)) return null;
+
+  const normalizedValue = Number.isInteger(numericValue)
+    ? String(numericValue)
+    : String(numericValue).replace(/(?:\.0+|(\.\d*?)0+)$/, "$1");
+  const normalizedUnit = normalizeExperienceUnit(unit);
+  const singularUnit = normalizedUnit === "months" ? "month" : "year";
+  const pluralUnit = normalizedUnit === "months" ? "months" : "years";
+
+  return `${normalizedValue}${openEnded ? "+" : ""} ${numericValue === 1 && !openEnded ? singularUnit : pluralUnit}`;
+};
+
+const formatContextualExperienceRange = (minimumValue, minimumUnit, maximumValue, maximumUnit) => {
+  const startUnit = normalizeExperienceUnit(minimumUnit || maximumUnit);
+  const endUnit = normalizeExperienceUnit(maximumUnit || minimumUnit);
+  if (!startUnit || !endUnit) return null;
+
+  return startUnit === endUnit
+    ? formatExperienceRange(minimumValue, maximumValue, startUnit)
+    : formatMixedExperienceRange(minimumValue, startUnit, maximumValue, endUnit);
+};
+
+const formatMixedExperienceRange = (minimumValue, minimumUnit, maximumValue, maximumUnit) => {
+  const start = formatExperienceBoundary(minimumValue, minimumUnit);
+  const end = formatExperienceBoundary(maximumValue, maximumUnit);
+  if (!start || !end) return null;
+  return `${start} - ${end}`;
+};
+
+const formatExperienceRange = (minimumValue, maximumValue, unit = "years") => {
+  const start = formatExperienceValue(minimumValue);
+  const end = formatExperienceValue(maximumValue);
+  if (!start || !end) return null;
+  return `${start}-${end} ${normalizeExperienceUnit(unit)}`;
+};
+
+const hasNonExperienceDurationContext = (value) => (
+  /\b(?:contract(?:\s+to\s+hire)?|internship\s+duration|duration|tenure|term|roadmap|timeline|rotation|semester|semesters|week|weeks)\b/i
+    .test(String(value || ""))
+);
+
+const hasCompanyProfileExperienceContext = (sourceText = "", matchIndex = 0, matchText = "") => {
+  const prefix = String(sourceText || "").slice(Math.max(0, matchIndex - 220), matchIndex);
+  return (
+    /\b(?:about the team|who we are|about us|our story|locations across|presence and scale|service experiences?|incepted|founded|employees|countries|clients)\b/i
+      .test(prefix)
+    && !/\b(?:minimum|required|preferred|at[\s-]*least|must have|should have|qualifications?|requirements?)\b/i
+      .test(String(matchText || ""))
+  );
+};
+
+const convertExperienceValueToYears = (value, unit) => {
+  const numericValue = Number.parseFloat(value);
+  if (!Number.isFinite(numericValue)) return null;
+
+  return normalizeExperienceUnit(unit) === "months"
+    ? numericValue / 12
+    : numericValue;
+};
 
 const bucketFromYears = (minimumYears, maximumYears) => {
   if (minimumYears == null && maximumYears == null) return "unspecified";
@@ -221,6 +496,15 @@ const buildExperienceYears = ({ minimumYears, maximumYears, isOpenEnded }) => {
     Math.round(Number.isFinite(minimumYears) ? minimumYears : maximumYears),
   );
   return singleYear == null ? [] : [singleYear];
+};
+
+const resolveContextualExperienceUnit = (label, explicitUnit = null) => {
+  const normalizedExplicitUnit = normalizeExperienceUnit(explicitUnit);
+  if (normalizedExplicitUnit === "months" || normalizedExplicitUnit === "years") {
+    return normalizedExplicitUnit;
+  }
+
+  return /\bmonth/i.test(String(label || "")) ? "months" : "years";
 };
 
 const collectSectionText = (description, labels) => labels
@@ -322,24 +606,34 @@ const collectStructuredSkillMatches = (values, options) => {
 };
 
 const parseExperienceProfile = (job = {}) => {
-  const explicitText = normalizeText(
+  const titleText = normalizeText(job.title);
+  const explicitExperienceField = normalizeExperienceNumberForms(
+    normalizeText(job.experienceRequired),
+  );
+  const explicitText = unique(
     [job.experienceRequired, job.minimumQualification, job.preferredQualification]
-      .filter(Boolean)
-      .join(" "),
-  );
-  const descriptiveText = normalizeText(
+      .map((value) => normalizeText(value))
+      .filter(Boolean),
+  ).join(" ");
+  const normalizedExplicitText = normalizeExperienceNumberForms(explicitText);
+  const descriptiveText = unique(
     [job.description, job.jobDescription]
+      .map((value) => stripTrailingCompanyNarrative(value, job.company))
+      .filter(Boolean),
+  ).join(" ");
+  const titleAndExplicitText = normalizeExperienceNumberForms(
+    [titleText, explicitText]
       .filter(Boolean)
       .join(" "),
   );
-  const combinedText = normalizeNumberWords(
-    [explicitText, descriptiveText]
+  const combinedText = normalizeExperienceNumberForms(
+    [titleText, explicitText, descriptiveText]
       .filter(Boolean)
       .join(" "),
   );
 
   const baseProfile = {
-    rawText: explicitText || descriptiveText || null,
+    rawText: explicitText || descriptiveText || titleText || null,
     minimumYears: null,
     maximumYears: null,
     isOpenEnded: false,
@@ -356,6 +650,93 @@ const parseExperienceProfile = (job = {}) => {
     };
   }
 
+  const explicitFieldRangeMatch = explicitExperienceField?.match(
+    /^(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)$/,
+  );
+  if (explicitFieldRangeMatch) {
+    const minimumYears = Number.parseFloat(explicitFieldRangeMatch[1]);
+    const maximumYears = Number.parseFloat(explicitFieldRangeMatch[2]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceRange(
+        explicitFieldRangeMatch[1],
+        explicitFieldRangeMatch[2],
+        "years",
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const explicitFieldPlusMatch = explicitExperienceField?.match(
+    /^(\d+(?:\.\d+)?)\s*(?:\+|plus)$/,
+  );
+  if (explicitFieldPlusMatch) {
+    const minimumYears = Number.parseFloat(explicitFieldPlusMatch[1]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        explicitFieldPlusMatch[1],
+        "years",
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const explicitFieldExactMatch = explicitExperienceField?.match(
+    /^(\d+(?:\.\d+)?)$/,
+  );
+  if (explicitFieldExactMatch) {
+    const exactYears = Number.parseFloat(explicitFieldExactMatch[1]);
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(explicitFieldExactMatch[1], "years"),
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const explicitFieldContextualValueMatch = explicitExperienceField?.match(
+    /^(\d+(?:\.\d+)?)\s*(\+|plus)?\s*(months?|years?|yrs?)\s+(?:of|for)\s+.+?\bexperience\b$/i,
+  );
+  if (explicitFieldContextualValueMatch) {
+    const exactYears = convertExperienceValueToYears(
+      explicitFieldContextualValueMatch[1],
+      explicitFieldContextualValueMatch[3],
+    );
+    const openEnded = Boolean(explicitFieldContextualValueMatch[2]);
+    const evidence = formatExperienceValueWithUnit(
+      explicitFieldContextualValueMatch[1],
+      explicitFieldContextualValueMatch[3],
+      { openEnded },
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: openEnded ? null : exactYears,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(exactYears), null)
+        : bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
   const noExperienceMatch = combinedText.match(
     /\b(no prior experience required|no experience required|freshers? can apply|entry-level applicants are encouraged)\b/i,
   );
@@ -368,6 +749,1066 @@ const parseExperienceProfile = (job = {}) => {
       confidence: "high",
       evidence: noExperienceMatch[0],
       experienceBucket: "0-1",
+    };
+  }
+
+  const fresherCueMatch = combinedText.match(
+    /\b(freshers?|fresh graduates?|recent graduates?)\b/i,
+  );
+  if (
+    fresherCueMatch
+    && !/\b\d+(?:\.\d+)?\s*(?:-|to|\+)?\s*\d*(?:\.\d+)?\s*(?:years?|yrs?|months?)\b/i.test(combinedText)
+  ) {
+    return {
+      ...baseProfile,
+      minimumYears: 0,
+      maximumYears: 0,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: fresherCueMatch[0],
+      experienceBucket: "0-1",
+    };
+  }
+
+  const labeledRangeMatch = combinedText.match(
+    /\b((?:(?:required|minimum|preferred|total)\s+)?(?:years?|months?)\s+of\s+experience|(?:required|minimum|preferred|total)\s+experience|experience\s+required)\b\s*[:\-]?\s*(?:min(?:imum)?(?:\s+of)?|at[\s-]*least)?\s*(\d+(?:\.\d+)?)\s*(?:-|~|to)\s*(\d+(?:\.\d+)?)(?:\s*(months?|years?|yrs?))?\b/i,
+  );
+  if (labeledRangeMatch) {
+    const unit = resolveContextualExperienceUnit(labeledRangeMatch[1], labeledRangeMatch[4]);
+    const minimumYears = convertExperienceValueToYears(labeledRangeMatch[2], unit);
+    const maximumYears = convertExperienceValueToYears(labeledRangeMatch[3], unit);
+    const evidence = formatExperienceRange(labeledRangeMatch[2], labeledRangeMatch[3], unit);
+
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const labeledValueMatch = combinedText.match(
+    /\b((?:(?:required|minimum|preferred|total)\s+)?(?:years?|months?)\s+of\s+experience|(?:required|minimum|preferred|total)\s+experience|experience\s+required)\b\s*[:\-]?\s*(?:min(?:imum)?(?:\s+of)?|at[\s-]*least)?\s*(\d+(?:\.\d+)?)(?:\s*(\+|plus))?(?:\s*(months?|years?|yrs?))?\b/i,
+  );
+  if (labeledValueMatch) {
+    const unit = resolveContextualExperienceUnit(labeledValueMatch[1], labeledValueMatch[4]);
+    const exactValue = convertExperienceValueToYears(labeledValueMatch[2], unit);
+    const openEnded = Boolean(labeledValueMatch[3]);
+    const evidence = formatExperienceValueWithUnit(labeledValueMatch[2], unit, { openEnded });
+
+    return {
+      ...baseProfile,
+      minimumYears: exactValue,
+      maximumYears: openEnded ? null : exactValue,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(exactValue), null)
+        : bucketFromYears(Math.floor(exactValue), Math.ceil(exactValue)),
+    };
+  }
+
+  const workExperienceMinimumExpMatch = combinedText.match(
+    /\bwork\s+experience\b[^.]{0,80}?\bmin\.?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+of\s+[^.]{0,40}?\b(?:experience|exp\.?)\b/i,
+  );
+  if (workExperienceMinimumExpMatch) {
+    const exactValue = convertExperienceValueToYears(
+      workExperienceMinimumExpMatch[1],
+      workExperienceMinimumExpMatch[2],
+    );
+    const evidence = formatExperienceValueWithUnit(
+      workExperienceMinimumExpMatch[1],
+      workExperienceMinimumExpMatch[2],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears: exactValue,
+      maximumYears: exactValue,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(exactValue), Math.ceil(exactValue)),
+    };
+  }
+
+  const bareExperienceLabelValueMatch = combinedText.match(
+    /\b(?:experience|exp\.?)\s*[:\-]\s*(\d+(?:\.\d+)?)(?:\s*(\+|plus))?\b/i,
+  );
+  if (bareExperienceLabelValueMatch) {
+    const exactValue = convertExperienceValueToYears(bareExperienceLabelValueMatch[1], "years");
+    const openEnded = Boolean(bareExperienceLabelValueMatch[2]);
+    const evidence = formatExperienceValueWithUnit(
+      bareExperienceLabelValueMatch[1],
+      "years",
+      { openEnded },
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears: exactValue,
+      maximumYears: openEnded ? null : exactValue,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(exactValue), null)
+        : bucketFromYears(Math.floor(exactValue), Math.ceil(exactValue)),
+    };
+  }
+
+  const labeledMinMaxRangeMatch = combinedText.match(
+    /\b(?:min(?:imum)?|minimum|required)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)?\b[^.]{0,40}?\b(?:max(?:imum|x)?|up\s+to)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (labeledMinMaxRangeMatch) {
+    const startUnit = labeledMinMaxRangeMatch[2] || labeledMinMaxRangeMatch[4];
+    const endUnit = labeledMinMaxRangeMatch[4] || labeledMinMaxRangeMatch[2];
+    const minimumYears = convertExperienceValueToYears(labeledMinMaxRangeMatch[1], startUnit);
+    const maximumYears = convertExperienceValueToYears(labeledMinMaxRangeMatch[3], endUnit);
+    const evidence = formatContextualExperienceRange(
+      labeledMinMaxRangeMatch[1],
+      startUnit,
+      labeledMinMaxRangeMatch[3],
+      endUnit,
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(minimumYears, maximumYears),
+    };
+  }
+
+  const parenthesizedMinimumRangeMatch = combinedText.match(
+    /\bexperience\b[^.]{0,180}?\(\s*min\.?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\.?\s*(?:to|-)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\.?\s*\)/i,
+  );
+  if (
+    parenthesizedMinimumRangeMatch
+    && !hasNonExperienceDurationContext(parenthesizedMinimumRangeMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      parenthesizedMinimumRangeMatch[1],
+      parenthesizedMinimumRangeMatch[2],
+    );
+    const maximumYears = convertExperienceValueToYears(
+      parenthesizedMinimumRangeMatch[3],
+      parenthesizedMinimumRangeMatch[4],
+    );
+    const evidence = formatContextualExperienceRange(
+      parenthesizedMinimumRangeMatch[1],
+      parenthesizedMinimumRangeMatch[2],
+      parenthesizedMinimumRangeMatch[3],
+      parenthesizedMinimumRangeMatch[4],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(minimumYears, maximumYears),
+    };
+  }
+
+  const mixedUnitRangeMatch = combinedText.match(
+    /(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b[^.]{0,80}?\bexperience\b/i,
+  );
+  if (mixedUnitRangeMatch) {
+    const startUnit = normalizeExperienceUnit(mixedUnitRangeMatch[2]);
+    const endUnit = normalizeExperienceUnit(mixedUnitRangeMatch[4]);
+
+    if (startUnit !== endUnit) {
+      const minimumYears = convertExperienceValueToYears(mixedUnitRangeMatch[1], startUnit);
+      const maximumYears = convertExperienceValueToYears(mixedUnitRangeMatch[3], endUnit);
+      const evidence = formatMixedExperienceRange(
+        mixedUnitRangeMatch[1],
+        startUnit,
+        mixedUnitRangeMatch[3],
+        endUnit,
+      );
+
+      return {
+        ...baseProfile,
+        minimumYears,
+        maximumYears,
+        hasExplicitExperience: true,
+        confidence: "high",
+        evidence,
+        experienceBucket: bucketFromYears(minimumYears, maximumYears),
+      };
+    }
+  }
+
+  const betweenExperienceRangeMatch = combinedText.match(
+    /\b(?:total\s+work\s+)?experience\s+between\s*(\d+(?:\.\d+)?)\s*(?:and|to|-)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (betweenExperienceRangeMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      betweenExperienceRangeMatch[1],
+      betweenExperienceRangeMatch[3],
+    );
+    const maximumYears = convertExperienceValueToYears(
+      betweenExperienceRangeMatch[2],
+      betweenExperienceRangeMatch[3],
+    );
+    const evidence = formatExperienceRange(
+      betweenExperienceRangeMatch[1],
+      betweenExperienceRangeMatch[2],
+      betweenExperienceRangeMatch[3],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const contextualRepeatedUnitRangeMatch = (
+    combinedText.match(
+      /\(?\s*(?:(?:over|around)\s+)?(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)?\s*(?:-|~|to)\s*(\d+(?:\.\d+)?)(?:\s*[-–—]?\s*)(months?|years?|yrs?)\)?[^.]{0,120}?\b(?:general|managerial|relevant|overall|professional|specific|related|hands[- ]on|working|comprehensive)?\s*experience\b/i,
+    )
+    || combinedText.match(
+      /\b(?:general|managerial|relevant|overall|professional|specific|related|hands[- ]on|working|comprehensive)?\s*experience\b[^.]{0,120}?\(?\s*(?:(?:over|around)\s+)?(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)?\s*(?:-|~|to)\s*(\d+(?:\.\d+)?)(?:\s*[-–—]?\s*)(months?|years?|yrs?)\)?/i,
+    )
+  );
+  if (
+    contextualRepeatedUnitRangeMatch
+    && !hasNonExperienceDurationContext(contextualRepeatedUnitRangeMatch[0])
+  ) {
+    const startUnit = contextualRepeatedUnitRangeMatch[2] || contextualRepeatedUnitRangeMatch[4];
+    const endUnit = contextualRepeatedUnitRangeMatch[4] || contextualRepeatedUnitRangeMatch[2];
+    const minimumYears = convertExperienceValueToYears(contextualRepeatedUnitRangeMatch[1], startUnit);
+    const maximumYears = convertExperienceValueToYears(contextualRepeatedUnitRangeMatch[3], endUnit);
+    const evidence = formatContextualExperienceRange(
+      contextualRepeatedUnitRangeMatch[1],
+      startUnit,
+      contextualRepeatedUnitRangeMatch[3],
+      endUnit,
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(minimumYears, maximumYears),
+    };
+  }
+
+  const experienceRequirementValueMatch = combinedText.match(
+    /\b(?:minimum\s+)?experience\s+requirement\b\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (experienceRequirementValueMatch) {
+    const exactYears = convertExperienceValueToYears(
+      experienceRequirementValueMatch[1],
+      experienceRequirementValueMatch[2],
+    );
+    const evidence = formatExperienceValueWithUnit(
+      experienceRequirementValueMatch[1],
+      experienceRequirementValueMatch[2],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const experienceWordTrailingUnitRangeMatch = combinedText.match(
+    /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s+experience\s+(months?|years?|yrs?)\b/i,
+  );
+  if (experienceWordTrailingUnitRangeMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      experienceWordTrailingUnitRangeMatch[1],
+      experienceWordTrailingUnitRangeMatch[3],
+    );
+    const maximumYears = convertExperienceValueToYears(
+      experienceWordTrailingUnitRangeMatch[2],
+      experienceWordTrailingUnitRangeMatch[3],
+    );
+    const evidence = formatExperienceRange(
+      experienceWordTrailingUnitRangeMatch[1],
+      experienceWordTrailingUnitRangeMatch[2],
+      experienceWordTrailingUnitRangeMatch[3],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const minimumWordMidRangeMatch = combinedText.match(
+    /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s+minimum\s+(months?|years?|yrs?)\s+of\s+experience\b/i,
+  );
+  if (minimumWordMidRangeMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      minimumWordMidRangeMatch[1],
+      minimumWordMidRangeMatch[3],
+    );
+    const maximumYears = convertExperienceValueToYears(
+      minimumWordMidRangeMatch[2],
+      minimumWordMidRangeMatch[3],
+    );
+    const evidence = formatExperienceRange(
+      minimumWordMidRangeMatch[1],
+      minimumWordMidRangeMatch[2],
+      minimumWordMidRangeMatch[3],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const candidateCuedApproximateSingleValueMatch = combinedText.match(
+    /\b(?:have|has|with|possess(?:es)?|bring(?:s)?|need(?:ed)?|required|should have|must have)\b[^.]{0,120}?\(?\s*(?:around|about)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\)?\s+experience\b/i,
+  );
+  if (candidateCuedApproximateSingleValueMatch) {
+    const exactYears = convertExperienceValueToYears(
+      candidateCuedApproximateSingleValueMatch[1],
+      candidateCuedApproximateSingleValueMatch[2],
+    );
+    const evidence = formatExperienceValueWithUnit(
+      candidateCuedApproximateSingleValueMatch[1],
+      candidateCuedApproximateSingleValueMatch[2],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const minimumRequirementsContributionMatch = combinedText.match(
+    /\bminimum requirements?\b[\s\S]{0,180}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+of\s+(?:recent\s+)?(?:involvement|contribution)\b/i,
+  );
+  if (minimumRequirementsContributionMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      minimumRequirementsContributionMatch[1],
+      minimumRequirementsContributionMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        minimumRequirementsContributionMatch[1],
+        minimumRequirementsContributionMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const labeledOpenEndedMatch = combinedText.match(
+    /\b(?:years?\s+of\s+experience|(?:relevant\s+)?experience|exp\.?)\s*[:;\-]{0,2}\s*(?:>|>=|more than|over)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (labeledOpenEndedMatch) {
+    const minimumYears = convertExperienceValueToYears(labeledOpenEndedMatch[1], labeledOpenEndedMatch[2]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(labeledOpenEndedMatch[1], labeledOpenEndedMatch[2], { openEnded: true }),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const keySkillsUpToMatch = combinedText.match(
+    /\bkey skills?\b[^.]{0,80}?\b(?:up\s*to|upto)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (keySkillsUpToMatch) {
+    const maximumYears = convertExperienceValueToYears(
+      keySkillsUpToMatch[1],
+      keySkillsUpToMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: 0,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceRange("0", keySkillsUpToMatch[1], keySkillsUpToMatch[2]),
+      experienceBucket: bucketFromYears(0, maximumYears),
+    };
+  }
+
+  const contextualUpToMatch = combinedText.match(
+    /\b(?:up\s*to|upto)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+(?:of\s+)?(?:overall\s+|relevant\s+|professional\s+|hands[- ]on\s+|working\s+|managerial\s+|specific\s+|comprehensive\s+|related\s+|prior\s+|previous\s+|post[- ]qualification\s+)?(?:experience|exp\.?)\b/i,
+  );
+  if (
+    contextualUpToMatch
+    && !hasNonExperienceDurationContext(contextualUpToMatch[0])
+  ) {
+    const maximumYears = convertExperienceValueToYears(
+      contextualUpToMatch[1],
+      contextualUpToMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: 0,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceRange("0", contextualUpToMatch[1], contextualUpToMatch[2]),
+      experienceBucket: bucketFromYears(0, maximumYears),
+    };
+  }
+
+  const minimumAtLeastExperienceMatch = combinedText.match(
+    /\b(?:minimum(?:\s+of)?|at[\s-]*least)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b(?:\s+of\s+[^.]{0,80}?\bexperience|\s+experience)\b/i,
+  );
+  if (
+    minimumAtLeastExperienceMatch
+    && !hasNonExperienceDurationContext(minimumAtLeastExperienceMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      minimumAtLeastExperienceMatch[1],
+      minimumAtLeastExperienceMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        minimumAtLeastExperienceMatch[1],
+        minimumAtLeastExperienceMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const minimumDomainExperienceMatch = combinedText.match(
+    /\b(?:min\.?|minimum|at[\s-]*least)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b\s+in\s+[^.]{0,120}?\b(?:environment|role|roles?|field|domain|industry|sales|development|engineering|operations|support|product|marketing|design|testing|platform|technology|programming|banking|finance|accounting|consulting|sap)\b/i,
+  );
+  if (
+    minimumDomainExperienceMatch
+    && !hasNonExperienceDurationContext(minimumDomainExperienceMatch[0])
+    && !/\b(?:must have|should have|you have|you should have|ideal candidate)\b/i.test(
+      combinedText.slice(Math.max(0, minimumDomainExperienceMatch.index - 48), minimumDomainExperienceMatch.index),
+    )
+  ) {
+    const exactYears = convertExperienceValueToYears(
+      minimumDomainExperienceMatch[1],
+      minimumDomainExperienceMatch[2],
+    );
+    const evidence = formatExperienceValueWithUnit(
+      minimumDomainExperienceMatch[1],
+      minimumDomainExperienceMatch[2],
+    );
+
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const candidateCuedOpenEndedMatch = combinedText.match(
+    /\b(?:essential|must have|should have|you have|you should have|you are fit if|candidate(?:s)?(?:\s+(?:should|must))?\s+have|possess|need(?:ed)?|required|preferred|ideal candidate(?:\s+should\s+have)?)\b[^.]{0,120}?\b(?:over|more than)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b[^.]{0,80}?\b(?:experience|exp\.?)\b/i,
+  );
+  if (candidateCuedOpenEndedMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedOpenEndedMatch[1],
+      candidateCuedOpenEndedMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedOpenEndedMatch[1],
+        candidateCuedOpenEndedMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const candidateCuedTrailingSubjectOpenEndedMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|basic requirements|minimum requirements|required qualifications?|required skills|must have|should have|what we.re looking for|what you.ll bring|you.ll need|all about you|help you succeed(?:\s+and\s+grow)?)\b[\s\S]{0,220}?\b(?:commercial|professional|relevant|overall|industry|hands[- ]on)?\s*experience\b(?:\s+in\s+[^.;:()]{0,100})?\s*\((?:more than|over)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\)/i,
+  );
+  if (candidateCuedTrailingSubjectOpenEndedMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedTrailingSubjectOpenEndedMatch[1],
+      candidateCuedTrailingSubjectOpenEndedMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedTrailingSubjectOpenEndedMatch[1],
+        candidateCuedTrailingSubjectOpenEndedMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const candidateCuedPlusPrefixedYearsMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|required qualification|what you will need|what you.ll bring|all about you)\b[\s\S]{0,180}?(?:(?:over|more than)\s*)?\+\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+(?:of\s+)?[^.]{0,100}?\b(?:architecting|selling|designing|developing|managing|supporting|building|leading|operating)\b/i,
+  );
+  if (candidateCuedPlusPrefixedYearsMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedPlusPrefixedYearsMatch[1],
+      candidateCuedPlusPrefixedYearsMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedPlusPrefixedYearsMatch[1],
+        candidateCuedPlusPrefixedYearsMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const candidateCuedTrailingPlusYearsMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|minimum qualifications?|required qualification|what you will need|what you.ll bring|all about you|who you are)\b[\s\S]{0,360}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s*\+/i,
+  );
+  if (candidateCuedTrailingPlusYearsMatch) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedTrailingPlusYearsMatch[1],
+      candidateCuedTrailingPlusYearsMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedTrailingPlusYearsMatch[1],
+        candidateCuedTrailingPlusYearsMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const candidateCuedMinimumYearsInDomainMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|minimum qualifications?|required qualification|what you will need|what you.ll bring|all about you|who you are|must have|should have|required|preferred)\b[\s\S]{0,240}?\bm(?:inimum|miniumum|minumum)(?:\s+of)?\s+(\d+(?:\.\d+)?)\s*(months?|years?|yrs?|yr)\s*(\+)?\s+in\s+[^.]{0,140}?\b[a-z][a-z0-9/+#&._-]*\b/i,
+  );
+  if (
+    candidateCuedMinimumYearsInDomainMatch
+    && !hasNonExperienceDurationContext(candidateCuedMinimumYearsInDomainMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedMinimumYearsInDomainMatch[1],
+      candidateCuedMinimumYearsInDomainMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedMinimumYearsInDomainMatch[1],
+        candidateCuedMinimumYearsInDomainMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const candidateCuedExactYearsInDomainMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|minimum qualifications?|required qualification|what you will need|what you.ll bring|all about you|who you are|must have|should have|required|preferred)\b[\s\S]{0,240}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?|yr)\s*(\+)?\s+in\s+[^.]{0,140}?\b[a-z][a-z0-9/+#&._-]*\b/i,
+  );
+  if (
+    candidateCuedExactYearsInDomainMatch
+    && !hasNonExperienceDurationContext(candidateCuedExactYearsInDomainMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedExactYearsInDomainMatch[1],
+      candidateCuedExactYearsInDomainMatch[2],
+    );
+    const openEnded = Boolean(candidateCuedExactYearsInDomainMatch[3]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: openEnded ? null : minimumYears,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedExactYearsInDomainMatch[1],
+        candidateCuedExactYearsInDomainMatch[2],
+        { openEnded },
+      ),
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(minimumYears), null)
+        : bucketFromYears(Math.floor(minimumYears), Math.ceil(minimumYears)),
+    };
+  }
+
+  const candidateCuedExactYearsWorkVerbMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|required qualification|what you will need|what you.ll bring|all about you|what we.re looking for|who you are|ideal candidate(?:\s+will\s+possess\s+following|\s+should\s+have)?)\b[\s\S]{0,220}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+(?:in\s+)?[^.]{0,120}?\b(?:supporting|managing|architecting|selling|designing|developing|building|leading|operating|working)\b/i,
+  );
+  if (
+    candidateCuedExactYearsWorkVerbMatch
+    && !hasNonExperienceDurationContext(candidateCuedExactYearsWorkVerbMatch[0])
+  ) {
+    const exactYears = convertExperienceValueToYears(
+      candidateCuedExactYearsWorkVerbMatch[1],
+      candidateCuedExactYearsWorkVerbMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedExactYearsWorkVerbMatch[1],
+        candidateCuedExactYearsWorkVerbMatch[2],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const candidateCuedExperiencedYearsMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|minimum qualifications?|required qualification|what we.re looking for|we.re looking for people who have|all about you|who you are)\b[\s\S]{0,220}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+experienced\b/i,
+  );
+  if (
+    candidateCuedExperiencedYearsMatch
+    && !hasNonExperienceDurationContext(candidateCuedExperiencedYearsMatch[0])
+    && !/\b\d+(?:\.\d+)?\s*(?:or|\/|-|to)\s*\d+(?:\.\d+)?\s*(?:months?|years?|yrs?)\s+experienced\b/i
+      .test(candidateCuedExperiencedYearsMatch[0])
+  ) {
+    const exactYears = convertExperienceValueToYears(
+      candidateCuedExperiencedYearsMatch[1],
+      candidateCuedExperiencedYearsMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedExperiencedYearsMatch[1],
+        candidateCuedExperiencedYearsMatch[2],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const candidateCuedYearsInRoleCategoryMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|minimum qualifications?|required qualification|what you will need|what you.ll bring|all about you|what we.re looking for|who you are)\b[\s\S]{0,240}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+in\s+(?!the\s+(?:same|current|present)\s+role\b)[^.]{0,140}?\broles?\b/i,
+  );
+  if (
+    candidateCuedYearsInRoleCategoryMatch
+    && !hasNonExperienceDurationContext(candidateCuedYearsInRoleCategoryMatch[0])
+  ) {
+    const exactYears = convertExperienceValueToYears(
+      candidateCuedYearsInRoleCategoryMatch[1],
+      candidateCuedYearsInRoleCategoryMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedYearsInRoleCategoryMatch[1],
+        candidateCuedYearsInRoleCategoryMatch[2],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const candidateCuedRoleHistoryForYearsMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|minimum qualifications?|required qualification|what you will need|what you.ll bring|all about you)\b[\s\S]{0,220}?\b(?:played|worked|served|functioned)\b[^.]{0,120}?\bfor\s+(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (
+    candidateCuedRoleHistoryForYearsMatch
+    && !hasNonExperienceDurationContext(candidateCuedRoleHistoryForYearsMatch[0])
+  ) {
+    const exactYears = convertExperienceValueToYears(
+      candidateCuedRoleHistoryForYearsMatch[1],
+      candidateCuedRoleHistoryForYearsMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedRoleHistoryForYearsMatch[1],
+        candidateCuedRoleHistoryForYearsMatch[2],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const requiredQualificationsSectionMatch = combinedText.match(
+    /\brequired qualifications?, capabilities, and skills\b([\s\S]{0,900}?)(?=\bpreferred qualifications?, capabilities, and skills\b|$)/i,
+  );
+  const requiredQualificationsSingleValueMatch = requiredQualificationsSectionMatch?.[1]?.match(
+    /\b(?:(more than|over|>=|>)\s*)?[~â‰ˆ]?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+(?:of|for)\s+[^.]{0,120}?\bexperience\b/i,
+  );
+  if (
+    requiredQualificationsSingleValueMatch
+    && !hasNonExperienceDurationContext(requiredQualificationsSingleValueMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      requiredQualificationsSingleValueMatch[2],
+      requiredQualificationsSingleValueMatch[3],
+    );
+    const openEnded = Boolean(requiredQualificationsSingleValueMatch[1]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: openEnded ? null : minimumYears,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        requiredQualificationsSingleValueMatch[2],
+        requiredQualificationsSingleValueMatch[3],
+        { openEnded },
+      ),
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(minimumYears), null)
+        : bucketFromYears(Math.floor(minimumYears), Math.ceil(minimumYears)),
+    };
+  }
+
+  const candidateCuedYearsWithBackgroundMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|basic requirements|minimum requirements|required qualifications?|required skills|must have|should have|what we.re looking for|what you.ll bring|you.ll need|all about you|help you succeed(?:\s+and\s+grow)?)\b[\s\S]{0,260}?\b(?:(more than|over|>=|>)\s*)?(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+with\b[^.]{0,120}?\b(?:background|expertise|knowledge|understanding|exposure|focus)\b/i,
+  );
+  if (
+    candidateCuedYearsWithBackgroundMatch
+    && !hasNonExperienceDurationContext(candidateCuedYearsWithBackgroundMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedYearsWithBackgroundMatch[2],
+      candidateCuedYearsWithBackgroundMatch[3],
+    );
+    const openEnded = Boolean(candidateCuedYearsWithBackgroundMatch[1]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: openEnded ? null : minimumYears,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedYearsWithBackgroundMatch[2],
+        candidateCuedYearsWithBackgroundMatch[3],
+        { openEnded },
+      ),
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(minimumYears), null)
+        : bucketFromYears(Math.floor(minimumYears), Math.ceil(minimumYears)),
+    };
+  }
+
+  const candidateCuedSingleValueMatch = combinedText.match(
+    /\b(?:requirements?(?!\s+of\b)|qualifications?|basic requirements|minimum requirements|required qualifications?|required skills|must have|should have|what we.re looking for|what you.ll bring|you.ll need|experience(?:, education and other required)?|all about you|help you succeed(?:\s+and\s+grow)?)\b[\s\S]{0,220}?\b(?:(more than|over|>=|>)\s*)?[~≈]?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+(?:of|for)\s+[^.]{0,80}?\bexperience\b/i,
+  );
+  if (
+    candidateCuedSingleValueMatch
+    && !hasNonExperienceDurationContext(candidateCuedSingleValueMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      candidateCuedSingleValueMatch[2],
+      candidateCuedSingleValueMatch[3],
+    );
+    const openEnded = Boolean(candidateCuedSingleValueMatch[1]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: openEnded ? null : minimumYears,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        candidateCuedSingleValueMatch[2],
+        candidateCuedSingleValueMatch[3],
+        { openEnded },
+      ),
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(minimumYears), null)
+        : bucketFromYears(Math.floor(minimumYears), Math.ceil(minimumYears)),
+    };
+  }
+
+  const academicQualificationExperienceYearsMatch = combinedText.match(
+    /\bacademic qualification(?:\s*&\s*experience)?\b[\s\S]{0,80}?\+\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (
+    academicQualificationExperienceYearsMatch
+    && !hasNonExperienceDurationContext(academicQualificationExperienceYearsMatch[0])
+  ) {
+    const exactYears = convertExperienceValueToYears(
+      academicQualificationExperienceYearsMatch[1],
+      academicQualificationExperienceYearsMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        academicQualificationExperienceYearsMatch[1],
+        academicQualificationExperienceYearsMatch[2],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const qualificationLineOpenEndedMatch = combinedText.match(
+    /\b(?:b\.?e\.?|be\/mtech|btech|mtech|graduation|masters?|bachelor(?:'s)?|graduate)\b[\s\S]{0,100}?\b(?:more than|over|>=|>)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (
+    qualificationLineOpenEndedMatch
+    && !hasNonExperienceDurationContext(qualificationLineOpenEndedMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      qualificationLineOpenEndedMatch[1],
+      qualificationLineOpenEndedMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        qualificationLineOpenEndedMatch[1],
+        qualificationLineOpenEndedMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const qualificationLineRangeMatch = combinedText.match(
+    /\b(?:b\.?e\.?|be\/mtech|btech|mtech|graduation|masters?|bachelor(?:'s)?|graduate)\b[\s\S]{0,100}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (
+    qualificationLineRangeMatch
+    && !hasNonExperienceDurationContext(qualificationLineRangeMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      qualificationLineRangeMatch[1],
+      qualificationLineRangeMatch[2],
+    );
+    const maximumYears = convertExperienceValueToYears(
+      qualificationLineRangeMatch[3],
+      qualificationLineRangeMatch[4],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatContextualExperienceRange(
+        qualificationLineRangeMatch[1],
+        qualificationLineRangeMatch[2],
+        qualificationLineRangeMatch[3],
+        qualificationLineRangeMatch[4],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const qualificationLineSingleValueMatch = combinedText.match(
+    /\b(?:b\.?e\.?|be\/mtech|btech|mtech|graduation|masters?|bachelor(?:'s)?|graduate)\b[\s\S]{0,100}?\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b(?!\s*(?:-|to)\s*\d)(?!\s*(?:\+|\bplus\b))(?:\s+(or\s+more|or\s+above|and\s+above))?/i,
+  );
+  if (
+    qualificationLineSingleValueMatch
+    && !hasNonExperienceDurationContext(qualificationLineSingleValueMatch[0])
+    && !/\b(?:at[- ]least|minimum|more than|over|>=|>)\b/i.test(qualificationLineSingleValueMatch[0])
+  ) {
+    const exactYears = convertExperienceValueToYears(
+      qualificationLineSingleValueMatch[1],
+      qualificationLineSingleValueMatch[2],
+    );
+    const openEnded = Boolean(qualificationLineSingleValueMatch[3]);
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: openEnded ? null : exactYears,
+      isOpenEnded: openEnded,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        qualificationLineSingleValueMatch[1],
+        qualificationLineSingleValueMatch[2],
+        { openEnded },
+      ),
+      experienceBucket: openEnded
+        ? bucketFromYears(Math.floor(exactYears), null)
+        : bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const contextualOrMoreMatch = (
+    combinedText.match(
+      /\b(?:experience|exp\.?)\b[^.]{0,80}?\bfor\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+or\s+more\b/i,
+    )
+    || combinedText.match(
+      /\b(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+or\s+more\b[^.]{0,80}?\b(?:experience|exp\.?)\b/i,
+    )
+  );
+  if (
+    contextualOrMoreMatch
+    && !hasNonExperienceDurationContext(contextualOrMoreMatch[0])
+  ) {
+    const minimumYears = convertExperienceValueToYears(
+      contextualOrMoreMatch[1],
+      contextualOrMoreMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears: null,
+      isOpenEnded: true,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceValueWithUnit(
+        contextualOrMoreMatch[1],
+        contextualOrMoreMatch[2],
+        { openEnded: true },
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
+    };
+  }
+
+  const experiencedRangeMatch = combinedText.match(
+    /(\d+(?:\.\d+)?)\s*(?:or|\/)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s+experienced\b/i,
+  );
+  if (experiencedRangeMatch) {
+    const minimumYears = Number.parseFloat(experiencedRangeMatch[1]);
+    const maximumYears = Number.parseFloat(experiencedRangeMatch[2]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceRange(experiencedRangeMatch[1], experiencedRangeMatch[2], "years"),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const hyphenatedUnitRangeMatch = combinedText.match(
+    /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*[-–—]\s*(years?|yrs?)\b/i,
+  );
+  if (hyphenatedUnitRangeMatch) {
+    const minimumYears = Number.parseFloat(hyphenatedUnitRangeMatch[1]);
+    const maximumYears = Number.parseFloat(hyphenatedUnitRangeMatch[2]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceRange(
+        hyphenatedUnitRangeMatch[1],
+        hyphenatedUnitRangeMatch[2],
+        hyphenatedUnitRangeMatch[3],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
+    };
+  }
+
+  const compactHyphenatedToRangeMatch = combinedText.match(
+    /(\d+(?:\.\d+)?)\s*-\s*to\s*-\s*(\d+(?:\.\d+)?)\s*[-â€“â€”]\s*(years?|yrs?)\b/i,
+  );
+  if (compactHyphenatedToRangeMatch) {
+    const minimumYears = Number.parseFloat(compactHyphenatedToRangeMatch[1]);
+    const maximumYears = Number.parseFloat(compactHyphenatedToRangeMatch[2]);
+    return {
+      ...baseProfile,
+      minimumYears,
+      maximumYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence: formatExperienceRange(
+        compactHyphenatedToRangeMatch[1],
+        compactHyphenatedToRangeMatch[2],
+        compactHyphenatedToRangeMatch[3],
+      ),
+      experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
     };
   }
 
@@ -388,19 +1829,54 @@ const parseExperienceProfile = (job = {}) => {
     };
   }
 
-  const plusMatch = (
-    combinedText.match(
-      /(\d+(?:\.\d+)?)\s*(?:\+|plus)\s*(?:years?|yrs?)\b/i,
-    )
-    || combinedText.match(
-      /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s*(?:and above|or above)\b/i,
-    )
-    || combinedText.match(
-      /(?:at least|min(?:imum)?(?: of)?|minimum|required|preferred)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i,
-    )
-  );
-  if (plusMatch) {
-    const minimumYears = Number.parseFloat(plusMatch[1]);
+  const plusMatchPattern = [
+    {
+      match: combinedText.match(
+        /(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s*(?:\+\s*plus|plus)\b(?:\s+of)?(?:\s+[^.]{0,80}?)?\bexperience\b/i,
+      ),
+      valueIndex: 1,
+      unitIndex: 2,
+    },
+    {
+      match: combinedText.match(
+        /(\d+(?:\.\d+)?)\s*(?:\+|plus)\s*(months?|years?|yrs?)\b/i,
+      ),
+      valueIndex: 1,
+      unitIndex: 2,
+    },
+    {
+      match: combinedText.match(
+        /(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s*(?:and above|or above)\b/i,
+      ),
+      valueIndex: 1,
+      unitIndex: 2,
+    },
+    {
+      match: combinedText.match(
+        /(\d+(?:\.\d+)?)\s+or\s+more\s+(months?|years?|yrs?)\b(?:\s+of\s+experience)?/i,
+      ),
+      valueIndex: 1,
+      unitIndex: 2,
+    },
+    {
+      match: combinedText.match(
+        /(\d+(?:\.\d+)?)\+\s+(?:overall\s+|relevant\s+|professional\s+|hands[- ]on\s+|working\s+|managerial\s+|specific\s+|comprehensive\s+|related\s+)?(?:experience|exp\.?)\b/i,
+      ),
+      valueIndex: 1,
+      unitIndex: null,
+    },
+    {
+      match: combinedText.match(
+        /(?:at[\s-]*least|min(?:imum)?(?:\s+of)?|required|preferred)\s*[:\-]?\s*(?:full[- ]time\s+)?(\d+(?:\.\d+)?)\s*[- ]?\s*(months?|years?|yrs?)\b(?:\s+(?:of\s+[^.]{0,80}?\bexperience|experience))?/i,
+      ),
+      valueIndex: 1,
+      unitIndex: 2,
+    },
+  ].find(({ match }) => match);
+  if (plusMatchPattern) {
+    const { match, valueIndex, unitIndex } = plusMatchPattern;
+    const normalizedUnit = unitIndex == null ? "years" : match[unitIndex];
+    const minimumYears = convertExperienceValueToYears(match[valueIndex], normalizedUnit);
     return {
       ...baseProfile,
       minimumYears,
@@ -408,37 +1884,101 @@ const parseExperienceProfile = (job = {}) => {
       isOpenEnded: true,
       hasExplicitExperience: true,
       confidence: "high",
-      evidence: plusMatch[0],
+      evidence: formatExperienceValueWithUnit(match[valueIndex], normalizedUnit, { openEnded: true }),
       experienceBucket: bucketFromYears(Math.floor(minimumYears), null),
     };
   }
 
-  const singleValueMatch = combinedText.match(
-    /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i,
+  const comparableExperienceMatch = combinedText.match(
+    /\bexperience\s*\(?\s*comparable\s+to\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s*\)?/i,
   );
-  if (singleValueMatch) {
-    const exactYears = Number.parseFloat(singleValueMatch[1]);
+  if (comparableExperienceMatch) {
+    const exactYears = convertExperienceValueToYears(
+      comparableExperienceMatch[1],
+      comparableExperienceMatch[2],
+    );
+    const evidence = formatExperienceValueWithUnit(
+      comparableExperienceMatch[1],
+      comparableExperienceMatch[2],
+    );
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const contextualSingleValueMatch = (
+    combinedText.match(
+      /(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\s+(?:of\s+)?(?:overall\s+|relevant\s+|professional\s+|hands[- ]on\s+|working\s+|managerial\s+|specific\s+|comprehensive\s+|related\s+|prior\s+|previous\s+|post[- ]qualification\s+)?(?:experience|exp\.?)\b/i,
+    )
+    || combinedText.match(
+      /\b(?:experience|exp\.?)\s*(?::|of|required:?|-)?\s*(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+    )
+  );
+  if (
+    contextualSingleValueMatch
+    && !hasCompanyProfileExperienceContext(
+      combinedText,
+      contextualSingleValueMatch.index,
+      contextualSingleValueMatch[0],
+    )
+  ) {
+    const exactYears = convertExperienceValueToYears(contextualSingleValueMatch[1], contextualSingleValueMatch[2]);
+    const evidence = formatExperienceValueWithUnit(contextualSingleValueMatch[1], contextualSingleValueMatch[2]);
+    return {
+      ...baseProfile,
+      minimumYears: exactYears,
+      maximumYears: exactYears,
+      hasExplicitExperience: true,
+      confidence: "high",
+      evidence,
+      experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
+    };
+  }
+
+  const explicitSingleValueMatch = normalizedExplicitText.match(
+    /(\d+(?:\.\d+)?)\s*(months?|years?|yrs?)\b/i,
+  );
+  if (explicitSingleValueMatch) {
+    const exactYears = convertExperienceValueToYears(explicitSingleValueMatch[1], explicitSingleValueMatch[2]);
+    const evidence = formatExperienceValueWithUnit(explicitSingleValueMatch[1], explicitSingleValueMatch[2]);
     return {
       ...baseProfile,
       minimumYears: exactYears,
       maximumYears: exactYears,
       hasExplicitExperience: true,
       confidence: "medium",
-      evidence: singleValueMatch[0],
+      evidence,
       experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
     };
   }
 
-  const titleText = normalizeText(job.title);
-  if (/\b(graduate|new grad|entry[- ]level|fresher)\b/i.test(`${titleText} ${combinedText}`)) {
+  const entryLevelCue = extractEntryLevelCue(`${titleText} ${combinedText}`);
+  if (entryLevelCue) {
     return {
       ...baseProfile,
       minimumYears: 0,
       maximumYears: 0,
-      hasExplicitExperience: /\b(graduate|new grad|entry[- ]level|fresher)\b/i.test(combinedText),
+      hasExplicitExperience: hasEntryLevelCue(combinedText),
       confidence: explicitText ? "medium" : "low",
-      evidence: titleText || combinedText,
+      evidence: entryLevelCue,
       experienceBucket: "0-1",
+    };
+  }
+
+  const nonNumericExperienceEvidence = extractNonNumericExperienceEvidence(combinedText);
+  if (nonNumericExperienceEvidence) {
+    return {
+      ...baseProfile,
+      hasExplicitExperience: true,
+      confidence: "medium",
+      evidence: nonNumericExperienceEvidence,
+      experienceBucket: "unspecified",
     };
   }
 
@@ -455,7 +1995,7 @@ const classifySeniority = (job = {}, experienceProfile = {}) => {
 
   if (/\bintern(ship)?\b/.test(titleText)) return { value: "Internship", confidence: "high" };
   if (/\bapprentice\b/.test(titleText)) return { value: "Apprentice", confidence: "high" };
-  if (/\b(entry[- ]level|graduate|new grad|fresher|trainee)\b/.test(combinedText)) {
+  if (hasEntryLevelCue(combinedText)) {
     return { value: "Entry Level", confidence: "high" };
   }
   if (/\bvice president\b|\bvp\b/.test(titleText)) return { value: "Vice President", confidence: "high" };
@@ -563,7 +2103,7 @@ const detectWorkArrangement = (job = {}) => {
     if (/hybrid/i.test(explicit)) return "Hybrid";
     if (/remote/i.test(explicit)) return "Remote";
     if (/on[- ]site/i.test(explicit)) return "On-site";
-    if (/flexible/i.test(explicit)) return "Flexible";
+    if (/flexible/i.test(explicit)) return "Not specified";
   }
 
   const locationText = normalizeText(
@@ -577,7 +2117,6 @@ const detectWorkArrangement = (job = {}) => {
   if (/\bhybrid\b/.test(combined)) return "Hybrid";
   if (/\bremote\b/.test(locationText.toLowerCase()) || /\bremote\b/.test(combined)) return "Remote";
   if (/\bon[- ]site\b|\bonsite\b|\bin[- ]office\b/.test(combined)) return "On-site";
-  if (/\bflexible\b/.test(combined)) return "Flexible";
   if (locationText) return "On-site";
   return "Not specified";
 };

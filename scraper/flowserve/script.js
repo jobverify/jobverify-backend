@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREER_PAGE_URL = 'https://careers.flowserve.com/locations/ind/jobs/'
 export const API_ENDPOINT = 'https://prod-search-api.jobsyn.org/api/v1/solr/search'
@@ -7,7 +7,7 @@ export const REQUEST_HEADERS = {
   Accept: 'application/json',
   'X-Origin': 'careers.flowserve.com',
   Referer: CAREER_PAGE_URL,
-  'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+  'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
 }
 
 const COMPANY = 'Flowserve'

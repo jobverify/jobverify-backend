@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Native orange is registered as a verified first-party about-to-contact sentinel without aliases', () => {
+test('Native orange is registered as a verified first-party marketing-shell sentinel without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'nativeorange')
 
   assert.ok(provider)
@@ -14,10 +14,10 @@ test('Native orange is registered as a verified first-party about-to-contact sen
   assert.equal(provider.companyCareerPage, 'https://nativeorange.ai/about/')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-about-careers-and-contact-validation')
+  assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-plus-marketing-routes-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-careers-contact-handoff+verified-contact-page-return-empty',
+    'verified-homepage+verified-about-join-team-contact-handoff+verified-contact-page+marketing-careers-routes-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

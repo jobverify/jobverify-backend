@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -122,6 +122,8 @@ export const extractPublicListings = (html) => {
       closingDate: null,
       jobDescription: null,
       remoteStatus: null,
+      companyCareerPage: CAREERS_URL,
+      atsPlatform: 'official-company-careers',
     }
   }).filter(Boolean)
 
@@ -157,7 +159,7 @@ export const createTurnBScraper = ({ now = () => new Date().toISOString() } = {}
 export const run = async (options = {}) => createTurnBScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

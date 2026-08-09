@@ -21,9 +21,9 @@ export const NAS_ACADEMY_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'nasacademy/jobs.json',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://www.nas.co/work-with-us is the official Nas Company work-with-us page and explicitly names Nas Academy, but its Explore Our Job Openings CTA hands off to https://linktr.ee/nascompany rather than to a dedicated Nas Academy board. That public handoff only exposes company-level links such as Nas Daily Jobs, Nas.com Jobs, and Nas Summit Jobs, so there is no trustworthy exact-name Nas Academy public jobs surface to scrape.',
+    'Verified on Monday, August 3, 2026 that https://www.nas.co/work-with-us is still the official Nas Company work-with-us page and still hands off via Explore Our Job Openings to https://linktr.ee/nascompany rather than to a dedicated Nas Academy board. The current Linktree now renders nested button markup, but the public handoff still only exposes company-level jobs links such as Nas Daily Jobs, Nas.com Jobs, and Nas Summit Jobs, with no trustworthy exact-name Nas Academy public jobs surface to scrape.',
 }
 
 export default NAS_ACADEMY_CATALOG

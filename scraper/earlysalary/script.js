@@ -33,7 +33,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
-  .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/&#39;|&#x27;|&apos;|&rsquo;/gi, "'")
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
 
@@ -106,10 +106,11 @@ export const hasOfficialCareersPageSignal = (html) => {
 export const hasEmptyJobsStateSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const unescapedJson = decodeHtmlEntities(rawHtml).replace(/\\"/g, '"')
 
   return normalized.includes('no jobs found')
     && normalized.includes('rewards and recognition keep us going')
-    && /"currentjobopeningsdepts"\s*:\s*null/i.test(rawHtml)
+    && /"currentjobopeningsdepts"\s*:\s*null/i.test(unescapedJson)
 }
 
 export const pageExposesPublicJobListings = (html) => {
@@ -157,7 +158,7 @@ export const createEarlySalaryScraper = () => ({
 export const run = async (options = {}) => createEarlySalaryScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

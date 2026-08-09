@@ -1,6 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolve4, resolve6 } from 'node:dns/promises'
+import {
+  DEFAULT_DNS_LOOKUP_TIMEOUT_MS,
+  resolveHostAddressesWithTimeout,
+} from '../../scraper-support/utils/dnsHostResolution.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -9,6 +12,7 @@ export const COMPANY = 'DSQ Software'
 export const VERIFIED_AT = '2026-07-15'
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 15, 2026 that https://dsqsoftware.com/, https://www.dsqsoftware.com/, https://dsqsoftware.com/careers, https://www.dsqsoftware.com/careers, https://dsqsoftware.com/jobs, https://www.dsqsoftware.com/jobs, https://dsqsoftware.co.in/, https://www.dsqsoftware.co.in/, https://dsqsoftware.co.in/careers, https://www.dsqsoftware.co.in/careers, https://dsqworld.com/, https://www.dsqworld.com/, https://dsqworld.com/careers, and https://www.dsqworld.com/careers were all unreachable because their hostnames did not resolve, while Resolve-DnsName also returned DNS name does not exist for dsqsoftware.com, dsqsoftware.co.in, dsqworld.com, and their www/careers/jobs subdomains. No trustworthy public first-party jobs surface was reachable.'
+export const DNS_LOOKUP_TIMEOUT_MS = DEFAULT_DNS_LOOKUP_TIMEOUT_MS
 
 export const CANDIDATE_FIRST_PARTY_URLS = [
   'https://dsqsoftware.com/',
@@ -59,25 +63,18 @@ export const PROVIDER_METADATA = {
 export const hasResolvableFirstPartyHost = (addresses) =>
   Array.isArray(addresses) && addresses.length > 0
 
-export const resolveHosts = async (hosts = CANDIDATE_FIRST_PARTY_HOSTS) => {
-  const addresses = new Set()
-
-  for (const host of hosts) {
-    try {
-      for (const address of await resolve4(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-
-    try {
-      for (const address of await resolve6(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-  }
-
-  return [...addresses]
-}
+export const resolveHosts = async (
+  hosts = CANDIDATE_FIRST_PARTY_HOSTS,
+  {
+    resolve4Impl,
+    resolve6Impl,
+    timeoutMs = DNS_LOOKUP_TIMEOUT_MS,
+  } = {},
+) => resolveHostAddressesWithTimeout(hosts, {
+  resolve4Impl,
+  resolve6Impl,
+  timeoutMs,
+})
 
 export const createDsqSoftwareScraper = () => ({
   async run({ resolveHosts: overrideResolveHosts = resolveHosts } = {}) {
@@ -96,7 +93,7 @@ export const createDsqSoftwareScraper = () => ({
 export const run = async (options = {}) => createDsqSoftwareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

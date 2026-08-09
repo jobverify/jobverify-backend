@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { LENSKART_CATALOG } from './catalog.js'
 
@@ -137,6 +137,7 @@ const mapJob = (job, scrapedAt) => {
     link: sourceUrl,
     employmentType: normalizeWhitespace(job?.job_type),
     experienceRequired: null,
+    publicExperienceChecked: true,
     ...(normalizeWhitespace(job?.experience_level)
       ? { experienceLevel: normalizeWhitespace(job?.experience_level) }
       : {}),
@@ -180,7 +181,7 @@ export const createLenskartScraper = ({
 export const run = async (options = {}) => createLenskartScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

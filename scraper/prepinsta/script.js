@@ -9,6 +9,7 @@ export const CAREERS_URL = 'https://prepinsta.com/career-opportunities/'
 export const START_CAREER_URL = 'https://angel.co/company/prepinsta'
 export const PUBLIC_JOBS_URL = 'https://angel.co/company/prepinsta/jobs'
 export const BLOCKED_PUBLIC_JOBS_FINAL_URL = 'https://wellfound.com/company/prepinsta/jobs'
+export const VERIFIED_ON = '2026-08-07'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -92,8 +93,19 @@ export const hasBlockedPublicJobsSignal = ({ status, url, html } = {}) => {
 
   return status === 403
     && url === BLOCKED_PUBLIC_JOBS_FINAL_URL
-    && normalized.includes('wellfound.com')
-    && normalized.includes('please enable js and disable any ad blocker')
+    && (
+      (
+        normalized.includes('wellfound.com')
+        && normalized.includes('please enable js and disable any ad blocker')
+      )
+      || (
+        normalized.includes('just a moment')
+        && normalized.includes('checking if the site connection is secure')
+        && normalized.includes('enable javascript and cookies to continue')
+        && normalized.includes('cloudflare ray id')
+        && normalized.includes('team@wellfound.com')
+      )
+    )
 }
 
 export const createPrepinstaScraper = () => ({
@@ -133,7 +145,7 @@ export const createPrepinstaScraper = () => ({
 export const run = async (options = {}) => createPrepinstaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

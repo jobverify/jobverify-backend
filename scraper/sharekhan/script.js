@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import SHAREKHAN_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -87,13 +87,26 @@ const normalizeExperience = (value) => {
 }
 
 const extractJobDescription = (html = '') => {
-  const match = String(html ?? '').match(
+  const page = String(html ?? '')
+  const directResponsibilitiesMatch = page.match(
     /<p><strong>\s*(?:<span[^>]*>)?Direct Responsibilities(?:<\/span>)?\s*<\/strong><\/p>[\s\S]*?<ul>([\s\S]*?)<\/ul>/i,
   )
-  if (!match) return null
+  const modernResponsibilitiesMatch = page.match(
+    /Direct Responsibilities[\s\S]*?<\/ul>\s*<div>\s*<ul>([\s\S]*?)<\/ul>/i,
+  )
+  const listOnlyResponsibilitiesMatch = page.match(
+    /<h3[^>]+class=["'][^"']*JobTitle[^"']*["'][^>]*>[\s\S]*?<\/h3>\s*<hr[^>]*>\s*<ul>([\s\S]*?)<\/ul>/i,
+  )
+  const listHtml =
+    directResponsibilitiesMatch?.[1]
+    || modernResponsibilitiesMatch?.[1]
+    || listOnlyResponsibilitiesMatch?.[1]
 
-  const items = Array.from(match[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi))
+  if (!listHtml) return null
+
+  const items = Array.from(listHtml.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi))
     .map((item) => stripTags(item[1]))
+    .map((item) => item?.replace(/^[•\u2022]\s*/, '') || item)
     .filter(Boolean)
 
   return items[0] ?? null
@@ -231,7 +244,7 @@ export const createSharekhanScraper = () => ({
 export const run = async (options = {}) => createSharekhanScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

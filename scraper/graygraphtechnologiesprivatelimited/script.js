@@ -1,14 +1,19 @@
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 export const SOURCE = 'graygraphtechnologiesprivatelimited'
 export const COMPANY = 'Graygraph Technologies Private Limited'
 export const HOMEPAGE_URL = 'https://www.graygraph.com/'
 export const CAREERS_URL = 'https://www.graygraph.com/jobs/'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   officialBrandName: 'Graygraph Technologies',
   adapter: 'script',
-  modulePath: '../graygraphtechnologiesprivatelimited/script.js',
+  modulePath: '../../scraper/graygraphtechnologiesprivatelimited/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
@@ -25,6 +30,15 @@ export const PROVIDER_METADATA = {
 }
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
@@ -61,7 +75,7 @@ export const extractJobCards = (html) => {
   return jobs
 }
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const page = await fetchText(CAREERS_URL)
   if (!hasOfficialCareersSignal(page)) {
     throw new Error('Graygraph Technologies Private Limited verified jobs archive changed materially')
@@ -81,3 +95,4 @@ export const run = async ({ fetchText, now = () => new Date().toISOString() } = 
     scrapedAt: now(),
   }))
 }
+

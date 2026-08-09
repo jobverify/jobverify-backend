@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { ATMECS_GLOBAL_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -36,9 +36,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 20000,
 })
+
+export const isTrustedUnavailableFailure = (error) => {
+  const message = String(error?.message ?? error ?? '').toLowerCase()
+
+  return message.includes('enotfound')
+    || message.includes('getaddrinfo')
+    || message.includes('could not be resolved')
+    || (message.includes('net::err_failed') && message.includes('atmecs.com'))
+}
 
 export const hasOfficialJobsShellSignal = (html = '') => {
   const page = String(html ?? '')
@@ -54,13 +64,20 @@ export const hasPublicJobsSignal = (html = '') =>
   /<article\b/i.test(String(html ?? ''))
   || /class=["'][^"']*job[-\s]?card/i.test(String(html ?? ''))
   || /Apply now/i.test(String(html ?? ''))
-  || /href=["'][^"']*(?:\/jobs?\/|\/careers?\/)[^"']*["']/i.test(String(html ?? ''))
+  || /href=["'][^"']*(?:\/jobs?\/[^"']+|\/careers?\/[^"']+)["']/i.test(String(html ?? ''))
 
 export const createAtmecsGlobalScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-  } = {}) {
-    const jobsHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText } = {}) {
+    let jobsHtml
+    try {
+      jobsHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (isTrustedUnavailableFailure(error)) {
+        return []
+      }
+
+      throw error
+    }
 
     if (hasPublicJobsSignal(jobsHtml)) {
       throw new Error('ATMECS Global surface now appears to expose public jobs')
@@ -77,7 +94,7 @@ export const createAtmecsGlobalScraper = () => ({
 export const run = async (options = {}) => createAtmecsGlobalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

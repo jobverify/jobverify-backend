@@ -15,36 +15,43 @@ const hasIndex = (expectedKey) => getJobIndexes().some(({ key }) => (
 
 test("Job schema has a deterministic latest/oldest sort index", () => {
   assert.equal(
-    hasIndex({ status: 1, postedAt: -1, createdAt: -1, _id: -1 }),
+    hasIndex({ status: 1, isPublicIndia: 1, sortDate: -1, _id: -1 }),
     true,
   );
 });
 
 test("Job schema has a deterministic popularity sort index", () => {
   assert.equal(
-    hasIndex({ status: 1, clickCount: -1, postedAt: -1, _id: -1 }),
+    hasIndex({ status: 1, isPublicIndia: 1, clickCount: -1, sortDate: -1, _id: -1 }),
     true,
   );
 });
 
 test("Job schema can filter by experience year and keep latest ordering stable", () => {
   assert.equal(
-    hasIndex({ status: 1, experienceYears: 1, postedAt: -1, _id: -1 }),
+    hasIndex({ status: 1, isPublicIndia: 1, experienceYears: 1, sortDate: -1, _id: -1 }),
     true,
   );
 });
 
 test("Job schema has equality-key indexes for common company and location filters", () => {
   assert.equal(
-    hasIndex({ status: 1, companyKey: 1, postedAt: -1, _id: -1 }),
+    hasIndex({ status: 1, isPublicIndia: 1, companyKey: 1, sortDate: -1, _id: -1 }),
     true,
   );
   assert.equal(
-    hasIndex({ status: 1, locationKeys: 1, postedAt: -1, _id: -1 }),
+    hasIndex({ status: 1, isPublicIndia: 1, locationKeys: 1, sortDate: -1, _id: -1 }),
     true,
   );
   assert.equal(
-    hasIndex({ status: 1, companyKey: 1, locationKeys: 1, postedAt: -1, _id: -1 }),
+    hasIndex({ status: 1, isPublicIndia: 1, companyKey: 1, locationKeys: 1, sortDate: -1, _id: -1 }),
+    true,
+  );
+});
+
+test("Job schema can advance source lifecycle misses without scanning all jobs", () => {
+  assert.equal(
+    hasIndex({ source: 1, status: 1, missedScrapeCount: 1 }),
     true,
   );
 });

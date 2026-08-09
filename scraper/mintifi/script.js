@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { MINTIFI_CATALOG } from './catalog.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -19,7 +19,7 @@ export const EXPECTED_IDENTIFIER = PROVIDER_METADATA.expectedKekaIdentifier
 export const EXPECTED_KEKA_DOMAIN = PROVIDER_METADATA.expectedKekaDomain
 export const EXPECTED_PORTAL_NAME = PROVIDER_METADATA.expectedPortalName
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -248,7 +248,7 @@ export const createMintifiScraper = ({
 export const run = async () => createMintifiScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

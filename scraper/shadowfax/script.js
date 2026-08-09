@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import SHADOWFAX_CATALOG from './catalog.js'
 
@@ -25,10 +25,11 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#0*39;|&apos;|&rsquo;|&lsquo;|&#x27;/gi, "'")
+  .replace(/&#0*39;|&apos;|&rsquo;|&lsquo;|&#8217;|&#8216;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/&#8211;|&ndash;/gi, '-')
+  .replace(/[\u2018\u2019]/g, "'")
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -95,9 +96,9 @@ export const hasVerifiedHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Shadowfax - Best Indian Logistics Company for Express Deliveries\s*<\/title>/i.test(page)
-    && normalized.includes("India's Trusted Partner For Speed and Reliable Delivery")
-    && normalized.includes('Your trusted partner for express parcels, returns, same-day, next-day, 30-min delivery, and fulfillment solutions.')
+  return /<title[^>]*>\s*Shadowfax - Best Indian Logistics Company for Express Deliveries\s*<\/title>/i.test(page)
+    && normalized.includes("India's Trusted Partner for Fast, Reliable Delivery")
+    && normalized.includes('Your trusted partner for express parcel delivery, returns, same-day, next-day, 30-minute delivery, and fulfilment solutions.')
     && extractCareersUrl(page) === CAREERS_URL
     && normalized.includes('Shadowfax Technologies Limited')
 }
@@ -106,9 +107,9 @@ export const hasVerifiedCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Build Your Career at a Leading Logistics Company\s*\|\s*Shadowfax\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Build Your Career at a Leading Logistics Company\s*\|\s*Shadowfax\s*<\/title>/i.test(page)
     && normalized.includes('Join the Shadowfax Team!')
-    && normalized.includes('Join a team of passionate people moving the world forward. We’re hiring those who want to help shape the future of logistics with us.')
+    && normalized.includes("Join a team of passionate people moving the world forward. We're hiring those who want to help shape the future of logistics with us.")
     && normalized.includes('Our Openings')
     && normalized.includes('Shadowfax Technologies Limited')
 }
@@ -118,8 +119,8 @@ export const hasEmptyOpeningsSignal = (html = '') => {
 
   return normalized.includes('No job openings available at the moment.')
     && normalized.includes('Join our talent pool')
-    && normalized.includes('Couldn’t find a suitable vacancy?')
-    && normalized.includes('Upload your CV and we’ll get back to you when something opens up')
+    && normalized.includes("Couldn't find a suitable vacancy?")
+    && normalized.includes("Upload your CV and we'll get back to you when something opens up")
     && normalized.includes('Preffered department')
 }
 
@@ -167,7 +168,7 @@ export const createShadowfaxScraper = () => ({
 export const run = async (options = {}) => createShadowfaxScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

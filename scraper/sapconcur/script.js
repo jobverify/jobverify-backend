@@ -9,7 +9,7 @@ export const SOURCE = SAP_CONCUR_CATALOG.source
 export const COMPANY = SAP_CONCUR_CATALOG.companyName
 export const SAP_INDIA_JOBS_URL = SAP_CONCUR_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -37,9 +37,14 @@ const isConcurTitle = (title) => /\bconcur\b/i.test(String(title ?? ''))
 
 export const hasOfficialSapIndiaListingsSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
   return /<title>\s*Jobs in India\s*\|\s*SAP Careers\s*<\/title>/i.test(page)
-    && /Results\s*1\s*[–-]\s*25\s*of\s*\d+\s*Page\s*1\s*of\s*\d+/i.test(page)
-    && /AI Product Manager,\s*SAP Concur Spend/i.test(page)
+    && normalized.includes('Search by keyword')
+    && normalized.includes('Search by location')
+    && /id="searchresults"/i.test(page)
+    && /Results\s*1/i.test(normalized)
+    && /Page\s*1\s*of\s*\d+/i.test(normalized)
 }
 
 export const extractSapConcurJobs = (html) => {
@@ -48,17 +53,19 @@ export const extractSapConcurJobs = (html) => {
   }
 
   const jobs = []
-  const pattern = /<a\b[^>]*href="([^"]*jobs\.sap\.com\/job\/[^"]+)"[^>]*>\s*([\s\S]*?)\s*<\/a>([\s\S]*?)(?=<a\b[^>]*href="[^"]*jobs\.sap\.com\/job\/|<\/body>|$)/gi
 
-  for (const match of html.matchAll(pattern)) {
-    const sourceUrl = absoluteUrl(match[1])
-    const title = normalizeWhitespace(match[2])
-    const trailingText = normalizeWhitespace(match[3])
-    const locationMatch = trailingText.match(/[A-Za-z][A-Za-z\s.-]+,\s*(?:[A-Z]{2},\s*)?IN,\s*\d{6}/)
-    const location = locationMatch ? normalizeWhitespace(locationMatch[0]) : null
+  for (const match of String(html ?? '').matchAll(/<tr class="data-row">([\s\S]*?)<\/tr>/gi)) {
+    const rowHtml = String(match[1] ?? '')
+    const linkMatch = rowHtml.match(/<a\b(?=[^>]*class="jobTitle-link")(?=[^>]*href="([^"]+)")[^>]*>([\s\S]*?)<\/a>/i)
+    const sourceUrl = absoluteUrl(linkMatch?.[1])
+    const title = normalizeWhitespace(linkMatch?.[2])
+    const location = normalizeWhitespace(
+      rowHtml.match(/<td class="colLocation hidden-phone"[^>]*>[\s\S]*?<span class="jobLocation">\s*([\s\S]*?)<\/span>/i)?.[1]
+        || rowHtml.match(/<span class="jobLocation">\s*([\s\S]*?)<\/span>/i)?.[1],
+    )
 
     if (!sourceUrl || !title || !location) continue
-    if (!isConcurTitle(title) || !/india|,\s*in,\s*\d{6}/i.test(location)) continue
+    if (!isConcurTitle(title) || !/,\s*in,\s*\d{6}/i.test(location)) continue
 
     const jobIdMatch = sourceUrl.match(/\/(\d+)\/?$/)
     const jobId = jobIdMatch ? jobIdMatch[1] : null
@@ -124,7 +131,7 @@ export const createSapConcurScraper = () => ({
 export const run = async (options = {}) => createSapConcurScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -110,6 +110,31 @@ const ipPortfolioHtml = `
 </html>
 `
 
+const liveLikeIpPortfolioHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>sievanetworks :: company</title>
+  </head>
+  <body id="home">
+    <div id="content-left">
+      <h2>Ultra Low Power IP Circuit Blocks</h2>
+      <p>
+        Sieva Networks provides a number of blocks for RF and baseband circuitry such as LNA's, mixers, VCO's, PLL's, op amps, log domain filters, micropower amplifiers, voltage regulators, bandgaps.
+        The focus is on very low power consumption and generally most circuits consume less than 500uA of current at 1.8 nominal voltage.
+      </p>
+      <h2>Voltage Controlled Oscillator (VCO)</h2>
+      <h3 class="title"><a href="#">SN040</a></h3>
+      <a href="http://www.sievanetworks.com/sn040.pdf" class="readmore"><span>DATASHEET</span></a>
+      <h2>Low Noise Amplifier (LNA)</h2>
+    </div>
+    <div id="footer">
+      <a href="#">Copyright 2011 Sieva Networks. All rights reserved.</a>
+    </div>
+  </body>
+</html>
+`
+
 const missingCareerRoutePage = {
   status: 404,
   url: 'https://www.sievanetworks.com/careers',
@@ -124,6 +149,17 @@ const missingCareerRoutePage = {
         <p>The requested URL was not found on this server.</p>
         <p>Additionally, a 404 Not Found error was encountered while trying to use an ErrorDocument to handle the request.</p>
       </body>
+    </html>
+  `,
+}
+
+const blockedCareerRoutePage = {
+  status: 406,
+  url: 'https://www.sievanetworks.com/careers',
+  html: `
+    <html>
+      <head><title>Not Acceptable!</title></head>
+      <body><h1>Not Acceptable!</h1></body>
     </html>
   `,
 }
@@ -166,6 +202,7 @@ test('Sieva Networks Solutions sentinel recognizes the verified official pages a
   assert.equal(sieva.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(sieva.hasOfficialCanopusSignal(canopusHtml), true)
   assert.equal(sieva.hasOfficialIpPortfolioSignal(ipPortfolioHtml), true)
+  assert.equal(sieva.hasOfficialIpPortfolioSignal(liveLikeIpPortfolioHtml), true)
   assert.equal(sieva.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(sieva.isVerifiedMissingCareerRoute(missingCareerRoutePage), true)
 })
@@ -217,6 +254,32 @@ test('Sieva Networks Solutions default fetch is bounded by a timeout signal', as
   assert.equal(page.html, homepageHtml)
   assert.equal(capturedInit.redirect, 'follow')
   assert.equal(capturedInit.signal instanceof AbortSignal, true)
+})
+
+test('Sieva Networks Solutions sentinel can recover with a browser-backed fetch when direct requests only return 406 block pages', async () => {
+  const sieva = await loadSievaModule()
+  assert.ok(sieva, 'Expected scraper module at ./script.js')
+
+  const browserUrls = []
+  const jobs = await sieva.createSievaNetworksSolutionsScraper().run({
+    fetchPage: async (url) => ({ ...blockedCareerRoutePage, url }),
+    fetchBrowserPage: async (url) => {
+      browserUrls.push(url)
+      if (url === sieva.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === sieva.CANOPUS_URL) return { status: 200, url, html: canopusHtml }
+      if (url === sieva.IP_PORTFOLIO_URL) return { status: 200, url, html: ipPortfolioHtml }
+      if (sieva.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) return { ...missingCareerRoutePage, url }
+      throw new Error(`Unexpected browser URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(browserUrls, [
+    sieva.HOMEPAGE_URL,
+    sieva.CANOPUS_URL,
+    sieva.IP_PORTFOLIO_URL,
+    ...sieva.NO_PUBLIC_CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
 test('Sieva Networks Solutions sentinel fails closed when the verified no-public-careers surface drifts', async () => {

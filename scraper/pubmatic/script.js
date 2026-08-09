@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { PUBMATIC_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -14,6 +16,7 @@ export { PROVIDER_METADATA }
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DETAIL_FETCH_CONCURRENCY = 4
 
 const INDIA_LOCATIONS = {
   'Gurugram, IN': { city: 'Gurugram', state: 'Haryana', country: 'India' },
@@ -36,35 +39,124 @@ const slugify = (value) => String(value ?? '')
 
 const decodeHtml = (value) => normalizeWhitespace(value)
 
-export const hasOfficialJobsSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
-  return normalized.includes('OPPORTUNITY. DELIVERED.')
-    && normalized.includes('62 open positions')
-    && normalized.includes('Gurugram, IN')
+const extractDetailSectionHtml = (html = '') => {
+  const page = String(html ?? '')
+  const startMatch = /<div[^>]*class=["'][^"']*pubm-job__description[^"']*["'][^>]*>/i.exec(page)
+  if (!startMatch) return null
+
+  const tail = page.slice(startMatch.index + startMatch[0].length)
+  const endPatterns = [
+    /<div[^>]*class=["'][^"']*pubm-job__sidebar[^"']*["'][^>]*>/i,
+    /<div[^>]*class=["'][^"']*pubm-job__apply-box[^"']*["'][^>]*>/i,
+    /<div[^>]*class=["'][^"']*pubm-job__form-wrap[^"']*["'][^>]*>/i,
+  ]
+
+  let endIndex = tail.length
+  for (const pattern of endPatterns) {
+    const match = pattern.exec(tail)
+    if (match && match.index < endIndex) {
+      endIndex = match.index
+    }
+  }
+
+  return tail.slice(0, endIndex)
 }
 
-export const extractLocationGroups = (html = '') =>
+const extractExperienceRequirement = (description = '') => {
+  const experienceProfile = extractJobFilterSignals({
+    description,
+  })?.experienceProfile
+
+  if (!experienceProfile || experienceProfile.confidence !== 'high') {
+    return null
+  }
+
+  if (experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0) {
+    return 'No experience required'
+  }
+
+  return experienceProfile.evidence || null
+}
+
+const extractJobDetail = (html = '') => {
+  const description = normalizeWhitespace(extractDetailSectionHtml(html))
+  if (!description) {
+    return {
+      jobDescription: null,
+      experienceRequired: null,
+    }
+  }
+
+  return {
+    jobDescription: description,
+    experienceRequired: extractExperienceRequirement(description),
+  }
+}
+
+export const hasOfficialJobsSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+
+  const hasLegacySignal = normalized.includes('OPPORTUNITY. DELIVERED.')
+    && /\b\d+\s+open positions\b/i.test(normalized)
+    && normalized.includes('Gurugram, IN')
+
+  const hasCurrentSignal = /\b\d+\s+open positions\b/i.test(normalized)
+    && normalized.includes('Gurugram, IN')
+    && normalized.includes('Pune, IN')
+    && normalized.includes('View Engineering Jobs')
+    && /class=["'][^"']*postings-count[^"']*["']/i.test(page)
+
+  return hasLegacySignal || hasCurrentSignal
+}
+
+const toAbsoluteUrl = (value = '') => {
+  try {
+    return new URL(value, CAREERS_URL).toString()
+  } catch {
+    return null
+  }
+}
+
+const extractJobsFromGroupBody = (body = '') =>
+  Array.from(
+    String(body ?? '').matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/gi),
+    (jobMatch) => ({
+      title: decodeHtml(jobMatch[2]),
+      applyUrl: toAbsoluteUrl(jobMatch[1]),
+    }),
+  ).filter((job) => job.title && job.applyUrl)
+
+const extractLegacyLocationGroups = (html = '') =>
   Array.from(
     String(html ?? '').matchAll(
       /<section[\s\S]*?<h4>([^<]+)<\/h4>([\s\S]*?)<\/section>/gi,
     ),
-    (match) => {
-      const location = decodeHtml(match[1])
-      const body = match[2]
-      const jobs = Array.from(
-        body.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/gi),
-        (jobMatch) => ({
-          title: decodeHtml(jobMatch[2]),
-          applyUrl: decodeHtml(jobMatch[1]),
-        }),
-      ).filter((job) => job.title && job.applyUrl)
+    (match) => ({
+      location: decodeHtml(match[1]),
+      jobs: extractJobsFromGroupBody(match[2]),
+    }),
+  )
 
-      return {
-        location,
-        jobs,
-      }
-    },
-  ).filter((group) => group.location && group.jobs.length > 0)
+const extractCurrentLocationGroups = (html = '') =>
+  Array.from(
+    String(html ?? '').matchAll(
+      /<h4[^>]*class=["'][^"']*location-name[^"']*["'][^>]*>([^<]+)<\/h4>([\s\S]*?)(?=<h4[^>]*class=["'][^"']*location-name[^"']*["']|<\/body>|$)/gi,
+    ),
+    (match) => ({
+      location: decodeHtml(match[1]),
+      jobs: extractJobsFromGroupBody(match[2]),
+    }),
+  )
+
+export const extractLocationGroups = (html = '') => {
+  const legacyGroups = extractLegacyLocationGroups(html)
+  const groups = legacyGroups.length > 0
+    ? legacyGroups
+    : extractCurrentLocationGroups(html)
+
+  return groups.filter((group) => group.location && group.jobs.length > 0)
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -72,7 +164,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  timeoutMs: 90000,
 })
 
 export const createPubMaticScraper = ({
@@ -85,7 +177,7 @@ export const createPubMaticScraper = ({
       throw new Error('PubMatic first-party jobs page changed materially')
     }
 
-    return extractLocationGroups(html)
+    const jobs = extractLocationGroups(html)
       .flatMap((group) => {
         const locationMeta = INDIA_LOCATIONS[group.location]
         if (!locationMeta) return []
@@ -107,13 +199,32 @@ export const createPubMaticScraper = ({
         }))
       })
       .sort((left, right) => left.title.localeCompare(right.title))
+
+    return mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailHtml = await fetchText(job.sourceUrl)
+          const detail = extractJobDetail(detailHtml)
+
+          return {
+            ...job,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 
 export const run = async (options = {}) => createPubMaticScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,3 +1,8 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'terraeagle'
 export const COMPANY = 'Terraeagle'
 export const HOMEPAGE_URL = 'https://terraeagle.com/'
@@ -60,33 +65,33 @@ const defaultFetchPage = async (url) => {
 }
 
 export const hasOfficialHomepageSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page).toLowerCase()
+  const normalized = normalizeWhitespace(html).toLowerCase()
 
   return normalized.includes('terraeagle')
-    && normalized.includes('autonomous drone')
-    && /href=["']https:\/\/terraeagle\.com\/jobs\/["']/i.test(page)
+    && normalized.includes('home - terraeagle')
+    && normalized.includes('zero trust network access')
+    && normalized.includes('ot security')
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('about terraeagle')
-    && normalized.includes('leadership')
+  return normalized.includes('about terraeagle - terraeagle')
+    && normalized.includes('zero trust network access')
+    && normalized.includes('cyber risk')
 }
 
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const hasVerifiedCareersShellSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page).toLowerCase()
+  const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('careers')
+  return normalized.includes('careers - terraeagle')
     && normalized.includes('terraeagle')
-    && /\[awsmjobs\]/i.test(page)
-    && !hasPublicJobsSignal(page)
-  }
+    && normalized.includes('zero trust network access')
+    && !hasPublicJobsSignal(html)
+}
 
 export const isVerifiedBrokenJobsRoute = (page = {}) => {
   if (!isSameOfficialDomain(page.url || BROKEN_JOBS_URL)) {
@@ -102,7 +107,9 @@ export const isVerifiedBrokenJobsRoute = (page = {}) => {
   }
 
   const normalized = normalizeWhitespace(page.html).toLowerCase()
-  return NOT_FOUND_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalized))
+  return normalized.includes('404 - terraeagle')
+    || (String(page.url || '').includes('/404-error/')
+      && NOT_FOUND_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalized)))
 }
 
 export const createTerraEagleScraper = () => ({
@@ -132,3 +139,15 @@ export const createTerraEagleScraper = () => ({
 })
 
 export const run = async (options = {}) => createTerraEagleScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

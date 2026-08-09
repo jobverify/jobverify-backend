@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { createDarwinboxScraper } from '../darwinbox/script.js'
 
 import { HARBINGER_SYSTEMS_CATALOG } from './catalog.js'
@@ -50,8 +50,9 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title[^>]*>\s*Current Openings\s*\|\s*Harbinger Group\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Current(?:\s+Job)?\s+Openings(?:\s*(?:\||at)\s*)Harbinger Group\s*<\/title>/i.test(page)
     && normalized.includes('Current Openings')
+    && normalized.includes('Grow With Us')
     && page.includes(DARWINBOX_HANDOFF_URL)
 }
 
@@ -83,7 +84,7 @@ export const createHarbingerSystemsScraper = ({
 export const run = async (options = {}) => createHarbingerSystemsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -16,6 +16,7 @@ const homepageHtml = `
     <main>
       <h1>Turn your unused things into income</h1>
       <p>Find what you need. List what you don't. The autonomous AI ecosystem that works 24/7.</p>
+      <p>Hi! I'm Yogu, your AI marketplace guide.</p>
       <p>From professional expertise to heavy machinery - every idle asset has a home on Ubayog.</p>
       <p>Yogu helps you earn more.</p>
     </main>
@@ -39,6 +40,8 @@ const aboutHtml = `
       <h2>What is Ubayog?</h2>
       <p>Ubayog is India's first AI-native asset marketplace - a living ecosystem where idle assets meet intelligent automation.</p>
       <p>Think of it as your personal AI broker, lawyer, negotiator, and logistics manager, all in one.</p>
+      <p>Verified users and secure communication make every interaction safer.</p>
+      <p>Multiple business models support rentals, leases, and more.</p>
       <p>Aadhaar-linked KYC, Ubayog secure payments, and real-time Trust Scores keep every deal safe.</p>
       <p>Every rental or lease is a step toward circular economy - less waste, more wealth.</p>
     </main>

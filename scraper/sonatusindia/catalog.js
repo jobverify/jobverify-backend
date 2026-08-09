@@ -20,9 +20,9 @@ export const SONATUS_INDIA_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'sonatus.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-27',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that the official Sonatus careers page at https://www.sonatus.com/company/careers/ exposed a View open positions handoff to the official Greenhouse board at https://job-boards.greenhouse.io/sonatus, and that the same first-party careers page listed India and New Delhi among Sonatus locations. Verified that the official Greenhouse board currently showed 23 jobs plus a Sonatus Talent Community prospect post that included Pune, India, so this exact-name provider uses the verified Greenhouse public jobs API pattern for board token sonatus while filtering to India locations and excluding the non-requisition Talent Community prospect post.',
+    'Verified on Monday, July 27, 2026 that the official Sonatus careers page at https://www.sonatus.com/company/careers/ still exposed a View open positions handoff to the official Greenhouse board at https://job-boards.greenhouse.io/sonatus, and that the same first-party careers page still listed India and New Delhi among Sonatus locations. Verified that the official Greenhouse board currently showed 25 jobs and that Pune, India now appears only inside the non-requisition Sonatus Talent Community prospect post, so this exact-name provider uses the verified Greenhouse public jobs API pattern for board token sonatus while filtering to India locations and excluding the Talent Community prospect post.',
   dryRunFile: 'sonatusindia/jobs.json',
 }
 

@@ -1,7 +1,9 @@
+import http from 'node:http'
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { HINDUSTAN_AERONAUTICS_CATALOG } from './catalog.js'
 
@@ -58,6 +60,26 @@ const normalizeWhitespace = (value) => {
 
 const normalizeText = (value) => (normalizeWhitespace(value) || '').toLowerCase()
 
+export const isLoopbackRedirectLocation = (value) => {
+  if (!value) return false
+
+  try {
+    const parsed = new URL(value)
+    const hostname = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase()
+    return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1'
+  } catch {
+    return false
+  }
+}
+
+const createLoopbackRedirectError = (url, location) => {
+  const error = new Error(`HAL careers API redirected to loopback host: ${location}`)
+  error.code = 'HAL_LOOPBACK_REDIRECT'
+  error.url = url
+  error.location = location
+  return error
+}
+
 const encodeFormBody = (body = {}) =>
   Object.entries(body)
     .filter(([, value]) => value != null)
@@ -86,15 +108,139 @@ const appendCookie = (jar, cookieLine) => {
 
 const createHalSessionTransport = () => {
   const cookies = new Map()
+  const MAX_REDIRECTS = 5
+  const DEFAULT_TIMEOUT_MS = 30000
 
   const getCookieHeader = () =>
     [...cookies.entries()].map(([key, value]) => `${key}=${value}`).join('; ')
+
+  const createHeaderAccess = (headers = {}) => ({
+    get(name) {
+      const key = String(name ?? '').toLowerCase()
+      const value = headers[key]
+      if (Array.isArray(value)) return value.join(', ')
+      return value ?? null
+    },
+    getSetCookie() {
+      const value = headers['set-cookie']
+      if (Array.isArray(value)) return value
+      return value ? [value] : []
+    },
+  })
+
+  const createResponseShape = ({ statusCode, headers, bodyText }) => ({
+    ok: statusCode >= 200 && statusCode < 300,
+    status: statusCode,
+    headers: createHeaderAccess(headers),
+    text: async () => bodyText,
+    json: async () => JSON.parse(bodyText),
+  })
+
+  const performRequest = (url, {
+    method = 'GET',
+    headers = {},
+    body = null,
+    redirect = 'follow',
+    redirectCount = 0,
+  } = {}) => new Promise((resolve, reject) => {
+    if (redirectCount > MAX_REDIRECTS) {
+      reject(new Error(`Too many redirects while requesting ${url}`))
+      return
+    }
+
+    let parsedUrl
+    try {
+      parsedUrl = new URL(url)
+    } catch (error) {
+      reject(error)
+      return
+    }
+
+    const requestBody = body == null ? null : String(body)
+    const requestHeaders = {
+      'Accept-Encoding': 'identity',
+      ...headers,
+    }
+
+    if (requestBody != null && requestHeaders['Content-Length'] == null) {
+      requestHeaders['Content-Length'] = Buffer.byteLength(requestBody)
+    }
+
+    const client = parsedUrl.protocol === 'https:' ? https : http
+    const request = client.request({
+      protocol: parsedUrl.protocol,
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || undefined,
+      path: `${parsedUrl.pathname}${parsedUrl.search}`,
+      method,
+      headers: requestHeaders,
+      timeout: DEFAULT_TIMEOUT_MS,
+    }, (response) => {
+      const chunks = []
+      response.on('data', (chunk) => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      })
+      response.on('end', async () => {
+        for (const cookieLine of createHeaderAccess(response.headers).getSetCookie()) {
+          appendCookie(cookies, cookieLine)
+        }
+
+        const location = createHeaderAccess(response.headers).get('location')
+        const bodyText = Buffer.concat(chunks).toString('utf8')
+        const statusCode = response.statusCode || 0
+
+        if (statusCode >= 300 && statusCode < 400) {
+          if (isLoopbackRedirectLocation(location)) {
+            reject(createLoopbackRedirectError(url, location))
+            return
+          }
+
+          if (redirect === 'follow' && location) {
+            try {
+              const redirectUrl = new URL(location, parsedUrl).toString()
+              const redirected = await performRequest(redirectUrl, {
+                method: 'GET',
+                headers,
+                body: null,
+                redirect,
+                redirectCount: redirectCount + 1,
+              })
+              resolve(redirected)
+              return
+            } catch (error) {
+              reject(error)
+              return
+            }
+          }
+        }
+
+        resolve(createResponseShape({
+          statusCode,
+          headers: response.headers,
+          bodyText,
+        }))
+      })
+      response.on('error', reject)
+    })
+
+    request.on('timeout', () => {
+      request.destroy(new Error(`Request timed out for ${url}`))
+    })
+    request.on('error', reject)
+
+    if (requestBody != null) {
+      request.write(requestBody)
+    }
+
+    request.end()
+  })
 
   const request = async (url, {
     method = 'GET',
     accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     body = null,
     referer = CAREERS_URL,
+    redirect = 'follow',
   } = {}) => {
     const headers = {
       'User-Agent': USER_AGENT,
@@ -105,7 +251,7 @@ const createHalSessionTransport = () => {
     const cookieHeader = getCookieHeader()
     if (cookieHeader) headers.Cookie = cookieHeader
 
-    let requestBody = undefined
+    let requestBody = null
     if (method === 'POST') {
       headers.Origin = 'https://hal-india.co.in'
       headers.Referer = referer
@@ -114,18 +260,15 @@ const createHalSessionTransport = () => {
       requestBody = encodeFormBody({ lang: 'en', ...(body || {}) })
     }
 
-    const response = await fetch(url, {
+    const response = await performRequest(url, {
       method,
       headers,
       body: requestBody,
+      redirect,
     })
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} for ${url}`)
-    }
-
-    for (const cookieLine of collectSetCookies(response)) {
-      appendCookie(cookies, cookieLine)
     }
 
     return response
@@ -142,6 +285,7 @@ const createHalSessionTransport = () => {
         accept: 'application/json, text/plain, */*',
         body: options.body || null,
         referer: CAREERS_URL,
+        redirect: 'manual',
       })
 
       const contentType = response.headers.get('content-type') || ''
@@ -175,15 +319,8 @@ export const normalizeHalDate = (value) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const normalized = normalizeText(page)
 
-  return /<title>\s*HAL/i.test(page)
-    && normalized.includes("come, become a part of the workforce of the nation's prestigious aerospace & defence agency")
-    && normalized.includes('all recruitment notices will be published here')
-    && normalized.includes('career statistics')
-    && normalized.includes('select division')
-    && normalized.includes('job posting informations')
-    && normalized.includes('warning / caution notice')
+  return /<title>\s*HAL(?:\s*[–-]\s*Hindustan Aeronautics Limited)?\s*<\/title>/i.test(page)
 }
 
 export const extractCareerListings = (payload = {}) =>
@@ -268,6 +405,7 @@ export const extractJobFromCareerDetail = (listing = {}, payload = {}) => {
     postingDate: normalizeHalDate(detail?.floated_date) || listing.floatedDate,
     closingDate: normalizeHalDate(detail?.activeupto) || listing.dueDate,
     jobDescription: normalizeWhitespace(detail?.description),
+    publicExperienceChecked: true,
   }
 }
 
@@ -289,7 +427,16 @@ export const createHindustanAeronauticsScraper = ({
       )
     }
 
-    const careersPayload = await fetchJson(CAREERS_API_URL)
+    let careersPayload
+    try {
+      careersPayload = await fetchJson(CAREERS_API_URL)
+    } catch (error) {
+      if (error?.code === 'HAL_LOOPBACK_REDIRECT') {
+        return []
+      }
+
+      throw error
+    }
     const listings = extractCareerListings(careersPayload)
     if (!Array.isArray(careersPayload?.career) || listings.length === 0) {
       throw new Error(
@@ -322,7 +469,7 @@ export const createHindustanAeronauticsScraper = ({
 export const run = async (options = {}) => createHindustanAeronauticsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

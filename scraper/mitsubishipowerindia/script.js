@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -63,9 +63,15 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*1 \| Mitsubishi Power India Private Limited\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*1 \| Mitsubishi Power India Private Limited\s*<\/title>/i.test(page)
+      || /<title>\s*Mitsubishi Power India Private Limited\s*<\/title>/i.test(page)
+  )
     && text.includes('Welcome to Mitsubishi Power India')
-    && text.includes('Mitsubishi Power India Private Limited is based at Bangalore India.')
+    && (
+      text.includes('Mitsubishi Power India Private Limited is based at Bangalore India.')
+        || text.includes('Mitsubishi Power India headquartered at Bangalore')
+    )
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -82,7 +88,15 @@ export const hasOfficialCareersSignal = (html) => {
 
 export const hasOfficialCurrentOpeningsSignal = (html) => {
   const page = String(html ?? '')
-  return /<app-root\b/i.test(page) && /main\.c5020320440ba363d661\.js/i.test(page)
+  return (
+    /<app-root\b/i.test(page) && /main\.c5020320440ba363d661\.js/i.test(page)
+  ) || (
+    /<title>\s*TalentRecruit Softwares\s*<\/title>/i.test(page)
+      && page.includes('Please enable JavaScript to continue using this application.')
+      && /<base href="\/">/i.test(page)
+      && /favicon\.svg/i.test(page)
+      && /<app-root\b/i.test(page)
+  )
 }
 
 export const hasPublicJobListings = (html) =>
@@ -116,7 +130,7 @@ export const createMitsubishiPowerIndiaScraper = () => ({
 export const run = async (options = {}) => createMitsubishiPowerIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

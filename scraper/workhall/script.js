@@ -82,8 +82,20 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('workhall')
-    && (normalized.includes('workhall.co') || normalized.includes('www.workhall.co'))
+  return (normalized.includes('workhall') || normalized.includes('work hall'))
+    && (
+      normalized.includes('workhall.co')
+      || normalized.includes('www.workhall.co')
+      || normalized.includes('co-working space')
+      || normalized.includes('co working space')
+      || normalized.includes('private offices')
+    )
+    && (
+      normalized.includes('book my space')
+      || normalized.includes('book my tour')
+      || normalized.includes('workspace')
+      || normalized.includes('workhall.co')
+    )
 }
 
 export const hasPublicJobsSignal = (html) =>

@@ -19,13 +19,6 @@ const HOMEPAGE_SIGNALS = [
   '500,000 students',
 ]
 
-const CAREERS_SIGNALS = [
-  'aria-selected="true" href="/careers"',
-  'global skill-ed conclave',
-  'bengaluru',
-  'mysuru',
-]
-
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bopen positions\b/i,
@@ -98,13 +91,18 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
-
-  return CAREERS_SIGNALS.every((signal) => rawHtml.toLowerCase().includes(signal))
-    && normalized.includes('kidvento')
-    && /normalizedpath\s*:\s*['"]kidvento\.com\/kidventoeducation\/careers/i.test(rawHtml)
-    && /pagetitle\s*:\s*['"]careers/i.test(rawHtml)
+  const hasStableCareersChrome =
+    rawHtml.toLowerCase().includes('aria-selected="true" href="/careers"')
     && /<title>\s*careers\s*<\/title>/i.test(rawHtml)
     && /og:url"\s+content="https:\/\/www\.kidvento\.com\/careers"/i.test(rawHtml)
+  const hasVerifiedOfficeMarkers =
+    normalized.includes('bengaluru')
+    && normalized.includes('mysuru')
+    && (normalized.includes('global skill-ed conclave') || normalized.includes('dubai'))
+
+  return hasStableCareersChrome
+    && normalized.includes('kidvento')
+    && hasVerifiedOfficeMarkers
 }
 
 export const hasPublicJobsSignal = (html) =>
@@ -169,7 +167,7 @@ export const createKidventoScraper = () => ({
 export const run = async (options = {}) => createKidventoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

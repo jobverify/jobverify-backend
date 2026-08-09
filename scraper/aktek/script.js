@@ -98,7 +98,6 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml)
 
   return /<title>\s*Advanced Intelligence &amp; Technology Solutions \| AKTEK\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/aktek\.io\/["']/i.test(rawHtml)
     && /href=["']https:\/\/aktek\.io\/software\/["']/i.test(rawHtml)
     && /href=["']https:\/\/aktek\.io\/intelligence\/["']/i.test(rawHtml)
     && /href=["']https:\/\/aktek\.io\/integrated-services\/["']/i.test(rawHtml)
@@ -193,7 +192,7 @@ export const createAktekScraper = () => ({
 export const run = async (options = {}) => createAktekScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

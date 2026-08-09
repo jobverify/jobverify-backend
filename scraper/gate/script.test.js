@@ -42,11 +42,15 @@ const officialCareersHtml = `
 const leverBoardHtml = `
   <!doctype html>
   <html>
-    <head>
+  <head>
       <title>Gate</title>
       <meta property="og:description" content="Job openings at Gate">
     </head>
     <body>
+      <div>Location Type</div>
+      <div>Work Type</div>
+      <div>Location All</div>
+      <div>Team All</div>
       <div class="posting" data-qa-posting-id="aa738bea-de6b-4a76-a9f5-c30a6c8ceabc">
         <a class="posting-title" href="https://jobs.lever.co/gate/aa738bea-de6b-4a76-a9f5-c30a6c8ceabc">
           <h5 data-qa="posting-name">Product Manager - ASO/SEO</h5>

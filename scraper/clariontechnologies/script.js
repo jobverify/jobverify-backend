@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
+
 import { CLARION_TECHNOLOGIES_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,6 +18,10 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+export const ALLOW_INSECURE_TLS_HOSTS = [
+  'jobs.clariontechnologies.co.in',
+]
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&amp;/gi, '&')
@@ -26,20 +32,21 @@ const normalizeWhitespace = (value) => String(value ?? '')
 const extractTitle = (html = '') =>
   normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+export const defaultFetchPage = (url, {
+  fetchPageImpl = fetchPageWithRetry,
+} = {}) => fetchPageImpl(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+  allowInsecureTlsHosts: ALLOW_INSECURE_TLS_HOSTS,
+})
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
+export const defaultFetchText = async (url, options = {}) => {
+  const page = await defaultFetchPage(url, options)
+  return page.html
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -80,7 +87,7 @@ export const createClarionTechnologiesScraper = () => ({
 export const run = async (options = {}) => createClarionTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

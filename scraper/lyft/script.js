@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { LYFT_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -28,6 +28,10 @@ const normalizeWhitespace = (value) => {
 
   return normalized || null
 }
+
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1],
+)
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -104,8 +108,9 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasVerifiedCareersShellSignal = (html) => {
   const page = String(html ?? '')
+  const title = extractTitle(page) || ''
 
-  return /<title>\s*Lyft Careers\s*<\/title>/i.test(page)
+  return title === 'Lyft Careers'
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.lyft\.com\/careers["']/i.test(page)
     && /WORKING AT LYFT/i.test(page)
     && /Search job openings/i.test(page)
@@ -252,7 +257,7 @@ export const createLyftScraper = ({
 export const run = async (options = {}) => createLyftScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -10,7 +10,7 @@ export const hasOfficialCareersSurface = (html) => {
 
   return /<title[^>]*>\s*Careers at GE HealthCare\s*\|\s*GE HealthCare jobs\s*<\/title>/i.test(source)
     && /Create the future of healthcare/i.test(source)
-    && /Search Jobs/i.test(source)
+    && /Search(?:\s|&nbsp;|&#xa0;)+Jobs/i.test(source)
 }
 
 const defaultFetchText = async (url) => {
@@ -45,7 +45,7 @@ export const createGeHealthCareScraper = () => ({
 export const run = async (options = {}) => createGeHealthCareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running GE HealthCare scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

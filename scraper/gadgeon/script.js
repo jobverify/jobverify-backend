@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -59,13 +59,54 @@ const uniqueBy = (items, getKey) => {
   return results
 }
 
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
+)
+
+const extractVisibleText = (html = '') => normalizeWhitespace(
+  String(html ?? '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const extractListingJobsFromHtml = (html = '') => {
+  const jobs = []
+
+  for (const match of String(html ?? '').matchAll(
+    /<div class="border my-3 p-3 v-box">([\s\S]*?)<div class="modal fade" id="jobModal-\d+"/gi,
+  )) {
+    const block = match[1]
+    const title = normalizeWhitespace(
+      block.match(/<span class="fs-6 fw-medium caret-right">([\s\S]*?)<\/span>/i)?.[1],
+    )
+    const location = normalizeWhitespace(
+      block.match(/<div class="col-md-3 mb-3 mb-md-0">([\s\S]*?)<\/div>/i)?.[1],
+    )
+
+    if (!title || !location) continue
+
+    jobs.push({
+      title,
+      location,
+      experienceRequired: null,
+      department: null,
+    })
+  }
+
+  return jobs
+}
+
 export const hasVerifiedCareersSurface = (pageData) => {
   const title = normalizeWhitespace(pageData?.title)
   const text = String(pageData?.text ?? '')
 
   return Boolean(title)
     && /gadgeon/i.test(title)
-    && text.includes(VERIFIED_PAGE_SIGNAL)
+    && new RegExp(VERIFIED_PAGE_SIGNAL, 'i').test(text)
 }
 
 export const extractJobsFromPageData = (pageData) => uniqueBy(
@@ -106,119 +147,56 @@ export const extractJobsFromPageData = (pageData) => uniqueBy(
   (job) => job.jobId,
 )
 
-const collectPageData = async (page, url) => {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
-  await page.waitForSelector('body', { timeout: NAVIGATION_TIMEOUT_MS }).catch(() => null)
-  await waitForPageSettle(page)
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  attempts: 1,
+  label: SOURCE,
+  timeoutMs: NAVIGATION_TIMEOUT_MS,
+})
 
-  return page.evaluate(() => {
-    const normalize = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
-    const looksLikeLocation = (value) => /\b(?:india|kochi|cochin|bangalore|bengaluru|trivandrum|thiruvananthapuram|hyderabad|chennai|pune|noida|gurugram|mumbai)\b/i.test(value)
-    const cards = Array.from(document.querySelectorAll('article, li, .job, .job-card, .opening, .career, .career-item, .vc_row'))
-    const jobs = cards
-      .map((card) => {
-        const textLines = (card.textContent || '')
-          .split('\n')
-          .map((line) => normalize(line))
-          .filter(Boolean)
-        const title = normalize(
-          card.querySelector('h1, h2, h3, h4, strong, b')?.textContent
-          || textLines[0],
-        )
-        const location = normalize(
-          card.querySelector('[class*="location" i]')?.textContent
-          || textLines.find((line) => looksLikeLocation(line))
-          || null,
-        )
-        const experienceRequired = normalize(
-          card.querySelector('[class*="experience" i]')?.textContent
-          || textLines.find((line) => /\byears?\b/i.test(line))
-          || null,
-        )
-        const department = normalize(
-          card.querySelector('[class*="department" i], [class*="team" i]')?.textContent
-          || textLines.find((line, index) => index > 0 && line !== location && line !== experienceRequired)
-          || null,
-        )
-
-        return title && location
-          ? { title, location, experienceRequired, department }
-          : null
-      })
-      .filter(Boolean)
-
-    return {
-      url: window.location.href,
-      title: document.title,
-      text: document.body?.innerText || '',
-      links: Array.from(document.querySelectorAll('a[href]')).map((anchor) => ({
-        text: anchor.textContent || '',
-        href: anchor.href,
-      })),
-      jobs,
-    }
-  })
-}
-
-const createBrowserContext = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-
-    return {
-      browser,
-      page,
-      close: async () => browser.close(),
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
+export const buildPageDataFromHtml = (html = '', url = CAREERS_PAGE_URL) => ({
+  url,
+  title: extractTitle(html),
+  text: extractVisibleText(html) || '',
+  jobs: extractListingJobsFromHtml(html),
+})
 
 export const createGadgeonScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
-    collectPageDataImpl = collectPageData,
-    launchBrowserImpl = launchBrowser,
-    createOptimizedPageImpl = createOptimizedPage,
+    fetchText = defaultFetchText,
+    collectPageDataImpl,
   } = {}) {
-    const browserContext = await createBrowserContext({
-      launchBrowserImpl,
-      createOptimizedPageImpl,
-    })
-
-    try {
-      const pageData = await collectPageDataImpl(browserContext.page, CAREERS_PAGE_URL)
-
-      if (!hasVerifiedCareersSurface(pageData)) {
-        throw new Error('Gadgeon careers page no longer matches the verified public careers surface')
-      }
-
-      const jobs = extractJobsFromPageData(pageData)
-      const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-
-      return selectedJobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.sourceUrl,
-        scrapedAt: new Date().toISOString(),
-      }))
-    } finally {
-      await browserContext.close()
+    if (!collectPageDataImpl) {
+      collectPageDataImpl = async (url) => buildPageDataFromHtml(await fetchText(url), url)
     }
+
+    const pageData = await collectPageDataImpl(CAREERS_PAGE_URL)
+
+    if (!hasVerifiedCareersSurface(pageData)) {
+      throw new Error('Gadgeon careers page no longer matches the verified public careers surface')
+    }
+
+    const jobs = extractJobsFromPageData(pageData)
+    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+
+    return selectedJobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.sourceUrl,
+      scrapedAt: new Date().toISOString(),
+    }))
   },
 })
 
 export const run = async (options = {}) => createGadgeonScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Gadgeon scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -1,0 +1,21 @@
+{
+  "source": "wizklub",
+  "companyName": "WizKlub",
+  "officialBrandName": "WizKlub Learning",
+  "adapter": "script",
+  "modulePath": "../wizklub/script.js",
+  "dryRunFile": "wizklub/jobs.json",
+  "companyCareerPage": "https://dev.wizklub.com/",
+  "companyDomain": "dev.wizklub.com",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "no-enumerable-first-party-careers-feed",
+  "extractionStrategy": "verified-first-party-site-without-public-job-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://dev.wizklub.com/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://dev.wizklub.com/ is WizKlub Learning's first-party public site. The site exposes no careers navigation, public job listings, or trustworthy enumerable ATS feed, so this exact-name provider fails closed and returns no jobs until WizKlub publishes a public hiring surface."
+}

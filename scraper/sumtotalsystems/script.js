@@ -56,7 +56,10 @@ export const hasRedirectedHomepageSignal = (page = {}) => {
   return page?.status === 200
     && page?.url === REDIRECT_HOMEPAGE_URL
     && normalized.includes('Cornerstone Workforce AI')
-    && normalized.includes('Trusted by over 7,000 organizations worldwide')
+    && (
+      normalized.includes('The intelligence era of talent is coming to a city near you')
+      || normalized.includes('Trusted by over 7,000 organizations worldwide')
+    )
 }
 
 export const hasRedirectedCompanySignal = (page = {}) => {
@@ -66,7 +69,9 @@ export const hasRedirectedCompanySignal = (page = {}) => {
   return page?.status === 200
     && page?.url === REDIRECT_COMPANY_URL
     && normalized.includes('We power potential')
-    && /<a[^>]+href=["']https:\/\/www\.cornerstoneondemand\.com\/careers\/["'][^>]*>\s*Explore Open Positions\s*<\/a>/i.test(rawHtml)
+    && (/href=["']https:\/\/www\.cornerstoneondemand\.com\/careers\/["']/i.test(rawHtml)
+      || /href=["']\/careers\/["']/i.test(rawHtml))
+    && normalized.includes('Explore Open Positions')
 }
 
 export const extractParentOpenPositionsUrl = (html = '') => {
@@ -87,7 +92,7 @@ export const hasGenericCornerstoneCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Careers at Cornerstone\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*Careers at Cornerstone(?:\s*\|[\s\S]*?)?\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Tomorrow. Together.')
     && normalized.includes('Interested in a Career at Cornerstone?')
     && normalized.includes('careers@csod.com')
@@ -123,7 +128,7 @@ export const createSumTotalSystemsScraper = () => ({
 export const run = async (options = {}) => createSumTotalSystemsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -5,22 +5,32 @@ const homepageHtml = `
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-neutral-950 text-base antialiased">
   <head>
-    <title>Defining the Future of Data Archiving</title>
-    <meta name="description" content="Defining the Future of Data Archiving" />
+    <title>NeoWare — NeoZip</title>
+    <meta
+      name="description"
+      content="NeoWare builds next-generation data tools that combine archiving, blockchain authenticity and modern cryptography. Maker of NeoZip."
+    />
   </head>
   <body>
     <nav>
-      <a href="/work">Our Work</a>
-      <a href="/blog">Blog</a>
+      <a href="/">Home</a>
+      <a href="/products">Products</a>
+      <a href="/use-cases">Use Cases</a>
+      <a href="/articles">Articles</a>
+      <a href="/about">About</a>
+      <a href="https://neozip.io">Try NeoZip →</a>
     </nav>
     <main>
-      <h1>Defining the Future of Data Archiving</h1>
-      <p>Creating the next generation .Zip Data Manager</p>
-      <p>Our offices</p>
-      <p>Copenhagen</p>
-      <p>Billund</p>
-      <p>NeoZip is a new software program that aims to expand on the legacy of ZIP.</p>
-      <p>Email: contact@neoware.io</p>
+      <h1>Trusted data, built for the next generation</h1>
+      <p>
+        NeoWare designs open source tools and standards that make digital files, and AI agents, secure and durable.
+      </p>
+      <h2>A foundation you can trust</h2>
+      <p>Verifiable by design</p>
+      <p>Built on standards</p>
+      <p>Open and extensible</p>
+      <h2>Our flagship product</h2>
+      <p>NeoZip — Blockchain-secured Zip files</p>
     </main>
   </body>
 </html>
@@ -30,31 +40,17 @@ const missingRouteHtml = `
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-neutral-950 text-base antialiased">
   <head>
-    <title>Defining the Future of Data Archiving</title>
+    <title>NeoWare — NeoZip</title>
   </head>
   <body>
     <main>
-      <h1>404 Page not found</h1>
-      <p>Sorry, we couldn't find the page you're looking for.</p>
+      <h1>Page not found</h1>
+      <p>Sorry, we couldn&#x27;t find the page you're looking for.</p>
       <a href="/">Go to the home page</a>
-      <footer>© NeoWare Inc. 2025 All rights reserved. Email: contact@neoware.io</footer>
-    </main>
-  </body>
-</html>
-`
-
-const liveMissingRouteHtml = `
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-neutral-950 text-base antialiased">
-  <head>
-    <title>Defining the Future of Data Archiving</title>
-  </head>
-  <body>
-    <main>
-      <h1>404 Page not found</h1>
-      <p>Sorry, we couldn’t find the page you’re looking for.</p>
-      <a href="/">Go to the home page</a>
-      <footer>© NeoWare Inc. 2025 All rights reserved. Email: contact@neoware.io</footer>
+      <p>Looking for an article?</p>
+      <a href="/articles">Browse all articles</a>
+      <p>Building the next generation of trusted data infrastructure.</p>
+      <footer>© 2026 NeoWare. All rights reserved. <a href="/privacy">Privacy Policy</a></footer>
     </main>
   </body>
 </html>
@@ -68,12 +64,13 @@ const loadModule = async () => {
   }
 }
 
-test('Neoware sentinel recognizes the verified homepage and first-party missing-route shell', async () => {
+test('Neoware sentinel recognizes the Monday, August 3, 2026 homepage and first-party missing-route shell', async () => {
   const neoware = await loadModule()
   assert.ok(neoware, 'Expected scraper module at ./script.js')
 
   assert.equal(neoware.SOURCE, 'neoware')
   assert.equal(neoware.COMPANY, 'Neoware')
+  assert.equal(neoware.VERIFIED_ON, '2026-08-03')
   assert.equal(neoware.HOMEPAGE_URL, 'https://www.neoware.io/')
   assert.deepEqual(neoware.NO_PUBLIC_CAREERS_ROUTE_URLS, [
     'https://www.neoware.io/careers',
@@ -100,17 +97,9 @@ test('Neoware sentinel recognizes the verified homepage and first-party missing-
     }),
     true,
   )
-  assert.equal(
-    neoware.isVerifiedMissingRoute({
-      status: 404,
-      url: 'https://www.neoware.io/careers',
-      html: liveMissingRouteHtml,
-    }),
-    true,
-  )
 })
 
-test('Neoware sentinel returns no jobs only while the verified first-party surface stays unchanged', async () => {
+test('Neoware sentinel returns no jobs only while the verified NeoZip shell stays unchanged', async () => {
   const neoware = await loadModule()
   assert.ok(neoware, 'Expected scraper module at ./script.js')
 

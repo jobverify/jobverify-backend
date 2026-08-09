@@ -6,7 +6,7 @@ import mongoose from 'mongoose'
 
 import connectDB from '../db/db.js'
 import Job from '../src/models/Job.js'
-import { normalizeCompanyNameExact } from '../scraper/providers/companyCoverage.js'
+import { normalizeCompanyNameExact } from '../scraper-support/providers/companyCoverage.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')

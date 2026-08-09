@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -65,12 +65,13 @@ const defaultFetchPage = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*Zeon Charging\s*<\/title>/i.test(page)
-    && /rel=["']canonical["'][^>]+href=["']https:\/\/zeoncharging\.com\/["']/i.test(page)
-    && /href=["']\/about_us["']/i.test(page)
-    && /href=["']\/careers["']/i.test(page)
-    && /href=["']\/contact_us["']/i.test(page)
+  return /<title>\s*Zeon Charging(?:\s+[—-]\s+EV Charging Solutions)?\s*<\/title>/i.test(page)
+    && /\bOur Charging Network\b/i.test(normalized)
+    && /\bFind Nearest Station\b/i.test(normalized)
+    && /\bLocations\b/i.test(normalized)
+    && /\bBusiness\b/i.test(normalized)
 }
 
 export const hasOfficialAboutSignal = (html) =>
@@ -84,39 +85,51 @@ export const hasOfficialContactSignal = (html) => {
 }
 
 export const extractJobCards = (html) =>
-  Array.from(
-    String(html ?? '').matchAll(
-      /<article\b[^>]*class=["'][^"']*\bposition-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi,
-    ),
-  )
-    .map((match) => {
-      const articleHtml = match[1]
+  String(html ?? '')
+    .split(/<div class="card\s*">/i)
+    .slice(1)
+    .map((cardHtml) => {
+      const location = normalizeWhitespace(
+        cardHtml.match(/<div class="col-xs-6 pad_lr">([\s\S]*?)<\/div>/i)?.[1],
+      )
+      const experienceRequired = normalizeWhitespace(
+        cardHtml.match(/<div class="experience col-xs-6">([\s\S]*?)<\/div>/i)?.[1],
+      )
+      const roleId = normalizeWhitespace(cardHtml.match(/<h3 id="job_title_(\d+)"/i)?.[1])
       const title = normalizeWhitespace(
-        articleHtml.match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1],
+        cardHtml.match(/<h3 id="job_title_\d+"[^>]*>([\s\S]*?)<\/h3>/i)?.[1],
       )
+      const department = normalizeWhitespace(cardHtml.match(/<h6>([\s\S]*?)<\/h6>/i)?.[1])
       const jobDescription = normalizeWhitespace(
-        articleHtml.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1],
+        cardHtml.match(/<p>([\s\S]*?)<a href="JavaScript:show_job_role/i)?.[1],
       )
+      const detailHtml = roleId
+        ? String(cardHtml.match(new RegExp(`<div id="job_role_${roleId}" class="hide">([\\s\\S]*?)<\\/div>`, 'i'))?.[1] ?? '')
+        : ''
       const titleSlug = slugify(title)
+      const employmentType = normalizeWhitespace(
+        detailHtml.match(/<h3>\s*Job Type\s*<\/h3>\s*<p>([\s\S]*?)<\/p>/i)?.[1],
+      ) || (/\binternship\b/i.test(title) ? 'Internship' : null)
 
-      if (!title || !jobDescription || !titleSlug) return null
+      if (!location || !roleId || !title || !department || !jobDescription || !titleSlug) return null
 
-      const jobId = `${SOURCE}-${titleSlug}`
+      const jobId = `${SOURCE}-${roleId}`
+      const jobUrl = `${CAREERS_URL}#job-${roleId}`
 
       return {
         title,
         company: COMPANY,
-        department: null,
-        location: null,
-        city: null,
+        department,
+        location: `${location}, India`,
+        city: location,
         state: null,
         country: 'India',
         jobId,
-        requisitionId: jobId,
-        sourceUrl: CAREERS_URL,
-        applyUrl: CAREERS_URL,
-        employmentType: null,
-        experienceRequired: null,
+        requisitionId: roleId,
+        sourceUrl: jobUrl,
+        applyUrl: jobUrl,
+        employmentType,
+        experienceRequired,
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
@@ -140,6 +153,7 @@ export const createZeonChargingScraper = ({
 } = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
+    extractRenderedJobs = null,
     now = () => new Date().toISOString(),
   } = {}) {
     const homepage = await fetchPage(LEGACY_HOMEPAGE_URL)
@@ -162,11 +176,21 @@ export const createZeonChargingScraper = ({
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+    if (careersPage.status !== 200) {
       throw new Error('Response is not the verified official careers page for Zeon Charging')
     }
 
-    const jobs = extractJobCards(careersPage.html)
+    let jobs = hasOfficialCareersSignal(careersPage.html) ? extractJobCards(careersPage.html) : []
+    if (
+      jobs.length === 0
+      && typeof extractRenderedJobs === 'function'
+    ) {
+      jobs = await extractRenderedJobs({ careersPage, careersUrl: CAREERS_URL })
+    }
+    if (jobs.length === 0) {
+      throw new Error('Zeon Charging API-only scraper could not find jobs in the official careers response')
+    }
+
     const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
 
     return selectedJobs.map((job) => ({
@@ -181,7 +205,7 @@ export const createZeonChargingScraper = ({
 export const run = async (options = {}) => createZeonChargingScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

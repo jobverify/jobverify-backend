@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -187,7 +187,7 @@ export const extractJobDetail = (html, listing = {}) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify Ingersoll Rand scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify Ingersoll Rand scraper)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

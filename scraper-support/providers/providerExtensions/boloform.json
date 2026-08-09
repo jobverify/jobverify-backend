@@ -1,0 +1,22 @@
+{
+  "source": "boloform",
+  "companyName": "Boloform",
+  "officialBrandName": "Boloform AB",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../boloform/script.js",
+  "dryRunFile": "boloform/jobs.json",
+  "companyCareerPage": "https://www.boloform.se/",
+  "companyDomain": "boloform.se",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "official-site-without-careers-or-ats-feed-sentinel",
+  "extractionStrategy": "official-first-party-site-without-public-job-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.boloform.se/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that the only attributable first-party Boloform domain is https://www.boloform.se/. No public careers page, job listings, or official ATS feed is verifiable from that surface. This literal-name provider therefore fails closed and returns no jobs until Boloform publishes a verifiable official hiring surface."
+}

@@ -214,35 +214,24 @@ test('Orion Innovation runs through the verified browser-backed public jobs surf
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 
-test('Orion Innovation page collection supports Puppeteer builds without waitForTimeout', async () => {
+test('Orion Innovation API-only collection does not require browser hooks', async () => {
   const orion = await loadOrionInnovationModule()
   assert.ok(orion, 'Expected Orion Innovation scraper module at ./script.js')
 
-  const pages = [
-    {
-      url: null,
-      goto: async (url) => { pages[0].url = url },
-      waitForSelector: async () => {},
-      evaluate: async () => ({
-        url: pages[0].url,
-        title: 'Life at Orion - Orion Innovation',
-        text: 'Where people grow and innovation thrives Explore Opportunities Join us Explore open roles today.',
-        links: [{ text: 'Explore Opportunities', href: orion.OPEN_JOBS_URL }],
-      }),
-    },
-    {
-      url: null,
-      goto: async (url) => { pages[1].url = url },
-      waitForSelector: async () => {},
-      evaluate: async () => openJobsPageData,
-    },
-  ]
-  let pageIndex = 0
-
   const jobs = await orion.createOrionInnovationScraper({ maxJobs: 1 }).run({
+    collectPageDataImpl: async (_page, url) => {
+      if (url === orion.CAREERS_PAGE_URL) {
+        return {
+          url,
+          title: 'Life at Orion - Orion Innovation',
+          text: 'Where people grow and innovation thrives Explore Opportunities Join us Explore open roles today.',
+          links: [{ text: 'Explore Opportunities', href: orion.OPEN_JOBS_URL }],
+        }
+      }
+
+      return openJobsPageData
+    },
     readRenderedJobCardsImpl: async () => renderedJobCards,
-    launchBrowserImpl: async () => ({ close: async () => {} }),
-    createOptimizedPageImpl: async () => pages[pageIndex++],
   })
 
   assert.equal(jobs.length, 1)

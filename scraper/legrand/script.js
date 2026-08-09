@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -213,6 +213,17 @@ export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
   const location = getEffectiveLocation(detail) || listing.location || null
   const sourceUrl = listing.sourceUrl || buildJobDetailUrl(detail.Id)
+  const requiredSkills = Array.isArray(detail.skills)
+    ? detail.skills
+      .map((skill) => normalizeWhitespace(skill?.Skill))
+      .filter(Boolean)
+    : []
+  const jobDescription = joinDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ShortDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ExternalQualificationsStr,
+  ) || listing.jobDescription || null
 
   return {
     title: normalizeWhitespace(detail.Title) || listing.title || null,
@@ -230,19 +241,15 @@ export const extractJobDetail = (payload, listing = {}) => {
     experienceRequired: null,
     minimumQualification: normalizeWhitespace(detail.StudyLevel || detail.ExternalQualificationsStr),
     preferredQualification: null,
-    requiredSkills: Array.isArray(detail.skills)
-      ? detail.skills
-        .map((skill) => normalizeWhitespace(skill?.Skill))
-        .filter(Boolean)
-      : [],
+    requiredSkills,
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ExternalDescriptionStr,
-      detail.ShortDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-      detail.ExternalQualificationsStr,
-    ) || listing.jobDescription || null,
+    jobDescription,
+    publicExperienceChecked: Boolean(
+      jobDescription
+      || normalizeWhitespace(detail.StudyLevel || detail.ExternalQualificationsStr)
+      || requiredSkills.length > 0
+    ),
   }
 }
 
@@ -304,7 +311,7 @@ export const createLegrandScraper = ({
 export const run = async () => createLegrandScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Legrand scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

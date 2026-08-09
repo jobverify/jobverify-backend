@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import EMIDS_TECHNOLOGIES_LIMITED_CATALOG from './catalog.js'
 
@@ -86,6 +86,14 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   timeoutMs: 30000,
 })
 
+const normalizeAbsoluteUrl = (value) => {
+  try {
+    return new URL(String(value ?? '')).href
+  } catch {
+    return null
+  }
+}
+
 const getListingSummary = (payload = {}) => payload?.items?.[0] || {}
 
 const getRequisitionList = (payload = {}) => {
@@ -162,9 +170,15 @@ export const hasOfficialCorporateCareersSignal = (html = '') => {
   const text = normalizeWhitespace(page)
 
   return /<title[^>]*>\s*Careers\s*-\s*Emids\s*<\/title>/i.test(page)
-    && page.includes(CANDIDATE_EXPERIENCE_URL)
+    && text.includes('Help Shape the Future of Health')
+    && text.includes('Be A Part Of Our Growth Story')
     && text.includes('Explore Open Roles')
 }
+
+export const extractCorporateHandoffUrl = (html = '') =>
+  normalizeAbsoluteUrl(
+    String(html ?? '').match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Explore Open Roles\s*<\/a>/i)?.[1],
+  )
 
 export const hasOfficialCandidateExperienceSignal = (html = '') => {
   const page = String(html ?? '')
@@ -248,6 +262,13 @@ export const createEmidsTechnologiesLimitedScraper = ({
       throw new Error('Emids Technologies Limited verified first-party careers page no longer matches the trusted handoff')
     }
 
+    const handoffUrl = extractCorporateHandoffUrl(careersHtml)
+    if (handoffUrl && handoffUrl !== CANDIDATE_EXPERIENCE_URL) {
+      throw new Error(
+        `Emids Technologies Limited careers handoff changed to ${handoffUrl}; update scraper to follow the new public board`,
+      )
+    }
+
     const candidateExperienceHtml = await fetchText(CANDIDATE_EXPERIENCE_URL)
     if (!hasOfficialCandidateExperienceSignal(candidateExperienceHtml)) {
       throw new Error('Emids Technologies Limited verified Oracle candidate experience shell no longer matches the trusted page')
@@ -290,7 +311,7 @@ export const createEmidsTechnologiesLimitedScraper = ({
 export const run = async (options = {}) => createEmidsTechnologiesLimitedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

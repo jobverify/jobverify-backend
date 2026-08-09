@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SENECA_GLOBAL_IT_SERVICES_CATALOG from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -50,11 +50,26 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractJobCards = (html = '') => {
   const cards = []
+  const seenDetailUrls = new Set()
 
-  for (const match of String(html ?? '').matchAll(/<a href="(https:\/\/www\.senecaglobal\.com\/india-careers\/[^"]+\/)"[^>]*title="([^"]+)"/gi)) {
+  for (const match of String(html ?? '').matchAll(
+    /<a\b[^>]*href=(["'])(https:\/\/www\.senecaglobal\.com\/india-careers\/[^"'<>]+\/)\1[^>]*>([\s\S]*?)<\/a>/gi,
+  )) {
+    const anchorHtml = match[0]
+    const detailUrl = normalizeWhitespace(match[2])
+    const title = normalizeWhitespace(
+      anchorHtml.match(/\btitle=(["'])(.*?)\1/i)?.[2]
+      || match[3],
+    )
+
+    if (!detailUrl || !title || /^read more$/i.test(title) || seenDetailUrls.has(detailUrl)) {
+      continue
+    }
+
+    seenDetailUrls.add(detailUrl)
     cards.push({
-      title: normalizeWhitespace(match[2]),
-      detailUrl: normalizeWhitespace(match[1]),
+      title,
+      detailUrl,
     })
   }
 
@@ -101,6 +116,7 @@ export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {
     postingDate: null,
     closingDate: null,
     jobDescription: description,
+    publicExperienceChecked: true,
     requisitionId: jobId,
     source: SOURCE,
     link: detailUrl,
@@ -154,7 +170,7 @@ export const createSenecaGlobalITServicesScraper = ({
 export const run = async (options = {}) => createSenecaGlobalITServicesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -47,7 +47,13 @@ const stripToLines = (value) => String(value ?? '')
   .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
-const extractTitle = (html) => normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+const extractTitle = (html) => {
+  const titles = [...String(html ?? '').matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)]
+    .map((match) => normalizeWhitespace(match[1]))
+    .filter(Boolean)
+
+  return titles.at(-1) || null
+}
 
 const toAbsoluteBoardUrl = (value) => {
   try {
@@ -94,7 +100,6 @@ export const hasOfficialCareersSignal = (html) => {
     && /View all Jobs/i.test(text)
     && /workplaceoptions\.applytojob\.com\/apply/i.test(page)
     && /Bangalore/i.test(text)
-    && /©\s*2026 Workplace Options/i.test(text)
 }
 
 export const hasVerifiedBoardSignal = (html) => {
@@ -105,7 +110,8 @@ export const hasVerifiedBoardSignal = (html) => {
     && /Start your journey with us by browsing available jobs\./i.test(text)
     && /Current Openings/i.test(text)
     && /View Our Website/i.test(text)
-    && /Powered by JazzHR/i.test(text)
+    && /Skip To Job Description/i.test(text)
+    && /JazzHr/i.test(page)
     && /workplaceoptions/i.test(page)
 }
 
@@ -193,7 +199,7 @@ export const createWorkplaceOptionScraper = ({ now = () => new Date().toISOStrin
 export const run = async (options = {}) => createWorkplaceOptionScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createOptimizedPage, launchBrowser } from '../../scraper-support/utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { GODREJ_CONSUMER_PRODUCTS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -52,6 +52,8 @@ const stripTags = (value) => normalizeWhitespace(decodeHtmlEntities(String(value
 const extractTitle = (html = '') =>
   stripTags(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const slugify = (value) => String(value ?? '')
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -74,6 +76,9 @@ const normalizeApplyUrl = (value) => {
   }
 }
 
+const isGcplCompany = (value) =>
+  stripTags(value).toLowerCase() === PROVIDER_METADATA.legalEntityName.toLowerCase()
+
 export const extractOfficialJoinUsUrl = (html = '') => {
   const match = String(html ?? '').match(
     /https:\/\/careers\.godrejindustries\.com\/in\/en\/godrej-consumer-products-limited-gcpl-/i,
@@ -82,11 +87,25 @@ export const extractOfficialJoinUsUrl = (html = '') => {
 }
 
 const extractLabeledValue = (cardHtml, label) => {
-  const pattern = new RegExp(
+  const splitFieldPattern = new RegExp(
     `>${label}\\s*<\\/p>\\s*<(?:p|div|span)[^>]*>([\\s\\S]*?)<\\/(?:p|div|span)>`,
     'i',
   )
-  return stripTags(cardHtml.match(pattern)?.[1])
+  const splitFieldMatch = cardHtml.match(splitFieldPattern)
+  if (splitFieldMatch) {
+    return stripTags(splitFieldMatch[1])
+  }
+
+  const inlineFieldPattern = new RegExp(
+    `<p[^>]*>[\\s\\S]*?${escapeRegex(label)}[\\s\\S]*?<\\/p>`,
+    'i',
+  )
+  const inlineFieldText = stripTags(cardHtml.match(inlineFieldPattern)?.[0])
+  if (!inlineFieldText) return null
+
+  return normalizeWhitespace(
+    inlineFieldText.replace(new RegExp(`^${escapeRegex(label)}\\s*:\\s*`, 'i'), ''),
+  )
 }
 
 const toIsoDate = (value) => {
@@ -153,14 +172,61 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const extractJobCards = (html = '') => {
+const mapEmbeddedJobRecord = (record = {}) => {
+  const requisitionId = stripTags(record.id)
+  const title = stripTags(record.title)
+  const applyUrl = normalizeApplyUrl(record.applyLink)
+  const company = isGcplCompany(record.company) ? PROVIDER_METADATA.legalEntityName : null
+
+  if (!requisitionId || !title || !applyUrl || !company) return null
+
+  const locationData = toLocationData(record.cardlocation)
+
+  return {
+    title,
+    company,
+    requisitionId,
+    jobId: `${requisitionId}-${slugify(locationData.city || title)}`,
+    department: stripTags(record.cardfunction),
+    location: locationData.location,
+    city: locationData.city,
+    country: locationData.country,
+    experienceRequired: stripTags(record.experience),
+    postingDate: toIsoDate(stripTags(record.postedOn)),
+    employmentType: stripTags(record.jobType),
+    sourceUrl: applyUrl,
+    applyUrl,
+  }
+}
+
+const extractEmbeddedJobRecords = (html = '') => {
+  const unescaped = String(html ?? '').replace(/\\"/g, '"')
+  const records = []
+  const seen = new Set()
+
+  for (const match of unescaped.matchAll(/\{"id":"[^"]+","title":"[^"]+","company":"[^"]+"[\s\S]*?"applyLink":"[^"]+"\}/g)) {
+    try {
+      const record = JSON.parse(match[0])
+      const requisitionId = stripTags(record?.id)
+      if (!requisitionId || seen.has(requisitionId)) continue
+      seen.add(requisitionId)
+      records.push(record)
+    } catch {
+      // Ignore malformed embedded records and keep scanning for other matches.
+    }
+  }
+
+  return records
+}
+
+const extractDomJobCards = (html = '') => {
   const cards = []
   const segments = String(html ?? '').split(/<div\b[^>]*\bFilterCard\b[^>]*>/i).slice(1)
 
   for (const segment of segments) {
     const requisitionId = stripTags(segment.match(/Job ID\s*-\s*([\s\S]*?)<\/p>/i)?.[1])
     const title = stripTags(segment.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
-    const applyUrl = normalizeApplyUrl(segment.match(/<a[^>]*href="([^"]+)"[^>]*>\s*Apply\s*<\/a>/i)?.[1])
+    const applyUrl = normalizeApplyUrl(segment.match(/<a[^>]*href="([^"]+)"[^>]*>[\s\S]*?Apply[\s\S]*?<\/a>/i)?.[1])
 
     if (!requisitionId || !title || !applyUrl) continue
 
@@ -191,7 +257,16 @@ export const extractJobCards = (html = '') => {
     })
   }
 
-  return cards
+  return cards.filter((job) => isGcplCompany(job.company))
+}
+
+export const extractJobCards = (html = '') => {
+  const domCards = extractDomJobCards(html)
+  if (domCards.length > 0) return domCards
+
+  return extractEmbeddedJobRecords(html)
+    .map((record) => mapEmbeddedJobRecord(record))
+    .filter(Boolean)
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -240,11 +315,22 @@ export const createGodrejConsumerProductsScraper = () => ({
       }
     }
 
-    try {
-      const careersHtml = await fetchPageText(CAREERS_URL)
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('The verified Godrej Consumer Products careers page changed materially')
+    const fetchVerifiedCareersHtml = async () => {
+      const directHtml = await fetchPageText(CAREERS_URL)
+      if (hasOfficialCareersSignal(directHtml)) {
+        return directHtml
       }
+
+      const browserHtml = await browserTextFetcher(CAREERS_URL)
+      if (hasOfficialCareersSignal(browserHtml)) {
+        return browserHtml
+      }
+
+      throw new Error('The verified Godrej Consumer Products careers page changed materially')
+    }
+
+    try {
+      const careersHtml = await fetchVerifiedCareersHtml()
 
       return extractJobCards(careersHtml).map((job) => ({
         ...job,
@@ -266,7 +352,7 @@ export const createGodrejConsumerProductsScraper = () => ({
 export const run = async (options = {}) => createGodrejConsumerProductsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -36,6 +36,8 @@ import {
   applyExpiredAccessDowngrade,
   buildAccessSummary,
 } from "../utils/accessControl.js";
+import { googleIdentity } from "../utils/googleAuth.js";
+import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
 
 const GENERIC_REGISTRATION_MESSAGE = "If this email can be registered, a verification email will be sent.";
 const GENERIC_RESEND_MESSAGE = "If a pending registration exists for this email, a verification email will be sent when eligible.";
@@ -53,9 +55,14 @@ const buildSessionUserPayload = (user) => ({
   onboardingCompleted: user.onboardingCompleted,
 });
 
+const GOOGLE_SIGN_IN_REQUIRED_MESSAGE = "This account uses Google sign-in. Continue with Google or reset your password to add email sign-in.";
+const GOOGLE_AUTH_FAILURE_MESSAGE = "Google sign-in failed. Please try again.";
+const GOOGLE_EMAIL_VERIFICATION_MESSAGE = "Use a Google account with a verified email address to continue.";
+const GOOGLE_ACCOUNT_LINK_CONFLICT_MESSAGE = "This account is already linked to a different Google sign-in.";
+
 // Generates a JWT token valid for 7 days.
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+const generateToken = (id, role, sessionVersion = 0) => {
+  return jwt.sign({ id, role, sessionVersion }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 };
@@ -101,6 +108,36 @@ const buildPasswordResetLink = (resetToken) => {
   return url.toString();
 };
 
+const buildGoogleMetadata = (identity, currentGoogle = {}) => ({
+  sub: identity.sub,
+  picture: identity.picture ?? currentGoogle.picture ?? null,
+  linkedAt: currentGoogle.linkedAt ?? new Date(),
+});
+
+const issueAuthenticatedSession = async (user, res, successMessage = "Logged in successfully") => {
+  const accessChanged = applyExpiredAccessDowngrade(user);
+  if (accessChanged) {
+    await Subscription.updateOne(
+      { user: user._id },
+      { $set: { isActive: false } },
+    ).catch(() => null);
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  const token = generateToken(user._id, user.role, user.sessionVersion ?? 0);
+  setAuthCookie(res, token);
+
+  return res.status(200).json({
+    code: 200,
+    success: true,
+    message: successMessage,
+    user: buildSessionUserPayload(user),
+    accessChanged,
+  });
+};
+
 export const getCsrfToken = (req, res) => {
   const token = issueCsrfToken(req, res);
 
@@ -118,17 +155,19 @@ export const register = async (req, res) => {
     return sendValidationError(res, errors);
   }
 
-  const { name, email, password } = req.body;
+  const { name, email, password, phoneE164 } = req.body;
   const normalizedEmail = normalizeEmailAddress(email);
+  const normalizedPhoneE164 = normalizePhoneE164(phoneE164);
 
   try {
     const user = await User.findOne({ email: normalizedEmail });
     if (user) {
-      return res.status(409).json({
-        code: 409,
-        success: false,
-        accountExists: true,
-        message: "An account for this email already exists. Please sign in.",
+      return res.status(201).json({
+        code: 201,
+        success: true,
+        pending: true,
+        email: normalizedEmail,
+        message: GENERIC_REGISTRATION_MESSAGE,
       });
     }
 
@@ -151,7 +190,10 @@ export const register = async (req, res) => {
       email: normalizedEmail,
       password: hashedPassword,
       pendingBrowserNonceHash: hashOpaqueToken(browserBindingToken),
-      profile: { name },
+      profile: {
+        name,
+        phoneE164: normalizedPhoneE164,
+      },
       verificationTokenHash: verificationToken.tokenHash,
       verificationTokenExpiresAt: verificationToken.expiresAt,
       lastResentAt: new Date(), // initialized to register time
@@ -266,7 +308,10 @@ export const verifyEmail = async (req, res) => {
     const user = new User({
       email: pendingUser.email,
       password: finalPasswordHash,
-      profile: pendingUser.profile,
+      profile: pendingUser.profile ? { name: pendingUser.profile.name } : {},
+      contact: {
+        phoneE164: pendingUser.profile?.phoneE164 ?? null,
+      },
       isVerified: true,
       lastLoginAt: new Date(),
     });
@@ -445,6 +490,8 @@ export const resetPassword = async (req, res) => {
     }
 
     user.password = await bcrypt.hash(password, 10);
+    user.passwordChangedAt = new Date();
+    user.sessionVersion = (user.sessionVersion ?? 0) + 1;
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpiresAt = null;
     await user.save();
@@ -495,6 +542,14 @@ export const login = async (req, res) => {
       });
     }
 
+    if (!user.password) {
+      return res.status(401).json({
+        code: 401,
+        success: false,
+        message: GOOGLE_SIGN_IN_REQUIRED_MESSAGE,
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
@@ -511,32 +566,108 @@ export const login = async (req, res) => {
         message: "Your account has been deactivated. Please contact support.",
       });
     }
-
-    const accessChanged = applyExpiredAccessDowngrade(user);
-    if (accessChanged) {
-      await Subscription.updateOne(
-        { user: user._id },
-        { $set: { isActive: false } },
-      ).catch(() => null);
-    }
-    user.lastLoginAt = new Date();
-    await user.save();
-
-    const token = generateToken(user._id, user.role);
-    setAuthCookie(res, token);
-    res.status(200).json({
-      code: 200,
-      success: true,
-      message: "Logged in successfully",
-      user: buildSessionUserPayload(user),
-      accessChanged,
-    });
+    return issueAuthenticatedSession(user, res);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
       code: 500,
       success: false,
       message: "Server Error",
+    });
+  }
+};
+
+export const authenticateWithGoogle = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return sendValidationError(res, errors);
+  }
+
+  const credential = String(req.body?.credential ?? "").trim();
+  if (!credential) {
+    return res.status(400).json({
+      code: 400,
+      success: false,
+      message: "Google credential is required.",
+    });
+  }
+
+  try {
+    const identity = await googleIdentity.verifyCredential(credential);
+
+    if (!identity.emailVerified || !identity.email || !identity.sub) {
+      return res.status(401).json({
+        code: 401,
+        success: false,
+        message: GOOGLE_EMAIL_VERIFICATION_MESSAGE,
+      });
+    }
+
+    const normalizedEmail = normalizeEmailAddress(identity.email);
+    const existingUser = await User.findOne({ email: normalizedEmail });
+
+    if (existingUser) {
+      if (existingUser.deactivated) {
+        return res.status(403).json({
+          code: 403,
+          success: false,
+          message: "Your account has been deactivated. Please contact support.",
+        });
+      }
+
+      if (existingUser.google?.sub && existingUser.google.sub !== identity.sub) {
+        return res.status(409).json({
+          code: 409,
+          success: false,
+          message: GOOGLE_ACCOUNT_LINK_CONFLICT_MESSAGE,
+        });
+      }
+
+      existingUser.google = buildGoogleMetadata(identity, existingUser.google);
+      existingUser.isVerified = true;
+      return issueAuthenticatedSession(existingUser, res, "Logged in successfully");
+    }
+
+    const pendingUser = await PendingUser.findOne({ email: normalizedEmail });
+    if (pendingUser) {
+      const promotedUser = new User({
+        email: normalizedEmail,
+        password: pendingUser.password ?? null,
+        profile: {
+          name: pendingUser.profile?.name ?? identity.name ?? undefined,
+        },
+        contact: {
+          phoneE164: pendingUser.profile?.phoneE164 ?? null,
+        },
+        google: buildGoogleMetadata(identity),
+        isVerified: true,
+      });
+
+      await promotedUser.save();
+      await PendingUser.deleteOne({ email: normalizedEmail });
+      clearPendingRegistrationCookie(res);
+      return issueAuthenticatedSession(promotedUser, res, "Logged in successfully");
+    }
+
+    const newUser = new User({
+      email: normalizedEmail,
+      password: null,
+      profile: identity.name
+        ? {
+          name: identity.name,
+        }
+        : {},
+      google: buildGoogleMetadata(identity),
+      isVerified: true,
+    });
+
+    return issueAuthenticatedSession(newUser, res, "Logged in successfully");
+  } catch (error) {
+    console.error("Google authentication failed:", error.message);
+    return res.status(401).json({
+      code: 401,
+      success: false,
+      message: GOOGLE_AUTH_FAILURE_MESSAGE,
     });
   }
 };

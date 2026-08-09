@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import ALGOWORKS_TECHNOLOGIES_CATALOG from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
@@ -41,7 +41,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /Algoworks Careers/i.test(page)
     && /Want to join Algoworks\?/i.test(text)
     && /email your resume and cover letter/i.test(text)
-    && /mailto:careers@algoworks\.com/i.test(page)
+    && (/mailto:careers@algoworks\.com/i.test(page) || /\/cdn-cgi\/l\/email-protection/i.test(page))
 }
 
 export const hasFirstPartyJobsSignal = (html = '') => /https?:\/\/(?:www\.)?algoworks\.com\/careers\/[a-z0-9-]/i.test(
@@ -66,7 +66,7 @@ export const createAlgoworksTechnologiesScraper = () => ({
 export const run = async (options = {}) => createAlgoworksTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

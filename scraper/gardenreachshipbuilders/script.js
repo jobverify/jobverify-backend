@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { GARDEN_REACH_SHIPBUILDERS_CATALOG } from './catalog.js'
 
@@ -181,8 +181,8 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Official website of Garden Reach Shipbuilders\s*&amp;\s*Engineers Limited\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/www\.grse\.in\/career\/["']/i.test(page)
+  return /<title>\s*Official website of Garden Reach Shipbuilders\s*(?:&amp;|&)\s*Engineers Limited\s*<\/title>/i.test(page)
+    && /href=["'](?:(?:https?:\/\/(?:www\.)?grse\.in\/)?(?:\.\.\/)?career\/)["']/i.test(page)
     && normalized.includes('WELCOME TO THE OFFICIAL WEBSITE OF GARDEN REACH SHIPBUILDERS & ENGINEERS LIMITED')
     && normalized.includes('LATEST')
 }
@@ -191,13 +191,13 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Careers\s*-\s*Official website of Garden Reach Shipbuilders and Engineers Limited/i.test(page)
+  return /<title>\s*Careers\s*-\s*Official website of Garden Reach Shipbuilders and Engineers\s+Limited/i.test(page)
     && normalized.includes('Current Job Openings')
     && normalized.includes('Engagement of Apprentices and Trainee')
     && normalized.includes('Other Positions')
     && normalized.includes('RECRUITMENT OF OFFICERS [EMPLOYMENT NOTIFICATION -2026/03(O)]')
-    && normalized.includes('https://jobapply.in/grse2026/')
-    && normalized.includes('https://jobapply.in/grse2025/')
+    && /https:\/\/jobapply\.in\/grse2026\/?/i.test(normalized)
+    && /https:\/\/jobapply\.in\/grse2025\/?/i.test(normalized)
 }
 
 export const extractNotifications = (html) => {
@@ -301,7 +301,7 @@ export const createGardenReachShipbuildersScraper = ({
 export const run = async (options = {}) => createGardenReachShipbuildersScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

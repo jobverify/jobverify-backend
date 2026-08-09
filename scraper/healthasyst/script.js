@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { HEALTHASYST_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -18,7 +18,7 @@ export const ACTIVE_JOBS_URL = `${KEKA_BOARD_URL}api/jobs/default/active`
 export const EXPECTED_KEKA_DOMAIN = 'healthasyst.keka.com'
 export const EXPECTED_PORTAL_NAME = 'HealthAsyst'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -157,7 +157,10 @@ export const createHealthAsystScraper = () => ({
   async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
-    if (!hasOfficialCareersPageSignal(careersHtml) || extractExternalHandoffUrl(careersHtml) !== KEKA_BOARD_URL) {
+    if (
+      !hasOfficialCareersPageSignal(careersHtml)
+      || normalizeDomain(extractExternalHandoffUrl(careersHtml)) !== normalizeDomain(KEKA_BOARD_URL)
+    ) {
       throw new Error('HealthAsyst verified official careers handoff changed materially')
     }
 
@@ -180,7 +183,7 @@ export const createHealthAsystScraper = () => ({
 export const run = async (options = {}) => createHealthAsystScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

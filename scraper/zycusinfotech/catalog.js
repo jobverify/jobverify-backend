@@ -19,9 +19,9 @@ export const ZYCUS_INFOTECH_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+talismatic-job-list+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.zycus.com/company/careers is the live first-party Zycus careers page and that its SEARCH ALL JOBS handoff resolves to https://zycus.talismatic.com/jobs. Live verification on the same date confirmed the public Talismatic microsite APIs at get-company-config and job-list returning 71 open Zycus jobs, including India roles such as Director - Technical Account Management (APAC) and OpenShift & Kubernetes Administrator.',
+    'Verified on Saturday, August 1, 2026 that https://www.zycus.com/company/careers remained the live first-party Zycus careers page and that its SEARCH ALL JOBS handoff still resolved to https://zycus.talismatic.com/jobs. Live verification on the same date confirmed the public Talismatic microsite APIs at get-company-config and job-list returning 75 open Zycus jobs, including India roles such as Finance Intern and Director - Technical Account Management (APAC).',
 }
 
 export default ZYCUS_INFOTECH_CATALOG

@@ -1,45 +1,41 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { INDEED_CATALOG } from './catalog.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import INDEED_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const config = loadConfig(currentDir)
 
 export const PROVIDER_METADATA = INDEED_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
-export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const INDIA_CAREERS_URL = PROVIDER_METADATA.indiaCareersPage
 export const INDIA_JOBS_URL = PROVIDER_METADATA.indiaJobsPage
-export const COMPANY_DOMAIN = PROVIDER_METADATA.companyDomain
-export const COUNTRY_FILTER = PROVIDER_METADATA.countryFilter
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
-export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const decodeHtmlEntities = (value) => String(value ?? '')
-  .replace(/&nbsp;|&#160;/gi, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-  .replace(/&#39;|&apos;|&#x27;|&rsquo;|&#8217;/gi, "'")
-  .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, '-')
-  .replace(/&lt;/gi, '<')
-  .replace(/&gt;/gi, '>')
+const normalizeWhitespace = (value) => {
+  if (value == null) return null
 
-const normalizeWhitespace = (value) =>
-  decodeHtmlEntities(value)
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  const normalized = String(value)
     .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;|&#x27;/gi, "'")
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
-const toAbsoluteUrl = (value, baseUrl = INDIA_JOBS_URL) => {
+  return normalized || null
+}
+
+const toAbsoluteUrl = (value, baseUrl) => {
   if (!value) return null
 
   try {
@@ -49,247 +45,186 @@ const toAbsoluteUrl = (value, baseUrl = INDIA_JOBS_URL) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    redirect: 'follow',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const extractHref = (block) =>
+  String(block ?? '').match(/<a[^>]+href=["']([^"']+)["']/i)?.[1] ?? null
 
-  return response.text()
-}
-
-const normalizeLineList = (value) =>
-  decodeHtmlEntities(value)
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(div|li|ul|ol|p|section|article|h[1-6]|span|a)>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .split('\n')
-    .map((line) => line.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim())
+const extractLines = (block) =>
+  [...String(block ?? '').matchAll(/<div[^>]*>([\s\S]*?)<\/div>/gi)]
+    .map((match) => normalizeWhitespace(match[1]))
     .filter(Boolean)
 
-const extractVisibleJobCount = (html) => {
-  const normalized = normalizeWhitespace(html)
-  const match = normalized.match(/\b(\d+)\s+jobs?\s+at\s+Indeed\b/i)
-  if (!match) return null
-
-  const count = Number.parseInt(match[1], 10)
-  return Number.isFinite(count) ? count : null
-}
-
-const extractJobIdFromUrl = (value) => {
-  try {
-    const url = new URL(value)
-    return url.searchParams.get('jk')
-  } catch {
-    return null
-  }
-}
-
-const normalizeEmploymentType = (value) => {
-  const normalized = normalizeWhitespace(value)?.toLowerCase() || ''
-  if (!normalized) return null
-  if (normalized.includes('full-time')) return 'Full-time'
-  if (normalized.includes('part-time')) return 'Part-time'
-  if (normalized.includes('contract')) return 'Contract'
-  if (normalized.includes('intern')) return 'Internship'
-  return normalizeWhitespace(value)
-}
-
-const normalizeLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  if (/^remote$/i.test(normalized)) return 'Remote, India'
-  if (/,?\s*India$/i.test(normalized)) return normalized
-  return `${normalized}, India`
-}
-
-const deriveCity = (location) => {
-  const normalized = normalizeWhitespace(location)
-  if (!normalized || /^remote\b/i.test(normalized)) return null
-
-  return normalizeCity(normalized.split(',')[0]?.trim()) || null
-}
-
-const inferRemoteStatus = (location) => {
-  const normalized = normalizeWhitespace(location)?.toLowerCase() || ''
-  if (normalized.includes('hybrid')) return 'Hybrid'
-  if (normalized.includes('remote')) return 'Remote'
-  return 'On-site'
-}
-
-const normalizeJobUrl = (value) => {
-  const url = toAbsoluteUrl(value, INDIA_JOBS_URL)
-  const jobId = extractJobIdFromUrl(url)
-
-  if (!url || !jobId) return null
-
-  try {
-    const parsed = new URL(url)
-    if (parsed.hostname !== 'in.indeed.com') return null
-    if (parsed.pathname !== '/viewjob') return null
-    return `https://in.indeed.com/viewjob?jk=${jobId}`
-  } catch {
-    return null
-  }
-}
-
-export const hasOfficialCareersSignal = (html) => {
-  const normalized = normalizeWhitespace(html)
-
-  return normalized.includes('We help people get jobs.')
-    && normalized.includes('Opportunities around the globe')
-    && normalized.includes('Choose a location to search for open roles at Indeed.')
-    && extractIndiaCareersUrl(html) === INDIA_CAREERS_URL
-}
-
-export const extractIndiaCareersUrl = (html) => {
-  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
-    const href = toAbsoluteUrl(match[1], CAREERS_URL)
-    const text = normalizeWhitespace(match[2])?.toLowerCase() || ''
-
-    if (text === 'india' && href) {
-      return href
+const extractIndiaJobsUrl = (html) => {
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    const absoluteUrl = toAbsoluteUrl(match[1], INDIA_CAREERS_URL)
+    if (absoluteUrl === INDIA_JOBS_URL) {
+      return absoluteUrl
     }
   }
 
   return null
 }
 
-export const extractIndiaJobsUrl = (html) => {
-  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
-    const href = toAbsoluteUrl(match[1], INDIA_CAREERS_URL)
-    const text = normalizeWhitespace(match[2])?.toLowerCase() || ''
+export const hasOfficialCareersSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
 
-    if (href === INDIA_JOBS_URL) return href
-    if (text === 'work at indeed' && href === INDIA_JOBS_URL) return href
+  return /<h1>\s*We help people get jobs\.\s*<\/h1>/i.test(rawHtml)
+    && /Opportunities around the globe/i.test(normalized)
+    && /Choose a location to search for open roles at Indeed\./i.test(normalized)
+    && extractIndiaCareersUrl(rawHtml) === INDIA_CAREERS_URL
+}
+
+export const extractIndiaCareersUrl = (html) => {
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    const absoluteUrl = toAbsoluteUrl(match[1], CAREERS_URL)
+    if (absoluteUrl === INDIA_CAREERS_URL) {
+      return absoluteUrl
+    }
   }
 
   return null
 }
 
 export const hasIndiaJobsSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title>\s*Indeed Jobs and Careers \| Indeed\.com\s*<\/title>/i.test(page)
-    && normalized.includes('Indeed Jobs')
-    && /\b\d+\s+jobs?\s+at\s+Indeed\b/i.test(normalized)
-    && normalized.includes('Work at Indeed')
-}
-
-export const pageIndicatesCloudflareChallenge = (html) => {
-  const normalized = normalizeWhitespace(html)
-
-  return /<title>\s*Security Check - Indeed\.com\s*<\/title>/i.test(String(html ?? ''))
-    || normalized.includes('Additional Verification Required')
-    || String(html ?? '').includes('PAGE_TYPE:"captcha"')
-    || String(html ?? '').includes("PAGE_TYPE:'captcha'")
-}
-
-export const extractPublicJobsFromIndiaJobsPage = (
-  html,
-  { scrapedAt = new Date().toISOString() } = {},
-) => {
-  const listings = []
-  const seenJobIds = new Set()
-
-  for (const match of String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)) {
-    const blockHtml = match[1]
-    const linkMatch = blockHtml.match(/<a[^>]+href=["']([^"']*\/viewjob\?jk=[^"']+)["'][^>]*>([\s\S]*?)<\/a>/i)
-    if (!linkMatch) continue
-
-    const sourceUrl = normalizeJobUrl(linkMatch[1])
-    const title = normalizeWhitespace(linkMatch[2])
-    const jobId = extractJobIdFromUrl(sourceUrl)
-
-    if (!sourceUrl || !title || !jobId || seenJobIds.has(jobId)) continue
-
-    const lines = normalizeLineList(blockHtml).filter((line) => line !== title)
-    const locationLine = lines.find((line) => /^remote$/i.test(line) || /,\s*[A-Za-z]/.test(line)) || null
-    const compensation = lines.find((line) => /(?:₹|INR|Rs\.?).*(?:a year|per year|a month|per month)/i.test(line)) || null
-    const employmentType = normalizeEmploymentType(
-      lines.find((line) => /\b(full-time|part-time|contract|internship|temporary)\b/i.test(line)) || null,
-    )
-    const location = normalizeLocation(locationLine)
-
-    seenJobIds.add(jobId)
-    listings.push({
-      title,
-      company: COMPANY,
-      location,
-      city: deriveCity(location),
-      country: COUNTRY_FILTER,
-      jobId,
-      requisitionId: null,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      employmentType,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: inferRemoteStatus(location),
-      compensation: compensation ? normalizeWhitespace(compensation) : null,
-      source: SOURCE,
-      link: sourceUrl,
-      scrapedAt,
-    })
+  return /<title>\s*Indeed Jobs and Careers \| Indeed\.com\s*<\/title>/i.test(rawHtml)
+    && /<h1>\s*Indeed Jobs\s*<\/h1>/i.test(rawHtml)
+    && /\bjobs at Indeed\b/i.test(normalized)
+    && /data-jobkey=/i.test(rawHtml)
   }
 
-  return listings
-}
+export const pageIndicatesCloudflareChallenge = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(rawHtml)
+    || /Additional Verification Required/i.test(normalized)
+    || /PAGE_TYPE\s*:\s*["']captcha["']/i.test(rawHtml)
+    || /Cloudflare Ray ID/i.test(normalized)
+  }
+
+export const extractPublicJobsFromIndiaJobsPage = (html, { scrapedAt } = {}) =>
+  [...String(html ?? '').matchAll(/<li\b[^>]*data-jobkey=["']([^"']+)["'][^>]*>([\s\S]*?)<\/li>/gi)]
+    .map((match) => {
+      const jobId = match[1]
+      const block = match[2]
+      const title = normalizeWhitespace(
+        block.match(/<h3[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i)?.[1] ?? null,
+      )
+      const href = extractHref(block)
+      const lines = extractLines(block)
+      const locationText = lines[0] ?? null
+      const compensation = lines.find((line) => /year|month|hour|day|week|₹|â‚¹/i.test(line)) ?? null
+      const employmentType = lines.find((line) => /full-?time|part-?time|contract|internship/i.test(line)) ?? null
+      const remote = /remote/i.test(locationText ?? '')
+      const city = remote ? null : normalizeWhitespace(locationText?.split(',')[0] ?? null)
+      const location = remote
+        ? 'Remote, India'
+        : [locationText, 'India']
+          .filter(Boolean)
+          .join(locationText?.includes('India') ? '' : ', ')
+      const jobUrl = toAbsoluteUrl(href, INDIA_JOBS_URL)
+
+      if (!title || !jobUrl || !location) return null
+
+      return {
+        title,
+        company: COMPANY,
+        location,
+        city,
+        country: 'India',
+        jobId,
+        requisitionId: null,
+        sourceUrl: jobUrl,
+        applyUrl: jobUrl,
+        employmentType,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription: null,
+        remoteStatus: remote ? 'Remote' : 'On-site',
+        compensation,
+        source: SOURCE,
+        link: jobUrl,
+        scrapedAt: scrapedAt ?? new Date().toISOString(),
+      }
+    })
+    .filter(Boolean)
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: `${SOURCE}-html`,
+  timeoutMs: 15000,
+})
 
 export const createIndeedScraper = ({
-  now = () => new Date().toISOString(),
+  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    now = () => new Date().toISOString(),
+  } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
+    if (pageIndicatesCloudflareChallenge(careersHtml)) {
+      return []
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Indeed verified careers handoff no longer matches the known first-party surface')
+      throw new Error('Indeed verified careers handoff changed materially')
+    }
+
+    if (extractIndiaCareersUrl(careersHtml) !== INDIA_CAREERS_URL) {
+      throw new Error('Indeed verified careers handoff changed materially')
     }
 
     const indiaCareersHtml = await fetchText(INDIA_CAREERS_URL)
-    if (extractIndiaJobsUrl(indiaCareersHtml) !== INDIA_JOBS_URL) {
-      throw new Error('Indeed verified careers handoff no longer resolves to the known India jobs page')
+    if (pageIndicatesCloudflareChallenge(indiaCareersHtml)) {
+      return []
     }
 
-    const jobsHtml = await fetchText(INDIA_JOBS_URL)
-    if (pageIndicatesCloudflareChallenge(jobsHtml)) {
-      throw new Error('Indeed India jobs page is currently behind a Cloudflare security check')
-    }
-    if (!hasIndiaJobsSignal(jobsHtml)) {
-      throw new Error('Indeed verified India jobs page no longer matches the known first-party surface')
-    }
+    const verifiedJobsUrl = hasIndiaJobsSignal(indiaCareersHtml)
+      ? INDIA_JOBS_URL
+      : extractIndiaJobsUrl(indiaCareersHtml)
 
-    const jobs = extractPublicJobsFromIndiaJobsPage(jobsHtml, { scrapedAt: now() })
-    const visibleJobCount = extractVisibleJobCount(jobsHtml)
-
-    if (jobs.length === 0 && visibleJobCount > 0) {
-      throw new Error('Indeed India jobs page no longer exposes parseable public job detail links')
+    if (verifiedJobsUrl !== INDIA_JOBS_URL) {
+      throw new Error('Indeed verified careers handoff changed materially')
     }
 
-    return jobs
+    const indiaJobsHtml = hasIndiaJobsSignal(indiaCareersHtml)
+      ? indiaCareersHtml
+      : await fetchText(INDIA_JOBS_URL)
+
+    if (pageIndicatesCloudflareChallenge(indiaJobsHtml)) {
+      return []
+    }
+
+    if (!hasIndiaJobsSignal(indiaJobsHtml)) {
+      throw new Error('Indeed verified india jobs page changed materially')
+    }
+
+    const jobs = extractPublicJobsFromIndiaJobsPage(indiaJobsHtml, {
+      scrapedAt: now(),
+    })
+
+    return maxJobs ? jobs.slice(0, maxJobs) : jobs
   },
 })
 
 export const run = async (options = {}) => createIndeedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  if (isDryRun) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
 }

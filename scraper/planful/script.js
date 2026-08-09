@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { PLANFUL_CATALOG } from './catalog.js'
 
@@ -107,19 +107,34 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Join the Planful Team \| Planful Jobs\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/planful\.com\/jobs\/["']/i.test(page)
+  const hasVerifiedTitle = /<title[^>]*>\s*Join the Planful Team \| Planful Jobs\s*<\/title>/i.test(page)
+  const hasCareersListLink = /\/jobs\/careers-list\//i.test(page)
+  const hasLegacyShell = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/planful\.com\/jobs\/["']/i.test(page)
     && /Planful is hiring!/i.test(page)
     && /Join Our Team/i.test(page)
-    && /\/jobs\/careers-list\//i.test(page)
+  const hasCurrentShell = /Planful is hiring!/i.test(page)
+    && /A Team of Champions/i.test(page)
+    && /Your ideas\.\s*Your actions\.\s*Your spirit\./i.test(page)
+    && /We Take Care of Our People/i.test(page)
+    && /Your Planful Journey Begins Today/i.test(page)
+
+  return hasVerifiedTitle
+    && hasCareersListLink
+    && (hasLegacyShell || hasCurrentShell)
 }
 
 export const hasVerifiedJobListingSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Careers List - Planful\s*<\/title>/i.test(page)
-    && /Join Our Journey/i.test(page)
-    && /id=["']grnhse_app["']/i.test(page)
+  const hasVerifiedTitle = /<title[^>]*>\s*Careers List - Planful\s*<\/title>/i.test(page)
+  const hasGreenhouseMount = /id=["']grnhse_app["']/i.test(page)
+  const hasLegacyShell = /Join Our Journey/i.test(page)
+  const hasCurrentShell = /Your Planful Journey Begins Today/i.test(page)
+    && /Get Started with Planful/i.test(page)
+
+  return hasVerifiedTitle
+    && hasGreenhouseMount
+    && (hasLegacyShell || hasCurrentShell)
 }
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {
@@ -166,7 +181,7 @@ export const extractIndiaJobsFromGreenhousePayload = (
         decodedDescription,
       })
 
-      if (toComparableBrand(job?.company_name) && toComparableBrand(job?.company_name) !== 'planful') {
+      if (toComparableBrand(job?.company_name) !== 'planful') {
         throw new Error('Planful Greenhouse payload no longer matches the verified company identity')
       }
 
@@ -251,7 +266,7 @@ export const createPlanfulScraper = ({
 export const run = async (options = {}) => createPlanfulScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

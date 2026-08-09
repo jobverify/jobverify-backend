@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('Ipopi Ads is registered as a verified first-party no-public-careers sentinel without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'ipopiads')
@@ -22,6 +22,11 @@ test('Ipopi Ads is registered as a verified first-party no-public-careers sentin
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'ipopi.in')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.match(provider.verifiedSurfaceSummary, /sales@ipopi\.in/i)
+  assert.match(provider.verifiedSurfaceSummary, /Ipopi Ads Blog -/i)
   assert.match(provider.modulePath, /ipopiads[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Ipopi Ads'), false)
 })

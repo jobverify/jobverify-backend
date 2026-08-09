@@ -1,0 +1,22 @@
+{
+  "source": "robomq",
+  "companyName": "RoboMQ",
+  "officialBrandName": "RoboMQ",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../robomq/script.js",
+  "dryRunFile": "robomq/jobs.json",
+  "companyCareerPage": "https://www.robomq.io/",
+  "companyDomain": "robomq.io",
+  "atsPlatform": "official-first-party-careers-link-without-enumerable-public-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-link-sentinel",
+  "extractionStrategy": "official-first-party-careers-surface-without-enumerable-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.robomq.io/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that RoboMQ's official robomq.io site identifies its Careers destination as LinkedIn rather than a first-party or official ATS listing feed. This exact-name provider fails closed and returns no jobs until RoboMQ publishes an enumerable first-party or official ATS careers surface."
+}

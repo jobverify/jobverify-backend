@@ -13,35 +13,34 @@ const officialCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>India</title>
+    <title>Search India Jobs at Unilever</title>
   </head>
   <body>
     <main>
-      <h1>India</h1>
-      <h2>Our local jobs</h2>
-      <ul>
+      <h2 class="search-results__heading">Jobs in India</h2>
+      <ul class="global-job-list">
         <li>
-          <a href="https://careers.unilever.com/en/job/bengaluru/senior-executive-operational-transfer-pricing/34155/97561245184">
-            Senior Executive - Operational Transfer Pricing
-            <span>Bengaluru, India</span>
+          <a href="/en/job/bengaluru/assistant-manager-it-controls-sme/34155/98568176624" data-job-id="98568176624">
+            <h2 class="global-job-list__title">Assistant Manager - IT Controls SME</h2>
+            <span class="job-location">Bengaluru, Karnataka</span>
           </a>
         </li>
         <li>
-          <a href="https://careers.unilever.com/en/job/bengaluru/logistics-analytics-product-engineer/34155/97561244896">
-            Logistics Analytics Product Engineer
-            <span>Bengaluru, India</span>
+          <a href="/en/job/chennai/territory-sales-officer/34155/98558111584" data-job-id="98558111584">
+            <h2 class="global-job-list__title">Territory Sales Officer</h2>
+            <span class="job-location">Chennai, Tamil Nadu</span>
           </a>
         </li>
         <li>
-          <a href="https://careers.unilever.com/en/job/gurgaon/key-account-executive/34155/97561244992">
-            Key Account Executive
-            <span>Gurgaon, India</span>
+          <a href="/en/job/kolkata/sr-strategic-account-executive/34155/98553005520" data-job-id="98553005520">
+            <h2 class="global-job-list__title">Sr. Strategic Account Executive</h2>
+            <span class="job-location">Kolkata, West Bengal</span>
           </a>
         </li>
         <li>
-          <a href="https://careers.unilever.com/en/job/bengaluru/finance-manager-corporate-fet-operations-gbs-gdt/34155/97561245088">
-            Finance Manager Corporate FET Operations - GBS-GDT
-            <span>Bengaluru, India</span>
+          <a href="/en/job/mumbai/hr-capability-and-culture-executive-sr-executive-b-and-w/34155/98129095504" data-job-id="98129095504">
+            <h2 class="global-job-list__title">HR Capability and Culture Executive/Sr. Executive - B&amp;W</h2>
+            <span class="job-location">Mumbai, Maharashtra</span>
           </a>
         </li>
       </ul>
@@ -50,13 +49,19 @@ const officialCareersHtml = `
 </html>
 `
 
-test('Hindustan Unilever scraper validates the verified official India careers surface', async () => {
+test('Hindustan Unilever scraper validates the current official India careers surface', async () => {
   const hindustanUnilever = await loadHindustanUnileverModule()
 
   assert.equal(hindustanUnilever.SOURCE, 'hindustanunilever')
   assert.equal(hindustanUnilever.COMPANY, 'Hindustan Unilever Limited')
-  assert.equal(hindustanUnilever.CAREERS_URL, 'https://www.hul.co.in/careers/')
-  assert.equal(hindustanUnilever.LOCATION_PAGE_URL, 'https://careers.unilever.com/en/india')
+  assert.equal(
+    hindustanUnilever.CAREERS_URL,
+    'https://careers.unilever.com/en/location/india-jobs/34155/1269750/2/1',
+  )
+  assert.equal(
+    hindustanUnilever.LOCATION_PAGE_URL,
+    'https://careers.unilever.com/en/location/india-jobs/34155/1269750/2/1',
+  )
   assert.equal(hindustanUnilever.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.deepEqual(
     hindustanUnilever.extractLocalJobs(officialCareersHtml).map((job) => ({
@@ -66,46 +71,42 @@ test('Hindustan Unilever scraper validates the verified official India careers s
     })),
     [
       {
-        title: 'Senior Executive - Operational Transfer Pricing',
-        location: 'Bengaluru, India',
-        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/senior-executive-operational-transfer-pricing/34155/97561245184',
+        title: 'Assistant Manager - IT Controls SME',
+        location: 'Bengaluru, Karnataka, India',
+        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/assistant-manager-it-controls-sme/34155/98568176624',
       },
       {
-        title: 'Logistics Analytics Product Engineer',
-        location: 'Bengaluru, India',
-        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/logistics-analytics-product-engineer/34155/97561244896',
+        title: 'Territory Sales Officer',
+        location: 'Chennai, Tamil Nadu, India',
+        applyUrl: 'https://careers.unilever.com/en/job/chennai/territory-sales-officer/34155/98558111584',
       },
       {
-        title: 'Key Account Executive',
-        location: 'Gurgaon, India',
-        applyUrl: 'https://careers.unilever.com/en/job/gurgaon/key-account-executive/34155/97561244992',
+        title: 'Sr. Strategic Account Executive',
+        location: 'Kolkata, West Bengal, India',
+        applyUrl: 'https://careers.unilever.com/en/job/kolkata/sr-strategic-account-executive/34155/98553005520',
       },
       {
-        title: 'Finance Manager Corporate FET Operations - GBS-GDT',
-        location: 'Bengaluru, India',
-        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/finance-manager-corporate-fet-operations-gbs-gdt/34155/97561245088',
+        title: 'HR Capability and Culture Executive/Sr. Executive - B&W',
+        location: 'Mumbai, Maharashtra, India',
+        applyUrl: 'https://careers.unilever.com/en/job/mumbai/hr-capability-and-culture-executive-sr-executive-b-and-w/34155/98129095504',
       },
     ],
   )
 })
 
-test('Hindustan Unilever scraper returns the local jobs exposed on the verified official India careers page', async () => {
+test('Hindustan Unilever scraper returns the local jobs exposed on the current official India careers page', async () => {
   const hindustanUnilever = await loadHindustanUnileverModule()
   const requestedUrls = []
 
   const jobs = await hindustanUnilever.createHindustanUnileverScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === hindustanUnilever.CAREERS_URL) {
-        return '<html><head><meta http-equiv="refresh" content="0;url=https://careers.unilever.com/en/india"></head></html>'
-      }
       if (url === hindustanUnilever.LOCATION_PAGE_URL) return officialCareersHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
   assert.deepEqual(requestedUrls, [
-    hindustanUnilever.CAREERS_URL,
     hindustanUnilever.LOCATION_PAGE_URL,
   ])
   assert.equal(jobs.length, 4)
@@ -119,49 +120,43 @@ test('Hindustan Unilever scraper returns the local jobs exposed on the verified 
     })),
     [
       {
-        title: 'Finance Manager Corporate FET Operations - GBS-GDT',
-        location: 'Bengaluru, India',
+        title: 'Assistant Manager - IT Controls SME',
+        location: 'Bengaluru, Karnataka, India',
         country: 'India',
-        sourceUrl: hindustanUnilever.LOCATION_PAGE_URL,
-        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/finance-manager-corporate-fet-operations-gbs-gdt/34155/97561245088',
+        sourceUrl: 'https://careers.unilever.com/en/job/bengaluru/assistant-manager-it-controls-sme/34155/98568176624',
+        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/assistant-manager-it-controls-sme/34155/98568176624',
       },
       {
-        title: 'Key Account Executive',
-        location: 'Gurgaon, India',
+        title: 'HR Capability and Culture Executive/Sr. Executive - B&W',
+        location: 'Mumbai, Maharashtra, India',
         country: 'India',
-        sourceUrl: hindustanUnilever.LOCATION_PAGE_URL,
-        applyUrl: 'https://careers.unilever.com/en/job/gurgaon/key-account-executive/34155/97561244992',
+        sourceUrl: 'https://careers.unilever.com/en/job/mumbai/hr-capability-and-culture-executive-sr-executive-b-and-w/34155/98129095504',
+        applyUrl: 'https://careers.unilever.com/en/job/mumbai/hr-capability-and-culture-executive-sr-executive-b-and-w/34155/98129095504',
       },
       {
-        title: 'Logistics Analytics Product Engineer',
-        location: 'Bengaluru, India',
+        title: 'Sr. Strategic Account Executive',
+        location: 'Kolkata, West Bengal, India',
         country: 'India',
-        sourceUrl: hindustanUnilever.LOCATION_PAGE_URL,
-        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/logistics-analytics-product-engineer/34155/97561244896',
+        sourceUrl: 'https://careers.unilever.com/en/job/kolkata/sr-strategic-account-executive/34155/98553005520',
+        applyUrl: 'https://careers.unilever.com/en/job/kolkata/sr-strategic-account-executive/34155/98553005520',
       },
       {
-        title: 'Senior Executive - Operational Transfer Pricing',
-        location: 'Bengaluru, India',
+        title: 'Territory Sales Officer',
+        location: 'Chennai, Tamil Nadu, India',
         country: 'India',
-        sourceUrl: hindustanUnilever.LOCATION_PAGE_URL,
-        applyUrl: 'https://careers.unilever.com/en/job/bengaluru/senior-executive-operational-transfer-pricing/34155/97561245184',
+        sourceUrl: 'https://careers.unilever.com/en/job/chennai/territory-sales-officer/34155/98558111584',
+        applyUrl: 'https://careers.unilever.com/en/job/chennai/territory-sales-officer/34155/98558111584',
       },
     ],
   )
 })
 
-test('Hindustan Unilever scraper fails closed when the verified official India careers surface changes', async () => {
+test('Hindustan Unilever scraper fails closed when the current official India careers surface changes', async () => {
   const hindustanUnilever = await loadHindustanUnileverModule()
 
   await assert.rejects(
     hindustanUnilever.createHindustanUnileverScraper().run({
-      fetchText: async (url) => {
-        if (url === hindustanUnilever.CAREERS_URL) {
-          return '<html><body><a href="https://careers.unilever.com/en/india">India careers</a></body></html>'
-        }
-
-        return '<main><h1>India</h1><p>No local jobs section.</p></main>'
-      },
+      fetchText: async () => '<main><h1>India</h1><p>No local jobs section.</p></main>',
     }),
     /verified official india careers surface/i,
   )

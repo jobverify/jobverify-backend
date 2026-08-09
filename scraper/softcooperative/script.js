@@ -1,6 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolve4, resolve6 } from 'node:dns/promises'
+import {
+  DEFAULT_DNS_LOOKUP_TIMEOUT_MS,
+  resolveHostAddressesWithTimeout,
+} from '../../scraper-support/utils/dnsHostResolution.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -9,6 +12,7 @@ export const COMPANY = 'Soft Co-operative'
 export const VERIFIED_ON = '2026-07-13'
 export const VERIFIED_SURFACE_SUMMARY =
   'No trustworthy first-party careers surface was discoverable on July 13, 2026, and the canonical Soft Co-operative hostnames did not resolve.'
+export const DNS_LOOKUP_TIMEOUT_MS = DEFAULT_DNS_LOOKUP_TIMEOUT_MS
 export const CAREER_HOSTS = [
   'soft.coop',
   'www.soft.coop',
@@ -21,25 +25,18 @@ export const CAREER_HOSTS = [
 export const hasResolvableFirstPartyHost = (addresses) =>
   Array.isArray(addresses) && addresses.length > 0
 
-export const resolveCanonicalHosts = async (hosts = CAREER_HOSTS) => {
-  const addresses = new Set()
-
-  for (const host of hosts) {
-    try {
-      for (const address of await resolve4(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-
-    try {
-      for (const address of await resolve6(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-  }
-
-  return [...addresses]
-}
+export const resolveCanonicalHosts = async (
+  hosts = CAREER_HOSTS,
+  {
+    resolve4Impl,
+    resolve6Impl,
+    timeoutMs = DNS_LOOKUP_TIMEOUT_MS,
+  } = {},
+) => resolveHostAddressesWithTimeout(hosts, {
+  resolve4Impl,
+  resolve6Impl,
+  timeoutMs,
+})
 
 export const createSoftCooperativeScraper = () => ({
   async run({
@@ -60,7 +57,7 @@ export const createSoftCooperativeScraper = () => ({
 export const run = async () => createSoftCooperativeScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

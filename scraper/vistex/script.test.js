@@ -48,6 +48,24 @@ const careersHtml = `
 </html>
 `
 
+const liveCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers - Vistex, Inc</title>
+  </head>
+  <body>
+    <main>
+      <h1>Careers at Vistex.</h1>
+      <h2>Be Our Colleague.</h2>
+      <h3>Find Your Opportunity</h3>
+      <a href="/careers/careers-in-india/">India</a>
+      <a href="https://recruiting2.ultipro.com/VIS1012VISX/JobBoard/23e64b4e-ff01-4579-9e5a-835480ac7a51/?q=&amp;o=postedDateDesc">View All Opportunities</a>
+    </main>
+  </body>
+</html>
+`
+
 const indiaHtml = `
 <!doctype html>
 <html lang="en">
@@ -62,6 +80,24 @@ const indiaHtml = `
       <p>Vistex Asia Pacific Pvt Ltd.</p>
       <p>Chennai, Tamil Nadu 603103</p>
       <p>Pune, Maharashtra 411045</p>
+      <p>Mumbai, Maharashtra 400059, India</p>
+    </main>
+  </body>
+</html>
+`
+
+const liveIndiaHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers in India - Vistex, Inc.</title>
+  </head>
+  <body>
+    <main>
+      <h1>Careers in India</h1>
+      <p>We develop enterprise business solutions for the largest companies in the world</p>
+      <a href="https://recruiting2.ultipro.com/VIS1012VISX/JobBoard/23e64b4e-ff01-4579-9e5a-835480ac7a51/?q=&amp;o=postedDateDesc&amp;f4=AFRPpIe5p0uCZgc2LdGixQ">FIND YOUR OPPORTUNITY</a>
+      <p>Vistex Asia Pacific Pvt Ltd.</p>
       <p>Mumbai, Maharashtra 400059, India</p>
     </main>
   </body>
@@ -84,6 +120,22 @@ const aboutHtml = `
 </html>
 `
 
+const liveAboutHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About Us - Vistex, Inc</title>
+  </head>
+  <body>
+    <main>
+      <h1>About Us</h1>
+      <p>When you can’t account for everything, there’s Vistex. Now it all adds up.</p>
+      <p>Vistex solutions help businesses take control of mission critical processes.</p>
+    </main>
+  </body>
+</html>
+`
+
 const contactHtml = `
 <!doctype html>
 <html lang="en">
@@ -94,6 +146,21 @@ const contactHtml = `
     <main>
       <h1>CONTACT US</h1>
       <p>Vistex Logo</p>
+      <p>General Inquiry</p>
+    </main>
+  </body>
+</html>
+`
+
+const liveContactHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>General Inquiry - Vistex, Inc.</title>
+  </head>
+  <body>
+    <main>
+      <h1>How Can We Help You?</h1>
       <p>General Inquiry</p>
     </main>
   </body>
@@ -128,11 +195,17 @@ test('Vistex validates the verified homepage, careers pages, about page, contact
   )
   assert.equal(vistex.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(vistex.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(vistex.hasOfficialCareersSignal(liveCareersHtml), true)
   assert.equal(vistex.hasOfficialIndiaCareersSignal(indiaHtml), true)
+  assert.equal(vistex.hasOfficialIndiaCareersSignal(liveIndiaHtml), true)
   assert.equal(vistex.hasOfficialAboutSignal(aboutHtml), true)
+  assert.equal(vistex.hasOfficialAboutSignal(liveAboutHtml), true)
   assert.equal(vistex.hasOfficialContactSignal(contactHtml), true)
+  assert.equal(vistex.hasOfficialContactSignal(liveContactHtml), true)
   assert.equal(vistex.extractOfficialUltiproUrl(careersHtml), vistex.ULTIPRO_BOARD_URL)
+  assert.equal(vistex.extractOfficialUltiproUrl(liveCareersHtml), vistex.ULTIPRO_BOARD_URL)
   assert.equal(vistex.extractOfficialUltiproUrl(indiaHtml), vistex.ULTIPRO_BOARD_URL)
+  assert.equal(vistex.extractOfficialUltiproUrl(liveIndiaHtml), vistex.ULTIPRO_BOARD_URL)
   assert.equal(vistex.hasOfficialUltiproBoardSignal(ultiproBoardHtml), true)
 })
 

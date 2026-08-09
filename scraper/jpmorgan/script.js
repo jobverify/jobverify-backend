@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -130,13 +131,32 @@ const getEmploymentType = (record = {}) =>
 const buildJobDetailApiUrl = (jobId) =>
   `${DETAIL_API_BASE_URL}?expand=all&onlyData=true&finder=ById;Id=%22${normalizeWhitespace(jobId) || ''}%22,siteNumber=${SITE_NUMBER}`
 
+const extractExperienceRequired = ({
+  title,
+  minimumQualification,
+  jobDescription,
+}) => (
+  extractJobFilterSignals({
+    title,
+    minimumQualification,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || null
+)
+
 const toJob = (record = {}) => {
   const jobId = normalizeWhitespace(record.Id)
   const location = getEffectiveLocation(record)
   const sourceUrl = jobId ? buildJobDetailUrl(jobId) : null
+  const title = normalizeWhitespace(record.Title)
+  const minimumQualification = normalizeWhitespace(record.StudyLevel || record.ExternalQualificationsStr)
+  const jobDescription = joinDescriptionParts(
+    record.ShortDescriptionStr,
+    record.ExternalResponsibilitiesStr,
+  )
 
   return {
-    title: normalizeWhitespace(record.Title),
+    title,
     company: 'JP Morgan',
     department: normalizeWhitespace(record.JobFunction || record.JobFamily || record.Department || record.Organization),
     location,
@@ -146,16 +166,17 @@ const toJob = (record = {}) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: getEmploymentType(record),
-    experienceRequired: null,
-    minimumQualification: normalizeWhitespace(record.StudyLevel || record.ExternalQualificationsStr),
+    experienceRequired: extractExperienceRequired({
+      title,
+      minimumQualification,
+      jobDescription,
+    }),
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: normalizeDate(record.PostedDate || record.ExternalPostedStartDate),
     closingDate: null,
-    jobDescription: joinDescriptionParts(
-      record.ShortDescriptionStr,
-      record.ExternalResponsibilitiesStr,
-    ),
+    jobDescription,
   }
 }
 
@@ -195,9 +216,17 @@ export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
   const location = getEffectiveLocation(detail) || listing.location || null
   const sourceUrl = listing.sourceUrl || buildJobDetailUrl(detail.Id)
+  const title = normalizeWhitespace(detail.Title) || listing.title || null
+  const minimumQualification = stripTags(detail.StudyLevel || detail.ExternalQualificationsStr)
+  const jobDescription = joinDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ShortDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ExternalQualificationsStr,
+  ) || listing.jobDescription || null
 
   return {
-    title: normalizeWhitespace(detail.Title) || listing.title || null,
+    title,
     company: 'JP Morgan',
     department: normalizeWhitespace(
       detail.JobFunction || detail.JobFamily || detail.Department || detail.Organization,
@@ -209,18 +238,17 @@ export const extractJobDetail = (payload, listing = {}) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: getEmploymentType(detail) || listing.employmentType || null,
-    experienceRequired: null,
-    minimumQualification: stripTags(detail.StudyLevel || detail.ExternalQualificationsStr),
+    experienceRequired: extractExperienceRequired({
+      title,
+      minimumQualification,
+      jobDescription,
+    }) || listing.experienceRequired || null,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ExternalDescriptionStr,
-      detail.ShortDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-      detail.ExternalQualificationsStr,
-    ) || listing.jobDescription || null,
+    jobDescription,
   }
 }
 
@@ -282,7 +310,7 @@ export const createJPMorganScraper = ({
 export const run = async () => createJPMorganScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running JP Morgan scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -32,6 +32,14 @@ const officialSearchResultPage = {
   `,
 }
 
+const encodedTitleSearchResultPage = {
+  ...officialSearchResultPage,
+  text: officialSearchResultPage.text.replace(
+    '<title>"SHREE ABIRAMI ENGGINEERING WORKS" - Search</title>',
+    '<title>&quot;SHREE ABIRAMI ENGGINEERING WORKS&quot; - Search</title>',
+  ),
+}
+
 test('SHREE ABIRAMI ENGGINEERING WORKS sentinel pins the verified missing first-party careers contract', async () => {
   const shreeabirami = await loadModule()
 
@@ -50,10 +58,22 @@ test('SHREE ABIRAMI ENGGINEERING WORKS sentinel pins the verified missing first-
     true,
   )
   assert.equal(
+    shreeabirami.isVerifiedNoFirstPartySearchResult(encodedTitleSearchResultPage),
+    true,
+  )
+  assert.equal(
     shreeabirami.isVerifiedNoResolvableFirstPartyDomain({
       url: 'https://www.shreeabirami.co.in/',
       ok: false,
       errorMessage: "The remote name could not be resolved: 'www.shreeabirami.co.in'",
+    }),
+    true,
+  )
+  assert.equal(
+    shreeabirami.isVerifiedNoResolvableFirstPartyDomain({
+      url: 'https://www.shreeabirami.in/',
+      ok: false,
+      errorMessage: 'getaddrinfo ENOTFOUND www.shreeabirami.in',
     }),
     true,
   )

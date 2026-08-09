@@ -14,12 +14,13 @@ export const DOODLEBLUE_INNOVATION_CATALOG = {
   atsPlatform: 'first-party-openings-page',
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-openings-page',
-  extractionStrategy: 'first-party-html-role-headings+shared-meta-line+apply-route-extraction',
+  extractionStrategy:
+    'first-party-role-rows-or-legacy-opening-cards+shared-meta-line+company-hosted-detail-route-or-shared-apply-route-extraction',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.doodleblue.com/careers/openings/ is doodleblue innovation\'s live first-party openings page and that the public HTML lists current role headings with shared Chennai, India / Full time / experienced metadata plus a first-party apply route.',
+    'Verified on Sunday, August 2, 2026 that https://www.doodleblue.com/careers/openings/ is doodleblue innovation\'s live first-party openings page and that the public HTML currently lists six role headings with shared Chennai, India / Full time / experienced metadata plus company-hosted detail routes under /careers/openings/view/, including Full stack Developer (Reactjs+Nodejs) 2+ years, React Native Developer 3+ years, and Project Managers 3+ years.',
 }
 
 export default DOODLEBLUE_INNOVATION_CATALOG

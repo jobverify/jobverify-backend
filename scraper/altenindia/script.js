@@ -1,7 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -47,6 +49,20 @@ const normalizeEmploymentType = (value) => {
   if (normalized.includes('intern')) return 'Internship'
   return normalizeWhitespace(value)
 }
+
+const extractExperienceRequired = ({
+  title = null,
+  jobDescription = null,
+  minimumQualification = null,
+  preferredQualification = null,
+} = {}) => (
+  extractJobFilterSignals({
+    jobTitle: title,
+    description: jobDescription,
+    minimumQualification,
+    preferredQualification,
+  }).experienceRequirement?.displayValue || null
+)
 
 const parseLocation = (location) => {
   const normalized = normalizeWhitespace(location)
@@ -153,6 +169,12 @@ export const extractJobDetail = (html) => {
   if (!jobPosting) return {}
 
   const locationData = detailLocationFromJsonLd(jobPosting)
+  const title = normalizeWhitespace(jobPosting?.title) || null
+  const jobDescription = stripTags(normalizeWhitespace(jobPosting?.description)) || null
+  const experienceRequired = extractExperienceRequired({
+    title,
+    jobDescription,
+  })
 
   return {
     company: normalizeWhitespace(jobPosting?.hiringOrganization?.name) || null,
@@ -161,25 +183,30 @@ export const extractJobDetail = (html) => {
     country: locationData.country,
     employmentType: normalizeEmploymentType(jobPosting?.employmentType),
     postingDate: normalizeWhitespace(jobPosting?.datePosted)?.slice(0, 10) || null,
-    jobDescription: stripTags(normalizeWhitespace(jobPosting?.description)) || null,
+    experienceRequired,
+    jobDescription,
+    publicExperienceChecked: !experienceRequired && jobDescription && jobDescription.length >= 80
+      ? true
+      : null,
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: 'altenindia',
+  timeoutMs: 15000,
+})
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const mergeListingWithDetail = (listing, detail = {}) => ({
+  ...listing,
+  ...Object.fromEntries(
+    Object.entries(detail).filter(([, value]) => value != null),
+  ),
+})
 
 export const createAltenIndiaScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -198,15 +225,15 @@ export const createAltenIndiaScraper = ({
     const enrichedJobs = []
 
     for (const listing of selectedJobs) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml)
+      try {
+        const detailHtml = await fetchText(listing.sourceUrl)
+        const detail = extractJobDetail(detailHtml)
 
-      enrichedJobs.push({
-        ...listing,
-        ...Object.fromEntries(
-          Object.entries(detail).filter(([, value]) => value != null),
-        ),
-      })
+        enrichedJobs.push(mergeListingWithDetail(listing, detail))
+      } catch (error) {
+        console.warn(`  [altenindia] Failed to enrich LinkedIn detail for ${listing.sourceUrl}: ${error.message}`)
+        enrichedJobs.push(listing)
+      }
     }
 
     return enrichedJobs.map((job) => ({
@@ -221,7 +248,7 @@ export const createAltenIndiaScraper = ({
 export const run = async () => createAltenIndiaScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running ALTEN India scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

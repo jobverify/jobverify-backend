@@ -69,7 +69,7 @@ export const extractLinktreeJobLinks = (html = '') => [...String(html ?? '').mat
   /<a\b[^>]*href=["'](https:\/\/www\.linkedin\.com\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
 )]
   .map((match) => ({
-    label: normalizeWhitespace(match[2]),
+    label: stripTags(match[2]),
     url: normalizeWhitespace(match[1]),
   }))
   .filter((link) => link.label && link.url)
@@ -129,7 +129,7 @@ export const createNasAcademyScraper = () => ({
 export const run = async (options = {}) => createNasAcademyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

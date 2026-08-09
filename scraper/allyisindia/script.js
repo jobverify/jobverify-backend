@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { ALLYIS_INDIA_CATALOG } from './catalog.js'
 
@@ -35,7 +35,7 @@ const isBlockedNetworkError = (error) => {
   const message = String(error?.message ?? '')
   const code = String(error?.code ?? '')
 
-  return /socket hang up|unable to connect|timed out|econnreset|enotfound|ehostunreach/i.test(`${message} ${code}`)
+  return /socket hang up|unable to connect|timed out|connect timeout|timeout:|econnreset|enotfound|ehostunreach|und_err_connect_timeout/i.test(`${message} ${code}`)
 }
 
 const defaultFetchPage = async (url) => ({
@@ -77,7 +77,7 @@ export const createAllyisIndiaScraper = () => ({
 export const run = async (options = {}) => createAllyisIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

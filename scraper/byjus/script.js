@@ -97,19 +97,18 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
   return extractTitle(rawHtml) === "BYJU'S Online learning Programs For K3, K10, K12, NEET, JEE, UPSC & Bank Exams"
     && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/byjus\.com\/["']/i.test(rawHtml)
+    && /<body[^>]+class=["'][^"']*\bhome\b[^"']*["']/i.test(rawHtml)
     && normalized.includes("BYJU'S Online learning Programs")
     && normalized.includes('NEET, JEE, UPSC & Bank Exams')
-    && normalized.includes('Careers')
 }
 
 export const hasCareerLandingSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return extractTitle(rawHtml) === 'e Learning for Online Courses like UPSC, K3, K10, K12, CBSE NCERT, ICSE, NEET & JEE'
-    && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/byjus\.com\/careers-at-byjus\/["']/i.test(rawHtml)
+  return /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/byjus\.com\/careers-at-byjus\/["']/i.test(rawHtml)
     && /page-template-careers_at_byjus/i.test(rawHtml)
-    && normalized.includes("Careers at BYJU'S")
+    && /Careers at BYJU'S|Careers at BYJUS/i.test(rawHtml)
     && normalized.includes('View all Jobs')
     && normalized.includes('View Jobs')
     && normalized.includes('recruitments@byjus.com')
@@ -121,11 +120,11 @@ export const hasGenericSalesApplySignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return extractTitle(rawHtml) === 'sales-apply'
-    && (
+  return (
       /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/byjus\.com\/sales-apply\/["']/i.test(rawHtml)
       || /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/byjus\.com\/sales-apply\/["']/i.test(rawHtml)
     )
+    && /page-template-sales-apply/i.test(rawHtml)
     && /id=["']sales-apply-form["']/i.test(rawHtml)
     && /https:\/\/web\.mxradon\.com\/t\/FormTracker\.aspx/i.test(rawHtml)
     && normalized.includes('career in Sales')
@@ -150,7 +149,7 @@ export const isMisdirectedTechRoute = (page = {}) => {
 
   return Number(page.status) === 200
     && page.url === MISDIRECTED_TECH_FINAL_URL
-    && extractTitle(rawHtml) === 'Technetium'
+    && /<body[^>]+class=["'][^"']*\bslug-technetium\b[^"']*["']/i.test(rawHtml)
     && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/byjus\.com\/chemistry\/technetium\/["']/i.test(rawHtml)
     && normalized.includes('Technetium')
     && !hasPublicJobsSignal(rawHtml)
@@ -214,7 +213,7 @@ export const createByjusScraper = () => ({
 export const run = async (options = {}) => createByjusScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

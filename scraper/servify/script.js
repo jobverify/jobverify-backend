@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import SERVIFY_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -33,8 +33,10 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers\s*-\s*The product lifecycle management platform\s*<\/title>/i.test(page)
-    && text.includes('Make Great Things Happen. Join Servify.')
+  return /<title[^>]*>\s*Careers\s*(?:&#8211;|&ndash;|-)\s*The product lifecycle management platform\s*<\/title>/i.test(page)
+    && text.includes('Make Great Things Happen.')
+    && text.includes('Join Servify.')
+    && text.includes('Present across 3 continents, Servify has a diverse workforce')
     && text.includes('Apply now and shape your future')
     && text.includes(CAREERS_EMAIL)
 }
@@ -72,7 +74,7 @@ export const createServifyScraper = () => ({
 export const run = async (options = {}) => createServifyScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

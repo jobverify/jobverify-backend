@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 
-import { generateCompanyCoverageReport } from '../scraper/providers/companyCoverage.js'
-import { getScraperCatalog } from '../scraper/providers/index.js'
+import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
+import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const DEFAULT_CSV_PATH = 'C:/Users/mohv/Downloads/company_list_extracted.csv'
 const csvPath = process.argv[2] || DEFAULT_CSV_PATH

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import RM_EDUCATION_SOLUTIONS_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -33,10 +33,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialIndiaSignal = (html = '') => {
-  const page = String(html ?? '')
+  const page = normalizeWhitespace(html) || ''
 
-  return /Life\s*@\s*RM India/i.test(page)
-    && /join RM India/i.test(page)
+  return /Life\s*(?:@|at)\s*RM India/i.test(page)
+    && (
+      /join RM India/i.test(page)
+      || /When you join RM India/i.test(page)
+      || /Come to Trivandrum/i.test(page)
+    )
 }
 
 export const hasVerifiedJobsShell = (html = '') => {
@@ -47,9 +51,11 @@ export const hasVerifiedJobsShell = (html = '') => {
 }
 
 const hasLocationsIndexSignal = (html = '') => {
-  const page = String(html ?? '')
-  return /By City \| By State \/ Province \| By Country/i.test(page)
-    && /\/jobs\/locations\/country\/India/i.test(page)
+  const page = normalizeWhitespace(html) || ''
+  return page.includes('By City')
+    && page.includes('By State / Province')
+    && page.includes('By Country')
+    && /\/jobs\/locations\/country\/India/i.test(String(html ?? ''))
 }
 
 const hasCountryRouteJobLinks = (html = '') => /\/jobs\/\d+\?lang=/i.test(String(html ?? ''))
@@ -89,7 +95,7 @@ export const createRmEducationSolutionsScraper = () => ({
 export const run = async (options = {}) => createRmEducationSolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

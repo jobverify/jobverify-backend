@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'tarentotechnologies',
   companyName: 'Tarento Technologies',
   officialBrandName: 'Tarento',
   adapter: 'script',
-  modulePath: '../tarentotechnologies/script.js',
+  modulePath: '../../scraper/tarentotechnologies/script.js',
   homepageUrl: 'https://www.tarento.com/',
   companyCareerPage: 'https://www.tarento.com/careers/',
   atsPlatform: 'official-careers-challenge-page-no-structured-public-jobs',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

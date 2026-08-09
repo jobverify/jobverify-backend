@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -203,6 +203,13 @@ export const hasOfficialBpSearchSignal = ({ status, url, html } = {}) => {
     && /algoliasearch|instantsearch|production_bp_jobs/i.test(page)
 }
 
+export const hasNoOpenRolesSignal = (html) => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return normalized.includes('there are no open roles')
+    || normalized.includes('no matching jobs found')
+}
+
 const firstValue = (value) => {
   if (Array.isArray(value)) return normalizeWhitespace(value[0])
   return normalizeWhitespace(value)
@@ -319,6 +326,10 @@ export const createCastrolIndiaScraper = () => ({
       throw new Error('Castrol India verified public BP jobs surface changed')
     }
 
+    if (hasNoOpenRolesSignal(bpSearchPage.html)) {
+      return []
+    }
+
     const jobs = extractBpIndiaJobs(
       await fetchAlgoliaJobs(buildBpAlgoliaJobsRequest()),
     )
@@ -335,7 +346,7 @@ export const createCastrolIndiaScraper = () => ({
 export const run = async (options = {}) => createCastrolIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

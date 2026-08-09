@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'aavishkar',
   companyName: 'Aavishkar',
   officialBrandName: 'Aavishkaar Group',
   adapter: 'script',
-  modulePath: '../aavishkar/script.js',
+  modulePath: '../../scraper/aavishkar/script.js',
   companyCareerPage: 'https://aavishkaargroup.com/',
   companyDomain: 'aavishkaargroup.com',
   contactPageUrl: 'https://aavishkaargroup.com/contact-us/',
@@ -23,3 +23,4 @@ export const provider = {
 }
 
 export default provider
+

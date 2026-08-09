@@ -1,9 +1,9 @@
-export const KFIN_TECHNOLOGIES_CATALOG = {
+﻿export const KFIN_TECHNOLOGIES_CATALOG = {
   source: 'kfintechnologies',
   companyName: 'KFin Technologies',
   officialBrandName: 'KFintech',
   adapter: 'script',
-  modulePath: '../kfintechnologies/script.js',
+  modulePath: '../../scraper/kfintechnologies/script.js',
   dryRunFile: 'kfintechnologies/jobs.json',
   companyCareerPage: 'https://www.kfintech.com/career/',
   officialJobsArchiveUrl: 'https://www.kfintech.com/jobs/',
@@ -23,3 +23,4 @@ export const KFIN_TECHNOLOGIES_CATALOG = {
 }
 
 export default KFIN_TECHNOLOGIES_CATALOG
+

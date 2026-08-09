@@ -13,131 +13,200 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>TESCRA | Engineering the future</title>
+    <title>Tescra</title>
   </head>
   <body>
     <header>
       <a href="https://www.tescra.com/">Home</a>
-      <a href="https://www.tescra.com/about-us/">About</a>
-      <a href="https://www.tescra.com/careers/">Careers</a>
+      <a href="https://www.tescra.com/current-openings/">Current Openings</a>
     </header>
     <main>
-      <h1>TESCRA</h1>
-      <p>Engineering services and digital transformation solutions.</p>
+      <h2>Software Advisory Services</h2>
+      <p>At Tescra, we drive digital transformation through cutting-edge technology and innovative solutions.</p>
+      <p>Trusted by Fortune companies Worldwide</p>
     </main>
   </body>
 </html>
 `
 
-const linkedinCompanyHtml = `
+const currentOpeningsHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>TESCRA | LinkedIn</title>
+    <title>Current Openings – Tescra</title>
   </head>
   <body>
-    <h1>TESCRA</h1>
-    <p>IT Services and IT Consulting</p>
-    <a href="https://www.tescra.com/">Website</a>
+    <h1>Current Openings</h1>
+    <section>
+      <div class="elementor-icon-box-content">
+        <h3 class="elementor-icon-box-title"><span>Software Engineer_Full Stack</span></h3>
+        <p class="elementor-icon-box-description"><b>Must Have : </b>C#, ASP.NET framework, .NET CORE, HTML, ANGULAR</p>
+      </div>
+      <div class="elementor-button-wrapper">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/6843b60ab74bb8d18e738104?type=default&amp;uid=6843b60ab74bb8d18e738104&amp;mod=jobs">
+          <span class="elementor-button-text">Easy Apply</span>
+        </a>
+      </div>
+    </section>
+    <section>
+      <div class="elementor-icon-box-content">
+        <h3 class="elementor-icon-box-title"><span>Qa Automation Engineer</span></h3>
+        <p class="elementor-icon-box-description"><b>Must Have : </b>SELENIUM, AUTOMATION, JAVASCRIPT, NODE, BDD</p>
+      </div>
+      <div class="elementor-button-wrapper">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67f4c22c964d3b8986247cf4?type=default&amp;uid=67f4c22c964d3b8986247cf4&amp;mod=jobs">
+          <span class="elementor-button-text">Easy Apply</span>
+        </a>
+      </div>
+    </section>
+    <section>
+      <div class="elementor-icon-box-content">
+        <h3 class="elementor-icon-box-title"><span>Customer Excellence Data Analysts</span></h3>
+        <p class="elementor-icon-box-description"><b>Must Have : </b>DATA VISUALIZATION, POWER BI, PYTHON, MYSQL</p>
+      </div>
+      <div class="elementor-button-wrapper">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67ee3b37470c11a71b785aa3?navigation=opportunity-&amp;companyName=undefined&amp;location=undefined&amp;recentWorkType=undefined&amp;resultsStartIndex=10&amp;type=default&amp;uid=67ee3b37470c11a71b785aa3&amp;mod=jobs">
+          <span class="elementor-button-text">Easy Apply</span>
+        </a>
+      </div>
+    </section>
+    <footer>
+      <a href="https://www.linkedin.com/company/tescra">Linkedin</a>
+    </footer>
   </body>
 </html>
 `
 
-const linkedinFeedHtml = `
-<article data-urn="urn:li:activity:1">
-  <a href="https://www.linkedin.com/posts/tescra_hiring-salesforce-developer-activity-111">
-    TESCRA's Post
-  </a>
-  <div class="feed-shared-update-v2__description">
-    TESCRA is hiring now.
-    Position: Salesforce Developer
-    Location: Pune
-    Employment Type: Full Time
-    <a href="https://lnkd.in/tescra-salesforce">Apply Now</a>
-  </div>
-</article>
-<article data-urn="urn:li:activity:2">
-  <a href="https://www.linkedin.com/posts/tescra_culture-update-activity-222">
-    TESCRA's Post
-  </a>
-  <div class="feed-shared-update-v2__description">
-    Celebrating our delivery milestone this week.
-  </div>
-</article>
-<article data-urn="urn:li:activity:3">
-  <a href="https://www.linkedin.com/posts/tescra_hiring-cloud-architect-activity-333">
-    TESCRA's Post
-  </a>
-  <div class="feed-shared-update-v2__description">
-    We are hiring across engineering.
-    Position: Cloud Architect
-    Location: Bengaluru / Hybrid
-    Employment Type: Contract
-    <a href="https://lnkd.in/tescra-cloud">Apply here</a>
-  </div>
-</article>
+const achnetErrorShellHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <div class="document-not-found">
+      <div class="not-found-text"><h1>Something Went Wrong</h1></div>
+      <div class="not-found-text">We have encountered an unexpected error. Please try again after some time.</div>
+    </div>
+  </body>
+</html>
 `
 
-test('TESCRA scraper recognizes the verified homepage, LinkedIn company page, and hiring-post feed', async () => {
+test('TESCRA scraper recognizes the verified homepage and current openings page', async () => {
   const tescra = await loadTescraModule()
   assert.ok(tescra, 'Expected scraper module at ./script.js')
 
   assert.equal(tescra.SOURCE, 'tescra')
   assert.equal(tescra.COMPANY, 'TESCRA')
   assert.equal(tescra.HOMEPAGE_URL, 'https://www.tescra.com/')
-  assert.equal(tescra.LINKEDIN_COMPANY_URL, 'https://www.linkedin.com/company/tescra')
+  assert.equal(tescra.CURRENT_OPENINGS_URL, 'https://www.tescra.com/current-openings/')
   assert.equal(tescra.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(tescra.pageIndicatesTescraLinkedinCompany(linkedinCompanyHtml), true)
-  assert.deepEqual(tescra.extractJobPostings(linkedinFeedHtml), [
+  assert.equal(tescra.hasCurrentOpeningsSignal(currentOpeningsHtml), true)
+  assert.deepEqual(tescra.extractJobCards(currentOpeningsHtml), [
     {
-      title: 'Salesforce Developer',
-      company: 'TESCRA',
-      location: 'Pune, India',
-      city: 'Pune',
-      country: 'India',
-      employmentType: 'Full Time',
-      sourceUrl: 'https://www.linkedin.com/posts/tescra_hiring-salesforce-developer-activity-111',
-      applyUrl: 'https://lnkd.in/tescra-salesforce',
-      jobDescription: 'TESCRA is hiring now.',
-      remoteStatus: 'On-site',
+      title: 'Software Engineer_Full Stack',
+      description: 'Must Have : C#, ASP.NET framework, .NET CORE, HTML, ANGULAR',
+      sourceUrl: 'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/6843b60ab74bb8d18e738104?type=default&uid=6843b60ab74bb8d18e738104&mod=jobs',
+      applyUrl: 'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/6843b60ab74bb8d18e738104?type=default&uid=6843b60ab74bb8d18e738104&mod=jobs',
     },
     {
-      title: 'Cloud Architect',
-      company: 'TESCRA',
-      location: 'Bengaluru / Hybrid, India',
-      city: 'Bengaluru',
-      country: 'India',
-      employmentType: 'Contract',
-      sourceUrl: 'https://www.linkedin.com/posts/tescra_hiring-cloud-architect-activity-333',
-      applyUrl: 'https://lnkd.in/tescra-cloud',
-      jobDescription: 'We are hiring across engineering.',
-      remoteStatus: 'Hybrid',
+      title: 'Qa Automation Engineer',
+      description: 'Must Have : SELENIUM, AUTOMATION, JAVASCRIPT, NODE, BDD',
+      sourceUrl: 'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67f4c22c964d3b8986247cf4?type=default&uid=67f4c22c964d3b8986247cf4&mod=jobs',
+      applyUrl: 'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67f4c22c964d3b8986247cf4?type=default&uid=67f4c22c964d3b8986247cf4&mod=jobs',
+    },
+    {
+      title: 'Customer Excellence Data Analysts',
+      description: 'Must Have : DATA VISUALIZATION, POWER BI, PYTHON, MYSQL',
+      sourceUrl: 'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67ee3b37470c11a71b785aa3?navigation=opportunity-&companyName=undefined&location=undefined&recentWorkType=undefined&resultsStartIndex=10&type=default&uid=67ee3b37470c11a71b785aa3&mod=jobs',
+      applyUrl: 'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67ee3b37470c11a71b785aa3?navigation=opportunity-&companyName=undefined&location=undefined&recentWorkType=undefined&resultsStartIndex=10&type=default&uid=67ee3b37470c11a71b785aa3&mod=jobs',
     },
   ])
 })
 
-test('TESCRA scraper run() fetches the official homepage and public LinkedIn company feed and returns only hiring posts', async () => {
+test('TESCRA scraper run() fetches the official homepage and first-party current openings page', async () => {
   const tescra = await loadTescraModule()
   assert.ok(tescra, 'Expected scraper module at ./script.js')
 
   const requestedUrls = []
-  const jobs = await tescra.createTescraScraper().run({
+  const jobs = await tescra.createTescraScraper({
+    now: () => '2026-08-05T00:00:00.000Z',
+  }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === tescra.HOMEPAGE_URL) return homepageHtml
-      if (url === tescra.LINKEDIN_COMPANY_URL) return `${linkedinCompanyHtml}${linkedinFeedHtml}`
+      if (url === tescra.CURRENT_OPENINGS_URL) return currentOpeningsHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
   assert.deepEqual(requestedUrls, [
     tescra.HOMEPAGE_URL,
-    tescra.LINKEDIN_COMPANY_URL,
+    tescra.CURRENT_OPENINGS_URL,
   ])
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 3)
   assert.equal(jobs[0].source, 'tescra')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.equal(jobs[0].scrapedAt, '2026-08-05T00:00:00.000Z')
+})
+
+test('TESCRA scraper marks jobs as verified-missing when the live ACHNET detail pages resolve to the current public error shell', async () => {
+  const tescra = await loadTescraModule()
+  assert.ok(tescra, 'Expected scraper module at ./script.js')
+
+  const requestedDetailUrls = []
+  const jobs = await tescra.createTescraScraper({
+    now: () => '2026-08-05T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === tescra.HOMEPAGE_URL) return homepageHtml
+      if (url === tescra.CURRENT_OPENINGS_URL) return currentOpeningsHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchPublicJobText: async (url) => {
+      requestedDetailUrls.push(url)
+      return achnetErrorShellHtml
+    },
+  })
+
+  assert.deepEqual(requestedDetailUrls, [
+    'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/6843b60ab74bb8d18e738104?type=default&uid=6843b60ab74bb8d18e738104&mod=jobs',
+    'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67f4c22c964d3b8986247cf4?type=default&uid=67f4c22c964d3b8986247cf4&mod=jobs',
+    'https://www.achnet.com/business/59b8fbbb0f97e21b3ca67a33/public/careers/67ee3b37470c11a71b785aa3?navigation=opportunity-&companyName=undefined&location=undefined&recentWorkType=undefined&resultsStartIndex=10&type=default&uid=67ee3b37470c11a71b785aa3&mod=jobs',
+  ])
+  assert.equal(jobs.length, 3)
+  assert.equal(jobs[0].experienceRequired, null)
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[1].publicExperienceChecked, true)
+  assert.equal(jobs[2].publicExperienceChecked, true)
+})
+
+test('TESCRA scraper serializes ACHNET detail checks when a single browser-backed fetcher is used', async () => {
+  const tescra = await loadTescraModule()
+  assert.ok(tescra, 'Expected scraper module at ./script.js')
+
+  let activeRequests = 0
+  let maxConcurrentRequests = 0
+
+  const jobs = await tescra.createTescraScraper({
+    now: () => '2026-08-05T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === tescra.HOMEPAGE_URL) return homepageHtml
+      if (url === tescra.CURRENT_OPENINGS_URL) return currentOpeningsHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchPublicJobText: async () => {
+      activeRequests += 1
+      maxConcurrentRequests = Math.max(maxConcurrentRequests, activeRequests)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      activeRequests -= 1
+      return achnetErrorShellHtml
+    },
+  })
+
+  assert.equal(maxConcurrentRequests, 1)
+  assert.equal(jobs.length, 3)
+  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[1].publicExperienceChecked, true)
+  assert.equal(jobs[2].publicExperienceChecked, true)
 })
 
 test('TESCRA scraper fails closed when the verified public surface drifts', async () => {
@@ -160,10 +229,10 @@ test('TESCRA scraper fails closed when the verified public surface drifts', asyn
     tescra.createTescraScraper().run({
       fetchText: async (url) => {
         if (url === tescra.HOMEPAGE_URL) return homepageHtml
-        if (url === tescra.LINKEDIN_COMPANY_URL) return '<html><body><h1>Unknown company</h1></body></html>'
+        if (url === tescra.CURRENT_OPENINGS_URL) return '<html><body><h1>Current Openings</h1></body></html>'
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified linkedin company page/i,
+    /verified current openings/i,
   )
 })

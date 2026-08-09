@@ -52,6 +52,71 @@ const officialCareersHtml = `
 </html>
 `
 
+const currentCareersHubHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career - Life at Maruti Suzuki India Limited</title>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>Come, join us! The future of mobility needs you</h1>
+        <p>Maruti Suzuki is built on trust, making mobility in India simpler, safer, and more reassuring every day.</p>
+        <a href="#career-life-at-msil">Life at MSIL</a>
+        <a href="#job-listing">See Open Positions</a>
+      </section>
+
+      <section>
+        <h2>WHY WORK WITH US</h2>
+        <p>We believe in the four pillars of Maruti that shape meaningful careers.</p>
+        <h3>Better Opportunities</h3>
+        <h3>Learning &#x26; Development</h3>
+        <h3>Care &#x26; Love</h3>
+        <h3>Maximize Potential</h3>
+      </section>
+
+      <section id="job-listing">
+        <h2>JOIN US</h2>
+        <p>View all open positions</p>
+
+        <article>
+          <h3>Freshers</h3>
+          <p>0-1 YOE</p>
+          <p>Entry Level</p>
+          <p>PAN India / Hybrid</p>
+          <a href="https://maruti.app.param.ai/jobs/">Apply Now</a>
+        </article>
+
+        <article>
+          <h3>All India Engineering Hiring</h3>
+          <p>0-1 YOE</p>
+          <p>Entry Level</p>
+          <p>PAN India / Hybrid</p>
+          <a href="https://maruti.app.param.ai/jobs/">Apply Now</a>
+        </article>
+
+        <article>
+          <h3>Experienced Professionals</h3>
+          <p>0-1 YOE</p>
+          <p>Entry Level</p>
+          <p>PAN India / Hybrid</p>
+          <a href="https://maruti.app.param.ai/jobs/">Apply Now</a>
+        </article>
+
+        <article>
+          <h3>Workmen Hiring (ITI)</h3>
+          <p>0-1 YOE</p>
+          <p>Entry Level</p>
+          <p>PAN India / Hybrid</p>
+          <a href="https://www.marutisuzuki.com/corporate/careers/join-us/career-notice">Apply Now</a>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 test('Maruti Suzuki scraper validates the verified official careers surface and current apply-only links', async () => {
   const marutiSuzuki = await loadMarutiSuzukiModule()
 
@@ -67,6 +132,16 @@ test('Maruti Suzuki scraper validates the verified official careers surface and 
   ])
 })
 
+test('Maruti Suzuki scraper accepts the current careers hub and generic apply-only handoff surface', async () => {
+  const marutiSuzuki = await loadMarutiSuzukiModule()
+
+  assert.equal(marutiSuzuki.hasOfficialCareersSignal(currentCareersHubHtml), true)
+  assert.equal(marutiSuzuki.hasArchivedApplyOnlySignal(currentCareersHubHtml), true)
+  assert.deepEqual(marutiSuzuki.extractApplyUrls(currentCareersHubHtml), [
+    'https://maruti.app.param.ai/jobs/',
+  ])
+})
+
 test('Maruti Suzuki scraper returns no jobs while the official public careers page remains apply-only', async () => {
   const marutiSuzuki = await loadMarutiSuzukiModule()
   const requestedUrls = []
@@ -75,6 +150,22 @@ test('Maruti Suzuki scraper returns no jobs while the official public careers pa
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === marutiSuzuki.CAREERS_URL) return officialCareersHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [marutiSuzuki.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Maruti Suzuki scraper returns no jobs while the current careers hub remains a generic apply-only handoff', async () => {
+  const marutiSuzuki = await loadMarutiSuzukiModule()
+  const requestedUrls = []
+
+  const jobs = await marutiSuzuki.createMarutiSuzukiScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === marutiSuzuki.CAREERS_URL) return currentCareersHubHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
   })

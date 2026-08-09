@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { EVALUESERVE_CATALOG } from './catalog.js'
 
@@ -172,6 +172,7 @@ const extractAllJobCards = (html) => [...String(html ?? '').matchAll(
       postingDate: null,
       closingDate: null,
       jobDescription: summary,
+      publicExperienceChecked: true,
       remoteStatus: null,
     }
   })
@@ -233,7 +234,7 @@ export const createEvalueserveScraper = ({
 export const run = async (options = {}) => createEvalueserveScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

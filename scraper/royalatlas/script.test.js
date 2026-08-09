@@ -13,16 +13,18 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Royal Atlas General Contracting</title>
+    <title>Leading Contracting Company and Rock Supplier in UAE</title>
   </head>
   <body>
     <main>
-      <h1>Royal Atlas General Contracting</h1>
+      <h1>"Building a Strong Foundation for the Future"</h1>
       <nav>
         <a href="/careers/">Careers</a>
         <a href="/contact-us/">Contact Us</a>
       </nav>
-      <p>Integrated infrastructure and contracting services in the UAE.</p>
+      <h2>About Royal Atlas</h2>
+      <p>Founded in 2010, Royal Atlas General Contracting is a leading construction and infrastructure company based in Abu Dhabi, UAE.</p>
+      <p>Expertise in Earthwork, Aggregates Supply & Heavy Equipment Rentals.</p>
     </main>
   </body>
 </html>
@@ -36,9 +38,11 @@ const careersHtml = `
   </head>
   <body>
     <main>
-      <h1>Careers</h1>
-      <p>Please send your resume and cover letter to info@royal-atlas.com.</p>
-      <p>We are always looking for experienced professionals.</p>
+      <h1>Join Our Team</h1>
+      <p>At Royal Atlas General Contracting, we believe that our people are our greatest asset.</p>
+      <p>Please send your resume and a cover letter to
+        <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5c342e1c2e33253d30713d28303d2f723f3331">[email&#160;protected]</a>.
+      </p>
     </main>
   </body>
 </html>
@@ -52,10 +56,13 @@ const contactHtml = `
   </head>
   <body>
     <main>
-      <h1>Contact Us</h1>
-      <p>Royal Atlas General Contracting</p>
-      <p>info@royal-atlas.com</p>
-      <p>United Arab Emirates</p>
+      <h1>Write to Us</h1>
+      <p>Office No 604, Regal Tower</p>
+      <p>Tel: +9714 883 8384</p>
+      <p>Email:
+        <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="40292e262f00322f39212c6d21342c21336e232f2d">[email&#160;protected]</a>
+      </p>
+      <p>Jebel Ali Freezone - Dubai</p>
     </main>
   </body>
 </html>
@@ -73,7 +80,8 @@ test('Royal Atlas scraper validates the verified homepage, email-only careers pa
   assert.equal(royalAtlas.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(royalAtlas.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(royalAtlas.hasOfficialContactSignal(contactHtml), true)
-  assert.equal(royalAtlas.extractApplicationEmail(careersHtml), 'info@royal-atlas.com')
+  assert.equal(royalAtlas.extractApplicationEmail(careersHtml), 'hr@royal-atlas.com')
+  assert.equal(royalAtlas.extractApplicationEmail(contactHtml), 'info@royal-atlas.com')
   assert.equal(royalAtlas.hasUnexpectedPublicJobsSignal(careersHtml), false)
 })
 

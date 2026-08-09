@@ -1,7 +1,7 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -18,7 +18,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'crompton.co.in',
   adapter: 'script',
   atsPlatform: 'shopify-careers-page',
-  modulePath: '../cromptongreaves/script.js',
+  modulePath: '../../scraper/cromptongreaves/script.js',
   dryRunFile: 'cromptongreaves/jobs.json',
   countryFilter: 'India',
   paginationStrategy: 'single-public-page',
@@ -134,6 +134,7 @@ export const extractSearchResults = (html) => {
         applyUrl: CAREER_PAGE_URL,
         employmentType: null,
         experienceRequired: null,
+        publicExperienceChecked: true,
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
@@ -185,7 +186,7 @@ export const createCromptonGreavesScraper = ({
 export const run = async (options = {}) => createCromptonGreavesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
@@ -196,3 +197,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

@@ -1,8 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -119,8 +120,24 @@ const inferRemoteStatus = (...values) => {
   return 'On-site'
 }
 
-const extractExperienceRequired = (value) =>
-  normalizeWhitespace((normalizeWhitespace(value) || '').match(/\b\d+\s*(?:\+|-\s*\d+)?\s*years\b/i)?.[0])
+const extractExperienceRequired = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
 
 const extractEmploymentTypeFromDetail = (html) =>
   firstMatch(html, [
@@ -148,27 +165,32 @@ const extractDescriptionHtml = (source) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
+  const decoded = decodeHtmlEntities(rawHtml)
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*NewSpace Research and Technologies - Engineering tomorrow's missions, today\s*<\/title>/i
-      .test(rawHtml)
+  return /NewSpace Research and Technologies - Engineering tomorrow'?s missions, today/i
+      .test(decoded)
     && /Engineering tomorrow's missions,\s*today/i.test(normalized)
-    && /ABOUT US/i.test(rawHtml)
-    && /PRODUCTS/i.test(rawHtml)
-    && /FOUNDERS/i.test(rawHtml)
-    && /CONTACT US/i.test(rawHtml)
+    && /\bAbout Us\b/i.test(normalized)
+    && /\bProducts\b/i.test(normalized)
+    && /\bFounders\b/i.test(normalized)
+    && /\bContact Us\b/i.test(normalized)
     && /info@newspace\.co\.in/i.test(rawHtml)
 }
 
 export const hasOfficialJobsBoardSignal = (html) => {
   const rawHtml = String(html ?? '')
   const decoded = decodeHtmlEntities(rawHtml)
-
-  return /Careers/i.test(decoded)
-    && /NewSpace Research\s*&\s*Technologies/i.test(decoded)
+  const hasCoreBoardSignal = /Careers/i.test(decoded)
     && /#\s*\d+\s*Jobs\b/i.test(decoded)
     && /Open Positions/i.test(decoded)
     && /\/jobs\/[^/"?#]+\/[^/"?#]+/i.test(rawHtml)
+  const hasLegacyBrandSignal = /NewSpace Research\s*&\s*Technologies/i.test(decoded)
+  const hasLiveBoardSignal = /newspace-talent\.freshteam\.com/i.test(rawHtml)
+    && /data-portal-role/i.test(rawHtml)
+    && /Who we are:/i.test(decoded)
+
+  return hasCoreBoardSignal && (hasLegacyBrandSignal || hasLiveBoardSignal)
 }
 
 export const buildDetailUrl = (opaqueId, slug) =>
@@ -300,6 +322,7 @@ export const extractJobDetail = (html, listing = {}) => {
     closingDate: null,
     jobDescription,
     remoteStatus: inferRemoteStatus(listing.remoteFlag, locationText, jobDescription),
+    publicExperienceChecked: true,
   }
 }
 
@@ -314,14 +337,20 @@ export const extractSearchResults = ({
     extractJobDetail(detailHtmlByUrl[listing.detailUrl] || '', listing))
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  ...options,
 })
+
+const isHomepageReachabilityError = (error) =>
+  /connect timeout|timeout|timed out|could not connect|fetch failed|econnrefused|enotfound|ehostunreach/i.test(
+    String(error?.message || error),
+  )
 
 export const createNewSpaceResearchTechnologiesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -330,8 +359,19 @@ export const createNewSpaceResearchTechnologiesScraper = ({
     const fetchText = options.fetchText || defaultFetchText
     const now = options.now || (() => new Date().toISOString())
 
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    let homepageHtml = null
+
+    try {
+      homepageHtml = options.fetchText
+        ? await fetchText(HOMEPAGE_URL)
+        : await fetchText(HOMEPAGE_URL, { attempts: 1, timeoutMs: 10000 })
+    } catch (error) {
+      if (!isHomepageReachabilityError(error)) {
+        throw error
+      }
+    }
+
+    if (homepageHtml && !hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error(
         'New Space Research Technologies verified official homepage no longer matches the known public surface',
       )
@@ -369,7 +409,7 @@ export const createNewSpaceResearchTechnologiesScraper = ({
 export const run = async (options = {}) => createNewSpaceResearchTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -192,16 +192,27 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const hasJobsArchiveIdentity =
+    /<title>\s*Jobs(?:\s*-\s*Page\s+\d+\s+of\s+\d+)?\s*-\s*Clari5\s*<\/title>/i.test(page)
+    || /<title>\s*Contact Forms\s*-\s*Clari5\s*<\/title>/i.test(page)
+    || /meta name="description" content="Jobs Archive - Clari5"/i.test(page)
+  const hasListingsOrEmptyState =
+    /class="sjb-search-location\b/i.test(page)
+    || /<div class="v2 sjb-job-\d+">/i.test(page)
+    || /<div class="no-job-listing">/i.test(page)
 
-  return /<title>\s*Jobs(?:\s*-\s*Page\s+\d+\s+of\s+\d+)?\s*-\s*Clari5\s*<\/title>/i.test(page)
+  return hasJobsArchiveIdentity
     && /<link rel="canonical" href="https:\/\/www\.clari5\.com\/careers\/(?:page\/\d+\/)?"/i.test(page)
-    && /href="https:\/\/www\.clari5\.com\/careers\/feed\/"/i.test(page)
     && /post-type-archive-jobpost/i.test(page)
     && /<div class="sjb-listing">/i.test(page)
-    && /class="sjb-search-location\b/i.test(page)
     && /simple-job-board-public\.js/i.test(page)
-    && normalized.includes('Apply Now')
+    && hasListingsOrEmptyState
+    && (normalized.includes('Apply Now') || normalized.includes('No jobs found'))
 }
+
+const archiveShowsNoJobs = (html = '') =>
+  /<div class="no-job-listing">/i.test(String(html ?? ''))
+  && /No jobs found/i.test(String(html ?? ''))
 
 export const extractNextPageUrl = (html) => {
   const nextUrl = String(html ?? '').match(/<link rel="next" href="([^"]+)"/i)?.[1] ?? null
@@ -222,6 +233,10 @@ export const extractNextPageUrl = (html) => {
 export const extractArchiveListings = (html) => {
   if (!hasOfficialCareersPageSignal(html)) {
     throw new Error('verified Clari5 careers archive no longer matches the trusted first-party public surface')
+  }
+
+  if (archiveShowsNoJobs(html)) {
+    return []
   }
 
   const listings = []
@@ -384,7 +399,7 @@ export const createClari5Scraper = () => ({
 export const run = async (options = {}) => createClari5Scraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

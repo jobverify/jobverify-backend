@@ -6,19 +6,24 @@
 import express from "express";
 import {
   getAllJobs,
+  getJobSearch,
   getJobById,
+  getJobCompanySuggestions,
   trackJobClick,
   getJobMeta,
   getJobStats,
+  getLiveHiringCompanies,
   getJobSeoFeed,
 } from "../controllers/jobController.js";
 import { optionalProtect, protect } from "../middleware/authMiddleware.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+import { requireJsonMutation, validateRequest } from "../middleware/validateRequest.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
 import {
+  jobCompanyAutocompleteValidation,
   jobQueryValidation,
   mongoIdParamValidation,
 } from "../validation/requestValidators.js";
+import { createPublicJobAbuseGuard } from "../middleware/publicJobAbuseGuard.js";
 
 const clickLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
@@ -33,12 +38,23 @@ const clickLimiter = createRateLimiter({
 });
 
 const router = express.Router();
+const publicJobAbuseGuard = createPublicJobAbuseGuard();
 
-router.get("/", jobQueryValidation, validateRequest, optionalProtect, getAllJobs);
+router.get("/", publicJobAbuseGuard, jobQueryValidation, validateRequest, optionalProtect, getAllJobs);
+router.get("/search", publicJobAbuseGuard, optionalProtect, getJobSearch);
+router.post("/search", requireJsonMutation, publicJobAbuseGuard, optionalProtect, getJobSearch);
+router.get(
+  "/meta/companies",
+  jobCompanyAutocompleteValidation,
+  validateRequest,
+  optionalProtect,
+  getJobCompanySuggestions,
+);
 router.get("/meta", jobQueryValidation, validateRequest, optionalProtect, getJobMeta);   // must be before /:id
 router.get("/stats", getJobStats); // public stats for landing page
+router.get("/live-companies", getLiveHiringCompanies);
 router.get("/seo-feed", getJobSeoFeed);
-router.get("/:id", mongoIdParamValidation("id", "job ID"), validateRequest, getJobById);
+router.get("/:id", publicJobAbuseGuard, mongoIdParamValidation("id", "job ID"), validateRequest, getJobById);
 router.post(
   "/:id/click",
   protect,

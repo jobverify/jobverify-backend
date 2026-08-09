@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { EXPEDIA_CATALOG } from './catalog.js'
 
@@ -37,6 +37,7 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = decodeHtmlEntities(value)
+    .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<br\s*\/?>/gi, ' ')
@@ -205,10 +206,10 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
 
   return title === 'Home - Expedia Group | Careers'
-    && /Search by keyword\/title/i.test(page)
-    && /<option value="India"\s*>India<\/option>/i.test(page)
     && /Search Jobs/i.test(page)
-    && /careers in Gurgaon, India/i.test(page)
+    && /(?:Search by keyword\/title|Enter keyword\/title)/i.test(page)
+    && /(?:Search Expedia Group Jobs|We currently have \d+ openings in \d+ countries|Opportunities for every journey)/i.test(page)
+    && /(?:careers in Gurgaon, India|Gurgaon,\s*India)/i.test(page)
     && sameUrl(toAbsoluteUrl(extractJobsPagePath(page), HOMEPAGE_URL), JOBS_URL)
 }
 
@@ -220,14 +221,20 @@ export const hasOfficialJobsPageSignal = (html = '') => {
   const page = String(html ?? '')
 
   return title === 'Jobs | Expedia Group | Careers'
-    && /Results__list/i.test(page)
-    && /view-job-button/i.test(page)
-    && /Results__list__location/i.test(page)
+    && (/Results__list/i.test(page) || /\b\d+\s+positions?\s+in all locations\b/i.test(page))
+    && (/view-job-button/i.test(page) || />\s*View Job\s*</i.test(page))
+    && (/Results__list__location/i.test(page) || /India\s*-\s*[^<]+/i.test(page))
   }
 
 export const extractNextPageUrl = (html = '') => {
-  const match = String(html ?? '').match(/<link rel=['"]next['"] href="([^"]+)">/i)
-  return match ? toAbsoluteUrl(match[1], JOBS_URL) : null
+  const source = String(html ?? '')
+  const relNextMatch = source.match(/<link rel=['"]next['"] href="([^"]+)">/i)
+  if (relNextMatch) {
+    return toAbsoluteUrl(relNextMatch[1], JOBS_URL)
+  }
+
+  const anchorMatch = source.match(/<a[^>]+href="([^"]+)"[^>]*>\s*Next jobs\s*<\/a>/i)
+  return anchorMatch ? toAbsoluteUrl(anchorMatch[1], JOBS_URL) : null
 }
 
 export const extractJobCards = (html = '') =>
@@ -333,18 +340,26 @@ export const createExpediaScraper = ({
       && visitedPages < maxPages
     ) {
       const jobsHtml = await fetchText(nextPageUrl)
-      if (!hasOfficialJobsPageSignal(jobsHtml)) {
+      const pageListings = extractAllJobCards(jobsHtml)
+      const nextCandidateUrl = extractNextPageUrl(jobsHtml)
+
+      if (
+        !hasOfficialJobsPageSignal(jobsHtml)
+        && !(allListings.length > 0 && pageListings.length === 0 && !nextCandidateUrl)
+      ) {
         throw new Error('Expedia verified first-party jobs surface no longer matches the public contract')
       }
 
-      const pageListings = extractAllJobCards(jobsHtml)
       if (pageListings.length === 0) {
+        if (allListings.length > 0) {
+          break
+        }
         throw new Error('Expedia verified first-party jobs surface no longer exposes the expected job cards')
       }
 
       allListings.push(...pageListings)
       seenPageUrls.add(normalizeComparableUrl(nextPageUrl))
-      nextPageUrl = extractNextPageUrl(jobsHtml)
+      nextPageUrl = nextCandidateUrl
       visitedPages += 1
     }
 
@@ -373,7 +388,7 @@ export const createExpediaScraper = ({
 export const run = async (options = {}) => createExpediaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

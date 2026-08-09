@@ -1,9 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  createApiRateLimitHandler,
   createRateLimiter,
+  getApiRateLimitProfile,
   isRateLimitingEnabled,
+  isReadOnlyRequest,
 } from "../src/utils/rateLimit.js";
+
+const createResponse = () => ({
+  statusCode: 200,
+  body: null,
+  headers: {},
+  set(name, value) {
+    this.headers[name] = String(value);
+    return this;
+  },
+  setHeader(name, value) {
+    this.headers[name] = String(value);
+    return this;
+  },
+  status(code) {
+    this.statusCode = code;
+    return this;
+  },
+  json(payload) {
+    this.body = payload;
+    return this;
+  },
+});
 
 test("rate limiting is disabled by default outside production", () => {
   assert.equal(isRateLimitingEnabled({ NODE_ENV: "development" }), false);
@@ -46,6 +71,78 @@ test("createRateLimiter returns pass-through middleware when disabled", () => {
   });
 
   assert.equal(nextCalled, true);
+});
+
+test("read-only helpers classify API traffic into separate limiter buckets", () => {
+  assert.equal(isReadOnlyRequest({ method: "GET" }), true);
+  assert.equal(isReadOnlyRequest({ method: "POST" }), false);
+
+  assert.equal(
+    getApiRateLimitProfile({ method: "POST", originalUrl: "/api/auth/login" }),
+    "auth",
+  );
+  assert.equal(
+    getApiRateLimitProfile({ method: "GET", originalUrl: "/api/auth/csrf-token" }),
+    "auth",
+  );
+  assert.equal(
+    getApiRateLimitProfile({ method: "GET", originalUrl: "/api/jobs?limit=12" }),
+    "expensive-search",
+  );
+  assert.equal(
+    getApiRateLimitProfile({ method: "POST", originalUrl: "/api/jobs/search" }),
+    "expensive-search",
+  );
+  assert.equal(
+    getApiRateLimitProfile({ method: "GET", originalUrl: "/api/jobs/meta/companies?query=ac" }),
+    "expensive-search",
+  );
+  assert.equal(
+    getApiRateLimitProfile({ method: "GET", originalUrl: "/api/jobs/abc123" }),
+    "cheap-read",
+  );
+  assert.equal(
+    getApiRateLimitProfile({ method: "PUT", originalUrl: "/api/user/profile" }),
+    "mutation",
+  );
+  assert.equal(
+    getApiRateLimitProfile({ method: "POST", originalUrl: "/api/billing/webhook" }),
+    "skip",
+  );
+});
+
+test("rate-limit handler emits the shared JSON contract with an explicit Retry-After", () => {
+  const response = createResponse();
+
+  createApiRateLimitHandler({
+    message: "Too many requests",
+    retryAfterSeconds: 900,
+  })({}, response);
+
+  assert.equal(response.statusCode, 429);
+  assert.equal(response.headers["Retry-After"], "900");
+  assert.equal(response.headers["Cache-Control"], "no-store");
+  assert.deepEqual(response.body, {
+    code: 429,
+    error: "rate_limited",
+    success: false,
+    message: "Too many requests",
+  });
+});
+
+test("rate-limit handler derives Retry-After from the limiter window when provided", () => {
+  const response = createResponse();
+
+  createApiRateLimitHandler({
+    message: "Too many requests",
+  })(
+    {},
+    response,
+    undefined,
+    { windowMs: 60_000 },
+  );
+
+  assert.equal(response.headers["Retry-After"], "60");
 });
 
 test("admin routes initialize when rate limiting is enabled", async () => {

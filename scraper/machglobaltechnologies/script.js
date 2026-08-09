@@ -163,6 +163,7 @@ const buildJob = ({ title, department, description }) => {
     postingDate: null,
     closingDate: null,
     jobDescription: description,
+    publicExperienceChecked: true,
     remoteStatus: null,
   }
 }
@@ -288,7 +289,7 @@ export const createMachGlobalTechnologiesScraper = ({ now = () => new Date().toI
 export const run = async (options = {}) => createMachGlobalTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

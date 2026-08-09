@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -50,9 +50,15 @@ const extractTitleFromBlock = (block) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /Electrifex/i.test(page)
+  const hasLegacyHomepageMarkers = /Electrifex/i.test(page)
     && /innovative solutions for automotive, embedded, and cloud technologies/i.test(page)
     && /talents\.electrifex\.com/i.test(page)
+  const hasSpaHomepageShell = /<title>\s*Electrifex\s*<\/title>/i.test(page)
+    && /Electrifex:\s*Engineering innovative solutions for automotive, embedded, and cloud technologies/i.test(page)
+    && /<div[^>]+id=["']root["'][^>]*>/i.test(page)
+    && /\/assets\/index-[^"']+\.(?:js|css)/i.test(page)
+
+  return hasLegacyHomepageMarkers || hasSpaHomepageShell
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -133,7 +139,7 @@ export const createElectrifexScraper = () => ({
 export const run = async (options = {}) => createElectrifexScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Electrifex scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

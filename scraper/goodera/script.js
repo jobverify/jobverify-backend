@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import GOODERA_CATALOG from './catalog.js'
 
@@ -85,7 +85,7 @@ export const extractKulaCompanyUrl = (html = '') => {
 export const hasOfficialKulaBoardSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
 
-  return /Work that powers the world of good\./i.test(normalized)
+  return /(?:Work that powers the world of good\.|Powering the World of Good)/i.test(normalized)
     && /Open Positions/i.test(normalized)
     && /Explore our current job openings across various departments/i.test(normalized)
 }
@@ -277,7 +277,7 @@ export const createGooderaScraper = () => ({
 export const run = async (options = {}) => createGooderaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

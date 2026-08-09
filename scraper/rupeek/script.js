@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { enrichJobsWithPublicExperience } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
 import RUPEEK_CATALOG from './catalog.js'
 
@@ -98,12 +99,19 @@ const isIndiaLocation = (location) => {
 export const hasOfficialRupeekCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const title = extractTitle(page)
+  const text = normalizeWhitespace(page) || ''
+  const hasLegacyContentSignals = /Why join Us/i.test(text)
+    && /Engineering at Rupeek/i.test(text)
+    && /Open Positions/i.test(text)
+  const hasCurrentValueSignals = text.includes('Excellent Growth')
+    && text.includes('Wealth creation')
+    && text.includes('Work that matters')
+    && text.includes('Passionate, Energetic People')
+    && text.includes('Innovation')
 
   return title === 'Join our team | Rupeek | Careers'
     && new RegExp(`href=["']${OFFICIAL_CAREERS_CANONICAL_URL}["']`, 'i').test(page)
-    && /Why join Us/i.test(page)
-    && /Engineering at Rupeek/i.test(page)
-    && /Open Positions/i.test(page)
+    && (hasLegacyContentSignals || hasCurrentValueSignals)
     && /https:\/\/www\.linkedin\.com\/jobs\/view\//i.test(page)
 }
 
@@ -162,8 +170,7 @@ export const createRupeekScraper = ({
     }
 
     const limitedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return limitedJobs.map((job) => ({
+    const baseJobs = limitedJobs.map((job) => ({
       title: job.title,
       company: COMPANY_NAME,
       department: null,
@@ -184,6 +191,17 @@ export const createRupeekScraper = ({
       jobDescription: null,
       source: SOURCE,
       link: job.applyUrl,
+    }))
+    const enrichedJobs = await enrichJobsWithPublicExperience(baseJobs, {
+      fetchText,
+      useBrowserFallback: false,
+      concurrency: Math.min(4, Math.max(1, baseJobs.length)),
+    })
+
+    return enrichedJobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))
   },
@@ -192,7 +210,7 @@ export const createRupeekScraper = ({
 export const run = async (options = {}) => createRupeekScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

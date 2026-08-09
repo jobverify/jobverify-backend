@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import KLAUS_IT_SOLUTIONS_CATALOG from './catalog.js'
 
@@ -40,11 +40,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialKlausCareersSignals = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title[^>]*>\s*Careers\s*[-–]\s*Klaus IT Solutions\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Careers\s*(?:-|&#8211;|&ndash;|â€“|–)\s*Klaus IT Solutions\s*<\/title>/i.test(page)
     && /MyApiPage/i.test(page)
     && /id=["']txtsearch["']/i.test(page)
     && /id=["']txtcity["']/i.test(page)
-  }
+}
 
 export const pageExposesStructuredJobListings = (html = '') =>
   /\bjob-card\b/i.test(String(html ?? ''))
@@ -69,7 +69,7 @@ export const createKlausITSolutionsScraper = () => ({
 export const run = async (options = {}) => createKlausITSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

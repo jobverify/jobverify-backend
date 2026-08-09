@@ -1,4 +1,4 @@
-export const SOURCE = 'cibersitesindia'
+﻿export const SOURCE = 'cibersitesindia'
 export const COMPANY = 'CIBERsites India'
 export const HOMEPAGE_URL = 'https://www.ciber.com/'
 export const CAREERS_URL = 'https://www.ciber.com/careers'
@@ -14,7 +14,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'CIBERsites India',
   adapter: 'script',
-  modulePath: '../cibersitesindia/script.js',
+  modulePath: '../../scraper/cibersitesindia/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'exact-name-domain-redirects-to-acquirer-homepage',
@@ -94,3 +94,4 @@ export const run = async ({ fetchPage = defaultFetchPage } = {}) => {
 
   return []
 }
+

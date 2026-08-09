@@ -1,43 +1,41 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const SOURCE = 'primesoftenterprise'
 const COMPANY = 'Primesoft Enterprise'
-const HOMEPAGE_URL = 'https://www.primesoftindia.com/'
+const CAREERS_URL = 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs'
 
-test('Primesoft Enterprise is registered as a verified blocked-homepage sentinel without aliases', () => {
+test('Primesoft Enterprise is registered as a Darwinbox-backed first-party careers scraper without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
-  assert.ok(provider, 'Expected Primesoft Enterprise provider to be registered in customProviders.json')
+  assert.ok(provider, 'Expected Primesoft Enterprise provider to be registered in the scraper catalog')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, COMPANY)
-  assert.equal(provider.companyCareerPage, HOMEPAGE_URL)
-  assert.deepEqual(provider.alternateCareerPages, [
-    'https://www.primesoftindia.com/careers',
-    'https://www.primesoftindia.com/careers/',
-    'https://www.primesoftindia.com/career',
-    'https://www.primesoftindia.com/career/',
-    'https://www.primesoftindia.com/jobs',
-    'https://www.primesoftindia.com/jobs/',
-    'https://www.primesoftindia.com/join-us',
-    'https://www.primesoftindia.com/join-us/',
-    'https://www.primesoftindia.com/current-openings',
-    'https://www.primesoftindia.com/current-openings/',
-  ])
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.companyCareerPage, CAREERS_URL)
+  assert.equal(provider.homepageUrl, 'https://primesoft.net/')
+  assert.equal(provider.legacyCareersPageUrl, 'https://primesoft.net/careers/')
+  assert.equal(provider.officialCareersHandoffUrl, 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs')
+  assert.equal(provider.publicAllJobsUrl, 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs')
+  assert.equal(provider.darwinboxOrigin, 'https://primesoft.darwinbox.in')
+  assert.equal(provider.darwinboxCompanyId, 'main')
+  assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'blocked-homepage-plus-absent-careers-route-validation')
+  assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-blocked-homepage+verified-absent-careers-routes-return-empty',
+    'verified-homepage-careers-handoff+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'primesoftindia.com')
+  assert.equal(provider.companyDomain, 'primesoft.net')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/primesoft\.net\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/primesoft\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/allJobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /16 India openings/i)
   assert.match(provider.modulePath, /primesoftenterprise[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })
@@ -62,6 +60,6 @@ test('Primesoft Enterprise is runnable through the scraper provider catalog', ()
   assert.ok(scraper, 'Expected buildScrapers() to return the Primesoft Enterprise scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, SOURCE)
-  assert.equal(scraper.provider.companyCareerPage, HOMEPAGE_URL)
+  assert.equal(scraper.provider.companyCareerPage, CAREERS_URL)
   assert.match(scraper.dryRunFile, /primesoftenterprise[\\/]jobs\.json$/i)
 })

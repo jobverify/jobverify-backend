@@ -3,16 +3,16 @@ import test from 'node:test'
 
 const careersHtml = `
 <html>
-  <head><title>Verinite | Explore World of Opportunities with Us</title></head>
+  <head><title>Verinite | Explore World of  Opportunities with Us</title></head>
   <body>
     <div class="job_box">
       <h5>Prime Test Lead</h5>
-      <p class="job_location"><span class="theme_text">Pune</span><span class="job_status">Full Time</span></p>
+      <p class="mt_20 job_location"><span class="theme_text">Pune</span><span class="job_status">Full Time</span></p>
       <a href="lead-tsys-prime.html">Apply Now</a>
     </div>
     <div class="job_box">
       <h5>Powercard L2 Support</h5>
-      <p class="job_location"><span class="theme_text">Pune / Chennai</span><span class="job_status">Full Time</span></p>
+      <p class="mt_20 job_location"><span class="theme_text">Pune / Chennai</span><span class="job_status">Full Time</span></p>
       <a href="bau-analyst-2.html">Apply Now</a>
     </div>
   </body>

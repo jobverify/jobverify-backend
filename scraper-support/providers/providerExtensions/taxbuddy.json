@@ -1,0 +1,21 @@
+{
+  "source": "taxbuddy",
+  "companyName": "TaxBuddy",
+  "officialBrandName": "TaxBuddy.com",
+  "adapter": "script",
+  "modulePath": "../taxbuddy/script.js",
+  "dryRunFile": "taxbuddy/jobs.json",
+  "companyCareerPage": "https://www.taxbuddy.com/",
+  "companyDomain": "taxbuddy.com",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "no-verified-first-party-careers-surface",
+  "extractionStrategy": "no-verified-official-careers-page-or-ats-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.taxbuddy.com/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.taxbuddy.com/ is TaxBuddy's first-party website. The public site does not expose a verified careers page, official ATS endpoint, or enumerable job feed. This exact-name provider fails closed and returns no jobs rather than substituting similarly named companies or third-party listings."
+}

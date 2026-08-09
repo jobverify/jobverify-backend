@@ -1,4 +1,5 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 export const OPENINGS_URL = 'https://www.cafecoffeeday.com/careers/openings'
 export const APPLY_URL = 'https://www.cafecoffeeday.com/careers/apply-now'
@@ -87,16 +88,53 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createCafeCoffeeDayScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const openingsHtml = await fetchText(OPENINGS_URL)
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
-    return extractSearchResults(openingsHtml).map((job) => ({
-      ...job,
-      source: 'cafecoffeeday',
-      link: job.applyUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+export const createCafeCoffeeDayScraper = () => ({
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
+    }
+
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchOpeningsText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const openingsHtml = await fetchOpeningsText(OPENINGS_URL)
+
+      return extractSearchResults(openingsHtml).map((job) => ({
+        ...job,
+        source: 'cafecoffeeday',
+        link: job.applyUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

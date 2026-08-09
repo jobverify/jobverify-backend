@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -130,13 +130,12 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const text = stripTags(page) || ''
 
   return /Explore Exciting IT Career Opportunities at Experion Technologies/i.test(page)
-    && /careers at experion/i.test(text)
     && /career-jobs-container/i.test(page)
     && /career-job-row/i.test(page)
     && /career-job-title/i.test(page)
+    && /https:\/\/experionglobal\.com\/jobs\//i.test(page)
   }
 
 export const extractListings = (html) => {
@@ -280,7 +279,7 @@ export const createExperionTechnologiesScraper = ({ now = () => new Date().toISO
 export const run = async (options = {}) => createExperionTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

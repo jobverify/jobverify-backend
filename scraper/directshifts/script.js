@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -11,6 +11,7 @@ export const OPEN_JOBS_URL = 'https://www.directshifts.com/open-jobs'
 export const FEED_URL = 'https://app.directshifts.com/jobs/p/list.json'
 
 const DETAIL_URL_BASE = 'https://app.directshifts.com/jobs/p'
+const EXPERIENCE_CONTEXT_PATTERN = String.raw`(?:\s+of\s+(?:[a-z0-9+/,&().-]+\s+){0,8}?experience|\s+(?:[a-z0-9+/,&().-]+\s+){0,8}?experience|\s+experience)`
 
 const STATE_NAMES = {
   AK: 'Alaska',
@@ -70,6 +71,10 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = String(value)
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -181,6 +186,69 @@ const buildJobDescription = (record = {}, specialties = []) => {
   return parts.length > 0 ? `${parts.join('. ')}.` : null
 }
 
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<\/(p|div|li|ul|ol|h[1-6])>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const normalizeIsoDate = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const timestamp = Date.parse(normalized)
+  if (Number.isNaN(timestamp)) return null
+
+  return new Date(timestamp).toISOString().slice(0, 10)
+}
+
+const extractFirst = (pattern, value) => {
+  const match = String(value ?? '').match(pattern)
+  return match ? match[1] : null
+}
+
+const extractJobPostingJsonLd = (html = '') => {
+  for (const match of String(html ?? '').matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)) {
+    try {
+      const parsed = JSON.parse(match[1])
+      if (parsed?.['@type'] === 'JobPosting') return parsed
+    } catch {
+      // Ignore non-JSON or non-JobPosting structured data blocks.
+    }
+  }
+
+  return null
+}
+
+const formatExperienceYears = (minimum, maximum = null, suffix = '') => {
+  if (!minimum) return null
+  if (maximum) return `${minimum}-${maximum} years`
+  return `${minimum}${suffix} years`
+}
+
+const extractExperienceRequired = (jobDescription) => {
+  const text = normalizeWhitespace(jobDescription)
+  if (!text) return null
+
+  const rangeMatch = text.match(new RegExp(`(?:at\\s+least\\s+|minimum\\s+)?(\\d+(?:\\.\\d+)?)\\s*(?:-|to)\\s*(\\d+(?:\\.\\d+)?)\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (rangeMatch) {
+    return formatExperienceYears(rangeMatch[1], rangeMatch[2])
+  }
+
+  const plusMatch = text.match(new RegExp(`(?:at\\s+least\\s+|minimum\\s+)?(\\d+(?:\\.\\d+)?)\\+\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (plusMatch) {
+    return formatExperienceYears(plusMatch[1], null, '+')
+  }
+
+  const singleMatch = text.match(new RegExp(`(?:at\\s+least\\s+|minimum\\s+)?(\\d+(?:\\.\\d+)?)\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (singleMatch) {
+    return formatExperienceYears(singleMatch[1])
+  }
+
+  return null
+}
+
 const toPositiveInteger = (value) => {
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
@@ -242,6 +310,28 @@ export const extractSearchResults = (payload = {}) =>
     })
     .filter(Boolean)
 
+export const extractJobDetail = (html = '', listing = {}) => {
+  const rawHtml = String(html ?? '')
+  const jobPosting = extractJobPostingJsonLd(rawHtml)
+  const descriptionHtml = jobPosting?.description
+    || extractFirst(/<div class="description">([\s\S]*?)<\/div>\s*<div class="quick_application_box"/i, rawHtml)
+    || null
+  const jobDescription = stripTags(descriptionHtml) || listing.jobDescription || null
+
+  return {
+    ...listing,
+    title: normalizeWhitespace(jobPosting?.title) || listing.title || null,
+    company: normalizeWhitespace(jobPosting?.hiringOrganization?.name) || listing.company || 'DirectShifts',
+    applyUrl: listing.applyUrl || listing.sourceUrl || null,
+    sourceUrl: listing.sourceUrl || listing.applyUrl || null,
+    employmentType: listing.employmentType || null,
+    experienceRequired: extractExperienceRequired(jobDescription) || listing.experienceRequired || null,
+    postingDate: normalizeIsoDate(jobPosting?.datePosted) || listing.postingDate || null,
+    closingDate: normalizeIsoDate(jobPosting?.validThrough) || listing.closingDate || null,
+    jobDescription,
+  }
+}
+
 const defaultFetchJson = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -257,12 +347,28 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.text()
+}
+
 export const createDirectShiftsScraper = ({
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
     const fetchJson = options.fetchJson || defaultFetchJson
+    const fetchText = options.fetchText || defaultFetchText
     const jobs = []
     const seenJobIds = new Set()
 
@@ -275,10 +381,12 @@ export const createDirectShiftsScraper = ({
         if (seenJobIds.has(job.jobId)) continue
         seenJobIds.add(job.jobId)
 
+        const detail = extractJobDetail(await fetchText(job.sourceUrl), job)
+
         jobs.push({
-          ...job,
+          ...detail,
           source: 'directshifts',
-          link: job.applyUrl || job.sourceUrl,
+          link: detail.applyUrl || detail.sourceUrl,
           scrapedAt: new Date().toISOString(),
         })
 
@@ -297,7 +405,7 @@ export const createDirectShiftsScraper = ({
 export const run = async () => createDirectShiftsScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

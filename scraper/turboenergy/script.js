@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -83,7 +83,6 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return HOMEPAGE_SIGNALS.every((signal) => normalized.includes(signal))
-    && extractCareersUrl(html) === CAREERS_URL
 }
 
 export const hasOfficialCareersShellSignal = (html) => {
@@ -127,8 +126,8 @@ export const createTurboEnergyScraper = () => ({
 
 export const run = async (options = {}) => createTurboEnergyScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

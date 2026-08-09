@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { FREECHARGE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -366,26 +366,44 @@ const defaultFetchPayload = async (url, options = {}) => {
 }
 
 export const extractCareersHandoffUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /https:\/\/freecharge\.ripplehire\.com\/candidate\/\?source=CAREERSITE(?:&amp;|&)token=IoV5vvUSMKLwmaa1Suou/i,
-  )
+  for (const match of String(html ?? '').matchAll(/https:\/\/freecharge\.ripplehire\.com\/candidate\/\?[^"'\s<>]+/gi)) {
+    const decoded = decodeHtmlEntities(match[0])
 
-  return match ? decodeHtmlEntities(match[0]) : null
+    try {
+      const url = new URL(decoded)
+      if (url.hostname !== 'freecharge.ripplehire.com') continue
+      if (url.pathname !== '/candidate/') continue
+      if (url.searchParams.get('token') !== TOKEN) continue
+      if ((url.searchParams.get('source') || '').toUpperCase() !== BOARD_SOURCE) continue
+
+      const canonicalUrl = new URL('https://freecharge.ripplehire.com/candidate/')
+      canonicalUrl.searchParams.set('token', TOKEN)
+      canonicalUrl.searchParams.set('source', BOARD_SOURCE)
+      canonicalUrl.hash = '#list'
+      return canonicalUrl.toString()
+    } catch {
+      // Ignore malformed candidate URLs and continue searching for the verified handoff.
+    }
+  }
+
+  return null
 }
 
 export const hasVerifiedHomepageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
 
   return normalized.includes('Freecharge')
-    && /href=["']https:\/\/careers\.freecharge\.in\/["']/i.test(String(html ?? ''))
+    && /href=["']https:\/\/careers\.freecharge\.in\/?["']/i.test(String(html ?? ''))
     && normalized.includes('Freecharge Payment Technologies Pvt. Ltd. All Rights Reserved')
 }
 
 export const hasVerifiedCareersPageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
 
-  return normalized.includes('#ChangeYourFuture')
-    && normalized.includes('Grow Your Career While We Revolutionize Payments')
+  return /<title>\s*Careers at Freecharge\s*<\/title>/i.test(String(html ?? ''))
+    && normalized.includes('#ChangeYourFuture')
+    && normalized.includes('Grow Your Career')
+    && normalized.includes('open roles')
     && extractCareersHandoffUrl(html) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
@@ -497,7 +515,7 @@ export const createFreeChargeScraper = ({
 export const run = async (options = {}) => createFreeChargeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

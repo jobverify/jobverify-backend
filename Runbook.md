@@ -1,4 +1,4 @@
-# Jobify Backend Execution Guide
+# Jobverify Backend Execution Guide
 
 This guide explains how to install, configure, run, and operate the backend and scraper from this repository.
 
@@ -51,7 +51,7 @@ NODE_ENV=development
 SCRAPER_CONCURRENCY=3
 
 BREVO_API_KEY=<brevo-api-key>
-BREVO_SENDER_NAME=Jobify
+BREVO_SENDER_NAME=Jobverify
 BREVO_SENDER_EMAIL=<verified-sender-email>
 
 GITHUB_PAT=<optional-github-token>
@@ -62,8 +62,8 @@ Notes:
 
 - Keep real credentials out of documentation and commits.
 - `CORS_ORIGIN` is comma-separated. If `FRONTEND_ORIGIN` is not set, the first origin is used for email verification redirects.
-- `FRONTEND_ORIGIN` should be the browser origin of the frontend app, for example `https://jobify-frontend.onrender.com`.
-- `PUBLIC_API_ORIGIN` should be the public HTTPS origin of this backend service, for example `https://jobify-backend.onrender.com`.
+- `FRONTEND_ORIGIN` should be the browser origin of the frontend app, for example `https://jobverify-frontend.onrender.com`.
+- `PUBLIC_API_ORIGIN` should be the public HTTPS origin of this backend service, for example `https://jobverify-backend.onrender.com`.
 - `TRUST_PROXY` defaults to disabled. Set it to `1` only when the backend is behind exactly one trusted reverse proxy that overwrites `X-Forwarded-For`.
 - `GITHUB_PAT` and `GITHUB_REPO` are only needed for `POST /api/admin/scrape/trigger`.
 - Start new environments from `.env.example`.
@@ -97,7 +97,7 @@ curl.exe http://localhost:5000/
 Expected response:
 
 ```text
-Hello from the Jobify Backend!
+Hello from the Jobverify Backend!
 ```
 
 Dedicated health endpoint:
@@ -224,6 +224,14 @@ curl.exe -X POST http://localhost:5000/api/auth/logout `
 
 ## Scraper Commands
 
+Remove all dry run jobs.json in all scraper folder:
+
+```powershell
+npm run clean:workspace
+```
+
+
+
 Run all scrapers sequentially and save to MongoDB:
 
 ```powershell
@@ -248,13 +256,73 @@ Run all scrapers in parallel without writing to MongoDB:
 npm run scrape:parallel:dry
 ```
 
+```powershell
+cd jobverify-backend
+$env:SCRAPER_CONCURRENCY = "5"
+$env:WORKDAY_DETAIL_FETCH_CONCURRENCY = "1"
+$env:NODE_OPTIONS = "--use-system-ca"
+$runStamp = Get-Date -Format "yyyyMMddTHHmmss"
+$logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
+```
+
 Equivalent direct commands:
 
 ```powershell
-node scraper/runner.js
-node scraper/runner.js --dry-run
-node scraper/runner.js --parallel
-node scraper/runner.js --parallel --dry-run
+node --use-system-ca scraper-support/runner.js
+node --use-system-ca scraper-support/runner.js --dry-run
+node --use-system-ca scraper-support/runner.js --parallel
+node --use-system-ca scraper-support/runner.js --parallel --dry-run
+```
+
+### Run A Specific Source Or Resume An Interrupted Run
+
+Run one or more named sources without clearing jobs from other sources:
+
+```powershell
+$env:SCRAPER_ONLY = "google,rubrik"
+npm run scrape:parallel
+Remove-Item Env:SCRAPER_ONLY
+```
+
+Resume at a source (including that source) after an interruption. The resume mode preserves jobs from sources before the restart point:
+
+```powershell
+$env:SCRAPER_START_AT = "indegene"
+npm run scrape:parallel
+Remove-Item Env:SCRAPER_START_AT
+```
+
+To continue strictly after a source that completed successfully, use `SCRAPER_START_AFTER` instead:
+
+```powershell
+$env:SCRAPER_CONCURRENCY = "20"
+$env:SCRAPER_START_AFTER = "eko"
+$runStamp = Get-Date -Format "yyyyMMddTHHmmss"
+$logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline-batch2.log"
+Remove-Item Env:SCRAPER_START_AFTER
+```
+
+Use only one of `SCRAPER_ONLY`, `SCRAPER_START_AT`, or `SCRAPER_START_AFTER` for a run. For the interrupted 30 July 2026 run, restart at `eko` so that its failed attempt is retried before the remaining catalog is processed.
+
+For an unattended local run, capture output to a timestamped log while preserving the console output:
+
+```powershell
+$runStamp = Get-Date -Format "yyyyMMddTHHmmss"
+$logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+npm run scrape:parallel 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
+```
+
+Before a broad live run, use the dry-run variant to confirm the environment and scraper behavior:
+
+```powershell
+$env:SCRAPER_START_AT = "eko"
+npm run scrape:parallel:dry
+Remove-Item Env:SCRAPER_START_AT
 ```
 
 Dry-run output files are written under each scraper folder, for example:
@@ -262,7 +330,7 @@ Dry-run output files are written under each scraper folder, for example:
 ```text
 scraper/google/jobs.json
 scraper/rubrik/jobs.json
-scraper/myworkday/<source>/jobs.json
+scraper-support/myworkday/<source>/jobs.json
 ```
 
 ## Admin Scraper Control

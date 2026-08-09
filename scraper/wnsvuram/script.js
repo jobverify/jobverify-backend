@@ -1,3 +1,8 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'wnsvuram'
 export const COMPANY = 'WNS-Vuram'
 export const HOMEPAGE_URL = 'https://www.vuram.com/'
@@ -72,6 +77,15 @@ export const hasOfficialCareersSignal = (html) => {
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+export const isVerifiedMissingCareersRoute = (page = {}) => {
+  const normalized = normalizeWhitespace(page.html).toLowerCase()
+
+  return Number(page.status) === 404
+    && /(^|\.)vuram\.com$/i.test(new URL(page.url || CAREERS_URL).hostname)
+    && normalized.includes('404 error page')
+    && !hasPublicJobsSignal(page.html)
+}
+
 export const createWnsVuramScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
@@ -80,7 +94,11 @@ export const createWnsVuramScraper = () => ({
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+    const hasVerifiedCareersShell =
+      careersPage.status === 200 && hasOfficialCareersSignal(careersPage.html)
+    const hasVerifiedMissingRoute = isVerifiedMissingCareersRoute(careersPage)
+
+    if (!hasVerifiedCareersShell && !hasVerifiedMissingRoute) {
       throw new Error('WNS-Vuram careers page changed materially or no longer matches the known public surface')
     }
 
@@ -93,3 +111,15 @@ export const createWnsVuramScraper = () => ({
 })
 
 export const run = async (options = {}) => createWnsVuramScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

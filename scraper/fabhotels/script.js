@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { FAB_HOTELS_CATALOG } from './catalog.js'
 
@@ -22,8 +22,8 @@ export const VERIFIED_ROLE_URLS = PROVIDER_METADATA.verifiedRoleUrls
 export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
-const DETAIL_URL_PATTERN = /^https:\/\/www\.fabhotels\.com\/careers\/[A-Z0-9-]+$/i
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const DETAIL_URL_PATTERN = /^https:\/\/www\.fabhotels\.com\/careers\/(?!department-)[A-Z0-9-]+$/i
 
 const STATE_BY_CITY = {
   ahmadabad: 'Gujarat',
@@ -166,7 +166,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title>\s*FabHotels:\s*India's Best Budget Hotels\s*\|\s*Online Hotel Booking\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*FabHotels:\s*India(?:'|&#x27;|&#39;|&apos;)s Best Budget Hotels\s*\|\s*Online Hotel Booking\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Book top-rated budget hotels in India.')
     && normalized.includes('FabHotels across')
     && normalized.includes('Travelstack Tech Limited')
@@ -312,7 +312,7 @@ export const createFabHotelsScraper = ({
 export const run = async (options = {}) => createFabHotelsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

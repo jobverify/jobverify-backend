@@ -14,17 +14,6 @@ export const JOB_LISTINGS_AJAX_URL = ARAVIND_EYE_CARE_SYSTEM_CATALOG.jobListings
 export const JOB_LISTINGS_API_URL = ARAVIND_EYE_CARE_SYSTEM_CATALOG.jobListingsApiUrl
 export const VERIFIED_ON = ARAVIND_EYE_CARE_SYSTEM_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = ARAVIND_EYE_CARE_SYSTEM_CATALOG.verifiedSurfaceSummary
-export const KNOWN_LIVE_JOB_LINKS = [
-  'https://aravind.org/job/driver/',
-  'https://aravind.org/job/ac-mechanic/',
-  'https://aravind.org/job/data-engineering-jd/',
-]
-
-const KNOWN_LIVE_JOBS = [
-  { title: 'Driver', link: 'https://aravind.org/job/driver/' },
-  { title: 'AC Mechanic', link: 'https://aravind.org/job/ac-mechanic/' },
-  { title: 'Data Engineering JD', link: 'https://aravind.org/job/data-engineering-jd/' },
-]
 
 const SECTION_LABELS = [
   'Required Skills and Experience',
@@ -182,7 +171,6 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /data-post_id=["']1989["']/i.test(rawHtml)
     && /class=["']job_filters["']/i.test(rawHtml)
     && /Search Jobs/i.test(normalized)
-    && /AuroiTech-Madurai/i.test(normalized)
     && /Load more listings/i.test(normalized)
     && /job_manager_ajax_filters/i.test(rawHtml)
     && /ajax_url/i.test(rawHtml)
@@ -219,23 +207,29 @@ export const buildAjaxListingMap = (payload = {}) => new Map(
 )
 
 export const hasExpectedAjaxListingsSignal = (payload = {}) => {
+  const listings = extractAjaxListings(payload)
+  if (payload?.found_jobs === false) {
+    return Number(payload?.max_num_pages) === 0
+      && /no_job_listings_found/i.test(String(payload?.html ?? ''))
+      && listings.length === 0
+  }
+
   if (payload?.found_jobs !== true) return false
   if (Number(payload?.max_num_pages) < 1) return false
 
-  const listings = extractAjaxListings(payload)
-
-  return KNOWN_LIVE_JOBS.every((expectedJob) =>
-    listings.some((listing) => listing.title === expectedJob.title && listing.link === expectedJob.link))
+  return listings.length > 0
 }
 
 export const hasExpectedJobListingsApiSignal = (payload = {}) => (
   Array.isArray(payload)
-  && KNOWN_LIVE_JOBS.every((expectedJob) =>
-    payload.some((record) =>
+  && (
+    payload.length === 0
+    || payload.some((record) =>
       String(record?.status ?? '').toLowerCase() === 'publish'
       && String(record?.type ?? '').toLowerCase() === 'job_listing'
-      && normalizeText(record?.title?.rendered) === expectedJob.title
-      && normalizeText(record?.link) === expectedJob.link))
+      && normalizeText(record?.title?.rendered)
+      && normalizeText(record?.link))
+  )
 )
 
 const extractExperienceRequired = (sections) => {
@@ -364,6 +358,10 @@ export const createAravindEyeCareSystemScraper = () => ({
       throw new Error('Aravind Eye Care System verified public job feed no longer matches the known public surface')
     }
 
+    if (ajaxPayload?.found_jobs === false && Array.isArray(apiPayload) && apiPayload.length === 0) {
+      return []
+    }
+
     const ajaxListingMap = buildAjaxListingMap(ajaxPayload)
 
     return extractSearchResults(apiPayload, ajaxListingMap).map((job) => ({
@@ -378,7 +376,7 @@ export const createAravindEyeCareSystemScraper = () => ({
 export const run = async (options = {}) => createAravindEyeCareSystemScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

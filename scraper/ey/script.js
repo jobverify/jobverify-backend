@@ -1,14 +1,17 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 const BASE_URL = 'https://careers.ey.com'
 const SEARCH_PATH = '/ey/search/?createNewAlert=false&q=&locationsearch=India&optionsFacetsDD_country=&optionsFacetsDD_customfield1=&locale=en_US'
+const DEFAULT_DETAIL_CONCURRENCY = 10
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -141,14 +144,43 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
+const normalizeExperienceEvidence = (value) => normalizeWhitespace(value)
+  ?.replace(
+    /^(?:minimum|at\s+least)\s+(\d+(?:\.\d+)?)\s+(years?|months?)$/i,
+    (_, minimum, unit) => `${minimum}+ ${unit.toLowerCase()}`,
+  )
+  ?.replace(
+    /(\d+(?:\.\d+)?)\s+to\s+(\d+(?:\.\d+)?)\s+(years?|months?)$/i,
+    (_, minimum, maximum, unit) => `${minimum}-${maximum} ${unit.toLowerCase()}`,
+  )
+
+const extractExperienceRequired = ({ title, jobDescription }) => (
+  normalizeExperienceEvidence(
+    extractJobFilterSignals({
+      title,
+      jobDescription,
+      experienceRequired: null,
+    }).experienceProfile?.evidence,
+  ) || null
+)
+
+const extractDescriptionHtml = (html) => (
+  extractFirst(
+    /<span[^>]*class="jobdescription"[^>]*>([\s\S]*?)<\/span>\s*<\/span>(?=\s*<\/div>\s*<\/div>)/i,
+    html,
+  )
+  || extractFirst(
+    /itemprop="description"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/i,
+    html,
+  )
+  || extractFirst(/itemprop="description"[^>]*>([\s\S]*?)<\/span>/i, html)
+)
+
 export const extractJobDetail = (html, listing = {}) => {
   const title = normalizeWhitespace(
     extractFirst(/itemprop="title"[^>]*>([\s\S]*?)<\/span>/i, html),
   ) || listing.title || null
-  const descriptionHtml = extractFirst(
-    /itemprop="description"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/i,
-    html,
-  ) || extractFirst(/itemprop="description"[^>]*>([\s\S]*?)<\/span>/i, html)
+  const descriptionHtml = extractDescriptionHtml(html)
   const applyPath = normalizeWhitespace(
     extractFirst(/class="btn btn-primary btn-large btn-lg apply dialogApplyBtn "\s+href="([^"]+)"/i, html),
   )
@@ -158,6 +190,7 @@ export const extractJobDetail = (html, listing = {}) => {
   const city = listing.city || normalizeWhitespace(
     extractFirst(/itemprop="addressLocality" content="([^"]+)"/i, html),
   ) || null
+  const jobDescription = stripTags(descriptionHtml)
 
   return {
     title,
@@ -166,8 +199,11 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId,
     requisitionId: listing.requisitionId || jobId,
     employmentType: 'Full-time',
-    experienceRequired: listing.experienceRequired || null,
-    jobDescription: stripTags(descriptionHtml),
+    experienceRequired: extractExperienceRequired({
+      title,
+      jobDescription,
+    }) || listing.experienceRequired || null,
+    jobDescription,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractListItems(descriptionHtml),
@@ -198,6 +234,7 @@ export const createEyScraper = () => {
   const run = async ({
     maxPages = config.maxPages,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+    detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
     fetchText = defaultFetchText,
   } = {}) => {
     const jobs = []
@@ -212,39 +249,50 @@ export const createEyScraper = () => {
 
       if (listings.length === 0) break
 
+      const freshListings = []
       for (const listing of listings) {
         if (seenJobIds.has(listing.jobId)) continue
         seenJobIds.add(listing.jobId)
+        freshListings.push(listing)
+      }
 
-        const detailHtml = await fetchText(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
+      const remainingSlots = maxJobs ? Math.max(maxJobs - jobs.length, 0) : freshListings.length
+      const selectedListings = maxJobs ? freshListings.slice(0, remainingSlots) : freshListings
+      const enrichedJobs = await mapWithConcurrency(
+        selectedListings,
+        detailConcurrency,
+        async (listing) => {
+          const detailHtml = await fetchText(listing.sourceUrl)
+          const detail = extractJobDetail(detailHtml, listing)
 
-        jobs.push({
-          jobId: detail.jobId || listing.jobId,
-          requisitionId: detail.requisitionId || listing.requisitionId,
-          title: detail.title || listing.title,
-          company: 'EY',
-          department: null,
-          location: detail.location || listing.location,
-          city: detail.city || listing.city,
-          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-          applyUrl: detail.applyUrl || listing.sourceUrl,
-          sourceUrl: detail.sourceUrl || listing.sourceUrl,
-          source: 'ey',
-          employmentType: detail.employmentType,
-          experienceRequired: detail.experienceRequired,
-          jobDescription: detail.jobDescription,
-          minimumQualification: detail.minimumQualification,
-          preferredQualification: detail.preferredQualification,
-          requiredSkills: detail.requiredSkills,
-          postingDate: detail.postingDate || listing.postingDate,
-          closingDate: detail.closingDate || null,
-          scrapedAt: new Date().toISOString(),
-        })
+          return {
+            jobId: detail.jobId || listing.jobId,
+            requisitionId: detail.requisitionId || listing.requisitionId,
+            title: detail.title || listing.title,
+            company: 'EY',
+            department: null,
+            location: detail.location || listing.location,
+            city: detail.city || listing.city,
+            link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+            applyUrl: detail.applyUrl || listing.sourceUrl,
+            sourceUrl: detail.sourceUrl || listing.sourceUrl,
+            source: 'ey',
+            employmentType: detail.employmentType,
+            experienceRequired: detail.experienceRequired,
+            jobDescription: detail.jobDescription,
+            minimumQualification: detail.minimumQualification,
+            preferredQualification: detail.preferredQualification,
+            requiredSkills: detail.requiredSkills,
+            postingDate: detail.postingDate || listing.postingDate,
+            closingDate: detail.closingDate || null,
+            scrapedAt: new Date().toISOString(),
+          }
+        },
+      )
 
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
+      jobs.push(...enrichedJobs)
+      if (maxJobs && jobs.length >= maxJobs) {
+        return jobs
       }
 
       if (!summary.totalPages || pageNumber >= summary.totalPages) break
@@ -271,7 +319,7 @@ export const {
 } = scraper
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running EY scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

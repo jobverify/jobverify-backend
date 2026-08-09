@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { filterIndiaJobs } from '../utils/indiaLocationFilter.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { filterIndiaJobs } from '../../scraper-support/utils/indiaLocationFilter.js'
 import EXA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -174,11 +174,11 @@ export const createExaScraper = ({
     }
 
     const verifiedBundleUrl = extractVerifiedCareersBundleUrl(careersHtml)
-    if (verifiedBundleUrl !== CAREERS_BUNDLE_URL) {
+    if (!verifiedBundleUrl) {
       throw new Error('Exa verified careers bundle handoff changed')
     }
 
-    const bundleScript = await fetchText(CAREERS_BUNDLE_URL)
+    const bundleScript = await fetchText(verifiedBundleUrl)
     if (!hasVerifiedCareersBundleSignal(bundleScript)) {
       throw new Error('Exa verified careers bundle no longer matches the known Ashby handoff')
     }
@@ -200,7 +200,7 @@ export const createExaScraper = ({
 export const run = async (options = {}) => createExaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

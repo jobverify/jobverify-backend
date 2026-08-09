@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { SHREE_RENUKA_SUGARS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -37,10 +37,10 @@ const normalizeWhitespace = (value) => {
 
 const normalizeForBoundarySearch = (value) => String(value ?? '')
   .replace(/\r/g, '')
-  .replace(/’/g, "'")
-  .replace(/[–—]/g, '-')
-
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  .replace(/[\u2019\u2018]/g, "'")
+  .replace(/[\u2013\u2014]/g, '-')
+  .replace(/â€™|â€˜|Ã¢â‚¬â„¢/g, "'")
+  .replace(/â€“|â€”|Ã¢â‚¬â€œ|Ã¢â‚¬â€/g, '-')
 
 const htmlToText = (html = '') => decodeHtmlEntities(String(html ?? ''))
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -110,9 +110,12 @@ const extractOpportunityRows = (html = '') => {
 export const hasVerifiedCareersPageSignal = (html = '') => {
   const rawHtml = normalizeForBoundarySearch(String(html ?? ''))
   const text = normalizeForBoundarySearch(htmlToText(rawHtml))
+  const title = normalizeForBoundarySearch(
+    normalizeWhitespace(rawHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
+  )
 
-  return /<title[^>]*>\s*Join The Team\s*[-–—]\s*Renuka Sugar\s*<\/title>/i.test(rawHtml)
-    && /Come Join Shree Renuka Sugars Ltd\./i.test(text)
+  return /^Join The Team\s*-\s*Renuka Sugar$/i.test(title)
+    && /(?:Come\s+)?Join\s+Shree\s+Renuka\s+Sugars\s+Ltd\./i.test(text)
     && /Here's a list of the current opportunities:/i.test(text)
     && /Additionally, you can write to us on/i.test(text)
 }
@@ -199,7 +202,7 @@ export const createShreeRenukaSugarsScraper = ({
 export const run = async (options = {}) => createShreeRenukaSugarsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

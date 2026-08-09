@@ -1,9 +1,9 @@
-export const LAMBDATEST_CATALOG = {
+﻿export const LAMBDATEST_CATALOG = {
   source: 'lambdatest',
   companyName: 'LambdaTest',
   officialBrandName: 'TestMu AI (Formerly LambdaTest)',
   adapter: 'script',
-  modulePath: '../lambdatest/script.js',
+  modulePath: '../../scraper/lambdatest/script.js',
   dryRunFile: 'lambdatest/jobs.json',
   homepageUrl: 'https://www.lambdatest.com/',
   legacyCareersPageUrl: 'https://www.lambdatest.com/careers',
@@ -27,3 +27,4 @@ export const LAMBDATEST_CATALOG = {
 }
 
 export default LAMBDATEST_CATALOG
+

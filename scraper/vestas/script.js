@@ -1,4 +1,4 @@
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const BASE_URL = 'https://careers.vestas.com'
 const SEARCH_PATH = '/search/?q=&locationsearch=India'
@@ -120,7 +120,7 @@ export const extractJobDetail = (html, listing = {}) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobify Vestas scraper)',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify Vestas scraper)',
       Accept: 'text/html,application/xhtml+xml',
     },
   })

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import ODESSA_CATALOG from './catalog.js'
 
@@ -15,7 +15,7 @@ export const JOBS_API_URL = ODESSA_CATALOG.jobsApiUrl
 export const VERIFIED_ON = ODESSA_CATALOG.verifiedOn
 export const PROVIDER_METADATA = ODESSA_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 export const hasVerifiedOdessaCareersSignal = (html) =>
   /<title>\s*Careers\s*\|\s*All Job Openings\s*\|\s*Odessa\s*<\/title>/i.test(String(html))
@@ -63,7 +63,7 @@ export const createOdessaScraper = () => ({
 export const run = async (options = {}) => createOdessaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

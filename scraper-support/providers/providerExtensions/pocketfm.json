@@ -1,0 +1,22 @@
+{
+  "source": "pocketfm",
+  "companyName": "Pocket FM",
+  "officialBrandName": "Pocket FM",
+  "adapter": "script",
+  "modulePath": "../pocketfm/script.js",
+  "dryRunFile": "pocketfm/jobs.json",
+  "companyCareerPage": "https://pocketfm.com/",
+  "companyDomain": "pocketfm.com",
+  "atsPlatform": "official-company-recruiting-channel-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-surface-sentinel",
+  "extractionStrategy": "verified-first-party-surface-without-enumerable-job-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "exactCompanyMatchOnly": true,
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://pocketfm.com/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://pocketfm.com/ is Pocket FM's first-party web surface. Pocket FM's official recruitment communications direct candidates to careers@pocketfm.com, but no public ATS or first-party enumerable job-listing feed was verified. This exact-name provider fails closed and returns no jobs rather than using third-party listings or fuzzy company substitutions."
+}

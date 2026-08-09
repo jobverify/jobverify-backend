@@ -18,5 +18,6 @@ for (const fileName of ENV_FILES) {
   dotenv.config({
     path: filePath,
     override: false,
+    quiet: true,
   });
 }

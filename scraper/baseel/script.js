@@ -106,13 +106,6 @@ const stripHtmlToText = (html) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const normalizeShellHtml = (html) => normalizeWhitespace(
-  String(html ?? '')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' '),
-)
-
 const extractTitle = (html) =>
   normalizeWhitespace(String(html ?? '').match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '')
 
@@ -204,7 +197,8 @@ export const sitemapHasCareerLikeUrl = (xml) => {
 }
 
 export const isVerifiedRouteFallbackShell = (pageHtml, homepageHtml, baseUrl) =>
-  normalizeShellHtml(pageHtml) === normalizeShellHtml(homepageHtml)
+  extractTitle(pageHtml) === extractTitle(homepageHtml)
+  && stripHtmlToText(pageHtml) === stripHtmlToText(homepageHtml)
   && !hasPublicJobsTextSignal(pageHtml)
   && !hasUnexpectedCareerOrAtsLink(pageHtml, baseUrl)
 
@@ -333,7 +327,7 @@ export const createBaseelScraper = () => ({
 export const run = async (options = {}) => createBaseelScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

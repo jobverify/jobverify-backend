@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { JUEGO_STUDIO_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -72,43 +73,99 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
+const buildBlockedCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Juego Studio verified careers page remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
 export const createJuegoStudioScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialCareersSignal(html)) {
-      throw new Error('Juego Studio careers page changed materially')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    return extractOpenPositions(html)
-      .sort((left, right) => left.title.localeCompare(right.title))
-      .map((job) => ({
-        title: job.title,
-        company: COMPANY,
-        location: job.location,
-        city: job.city,
-        state: job.state,
-        country: job.country,
-        department: job.department,
-        positionTitle: job.positionTitle,
-        experienceRequired: job.experienceRequired,
-        jobId: job.jobId,
-        sourceUrl: job.sourceUrl,
-        applyUrl: job.applyUrl,
-        jobDescription: null,
-        source: SOURCE,
-        link: job.link,
-        scrapedAt: now(),
-      }))
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        try {
+          return await browserTextFetcher(url)
+        } catch (browserError) {
+          if (isBrowserFallbackError(browserError)) {
+            throw buildBlockedCareersSurfaceError(browserError)
+          }
+          throw browserError
+        }
+      }
+    }
+
+    try {
+      const html = await fetchPageText(CAREERS_URL)
+
+      if (!hasOfficialCareersSignal(html)) {
+        throw new Error('Juego Studio careers page changed materially')
+      }
+
+      return extractOpenPositions(html)
+        .sort((left, right) => left.title.localeCompare(right.title))
+        .map((job) => ({
+          title: job.title,
+          company: COMPANY,
+          location: job.location,
+          city: job.city,
+          state: job.state,
+          country: job.country,
+          department: job.department,
+          positionTitle: job.positionTitle,
+          experienceRequired: job.experienceRequired,
+          jobId: job.jobId,
+          sourceUrl: job.sourceUrl,
+          applyUrl: job.applyUrl,
+          jobDescription: null,
+          source: SOURCE,
+          link: job.link,
+          scrapedAt: now(),
+        }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createJuegoStudioScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

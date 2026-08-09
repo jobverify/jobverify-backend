@@ -13,8 +13,12 @@ import {
 const homepageHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Electronics Manufacturing and Supply Chain Solutions Elecbits</title>
+    </head>
     <body>
       <a href="https://elecbits.in/careers/">Careers</a>
+      <p>Elecbits is your Full-Stack Electronics Partner</p>
       <footer>Azoox Technologies Private Limited</footer>
     </body>
   </html>
@@ -23,49 +27,82 @@ const homepageHtml = `
 const careersHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Careers - Elecbits</title>
+    </head>
     <body>
-      <section class="role-card">
-        <h3>Senior Hardware Engineer</h3>
-        <a href="/wp-content/uploads/2025/12/JD-Senior-Hardware-Designer.pdf">Download JD</a>
+      <section>
+        <h2>Shape India's future with hardware.</h2>
+        <h3>Join the Team</h3>
       </section>
-      <section class="role-card">
-        <h3>SDE II</h3>
-        <a href="/wp-content/uploads/2025/12/EB_SDE-II.pdf">Download JD</a>
-      </section>
-      <section class="role-card">
-        <h3>Product Manager</h3>
-        <a href="/wp-content/uploads/2025/12/EB_Product-Manager.pdf">Download JD</a>
-      </section>
+      <div class="desktop-cards">
+        <section class="role-card">
+          <h3>Team Lead - Sales</h3>
+          <span>Bangalore/Gurugram</span>
+          <a href="https://elecbits.in/elecbits-jd-sales/">See details</a>
+        </section>
+        <section class="role-card">
+          <h3>Sr. Project Manager</h3>
+          <span>Bangalore, Karnataka</span>
+          <a href="https://elecbits.in/elecbits-jd-senior-project-manager/">See details</a>
+        </section>
+        <section class="role-card">
+          <h3>Sr. Firmware Engineer</h3>
+          <span>Bangalore, Karnataka</span>
+          <a href="https://elecbits.in/elecbits-jd-senior-firmware-engineer/">See details</a>
+        </section>
+        <section class="role-card">
+          <h3>Sr. Hardware Engineer</h3>
+          <span>Bangalore, Karnataka</span>
+          <a href="https://elecbits.in/elecbits-jd-senior-hardware-engineer/">See details</a>
+        </section>
+      </div>
+      <div class="mobile-slider">
+        <section class="role-card">
+          <h3>Senior Firmware Engineer</h3>
+          <a href="#">See details</a>
+        </section>
+      </div>
     </body>
   </html>
 `
 
-test('extractPublicListings parses the verified Elecbits career cards and JD links', () => {
+test('extractPublicListings parses the verified Elecbits role cards and ignores mobile duplicates', () => {
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(hasOfficialCareersSignal(careersHtml), true)
 
   const jobs = extractPublicListings(careersHtml)
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 4)
   assert.deepEqual(
     jobs.map((job) => ({
       title: job.title,
+      location: job.location,
       sourceUrl: job.sourceUrl,
       applyUrl: job.applyUrl,
     })),
     [
       {
-        title: 'Senior Hardware Engineer',
-        sourceUrl: 'https://elecbits.in/wp-content/uploads/2025/12/JD-Senior-Hardware-Designer.pdf',
+        title: 'Team Lead - Sales',
+        location: 'Bangalore/Gurugram',
+        sourceUrl: 'https://elecbits.in/elecbits-jd-sales/',
         applyUrl: null,
       },
       {
-        title: 'SDE II',
-        sourceUrl: 'https://elecbits.in/wp-content/uploads/2025/12/EB_SDE-II.pdf',
+        title: 'Sr. Project Manager',
+        location: 'Bangalore, Karnataka',
+        sourceUrl: 'https://elecbits.in/elecbits-jd-senior-project-manager/',
         applyUrl: null,
       },
       {
-        title: 'Product Manager',
-        sourceUrl: 'https://elecbits.in/wp-content/uploads/2025/12/EB_Product-Manager.pdf',
+        title: 'Sr. Firmware Engineer',
+        location: 'Bangalore, Karnataka',
+        sourceUrl: 'https://elecbits.in/elecbits-jd-senior-firmware-engineer/',
+        applyUrl: null,
+      },
+      {
+        title: 'Sr. Hardware Engineer',
+        location: 'Bangalore, Karnataka',
+        sourceUrl: 'https://elecbits.in/elecbits-jd-senior-hardware-engineer/',
         applyUrl: null,
       },
     ],
@@ -88,11 +125,11 @@ test('scraper run fetches the official homepage and careers page and returns nor
   })
 
   assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 4)
   assert.equal(jobs[0].company, 'Elecbits')
   assert.equal(jobs[0].country, 'India')
   assert.equal(jobs[0].source, 'elecbits')
-  assert.equal(jobs[0].link, 'https://elecbits.in/wp-content/uploads/2025/12/JD-Senior-Hardware-Designer.pdf')
+  assert.equal(jobs[0].link, 'https://elecbits.in/elecbits-jd-sales/')
   assert.ok(jobs[0].scrapedAt)
 })
 
@@ -113,7 +150,7 @@ test('fails closed when the Elecbits careers surface changes', async () => {
     createElecbitsScraper().run({
       fetchText: async (url) => {
         if (url === HOMEPAGE_URL) return homepageHtml
-        if (url === CAREERS_URL) return '<html><body>No JD links</body></html>'
+        if (url === CAREERS_URL) return '<html><head><title>Careers - Elecbits</title></head><body>No role cards</body></html>'
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),

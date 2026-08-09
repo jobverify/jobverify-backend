@@ -68,7 +68,7 @@ export const hasVerifiedJobBoardSignal = (html) => {
 
   return /<title>\s*Jobs in Greece\s*-\s*linq\s*<\/title>/i.test(page)
     && normalized.includes('jobs in greece')
-    && normalized.includes('search')
+    && (/\/job-board\b/i.test(page) || normalized.includes('explore jobs'))
 }
 
 export const isClientHandoffText = (value) => /on behalf of/i.test(stripTags(value))
@@ -210,7 +210,7 @@ export const createLinqScraper = ({ now = () => new Date().toISOString() } = {})
 export const run = async (options = {}) => createLinqScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -34,8 +34,18 @@ test('RS Academy sentinels recognize the verified homepage and non-listing caree
   ])
   assert.equal(rsacademy.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(rsacademy.hasPublicJobsSignal(homepageHtml), false)
-  assert.equal(rsacademy.hasSoft404NonListingSignal(soft404Html), true)
-  assert.equal(rsacademy.hasPublicJobsSignal(soft404Html), false)
+  assert.equal(
+    rsacademy.hasSoft404NonListingSignal(soft404Html, rsacademy.NON_LISTING_ROUTE_URLS[0]),
+    true,
+  )
+  assert.equal(
+    rsacademy.hasPublicJobsSignal(soft404Html, rsacademy.NON_LISTING_ROUTE_URLS[0]),
+    false,
+  )
+  assert.equal(
+    rsacademy.hasPublicJobsSignal(soft404Html, 'https://www.rsacademy.co.in/unrelated'),
+    true,
+  )
 })
 
 test('RS Academy returns no jobs only while the verified homepage and non-listing routes remain unchanged', async () => {
@@ -51,7 +61,11 @@ test('RS Academy returns no jobs only while the verified homepage and non-listin
       }
 
       if (rsacademy.NON_LISTING_ROUTE_URLS.includes(url)) {
-        return { status: 200, url, html: soft404Html }
+        return {
+          status: 200,
+          url,
+          html: soft404Html.replace('https://www.rsacademy.co.in/careers', url),
+        }
       }
 
       throw new Error(`Unexpected RS Academy URL: ${url}`)
@@ -95,7 +109,11 @@ test('RS Academy fails closed when the homepage or non-listing routes drift into
           }
         }
 
-        return { status: 200, url, html: soft404Html }
+        return {
+          status: 200,
+          url,
+          html: soft404Html.replace('https://www.rsacademy.co.in/careers', url),
+        }
       },
     }),
     /public careers or jobs signal/i,
@@ -122,7 +140,11 @@ test('RS Academy fails closed when the homepage or non-listing routes drift into
           }
         }
 
-        return { status: 200, url, html: soft404Html }
+        return {
+          status: 200,
+          url,
+          html: soft404Html.replace('https://www.rsacademy.co.in/careers', url),
+        }
       },
     }),
     /verified non-listing route changed|public careers or jobs signal/i,

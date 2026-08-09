@@ -16,7 +16,7 @@ const defaultFetchJson = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     },
   })
 

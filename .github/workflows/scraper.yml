@@ -2,8 +2,12 @@ name: Jobify Scraper Cron
 
 on:
   schedule:
-    - cron: '41 17 * * *' # 11:11 PM IST (UTC+5:30)
+    - cron: '38 20 * * 0,1,2,3,4' # Monday to Friday at 02:08 AM IST
   workflow_dispatch:
+
+concurrency:
+  group: jobverify-production-scraper
+  cancel-in-progress: false
 
 jobs:
   scrape:
@@ -29,8 +33,9 @@ jobs:
         run: node scraper/runner.js --parallel
         env:
           NODE_ENV: production
+          NODE_OPTIONS: '--use-system-ca'
           MONGO_URI: ${{ secrets.MONGO_URI }}
-          PUPPETEER_DISABLE_SANDBOX: ${{secrets.PUPPETEER_DISABLE_SANDBOX}}
           SCRAPER_CONCURRENCY: ${{secrets.SCRAPER_CONCURRENCY}}
-          SCRAPER_FAILURE_ABORT_THRESHOLD: '1000'
-          SCRAPER_JOB_POSTED_WITHIN_DAYS: ${{secrets.SCRAPER_JOB_POSTED_WITHIN_DAYS}}
+          WORKDAY_SCRAPER_TIMEOUT_MS: '90000'
+          WORKDAY_REQUEST_TIMEOUT_MS: '20000'
+          WORKDAY_DETAIL_FETCH_CONCURRENCY: '1'

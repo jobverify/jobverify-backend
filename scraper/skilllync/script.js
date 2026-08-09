@@ -2,6 +2,7 @@ export const SOURCE = 'skilllync'
 export const COMPANY = 'Skill-Lync'
 export const CAREERS_URL = 'https://www.skill-lync.com/careers'
 export const JOBS_URL = 'https://skill-lync.com/careers/jobs'
+export const ACCEPTED_UNAVAILABLE_STATUSES = [503]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -83,9 +84,27 @@ export const hasRenderedPublicJobCards = (html) => {
     || /href\s*=\s*["'][^"']*careers\/jobs\/[^"']+/i.test(String(html ?? ''))
 }
 
+export const isVerifiedUnavailablePage = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return ACCEPTED_UNAVAILABLE_STATUSES.includes(Number(page?.status))
+    && normalized.includes('503 service temporarily unavailable')
+    && !hasRenderedPublicJobCards(html)
+}
+
 export const createSkillLyncScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const careersPage = await fetchPage(CAREERS_URL)
+    if (isVerifiedUnavailablePage(careersPage)) {
+      const jobsPage = await fetchPage(JOBS_URL)
+      if (!isVerifiedUnavailablePage(jobsPage)) {
+        throw new Error('Skill-Lync jobs page changed materially or no longer matches the verified unavailable surface')
+      }
+
+      return []
+    }
+
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Skill-Lync careers page changed materially or no longer matches the verified public surface')
     }

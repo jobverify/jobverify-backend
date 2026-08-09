@@ -95,16 +95,19 @@ export const extractSearchResults = (payload = {}) =>
         jobId: firstNonEmpty(record.jobCode, record.jobId, record.requisitionId),
         requisitionId: firstNonEmpty(record.requisitionId, record.jobCode, record.jobId),
         sourceUrl,
-        applyUrl: sourceUrl,
-        employmentType: firstNonEmpty(
-          record.employmentTenureType,
-          record.employmentType,
-          record.jobType,
-        ),
-        experienceRequired: firstNonEmpty(record.expRange, record.experience, record.experienceRange),
-        minimumQualification: firstNonEmpty(record.minimumQualification, record.minQualification),
-        preferredQualification: firstNonEmpty(record.preferredQualification, record.prefQualification),
-        requiredSkills: flattenSkills(record.skills),
+      applyUrl: sourceUrl,
+      employmentType: firstNonEmpty(
+        record.employmentTenureType,
+        record.employmentType,
+        record.jobType,
+      ),
+      experienceRequired: firstNonEmpty(record.expRange, record.experience, record.experienceRange),
+      publicExperienceChecked: Boolean(
+        firstNonEmpty(record.expRange, record.experience, record.experienceRange),
+      ),
+      minimumQualification: firstNonEmpty(record.minimumQualification, record.minQualification),
+      preferredQualification: firstNonEmpty(record.preferredQualification, record.prefQualification),
+      requiredSkills: flattenSkills(record.skills),
         postingDate: firstNonEmpty(record.jobPostedDate, record.postingDate, record.postedOn),
         closingDate: firstNonEmpty(record.jobClosureDate, record.closingDate, record.expiryDate),
         jobDescription: firstNonEmpty(record.jobDescription, record.description),
@@ -150,7 +153,7 @@ export const createLarsenToubroScraper = () => ({
 export const run = async () => createLarsenToubroScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const currentDir = path.dirname(fileURLToPath(import.meta.url))
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

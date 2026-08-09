@@ -17,7 +17,8 @@ import {
   buildAccessSummary,
   canUseWhatsappAlerts,
 } from "../utils/accessControl.js";
-import { normalizePhoneE164 } from "../services/jobAlertService.js";
+import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
+import { buildPublishedJobDateScope } from "../utils/publicJobLocationScope.js";
 
 const MAX_PROFILE_TEXT_LENGTH = 80;
 const MAX_PROFILE_ITEMS = 20;
@@ -53,6 +54,7 @@ const getSavedJobIds = (user) => (user.savedJobs ?? []).map((jobId) => String(jo
 const buildSavedJobsFilter = (savedJobIds) => ({
   _id: { $in: savedJobIds },
   status: { $ne: "hidden" },
+  ...buildPublishedJobDateScope(),
 });
 
 const countAvailableSavedJobs = async (user) => {
@@ -73,6 +75,17 @@ const WHATSAPP_ELIGIBLE_ACCESS_ROLES = new Set([
   ACCESS_ROLES.SEMESTER,
   ACCESS_ROLES.YEARLY,
 ]);
+
+const buildWhatsappAlertSettingsData = (user) => ({
+  phoneE164: user.contact?.phoneE164 ?? null,
+  whatsappOptInAt: user.contact?.whatsappOptInAt ?? null,
+  whatsappOptOutAt: user.contact?.whatsappOptOutAt ?? null,
+  enabled: Boolean(user.premium?.whatsappAlertsEnabled),
+  canUseWhatsappAlerts: canUseWhatsappAlerts(user),
+  accessRole: user.accessRole,
+  access: buildAccessSummary(user),
+  whatsappAlertFilters: normalizeProfilePreferenceFilters(user.profile?.whatsappAlertFilters),
+});
 
 const buildProfilePayload = (user, savedJobsCount) => ({
   code: 200,
@@ -364,15 +377,7 @@ export const getWhatsappAlertSettings = async (req, res) => {
     return res.status(200).json({
       code: 200,
       success: true,
-      data: {
-        phoneE164: user.contact?.phoneE164 ?? null,
-        whatsappOptInAt: user.contact?.whatsappOptInAt ?? null,
-        whatsappOptOutAt: user.contact?.whatsappOptOutAt ?? null,
-        enabled: Boolean(user.premium?.whatsappAlertsEnabled),
-        canUseWhatsappAlerts: canUseWhatsappAlerts(user),
-        accessRole: user.accessRole,
-        access: buildAccessSummary(user),
-      },
+      data: buildWhatsappAlertSettingsData(user),
     });
   } catch (error) {
     return res.status(500).json({
@@ -386,6 +391,11 @@ export const getWhatsappAlertSettings = async (req, res) => {
 export const updateWhatsappAlertSettings = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    const enabled = [true, "true", "1"].includes(req.body.enabled)
+      ? true
+      : [false, "false", "0"].includes(req.body.enabled)
+        ? false
+        : undefined;
 
     if (!user) {
       return res.status(404).json({
@@ -399,7 +409,13 @@ export const updateWhatsappAlertSettings = async (req, res) => {
       user.contact.phoneE164 = normalizePhoneE164(req.body.phoneE164);
     }
 
-    if (req.body.enabled === true) {
+    if (req.body.whatsappAlertFilters !== undefined) {
+      user.profile.whatsappAlertFilters = normalizeProfilePreferenceFilters(
+        req.body.whatsappAlertFilters,
+      );
+    }
+
+    if (enabled === true) {
       if (
         user.role !== "admin"
         && !WHATSAPP_ELIGIBLE_ACCESS_ROLES.has(user.accessRole)
@@ -411,7 +427,8 @@ export const updateWhatsappAlertSettings = async (req, res) => {
         });
       }
 
-      if (!user.contact.phoneE164) {
+      const normalizedWhatsappPhone = normalizePhoneE164(user.contact?.phoneE164);
+      if (!normalizedWhatsappPhone) {
         return res.status(400).json({
           code: 400,
           success: false,
@@ -419,11 +436,12 @@ export const updateWhatsappAlertSettings = async (req, res) => {
         });
       }
 
+      user.contact.phoneE164 = normalizedWhatsappPhone;
       user.contact.whatsappOptInAt = new Date();
       user.premium.whatsappAlertsEnabled = true;
     }
 
-    if (req.body.enabled === false) {
+    if (enabled === false) {
       user.contact.whatsappOptOutAt = new Date();
       user.premium.whatsappAlertsEnabled = false;
     }
@@ -440,15 +458,7 @@ export const updateWhatsappAlertSettings = async (req, res) => {
       code: 200,
       success: true,
       message: "WhatsApp alert settings updated successfully.",
-      data: {
-        phoneE164: user.contact?.phoneE164 ?? null,
-        whatsappOptInAt: user.contact?.whatsappOptInAt ?? null,
-        whatsappOptOutAt: user.contact?.whatsappOptOutAt ?? null,
-        enabled: Boolean(user.premium?.whatsappAlertsEnabled),
-        canUseWhatsappAlerts: canUseWhatsappAlerts(user),
-        accessRole: user.accessRole,
-        access: buildAccessSummary(user),
-      },
+      data: buildWhatsappAlertSettingsData(user),
     });
   } catch (error) {
     return res.status(500).json({

@@ -15,9 +15,9 @@ export const ZINGHR_CATALOG = {
   extractionStrategy: 'verified-first-party-job-openings-page+detail-pages+first-party-application-form',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.zinghr.com/job-openings/ was the live first-party ZingHR jobs page, that it publicly listed five openings including Customer Support- (HRMS/HCM), Sales Manager, Project Manager, Talent Acquisition Specialist, and API Developer, and that the linked first-party detail pages under https://www.zinghr.com/jobs/ exposed job category, job type, job location, and an on-page application form.',
+    'Verified on Saturday, August 1, 2026 that https://www.zinghr.com/job-openings/ remained the live first-party ZingHR jobs page, that it publicly listed five openings including Customer Support- (HRMS/HCM), Sales Manager, Project Manager, Talent Acquisition Specialist, and API Developer, and that the linked first-party detail pages under https://www.zinghr.com/jobs/ still exposed job category, job type, job location, and an on-page application form while using mixed detail body headings such as JOB DESCRIPTION and Key Job Traits.',
   openingCount: 5,
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'zinghr/jobs.json',

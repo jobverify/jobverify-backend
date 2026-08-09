@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { PHARMEASY_CATALOG } from './catalog.js'
 
@@ -22,7 +22,7 @@ export const VERIFIED_ON = PHARMEASY_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PHARMEASY_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = PHARMEASY_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -110,7 +110,7 @@ export const createPharmEasyScraper = ({
 export const run = async (options = {}) => createPharmEasyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

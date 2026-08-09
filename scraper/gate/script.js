@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -31,16 +31,12 @@ const OFFICIAL_CAREERS_SIGNALS = [
   'internship',
 ]
 
-const OFFICIAL_CAREERS_LINK_SIGNALS = [
-  'https://jobs.lever.co/gate',
-]
-
 const LEVER_BOARD_SIGNALS = [
-  '<title>Gate</title>',
-  'Job openings at Gate',
+  'location type',
+  'work type',
+  'location all',
+  'team all',
   'Gate Home Page',
-  'Jobs powered by Lever',
-  'https://jobs.lever.co/gate/',
 ]
 
 const decodeHtmlEntities = (value) => String(value ?? '')
@@ -132,17 +128,17 @@ const requireField = (value, fieldName) => {
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const markup = String(html ?? '')
   const text = stripTags(html)?.toLowerCase() || ''
 
   return OFFICIAL_CAREERS_SIGNALS.every((signal) => text.includes(signal))
-    && OFFICIAL_CAREERS_LINK_SIGNALS.every((signal) => markup.includes(signal))
 }
 
 export const hasLeverBoardSignal = (html) => {
   const markup = String(html ?? '')
+  const text = stripTags(html)?.toLowerCase() || ''
 
-  return LEVER_BOARD_SIGNALS.every((signal) => markup.includes(signal))
+  return /<title>\s*Gate\s*<\/title>/i.test(markup)
+    && LEVER_BOARD_SIGNALS.every((signal) => text.includes(signal.toLowerCase()))
 }
 
 export const extractLeverJobs = (leverJobs = []) => (Array.isArray(leverJobs) ? leverJobs : [])
@@ -233,7 +229,7 @@ export const createGateScraper = ({
 export const run = async (options = {}) => createGateScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

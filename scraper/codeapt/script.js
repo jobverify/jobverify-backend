@@ -7,6 +7,8 @@ export const SOURCE = 'codeapt'
 export const COMPANY = 'CodeApt'
 export const HOMEPAGE_URL = 'https://www.codeapt.in/'
 export const CAREERS_URL = 'https://www.codeapt.in/careers/'
+export const CAREERS_API_URL = 'https://api.codeapt.in/api/careers'
+export const VERIFIED_ON = '2026-08-07'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -48,6 +50,12 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
     return null
   }
 }
+
+export const extractBundleUrl = (html, pageUrl = HOMEPAGE_URL) =>
+  toAbsoluteUrl(
+    String(html ?? '').match(/<script[^>]+type=["']module["'][^>]+src=["']([^"']*\/assets\/index-[^"']+\.js)["']/i)?.[1],
+    pageUrl,
+  )
 
 const toIsoDate = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -95,6 +103,38 @@ const defaultFetchPage = async (url) => {
     status: response.status,
     url: response.url,
     html: await response.text(),
+  }
+}
+
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: '*/*',
+    },
+    signal: createTimeoutSignal(15000),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.text()
+}
+
+const defaultFetchResource = async (url, { accept = '*/*' } = {}) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: accept,
+    },
+    signal: createTimeoutSignal(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    text: await response.text(),
   }
 }
 
@@ -184,6 +224,15 @@ export const hasOfficialHomepageSignal = (html) => {
     && /href=["']\/careers\/["']/i.test(page)
   }
 
+export const hasOfficialShellSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*CodeApt\s*<\/title>/i.test(page)
+    && /<div\s+id=["']root["']>\s*<\/div>/i.test(page)
+    && /viewport-fit=cover/i.test(page)
+    && Boolean(extractBundleUrl(page, HOMEPAGE_URL))
+}
+
 export const hasVerifiedCareersLink = (html) =>
   /href=["'](?:https:\/\/www\.codeapt\.in\/careers\/|\/careers\/)["']/i.test(String(html ?? ''))
 
@@ -196,6 +245,20 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes('exclusive job openings for codeapt students')
     && normalized.includes('apply on company site')
   }
+
+export const hasVerifiedApiBackedCareersSignal = (bundleText) => {
+  const page = String(bundleText ?? '')
+
+  return /https:\/\/api\.codeapt\.in/i.test(page)
+    && /CareersPage-[A-Za-z0-9_-]+\.js/i.test(page)
+    && /PostingDetailPage-[A-Za-z0-9_-]+\.js/i.test(page)
+    && /careers:\{list:async/i.test(page)
+    && page.includes('careers/${e}/apply')
+}
+
+export const isAuthRequiredCareersApiResponse = (response) =>
+  Number(response?.status) === 401
+  && /Authentication required/i.test(String(response?.text ?? ''))
 
 export const extractPublicJobs = (html) => String(html ?? '')
   .split(CARD_MARKER)
@@ -242,42 +305,75 @@ export const extractPublicJobs = (html) => String(html ?? '')
   .filter(Boolean)
 
 export const createCodeAptScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({
+    fetchPage = defaultFetchPage,
+    fetchText = defaultFetchText,
+    fetchResource = defaultFetchResource,
+  } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (homepage.status === 200 && hasOfficialHomepageSignal(homepage.html)) {
+      if (!hasVerifiedCareersLink(homepage.html)) {
+        throw new Error('CodeApt homepage no longer links to the verified careers page')
+      }
+
+      const careersPage = await fetchPage(CAREERS_URL)
+
+      if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+        throw new Error('CodeApt verified careers page no longer matches the known public surface')
+      }
+
+      const jobs = extractPublicJobs(careersPage.html)
+
+      if (jobs.length === 0) {
+        throw new Error('CodeApt careers page no longer exposes the verified public job-card structure')
+      }
+
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    }
+
+    if (homepage.status !== 200 || !hasOfficialShellSignal(homepage.html)) {
       throw new Error('CodeApt official homepage no longer matches the verified first-party surface')
     }
 
-    if (!hasVerifiedCareersLink(homepage.html)) {
-      throw new Error('CodeApt homepage no longer links to the verified careers page')
+    const bundleUrl = extractBundleUrl(homepage.html, homepage.url || HOMEPAGE_URL)
+    const bundleText = await fetchText(bundleUrl)
+
+    if (!hasVerifiedApiBackedCareersSignal(bundleText)) {
+      throw new Error('CodeApt verified homepage shell changed; refusing to assume no public listings')
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
 
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('CodeApt verified careers page no longer matches the known public surface')
+    if (careersPage.status !== 200 || !hasOfficialShellSignal(careersPage.html)) {
+      throw new Error('CodeApt verified careers shell changed; refusing to assume no public listings')
     }
 
-    const jobs = extractPublicJobs(careersPage.html)
+    const apiResponse = await fetchResource(CAREERS_API_URL, {
+      accept: 'application/json,text/plain,*/*',
+    })
 
-    if (jobs.length === 0) {
-      throw new Error('CodeApt careers page no longer exposes the verified public job-card structure')
+    if (apiResponse.status === 200) {
+      throw new Error('CodeApt careers API is now publicly accessible and needs a structured scraper')
     }
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    if (!isAuthRequiredCareersApiResponse(apiResponse)) {
+      throw new Error('CodeApt verified careers API changed; refusing to assume no public listings')
+    }
+
+    return []
   },
 })
 
 export const run = async (options = {}) => createCodeAptScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

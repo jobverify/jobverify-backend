@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { LUMIQ_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -49,11 +49,18 @@ const hasInputWithId = (html, id) => new RegExp(
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-  return /See All Open Positions/i.test(page)
-    && /Apply For All Open Positions/i.test(page)
-    && /https:\/\/lumiq\.zohorecruit\.in\/jobs\/Careers/i.test(page)
+  return (
+    title === 'Lumiq | Succeed in Data Transformation'
+    || /https:\/\/lumiq\.zohorecruit\.in\/jobs\/Careers/i.test(page)
+  )
+    && /See All Open Positions/i.test(normalized)
+    && /Apply For All Open Positions/i.test(normalized)
 }
+
+const hasBlockedCareersPageSignal = (html = '') => /banned permanently|access denied/i.test(String(html ?? ''))
 
 export const hasOfficialPortalSignal = (html = '') => {
   const page = String(html ?? '')
@@ -147,14 +154,32 @@ export const createLumiqScraper = ({
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
+    let careersHtml = null
+    let careersPageBlocked = false
+    try {
+      careersHtml = await fetchText(CAREERS_PAGE_URL)
+    } catch (error) {
+      if (!/HTTP 403\b/i.test(String(error?.message || ''))) {
+        throw error
+      }
+      careersPageBlocked = true
+    }
+
+    if (
+      careersHtml
+      && !hasOfficialCareersPageSignal(careersHtml)
+      && !hasBlockedCareersPageSignal(careersHtml)
+    ) {
       throw new Error('Response is not the verified official Lumiq careers page')
     }
 
     const portalHtml = await fetchText(CAREERS_PORTAL_URL)
     if (!hasOfficialPortalSignal(portalHtml)) {
       throw new Error('Response is not the verified official Lumiq careers portal')
+    }
+
+    if (!careersHtml && !careersPageBlocked) {
+      throw new Error('Response is not the verified official Lumiq careers page')
     }
 
     const payload = await fetchJson(CAREERS_API_URL)
@@ -177,7 +202,7 @@ export const createLumiqScraper = ({
 export const run = async () => createLumiqScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

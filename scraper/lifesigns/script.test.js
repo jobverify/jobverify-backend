@@ -44,12 +44,22 @@ const careersSnapshot = {
     '/',
     '/careers/',
     '/contact/',
+    '/careers/junior-video-editor/',
+    '/careers/junior-visual-designer/',
     '/careers/lead-network-engineer/',
     '/careers/biomedical-field-implementation-engineer-icu-solutions/',
     '/careers/digital-patient-monitoring-executive-cmt/',
     '/careers/hospital-support-executive-hse/',
   ],
   roleCards: [
+    {
+      href: '/careers/junior-video-editor/',
+      text: 'Junior Video EditorFull-TimeChennai',
+    },
+    {
+      href: '/careers/junior-visual-designer/',
+      text: 'Junior Visual DesignerFull-TimeChennai',
+    },
     {
       href: '/careers/lead-network-engineer/',
       text: 'Lead Network Engineer Full-TimeDelhi',
@@ -74,7 +84,7 @@ test('LifeSigns scraper recognizes the verified homepage and careers surfaces', 
   assert.equal(COMPANY, 'LifeSigns')
   assert.equal(HOMEPAGE_URL, 'https://www.lifesigns.us/')
   assert.equal(CAREERS_URL, 'https://www.lifesigns.us/careers/')
-  assert.equal(Object.keys(EXPECTED_ROLE_CARDS).length, 4)
+  assert.equal(Object.keys(EXPECTED_ROLE_CARDS).length, 6)
   assert.equal(hasOfficialHomepageSignal(homepageSnapshot), true)
   assert.equal(hasOfficialCareersSignal(careersSnapshot), true)
 })
@@ -82,7 +92,7 @@ test('LifeSigns scraper recognizes the verified homepage and careers surfaces', 
 test('LifeSigns scraper extracts the verified rendered open roles', () => {
   const jobs = extractVerifiedOpenRoles(careersSnapshot)
 
-  assert.equal(jobs.length, 4)
+  assert.equal(jobs.length, 6)
   assert.deepEqual(jobs.map((job) => ({
     title: job.title,
     location: job.location,
@@ -91,32 +101,46 @@ test('LifeSigns scraper extracts the verified rendered open roles', () => {
     applyUrl: job.applyUrl,
   })), [
     {
+      title: 'Junior Video Editor',
+      location: 'Chennai, India',
+      employmentType: 'Full-Time',
+      sourceUrl: 'https://www.lifesigns.us/careers/junior-video-editor/',
+      applyUrl: 'https://www.lifesigns.us/careers/junior-video-editor/',
+    },
+    {
+      title: 'Junior Visual Designer',
+      location: 'Chennai, India',
+      employmentType: 'Full-Time',
+      sourceUrl: 'https://www.lifesigns.us/careers/junior-visual-designer/',
+      applyUrl: 'https://www.lifesigns.us/careers/junior-visual-designer/',
+    },
+    {
       title: 'Lead Network Engineer',
       location: 'Delhi, India',
       employmentType: 'Full-Time',
-      sourceUrl: 'https://www.lifesigns.us/careers/',
-      applyUrl: 'https://www.lifesigns.us/careers/',
+      sourceUrl: 'https://www.lifesigns.us/careers/lead-network-engineer/',
+      applyUrl: 'https://www.lifesigns.us/careers/lead-network-engineer/',
     },
     {
       title: 'Biomedical Field Implementation Engineer',
       location: 'Bangalore, India',
       employmentType: 'Full-Time',
-      sourceUrl: 'https://www.lifesigns.us/careers/',
-      applyUrl: 'https://www.lifesigns.us/careers/',
+      sourceUrl: 'https://www.lifesigns.us/careers/biomedical-field-implementation-engineer-icu-solutions/',
+      applyUrl: 'https://www.lifesigns.us/careers/biomedical-field-implementation-engineer-icu-solutions/',
     },
     {
       title: 'Digital Patient Monitoring Executive (Central Monitoring Executive)',
       location: 'Chennai, India',
       employmentType: 'Full-Time',
-      sourceUrl: 'https://www.lifesigns.us/careers/',
-      applyUrl: 'https://www.lifesigns.us/careers/',
+      sourceUrl: 'https://www.lifesigns.us/careers/digital-patient-monitoring-executive-cmt/',
+      applyUrl: 'https://www.lifesigns.us/careers/digital-patient-monitoring-executive-cmt/',
     },
     {
       title: 'Hospital Support Executive (HSE)',
       location: 'Mysore, India',
       employmentType: 'Full-Time',
-      sourceUrl: 'https://www.lifesigns.us/careers/',
-      applyUrl: 'https://www.lifesigns.us/careers/',
+      sourceUrl: 'https://www.lifesigns.us/careers/hospital-support-executive-hse/',
+      applyUrl: 'https://www.lifesigns.us/careers/hospital-support-executive-hse/',
     },
   ])
 })
@@ -135,7 +159,7 @@ test('LifeSigns scraper runs end to end and fails closed on rendered-role drift'
     },
   })
 
-  assert.equal(jobs.length, 4)
+  assert.equal(jobs.length, 6)
   assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
   assert.equal(jobs[0].source, 'lifesigns')
   assert.equal(jobs[0].companyCareerPage, 'https://www.lifesigns.us/careers/')

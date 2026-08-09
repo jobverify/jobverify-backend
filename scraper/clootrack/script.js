@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const COMPANY_NAME = 'Clootrack'
 export const CAREERS_URL = 'https://www.clootrack.com/careers'
@@ -10,16 +10,16 @@ export const PROVIDER_METADATA = {
   companyDomain: 'clootrack.com',
   adapter: 'script',
   atsPlatform: 'official-company-careers',
-  modulePath: '../clootrack/script.js',
+  modulePath: '../../scraper/clootrack/script.js',
   dryRunFile: 'clootrack/jobs.json',
 }
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)'
 const OFFICIAL_TITLE_PATTERN = /<title>\s*Careers\s*<\/title>/i
 const OFFICIAL_HEADING_PATTERN = /Join our team at Clootrack to be at the forefront of AI-driven customer experience analytics\./i
 const REMOTE_WORK_PATTERN = /organizational culture can thrive regardless of physical office locations/i
 const REMOTE_PRACTICES_PATTERN = /remote work practices/i
-const REACH_OUT_PATTERN = /Think you(?:'|’)?re a fit\?\s*Reach out and let(?:'|’)s explore\./i
+const REACH_OUT_PATTERN = /Think you(?:'|â€™)?re a fit\?\s*Reach out and let(?:'|â€™)s explore\./i
 const PUBLIC_LISTING_PATTERN = /\bjob[-\s_]?(?:card|listing|result)s?\b|\bcurrent\s+openings?\b|\bopen\s+positions?\b|<article[^>]+class=["'][^"']*job[^"']*["'][^>]*>|<a[^>]+href=["'][^"']*\/careers\/[^"']+["'][^>]*>\s*(?:apply|view)\s+(?:now|job)s?\s*<\/a>/i
 
 export const hasOfficialCareersSignal = (html) => {
@@ -60,3 +60,4 @@ export const createClootrackScraper = () => ({
 })
 
 export const run = async (options = {}) => createClootrackScraper().run(options)
+

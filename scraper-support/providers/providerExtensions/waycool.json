@@ -1,0 +1,22 @@
+{
+  "source": "waycool",
+  "companyName": "WayCool",
+  "officialBrandName": "WayCool Foods and Products Private Limited",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../waycool/script.js",
+  "dryRunFile": "waycool/jobs.json",
+  "companyCareerPage": "https://www.waycool.in/job-opportunities.php",
+  "companyDomain": "waycool.in",
+  "atsPlatform": "official-first-party-careers-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-enumerable-public-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.waycool.in/job-opportunities.php",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://waycool.in/career is WayCool's first-party India careers surface and its Join Us link targets https://www.waycool.in/job-opportunities.php. The public surface does not expose a trustworthy enumerable job listing feed, so this exact-name provider fails closed and returns no jobs until WayCool publishes public openings."
+}

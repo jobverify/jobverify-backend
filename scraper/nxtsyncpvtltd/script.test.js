@@ -36,6 +36,15 @@ const homepageHtml = `
   </html>
 `
 
+const homepageHtmlWithSplitPhone = homepageHtml.replace(
+  '+91 63026 55033',
+  '+91 <span>63026</span> 55033',
+)
+const homepageHtmlWithCompactPhone = homepageHtml.replace(
+  '+91 63026 55033',
+  '+916302655033',
+)
+
 const careers404Html = `
   <!doctype html>
   <html lang="en">
@@ -63,6 +72,8 @@ test('Nxtsync sentinel validates the verified homepage and missing careers route
     'https://nxtsync.in/join-us',
   ])
   assert.equal(nxtsync.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(nxtsync.hasOfficialHomepageSignal(homepageHtmlWithSplitPhone), true)
+  assert.equal(nxtsync.hasOfficialHomepageSignal(homepageHtmlWithCompactPhone), true)
   assert.equal(nxtsync.hasFirstPartyCareerLikeLink(homepageHtml), false)
   assert.equal(nxtsync.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(

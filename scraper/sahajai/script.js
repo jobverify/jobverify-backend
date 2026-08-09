@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -124,7 +124,7 @@ export const extractListings = (html) => {
   const jobs = []
   const seen = new Set()
 
-  for (const match of String(html ?? '').matchAll(/<h3>([\s\S]*?)<\/h3>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>\s*Know More\s*<\/a>/gi)) {
+  for (const match of String(html ?? '').matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>\s*Know More\s*<\/a>/gi)) {
     const title = normalizeWhitespace(match[1])
     const sourceUrl = toAbsoluteUrl(match[2])
     const jobId = slugFromUrl(sourceUrl)
@@ -212,7 +212,7 @@ export const createSahajAiScraper = () => ({
 export const run = async (options = {}) => createSahajAiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

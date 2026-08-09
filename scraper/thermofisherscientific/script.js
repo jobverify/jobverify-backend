@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { createPhenomScraper } from '../phenom/engine.js'
+import { createPhenomScraper } from '../../scraper-support/phenom/engine.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const maxPages = 5
@@ -35,7 +35,7 @@ export const run = (options = {}) => scraper.run({
 })
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Thermo Fisher Scientific scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

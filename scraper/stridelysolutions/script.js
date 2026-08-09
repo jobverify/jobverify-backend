@@ -1,4 +1,9 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+﻿import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'stridelysolutions'
 export const COMPANY = 'Stridely Solutions'
@@ -13,7 +18,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Stridely Solutions',
   adapter: 'script',
-  modulePath: '../stridelysolutions/script.js',
+  modulePath: '../../scraper/stridelysolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
@@ -50,17 +55,35 @@ export const hasOfficialCareersSignal = (html) => {
 export const extractJobCards = (html) => {
   const page = String(html ?? '')
   const jobs = []
-  const titlePattern = /awsm-job-post-title">\s*<a href="([^"]+)">([^<]+)<\/a>/gi
-  const titleMatches = [...page.matchAll(titlePattern)]
+  const cardStarts = [...page.matchAll(/<div class="awsm-job-listing-item\b/gi)].map((match) => match.index)
+  const cards = cardStarts.map((start, index) => {
+    const end = cardStarts[index + 1] ?? page.length
+    return page.slice(start, end)
+  })
 
-  for (let index = 0; index < titleMatches.length; index += 1) {
-    const match = titleMatches[index]
-    const sectionEnd = titleMatches[index + 1]?.index ?? page.length
-    const card = page.slice(match.index, sectionEnd)
-    const sourceUrl = normalizeWhitespace(match[1])
-    const title = normalizeWhitespace(match[2])
-    const terms = [...card.matchAll(/awsm-job-specification-term">([^<]+)</gi)].map((item) => normalizeWhitespace(item[1]))
-    const location = terms.at(-1)
+  for (const card of cards) {
+    const sourceUrl = normalizeWhitespace(
+      card.match(/<a[^>]+href="([^"]+)"[^>]+class="awsm-job-item"/i)?.[1]
+      || card.match(/<a[^>]+class="awsm-job-item"[^>]+href="([^"]+)"/i)?.[1]
+      || card.match(/class="awsm-job-more"[^>]*href="([^"]+)"/i)?.[1]
+      || card.match(/awsm-job-post-title">\s*<a href="([^"]+)"/i)?.[1],
+    )
+    const title = normalizeWhitespace(
+      card.match(/awsm-job-post-title">\s*<a[^>]*>([^<]+)<\/a>/i)?.[1]
+      || card.match(/awsm-job-post-title">\s*([^<]+)</i)?.[1],
+    )
+    const locationTerms = [...card.matchAll(
+      /awsm-job-specification-job-location[\s\S]*?<\/div>/gi,
+    )]
+      .flatMap((match) => [...match[0].matchAll(/awsm-job-specification-term">([^<]+)</gi)])
+      .map((item) => normalizeWhitespace(item[1]))
+      .filter(Boolean)
+    const fallbackTerms = [...card.matchAll(/awsm-job-specification-term">([^<]+)</gi)]
+      .map((item) => normalizeWhitespace(item[1]))
+      .filter(Boolean)
+    const location = locationTerms.length > 0
+      ? locationTerms.join(' ')
+      : fallbackTerms.at(-1)
 
     if (!title || !sourceUrl || !location) continue
 
@@ -95,3 +118,16 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
     scrapedAt: now(),
   }))
 }
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}
+

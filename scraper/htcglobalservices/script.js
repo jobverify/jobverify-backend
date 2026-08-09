@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { HTC_GLOBAL_SERVICES_CATALOG } from './catalog.js'
 
@@ -101,7 +101,7 @@ export const hasOfficialCareersLandingSignal = (html = '') => {
 
   return /<title>\s*Careers in AI &amp; Agentic AI \| Transform Enterprise Change – HTC\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.htcinc\.com\/careers\/["']/i.test(page)
-    && normalized.includes('Careers at HTC Global Services')
+    && /Join HTC in shaping enterprise transformation through AI and Agentic AI/i.test(page)
     && page.includes('https://www.htcinc.com/career-job-listing/')
 }
 
@@ -211,7 +211,7 @@ export const createHtcGlobalServicesScraper = ({
 export const run = async (options = {}) => createHtcGlobalServicesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

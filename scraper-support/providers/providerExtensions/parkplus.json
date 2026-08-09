@@ -1,0 +1,22 @@
+{
+  "source": "parkplus",
+  "companyName": "Park+",
+  "officialBrandName": "Park+",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../parkplus/script.js",
+  "dryRunFile": "parkplus/jobs.json",
+  "companyCareerPage": "https://parkplus.io/careers",
+  "companyDomain": "parkplus.io",
+  "atsPlatform": "official-first-party-nextjs-careers-page",
+  "countryFilter": "India",
+  "paginationStrategy": "single-first-party-careers-page",
+  "extractionStrategy": "first-party-next-data-jobs-array+strict-shape-validation",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 1,
+  "verifiedIndiaJobCount": 1,
+  "officialCareersPageUrl": "https://parkplus.io/careers",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://parkplus.io/careers is Park+'s official first-party careers page. Its first-party Next.js payload publishes one Sales Manager opening for Gurugram, Chennai, Hyderabad, Kolkata, Pune, and Mumbai. This literal-name provider accepts only the official Park+ careers payload and does not cover the distinct CSV entries Park+ India or Park Plus."
+}

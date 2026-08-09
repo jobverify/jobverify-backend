@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -227,6 +227,9 @@ export const hasOfficialJobDetailSignal = (html, listing = {}) => {
     && /LOCATION/i.test(page)
 }
 
+export const isJavaScriptOnlyShell = (html) =>
+  /You need to enable JavaScript to run this app\./i.test(normalizeWhitespace(html) || '')
+
 export const extractJobDetail = (html, listing = {}) => {
   if (!hasOfficialJobDetailSignal(html, listing)) {
     throw new Error('verified Rinex Technologies job detail no longer matches the trusted first-party application surface')
@@ -294,6 +297,35 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
+export const buildListingFallbackJob = (listing = {}) => {
+  const title = normalizeWhitespace(listing.title)
+  const location = buildLocation(listing.locationText)
+  const jobId = listing.jobId || buildJobId(title)
+
+  return {
+    title,
+    company: COMPANY,
+    department: null,
+    location,
+    city: deriveCity(listing.locationText),
+    state: deriveState(listing.locationText),
+    country: 'India',
+    jobId,
+    requisitionId: listing.requisitionId || jobId,
+    sourceUrl: listing.sourceUrl || buildJobUrl(title),
+    applyUrl: listing.sourceUrl || buildJobUrl(title),
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: 'Apply via the Rinex Technologies job page.',
+    remoteStatus: /remote|hybrid|work from home/i.test(location) ? 'Remote' : 'On-site',
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -304,7 +336,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createRinexTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), maxJobs = null } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    now = () => new Date().toISOString(),
+    maxJobs = null,
+  } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageShellSignal(homepageHtml)) {
       throw new Error('Rinex Technologies verified homepage shell no longer matches the trusted first-party surface')
@@ -321,8 +357,18 @@ export const createRinexTechnologiesScraper = () => ({
     const jobs = []
 
     for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
+      let detailHtml = await fetchText(listing.sourceUrl)
+      let detail
+
+      if (!hasOfficialJobDetailSignal(detailHtml, listing)) {
+        if (isJavaScriptOnlyShell(detailHtml)) {
+          detail = buildListingFallbackJob(listing)
+        } else {
+          throw new Error('verified Rinex Technologies job detail no longer matches the trusted first-party application surface')
+        }
+      } else {
+        detail = extractJobDetail(detailHtml, listing)
+      }
 
       jobs.push({
         ...detail,
@@ -342,7 +388,7 @@ export const createRinexTechnologiesScraper = () => ({
 export const run = async (options = {}) => createRinexTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

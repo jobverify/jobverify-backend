@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { SAGE_INTACCT_CATALOG } from './catalog.js'
+import { createBrowserTextFallback } from '../../scraper-support/shared/browserTextFallback.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -59,7 +60,7 @@ export const hasVerifiedCareersHubSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Job Vacancies & Careers\s*\|\s*Sage US\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*Job Vacancies\s*(?:&|&amp;)\s*Careers\s*\|\s*Sage US\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Grow your future with us')
     && normalized.includes('Search for your new role.')
     && normalized.includes('See open roles')
@@ -92,25 +93,36 @@ export const hasVerifiedIndiaLocationsSignal = (html = '') => {
 export const createSageIntacctScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText = undefined,
   } = {}) {
-    const productPageHtml = await fetchText(PRODUCT_PAGE_URL)
-    if (!hasVerifiedProductPageSignal(productPageHtml)) {
-      throw new Error('Sage Intacct verified Sage Intacct product page no longer matches the known first-party surface')
-    }
+    const browserFallback = createBrowserTextFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+    })
 
-    const careersHubHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasVerifiedCareersHubSignal(careersHubHtml)) {
-      throw new Error('Sage Intacct verified shared Sage careers hub no longer matches the known first-party surface')
-    }
+    try {
+      const productPageHtml = await browserFallback.fetchText(PRODUCT_PAGE_URL)
+      if (!hasVerifiedProductPageSignal(productPageHtml)) {
+        throw new Error('Sage Intacct verified Sage Intacct product page no longer matches the known first-party surface')
+      }
 
-    const careerSearchHtml = await fetchText(CAREER_SEARCH_URL)
-    if (!hasVerifiedCareerSearchSignal(careerSearchHtml)) {
-      throw new Error('Sage Intacct verified Sage career search page no longer matches the known first-party surface')
-    }
+      const careersHubHtml = await browserFallback.fetchText(CAREERS_PAGE_URL)
+      if (!hasVerifiedCareersHubSignal(careersHubHtml)) {
+        throw new Error('Sage Intacct verified shared Sage careers hub no longer matches the known first-party surface')
+      }
 
-    const locationsHtml = await fetchText(LOCATIONS_URL)
-    if (!hasVerifiedIndiaLocationsSignal(locationsHtml)) {
-      throw new Error('Sage Intacct verified Sage India locations page no longer matches the known first-party surface')
+      const careerSearchHtml = await browserFallback.fetchText(CAREER_SEARCH_URL)
+      if (!hasVerifiedCareerSearchSignal(careerSearchHtml)) {
+        throw new Error('Sage Intacct verified Sage career search page no longer matches the known first-party surface')
+      }
+
+      const locationsHtml = await browserFallback.fetchText(LOCATIONS_URL)
+      if (!hasVerifiedIndiaLocationsSignal(locationsHtml)) {
+        throw new Error('Sage Intacct verified Sage India locations page no longer matches the known first-party surface')
+      }
+    } finally {
+      await browserFallback.close()
     }
 
     return []
@@ -120,7 +132,7 @@ export const createSageIntacctScraper = () => ({
 export const run = async (options = {}) => createSageIntacctScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

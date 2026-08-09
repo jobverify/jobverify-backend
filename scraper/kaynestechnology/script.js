@@ -36,7 +36,7 @@ export const hasVerifiedHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Kaynes Technology India Limited\s*<\/title>/i.test(page)
+  return /<title>\s*Kaynes Technology(?: India Limited)?\s*<\/title>/i.test(page)
     && normalized.includes('Beware of Recruitment Frauds')
     && normalized.includes('Kaynes Technology India Limited')
 }
@@ -54,9 +54,13 @@ export const isVerifiedMissingJobRoute = (page = {}) => {
   const normalized = normalizeWhitespace(html)
 
   return Number(page.status) === 404
-    && /<title>\s*404 Not Found\s*<\/title>/i.test(html)
-    && normalized.includes('404 Not Found')
-    && !hasPublicJobSignals(html)
+    && normalized === '404 Not Found'
+    || (
+      Number(page.status) === 404
+      && /<title>\s*404 Not Found\s*<\/title>/i.test(html)
+      && normalized.includes('404 Not Found')
+      && !hasPublicJobSignals(html)
+    )
 }
 
 const defaultFetchPage = async (url) => {
@@ -100,7 +104,7 @@ export const createKaynesTechnologyScraper = () => ({
 export const run = async (options = {}) => createKaynesTechnologyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

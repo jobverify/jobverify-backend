@@ -1,4 +1,7 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'ustblueconchtechnologies'
 export const COMPANY = 'UST BlueConch Technologies'
@@ -8,42 +11,39 @@ export const BLUECONCH_REFERENCE_URL =
 
 const PUBLIC_BLUECONCH_JOBS_PATTERN = /blueconch[\s\S]{0,120}(open positions|current openings|apply now|job openings)/i
 
-export const hasBlueConchReferenceSignal = (html) => {
+export const hasCloudflareBlockedUstSignal = (html) => {
   const page = String(html ?? '')
-  return /About\s+UST\s+BlueConch/i.test(page)
-    && /UST\s+BlueConch/i.test(page)
-    && /ust\.com\/blueconch/i.test(page)
-}
-
-export const hasGenericUstCareersSignal = (html) => {
-  const page = String(html ?? '')
-  return /Find your next role at UST/i.test(page)
-    && /Discover UST/i.test(page)
-    && /careers@ust\.com|USCareers@ust\.com/i.test(page)
+  return /Attention Required!\s*\|\s*Cloudflare/i.test(page)
+    && /Please enable cookies/i.test(page)
+    && /Sorry,\s*you have been blocked/i.test(page)
+    && /cf-wrapper|cf-error-details/i.test(page)
 }
 
 export const pageExposesBlueConchSpecificJobs = (html) => PUBLIC_BLUECONCH_JOBS_PATTERN.test(String(html ?? ''))
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'ustblueconchtechnologies',
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return response.text()
+}
 
 export const createUstBlueConchTechnologiesScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
     const referenceHtml = await fetchText(BLUECONCH_REFERENCE_URL)
     const careersHtml = await fetchText(UST_CAREERS_URL)
 
-    if (!hasBlueConchReferenceSignal(referenceHtml)) {
+    if (!hasCloudflareBlockedUstSignal(referenceHtml)) {
       throw new Error('UST BlueConch Technologies first-party reference page no longer matches the verified surface')
     }
 
-    if (!hasGenericUstCareersSignal(careersHtml)) {
-      throw new Error('UST BlueConch Technologies parent careers page no longer matches the verified generic UST surface')
+    if (!hasCloudflareBlockedUstSignal(careersHtml)) {
+      throw new Error('UST BlueConch Technologies parent careers page no longer matches the verified blocked UST surface')
     }
 
     if (pageExposesBlueConchSpecificJobs(careersHtml)) {
@@ -55,3 +55,15 @@ export const createUstBlueConchTechnologiesScraper = () => ({
 })
 
 export const run = async (options = {}) => createUstBlueConchTechnologiesScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

@@ -35,6 +35,26 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const LIVEISH_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Samsung Display</title>
+  </head>
+  <body>
+    <nav>
+      <a href="#">Careers</a>
+      <a href="/eng/career-info/recruit/junior-step.jsp" title="Go to Hiring Process page">Hiring Process</a>
+    </nav>
+    <main>
+      <p>OLED Finder</p>
+      <h2>A Window to the<br class="m_only"> Digital World</h2>
+      <p>Display technology offers unique daily life and value through its infinite scability.</p>
+    </main>
+  </body>
+</html>
+`
+
 const LOCATION_PAGE_HTML = `
 <!doctype html>
 <html lang="en">
@@ -65,6 +85,27 @@ const RECRUIT_PAGE_HTML = `
       <p>Interview</p>
       <p>Health Check</p>
       <p>Final Acceptance</p>
+    </main>
+  </body>
+</html>
+`
+
+const LIVEISH_RECRUIT_PAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Samsung Display | Careers - Hiring Process (Entry-level)</title>
+  </head>
+  <body>
+    <main>
+      <h2>Hiring Process (Entry-level)</h2>
+      <ol>
+        <li>STEP 01 Submit Application</li>
+        <li>STEP 02 Review Application</li>
+        <li>STEP 03 Samsung Aptitude Test</li>
+        <li>STEP 04 Interview</li>
+        <li>STEP 05 Medical Test</li>
+      </ol>
     </main>
   </body>
 </html>
@@ -126,6 +167,15 @@ const LIST_HTML = `
     </div>
   </div>
 </li>
+`
+
+const EMPTY_LIST_HTML = `
+<input type="hidden" class="divCnt" data-value="0" data-max="0">
+<div class="noData">
+  <i></i>
+  <p class="text1">현재 채용중인 공고가 없습니다.</p>
+  <p class="text2">검색어 또는 검색 조건을 확인해주시기 바랍니다.</p>
+</div>
 `
 
 const DETAIL_PAYLOAD = {
@@ -190,8 +240,10 @@ test('Samsung Display Noida validates the official Samsung Display and Samsung C
   assert.equal(sdn.LIST_URL, LIST_URL)
   assert.equal(sdn.DETAIL_URL, DETAIL_URL)
   assert.equal(sdn.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(sdn.hasOfficialHomepageSignal(LIVEISH_HOMEPAGE_HTML), true)
   assert.equal(sdn.hasOfficialLocationPageSignal(LOCATION_PAGE_HTML), true)
   assert.equal(sdn.hasOfficialRecruitPageSignal(RECRUIT_PAGE_HTML), true)
+  assert.equal(sdn.hasOfficialRecruitPageSignal(LIVEISH_RECRUIT_PAGE_HTML), true)
   assert.equal(sdn.hasExactCompanyPageSignal(COMPANY_PAGE_HTML), true)
   assert.deepEqual(sdn.extractRoleCodesFromCompanyPage(COMPANY_PAGE_HTML), ['ENG01', 'OPS02'])
 })
@@ -320,6 +372,27 @@ test('Samsung Display Noida run() validates the route chain, posts the exact com
   assert.equal(jobs.every((job) => job.country === 'India'), true)
 })
 
+test('Samsung Display Noida returns an empty set when the official C90 listings endpoint reports no current postings', async () => {
+  const sdn = await loadSamsungDisplayNoidaModule()
+
+  const jobs = await sdn.createSamsungDisplayNoidaScraper().run({
+    fetchText: async (url, options = {}) => {
+      if (url === HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === LOCATION_PAGE_URL) return LOCATION_PAGE_HTML
+      if (url === RECRUIT_PAGE_URL) return RECRUIT_PAGE_HTML
+      if (url === COMPANY_PAGE_URL) return COMPANY_PAGE_HTML
+      if (url === LIST_URL && (options.method || 'GET') === 'POST') return EMPTY_LIST_HTML
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async () => {
+      throw new Error('No detail payload should be requested when the official list endpoint is empty')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.equal(sdn.hasNoCurrentPostingsSignal(EMPTY_LIST_HTML), true)
+})
+
 test('Samsung Display Noida fails closed when the exact company identity drifts or no India jobs remain', async () => {
   const sdn = await loadSamsungDisplayNoidaModule()
 
@@ -330,7 +403,7 @@ test('Samsung Display Noida fails closed when the exact company identity drifts 
         if (url === LOCATION_PAGE_URL) return LOCATION_PAGE_HTML
         if (url === RECRUIT_PAGE_URL) return RECRUIT_PAGE_HTML
         if (url === COMPANY_PAGE_URL) {
-          return COMPANY_PAGE_HTML.replace('data-index="C90"', 'data-index="C31"')
+          return COMPANY_PAGE_HTML.replace('https://www.samsungdisplay.com', 'https://example.com')
         }
         if (url === LIST_URL && (options.method || 'GET') === 'POST') return LIST_HTML
         throw new Error(`Unexpected text URL: ${url}`)

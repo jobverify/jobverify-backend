@@ -85,6 +85,11 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1]) || null
+}
+
 const matchesExpectedUrl = (value, expected) => {
   try {
     const actualUrl = new URL(value)
@@ -101,13 +106,13 @@ export const hasOfficialAboutPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*About Us\s*\|\s*Read More\s*-\s*LazyPay\s*<\/title>/i.test(page)
+  return extractTitle(page) === 'About Us | Read More - LazyPay'
     && normalized.includes('We are part of PayU, a leading financial services provider in global growth markets.')
     && normalized.includes("India's Credit Super-app")
     && normalized.includes('LazyPay Private Limited is a part of PayU group')
     && normalized.includes('PayU Finance India Private Limited')
     && normalized.includes('wecare@lazypay.in')
-  }
+}
 
 export const pageExposesPublicJobListings = (html = '') =>
   PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -149,7 +154,7 @@ export const createLazyPayScraper = () => ({
 export const run = async (options = {}) => createLazyPayScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

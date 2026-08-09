@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { HUMANHIRECORP_CATALOG } from './catalog.js'
 
@@ -39,8 +39,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialSpaShellSignal = (html = '') => {
   const raw = String(html ?? '')
+  const normalized = normalizeWhitespace(raw)
+
   return /Human Hire Corp/i.test(raw)
-    && /Global Recruitment .* Staffing Solutions/i.test(raw)
+    && /Global Recruitment\s*&\s*Staffing\s+(?:Partner|Solutions)/i.test(normalized)
     && /<div id="root"><\/div>/i.test(raw)
     && /\/assets\/index-[A-Za-z0-9]+\.js/i.test(raw)
 }
@@ -67,7 +69,7 @@ export const run = async ({ fetchText = defaultFetchText } = {}) => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 
   if (process.argv.includes('--dry-run')) {

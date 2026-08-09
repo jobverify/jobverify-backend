@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict'
+import { execFile } from 'node:child_process'
+import path from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const execFileAsync = promisify(execFile)
 
 const loadModule = async () => {
   try {
@@ -19,6 +26,7 @@ test('Arjuna Research and Financial Services Pvt Ltd sentinel pins the verified 
     arjuna.VERIFIED_SURFACE_SUMMARY,
     'No trustworthy first-party careers surface was discoverable on July 13, 2026, and the canonical company hostnames did not resolve.',
   )
+  assert.equal(arjuna.DNS_LOOKUP_TIMEOUT_MS, 5000)
   assert.deepEqual(arjuna.CAREER_HOSTS, [
     'arjunaresearch.com',
     'www.arjunaresearch.com',
@@ -46,6 +54,49 @@ test('Arjuna Research and Financial Services Pvt Ltd sentinel returns no jobs on
 
   assert.deepEqual(calls, [arjuna.CAREER_HOSTS])
   assert.deepEqual(jobs, [])
+})
+
+test('Arjuna Research and Financial Services Pvt Ltd sentinel treats slow DNS lookups as unresolved instead of hanging the runner', async () => {
+  const arjuna = await loadModule()
+  const pendingLookup = () => new Promise(() => {})
+
+  const addresses = await arjuna.resolveCanonicalHosts(['arjunaresearch.com'], {
+    resolveIpv4: pendingLookup,
+    resolveIpv6: pendingLookup,
+    lookupTimeoutMs: 1,
+  })
+
+  assert.deepEqual(addresses, [])
+})
+
+test('Arjuna Research and Financial Services Pvt Ltd sentinel contains later DNS lookup rejections so they cannot crash the process', async () => {
+  const script = `
+    import { resolveCanonicalHosts } from './script.js'
+
+    const never = async () => new Promise(() => {})
+    const failIpv6 = async (host) => {
+      const error = new Error(\`queryAaaa ENOTFOUND \${host}\`)
+      error.code = 'ENOTFOUND'
+      throw error
+    }
+
+    const addresses = await resolveCanonicalHosts(['arjunaresearchandfinancialservices.in'], {
+      resolveIpv4: never,
+      resolveIpv6: failIpv6,
+      lookupTimeoutMs: 10,
+    })
+
+    console.log(JSON.stringify(addresses))
+  `
+
+  const { stdout, stderr } = await execFileAsync(
+    process.execPath,
+    ['--input-type=module', '-e', script],
+    { cwd: currentDir },
+  )
+
+  assert.equal(stderr, '')
+  assert.equal(stdout.trim(), '[]')
 })
 
 test('Arjuna Research and Financial Services Pvt Ltd sentinel fails closed when any canonical first-party hostname starts resolving', async () => {

@@ -1,11 +1,11 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 15, 2026 that https://anthembio.com/ is the live official Anthem homepage, that https://anthembio.com/careers/ is the first-party careers page published in https://anthembio.com/page-sitemap.xml, and that the careers page directly hands applicants to the public PeopleStrong portal at https://anthemhrcp.peoplestrong.com/. The linked public jobs API at https://anthemhrcp.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20 returned a successful empty payload with totalRecords: 0 and response: [] during live checks, even though the first-party careers page currently displays the CTA text "Open Positions (5)".'
 
 export const ANTHEM_CATALOG = {
   source: 'anthem',
   companyName: 'Anthem',
   adapter: 'script',
-  modulePath: '../anthem/script.js',
+  modulePath: '../../scraper/anthem/script.js',
   companyCareerPage: 'https://anthembio.com/careers/',
   homepageUrl: 'https://anthembio.com/',
   robotsTxtUrl: 'https://anthembio.com/robots.txt',
@@ -27,3 +27,4 @@ export const ANTHEM_CATALOG = {
 }
 
 export default ANTHEM_CATALOG
+

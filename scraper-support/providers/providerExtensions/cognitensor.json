@@ -1,0 +1,22 @@
+{
+  "source": "cognitensor",
+  "companyName": "CogniTensor",
+  "officialBrandName": "CogniTensor",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../cognitensor/script.js",
+  "dryRunFile": "cognitensor/jobs.json",
+  "companyCareerPage": "https://www.cognitensor.com/",
+  "companyDomain": "cognitensor.com",
+  "atsPlatform": "official-first-party-homepage-no-public-careers-or-ats-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-homepage-sentinel",
+  "extractionStrategy": "verified-first-party-company-domain-without-public-job-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.cognitensor.com/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.cognitensor.com/ is CogniTensor's official company domain. No public first-party careers page, official ATS board, or enumerable job listings were found. This exact-name-only provider deliberately returns no jobs rather than using LinkedIn, third-party listings, or a similarly named company."
+}

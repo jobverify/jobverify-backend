@@ -7,6 +7,7 @@ import {
 import { PREFERRED_JOB_TYPES } from "../constants/preferredJobTypes.js";
 import { ACCESS_ROLES, PLAN_IDS } from "../constants/accessPlans.js";
 import {
+  DATE_POSTED_NA_VALUE,
   DATE_POSTED_OPTIONS,
   EXPERIENCE_BUCKET_VALUES,
   ROLE_DOMAIN_OPTIONS,
@@ -15,12 +16,15 @@ import {
   SKILL_SCOPE_OPTIONS,
   WORK_ARRANGEMENT_OPTIONS,
 } from "../constants/jobFilterTaxonomy.js";
+import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
 
 const MAX_TEXT_LENGTH = 80;
 const MAX_QUERY_LENGTH = 200;
 const MAX_PROFILE_ITEMS = 20;
-const MAX_PAGE = 500;
-const MAX_JOB_LIMIT = 100;
+// The public listing currently contains more than 500 pages at its smallest
+// supported card count, so this must cover every page the UI can expose.
+const MAX_PAGE = 2000;
+const MAX_JOB_LIMIT = 2000;
 const MAX_ADMIN_LIMIT = 50;
 const MAX_EXPERIENCE_FILTER_YEAR = 15;
 const EXPERIENCE_UNSPECIFIED_VALUE = "unspecified";
@@ -95,7 +99,11 @@ const optionalDatePostedListRule = (chain) =>
       const list = Array.isArray(value) ? value : String(value ?? "").split(",");
 
       for (const item of list) {
-        const normalized = Number.parseInt(String(item ?? "").trim(), 10);
+        const rawValue = String(item ?? "").trim().toLowerCase();
+        const numericValue = /^\d+$/u.test(rawValue) ? Number(rawValue) : null;
+        const normalized = rawValue === DATE_POSTED_NA_VALUE
+          ? DATE_POSTED_NA_VALUE
+          : numericValue;
         if (!DATE_POSTED_OPTIONS.includes(normalized)) {
           throw new Error("Date posted filter is invalid.");
         }
@@ -183,7 +191,11 @@ const validateProfilePreferenceDatePostedList = (value) => {
   const list = Array.isArray(value) ? value : String(value ?? "").split(",");
 
   for (const item of list) {
-    const normalized = Number.parseInt(String(item ?? "").trim(), 10);
+    const rawValue = String(item ?? "").trim().toLowerCase();
+    const numericValue = /^\d+$/u.test(rawValue) ? Number(rawValue) : null;
+    const normalized = rawValue === DATE_POSTED_NA_VALUE
+      ? DATE_POSTED_NA_VALUE
+      : numericValue;
     if (!DATE_POSTED_OPTIONS.includes(normalized)) {
       throw new Error("Profile preference date posted is invalid.");
     }
@@ -216,6 +228,35 @@ const validateOptionalProfilePreferenceExperienceYear = (value) => {
   return true;
 };
 
+const whatsappAlertFiltersValidationRules = () => [
+  body("whatsappAlertFilters").optional().isObject(),
+  body("whatsappAlertFilters.company")
+    .optional()
+    .custom((value) => validateStringList(value, "WhatsApp alert company")),
+  body("whatsappAlertFilters.jobType")
+    .optional()
+    .custom((value) => validateStringList(value, "WhatsApp alert job type")),
+  body("whatsappAlertFilters.location")
+    .optional()
+    .custom((value) => validateStringList(value, "WhatsApp alert location")),
+  body("whatsappAlertFilters.experienceYear")
+    .optional()
+    .custom((value) => validateOptionalProfilePreferenceExperienceYear(value)),
+  body("whatsappAlertFilters.roleDomain")
+    .optional()
+    .custom((value) => validateProfilePreferenceChoiceList(value, ROLE_DOMAIN_OPTIONS, "Role domain is invalid.")),
+  body("whatsappAlertFilters.workArrangement")
+    .optional()
+    .custom((value) => validateProfilePreferenceChoiceList(value, WORK_ARRANGEMENT_OPTIONS, "Work arrangement is invalid.")),
+  body("whatsappAlertFilters.datePostedDays")
+    .optional()
+    .custom((value) => validateProfilePreferenceDatePostedList(value)),
+  body("whatsappAlertFilters.sortBy")
+    .optional()
+    .isIn(["all", "popularity", "latest", "oldest"])
+    .withMessage("WhatsApp alert sort must be one of: all, popularity, latest, oldest."),
+];
+
 export const registerValidation = [
   boundedStringRule(body("name"), "Name"),
   body("email")
@@ -233,6 +274,17 @@ export const registerValidation = [
     }
     return true;
   }),
+  body("phoneE164")
+    .optional()
+    .customSanitizer(trimIfString)
+    .isLength({ min: 8, max: 20 })
+    .withMessage("phoneE164 must be between 8 and 20 characters.")
+    .custom((value) => {
+      if (!normalizePhoneE164(value)) {
+        throw new Error("phoneE164 must be a valid phone number.");
+      }
+      return true;
+    }),
 ];
 
 export const loginValidation = [
@@ -244,6 +296,14 @@ export const loginValidation = [
     .isString()
     .isLength({ min: 1 })
     .withMessage("Password is required."),
+];
+
+export const googleAuthValidation = [
+  body("credential")
+    .customSanitizer(trimIfString)
+    .isString()
+    .isLength({ min: 1, max: 5000 })
+    .withMessage("Google credential is required."),
 ];
 
 export const resendValidation = [
@@ -341,6 +401,15 @@ export const jobQueryValidation = [
   optionalDatePostedListRule(query("datePostedDays")),
 ];
 
+export const jobCompanyAutocompleteValidation = [
+  ...jobQueryValidation,
+  query("q")
+    .optional()
+    .customSanitizer(trimIfString)
+    .isLength({ max: MAX_TEXT_LENGTH })
+    .withMessage(`Company search must be ${MAX_TEXT_LENGTH} characters or fewer.`),
+];
+
 export const mongoIdParamValidation = (name, label) => [
   param(name).isMongoId().withMessage(`Invalid ${label}.`),
 ];
@@ -394,6 +463,7 @@ export const userProfileValidation = [
     .optional()
     .isIn(["all", "popularity", "latest", "oldest"])
     .withMessage("Profile preference sort must be one of: all, popularity, latest, oldest."),
+  ...whatsappAlertFiltersValidationRules(),
 ];
 
 export const adminUsersQueryValidation = [
@@ -513,9 +583,18 @@ export const whatsappAlertsValidation = [
     .optional()
     .customSanitizer(trimIfString)
     .isLength({ min: 8, max: 20 })
-    .withMessage("phoneE164 must be between 8 and 20 characters."),
+    .withMessage("phoneE164 must be between 8 and 20 characters.")
+    .custom((value) => {
+      if (normalizePhoneE164(value) !== value) {
+        throw new Error("phoneE164 must be a valid normalized E.164 phone number.");
+      }
+      return true;
+    }),
   body("enabled")
     .optional()
     .isBoolean()
-    .withMessage("enabled must be a boolean."),
+    .withMessage("enabled must be a boolean.")
+    .bail()
+    .toBoolean(),
+  ...whatsappAlertFiltersValidationRules(),
 ];

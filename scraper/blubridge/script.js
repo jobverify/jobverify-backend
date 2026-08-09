@@ -1,18 +1,30 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { launchBrowser, createOptimizedPage } from '../utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
+export const SOURCE = 'blubridge'
+export const COMPANY = 'Blubridge Technologies Pvt Ltd'
 export const CAREER_PAGE_URL = 'https://blubridge.com/careers'
+
 const BLUBRIDGE_HOST = new URL(CAREER_PAGE_URL).hostname
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const SELECTORS = {
   listingJobRow: 'a.job-row',
 }
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/javascript;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 const normalizeWhitespace = (value) =>
   String(value ?? '')
@@ -20,8 +32,8 @@ const normalizeWhitespace = (value) =>
     .replace(/&amp;/gi, '&')
     .replace(/&#39;|&apos;/gi, "'")
     .replace(/&quot;/gi, '"')
-    .replace(/&#8211;|&#8212;/gi, '-')
-    .replace(/&bull;/gi, '•')
+    .replace(/&#8211;|&#8212;|\u2013|\u2014/gi, '-')
+    .replace(/&bull;|\u2022|â€¢/gi, '*')
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -65,15 +77,29 @@ const formatDepartment = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
 
-  if (normalized.includes('•')) {
+  if (normalized.includes('*')) {
     return normalized
-      .split('•')
+      .split('*')
       .map((part) => toTitleCase(part))
       .filter(Boolean)
       .join(' / ')
   }
 
+  if (/[a-z]/.test(normalized)) {
+    return normalized
+  }
+
   return toTitleCase(normalized)
+}
+
+const formatDepartmentParts = (...values) => {
+  const parts = [...new Set(
+    values
+      .map((value) => formatDepartment(value))
+      .filter(Boolean),
+  )]
+
+  return parts.length > 0 ? parts.join(' / ') : null
 }
 
 const findLineIndex = (lines, label) =>
@@ -123,14 +149,33 @@ const extractHtmlBetweenLabels = (html, startLabel, endLabels = []) => {
   return source.slice(startIndex, endIndex)
 }
 
+const buildBundleJobUrl = (slug) => `${CAREER_PAGE_URL}/job/${slug}`
+
 const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
   if (!normalized) return null
   if (/remote/i.test(normalized)) return 'Remote'
 
-  const parts = normalized.split(',').map((part) => normalizeWhitespace(part)).filter(Boolean)
-  if (parts.length > 1) return parts.at(-1)
-  return normalized.replace(/\s*India\s*$/i, '').trim() || normalized
+  const withoutWorkMode = normalized.replace(/\s+(On-site|Hybrid|Remote)\b/gi, '').trim()
+  const withoutParenthetical = normalizeWhitespace(withoutWorkMode.replace(/\([^)]*\)/g, ' '))
+  const parts = withoutParenthetical
+    .split(',')
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean)
+
+  if (parts.length >= 3 && /^(india|in|us|usa)$/i.test(parts.at(-1))) {
+    return parts[0]
+  }
+
+  if (parts.length === 2) {
+    return parts[1]
+  }
+
+  if (parts.length > 2) {
+    return parts[0]
+  }
+
+  return withoutParenthetical || normalized
 }
 
 const buildJobDescription = (sections) =>
@@ -138,6 +183,202 @@ const buildJobDescription = (sections) =>
     .filter((section) => section.value)
     .map((section) => `${section.label}: ${section.value}`)
     .join('\n') || null
+
+const extractBalancedArrayLiteral = (source, startIndex) => {
+  let depth = 0
+  let inString = false
+  let quote = ''
+  let escaped = false
+
+  for (let index = startIndex; index < source.length; index += 1) {
+    const character = source[index]
+
+    if (inString) {
+      if (escaped) {
+        escaped = false
+        continue
+      }
+
+      if (character === '\\') {
+        escaped = true
+        continue
+      }
+
+      if (character === quote) {
+        inString = false
+        quote = ''
+      }
+
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      inString = true
+      quote = character
+      continue
+    }
+
+    if (character === '[') {
+      depth += 1
+      continue
+    }
+
+    if (character === ']') {
+      depth -= 1
+      if (depth === 0) {
+        return source.slice(startIndex, index + 1)
+      }
+    }
+  }
+
+  return null
+}
+
+const parseObjectArrayLiteral = (arrayLiteral) => {
+  if (!arrayLiteral) return []
+
+  let normalized = ''
+  let inString = false
+  let quote = ''
+  let escaped = false
+
+  for (let index = 0; index < arrayLiteral.length; index += 1) {
+    const character = arrayLiteral[index]
+
+    if (inString) {
+      normalized += character
+
+      if (escaped) {
+        escaped = false
+        continue
+      }
+
+      if (character === '\\') {
+        escaped = true
+        continue
+      }
+
+      if (character === quote) {
+        inString = false
+        quote = ''
+      }
+
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      inString = true
+      quote = character
+      normalized += character
+      continue
+    }
+
+    if (character === '{' || character === ',') {
+      normalized += character
+
+      let cursor = index + 1
+      while (cursor < arrayLiteral.length && /\s/.test(arrayLiteral[cursor])) {
+        normalized += arrayLiteral[cursor]
+        cursor += 1
+      }
+
+      const keyMatch = arrayLiteral
+        .slice(cursor)
+        .match(/^([A-Za-z_$][A-Za-z0-9_$]*)(\s*:)/)
+
+      if (keyMatch) {
+        normalized += `"${keyMatch[1]}"${keyMatch[2]}`
+        index = cursor + keyMatch[0].length - 1
+        continue
+      }
+
+      index = cursor - 1
+      continue
+    }
+
+    normalized += character
+  }
+
+  return JSON.parse(normalized)
+}
+
+const extractAssignedArray = (bundleText, variableName) => {
+  const source = String(bundleText ?? '')
+  const assignment = `${variableName}=[`
+  const assignmentIndex = source.indexOf(assignment)
+
+  if (assignmentIndex === -1) {
+    return []
+  }
+
+  const arrayStartIndex = assignmentIndex + assignment.length - 1
+  return parseObjectArrayLiteral(
+    extractBalancedArrayLiteral(source, arrayStartIndex),
+  )
+}
+
+const asStringArray = (value) => [...new Set(
+  (Array.isArray(value) ? value : [])
+    .map((entry) => normalizeWhitespace(entry))
+    .filter(Boolean),
+)]
+
+export const extractMainBundleUrl = (html = '') => {
+  const match = String(html ?? '').match(
+    /<script[^>]+src=["']([^"']*\/static\/js\/main\.[^"']+\.js)["']/i,
+  )
+
+  return getSafeBlubridgeUrl(match?.[1])
+}
+
+export const extractBundleJobCards = (bundleText = '') =>
+  extractAssignedArray(bundleText, 'Pd')
+    .map((record) => {
+      const slug = normalizeWhitespace(record.slug)
+      if (!slug) return null
+
+      return {
+        title: normalizeWhitespace(record.title),
+        department: formatDepartmentParts(record.department, record.team),
+        location: normalizeWhitespace(record.location),
+        slug,
+        url: buildBundleJobUrl(slug),
+      }
+    })
+    .filter(Boolean)
+
+export const extractBundleJobDetails = (bundleText = '') =>
+  extractAssignedArray(bundleText, 'fu')
+    .map((record) => {
+      const slug = normalizeWhitespace(record.slug || record.id)
+      if (!slug) return null
+
+      return {
+        title: normalizeWhitespace(record.title),
+        company: COMPANY,
+        department: formatDepartmentParts(record.department, record.team),
+        location: normalizeWhitespace(record.location),
+        city: extractCity(record.location),
+        jobId: slug,
+        requisitionId: null,
+        sourceUrl: buildBundleJobUrl(slug),
+        applyUrl: buildBundleJobUrl(slug),
+        employmentType: normalizeWhitespace(record.employmentType),
+        experienceRequired: normalizeWhitespace(record.experience),
+        minimumQualification: normalizeWhitespace(record.education),
+        preferredQualification: null,
+        requiredSkills: asStringArray(record.skills),
+        postingDate: null,
+        closingDate: null,
+        jobDescription: buildJobDescription([
+          { label: 'About the Role', value: normalizeWhitespace(record.description) },
+          { label: 'Education', value: normalizeWhitespace(record.education) },
+          { label: 'Key Responsibilities', value: asStringArray(record.responsibilities).join('; ') || null },
+          { label: 'Requirements', value: asStringArray(record.requirements).join('; ') || null },
+        ]),
+      }
+    })
+    .filter(Boolean)
 
 export const extractJobCards = (html) => {
   const jobs = []
@@ -188,22 +429,22 @@ export const extractJobDetail = (html, sourceUrl) => {
   const minimumQualification = extractSection(lines, 'Education', ['Key Responsibilities', 'Requirements'])[0] || null
   const aboutRole = extractSection(lines, 'About the Role', ['Education', 'Key Responsibilities']).join(' ')
   const keyResponsibilities = extractSection(lines, 'Key Responsibilities', ['Requirements', 'Added Advantage', 'Why Join BluBridge?', 'Skills'])
-    .filter((value) => !['+', '✓'].includes(value))
+    .filter((value) => !['+', '*'].includes(value))
     .join('; ')
   const requirements = extractSection(lines, 'Requirements', ['Added Advantage', 'Why Join BluBridge?', 'Skills'])
-    .filter((value) => !['+', '✓'].includes(value))
+    .filter((value) => !['+', '*'].includes(value))
     .join('; ')
   const requiredSkills = [...new Set(
     [...String(
       extractHtmlBetweenLabels(html, 'Skills', ['Ready to Join Our Team?']) ?? '',
     ).matchAll(/<span[^>]*>([^<]+)<\/span>/gi)]
       .map((match) => normalizeWhitespace(match[1]))
-      .filter((value) => value && !['+', '✓'].includes(value)),
+      .filter((value) => value && !['+', '*'].includes(value)),
   )]
 
   return {
     title,
-    company: 'Blubridge Technologies Pvt Ltd',
+    company: COMPANY,
     department,
     location,
     city: extractCity(location),
@@ -231,73 +472,80 @@ export const extractJobDetail = (html, sourceUrl) => {
   }
 }
 
-const fetchRenderedHtml = async (page, url, waitForSelector) => {
-  await page.goto(url, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector(waitForSelector, {
-    timeout: config.jobListingTimeoutMs,
-  })
-  await new Promise((resolve) => setTimeout(resolve, config.pageLoadDelayMs || 1000))
-  return page.content()
-}
+export const createBlubridgeScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
+  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+    const listingHtml = await fetchText(CAREER_PAGE_URL)
+    const bundleUrl = extractMainBundleUrl(listingHtml)
 
-export const run = async () => {
-  let browser
-
-  try {
-    browser = await launchBrowser()
-    const page = await createOptimizedPage(browser)
-    const detailPage = await createOptimizedPage(browser)
-    const listingHtml = await fetchRenderedHtml(
-      page,
-      CAREER_PAGE_URL,
-      SELECTORS.listingJobRow,
-    )
-    const cards = extractJobCards(listingHtml)
-    const jobs = []
-    const maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null
-
-    console.log(`  [blubridge] Found ${cards.length} visible job cards on the careers page`)
-
-    for (const card of cards) {
-      const detailHtml = await fetchRenderedHtml(detailPage, card.url, 'body')
-      const detail = extractJobDetail(detailHtml, card.url)
-
-      if (!detail.title || !detail.jobId) continue
-
-      jobs.push({
-        ...detail,
-        title: detail.title || card.title,
-        department: detail.department || card.department,
-        location: detail.location || card.location,
-        city: detail.city || extractCity(card.location),
-        company: 'Blubridge Technologies Pvt Ltd',
-        source: 'blubridge',
-        link: detail.applyUrl || detail.sourceUrl,
-        scrapedAt: new Date().toISOString(),
-      })
-
-      if (maxJobs && jobs.length >= maxJobs) break
+    if (!bundleUrl) {
+      throw new Error('Blubridge careers shell no longer exposes the main React bundle')
     }
 
-    return jobs
-  } finally {
-    if (browser) await browser.close()
-  }
-}
+    const bundleText = await fetchText(bundleUrl)
+    const cards = extractBundleJobCards(bundleText)
+    const details = extractBundleJobDetails(bundleText)
+
+    if (cards.length === 0) {
+      throw new Error('Blubridge careers bundle no longer exposes structured job listings')
+    }
+
+    if (details.length === 0) {
+      throw new Error('Blubridge careers bundle no longer exposes structured job details')
+    }
+
+    const detailByJobId = new Map(
+      details.map((detail) => [detail.jobId, detail]),
+    )
+
+    return cards
+      .map((card) => {
+        const detail = detailByJobId.get(card.slug) || {
+          title: card.title,
+          company: COMPANY,
+          department: card.department,
+          location: card.location,
+          city: extractCity(card.location),
+          jobId: card.slug,
+          requisitionId: null,
+          sourceUrl: card.url,
+          applyUrl: card.url,
+          employmentType: null,
+          experienceRequired: null,
+          minimumQualification: null,
+          preferredQualification: null,
+          requiredSkills: [],
+          postingDate: null,
+          closingDate: null,
+          jobDescription: null,
+        }
+
+        return {
+          ...detail,
+          title: detail.title || card.title,
+          department: detail.department || card.department,
+          location: detail.location || card.location,
+          city: detail.city || extractCity(card.location),
+          source: SOURCE,
+          link: detail.applyUrl || detail.sourceUrl,
+          scrapedAt: (overrideNow || now)(),
+        }
+      })
+      .filter((job) => job.title && job.jobId)
+  },
+})
+
+export const run = async (options = {}) => createBlubridgeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
-  console.log(`Running Blubridge scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()
-  console.log(`\nTotal India jobs scraped: ${jobs.length}`)
 
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-    console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
   } else {
-    const result = await saveToDB(jobs, 'blubridge')
-    console.log('DB result:', result)
-    process.exit(0)
+    await saveToDB(jobs, SOURCE)
   }
 }

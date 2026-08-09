@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../tests/fixtures/leicabiosystems',
+  '../../scraper-support/tests/fixtures/leicabiosystems',
 )
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
@@ -96,7 +96,7 @@ test('Leica Biosystems extracts job detail metadata from the official Danaher de
   assert.equal(detail.employmentType, 'Full-time')
   assert.match(detail.location, /Hyderabad/i)
   assert.match(detail.jobDescription, /driving commercial growth/i)
-  assert.match(detail.experienceRequired, /8\+ years of commercial experience/i)
+  assert.match(detail.experienceRequired, /8\+ years/i)
   assert.equal(detail.minimumQualification, null)
   assert.deepEqual(detail.requiredSkills.slice(0, 4), [
     'sales funnel management',

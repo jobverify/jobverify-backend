@@ -7,10 +7,10 @@ export const CAREER_PAGE_URL = 'https://emptycup.in/'
 export const CAREERS_ROUTE_URL = 'https://emptycup.in/careers'
 export const JOBS_ROUTE_URL = 'https://emptycup.in/jobs'
 
-const MISSING_ROUTE_PATTERN = /\b404 not found\b/i
+const MISSING_ROUTE_PATTERN = /\b(?:404|page)\s+not\s+found\b|broken link|doesn’t exist on this site|doesn't exist on this site/i
 
 export const hasOfficialSiteSignal = (html) =>
-  /<title>\s*EmptyCup\b|\bWelcome to EmptyCup\b/i.test(html || '')
+  /<title>\s*EmptyCup(?:\s*3D)?\b|\bWelcome to EmptyCup\b/i.test(html || '')
 
 export const isMissingCareerRoute = (html) => MISSING_ROUTE_PATTERN.test(html || '')
 
@@ -51,7 +51,7 @@ export const createEmptyCupScraper = () => ({
 export const run = async () => createEmptyCupScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running EmptyCup scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

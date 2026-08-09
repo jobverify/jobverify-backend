@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://games24x7.com/ redirects to the live first-party homepage at https://www.games24x7.com/, that the official life and careers page is https://www.games24x7.com/life, and that the page explicitly hands job seekers to the public Darwinbox route https://games24x7.darwinbox.in/ms/candidate/a6150564417204/careers for PLAY GAMES24X7 PVT LTD-INDIA. The Darwinbox all-jobs shell at https://games24x7.darwinbox.in/ms/candidatev2/a6150564417204/careers/allJobs and listing API contract at https://games24x7.darwinbox.in/ms/candidateapi/job/alljobs?companyId=a6150564417204 were identified from that handoff, but direct non-browser requests to those Darwinbox URLs timed out from the verified environment, so this scraper uses the browser-session Darwinbox pagination pattern already established in the repo.'
+  'Verified on Saturday, August 1, 2026 that https://games24x7.com/ still redirects to the live first-party homepage at https://www.games24x7.com/, that the official life and careers page is still https://www.games24x7.com/life, and that the page still explicitly hands job seekers to the public Darwinbox route https://games24x7.darwinbox.in/ms/candidate/a6150564417204/careers for PLAY GAMES24X7 PVT LTD-INDIA. The homepage copy now renders "Entertaining 120 million + players" with a spaced plus sign, but the official handoff contract is otherwise unchanged. The Darwinbox all-jobs shell at https://games24x7.darwinbox.in/ms/candidatev2/a6150564417204/careers/allJobs and listing API contract at https://games24x7.darwinbox.in/ms/candidateapi/job/alljobs?companyId=a6150564417204 were re-confirmed from that handoff on the verified date, so this scraper continues to use the browser-session Darwinbox pagination pattern already established in the repo.'
 
 export const GAMES24X7_CATALOG = {
   source: 'games24x7',
@@ -26,7 +26,7 @@ export const GAMES24X7_CATALOG = {
   extractionStrategy: 'official-life-page+darwinbox-listing-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'games24x7/jobs.json',
 }

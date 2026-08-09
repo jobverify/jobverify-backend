@@ -10,7 +10,7 @@ const loadModule = async () => {
   }
 }
 
-const readFixture = (name) => readFileSync(new URL(`../tests/fixtures/${name}`, import.meta.url), 'utf8')
+const readFixture = (name) => readFileSync(new URL(`../../scraper-support/tests/fixtures/${name}`, import.meta.url), 'utf8')
 
 const careersHtml = readFixture('utopusinsights-careers.html')
 const openingsHtml = readFixture('utopusinsights-open-positions.html')

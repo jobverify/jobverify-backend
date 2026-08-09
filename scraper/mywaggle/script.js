@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'mywaggle'
@@ -27,7 +25,9 @@ const stripHtml = (html) =>
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
+    .replace(/&ndash;|&#8211;/gi, '-')
     .replace(/&#8217;|&rsquo;|&#x27;/gi, "'")
+    .replace(/[’]/g, "'")
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -42,50 +42,69 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = stripHtml(page)
 
   return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/mywaggle\.com\/["']/i.test(page)
-    && /<title>\s*Waggle\s*\|\s*#1 RV\s*(?:&|&amp;)\s*Pet Monitoring Devices\s*\|\s*Waggle(?:®)?\s*<\/title>/i.test(page)
+    && /<title>\s*Waggle\s*\|\s*#1 RV\s*(?:&|&amp;)\s*Pet Monitoring Devices\s*\|\s*Waggle(?:Â®|®)?\s*<\/title>/i.test(page)
     && normalized.includes('Built for Pets, Trusted by Pet Parents!')
     && normalized.includes('855-983-5566')
     && normalized.includes('support@mywaggle.com')
 }
 
-export const isVerifiedMissingJobsRoute = (html) => {
-  const page = String(html ?? '')
-  const normalized = stripHtml(page)
+export const isVerifiedMissingJobsRoute = (pageOrHtml) => {
+  const page = typeof pageOrHtml === 'string'
+    ? { status: 404, html: pageOrHtml }
+    : (pageOrHtml || {})
+  const html = String(page.html ?? '')
+  const normalized = stripHtml(html)
 
-  return /<body[^>]+class=["'][^"']*template-404[^"']*["']/i.test(page)
-    && /\berror-404\b/i.test(page)
+  return Number(page.status) === 404
+    && /<body[^>]+class=["'][^"']*template-404[^"']*["']/i.test(html)
+    && /\berror-404\b/i.test(html)
+    && /<title>\s*404 Not Found\s*(?:-|&ndash;)\s*Waggle\s*<\/title>/i.test(html)
     && normalized.includes('404')
-    && normalized.includes('Sorry! Page you are looking can’t be found.')
+    && normalized.includes("Sorry! Page you are looking can't be found.")
     && normalized.includes('Go back to the homepage')
     && normalized.includes('855-983-5566')
     && normalized.includes('support@mywaggle.com')
-    && !hasRecruitingSignal(page)
+    && !hasRecruitingSignal(html)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.9',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+export const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+  })
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 export const createMywaggleScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml) || hasRecruitingSignal(homepageHtml)) {
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (
+      homepage.status !== 200
+      || !hasOfficialHomepageSignal(homepage.html)
+      || hasRecruitingSignal(homepage.html)
+    ) {
       throw new Error('Mywaggle homepage no longer matches the verified no-public-jobs surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!isVerifiedMissingJobsRoute(careersHtml)) {
+    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    if (!isVerifiedMissingJobsRoute(careersPage)) {
       throw new Error('Mywaggle checked careers route no longer matches the verified 404 surface')
     }
 
-    const jobsHtml = await fetchText(JOBS_PAGE_URL)
-    if (!isVerifiedMissingJobsRoute(jobsHtml)) {
+    const jobsPage = await fetchPage(JOBS_PAGE_URL)
+    if (!isVerifiedMissingJobsRoute(jobsPage)) {
       throw new Error('Mywaggle checked jobs route no longer matches the verified 404 surface')
     }
 
@@ -96,7 +115,7 @@ export const createMywaggleScraper = () => ({
 export const run = async (options = {}) => createMywaggleScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

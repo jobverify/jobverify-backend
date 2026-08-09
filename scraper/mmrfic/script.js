@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -38,8 +38,12 @@ const HOMEPAGE_SIGNALS = [
   'careers',
 ]
 
-const CAREERS_SIGNALS = [
-  'careers at mmrfic',
+const CAREERS_BRANDING_SIGNALS = [
+  'careers',
+  'mmrfic',
+]
+
+const CAREERS_CULTURE_SIGNALS = [
   'passionate individuals',
   'vibrant and progressive culture',
 ]
@@ -71,7 +75,8 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
-  return CAREERS_SIGNALS.every((signal) => normalized.includes(signal))
+  return CAREERS_BRANDING_SIGNALS.every((signal) => normalized.includes(signal))
+    && CAREERS_CULTURE_SIGNALS.every((signal) => normalized.includes(signal))
 }
 
 export const hasPublicJobsSignal = (html) =>
@@ -96,7 +101,7 @@ export const createMMRFICScraper = () => ({
 export const run = async (options = {}) => createMMRFICScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

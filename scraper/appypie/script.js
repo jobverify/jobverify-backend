@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import provider from './provider.js'
 
@@ -126,6 +126,21 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /Appy Pie Career/i.test(text) && /Current Search/i.test(text)
 }
 
+export const extractOpeningCounts = (html = '') => [...String(html ?? '').matchAll(
+  /<span[^>]*class=["'][^"']*noofjobs[^"']*["'][^>]*>\s*\((\d+)\)\s*<\/span>/gi,
+)]
+  .map((match) => Number.parseInt(match[1], 10))
+  .filter(Number.isFinite)
+
+export const hasVerifiedNoOpeningsSignal = (html = '') => {
+  const text = normalizeWhitespace(html) || ''
+  const counts = extractOpeningCounts(html)
+  return counts.length > 0
+    && counts.every((count) => count === 0)
+    && /\b0\s+Results\b/i.test(text)
+    && /\bNo jobs found\b/i.test(text)
+}
+
 export const extractJobDetailUrls = (html = '') => [...new Set(
   [...String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)]
     .map((match) => toAbsoluteUrl(match[1]))
@@ -201,6 +216,9 @@ export const run = async ({
 
   const detailUrls = extractJobDetailUrls(listingHtml)
   if (detailUrls.length === 0) {
+    if (hasVerifiedNoOpeningsSignal(listingHtml)) {
+      return []
+    }
     throw new Error('Appy Pie verified careers page no longer exposes public role detail URLs')
   }
 
@@ -220,7 +238,7 @@ export const run = async ({
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { createPhenomScraper } from '../phenom/engine.js'
+import { createPhenomScraper } from '../../scraper-support/phenom/engine.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 

@@ -10,7 +10,7 @@ export const HYLAND_SOFTWARE_SOLUTIONS_INDIA_LLP_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://www.hyland.com/en',
   companyCareerPage: 'https://www.hyland.com/en/company/careers',
-  jobsSearchUrl: 'https://careers-hyland.icims.com/jobs/search?hashed=-435679902&ss=1',
+  jobsSearchUrl: 'https://careers-hyland.icims.com/jobs/search?pr=1&in_iframe=1',
   sampleRemoteIndiaJobUrl:
     'https://careers-hyland.icims.com/jobs/14187/senior-product-designer---cloud-update-service/job?in_iframe=1',
   sampleHyderabadJobUrl:
@@ -22,9 +22,9 @@ export const HYLAND_SOFTWARE_SOLUTIONS_INDIA_LLP_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'hyland.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.hyland.com/en/company/careers was the live first-party Hyland careers page, that it handed applicants to the public iCIMS listings page at https://careers-hyland.icims.com/jobs/search?hashed=-435679902&ss=1, and that live India roles included Senior Product Designer - Cloud Update Service in Remote - India and a Hyderabad India Office cyber security role.',
+    'Verified on Sunday, August 2, 2026 that https://www.hyland.com/en/company/careers remained the live first-party Hyland careers page, that it still exposed the public iCIMS handoff links, and that the stable public listings surface had moved to https://careers-hyland.icims.com/jobs/search?pr=1&in_iframe=1 where current India roles included Hyderabad India Office and Remote - India openings.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

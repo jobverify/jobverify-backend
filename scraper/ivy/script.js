@@ -1,92 +1,209 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-export const SOURCE = 'ivy'
-export const COMPANY = 'ivy'
-export const HOMEPAGE_URL = 'https://ivy.global/'
-export const CONTACT_URL = 'https://ivy.global/contact'
-export const BLOCKED_ROUTE_URLS = [
-  'https://ivy.global/careers',
-  'https://ivy.global/jobs',
-  'http://ivy.global/',
-  'http://www.ivy.global/',
+import provider from './provider.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const PUBLIC_JOBS_SIGNAL_PATTERNS = [
+  /"@type"\s*:\s*"JobPosting"/i,
+  /\bcurrent openings\b/i,
+  /\bopen positions?\b/i,
+  /\bjob openings?\b/i,
+  /\bsearch jobs\b/i,
+  /\bapply now\b/i,
+  /\bview job\b/i,
+  /\bjoin our team\b/i,
+  /boards\.greenhouse\.io/i,
+  /job-boards\.greenhouse\.io/i,
+  /jobs\.lever\.co/i,
+  /ashbyhq\.com/i,
+  /workdayjobs/i,
+  /myworkdayjobs/i,
+  /smartrecruiters/i,
+  /jobvite/i,
 ]
 
-const OFFICIAL_HOMEPAGE_PATTERNS = [
-  /Ivy\s+Comptech/i,
-  /Are you ready to shine/i,
-  /online gaming industry/i,
-]
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
+  .replace(/&quot;/gi, '"')
+  .replace(/&amp;/gi, '&')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-const OFFICIAL_CONTACT_PATTERNS = [
-  /Ivy\s+Comptech\s+Private\s+Limited/i,
-  /Ivy\s+Software\s+Development\s+Services\s+Private\s+Limited/i,
-  /Ivy\s+Global\s+Shared\s+Services\s+Private\s+Limited/i,
-  /Ivy\s+Mobitech\s+Services\s+Private\s+Limited/i,
-]
+const defaultFetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
 
-const PUBLIC_JOBS_PATTERN = /\b(open\s+positions|current\s+openings|job\s+openings)\b|<a[^>]+href=["'][^"']*(?:careers|jobs)[^"']*["'][^>]*>[^<]*(?:apply|view)/i
+  return response.text()
+}
 
-export const hasOfficialHomepageSignal = (html) =>
-  OFFICIAL_HOMEPAGE_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
 
-export const hasOfficialContactSignal = (html) =>
-  OFFICIAL_CONTACT_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
-
-export const pageExposesPublicJobListings = (html) => PUBLIC_JOBS_PATTERN.test(String(html ?? ''))
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'ivy',
-  timeoutMs: 15000,
-})
-
-const defaultProbeUrl = async (url) => {
-  try {
-    const text = await defaultFetchText(url)
-    return { ok: true, text }
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  return {
+    ok: response.ok,
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+    text: null,
   }
 }
 
-const isExpectedBlockedError = (errorText) =>
-  /403|forbidden|ssl\/tls secure channel|timed out|timeout|econnreset|unable to/i.test(String(errorText ?? ''))
+const asText = (value = {}) => String(value?.text ?? value?.html ?? '')
 
-export const createIvyScraper = () => ({
-  async run({ fetchText = defaultFetchText, probeUrl = defaultProbeUrl } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    const contactHtml = await fetchText(CONTACT_URL)
+const isTransportTimeoutError = (error) =>
+  /connect timeout error|timed out|timeout:/i.test(String(error?.message ?? error ?? ''))
 
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('ivy official homepage no longer matches the verified Ivy Comptech surface')
-    }
+const isBlockedResult = (result = {}) => {
+  const status = Number(result?.status)
+  const errorText = String(result?.error ?? '')
+  const bodyText = asText(result).toLowerCase()
 
-    if (!hasOfficialContactSignal(contactHtml)) {
-      throw new Error('ivy official contact page no longer matches the verified Ivy Comptech legal-entity surface')
-    }
+  return result?.ok === false
+    || status === 403
+    || status === 404
+    || status === 429
+    || status === 522
+    || /forbidden|access denied|ssl|tls secure channel|blocked/i.test(errorText)
+    || bodyText === 'forbidden'
+    || bodyText.includes('access denied')
+    || bodyText.includes('forbidden')
+}
 
-    for (const routeUrl of BLOCKED_ROUTE_URLS) {
-      const probe = await probeUrl(routeUrl)
-      if (probe.ok) {
-        if (pageExposesPublicJobListings(probe.text)) {
-          throw new Error(`ivy first-party blocked route now exposes public job listings: ${routeUrl}`)
+export const PROVIDER_METADATA = provider
+export const SOURCE = provider.source
+export const COMPANY = provider.companyName
+export const OFFICIAL_BRAND_NAME = provider.officialBrandName
+export const HOMEPAGE_URL = provider.homepageUrl
+export const CONTACT_URL = provider.contactPageUrl
+export const BLOCKED_ROUTE_URLS = [...provider.blockedRouteUrls]
+
+export const hasPublicJobsSignal = (html = '') =>
+  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+export const hasOfficialHomepageSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /<title>\s*Ivy Comptech - Leading Solutions for the Online Gaming Industry\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('Ivy Comptech')
+    && normalized.includes('Ivy is a beacon for open-minded, curious people.')
+    && normalized.includes('Are you ready to shine?')
+}
+
+export const hasOfficialContactSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /<title>\s*Contact - Ivy Comptech\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('Ivy Comptech Private Limited')
+    && normalized.includes('Ivy Software Development Services Private Limited')
+    && normalized.includes('Ivy Global Shared Services Private Limited')
+    && normalized.includes('Ivy Mobitech Services Private Limited')
+}
+
+export const createBlockedSurfaceScraper = (providerMetadata) => {
+  const homepageUrl = providerMetadata.homepageUrl
+  const contactUrl = providerMetadata.contactPageUrl
+  const blockedRouteUrls = [...providerMetadata.blockedRouteUrls]
+
+  return {
+    async run({
+      fetchText = defaultFetchText,
+      probeUrl,
+      fetchBrowserText,
+      fetchBrowserPage,
+    } = {}) {
+      let homepageHtml = null
+      let contactHtml = null
+      let shouldUseBrowserPageFallback = false
+
+      try {
+        homepageHtml = await fetchText(homepageUrl)
+        contactHtml = await fetchText(contactUrl)
+      } catch (error) {
+        if (isTransportTimeoutError(error)) {
+          return []
         }
-        throw new Error(`ivy first-party blocked route is reachable and needs review: ${routeUrl}`)
+
+        shouldUseBrowserPageFallback = true
+
+        if (fetchBrowserText) {
+          try {
+            homepageHtml = await fetchBrowserText(homepageUrl)
+          } catch {
+            homepageHtml = null
+          }
+
+          try {
+            contactHtml = await fetchBrowserText(contactUrl)
+          } catch {
+            contactHtml = null
+          }
+        }
       }
 
-      if (!isExpectedBlockedError(probe.error)) {
-        throw new Error(`ivy blocked-route validation changed materially: ${routeUrl} -> ${probe.error}`)
+      if (homepageHtml != null && !hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error(`${providerMetadata.officialBrandName} verified homepage no longer matches the trusted surface`)
       }
-    }
 
-    return []
-  },
-})
+      if (contactHtml != null && !hasOfficialContactSignal(contactHtml)) {
+        throw new Error(`${providerMetadata.officialBrandName} verified contact page no longer matches the trusted surface`)
+      }
+
+      for (const url of blockedRouteUrls) {
+        const result = probeUrl
+          ? await probeUrl(url)
+          : shouldUseBrowserPageFallback && fetchBrowserPage
+            ? await fetchBrowserPage(url)
+            : await defaultFetchPage(url)
+
+        if (hasPublicJobsSignal(asText(result))) {
+          throw new Error(`${providerMetadata.officialBrandName} blocked surface now exposes public job listings`)
+        }
+
+        if (!isBlockedResult(result)) {
+          throw new Error(`${providerMetadata.officialBrandName} blocked route changed materially: ${url}`)
+        }
+      }
+
+      return []
+    },
+  }
+}
+
+export const createIvyScraper = () => createBlockedSurfaceScraper(PROVIDER_METADATA)
 
 export const run = async (options = {}) => createIvyScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

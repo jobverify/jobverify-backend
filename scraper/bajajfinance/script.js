@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+
 import { BAJAJ_FINANCE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -11,11 +13,27 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const COMPANY_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const PORTAL_ORIGIN = PROVIDER_METADATA.portalOrigin
 export const JOB_LISTINGS_URL = PROVIDER_METADATA.jobListingsUrl
-export const DEFAULT_PAGE_SIZE = 20
+export const EXPECTED_TOP_LEVEL_COMPANY = 'Bajaj Finance Limited'
+export const DEFAULT_PAGE_SIZE = 99
 export const DEFAULT_SEARCH_BODY = {}
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+export const DEFAULT_FETCH_TIMEOUT_MS = 20000
+
+export const createFetchTimeoutSignal = (timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -99,6 +117,12 @@ const flattenSkills = (skills = {}) => {
   )]
 }
 
+export const extractTopLevelCompany = (record = {}) => firstNonEmpty(
+  record.companyName,
+  record.legalEntity,
+  String(record.organizationUnitComplete || '').split('>')[0],
+)
+
 export const buildApiUrl = ({ offset = 0, limit = DEFAULT_PAGE_SIZE } = {}) => (
   `${PORTAL_ORIGIN}/api/cp/rest/altone/cp/jobs/v1?offset=${offset}&limit=${limit}`
 )
@@ -115,13 +139,20 @@ export const buildPublicHeaders = () => ({
   'Content-Type': 'application/json',
 })
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, {
+  signal,
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
+} = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: composeAbortSignals(
+      signal,
+      createFetchTimeoutSignal(timeoutMs),
+    ),
   })
 
   return {
@@ -136,6 +167,10 @@ const defaultFetchJson = async (url, options = {}) => {
     method: options.method || 'GET',
     headers: options.headers,
     body: options.body,
+    signal: composeAbortSignals(
+      options.signal,
+      createFetchTimeoutSignal(options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS),
+    ),
   })
 
   if (!response.ok) {
@@ -199,6 +234,9 @@ export const extractSearchResults = (payload = {}) => (
         record.jobType,
       ),
       experienceRequired: firstNonEmpty(record.expRange, record.experience, record.experienceRange),
+      publicExperienceChecked: Boolean(
+        firstNonEmpty(record.expRange, record.experience, record.experienceRange),
+      ),
       minimumQualification: firstNonEmpty(record.minimumQualification, record.minQualification),
       preferredQualification: firstNonEmpty(record.preferredQualification, record.prefQualification),
       requiredSkills: flattenSkills(record.skills),
@@ -217,8 +255,9 @@ export const createBajajFinanceScraper = ({
     fetchJson = defaultFetchJson,
     pageSize = DEFAULT_PAGE_SIZE,
     maxPages = Number.POSITIVE_INFINITY,
+    signal,
   } = {}) {
-    const companyPage = await fetchPage(COMPANY_PAGE_URL)
+    const companyPage = await fetchPage(COMPANY_PAGE_URL, { signal })
     if (companyPage.status !== 200 || !hasOfficialBajajFinancePageSignal(companyPage.html)) {
       throw new Error('Bajaj Finance verified official Bajaj Finance page no longer matches the known public surface')
     }
@@ -228,7 +267,7 @@ export const createBajajFinanceScraper = ({
       throw new Error('Bajaj Finance verified official company page no longer exposes the known PeopleStrong handoff')
     }
 
-    const portalPage = await fetchPage(JOB_LISTINGS_URL)
+    const portalPage = await fetchPage(JOB_LISTINGS_URL, { signal })
     if (portalPage.status !== 200 || !hasPublicPortalShell(portalPage.html)) {
       throw new Error('Bajaj Finance verified public PeopleStrong portal no longer matches the known public surface')
     }
@@ -241,9 +280,19 @@ export const createBajajFinanceScraper = ({
         method: 'POST',
         headers: buildPublicHeaders(),
         body: JSON.stringify(DEFAULT_SEARCH_BODY),
+        signal,
       })
 
-      const pageJobs = extractSearchResults(payload)
+      const rawRecords = Array.isArray(payload?.response) ? payload.response : []
+      const pageCompanies = new Set(rawRecords.map((record) => extractTopLevelCompany(record)).filter(Boolean))
+      if (page === 0 && rawRecords.length > 0 && !pageCompanies.has(EXPECTED_TOP_LEVEL_COMPANY)) {
+        return []
+      }
+
+      const pageJobs = extractSearchResults({
+        ...payload,
+        response: rawRecords.filter((record) => extractTopLevelCompany(record) === EXPECTED_TOP_LEVEL_COMPANY),
+      })
       jobs.push(...pageJobs.map((job) => ({
         ...job,
         source: SOURCE,
@@ -251,7 +300,7 @@ export const createBajajFinanceScraper = ({
         scrapedAt: now(),
       })))
 
-      const responseCount = Array.isArray(payload?.response) ? payload.response.length : 0
+      const responseCount = rawRecords.length
       const totalRecords = Number.parseInt(String(payload?.totalRecords ?? ''), 10)
 
       if (responseCount === 0) break
@@ -265,7 +314,7 @@ export const createBajajFinanceScraper = ({
 export const run = async (options = {}) => createBajajFinanceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

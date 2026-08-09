@@ -1,4 +1,4 @@
-export const SOURCE = 'mobiculetechnologies'
+﻿export const SOURCE = 'mobiculetechnologies'
 export const COMPANY = 'Mobicule Technologies'
 export const HOMEPAGE_URL = 'https://mobicule.com/'
 export const CAREERS_URL = 'https://mobicule.com/careers/'
@@ -11,7 +11,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Mobicule',
   adapter: 'script',
-  modulePath: '../mobiculetechnologies/script.js',
+  modulePath: '../../scraper/mobiculetechnologies/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   careersPortalUrl: CAREERS_PORTAL_URL,
@@ -114,3 +114,4 @@ export const run = async ({
     scrapedAt: now(),
   }))
 }
+

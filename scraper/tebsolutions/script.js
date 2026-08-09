@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 export const SOURCE = 'tebsolutions'
 export const COMPANY = 'TEB Solutions'

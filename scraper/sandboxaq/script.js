@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { SANDBOXAQ_CATALOG } from './catalog.js'
+import { extractAshbyExperienceRequired } from '../../scraper-support/utils/ashbyExperience.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,6 +22,13 @@ const normalizeString = (value) => {
   const normalized = String(value).replace(/\s+/g, ' ').trim()
   return normalized || null
 }
+
+const stripTags = (value) => normalizeString(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
 
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeString(value)
@@ -49,11 +57,16 @@ const getAddress = (job = {}) => job?.address?.postalAddress || {}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
+  const visibleText = stripTags(rawHtml) || ''
 
   return /<title[^>]*>\s*Careers\s*\|\s*SandboxAQ\s*<\/title>/i.test(rawHtml)
-    && /Careers at Sandbox AQ/i.test(rawHtml)
-    && /Residency Program/i.test(rawHtml)
-    && /href=["'](?:https:\/\/www\.sandboxaq\.com)?\/careers-list["']/i.test(rawHtml)
+    && (
+      /Careers at Sandbox AQ/i.test(visibleText)
+      || /Careers at SandboxAQ/i.test(visibleText)
+    )
+    && /Residency Program/i.test(visibleText)
+    && /View Job Openings/i.test(visibleText)
+    && /href=["'](?:https:\/\/www\.sandboxaq\.com)?\/careers-list(?:[/?#][^"']*)?["']/i.test(rawHtml)
 }
 
 export const extractVerifiedCareersListUrl = (html = '') => {
@@ -114,7 +127,10 @@ export const extractAshbyJobs = (payload = {}) => (
         sourceUrl,
         applyUrl,
         employmentType: normalizeEmploymentType(job?.employmentType),
-        experienceRequired: null,
+        experienceRequired: extractAshbyExperienceRequired({
+          title,
+          jobDescription: normalizeString(job?.descriptionPlain ?? job?.descriptionHtml),
+        }),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
@@ -204,7 +220,7 @@ export const createSandboxAQScraper = ({
 export const run = async (options = {}) => createSandboxAQScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

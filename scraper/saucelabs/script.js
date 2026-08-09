@@ -1,11 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  createOptimizedPage as defaultCreateOptimizedPage,
-  launchBrowser as defaultLaunchBrowser,
-} from '../utils/browser.js'
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SAUCE_LABS_CATALOG from './catalog.js'
 
@@ -34,6 +30,10 @@ const normalizeWhitespace = (value) => {
 
   return normalized || null
 }
+
+const extractTitle = (html) => normalizeWhitespace(
+  decodeHtmlEntities(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null),
+)
 
 const normalizeText = (value) => normalizeWhitespace(
   String(value ?? '')
@@ -127,12 +127,17 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /<title>\s*Sauce Labs Careers & Opportunities\s*<\/title>/i.test(page)
+  return extractTitle(page) === 'Sauce Labs Careers & Opportunities'
     && normalized.includes('see openings')
     && normalized.includes('current positions at sauce labs')
     && normalized.includes('departments')
     && normalized.includes('locations')
 }
+
+const normalizeCompanyName = (value) => normalizeWhitespace(value)
+  ?.replace(/\binc\.?$/i, '')
+  .trim()
+  .toLowerCase() || null
 
 const getValidatedJobs = (payload) => {
   const jobs = Array.isArray(payload?.jobs) ? payload.jobs : null
@@ -144,13 +149,13 @@ const getValidatedJobs = (payload) => {
     const jobId = normalizeWhitespace(job?.id)
     const title = normalizeWhitespace(job?.title)
     const absoluteUrl = normalizeGreenhouseAbsoluteUrl(job?.absolute_url, jobId)
-    const companyName = normalizeWhitespace(job?.company_name)
+    const companyName = normalizeCompanyName(job?.company_name)
 
     if (!jobId || !title || !absoluteUrl) {
       throw new Error('Verified Sauce Labs greenhouse payload changed materially')
     }
 
-    if (companyName && companyName.toLowerCase() !== COMPANY.toLowerCase()) {
+    if (companyName && companyName !== COMPANY.toLowerCase()) {
       throw new Error('Verified Sauce Labs greenhouse payload changed materially')
     }
   }
@@ -214,48 +219,30 @@ export const createSauceLabsScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    launchBrowser = defaultLaunchBrowser,
-    createOptimizedPage = defaultCreateOptimizedPage,
     fetchJson = defaultFetchJson,
     now = defaultNow,
   } = {}) {
-    let browser
+    const indiaJobs = extractIndiaJobsFromGreenhousePayload(
+      await fetchJson(GREENHOUSE_JOBS_API_URL),
+      { scrapedAt: now() },
+    )
+    const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0
+      ? indiaJobs.slice(0, maxJobs)
+      : indiaJobs
 
-    try {
-      browser = await launchBrowser()
-      const page = await createOptimizedPage(browser)
-
-      await page.goto(CAREERS_PAGE_URL, { waitUntil: 'networkidle2' })
-
-      const careersHtml = await page.content()
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Response is not the verified official Sauce Labs careers page')
-      }
-
-      const indiaJobs = extractIndiaJobsFromGreenhousePayload(
-        await fetchJson(GREENHOUSE_JOBS_API_URL),
-        { scrapedAt: now() },
-      )
-      const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0
-        ? indiaJobs.slice(0, maxJobs)
-        : indiaJobs
-
-      return selectedJobs.map((job) => ({
-        ...job,
-        companyCareerPage: CAREERS_PAGE_URL,
-        companyDomain: PROVIDER_METADATA.companyDomain,
-        atsPlatform: PROVIDER_METADATA.atsPlatform,
-      }))
-    } finally {
-      if (browser) await browser.close()
-    }
+    return selectedJobs.map((job) => ({
+      ...job,
+      companyCareerPage: CAREERS_PAGE_URL,
+      companyDomain: PROVIDER_METADATA.companyDomain,
+      atsPlatform: PROVIDER_METADATA.atsPlatform,
+    }))
   },
 })
 
 export const run = async (options = {}) => createSauceLabsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

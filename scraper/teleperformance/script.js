@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -15,6 +15,9 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
@@ -49,9 +52,10 @@ export const extractIndiaCareersUrl = (html) => {
 }
 
 export const hasIndiaLocationSignal = (html) => {
+  const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes("you are on india's website")
+  return /<title>\s*TP in India\b/i.test(rawHtml)
     && normalized.includes('tp in india')
     && normalized.includes('digital cx & transformation coe for tp')
 }
@@ -86,9 +90,10 @@ export const extractPublicJobRecordUrls = (html) => {
 }
 
 export const hasIndiaCareersShellSignal = (html) => {
+  const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes("you are on india's website")
+  return /<title>\s*Jobs(?:&#160;|\s)+in(?:&#160;|\s)+TP(?:&#160;|\s)+India\b/i.test(rawHtml)
     && normalized.includes('tp in india')
     && normalized.includes('work with us')
     && normalized.includes('clear filter')
@@ -138,7 +143,7 @@ export const createTeleperformanceScraper = () => ({
 export const run = async (options = {}) => createTeleperformanceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

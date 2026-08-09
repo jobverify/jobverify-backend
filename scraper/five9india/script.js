@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import FIVE9_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -124,12 +124,19 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 export const hasOfficialCareersLandingSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Contact Center Careers - Five9 Career - SaaS Jobs \| Five9\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*Contact Center Careers - Five9 Career - SaaS Jobs \| Five9\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.five9\.com\/about\/careers["']/i.test(page)
     && /Five9 Careers:\s*Reimagine Where You Work/i.test(page)
     && /Employees Are the Secret to Our Success/i.test(page)
     && /Apply today!/i.test(page)
     && /href=["']\/about\/careers\/jobs["']/i.test(page)
+  ) || (
+    /<title>\s*Contact Center Careers - Five9 Career - SaaS Jobs \| Five9\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.five9\.com\/about\/careers["']/i.test(page)
+    && /Five9 Careers/i.test(page)
+    && /href=["']\/about\/careers\/jobs["']/i.test(page)
+  )
 }
 
 export const hasOfficialJobsPageSignal = (html = '') => {
@@ -300,7 +307,7 @@ export const createFive9IndiaScraper = ({
 export const run = async (options = {}) => createFive9IndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

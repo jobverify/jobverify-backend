@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 test('MaxEd is registered with the verified first-party internship page and needs no alias', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'maxed')
@@ -11,7 +11,7 @@ test('MaxEd is registered with the verified first-party internship page and need
   assert.ok(provider, 'Expected MaxEd provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'MaxEd')
-  assert.equal(provider.companyCareerPage, 'https://maxed.in/internship2025/')
+  assert.equal(provider.companyCareerPage, 'https://maxed.in/internship/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'homepage-plus-page-sitemap-plus-internship-page-plus-missing-route-validation')
@@ -46,6 +46,6 @@ test('MaxEd is runnable through the scraper provider catalog', () => {
   assert.ok(scraper, 'Expected buildScrapers() to return the MaxEd scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'maxed')
-  assert.equal(scraper.provider.companyCareerPage, 'https://maxed.in/internship2025/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://maxed.in/internship/')
   assert.match(scraper.dryRunFile, /maxed[\\/]jobs\.json$/i)
 })

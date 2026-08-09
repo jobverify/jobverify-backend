@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const SOURCE = 'tutrhyperloop'
 const COMPANY = 'Tutr Hyperloop'
-const CAREERS_URL = 'https://tutrhyperloop.com/'
+const CAREERS_URL = 'https://tutr.tech/career/'
 
-test('Tutr Hyperloop is registered as a verified parked-domain sentinel without aliases', () => {
+test('Tutr Hyperloop is registered as a verified first-party careers scraper without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
   assert.ok(provider, 'Expected Tutr Hyperloop provider to be registered in customProviders.json')
@@ -17,21 +17,19 @@ test('Tutr Hyperloop is registered as a verified parked-domain sentinel without 
   assert.equal(provider.companyName, COMPANY)
   assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.deepEqual(provider.alternateCareerPages, [
-    'https://tutrhyperloop.com/careers',
-    'https://tutrhyperloop.com/career',
-    'https://tutrhyperloop.com/jobs',
-    'https://tutrhyperloop.com/join-us',
+    'https://tutr.tech/',
+    'https://tutr.tech/contact-us/',
   ])
-  assert.equal(provider.atsPlatform, 'official-company-site-blocked-careers')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page-with-inline-modal-role-details')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-routes-parked-domain-validation')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-parked-homepage+verified-parked-careers-routes-return-empty',
+    'verified-homepage+verified-careers-page+inline-modal-role-details+contact-us-apply-handoff',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'tutrhyperloop.com')
+  assert.equal(provider.companyDomain, 'tutr.tech')
   assert.match(provider.modulePath, /tutrhyperloop[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

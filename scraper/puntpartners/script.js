@@ -1,13 +1,13 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'puntpartners'
 export const COMPANY = 'Punt Partners'
-export const VERIFIED_AT = '2026-07-13'
+export const VERIFIED_AT = '2026-08-04'
 
 export const HOMEPAGE_URL = 'https://punt.partners/'
 export const TEAM_URL = 'https://punt.partners/team/'
@@ -56,6 +56,7 @@ const CAREERS_TEXT_PATTERN =
 
 const CAREERS_ROUTE_PATTERN =
   /https:\/\/punt\.partners\/(?:careers?|jobs|join-us|work-with-us|current-openings|vacancies)\/?/i
+const PARTNERS_LINK_PATTERN = /href="https:\/\/punt\.partners\/partners\/?"/i
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
@@ -206,7 +207,7 @@ export const isVerifiedMissingRoute = ({ status, html }) => {
     && text.includes('it looks like nothing was found at this location')
     && /href="https:\/\/punt\.partners\/newsroom\/"/i.test(page)
     && /href="https:\/\/punt\.partners\/team\/"/i.test(page)
-    && /href="https:\/\/punt\.partners\/partners\/"/i.test(page)
+    && PARTNERS_LINK_PATTERN.test(page)
     && /href="https:\/\/punt\.partners\/contact-us\/"/i.test(page)
     && !hasUnexpectedJobsContent(page)
 }
@@ -252,7 +253,7 @@ export const createPuntPartnersScraper = () => ({
 export const run = async (options = {}) => createPuntPartnersScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

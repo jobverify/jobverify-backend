@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SP_SOFTWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -14,7 +14,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const CAREERS_BUNDLE_URL = PROVIDER_METADATA.careersBundleUrl
 export const CAREERS_EMAIL = 'careers@spsoftglobal.com'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -54,7 +54,16 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   return /<title>\s*SPSoft\s*<\/title>/i.test(page)
-    && /app-career-career-module\.js/i.test(page)
+    && /<app-root>\s*<\/app-root>/i.test(page)
+    && (
+      /app-career-career-module\.js/i.test(page)
+      || (
+        /<base\s+href="\/">/i.test(page)
+        && /<body[^>]*mat-typography/i.test(page)
+        && /<script[^>]+src="runtime\.js"/i.test(page)
+        && /<script[^>]+src="main\.js"/i.test(page)
+      )
+    )
 }
 
 export const hasVerifiedCareerBundleSignal = (bundleText = '') => {
@@ -65,8 +74,30 @@ export const hasVerifiedCareerBundleSignal = (bundleText = '') => {
     && /#\s*001585-\s*[\s\S]*?\.NET Developer/i.test(text)
 }
 
+const decodeCompiledTextLiteral = (value) => {
+  try {
+    return JSON.parse(`"${String(value ?? '')}"`)
+  } catch {
+    return String(value ?? '')
+  }
+}
+
+const extractCompiledTextLines = (bundleText = '') =>
+  [...String(bundleText ?? '').matchAll(/ɵɵtext"\]\(\d+,\s*"((?:[^"\\]|\\.)*)"\);/g)]
+    .map(([, value]) => normalizeWhitespace(decodeCompiledTextLiteral(value)))
+    .filter(Boolean)
+
+const normalizeBundleText = (bundleText = '') => {
+  const compiledLines = extractCompiledTextLines(bundleText)
+  if (compiledLines.some((line) => /^#\d{6}-$/.test(line))) {
+    return compiledLines.join('\n')
+  }
+
+  return String(bundleText ?? '')
+}
+
 const parseBundleSections = (bundleText = '') =>
-  [...String(bundleText ?? '').matchAll(/#\s*(\d{6})-\s*([\s\S]*?)(?=(?:#\s*\d{6}-)|$)/g)]
+  [...normalizeBundleText(bundleText).matchAll(/#\s*(\d{6})-\s*([\s\S]*?)(?=(?:#\s*\d{6}-)|$)/g)]
     .map(([, jobId, block]) => ({ jobId, block }))
 
 const mapSectionToJob = ({ jobId, block } = {}) => {
@@ -84,7 +115,30 @@ const mapSectionToJob = ({ jobId, block } = {}) => {
   const experienceRequired = normalizeWhitespace(headerMatch[2])
   const locationText = normalizeWhitespace(headerMatch[3])
   const city = stripLocationDecorators(locationText)
-  const requiredSkills = lines.filter(Boolean)
+  const sectionLines = lines.filter(Boolean)
+  let minimumQualification = null
+  let captureQualification = false
+
+  const requiredSkills = sectionLines.filter((line) => {
+    if (/careers@spsoftglobal\.com/i.test(line)) return false
+    if (/^Job Description:/i.test(line)) return false
+    if (/^Skills Set:/i.test(line)) return false
+    if (/^Educational Qualification:/i.test(line)) {
+      captureQualification = true
+      return false
+    }
+    if (/^Send your CV to\b/i.test(line)) {
+      captureQualification = false
+      return false
+    }
+    if (captureQualification && !minimumQualification) {
+      minimumQualification = line
+      captureQualification = false
+      return false
+    }
+
+    return true
+  })
 
   if (!title || !city) return null
 
@@ -102,7 +156,7 @@ const mapSectionToJob = ({ jobId, block } = {}) => {
     applyUrl: `mailto:${CAREERS_EMAIL}`,
     employmentType: null,
     experienceRequired,
-    minimumQualification: null,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills,
     postingDate: null,
@@ -151,7 +205,7 @@ export const createSpSoftwareScraper = ({
 export const run = async (options = {}) => createSpSoftwareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

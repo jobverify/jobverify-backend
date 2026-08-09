@@ -1,6 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 import { LATTICE_SEMICONDUCTOR_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -18,8 +21,19 @@ export const OFFICIAL_JOB_DETAIL_EXAMPLE_URL = PROVIDER_METADATA.officialJobDeta
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const ICIMS_HOST = 'https://careers-latticesemi.icims.com'
+const PINNED_SEARCH_INTRO_PARAMS = new Map([
+  ['bga', 'true'],
+  ['hashed', '-625919477'],
+  ['height', '500'],
+  ['jan1offset', '-480'],
+  ['jun1offset', '-420'],
+  ['mobile', 'false'],
+  ['needsRedirect', 'false'],
+  ['width', '1378'],
+])
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -54,6 +68,12 @@ const unique = (values) => [...new Set(values.filter(Boolean))]
 
 const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+const canonicalizeTitleForComparison = (value) => normalizeWhitespace(value)
+  ?.toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim()
+  || null
+
 const toAbsoluteUrl = (value, baseUrl = ICIMS_HOST) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -78,6 +98,24 @@ const normalizeUrl = (value, baseUrl = ICIMS_HOST) => {
   }
 }
 
+const hasPinnedSearchIntroUrl = (value) => {
+  const absoluteUrl = toAbsoluteUrl(value, OFFICIAL_CAREERS_PAGE_URL)
+  if (!absoluteUrl) return false
+
+  try {
+    const parsed = new URL(absoluteUrl)
+    if (`${parsed.origin}${parsed.pathname}` !== `${ICIMS_HOST}/jobs/intro`) {
+      return false
+    }
+
+    return [...PINNED_SEARCH_INTRO_PARAMS.entries()].every(([key, expectedValue]) => (
+      parsed.searchParams.get(key) === expectedValue
+    ))
+  } catch {
+    return false
+  }
+}
+
 const extractField = (html, label) => {
   const source = String(html ?? '')
   const escapedLabel = escapeRegex(label)
@@ -87,6 +125,19 @@ const extractField = (html, label) => {
   ))
 
   return stripTags(definitionMatch?.[1])
+}
+
+const extractListingLocationValue = (html = '') => {
+  const structuredLocation = extractField(html, 'Job Locations')
+  if (structuredLocation) {
+    return structuredLocation
+  }
+
+  const headerMatch = String(html ?? '').match(
+    /field-label">\s*Job Locations\s*<\/span>\s*<span[^>]*>\s*([^<]+?)\s*<\/span>/i,
+  )
+
+  return normalizeWhitespace(String(headerMatch?.[1] ?? '').replace(/^\|\s*/, ''))
 }
 
 const extractJobPathInfo = (value = '') => {
@@ -194,21 +245,15 @@ const buildCanonicalApplyUrl = (rawApplyUrl, fallbackUrl) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const buildSearchUrl = (pageIndex = 0) => (
   pageIndex > 0
@@ -229,22 +274,29 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const source = String(html ?? '')
   return /<title>\s*Lattice Semiconductor \| Careers \| Join the FPGA Leader\s*<\/title>/i.test(source)
     && /Search Job Openings/i.test(source)
-    && /careers-latticesemi\.icims\.com\/jobs\/intro\?bga=true&hashed=-625919477/i.test(source)
-    && /Apply Today/i.test(source)
+    && hasPinnedSearchIntroUrl(extractSearchIntroUrl(source))
 }
 
 export const extractSearchIntroUrl = (html = '') => {
   const match = String(html ?? '').match(
-    /href=["'](https:\/\/careers-latticesemi\.icims\.com\/jobs\/intro\?bga=true&hashed=-625919477[^"']+)["'][^>]*>\s*Search Job Openings/i,
+    /href=["'](https:\/\/careers-latticesemi\.icims\.com\/jobs\/intro\?[^"']+)["'][^>]*>\s*Search Job Openings/i,
   )
-  return normalizeUrl(match?.[1], OFFICIAL_CAREERS_PAGE_URL)
+  if (!match?.[1]) {
+    return null
+  }
+
+  return hasPinnedSearchIntroUrl(match[1])
+    ? SEARCH_INTRO_URL
+    : normalizeUrl(match[1], OFFICIAL_CAREERS_PAGE_URL)
 }
 
 export const hasOfficialSearchIntroSignal = (html = '') => {
   const source = String(html ?? '')
-  return /<title>\s*Lattice Semiconductor Corp\. \| Careers Center \| Welcome\s*<\/title>/i.test(source)
+  return (
+    /<title>\s*Lattice Semiconductor Corp\. \| Careers Center \| Welcome\s*<\/title>/i.test(source)
     && /view all open positions/i.test(source)
     && /MH Pune IN/i.test(source)
+  ) || /<title>\s*iCIMS Careers Portal\s*<\/title>/i.test(source)
 }
 
 export const extractSearchWrapperUrl = (html = '') => {
@@ -274,7 +326,7 @@ export const extractJobCards = (html = '') => {
   return [...String(html ?? '').matchAll(cardPattern)]
     .map((match) => {
       const cardHtml = match[1]
-      const locationValue = extractField(cardHtml, 'Job Locations')
+      const locationValue = extractListingLocationValue(cardHtml)
       if (!isIndiaLocation(locationValue)) return null
 
       const linkMatch = cardHtml.match(
@@ -359,7 +411,7 @@ const hasVerifiedDetailPageSignal = (html = '', listing = {}) => {
 
   return /<h1[^>]*class=["'][^"']*iCIMS_Header[^"']*["'][^>]*>/i.test(String(html ?? ''))
     && jsonLd?.['@type'] === 'JobPosting'
-    && normalizeWhitespace(jsonLd?.title) === detail.title
+    && canonicalizeTitleForComparison(jsonLd?.title) === canonicalizeTitleForComparison(detail.title)
     && normalizeWhitespace(jsonLd?.datePosted)
     && Boolean(detail.applyUrl)
     && /[?&]apply=yes&hashed=[^&]+&mode=apply$/i.test(detail.applyUrl)
@@ -372,74 +424,94 @@ export const createLatticeSemiconductorIndiaScraper = ({
 } = {}) => ({
   async run({
     fetchText: overrideFetchText,
+    fetchBrowserText,
     maxJobs: overrideMaxJobs = maxJobs,
   } = {}) {
     const fetchTextImpl = overrideFetchText || fetchText
-    const careersHtml = await fetchTextImpl(OFFICIAL_CAREERS_PAGE_URL)
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText: fetchTextImpl,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 12000,
+        ignoreHTTPSErrors: true,
+      },
+    })
 
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Lattice Semiconductor India verified first-party careers page no longer matches the pinned public surface')
-    }
+    try {
+      const careersHtml = await browserFallback.fetchText(OFFICIAL_CAREERS_PAGE_URL)
 
-    if (extractSearchIntroUrl(careersHtml) !== SEARCH_INTRO_URL) {
-      throw new Error('Lattice Semiconductor India verified first-party careers page no longer points to the pinned iCIMS intro')
-    }
-
-    const introHtml = await fetchTextImpl(SEARCH_INTRO_URL)
-    if (!hasOfficialSearchIntroSignal(introHtml) || extractSearchWrapperUrl(introHtml) !== SEARCH_WRAPPER_URL) {
-      throw new Error('Lattice Semiconductor India verified iCIMS intro no longer matches the pinned wrapper handoff')
-    }
-
-    const jobs = []
-    const seenJobIds = new Set()
-    const visitedPages = new Set()
-    let nextPageUrl = buildSearchUrl()
-
-    while (nextPageUrl && !visitedPages.has(nextPageUrl)) {
-      visitedPages.add(nextPageUrl)
-      const listingHtml = await fetchTextImpl(nextPageUrl)
-
-      if (!hasOfficialListingsPageSignal(listingHtml)) {
-        throw new Error('Lattice Semiconductor India verified India iCIMS listings page no longer matches the pinned public jobs surface')
+      if (!hasOfficialCareersPageSignal(careersHtml)) {
+        throw new Error('Lattice Semiconductor India verified first-party careers page no longer matches the pinned public surface')
       }
 
-      for (const listing of extractJobCards(listingHtml)) {
-        if (!listing.jobId || seenJobIds.has(listing.jobId)) {
-          continue
-        }
-
-        seenJobIds.add(listing.jobId)
-        const { jobId, slug } = extractJobPathInfo(listing.sourceUrl)
-        const detailHtml = await fetchTextImpl(buildDetailFetchUrl({ jobId, slug }))
-
-        if (!hasVerifiedDetailPageSignal(detailHtml, listing)) {
-          throw new Error(`Lattice Semiconductor India verified Lattice Semiconductor India iCIMS detail page no longer matches the pinned contract: ${listing.sourceUrl}`)
-        }
-
-        const detail = extractJobDetail(detailHtml, listing)
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
-
-        if (overrideMaxJobs && jobs.length >= overrideMaxJobs) {
-          return jobs
-        }
+      if (extractSearchIntroUrl(careersHtml) !== SEARCH_INTRO_URL) {
+        throw new Error('Lattice Semiconductor India verified first-party careers page no longer points to the pinned iCIMS intro')
       }
 
-      nextPageUrl = extractNextPageUrl(listingHtml)
-    }
+      const introHtml = await browserFallback.fetchText(SEARCH_INTRO_URL)
+      const extractedSearchWrapperUrl = extractSearchWrapperUrl(introHtml)
+      if (
+        !hasOfficialSearchIntroSignal(introHtml)
+        || (extractedSearchWrapperUrl && extractedSearchWrapperUrl !== SEARCH_WRAPPER_URL)
+      ) {
+        throw new Error('Lattice Semiconductor India verified iCIMS intro no longer matches the pinned wrapper handoff')
+      }
 
-    return jobs
+      const jobs = []
+      const seenJobIds = new Set()
+      const visitedPages = new Set()
+      let nextPageUrl = buildSearchUrl()
+
+      while (nextPageUrl && !visitedPages.has(nextPageUrl)) {
+        visitedPages.add(nextPageUrl)
+        const listingHtml = await browserFallback.fetchText(nextPageUrl)
+
+        if (!hasOfficialListingsPageSignal(listingHtml)) {
+          throw new Error('Lattice Semiconductor India verified India iCIMS listings page no longer matches the pinned public jobs surface')
+        }
+
+        for (const listing of extractJobCards(listingHtml)) {
+          if (!listing.jobId || seenJobIds.has(listing.jobId)) {
+            continue
+          }
+
+          seenJobIds.add(listing.jobId)
+          const { jobId, slug } = extractJobPathInfo(listing.sourceUrl)
+          const detailHtml = await browserFallback.fetchText(buildDetailFetchUrl({ jobId, slug }))
+
+          if (!hasVerifiedDetailPageSignal(detailHtml, listing)) {
+            throw new Error(`Lattice Semiconductor India verified Lattice Semiconductor India iCIMS detail page no longer matches the pinned contract: ${listing.sourceUrl}`)
+          }
+
+          const detail = extractJobDetail(detailHtml, listing)
+          jobs.push({
+            ...detail,
+            source: SOURCE,
+            link: detail.applyUrl || detail.sourceUrl,
+            scrapedAt: now(),
+          })
+
+          if (overrideMaxJobs && jobs.length >= overrideMaxJobs) {
+            return jobs
+          }
+        }
+
+        nextPageUrl = extractNextPageUrl(listingHtml)
+      }
+
+      return jobs
+    } finally {
+      await browserFallback.close()
+    }
   },
 })
 
 export const run = async (options = {}) => createLatticeSemiconductorIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,4 +1,9 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+﻿import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'unifiedinfotech'
 export const COMPANY = 'Unified Infotech'
@@ -9,7 +14,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Unified Infotech',
   adapter: 'script',
-  modulePath: '../unifiedinfotech/script.js',
+  modulePath: '../../scraper/unifiedinfotech/script.js',
   homepageUrl: 'https://www.unifiedinfotech.net/',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
@@ -27,13 +32,33 @@ export const PROVIDER_METADATA = {
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
 
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+
+const htmlToLines = (html) => decodeHtmlEntities(String(html ?? ''))
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<(?:h[1-6]|p|div|section|article|li|ul|ol)\b[^>]*>/gi, '\n')
+  .replace(/<\/(?:h[1-6]|p|div|section|article|li|ul|ol)>/gi, '\n')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\r\n?/g, '\n')
+  .split(/\n+/)
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
 export const defaultFetchText = (url, {
   fetchImpl = fetch,
   timeoutMs = 15000,
 } = {}) => fetchTextWithRetry(url, {
   fetchImpl,
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify scraper)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
@@ -50,25 +75,49 @@ export const hasOfficialCareersSignal = (html) => {
 
 export const extractJobCards = (html) => {
   const page = String(html ?? '')
+  const lines = htmlToLines(page)
   const jobs = []
+  const detailUrls = [...page.matchAll(/href=["'](https:\/\/www\.unifiedinfotech\.net\/career\/[^"']+)["']/gi)]
+    .map((match) => match[1])
+  const openingsIndex = lines.findIndex((line) => /^Explore Open Positions at Unified Infotech$/i.test(line))
+  const endIndex = lines.findIndex((line) => /^No jobs are posted right now/i.test(line) || /^Ready to Embrace Digital Change\?$/i.test(line))
 
-  for (const match of page.matchAll(/<article class="job-card">([\s\S]*?)<\/article>/gi)) {
-    const section = match[1]
-    const title = normalizeWhitespace(section.match(/<h2>(.*?)<\/h2>/i)?.[1])
-    const lines = [...section.matchAll(/<p>(.*?)<\/p>/gi)].map((item) => normalizeWhitespace(item[1])).filter(Boolean)
-    const href = section.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1]
+  if (openingsIndex === -1 || endIndex === -1 || endIndex <= openingsIndex) {
+    return jobs
+  }
 
-    if (!title || lines.length < 3 || !href) continue
+  let detailUrlIndex = 0
 
-    const sourceUrl = new URL(href, CAREERS_URL).toString()
+  for (let index = openingsIndex + 1; index < endIndex; index += 1) {
+    const remoteType = lines[index]
+    const employmentType = lines[index + 1] || null
+    const title = lines[index + 2] || null
+    const description = lines[index + 3] || null
+    const experienceLine = lines[index + 4] || null
+    const location = lines[index + 5] || null
+
+    if (!/^Remote\/Hybrid$/i.test(remoteType || '')) continue
+    if (!/^Full Time$/i.test(employmentType || '')) continue
+    if (!title || !description || !experienceLine || !location) continue
+    if (!/^Exp\s*\(/i.test(experienceLine)) continue
+
+    const sourceUrl = detailUrls[detailUrlIndex] || CAREERS_URL
+    detailUrlIndex += 1
+
     jobs.push({
       title,
-      remoteType: lines[0],
-      employmentType: lines[1],
-      location: lines[2],
+      remoteType,
+      employmentType,
+      location,
       sourceUrl,
       applyUrl: sourceUrl,
+      experienceRequired: normalizeWhitespace(
+        experienceLine.replace(/^Exp\s*\(/i, '').replace(/\)\s*$/i, ''),
+      ),
+      jobDescription: description,
     })
+
+    index += 5
   }
 
   return jobs
@@ -89,9 +138,23 @@ export const run = async ({ fetchText = defaultFetchText, now = () => new Date()
   return jobs.map((job) => ({
     ...job,
     company: COMPANY,
+    city: normalizeWhitespace(job.location.split('/')[0]),
     country: 'India',
     link: job.applyUrl || job.sourceUrl,
     source: SOURCE,
     scrapedAt: now(),
   }))
 }
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}
+

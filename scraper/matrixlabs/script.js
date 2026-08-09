@@ -85,7 +85,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /career\s*[–-]\s*Matrix Labs/i.test(rawHtml)
+  return /<title[^>]*>\s*career\s*(?:&#8211;|&ndash;|–|-)\s*Matrix Labs\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Career Opportunities at Matrix Labs Pvt Ltd - Innovators in IVD Solutions')
     && normalized.includes('Share your resume with us at')
     && normalized.includes(APPLICATION_EMAIL)
@@ -145,7 +145,7 @@ export const createMatrixLabsScraper = () => ({
 export const run = async (options = {}) => createMatrixLabsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

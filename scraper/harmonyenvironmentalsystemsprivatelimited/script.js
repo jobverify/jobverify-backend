@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -95,11 +95,12 @@ const extractJobDetailSection = (html) => {
 }
 
 export const hasOfficialHomepageSignal = (html) => {
-  const normalized = stripTags(html)
+  const normalized = stripTags(html).toLowerCase()
 
-  return normalized.includes('Harmony Environmental Systems Private Limited (HESPL) offers Air Quality Systems to Industries across the world')
-    && normalized.includes('At HESPL, we harmonize growth and environmental stewardship')
-    && normalized.includes('Innovative Solutions for a Sustainable Future')
+  return normalized.includes('welcome to harmony environmental solutions')
+    && normalized.includes('innovative solutions for a sustainable future')
+    && normalized.includes('leading the way in air quality systems')
+    && normalized.includes('at harmony, we offer integrated solutions including design and engineering services')
 }
 
 export const hasOfficialAboutSignal = (html) => {
@@ -137,12 +138,13 @@ export const hasOfficialDetailSignal = (html) => {
   const page = String(html ?? '')
   const normalized = stripTags(page)
 
-  return normalized.includes('Work with Harmony')
-    && /class="entry-title fusion-post-title"/i.test(page)
+  return /class="entry-title fusion-post-title"/i.test(page)
     && /class="Jobtitletb"/i.test(page)
     && /name="your-name"/i.test(page)
     && /name="your-email"/i.test(page)
     && /name="Your-phone"/i.test(page)
+    && normalized.includes('Location')
+    && normalized.includes('Experience')
 }
 
 export const extractCareerCards = (html) => {
@@ -318,7 +320,7 @@ export const run = async (options = {}) =>
   createHarmonyEnvironmentalSystemsPrivateLimitedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

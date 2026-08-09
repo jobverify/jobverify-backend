@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -20,7 +20,6 @@ const HOMEPAGE_CAREERS_LINK_PATTERN = /href=["'][^"']*career\.php["']/i
 const INQUIRIES_EMAIL_PATTERN = /inquiries@feedbackinfra\.com/i
 
 const CAREERS_TITLE_PATTERN = /<title>\s*Feedback Infra\s*\|\s*Making Infrastructure Happen\s*<\/title>/i
-const CAREERS_HEADING_PATTERN = /<h1[^>]*>\s*Careers\s*<\/h1>/i
 const LIFE_AT_FEEDBACK_PATTERN = /Life at Feedback/i
 const CURRENT_OPENINGS_PATTERN = /Current Openings/i
 const TWITTER_SECTION_PATTERN = /Feedback Infra on twitter/i
@@ -39,7 +38,6 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
   return CAREERS_TITLE_PATTERN.test(page)
-    && CAREERS_HEADING_PATTERN.test(page)
     && LIFE_AT_FEEDBACK_PATTERN.test(page)
     && CURRENT_OPENINGS_PATTERN.test(page)
     && TWITTER_SECTION_PATTERN.test(page)
@@ -84,7 +82,7 @@ export const createFeedbackInfraScraper = () => ({
 export const run = async (options = {}) => createFeedbackInfraScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

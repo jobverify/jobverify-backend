@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { PANASONIC_CATALOG } from './catalog.js'
 
@@ -23,7 +23,7 @@ export const VERIFIED_ON = PANASONIC_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PANASONIC_CATALOG.verifiedSurfaceSummary
 export const DEFAULT_PAGE_SIZE = 10
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const DEFAULT_SEARCH_CONFIG = {
   query: {
     country: COUNTRY_FILTER,
@@ -79,12 +79,25 @@ export const extractOfficialSearchConfig = (html) => {
   }
 }
 
+const getCorporateContextDefinition = (searchConfig = {}) =>
+  Array.isArray(searchConfig?.contextSettings?.contextDefinitions)
+    ? searchConfig.contextSettings.contextDefinitions.find(
+      (definition) => normalizeWhitespace(definition?.name) === 'corporate',
+    ) ?? null
+    : null
+
 export const hasOfficialPanasonicCareersSignals = (html) => {
   const rawHtml = String(html ?? '')
   const searchConfig = extractOfficialSearchConfig(rawHtml)
+  const corporateContextDefinition = getCorporateContextDefinition(searchConfig)
+  const normalizedPage = normalizeWhitespace(rawHtml) || ''
+  const hasCorporateLandingIdentity = normalizedPage.includes('Panasonic Corporation of North America Careers')
+    || normalizeWhitespace(searchConfig?.pageTitle) === 'Panasonic Corporate Careers'
+    || normalizeWhitespace(searchConfig?.searchPageHeader) === 'corporate Job Search'
+    || normalizeWhitespace(corporateContextDefinition?.metadata?.title) === 'Panasonic Corporate Careers'
 
   return extractTitle(rawHtml) === 'Panasonic Corporate Careers'
-    && (normalizeWhitespace(rawHtml) || '').includes('Panasonic Corporation of North America Careers')
+    && hasCorporateLandingIdentity
     && extractWindowValue(rawHtml, 'currentContext') === 'corporate'
     && extractWindowValue(rawHtml, 'currentContextValue') === 'corporate'
     && searchConfig?.path === DEFAULT_SEARCH_CONFIG.path
@@ -99,7 +112,10 @@ export const buildIndiaJobsApiUrl = ({
   searchConfig = DEFAULT_SEARCH_CONFIG,
 } = {}) => {
   const url = new URL(OFFICIAL_JOBS_API_URL)
-  const query = searchConfig?.query || DEFAULT_SEARCH_CONFIG.query
+  const query = {
+    ...DEFAULT_SEARCH_CONFIG.query,
+    ...(searchConfig?.query || {}),
+  }
 
   Object.entries(query).forEach(([key, value]) => {
     if (value == null || value === '') return
@@ -290,7 +306,7 @@ export const createPanasonicScraper = ({
 export const run = async (options = {}) => createPanasonicScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

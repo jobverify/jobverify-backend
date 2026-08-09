@@ -71,11 +71,18 @@ const defaultProbeListingApi = async (url) => {
 }
 
 export const extractCareersPageUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /https:\/\/www\.allcargologistics\.com\/about-us\/careers/i,
-  )
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    try {
+      const absoluteUrl = new URL(match[1], REDIRECT_HOMEPAGE_URL).toString()
+      if (normalizeUrl(absoluteUrl) === normalizeUrl(CAREERS_PAGE_URL)) {
+        return CAREERS_PAGE_URL
+      }
+    } catch {
+      // Ignore malformed URLs and keep scanning for the verified careers handoff.
+    }
+  }
 
-  return match?.[0] ?? null
+  return null
 }
 
 export const hasOfficialHomepageSignal = ({ status, url, html } = {}) => {
@@ -107,8 +114,7 @@ export const hasBrokenDarwinboxTenantSignal = (payload) =>
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('allcargo gati')
-    && normalized.includes('spotting future logistics leaders, now')
+  return normalized.includes('spotting future logistics leaders, now')
     && extractOfficialDarwinboxUrl(html) === DARWINBOX_HANDOFF_URL
     && countOfficialDarwinboxLinks(html) >= 2
 }
@@ -150,7 +156,7 @@ export const createGatiScraper = () => ({
 export const run = async (options = {}) => createGatiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { DROOM_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -23,6 +23,9 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<!--[\s\S]*?-->/g, ' ')
   .replace(/&nbsp;|&#160;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
@@ -55,6 +58,10 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/^-+|-+$/g, '')
 
 const toAbsoluteUrl = (value) => {
+  if (!normalizeWhitespace(value)) {
+    return null
+  }
+
   try {
     return new URL(value, CAREERS_URL).toString()
   } catch {
@@ -90,17 +97,17 @@ const defaultFetchPage = async (url) => {
 
 export const extractHomepageCareerUrl = (html = '') => {
   const match = String(html ?? '').match(
-    /<a\b[^>]*href=["']([^"']*\/career(?:["'#?][^"']*)?)["'][^>]*>\s*Career\s*<\/a>/i,
+    /<a\b[^>]*href=["']([^"']*\/career(?:\/?(?:[#?][^"']*)?)?)["'][^>]*>/i,
   )
 
-  return toAbsoluteUrl(match?.[1] ?? null)
+  return match?.[1] ? toAbsoluteUrl(match[1]) : null
 }
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
 
   return /<title>\s*Droom:\s*Automotive E-Commerce Platform to Buy and Sell Vehicles\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/droom\.in\/["']/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/droom\.in\/?["']/i.test(page)
     && extractHomepageCareerUrl(page) === CAREERS_URL
 }
 
@@ -215,7 +222,6 @@ const hasPublicJobsSignal = (html = '') => {
   const normalized = normalizeWhitespace(page).toLowerCase()
 
   return /"@type"\s*:\s*"JobPosting"/i.test(page)
-    || /href=["'][^"']*apply[^"']*["']/i.test(page)
     || normalized.includes('current openings')
     || normalized.includes('now hiring')
   }
@@ -284,7 +290,7 @@ export const createDroomScraper = ({ now = () => new Date().toISOString() } = {}
 export const run = async (options = {}) => createDroomScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

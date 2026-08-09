@@ -1,0 +1,21 @@
+{
+  "source": "letsventure",
+  "companyName": "LetsVenture",
+  "officialBrandName": "LetsVenture",
+  "adapter": "script",
+  "modulePath": "../letsventure/script.js",
+  "dryRunFile": "letsventure/jobs.json",
+  "companyCareerPage": "https://www.letsventure.com/",
+  "companyDomain": "letsventure.com",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "no-verified-public-careers-feed",
+  "extractionStrategy": "first-party-domain-only+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.letsventure.com/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that letsventure.com is LetsVenture's official first-party domain. No official public careers page, ATS-backed job feed, or enumerable job listing was verified, so this exact-name provider fails closed and returns no jobs rather than using third-party listings or another company's openings."
+}

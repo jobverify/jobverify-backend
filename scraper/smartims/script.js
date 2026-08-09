@@ -1,27 +1,47 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
-import { SMART_IMS_CATALOG } from './catalog.js'
+import { SMART_IMS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const PROVIDER_METADATA = SMART_IMS_CATALOG
+export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
-export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
+export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const normalizeText = (value = '') => String(value)
-  .replace(/<[^>]*>/g, ' ')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&#8211;|&ndash;|–/g, '-')
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&#x27;|&#8217;|&rsquo;/gi, "'")
+  .replace(/&quot;|&#34;/gi, '"')
+  .replace(/[\u2013\u2014]/g, '-')
+
+const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
+  .replace(/\s+:/g, ':')
   .trim()
+
+const stripHtml = (value) => normalizeWhitespace(
+  decodeHtmlEntities(value)
+    .replace(/<(br|\/p|\/div|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -33,79 +53,115 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = String(html).replace(/\s+/g, ' ')
+  const rawHtml = String(html ?? '')
+  const text = normalizeWhitespace(rawHtml)
 
-  return normalized.includes('Careers & Job Opportunities | SmartIMS')
-    && normalized.includes('Building Impactful Careers')
-    && normalized.includes('Select a region to view job openings.')
-    && normalized.includes('Smart IMS India')
-    && normalized.includes('Current Job Openings')
+  return /<title[^>]*>\s*Careers\s*(?:&amp;|&)\s*Job Opportunities\s*\|\s*SmartIMS\s*<\/title>/i.test(rawHtml)
+    && text.includes('Building Impactful Careers')
+    && text.includes('Smart IMS India')
+    && text.includes('Current Job Openings')
+    && text.includes('To apply send your profile to')
 }
 
-const extractApplyEmail = (block = '') => {
-  const directMatch = block.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i)
-  if (directMatch) {
-    return `mailto:${directMatch[1]}`
-  }
-
-  const lineMatch = block.match(/To apply send your profile to\s*([\s\S]*?)<\/p>/i)
-  if (!lineMatch) {
+export const decodeCloudflareEmail = (value = '') => {
+  const hex = String(value ?? '').trim()
+  if (!/^[0-9a-f]+$/i.test(hex) || hex.length < 4 || hex.length % 2 !== 0) {
     return null
   }
 
-  const rawToken = String(lineMatch[1]).replace(/<[^>]*>/g, '').trim()
-  if (/^\[email/i.test(rawToken) && /protected\]$/i.test(rawToken)) {
-    return `mailto:${rawToken}`
+  const key = Number.parseInt(hex.slice(0, 2), 16)
+  let decoded = ''
+
+  for (let index = 2; index < hex.length; index += 2) {
+    decoded += String.fromCharCode(Number.parseInt(hex.slice(index, index + 2), 16) ^ key)
   }
 
-  const normalizedEmail = normalizeText(rawToken).replace(/^\[|\]$/g, '')
-  return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(normalizedEmail)
-    ? `mailto:${normalizedEmail}`
-    : null
+  return decoded
 }
 
-export const parseCurrentOpenings = (html = '') => {
-  const jobs = []
-  const articlePattern = /<article\b[^>]*class=["'][^"']*job-opening[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi
-  let articleMatch
+const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-  while ((articleMatch = articlePattern.exec(String(html)))) {
-    const block = articleMatch[1]
-    const titleMatch = block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)
-    if (!titleMatch) {
-      continue
+const extractLabeledField = (html, label) => {
+  const pattern = new RegExp(
+    `<strong>\\s*${escapeRegExp(label)}\\s*<\\/strong>\\s*:\\s*([\\s\\S]*?)(?:<br\\s*\\/?>|<\\/p>|<\\/li>)`,
+    'i',
+  )
+  const match = String(html ?? '').match(pattern)
+  return normalizeWhitespace(match?.[1] ?? '')
+}
+
+export const extractApplyEmail = (html = '') => {
+  const cfEmail = String(html ?? '').match(/data-cfemail=["']([0-9a-f]+)["']/i)?.[1]
+  const decodedCfEmail = decodeCloudflareEmail(cfEmail)
+  if (decodedCfEmail) {
+    return decodedCfEmail
+  }
+
+  const mailtoMatch = String(html ?? '').match(/mailto:([^"' >]+)/i)?.[1]
+  return mailtoMatch ? decodeHtmlEntities(mailtoMatch) : null
+}
+
+export const extractSmartImsJobCards = (html = '') =>
+  [...String(html ?? '').matchAll(/<details\b[^>]*>([\s\S]*?)<\/details>/gi)]
+    .map((match) => {
+      const block = match[1]
+      const rawTitle = normalizeWhitespace(
+        block.match(/<div class=['"]e-n-accordion-item-title-text['"]>\s*([\s\S]*?)\s*<\/div>/i)?.[1] ?? '',
+      )
+      const textEditorBody = block.match(
+        /<div class=['"][^'"]*elementor-widget-text-editor[^'"]*['"][^>]*>\s*([\s\S]*?)\s*<\/div>\s*<\/div>/i,
+      )?.[1]
+      const bodyContainers = [...block.matchAll(/<div class=['"]elementor-widget-container['"]>\s*([\s\S]*?)\s*<\/div>/gi)]
+        .map((entry) => entry[1])
+      const bodyHtml = textEditorBody
+        || bodyContainers.find((entry) => /To apply send your profile to/i.test(entry))
+        || bodyContainers[0]
+
+      return {
+        rawTitle,
+        bodyHtml,
+      }
+    })
+    .filter((card) => card.rawTitle && card.bodyHtml)
+
+export const extractJobsFromCareersHtml = (html = '') => extractSmartImsJobCards(html)
+  .map(({ rawTitle, bodyHtml }) => {
+    const title = rawTitle.replace(/^Job Description:\s*/i, '').trim()
+    const applyEmail = extractApplyEmail(bodyHtml)
+    const location = extractLabeledField(bodyHtml, 'Location')
+    const experience = extractLabeledField(bodyHtml, 'Experience')
+    const team = extractLabeledField(bodyHtml, 'Team')
+    const openingsCount = extractLabeledField(bodyHtml, 'No of Positions')
+    const jobDescription = stripHtml(bodyHtml)
+
+    if (!title || !location || !applyEmail) {
+      return null
     }
 
-    const title = normalizeText(titleMatch[1]).replace(/^Job Description:\s*/i, '')
-    const locationMatch = block.match(/Location:\s*([^<\n]+)/i)
-    const experienceMatch = block.match(/Experience:\s*([^<\n]+)/i)
-    const openingsMatch = block.match(/No of Positions:\s*([^<\n]+)/i)
-    const teamMatch = block.match(/Team:\s*([^<\n]+)/i)
-    const applyUrl = extractApplyEmail(block)
-
-    jobs.push({
+    return {
       title,
-      location: locationMatch ? normalizeText(locationMatch[1]) : null,
-      applyUrl,
-      experience: experienceMatch ? normalizeText(experienceMatch[1]) : null,
-      ...(teamMatch ? { team: normalizeText(teamMatch[1]) } : {}),
-      ...(openingsMatch ? { openingsCount: normalizeText(openingsMatch[1]) } : {}),
-    })
-  }
-
-  return jobs
-}
+      location,
+      applyUrl: `mailto:${applyEmail}`,
+      experience: experience || null,
+      team: team || null,
+      openingsCount: openingsCount || null,
+      jobDescription,
+      detailUrl: CAREERS_URL,
+    }
+  })
+  .filter(Boolean)
 
 export const createSmartImsScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(html)) {
-      throw new Error('The verified Smart IMS careers page no longer matches the trusted first-party contract')
+    const careersHtml = await fetchText(CAREERS_URL)
+
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Smart IMS careers page changed materially')
     }
 
-    const jobs = parseCurrentOpenings(html)
+    const jobs = extractJobsFromCareersHtml(careersHtml)
     if (jobs.length === 0) {
-      throw new Error('The verified Smart IMS careers contract no longer exposes parseable current openings')
+      throw new Error('Smart IMS careers page no longer exposes the verified current openings accordion')
     }
 
     return jobs
@@ -115,7 +171,7 @@ export const createSmartImsScraper = () => ({
 export const run = async (options = {}) => createSmartImsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

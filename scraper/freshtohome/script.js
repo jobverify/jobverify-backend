@@ -119,16 +119,15 @@ export const hasFirstPartyCareerLikeLink = (html = '') => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
   return /<title>\s*FreshToHome - Order Fresh Fish, Chicken and Mutton Online\.\s*<\/title>/i.test(rawHtml)
     && /customercare@freshtohome\.com/i.test(rawHtml)
     && /Sell-With-Us/i.test(rawHtml)
     && /Certificates/i.test(rawHtml)
-    && /Fish\s*&amp;\s*Seafood/i.test(rawHtml)
+    && normalized.includes('fish & seafood')
     && /Poultry/i.test(rawHtml)
     && /Mutton/i.test(rawHtml)
-    && normalized.includes('Become a Purple Member and ENJOY UNLIMITED FREE HOME DELIVERY')
 }
 
 export const hasExpectedRobotsTxtSignal = (text = '') => {
@@ -192,7 +191,7 @@ export const createFreshToHomeScraper = () => ({
 export const run = async (options = {}) => createFreshToHomeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

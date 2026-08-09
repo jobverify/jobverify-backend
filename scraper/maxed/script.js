@@ -7,7 +7,7 @@ export const SOURCE = 'maxed'
 export const COMPANY = 'MaxEd'
 export const HOMEPAGE_URL = 'https://maxed.in/'
 export const PAGE_SITEMAP_URL = 'https://maxed.in/page-sitemap.xml'
-export const INTERNSHIP_URL = 'https://maxed.in/internship2025/'
+export const INTERNSHIP_URL = 'https://maxed.in/internship/'
 export const COMPANY_DOMAIN = 'maxed.in'
 export const SHARED_APPLY_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdxey-T9eLNQxKTxrORZ7A4kOSRa1kls0rZQIyXlV8KDXUUfw/viewform'
 export const MISSING_ROUTE_URLS = [
@@ -76,7 +76,7 @@ const defaultFetchPage = async (url) => {
 }
 
 export const hasVerifiedInternshipLink = (html) =>
-  /href=["'](?:https:\/\/maxed\.in\/internship2025\/|\/internship2025\/)["']/i.test(String(html ?? ''))
+  /href=["'](?:https:\/\/maxed\.in\/internship\/|\/internship\/)["']/i.test(String(html ?? ''))
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -96,7 +96,8 @@ export const hasVerifiedPageSitemapSignal = (xml) => {
 
   return /<urlset\b/i.test(page)
     && /<loc>\s*https:\/\/maxed\.in\/\s*<\/loc>/i.test(page)
-    && /<loc>\s*https:\/\/maxed\.in\/internship2025\/\s*<\/loc>/i.test(page)
+    && /<loc>\s*https:\/\/maxed\.in\/internship\/\s*<\/loc>/i.test(page)
+    && /<loc>\s*https:\/\/maxed\.in\/internship-dashboard\/\s*<\/loc>/i.test(page)
 }
 
 export const extractApplyUrl = (html) =>
@@ -110,7 +111,7 @@ export const hasOfficialInternshipSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeVisibleText(page).toLowerCase()
 
-  return /<title>\s*Internship2025\s*-\s*MaxEd\s*-\s*Best Market Research Agency\s*<\/title>/i.test(page)
+  return /<title>\s*Internship(?:2025)?\s*-\s*MaxEd\s*-\s*Best Market Research Agency\s*<\/title>/i.test(page)
     && text.includes('launch your career with the maxed internship program')
     && text.includes('market research, data analytics, and hr operations')
     && text.includes('key benefits of the program')
@@ -141,7 +142,7 @@ const buildInternshipJob = () => ({
   city: null,
   country: 'India',
   jobId: 'maxed-internship-program',
-  requisitionId: 'maxed-internship2025',
+  requisitionId: 'maxed-internship',
   sourceUrl: INTERNSHIP_URL,
   applyUrl: SHARED_APPLY_URL,
   employmentType: 'Internship',
@@ -206,7 +207,7 @@ export const createMaxEdScraper = () => ({
 export const run = async (options = {}) => createMaxEdScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

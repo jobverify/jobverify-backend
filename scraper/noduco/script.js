@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -162,7 +162,10 @@ export const hasOfficialCareersSignal = (html) => {
   const text = stripTags(page)
 
   return (
-    /<title>\s*Join Us, Careers in Software Engineering \| Noduco \| Noduco\s*<\/title>/i.test(page)
+    (
+      /<title>\s*Join Us, Careers in Software Engineering \| Noduco \| Noduco\s*<\/title>/i.test(page)
+      || /<title>\s*Software Engineering Careers\s*&(?:amp;)?\s*Open Roles\s*\|\s*Noduco\s*\|\s*Noduco\s*<\/title>/i.test(page)
+    )
     && /VACANCIES/i.test(text)
     && /Open Roles/i.test(text)
     && extractCardSegments(page).length > 0
@@ -299,7 +302,7 @@ export const createNoducoScraper = ({ fetchText = defaultFetchText, now = () => 
 export const run = async (options = {}) => createNoducoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

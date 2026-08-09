@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import ELECTRONICS_CORPORATION_OF_INDIA_LIMITED_CATALOG, {
   VERIFIED_SURFACE_SUMMARY,
@@ -227,7 +227,12 @@ export const createElectronicsCorporationOfIndiaLimitedScraper = () => ({
     }
 
     const pageOneSummary = extractPaginationSummary(pageOneHtml)
-    if (!pageOneSummary || pageOneSummary.start !== 1 || pageOneSummary.end !== 10 || pageOneSummary.total !== 12) {
+    if (
+      !pageOneSummary
+      || pageOneSummary.start !== 1
+      || pageOneSummary.end !== 10
+      || pageOneSummary.total <= 10
+    ) {
       throw new Error('Electronics Corporation of India Limited page 1 pagination contract changed')
     }
 
@@ -241,7 +246,12 @@ export const createElectronicsCorporationOfIndiaLimitedScraper = () => ({
     }
 
     const pageTwoSummary = extractPaginationSummary(pageTwoHtml)
-    if (!pageTwoSummary || pageTwoSummary.start !== 11 || pageTwoSummary.end !== 12 || pageTwoSummary.total !== 12) {
+    if (
+      !pageTwoSummary
+      || pageTwoSummary.start !== 11
+      || pageTwoSummary.end < 12
+      || pageTwoSummary.total !== pageTwoSummary.end
+    ) {
       throw new Error('Electronics Corporation of India Limited page 2 pagination contract changed')
     }
 
@@ -267,7 +277,7 @@ export const run = async (options = {}) =>
   createElectronicsCorporationOfIndiaLimitedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

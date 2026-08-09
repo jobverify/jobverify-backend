@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CONTUS_CATALOG } from './catalog.js'
 
@@ -16,7 +16,9 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const normalizeWhitespace = (value = '') => String(value).replace(/\s+/g, ' ').trim()
 const stripTags = (value = '') => String(value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+const stripHtmlComments = (value = '') => String(value).replace(/<!--[\s\S]*?-->/g, ' ')
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -28,14 +30,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = String(html).replace(/\s+/g, ' ')
+  const visibleHtml = stripHtmlComments(html)
+  const normalized = normalizeWhitespace(stripTags(visibleHtml))
 
-  return normalized.includes('CONTUS TECH - Career Opportunities and Job Openings')
-    && normalized.includes('We build features not just Tech.')
+  return /<title>\s*CONTUS TECH - Career Opportunities and Job Openings\s*<\/title>/i.test(visibleHtml)
+    && visibleHtml.includes('https://www.contus.com/careers.php')
+    && normalized.includes('We build not just Tech.')
     && normalized.includes('Current Openings')
+    && normalized.includes('Role(s)')
+    && normalized.includes('Location')
+    && normalized.includes('More Info')
 }
 
-export const parseOpeningCards = (html = '') => {
+const parseLegacyOpeningCards = (html = '') => {
   const jobs = []
   const articlePattern = /<article\b[^>]*class=["'][^"']*opening-card[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi
   let articleMatch
@@ -62,6 +69,44 @@ export const parseOpeningCards = (html = '') => {
   return jobs
 }
 
+const parseCurrentOpenings = (html = '') => {
+  const jobs = []
+  const openingsMatch = String(html).match(
+    /<h5>\s*Current Openings\s*<\/h5>[\s\S]*?<div class=["'][^"']*accordion-content[^"']*["'][^>]*>\s*<ul>([\s\S]*?)<\/ul>/i,
+  )
+
+  if (!openingsMatch) {
+    return jobs
+  }
+
+  const rowPattern =
+    /<li\b(?![^>]*class=["'][^"']*title[^"']*["'])[^>]*>\s*<h4>([\s\S]*?)<\/h4>\s*(?:<i\b[^>]*>[\s\S]*?<\/i>\s*)?<p>([\s\S]*?)<\/p>\s*<a[^>]*href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>\s*<\/li>/gi
+  let rowMatch
+
+  while ((rowMatch = rowPattern.exec(openingsMatch[1]))) {
+    const resolvedUrl = new URL(rowMatch[3], CAREERS_URL).toString()
+    jobs.push({
+      title: stripTags(rowMatch[1]),
+      location: stripTags(rowMatch[2]),
+      detailUrl: resolvedUrl,
+      applyUrl: resolvedUrl,
+    })
+  }
+
+  return jobs
+}
+
+export const parseOpeningCards = (html = '') => {
+  const visibleHtml = stripHtmlComments(html)
+  const currentOpenings = parseCurrentOpenings(visibleHtml)
+
+  if (currentOpenings.length > 0) {
+    return currentOpenings
+  }
+
+  return parseLegacyOpeningCards(visibleHtml)
+}
+
 export const createContusScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
     const html = await fetchText(CAREERS_URL)
@@ -71,7 +116,7 @@ export const createContusScraper = () => ({
 
     const jobs = parseOpeningCards(html)
     if (jobs.length === 0) {
-      throw new Error('The verified CONTUS openings list no longer exposes parseable role cards')
+      throw new Error('The verified CONTUS openings list no longer exposes parseable roles')
     }
 
     return jobs
@@ -81,7 +126,7 @@ export const createContusScraper = () => ({
 export const run = async (options = {}) => createContusScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

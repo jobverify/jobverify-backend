@@ -13,16 +13,16 @@ export const ROCKET_SOFTWARE_CATALOG = {
   workdayBoardUrl: 'https://rocket.wd5.myworkdayjobs.com/rocket_careers',
   jobsApiUrl: 'https://rocket.wd5.myworkdayjobs.com/wday/cxs/rocket/rocket_careers/jobs',
   companyDomain: 'rocketsoftware.com',
-  atsPlatform: 'official-careers-workday-handoff-with-upstream-outage',
+  atsPlatform: 'official-careers-workday-handoff',
   countryFilter: 'India',
-  paginationStrategy: 'first-party-careers-page-plus-workday-outage-validation',
+  paginationStrategy: 'first-party-careers-page-plus-public-workday-jobs-api',
   extractionStrategy:
-    'verified-careers-page+verified-workday-handoff+verified-workday-outage-return-empty',
+    'verified-careers-page+browser-fallback+public-workday-jobs-api+india-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.rocketsoftware.com/en-us/careers is Rocket Software\'s live first-party careers page and that its Current Openings handoff targets https://rocket.wd5.myworkdayjobs.com/rocket_careers. During verification, both the public Workday board and the public jobs API were serving the Workday upstream outage page titled "Workday is currently unavailable.", so this provider remains fail-closed until Rocket\'s public board recovers.',
+    'Verified on Tuesday, August 4, 2026 that https://www.rocketsoftware.com/en-us/careers is Rocket Software\'s live first-party careers page and still links View current openings to https://rocket.wd5.myworkdayjobs.com/rocket_careers. Direct non-browser fetches of the careers page now hit a Cloudflare challenge, but the public Workday jobs API at https://rocket.wd5.myworkdayjobs.com/wday/cxs/rocket/rocket_careers/jobs is live again and returned 5 India postings, including Software Engineer III - Java Full Stack Development in Bengaluru and Senior Software Engineer (C++, Parser /Compiler Development) in Pune.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'rocketsoftware/jobs.json',
 }

@@ -28,8 +28,26 @@ export const isExpectedAbsentCandidateSurface = ({ errorKind, status } = {}) =>
 export const isUnexpectedReachableSurface = ({ status, html } = {}) =>
   Number(status) >= 200 && Number(status) < 400 && normalizeWhitespace(html).length >= 0
 
-export const isExpectedVerificationFailure = ({ message } = {}) =>
-  /could not resolve host|enotfound/i.test(String(message ?? ''))
+export const classifyProbeErrorKind = ({ message, causeMessage } = {}) => {
+  const combinedMessage = `${message ?? ''} ${causeMessage ?? ''}`.trim()
+
+  if (/could not resolve host|enotfound|getaddrinfo/i.test(combinedMessage)) {
+    return 'dns'
+  }
+
+  if (/timed out|timeout|abort/i.test(combinedMessage)) {
+    return 'timeout'
+  }
+
+  if (/certificate|ssl|tls|secure tls connection/i.test(combinedMessage)) {
+    return 'tls'
+  }
+
+  return 'network'
+}
+
+export const isExpectedVerificationFailure = ({ message, causeMessage } = {}) =>
+  classifyProbeErrorKind({ message, causeMessage }) === 'dns'
 
 const defaultProbeUrl = async (url) => {
   try {
@@ -51,13 +69,8 @@ const defaultProbeUrl = async (url) => {
     }
   } catch (error) {
     const message = String(error?.message ?? '')
-    const errorKind = /enotfound|could not resolve host/i.test(message)
-      ? 'dns'
-      : /timed out|timeout|abort/i.test(message)
-        ? 'timeout'
-        : /certificate|ssl|tls/i.test(message)
-          ? 'tls'
-          : 'network'
+    const causeMessage = String(error?.cause?.message ?? '')
+    const errorKind = classifyProbeErrorKind({ message, causeMessage })
 
     return {
       url,
@@ -65,7 +78,7 @@ const defaultProbeUrl = async (url) => {
       status: null,
       html: null,
       errorKind,
-      message,
+      message: [message, causeMessage].filter(Boolean).join(' | '),
     }
   }
 }
@@ -91,7 +104,7 @@ export const createSmarterBharatScraper = () => ({
 export const run = async (options = {}) => createSmarterBharatScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

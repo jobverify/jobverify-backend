@@ -18,9 +18,9 @@ export const STRATOGENT_TECHNOLOGY_SERVICES_CATALOG = {
     'verified-first-party-careers-page+always-hiring-email-copy+no-public-job-cards-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.stratogent.com/careers/ is the official first-party Stratogent careers page. The live page says Stratogent is an "always hiring" company and instructs applicants to email careers@stratogent.com or careers-india@stratogent.com, but it exposes no trustworthy public job cards, detail pages, or ATS listings, so this local provider fails closed and returns an empty result.',
+    'Verified on Wednesday, August 5, 2026 that https://www.stratogent.com/careers/ redirects to the live first-party PTP India careers page at https://ptp.cloud/careers/india/. The live page says Opportunities at PTP / Stratogent: Build trusted life sciences cloud from India, still describes the team as always hiring, and instructs applicants to email careers-india@stratogent.com. The current surface exposes no trustworthy public job cards, detail pages, or ATS listings for the exact Stratogent row, so this provider fails closed and returns an empty result.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'stratogenttechnologyservices/jobs.json',
 }

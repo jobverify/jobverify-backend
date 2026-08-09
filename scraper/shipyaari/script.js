@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SHIPYAARI_CATALOG } from './catalog.js'
 
@@ -16,7 +16,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -25,6 +25,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/[\u2013\u2014]/g, '-')
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -73,22 +74,29 @@ const extractLastPathSegment = (value) => {
   }
 }
 
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const matchesLabelPrefix = (line, label) => {
+  const labelPattern = new RegExp(`^${escapeRegex(String(label ?? '').replace(/:\s*$/, ''))}\\s*:?(?:\\s+|$)`, 'i')
+  return labelPattern.test(String(line ?? ''))
+}
+
 const extractFieldValue = (lines, label) => {
-  const lowerLabel = label.toLowerCase()
-  const line = lines.find((entry) => entry.toLowerCase().startsWith(lowerLabel))
+  const line = lines.find((entry) => matchesLabelPrefix(entry, label))
   if (!line) return null
-  return normalizeWhitespace(line.slice(label.length))
+  const labelPattern = new RegExp(`^${escapeRegex(String(label ?? '').replace(/:\s*$/, ''))}\\s*:?(?:\\s+|$)`, 'i')
+  return normalizeWhitespace(line.replace(labelPattern, ''))
 }
 
 const extractSection = (lines, startLabel, endLabels = []) => {
-  const startIndex = lines.findIndex((line) => line.toLowerCase().startsWith(startLabel.toLowerCase()))
+  const startIndex = lines.findIndex((line) => matchesLabelPrefix(line, startLabel))
   if (startIndex < 0) return null
 
   const values = []
 
   for (let index = startIndex + 1; index < lines.length; index += 1) {
     const line = lines[index]
-    if (endLabels.some((label) => line.toLowerCase().startsWith(label.toLowerCase()))) break
+    if (endLabels.some((label) => matchesLabelPrefix(line, label))) break
     values.push(line)
   }
 
@@ -125,25 +133,34 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeWhitespace(stripScriptsAndStyles(rawHtml)) || '').toLowerCase()
 
-  return normalized.includes('shipyaari')
-    && (normalized.includes('why join shipyaari?') || normalized.includes("join the crew, we're hiring!"))
-    && normalized.includes("join the crew, we're hiring!")
-    && normalized.includes('please share your resume with us at careers@shipyaari.com')
+  return normalized.includes('careers in logistics, shipping and technology - shipyaari jobs')
+    && normalized.includes('why join shipyaari?')
+    && normalized.includes('join the crew')
   }
 
 export const hasOfficialRoleDetailSignal = (html = '') => {
   const normalized = (normalizeWhitespace(stripScriptsAndStyles(html)) || '').toLowerCase()
 
   return normalized.includes('shipyaari')
-    && normalized.includes('job title:')
-    && normalized.includes('location:')
-    && normalized.includes('job summary:')
-    && normalized.includes('apply now')
+    && (
+      normalized.includes('job title:')
+      || normalized.includes('job description -')
+      || normalized.includes('key responsibilities')
+    )
+    && (
+      normalized.includes('location:')
+      || normalized.includes('job summary')
+      || normalized.includes('scope of work')
+      || normalized.includes('required skills')
+      || normalized.includes('apply now')
+    )
   }
 
 export const extractRoleCardsFromHtml = (html = '') => {
   const rawHtml = String(html ?? '')
-  const roleLinks = [...rawHtml.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Know More\s*<\/a>/gi)]
+  const roleLinks = [...rawHtml.matchAll(
+    /<a[^>]+href=["']([^"']+)["'][^>]*>\s*(?:<span[^>]*>)?\s*Know More\s*(?:<\/span>)?\s*<\/a>/gi,
+  )]
   const seen = new Set()
 
   return roleLinks
@@ -152,8 +169,10 @@ export const extractRoleCardsFromHtml = (html = '') => {
       if (!detailUrl || seen.has(detailUrl)) return null
 
       const context = rawHtml.slice(Math.max(0, match.index - 500), match.index)
-      const headings = [...context.matchAll(/<h[1-6][^>]*>\s*([^<]+?)\s*<\/h[1-6]>/gi)]
-      const title = normalizeWhitespace(headings.at(-1)?.[1])
+      const headings = [...context.matchAll(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
+      const title = normalizeWhitespace(
+        String(headings.at(-1)?.[1] ?? '').replace(/<[^>]+>/g, ' '),
+      )
       if (!title) return null
 
       seen.add(detailUrl)
@@ -164,21 +183,50 @@ export const extractRoleCardsFromHtml = (html = '') => {
 
 export const extractJobFromRoleDetailHtml = (html = '', roleCard = {}, { scrapedAt } = {}) => {
   const lines = htmlToLines(html)
-  const title = extractFieldValue(lines, 'Job Title:') || normalizeWhitespace(roleCard.title)
-  const location = extractFieldValue(lines, 'Location:')
-  const summary = extractSection(lines, 'Job Summary:', [
-    'Key Responsibilities and Accountabilities:',
-    'Ideal Profile:',
-    'Additional Responsibilities:',
+  const title =
+    extractFieldValue(lines, 'Job Title')
+    || normalizeWhitespace(lines.find((line) => /^Job Description\s*-/i.test(line))?.replace(/^Job Description\s*-\s*/i, ''))
+    || extractFieldValue(lines, 'Position')
+    || normalizeWhitespace(roleCard.title)
+  const location = extractFieldValue(lines, 'Location')
+  const sectionEndLabels = [
+    'Key Responsibilities',
+    'Key Responsibilities and Accountabilities',
+    'Key Account Management',
+    'Required Skills',
+    'Ideal Profile',
+    'Additional Responsibilities',
+    'Apply Now',
+  ]
+  const summary =
+    extractSection(lines, 'Job Summary', sectionEndLabels)
+    || extractSection(lines, 'Scope of Work', sectionEndLabels)
+  const responsibilities =
+    extractSection(lines, 'Key Responsibilities and Accountabilities', [
+      'Required Skills',
+      'Ideal Profile',
+      'Additional Responsibilities',
+      'Apply Now',
+    ])
+    || extractSection(lines, 'Key Responsibilities', [
+      'Required Skills',
+      'Ideal Profile',
+      'Additional Responsibilities',
+      'Apply Now',
+    ])
+    || extractSection(lines, 'Key Account Management', [
+      'Required Skills',
+      'Ideal Profile',
+      'Additional Responsibilities',
+      'Apply Now',
+    ])
+  const requiredSkills = extractSection(lines, 'Required Skills', [
+    'Ideal Profile',
+    'Additional Responsibilities',
     'Apply Now',
   ])
-  const responsibilities = extractSection(lines, 'Key Responsibilities and Accountabilities:', [
-    'Ideal Profile:',
-    'Additional Responsibilities:',
-    'Apply Now',
-  ])
-  const idealProfile = extractSection(lines, 'Ideal Profile:', [
-    'Additional Responsibilities:',
+  const idealProfile = extractSection(lines, 'Ideal Profile', [
+    'Additional Responsibilities',
     'Apply Now',
   ])
   const detailUrl = makeAbsoluteUrl(roleCard.detailUrl || CAREERS_URL, CAREERS_URL) || CAREERS_URL
@@ -205,7 +253,7 @@ export const extractJobFromRoleDetailHtml = (html = '', roleCard = {}, { scraped
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: normalizeWhitespace([summary, responsibilities, idealProfile].filter(Boolean).join(' ')),
+    jobDescription: normalizeWhitespace([summary, responsibilities, requiredSkills, idealProfile].filter(Boolean).join(' ')),
     remoteStatus: deriveRemoteStatus(location),
     source: SOURCE,
     link: detailUrl,
@@ -252,7 +300,7 @@ export const createShipyaariScraper = ({
 export const run = async (options = {}) => createShipyaariScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

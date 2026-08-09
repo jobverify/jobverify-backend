@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import { NECTAR_LIFESCIENCES_CATALOG } from './catalog.js'
 
@@ -48,6 +48,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
+  .replace(/&copy;/gi, '©')
   .replace(/&amp;/gi, '&')
   .replace(/&#39;|&apos;|&#x27;|&rsquo;/gi, "'")
   .replace(/&quot;/gi, '"')
@@ -168,7 +169,7 @@ export const createNectarLifesciencesScraper = () => ({
 export const run = async (options = {}) => createNectarLifesciencesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

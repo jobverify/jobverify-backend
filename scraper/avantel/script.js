@@ -107,7 +107,15 @@ const toAbsoluteUrl = (value, baseUrl) => {
 
 const toTextArray = (value) => {
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeWhitespace(item)).filter(Boolean)
+    return value
+      .map((item) => {
+        if (item && typeof item === 'object') {
+          return normalizeWhitespace(item.point ?? item.text ?? item.value ?? '')
+        }
+
+        return normalizeWhitespace(item)
+      })
+      .filter(Boolean)
   }
 
   const normalized = normalizeWhitespace(value)
@@ -134,6 +142,23 @@ const normalizeLocation = (value) => {
   const location = normalizeWhitespace(value)
   if (!location) return null
   return /,\s*india$/i.test(location) ? location : `${location}, India`
+}
+
+const slugify = (value) => normalizeWhitespace(value)
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+
+const buildStableListingId = (listing, duplicateIdCounts) => {
+  const baseId = normalizeWhitespace(listing.id)
+  if (!baseId) return slugify(listing.role) || 'job'
+
+  if ((duplicateIdCounts.get(baseId) ?? 0) <= 1) {
+    return baseId
+  }
+
+  const roleSlug = slugify(listing.role)
+  return roleSlug ? `${baseId}-${roleSlug}` : baseId
 }
 
 const extractArrayLiteral = (bundle = '', marker = 'jobListings:') => {
@@ -288,15 +313,15 @@ const hasVerifiedJobTopology = (listings = []) =>
     })),
   ) === JSON.stringify(VERIFIED_JOB_TOPOLOGY)
 
-const mapListingToJob = (listing, now) => ({
+const mapListingToJob = (listing, stableId, now) => ({
   title: listing.role,
   company: COMPANY,
   department: null,
   location: normalizeLocation(listing.location),
   city: extractPrimaryCity(listing),
   country: 'India',
-  jobId: String(listing.id),
-  requisitionId: String(listing.id),
+  jobId: stableId,
+  requisitionId: stableId,
   sourceUrl: CAREERS_URL,
   applyUrl: CAREERS_URL,
   employmentType: listing.type || null,
@@ -311,6 +336,14 @@ const mapListingToJob = (listing, now) => ({
   link: CAREERS_URL,
   scrapedAt: now(),
 })
+
+const hasUsableListings = (listings = []) =>
+  listings.length > 0
+  && listings.every((listing) =>
+    normalizeWhitespace(listing.role)
+    && normalizeWhitespace(listing.location)
+    && (normalizeWhitespace(listing.id) || normalizeWhitespace(listing.role)),
+  )
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -370,22 +403,26 @@ export const createAvantelScraper = ({
     }
 
     const listings = extractEmbeddedJobListings(bundlePage.html)
-    if (
-      listings.length !== VERIFIED_ROLE_TITLES.length
-      || !hasVerifiedJobTopology(listings)
-      || JSON.stringify(listings.map((job) => job.role)) !== JSON.stringify(VERIFIED_ROLE_TITLES)
-    ) {
+    if (!hasUsableListings(listings)) {
       throw new Error('Avantel embedded jobListings array changed materially')
     }
 
-    return listings.map((listing) => mapListingToJob(listing, now))
+    const duplicateIdCounts = new Map()
+    for (const listing of listings) {
+      const baseId = normalizeWhitespace(listing.id)
+      if (!baseId) continue
+      duplicateIdCounts.set(baseId, (duplicateIdCounts.get(baseId) ?? 0) + 1)
+    }
+
+    return listings.map((listing) =>
+      mapListingToJob(listing, buildStableListingId(listing, duplicateIdCounts), now))
   },
 })
 
 export const run = async (options = {}) => createAvantelScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

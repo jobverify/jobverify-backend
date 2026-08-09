@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { KHATABOOK_CATALOG } from './catalog.js'
 
@@ -21,7 +21,7 @@ export const TURBOHIRE_HOST = PROVIDER_METADATA.publicApplyHost
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const CAREERS_TITLE = 'Careers at Khatabook | Khatabook Jobs | Latest Khatabook Openings'
 const INDIA_CITY_FALLBACK_PATTERN = /\b(bengaluru|bangalore|gurugram|gurgaon|mumbai|pune|chennai|hyderabad)\b/i
 
@@ -56,6 +56,20 @@ const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1])
 }
+
+const extractMetaContent = (html = '', attributeName, attributeValue) => {
+  const pattern = new RegExp(
+    `<meta[^>]+${attributeName}=["']${attributeValue}["'][^>]+content=["']([^"']+)["']|<meta[^>]+content=["']([^"']+)["'][^>]+${attributeName}=["']${attributeValue}["']`,
+    'i',
+  )
+  const match = String(html ?? '').match(pattern)
+  return normalizeWhitespace(match?.[1] || match?.[2])
+}
+
+const extractPageTitle = (html = '') =>
+  extractTitle(html)
+  || extractMetaContent(html, 'name', 'title')
+  || extractMetaContent(html, 'property', 'og:title')
 
 const parseLocationList = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -121,7 +135,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return extractTitle(page) === CAREERS_TITLE
+  return extractPageTitle(page) === CAREERS_TITLE
     && normalized.includes('Search for a Job')
     && normalized.includes('View Openings')
     && /name=["']locations["']/i.test(page)
@@ -277,7 +291,7 @@ export const createKhatabookScraper = ({
 export const run = async (options = {}) => createKhatabookScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

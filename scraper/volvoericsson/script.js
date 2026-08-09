@@ -30,7 +30,13 @@ const ERICSSON_SIGNAL_PATTERNS = [
   /\/careers\/join\?domain=ericsson\.com/i,
 ]
 
-const normalizeWhitespace = (value) => String(value ?? '')
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&quot;|&#34;/gi, '"')
+  .replace(/&amp;/gi, '&')
+
+const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .replace(/\s+/g, ' ')
   .trim()
 
@@ -62,7 +68,7 @@ export const extractVolvoJobsUrl = (html) => {
 }
 
 export const hasEricssonCareersSignal = (html) => ERICSSON_SIGNAL_PATTERNS.every((pattern) => (
-  pattern.test(String(html ?? ''))
+  pattern.test(normalizeWhitespace(html))
 ))
 
 const volvoSurfaceMentionsEricsson = (html) => /jobs\.ericsson\.com|Careers at Ericsson|"company_name"\s*:\s*"Ericsson"/i
@@ -115,8 +121,8 @@ export const getRunnerMetadata = () => ({
 
 export const run = async (options = {}) => createVolvoEricssonScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

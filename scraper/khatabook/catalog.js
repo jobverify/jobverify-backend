@@ -1,9 +1,9 @@
-export const KHATABOOK_CATALOG = {
+﻿export const KHATABOOK_CATALOG = {
   source: 'khatabook',
   companyName: 'Khatabook',
   officialBrandName: 'Khatabook',
   adapter: 'script',
-  modulePath: '../khatabook/script.js',
+  modulePath: '../../scraper/khatabook/script.js',
   dryRunFile: 'khatabook/jobs.json',
   homepageUrl: 'https://khatabook.com/',
   companyCareerPage: 'https://khatabook.com/en/hiring/',
@@ -25,3 +25,4 @@ export const KHATABOOK_CATALOG = {
 }
 
 export default KHATABOOK_CATALOG
+

@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { AIRTEL_DIGITAL_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -86,39 +87,76 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createAirtelDigitalScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialCareersShellSignal(careersHtml)) {
-      throw new Error('Airtel Digital verified first-party Airtel careers shell no longer matches the shared public surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const bundleUrl = extractMainBundleUrl(careersHtml)
-    const bundleText = await fetchText(bundleUrl)
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
 
-    if (hasDistinctAirtelDigitalSignal(bundleText)) {
-      throw new Error('Airtel Digital now appears to have a distinct Airtel Digital public surface and needs a dedicated scraper')
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    if (!hasVerifiedBundleSignal(bundleText)) {
-      throw new Error('Airtel Digital verified Airtel careers bundle no longer matches the shared public surface')
+    try {
+      const careersHtml = await fetchPageText(CAREERS_URL)
+
+      if (!hasOfficialCareersShellSignal(careersHtml)) {
+        throw new Error('Airtel Digital verified first-party Airtel careers shell no longer matches the shared public surface')
+      }
+
+      const bundleUrl = extractMainBundleUrl(careersHtml)
+      const bundleText = await fetchPageText(bundleUrl)
+
+      if (hasDistinctAirtelDigitalSignal(bundleText)) {
+        throw new Error('Airtel Digital now appears to have a distinct Airtel Digital public surface and needs a dedicated scraper')
+      }
+
+      if (!hasVerifiedBundleSignal(bundleText)) {
+        throw new Error('Airtel Digital verified Airtel careers bundle no longer matches the shared public surface')
+      }
+
+      const darwinboxShellHtml = await fetchPageText(SHARED_DARWINBOX_URL)
+
+      if (!hasSharedDarwinboxShellSignal(darwinboxShellHtml)) {
+        throw new Error('Airtel Digital verified shared Darwinbox shell no longer matches the public surface')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    const darwinboxShellHtml = await fetchText(SHARED_DARWINBOX_URL)
-
-    if (!hasSharedDarwinboxShellSignal(darwinboxShellHtml)) {
-      throw new Error('Airtel Digital verified shared Darwinbox shell no longer matches the public surface')
-    }
-
-    return []
   },
 })
 
 export const run = async (options = {}) => createAirtelDigitalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -54,6 +55,20 @@ const stripTags = (value) => normalizeWhitespace(
 const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   const match = pattern.exec(String(value ?? ''))
   return match ? transform(match) : null
+}
+
+const extractFieldMap = (html) => {
+  const fields = new Map()
+
+  for (const match of String(html ?? '').matchAll(
+    /article__content__view__field[\s\S]*?article__content__view__field__label[^>]*>([\s\S]*?)<\/div>[\s\S]*?article__content__view__field__value[^>]*>([\s\S]*?)<\/div>/gi,
+  )) {
+    const label = normalizeWhitespace(match[1])?.toLowerCase()
+    const value = stripTags(match[2])
+    if (label && value) fields.set(label, value)
+  }
+
+  return fields
 }
 
 const toAbsoluteUrl = (value) => {
@@ -138,12 +153,60 @@ const normalizeDate = (value) => {
 
 const isIndiaLocation = (location) => /india/i.test(normalizeWhitespace(location) || '')
 
+const extractDetailArticles = (html) => [...String(html ?? '').matchAll(
+  /<article\b[^>]*class="([^"]*\barticle--details\b[^"]*)"[^>]*>([\s\S]*?)<\/article>/gi,
+)]
+  .map((match) => {
+    const articleHtml = match[2]
+    const heading = normalizeWhitespace(
+      extractFirst(/article__header[\s\S]*?<h2[^>]*>([\s\S]*?)<\/h2>/i, articleHtml)
+      || extractFirst(/article__header[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/i, articleHtml),
+    )
+    const text = stripTags(articleHtml)
+
+    return {
+      className: normalizeWhitespace(match[1]),
+      heading,
+      text,
+    }
+  })
+  .filter((article) => article.text)
+
+const cleanDescriptionText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/^(?:description and requirements|job description)\s*/i, ''),
+)
+
 const extractDescription = (html) => {
+  const articles = extractDetailArticles(html)
+  const descriptionArticle = articles.find((article) => (
+    /description and requirements|job description/i.test(article.heading || '')
+    || /^job description\b/i.test(article.text || '')
+    || /^description and requirements\b/i.test(article.text || '')
+  ))
+
+  if (descriptionArticle) {
+    return cleanDescriptionText(descriptionArticle.text)
+  }
+
   const match = extractFirst(
-    /<article class="article article--details js_collapsible">[\s\S]*?<div class="article__content__view__field__value">([\s\S]*?)<\/div>[\s\S]*?<\/article>/i,
+    /<article\b[^>]*class="[^"]*\barticle--details\b[^"]*"[^>]*>[\s\S]*?<div class="article__content__view__field__value">([\s\S]*?)<\/div>[\s\S]*?<\/article>/i,
     html,
   )
-  return stripTags(match)
+  return cleanDescriptionText(stripTags(match))
+}
+
+const extractExperienceRequired = ({ title, jobDescription, minimumQualification }) => {
+  const { experienceProfile } = extractJobFilterSignals({
+    title,
+    jobDescription,
+    minimumQualification,
+    experienceRequired: null,
+  })
+
+  return experienceProfile?.confidence === 'high'
+    ? experienceProfile.evidence || null
+    : null
 }
 
 export const buildSearchUrl = ({ page = 1, pageSize = DEFAULT_PAGE_SIZE } = {}) => {
@@ -208,6 +271,7 @@ export const extractPaginationSummary = (html) => {
 }
 
 export const extractJobDetail = (html, listing = {}) => {
+  const fields = extractFieldMap(html)
   const title = normalizeWhitespace(
     extractFirst(/<meta property="og:title" content="([^"]+)"/i, html),
   ) || listing.title || null
@@ -219,6 +283,12 @@ export const extractJobDetail = (html, listing = {}) => {
       || listing.postingDate,
   )
   const jobDescription = extractDescription(html)
+  const minimumQualification = null
+  const experienceRequired = extractExperienceRequired({
+    title,
+    minimumQualification,
+    jobDescription,
+  })
 
   return {
     title,
@@ -227,9 +297,9 @@ export const extractJobDetail = (html, listing = {}) => {
     city: listing.city || null,
     jobId: listing.jobId || null,
     requisitionId: listing.requisitionId || listing.jobId || null,
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
+    employmentType: fields.get('working time') || null,
+    experienceRequired,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: [],
     postingDate,
@@ -237,6 +307,7 @@ export const extractJobDetail = (html, listing = {}) => {
     applyUrl,
     sourceUrl: listing.sourceUrl || null,
     jobDescription,
+    publicExperienceChecked: Boolean(jobDescription),
   }
 }
 
@@ -294,6 +365,7 @@ export const run = async () => {
         requiredSkills: detail.requiredSkills,
         postingDate: detail.postingDate || listing.postingDate || null,
         closingDate: detail.closingDate,
+        publicExperienceChecked: Boolean(detail.publicExperienceChecked),
         scrapedAt: new Date().toISOString(),
       })
     }
@@ -305,7 +377,7 @@ export const run = async () => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Lenovo scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

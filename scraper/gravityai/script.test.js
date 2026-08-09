@@ -37,6 +37,37 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title data-next-head=""></title>
+    <meta
+      name="description"
+      content="Build, deploy, and scale AI models securely with gravityAI. Private Cloud, on-prem, and air-gapped deployments with enterprise governance built in."
+    />
+  </head>
+  <body>
+    <header>
+      <a href="/pricing/">Pricing</a>
+      <a href="https://app.gravity-ai.com/catalog">Catalog</a>
+      <a href="https://docs.gravity-ai.com/">Documentation</a>
+      <a href="https://enterprise.gravity-ai.com/tenant/login">Sign In</a>
+    </header>
+    <main>
+      <h1>Build and Deploy AI. Every Team. Every Model. Fully Governed.</h1>
+      <p>Stop managing AI chaos across tools and teams.</p>
+      <p>gravityAI gives everyone a shared workspace, with governance that doesn&#x27;t slow you down.</p>
+      <p>Trusted by 50,000+ developers and enterprises:</p>
+      <a href="/about-us/">About us</a>
+    </main>
+    <footer>
+      <p>© 2019-2026 gravityAI. All rights reserved.</p>
+    </footer>
+  </body>
+</html>
+`
+
 const aboutHtml = `
 <!doctype html>
 <html lang="en">
@@ -145,6 +176,26 @@ const missingCareerRoutePage = {
   `,
 }
 
+const currentMissingCareerRoutePage = {
+  status: 404,
+  url: 'https://www.gravity-ai.com/careers',
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <link rel="canonical" href="https://www.gravity-ai.com/404/" />
+        <title>404: This page could not be found</title>
+      </head>
+      <body>
+        <a href="https://enterprise.gravity-ai.com/tenant/login">Sign In</a>
+        <h1>404</h1>
+        <h2>This page could not be found .</h2>
+        <p>© 2019-2025 gravityAI. All rights reserved.</p>
+      </body>
+    </html>
+  `,
+}
+
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -190,6 +241,7 @@ test('Gravity AI sentinel recognizes the verified homepage, about page, sitemap,
   ])
 
   assert.equal(gravityai.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(gravityai.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(gravityai.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(gravityai.hasVerifiedSitemapIndexSignal(sitemapIndexXml), true)
   assert.deepEqual(gravityai.extractSitemapUrls(sitemapXml), [
@@ -217,6 +269,28 @@ test('Gravity AI sentinel recognizes the verified homepage, about page, sitemap,
   assert.equal(gravityai.hasPublicJobsSignal(dataScientistHtml), false)
   assert.equal(gravityai.hasPublicJobsSignal(platformEngineerHtml), false)
   assert.equal(gravityai.isVerifiedMissingCareerRoute(missingCareerRoutePage), true)
+  assert.equal(gravityai.isVerifiedMissingCareerRoute(currentMissingCareerRoutePage), true)
+})
+
+test('Gravity AI sentinel accepts the current homepage entity encoding and branded 404 careers routes', async () => {
+  const gravityai = await loadGravityAIModule()
+  assert.ok(gravityai, 'Expected Gravity AI scraper module at ./script.js')
+
+  const jobs = await gravityai.createGravityAIScraper().run({
+    fetchPage: async (url) => {
+      if (url === gravityai.HOMEPAGE_URL) return { status: 200, url, html: currentHomepageHtml }
+      if (url === gravityai.ABOUT_URL) return { status: 200, url, html: aboutHtml }
+      if (url === gravityai.SITEMAP_INDEX_URL) return { status: 200, url, html: sitemapIndexXml }
+      if (url === gravityai.SITEMAP_URL) return { status: 200, url, html: sitemapXml }
+      if (url === gravityai.ROLE_PAGE_URLS[0]) return { status: 200, url, html: dataScientistHtml }
+      if (url === gravityai.ROLE_PAGE_URLS[1]) return { status: 200, url, html: platformEngineerHtml }
+      if (gravityai.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) return { ...currentMissingCareerRoutePage, url }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Gravity AI sentinel returns no jobs only while the verified first-party surface remains unchanged', async () => {

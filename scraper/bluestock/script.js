@@ -1,13 +1,15 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://bluestock.in/careers/'
 export const JOBS_PAGE_URL = 'https://bluestock.in/careers/jobs/'
+export const COMPANY_DOMAIN = 'bluestock.in'
+export const ATS_PLATFORM = 'custom-careers-pages'
 
 const normalizeWhitespace = (value) =>
   String(value ?? '')
@@ -47,6 +49,10 @@ const buildJob = ({
   postingDate: null,
   closingDate: null,
   jobDescription: description,
+  publicExperienceChecked: true,
+  companyCareerPage: CAREER_PAGE_URL,
+  companyDomain: COMPANY_DOMAIN,
+  atsPlatform: ATS_PLATFORM,
 })
 
 export const extractHighlightedRoles = (html) => {
@@ -136,7 +142,7 @@ export const run = async () => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Bluestock scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

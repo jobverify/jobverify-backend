@@ -17,10 +17,11 @@ export const INFORMATION_EVOLUTION_CATALOG = {
   extractionStrategy: 'verified-jobs-page+coimbatore-section+first-party-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://dev.informationevolution.com/jobs/ remained the first-party Information Evolution jobs page, that it publicly listed a Coimbatore, India opening for Team Leader, and that the first-party detail page at https://dev.informationevolution.com/job/team-leader/ remained publicly reachable on the verified date.',
+    'Verified on Sunday, August 2, 2026 that https://dev.informationevolution.com/jobs/ remained the first-party Information Evolution jobs page, that it publicly listed a Coimbatore, India opening for Team Leader, and that the first-party detail page at https://dev.informationevolution.com/job/team-leader/ exposed the current Employment Type and Job Location sections on the verified date.',
   modulePath: path.join(currentDir, 'script.js'),
+  dryRunFile: 'informationevolution/jobs.json',
 }
 
 export default INFORMATION_EVOLUTION_CATALOG

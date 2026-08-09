@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import SIXT_CATALOG from './catalog.js'
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -103,7 +103,10 @@ export const hasOfficialJobDetailSignal = (html) => {
     && normalized.includes('apply now')
     && normalized.includes('your role at sixt')
     && normalized.includes('your skills matter')
-    && normalized.includes('what we offer')
+    && (
+      normalized.includes('what we offer')
+      || normalized.includes('about us')
+    )
 }
 
 const extractDescription = (html) => {
@@ -211,7 +214,7 @@ export const createSixtScraper = ({
 export const run = async (options = {}) => createSixtScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

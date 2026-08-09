@@ -21,11 +21,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/\u2019/g, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const containsAny = (value, patterns) => patterns.some((pattern) => pattern.test(value))
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -66,8 +69,8 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes('remote-first')
     && normalized.includes('global team')
     && normalized.includes('competitive compensation')
-    && normalized.includes('flexible pto')
-    && normalized.includes('health benefits')
+    && containsAny(normalized, [/\bflexible pto\b/i, /\bflexible time off\b/i, /\b20 days of pto\b/i])
+    && containsAny(normalized, [/\bhealth benefits\b/i, /\bhealth & wellness\b/i, /\bhealth insurance\b/i])
     && normalized.includes('view current openings')
     && /https:\/\/www\.getswym\.com\/careers/i.test(page)
     && /rel=["']canonical["']/i.test(page)
@@ -79,7 +82,7 @@ export const hasOfficialJobs404Signal = (html) => {
   const normalized = normalizeWhitespace(page).toLowerCase()
 
   return normalized.includes('not found')
-    && normalized.includes('we’ve looked everywhere!'.toLowerCase())
+    && normalized.includes("we've looked everywhere!")
     && normalized.includes('page not found')
     && normalized.includes('go to homepage')
     && /https:\/\/www\.getswym\.com\/404/i.test(page)
@@ -122,7 +125,7 @@ export const createSwymScraper = () => ({
 export const run = async (options = {}) => createSwymScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

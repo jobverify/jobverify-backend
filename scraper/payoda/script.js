@@ -1,19 +1,22 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'payoda'
 export const COMPANY = 'Payoda'
 export const CAREERS_URL = 'https://www.payoda.com/careers'
-export const APPLICATION_EMAIL = 'careers@payoda.com'
-export const APPLICATION_URL = 'mailto:careers@payoda.com?subject=CV%3A%20open%20application'
+export const APPLICATION_EMAIL = 'joinus@payoda.com'
+export const APPLICATION_URL = 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const PAYODA_APPLICATION_EMAIL_PATTERN = /\b(?:joinus|careers)@payoda\.com\b/i
+const PAYODA_APPLICATION_MAILTO_PATTERN = /href=["'](mailto:(?:joinus|careers)@payoda\.com[^"']*)["']/i
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -73,16 +76,23 @@ const parseEmploymentDetails = (value) => {
   }
 }
 
+const buildApplicationUrl = (email = APPLICATION_EMAIL) =>
+  `mailto:${email}?subject=CV%3A%20open%20application`
+
+const extractApplicationEmail = (html) =>
+  String(html ?? '').match(PAYODA_APPLICATION_EMAIL_PATTERN)?.[0]
+  || APPLICATION_EMAIL
+
 const extractApplyUrl = (html) =>
-  String(html ?? '').match(/href=["'](mailto:careers@payoda\.com[^"']*)["']/i)?.[1]
-  || APPLICATION_URL
+  String(html ?? '').match(PAYODA_APPLICATION_MAILTO_PATTERN)?.[1]
+  || buildApplicationUrl(extractApplicationEmail(html))
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
   return /Careers\s*·\s*Build the future of agentic AI at Payoda/i.test(page)
     && /Open Roles|Where we'?re hiring right now\./i.test(page)
-    && /careers@payoda\.com/i.test(page)
+    && PAYODA_APPLICATION_EMAIL_PATTERN.test(page)
     && /View role/i.test(page)
 }
 
@@ -159,7 +169,7 @@ export const createPayodaScraper = () => ({
 export const run = async (options = {}) => createPayodaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

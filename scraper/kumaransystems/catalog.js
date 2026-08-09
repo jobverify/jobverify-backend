@@ -18,9 +18,9 @@ export const KUMARAN_SYSTEMS_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'kumaran.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://kumaran.com/careers/ is the live first-party Kumaran Systems careers page and that it links to public openings served from careers.kumaran.com via a public Zoho Recruit API. The verified public feed includes India roles such as QA Engineer - ETL & DWH and .Net Fullstack Developer, so this local scraper reads the public API directly after validating the first-party careers page.',
+    'Verified on Sunday, August 2, 2026 that https://kumaran.com/careers/ remains the live first-party Kumaran Systems careers surface, now as a thinner branded careers shell rather than the earlier copy-heavy recruiting page, and that careers.kumaran.com still exposes a public Zoho Recruit API with India openings. The verified public feed includes current India roles such as Associate Product Manager - Interns and QA Test Lead, so this local scraper reads the public API directly after validating the first-party careers page.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

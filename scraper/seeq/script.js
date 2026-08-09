@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { SEEQ_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -29,6 +29,12 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const normalizeOptionalValue = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized || /^[-—]+$/.test(normalized)) return null
+  return normalized
+}
+
 const normalizeUrl = (value) => String(value ?? '').replace(/\/+$/, '')
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -41,14 +47,20 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const parseLocation = (value) => {
-  const parts = String(value ?? '')
+  const location = normalizeOptionalValue(value)
+  const cleanLocation = location
+    ? location.replace(/\s+\(([^)]+)\)\s*$/, '')
+    : null
+  const parts = String(cleanLocation ?? '')
     .split(',')
     .map((part) => normalizeWhitespace(part))
     .filter(Boolean)
 
+  const isCountryOnly = parts.length === 1 && /india/i.test(parts[0] || '')
+
   return {
-    location: parts.join(', ') || null,
-    city: parts[0] || null,
+    location,
+    city: isCountryOnly ? null : (parts[0] || null),
     state: parts.length >= 3 ? parts[1] : null,
     country: parts.at(-1) || null,
   }
@@ -62,8 +74,11 @@ const ensureTrailingSlash = (value) => {
 }
 
 const extractJobId = (url) => {
-  const match = String(url ?? '').match(/\/j\/([A-Z0-9]+)\/?$/i)
-  return match?.[1]?.toUpperCase() || null
+  const viewMatch = String(url ?? '').match(/\/jobs\/view\/([A-Z0-9]+)(?:\.md)?(?:[?#].*)?$/i)
+  if (viewMatch?.[1]) return viewMatch[1].toUpperCase()
+
+  const publicMatch = String(url ?? '').match(/\/j\/([A-Z0-9]+)\/?(?:apply)?(?:[?#].*)?$/i)
+  return publicMatch?.[1]?.toUpperCase() || null
 }
 
 const normalizeScrapedAt = (value) => {
@@ -99,27 +114,136 @@ export const hasOfficialWorkableBoardSignal = (html = '') => {
 export const hasOfficialJobsFeedSignal = (markdown = '') => {
   const value = String(markdown ?? '')
 
-  return /^#\s*Seeq\s*-\s*Current Openings/im.test(value)
-    && /^\d+\s+current openings?/im.test(value)
+  return /^#\s*Seeq\s*[—-]\s*(?:All Open Positions|Current Openings)/im.test(value)
+    && (
+      (
+        /^>\s*Last updated:/im.test(value)
+        && /^\|\s*Title\s*\|\s*Department\s*\|\s*Location\s*\|\s*Type\s*\|\s*Salary\s*\|\s*Posted\s*\|\s*Details\s*\|/im.test(value)
+      )
+      || /^\d+\s+current openings?/im.test(value)
+    )
     && /Powered by\s+\[Workable\]\(https:\/\/www\.workable\.com\)/i.test(value)
 }
 
-export const extractJobsFromMarkdown = (markdown = '') => String(markdown ?? '')
-  .split(/\r?\n/)
-  .map((line) => line.trim())
-  .map((line) => {
-    const match = /^-\s+\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)\s*-\s*(.+)$/i.exec(line)
-    if (!match) return null
+const splitMarkdownRow = (line) => {
+  const cells = []
+  let current = ''
+  let escaping = false
 
-    const [, rawTitle, rawUrl, rawLocation] = match
-    const sourceUrl = ensureTrailingSlash(rawUrl)
-    const jobId = extractJobId(sourceUrl)
-    const locationBits = parseLocation(rawLocation)
+  for (const char of String(line ?? '')) {
+    if (escaping) {
+      current += char
+      escaping = false
+      continue
+    }
 
-    if (!rawTitle || !jobId || !isIndiaLocation(locationBits.location)) return null
+    if (char === '\\') {
+      escaping = true
+      continue
+    }
 
+    if (char === '|') {
+      cells.push(current)
+      current = ''
+      continue
+    }
+
+    current += char
+  }
+
+  if (escaping) current += '\\'
+  cells.push(current)
+
+  if (cells[0]?.trim() === '') cells.shift()
+  if (cells.at(-1)?.trim() === '') cells.pop()
+
+  return cells.map((cell) => normalizeWhitespace(cell))
+}
+
+const extractMarkdownLink = (value) => {
+  const match = String(value ?? '').match(/\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/i)
+  if (match?.[1]) return match[1]
+
+  const fallback = String(value ?? '').match(/https?:\/\/\S+/i)
+  return fallback?.[0] || null
+}
+
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeOptionalValue(value)
+  if (!normalized) return null
+  if (/full[\s-]?time/i.test(normalized)) return 'Full-time'
+  if (/part[\s-]?time/i.test(normalized)) return 'Part-time'
+  if (/intern/i.test(normalized)) return 'Internship'
+  if (/contract/i.test(normalized)) return 'Contract'
+  return normalized
+}
+
+const buildPublicJobUrl = (jobId, rawUrl) => {
+  if (/\/j\/[A-Z0-9]+\/?$/i.test(String(rawUrl ?? ''))) {
+    return ensureTrailingSlash(rawUrl)
+  }
+
+  return `${WORKABLE_BOARD_URL}j/${jobId}/`
+}
+
+const buildApplyUrl = (sourceUrl) => `${ensureTrailingSlash(sourceUrl)}apply`
+
+const parseMarkdownJobLine = (line) => {
+  const bulletMatch = /^-\s+\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)\s*-\s*(.+)$/i.exec(line)
+  if (bulletMatch) {
+    const [, rawTitle, rawUrl, rawLocation] = bulletMatch
     return {
-      title: normalizeWhitespace(rawTitle),
+      rawTitle,
+      rawUrl,
+      rawLocation,
+      department: null,
+      employmentType: null,
+      postingDate: null,
+    }
+  }
+
+  const trimmed = String(line ?? '').trim()
+  if (!trimmed.startsWith('|')) return null
+  if (/^\|\s*Title\s*\|/i.test(trimmed)) return null
+  if (/^\|\s*:?-{2,}/.test(trimmed)) return null
+
+  const cells = splitMarkdownRow(trimmed)
+  if (cells.length < 7) return null
+
+  const detailsCell = cells.at(-1)
+  const postedCell = cells.at(-2)
+  const typeCell = cells.at(-4)
+  const locationCell = cells.at(-5)
+  const departmentCell = cells.at(-6)
+  const titleCell = cells.slice(0, -6).join(' | ')
+
+  return {
+    rawTitle: titleCell,
+    rawUrl: extractMarkdownLink(detailsCell),
+    rawLocation: locationCell,
+    department: normalizeOptionalValue(departmentCell),
+    employmentType: normalizeEmploymentType(typeCell),
+    postingDate: normalizeOptionalValue(postedCell),
+  }
+}
+
+export const extractJobsFromMarkdown = (markdown = '') => {
+  const jobs = []
+  const seenJobIds = new Set()
+
+  for (const line of String(markdown ?? '').split(/\r?\n/)) {
+    const parsed = parseMarkdownJobLine(line)
+    if (!parsed) continue
+
+    const locationBits = parseLocation(parsed.rawLocation)
+    const jobId = extractJobId(parsed.rawUrl)
+    if (!parsed.rawTitle || !jobId || !isIndiaLocation(locationBits.location)) continue
+    if (seenJobIds.has(jobId)) continue
+
+    const sourceUrl = buildPublicJobUrl(jobId, parsed.rawUrl)
+    seenJobIds.add(jobId)
+    jobs.push({
+      title: normalizeWhitespace(parsed.rawTitle),
       company: COMPANY,
       location: locationBits.location,
       city: locationBits.city,
@@ -128,19 +252,21 @@ export const extractJobsFromMarkdown = (markdown = '') => String(markdown ?? '')
       jobId,
       requisitionId: jobId,
       sourceUrl,
-      applyUrl: `${sourceUrl}apply`,
-      department: null,
-      employmentType: null,
+      applyUrl: buildApplyUrl(sourceUrl),
+      department: parsed.department,
+      employmentType: parsed.employmentType,
       experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: null,
+      postingDate: parsed.postingDate,
       closingDate: null,
       jobDescription: null,
-    }
-  })
-  .filter(Boolean)
+    })
+  }
+
+  return jobs
+}
 
 export const createSeeqScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -183,7 +309,7 @@ export const createSeeqScraper = ({
 export const run = async (options = {}) => createSeeqScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

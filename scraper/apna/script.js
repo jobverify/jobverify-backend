@@ -1,8 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { APNA_CATALOG } from './catalog.js'
 
@@ -23,6 +25,7 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DETAIL_FETCH_CONCURRENCY = 4
 
 const normalizeUrl = (value) => String(value ?? '').replace(/\/+$/, '')
 
@@ -45,6 +48,110 @@ const normalizeOptionalValue = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized || /^[-—–]+$/.test(normalized)) return null
   return normalized
+}
+
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractFirst = (pattern, value) => {
+  const match = pattern.exec(String(value ?? ''))
+  return match ? match[1] : null
+}
+
+const extractAttributeValue = (tag, attributeName) => {
+  const escapedName = escapeRegex(attributeName)
+  const doubleQuoted = extractFirst(new RegExp(`${escapedName}\\s*=\\s*"([^"]*)"`, 'i'), tag)
+  if (doubleQuoted != null) return normalizeOptionalValue(doubleQuoted)
+
+  const singleQuoted = extractFirst(new RegExp(`${escapedName}\\s*=\\s*'([^']*)'`, 'i'), tag)
+  if (singleQuoted != null) return normalizeOptionalValue(singleQuoted)
+
+  return null
+}
+
+const extractMetaContent = (key, html = '') => {
+  for (const match of String(html ?? '').matchAll(/<meta\b[^>]*>/gi)) {
+    const tag = match[0]
+    const property = extractAttributeValue(tag, 'property')
+    const name = extractAttributeValue(tag, 'name')
+
+    if (property !== key && name !== key) {
+      continue
+    }
+
+    const content = extractAttributeValue(tag, 'content')
+    if (content) {
+      return content
+    }
+  }
+
+  return null
+}
+
+const normalizeDetailSummary = (value) => normalizeOptionalValue(
+  String(value ?? '')
+    .replace(/(?<!^)(Company:|Role:|Team:|Requirement:|Location:|Experience:|Why Join Apna|About Company|Description)/g, ' $1')
+    .replace(/([a-z0-9)])(Why Join Apna|About Company|Description)/g, '$1 $2'),
+)
+
+const formatExperienceNumber = (value) => {
+  const numeric = Number.parseFloat(value)
+  if (!Number.isFinite(numeric)) return null
+
+  return Number.isInteger(numeric)
+    ? String(numeric)
+    : String(numeric).replace(/(?:\.0+|(\.\d*?)0+)$/, '$1')
+}
+
+const extractExperienceFromSummary = (summary = '') => {
+  const normalized = normalizeOptionalValue(summary)
+  if (!normalized) return null
+
+  const boundedMatch = normalized.match(
+    /\bExperience\s*:?\s*(\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)\s*Years?\s+of\s+Experience\b/i,
+  )
+  if (boundedMatch) {
+    return `${formatExperienceNumber(boundedMatch[1])}-${formatExperienceNumber(boundedMatch[2])} years`
+  }
+
+  const openEndedMatch = normalized.match(
+    /\bExperience\s*:?\s*(\d+(?:\.\d+)?)\s*(\+|plus)\s*Years?\s+of\s+Experience\b/i,
+  )
+  if (openEndedMatch) {
+    return `${formatExperienceNumber(openEndedMatch[1])}+ years`
+  }
+
+  const exactMatch = normalized.match(
+    /\bExperience\s*:?\s*(\d+(?:\.\d+)?)\s*Years?\s+of\s+Experience\b/i,
+  )
+  if (exactMatch) {
+    const formattedValue = formatExperienceNumber(exactMatch[1])
+    return formattedValue === '1' ? '1 year' : `${formattedValue} years`
+  }
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+
+  if (!experienceProfile || experienceProfile.confidence !== 'high') {
+    return null
+  }
+
+  if (experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0) {
+    return 'No experience required'
+  }
+
+  return normalizeOptionalValue(experienceProfile.evidence)
+}
+
+const extractPublicJobMetadata = (html = '') => {
+  const summary = normalizeDetailSummary(
+    extractMetaContent('description', html) || extractMetaContent('og:description', html),
+  )
+
+  return {
+    jobDescription: summary,
+    experienceRequired: extractExperienceFromSummary(summary),
+  }
 }
 
 const getFinalUrl = (page, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
@@ -269,19 +376,42 @@ export const createApnaScraper = ({
     const selectedJobs = limit ? jobs.slice(0, limit) : jobs
     const scrapedAt = normalizeScrapedAt((options.now || now)())
 
-    return selectedJobs.map((job) => ({
+    const decoratedJobs = selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt,
     }))
+
+    return mapWithConcurrency(
+      decoratedJobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailPage = await fetchPage(job.sourceUrl)
+          if (Number(detailPage?.status) !== 200 || !detailPage?.html) {
+            return job
+          }
+
+          const detail = extractPublicJobMetadata(detailPage.html)
+          return {
+            ...job,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            publicExperienceChecked: true,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 
 export const run = async (options = {}) => createApnaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

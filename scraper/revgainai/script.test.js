@@ -5,27 +5,28 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>RevGain | Revolutionize Retention &amp; Expansion with AI-Powered Growth</title>
-    <meta
-      name="description"
-      content="RevGain Revenue Platform transforms your growth flywheel by enabling higher retention &amp; expansion. Powered by Human + AI collaboration, it optimizes revenue and accelerates sustainable."
-    />
+    <title>RevGain — AI Revenue Engine</title>
+    <meta name="description" content="RevGain is an AI-powered revenue platform that drives retention and expansion by pairing your team with an augmented workforce of AI agents." />
+    <link rel="canonical" href="https://revgain.ai/" />
+    <meta property="og:site_name" content="RevGain" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "RevGain",
+        "url": "https://revgain.ai/",
+        "logo": "https://revgain.ai/uploads/revgain-logo.png",
+        "email": "info@revgain.ai"
+      }
+    </script>
   </head>
   <body>
     <nav>
       <a href="/platform">Platform</a>
-      <a href="/resources/blogs">Blogs</a>
-      <a href="/signup">Sign up</a>
+      <a href="/product">Product</a>
+      <a href="/get-started">Get started</a>
     </nav>
-    <main>
-      <h1>The revenue platform that Transforms your Growth Flywheel</h1>
-      <p>
-        RevGain Revenue Platform enables higher retention &amp; expansion of your growth flywheel,
-        with an augmented workforce of Human + AI working together.
-      </p>
-      <p>Reducing friction in the flywheel &amp; eliminating internal silos unlocks 4-6x Revenue Growth</p>
-      <h2>Drive Engagement with Customer Data, Insights &amp; Actions</h2>
-    </main>
+    <div id="app"></div>
   </body>
 </html>
 `
@@ -33,32 +34,18 @@ const homepageHtml = `
 const sitemapXml = `
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.revgain.ai/</loc></url>
-  <url><loc>https://www.revgain.ai/platform</loc></url>
-  <url><loc>https://www.revgain.ai/product/customer-success-platform</loc></url>
-  <url><loc>https://www.revgain.ai/resources/blogs</loc></url>
-  <url><loc>https://www.revgain.ai/signup</loc></url>
+  <url><loc>https://revgain.ai/</loc></url>
+  <url><loc>https://revgain.ai/product</loc></url>
+  <url><loc>https://revgain.ai/platform</loc></url>
+  <url><loc>https://revgain.ai/use-cases</loc></url>
+  <url><loc>https://revgain.ai/get-started</loc></url>
 </urlset>
 `
 
 const missingCareerRoutePage = {
   status: 404,
-  url: 'https://www.revgain.ai/careers',
-  html: `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <title>Page Not Found | Framer</title>
-      </head>
-      <body>
-        <main>
-          <h1>Page Not Found</h1>
-          <p>The page you are looking for does not exist or may have been moved.</p>
-          <a href="/">Back to Home</a>
-        </main>
-      </body>
-    </html>
-  `,
+  url: 'https://revgain.ai/careers',
+  html: '',
 }
 
 const loadModule = async () => {
@@ -75,21 +62,21 @@ test('RevGain AI sentinel recognizes the verified homepage, sitemap, and missing
 
   assert.equal(revgain.SOURCE, 'revgainai')
   assert.equal(revgain.COMPANY, 'RevGain AI')
-  assert.equal(revgain.HOMEPAGE_URL, 'https://www.revgain.ai/')
-  assert.equal(revgain.SITEMAP_URL, 'https://www.revgain.ai/sitemap.xml')
+  assert.equal(revgain.HOMEPAGE_URL, 'https://revgain.ai/')
+  assert.equal(revgain.SITEMAP_URL, 'https://revgain.ai/sitemap.xml')
   assert.deepEqual(revgain.NO_PUBLIC_CAREERS_ROUTE_URLS, [
-    'https://www.revgain.ai/careers',
-    'https://www.revgain.ai/careers/',
-    'https://www.revgain.ai/career',
-    'https://www.revgain.ai/career/',
-    'https://www.revgain.ai/jobs',
-    'https://www.revgain.ai/jobs/',
-    'https://www.revgain.ai/join-us',
-    'https://www.revgain.ai/join-us/',
-    'https://www.revgain.ai/openings',
-    'https://www.revgain.ai/openings/',
-    'https://www.revgain.ai/work-with-us',
-    'https://www.revgain.ai/work-with-us/',
+    'https://revgain.ai/careers',
+    'https://revgain.ai/careers/',
+    'https://revgain.ai/career',
+    'https://revgain.ai/career/',
+    'https://revgain.ai/jobs',
+    'https://revgain.ai/jobs/',
+    'https://revgain.ai/join-us',
+    'https://revgain.ai/join-us/',
+    'https://revgain.ai/openings',
+    'https://revgain.ai/openings/',
+    'https://revgain.ai/work-with-us',
+    'https://revgain.ai/work-with-us/',
   ])
 
   assert.equal(revgain.hasOfficialHomepageSignal(homepageHtml), true)
@@ -179,7 +166,7 @@ test('RevGain AI sentinel fails closed when the verified public surface drifts',
             url,
             html: sitemapXml.replace(
               '</urlset>',
-              '<url><loc>https://www.revgain.ai/careers</loc></url></urlset>',
+              '<url><loc>https://revgain.ai/careers</loc></url></urlset>',
             ),
           }
         }

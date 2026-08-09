@@ -118,6 +118,21 @@ const missingRouteHtml = `
   </html>
 `
 
+const blockedShellHtml = `
+  <!doctype html>
+  <html lang="en-US">
+    <head>
+      <title>403 Forbidden</title>
+    </head>
+    <body>
+      <h1>403 Forbidden</h1>
+      <p>Forbidden</p>
+      <p>You don't have permission to access / on this server.</p>
+      <p>Additionally, a 403 Forbidden error was encountered while trying to use an ErrorDocument to handle the request.</p>
+    </body>
+  </html>
+`
+
 test('Manatec Electronics recognizes the verified homepage, sitemap, careers page, and missing-route shell', () => {
   assert.equal(SOURCE, 'manatecelectronics')
   assert.equal(COMPANY, 'Manatec Electronics Private Limited')
@@ -163,6 +178,30 @@ test('Manatec Electronics run() validates the verified application-only public s
 
       if (url === MISSING_ROUTE_URL) {
         return { status: 404, url, html: missingRouteHtml }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    HOMEPAGE_URL,
+    PAGE_SITEMAP_URL,
+    CAREERS_URL,
+    MISSING_ROUTE_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Manatec Electronics returns no jobs when the verified public site is uniformly blocked by the current 403 shell', async () => {
+  const requestedUrls = []
+
+  const jobs = await createManatecElectronicsScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if ([HOMEPAGE_URL, PAGE_SITEMAP_URL, CAREERS_URL, MISSING_ROUTE_URL].includes(url)) {
+        return { status: 403, url, html: blockedShellHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)

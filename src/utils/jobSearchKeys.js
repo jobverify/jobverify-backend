@@ -1,3 +1,5 @@
+import { normalizeCity } from "../../scraper-support/utils/cityNormalizer.js";
+
 const normalizeWhitespace = (value) => String(value ?? "")
   .normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "")
@@ -19,12 +21,19 @@ export const normalizeJobSearchKeyList = (values = []) => {
   )];
 };
 
-export const buildJobSearchKeys = (job = {}) => ({
-  companyKey: normalizeJobSearchKey(job.company),
-  cityKey: normalizeJobSearchKey(job.city),
-  locationKeys: normalizeJobSearchKeyList([
+export const buildJobSearchKeys = (job = {}) => {
+  const locationValues = [
     job.city,
     job.location,
     ...(Array.isArray(job.locations) ? job.locations : []),
-  ]),
-});
+  ];
+
+  return {
+    companyKey: normalizeJobSearchKey(job.company),
+    cityKey: normalizeJobSearchKey(job.city),
+    locationKeys: normalizeJobSearchKeyList([
+      ...locationValues,
+      ...locationValues.map(normalizeCity),
+    ]),
+  };
+};

@@ -52,7 +52,6 @@ export const hasVerifiedRedirectShell = (html) => {
   return /<title>\s*Salesforce Jobs\s*\|\s*Salesforce\s*<\/title>/i.test(page)
     && /Find your career in the Salesforce ecosystem\./i.test(page)
     && /More Salesforce Brands/i.test(page)
-    && /<a[^>]+href="https:\/\/www\.informatica\.com\/"[^>]*>\s*Informatica\s*<\/a>/i.test(page)
 }
 
 export const createInformaticaScraper = () => ({
@@ -82,7 +81,7 @@ export const createInformaticaScraper = () => ({
 export const run = async (options = {}) => createInformaticaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

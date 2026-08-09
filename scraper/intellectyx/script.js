@@ -12,28 +12,26 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNALS = [
-  /<title>\s*Innovative Generative AI, Data, and Digital Solutions \| Intellectyx\s*<\/title>/i,
+  /<title\b[^>]*>\s*Innovative Generative AI, Data, and Digital Solutions \| Intellectyx\s*<\/title>/i,
   /href=["'][^"']*\/careers\/?["']/i,
-  /we(?:'|&apos;|&rsquo;)?re hiring/i,
   /top-tier talent/i,
 ]
 
 const CAREERS_SIGNALS = [
-  /<title>\s*Careers\s*-\s*Intellectyx\s*<\/title>/i,
+  /<title\b[^>]*>\s*Careers\s*-\s*Intellectyx\s*<\/title>/i,
   /One Team - One Company - Intellectyx/i,
   /Discover new opportunities in data and analytics consulting\./i,
   /Send Your Resume/i,
   /recruitment@intellectyx\.com/i,
 ]
 
-const PUBLIC_JOB_PATTERNS = [
+const STRONG_PUBLIC_JOB_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bopen positions\b/i,
   /\bjob openings\b/i,
   /\bsearch jobs\b/i,
   /\bjob description\b/i,
   /\bview jobs\b/i,
-  /\bapply now\b/i,
   /jobs\.lever\.co/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
@@ -66,8 +64,13 @@ export const hasOfficialHomepageSignal = (html) =>
 export const hasOfficialCareersSignal = (html) =>
   CAREERS_SIGNALS.every((pattern) => pattern.test(String(html ?? '')))
 
-export const pageExposesPublicJobListings = (html) =>
-  PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+export const pageExposesPublicJobListings = (html) => {
+  const page = String(html ?? '')
+
+  return STRONG_PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(page))
+    || /\bapply now\b[\s\S]{0,120}\b(?:job|position|opening|role|vacanc(?:y|ies))\b/i.test(page)
+    || /\b(?:job|position|opening|role|vacanc(?:y|ies))\b[\s\S]{0,120}\bapply now\b/i.test(page)
+}
 
 export const createIntellectyxScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
@@ -92,7 +95,7 @@ export const createIntellectyxScraper = () => ({
 export const run = async (options = {}) => createIntellectyxScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

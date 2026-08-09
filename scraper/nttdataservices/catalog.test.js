@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import {
   buildScrapers,
   getScraperCatalog,
-} from '../providers/index.js'
+} from '../../scraper-support/providers/index.js'
 
 test('getScraperCatalog includes NTT Data Services as a verified Phenom script provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'nttdataservices')

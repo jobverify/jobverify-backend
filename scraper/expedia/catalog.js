@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://careers.expediagroup.com/ is the live first-party Expedia Group careers homepage, that it hands Search Jobs to the first-party jobs index at https://careers.expediagroup.com/jobs/, and that the public jobs index exposes rel-next pagination to https://careers.expediagroup.com/jobs/?&mypage=1. Verified India role cards on the first-party jobs pages including Machine Learning Engineer II in India - Bangalore with first-party detail page https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/. Verified that the detail page exposes the official Workday apply handoff at https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply? plus first-party description, team, job type, and posting metadata.'
+  'Verified on Sunday, August 2, 2026 that https://careers.expediagroup.com/ is the live first-party Expedia Group careers homepage, that it still hands Search Jobs to the first-party jobs index at https://careers.expediagroup.com/jobs/, and that the public jobs index still exposes next-page pagination at https://careers.expediagroup.com/jobs/?&mypage=1. Verified India role cards on the first-party jobs pages including Machine Learning Engineer II in India - Haryana - Gurgaon with first-party detail page https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/. Verified that the detail page exposes the official Workday apply handoff at https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply? plus first-party description, team, job type, and posting metadata.'
 
 export const EXPEDIA_CATALOG = {
   source: 'expedia',
@@ -16,9 +16,9 @@ export const EXPEDIA_CATALOG = {
   jobsPageUrl: 'https://careers.expediagroup.com/jobs/',
   verifiedNextPageUrl: 'https://careers.expediagroup.com/jobs/?&mypage=1',
   sampleIndiaJobDetailUrl:
-    'https://careers.expediagroup.com/job/machine-learning-engineer-ii/bangalore-bangalore/R-107194/',
+    'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
   sampleIndiaApplyUrl:
-    'https://expedia.wd108.myworkdayjobs.com/search/job/India---Bangalore/Machine-Learning-Engineer-II_R-107194/apply?',
+    'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
   companyDomain: 'expediagroup.com',
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
@@ -27,7 +27,7 @@ export const EXPEDIA_CATALOG = {
     'verified-first-party-careers-page+verified-first-party-jobs-pages+india-card-filter+first-party-detail-pages+workday-apply-handoff',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'expedia/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

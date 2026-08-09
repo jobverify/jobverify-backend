@@ -97,6 +97,7 @@ export const createLabvantageSolutionsScraper = ({
       postingDate: null,
       closingDate: null,
       jobDescription: 'Apply via the LabVantage Solutions India careers section.',
+      publicExperienceChecked: true,
       remoteStatus: null,
       scrapedAt: new Date().toISOString(),
     }))
@@ -108,7 +109,7 @@ export const createLabvantageSolutionsScraper = ({
 export const run = async (options = {}) => createLabvantageSolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

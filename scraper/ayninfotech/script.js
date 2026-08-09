@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'ayninfotech'
 export const COMPANY = 'AYN InfoTech'
-export const VERIFIED_ON = '2026-07-17'
+export const VERIFIED_ON = '2026-08-07'
 export const HOMEPAGE_URL = 'https://www.ayninfotech.com/'
 export const CHECKED_ROUTE_URLS = [
   'https://www.ayninfotech.com/careers',
@@ -46,11 +46,20 @@ const defaultFetchPage = async (url) => {
 }
 
 export const hasCompromisedHomepageSignal = (html = '') => {
+  const rawHtml = String(html ?? '').toLowerCase()
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('deposit pulsa indosat')
+  const hasSlotBaitCopy = normalized.includes('deposit pulsa indosat')
     && normalized.includes('slot pulsa')
-    && normalized.includes('powered by team')
+  const hasVerifiedCompromisedHostSignal = normalized.includes('powered by team')
+    || rawHtml.includes('bigskyworldview')
+    || rawHtml.includes('view.bigskyworldview.org')
+  const hasCurrentBigSkySignal = rawHtml.includes('big sky worldview forum | billings, mt')
+    && rawHtml.includes('traditional, orthodox approach based upon the bible')
+    && rawHtml.includes('https://www.bigskyworldview.org')
+
+  return (hasSlotBaitCopy && hasVerifiedCompromisedHostSignal)
+    || hasCurrentBigSkySignal
 }
 
 const redirectsOutsideOfficialDomain = (url) => {
@@ -87,7 +96,7 @@ export const createAynInfotechScraper = () => ({
 export const run = async (options = {}) => createAynInfotechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

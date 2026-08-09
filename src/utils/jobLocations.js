@@ -5,6 +5,14 @@ const LOCATION_SEPARATOR_REGEX = /\s*(?:\/|\||;)\s*/
 
 const normalizeLocationValue = (value) => String(value || '').replace(/\s+/g, ' ').trim()
 
+const formatLocationContext = (value) => {
+  const parts = normalizeLocationValue(value).split(',').map(normalizeLocationValue).filter(Boolean)
+  if (parts.length < 2) return parts[0] || ''
+
+  const [place, ...context] = parts
+  return `${place}${context.map((part) => ` [${part}]`).join('')}`
+}
+
 const unique = (values) => {
   const seen = new Set()
   const result = []
@@ -77,10 +85,10 @@ export const getPrimaryStoredLocation = (job = {}) => {
 export const formatStoredLocationLabel = (job = {}) => {
   const locations = normalizeStoredLocations(job)
   if (locations.length > 0) {
-    return locations.join(', ')
+    return locations.map(formatLocationContext).join(', ')
   }
 
-  return getPrimaryStoredLocation(job)
+  return formatLocationContext(getPrimaryStoredLocation(job)) || null
 }
 
 export const mergeLocationOptions = (...lists) =>

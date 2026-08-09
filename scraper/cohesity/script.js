@@ -1,7 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractWorkdayJobDetail } from '../../scraper-support/detailExtractors/workday.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -56,6 +58,11 @@ export const hasOpenPositionsSignal = (payload) =>
   && payload?.job_data
   && payload?.locationsByCountry
 
+export const buildPublicDetailUrl = (value) =>
+  normalizeWhitespace(String(value ?? '').replace(/\/apply\/?$/i, ''))
+
+export const hasUnavailableWorkdayPosting = (html = '') => /postingAvailable:\s*false/i.test(String(html ?? ''))
+
 export const extractSearchResults = (payload) => flattenJobData(payload)
   .filter((job) => isIndiaJob(job))
   .map((job) => {
@@ -101,9 +108,42 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: 'cohesity-detail',
+  timeoutMs: 15000,
+})
+
+export const enrichJobFromDetailPage = (job = {}, detailHtml = '') => {
+  const detail = extractWorkdayJobDetail(detailHtml)
+  const publicDetailUrl = buildPublicDetailUrl(job.sourceUrl || job.applyUrl)
+  const hasPublicEvidence =
+    Boolean(detail.experienceRequired)
+    || detail.publicExperienceChecked === true
+    || hasUnavailableWorkdayPosting(detailHtml)
+
+  return {
+    ...job,
+    sourceUrl: publicDetailUrl || job.sourceUrl,
+    experienceRequired: detail.experienceRequired || job.experienceRequired || null,
+    minimumQualification: detail.minimumQualification || job.minimumQualification || null,
+    preferredQualification: detail.preferredQualification || job.preferredQualification || null,
+    requiredSkills: detail.requiredSkills?.length ? detail.requiredSkills : job.requiredSkills,
+    postingDate: detail.postingDate || job.postingDate || null,
+    department: detail.department || job.department || null,
+    requisitionId: detail.requisitionId || job.requisitionId,
+    jobDescription: detail.jobDescription || job.jobDescription || null,
+    publicExperienceChecked: hasPublicEvidence,
+  }
+}
+
 export const createCohesityScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchJson = defaultFetchJson,
+  fetchText = defaultFetchText,
 } = {}) => ({
   async run() {
     const payload = await fetchJson(OPEN_POSITIONS_API_URL)
@@ -114,8 +154,19 @@ export const createCohesityScraper = ({
 
     const jobs = extractSearchResults(payload)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = await Promise.all(selectedJobs.map(async (job) => {
+      const detailUrl = buildPublicDetailUrl(job.sourceUrl || job.applyUrl)
+      if (!detailUrl) return job
 
-    return selectedJobs.map((job) => ({
+      try {
+        const detailHtml = await fetchText(detailUrl)
+        return enrichJobFromDetailPage(job, detailHtml)
+      } catch {
+        return job
+      }
+    }))
+
+    return enrichedJobs.map((job) => ({
       ...job,
       source: 'cohesity',
       link: job.applyUrl || job.sourceUrl,
@@ -127,7 +178,7 @@ export const createCohesityScraper = ({
 export const run = async () => createCohesityScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Cohesity scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

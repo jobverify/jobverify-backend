@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { INNOVACCER_CATALOG } from './catalog.js'
 
@@ -159,11 +159,14 @@ export const hasOfficialCareersPageSignal = (page) => {
   const status = typeof page === 'string' ? 200 : Number(page?.status)
   const finalUrl = normalizeUrl(getFinalUrl(page, CAREERS_PAGE_URL))
   const rawHtml = String(html ?? '')
+  const hasVerifiedHero = /(?:build the future of healthcare,\s*together|transforming healthcare together for a better future)/i
+    .test(rawHtml)
+  const hasVerifiedCta = /view open (?:roles|positions)/i.test(rawHtml)
 
   return status === 200
     && finalUrl === normalizeUrl(CAREERS_PAGE_URL)
-    && /build the future of healthcare,\s*together/i.test(rawHtml)
-    && /view open roles/i.test(rawHtml)
+    && hasVerifiedHero
+    && hasVerifiedCta
     && /\/careers\/jobs/i.test(rawHtml)
 }
 
@@ -214,11 +217,11 @@ export const extractIndiaJobsFromWidget = (payload) => {
         sourceUrl: normalizeOptionalValue(job.url) || `${WORKABLE_BOARD_URL}j/${jobId}`,
         applyUrl: normalizeOptionalValue(job.application_url) || `${WORKABLE_BOARD_URL}j/${jobId}/apply`,
         employmentType: normalizeEmploymentType(job.employment_type),
-        experienceRequired: null,
-        minimumQualification: null,
+        experienceRequired: normalizeOptionalValue(job.experience),
+        minimumQualification: normalizeOptionalValue(job.education),
         preferredQualification: null,
         requiredSkills: [],
-        postingDate: normalizePostingDate(job.published || job.created_at),
+        postingDate: normalizePostingDate(job.published || job.published_on || job.created_at),
         closingDate: null,
         jobDescription: normalizeOptionalValue(job.description),
         remoteStatus: normalizeRemoteStatus(job.workplace || job.remote_type),
@@ -287,7 +290,7 @@ export const createInnovaccerScraper = ({
 export const run = async (options = {}) => createInnovaccerScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

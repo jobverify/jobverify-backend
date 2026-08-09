@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { EMERSON_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -143,9 +144,11 @@ export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Your Career at Emerson Starts Here\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/hdjq\.fa\.us2\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/jobs["'][^>]*>\s*Let(?:'|’|&apos;)s Find Your Role\s*</i.test(page)
-    && /href=["']https:\/\/hdjq\.fa\.us2\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_1["'][^>]*>\s*Explore All Opportunities\s*</i.test(page)
+  return /<title[^>]*>\s*Your Career at Emerson Starts Here\s*<\/title>/i.test(page)
+    && page.includes('https://hdjq.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs')
+    && /Let(?:'|&#x27;|&apos;|â€™|’)s Find Your Role/i.test(page)
+    && page.includes('/en/corporate/careers/career-opportunities')
+    && page.includes('Explore All Opportunities')
     && text.includes('Careers at Emerson')
     && text.includes('We want you to join us in our bold aspiration to make the world healthier, safer, smarter and more sustainable.')
 }
@@ -231,9 +234,25 @@ export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
   const location = normalizeLocation(detail.PrimaryLocation) || listing.location || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
+  const title = normalizeWhitespace(detail.Title) || listing.title || null
+  const minimumQualification = normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
+    || listing.minimumQualification
+    || null
+  const jobDescription = joinDescriptionParts(
+    detail.ShortDescriptionStr,
+    detail.ExternalDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ExternalQualificationsStr,
+  ) || listing.jobDescription || null
+  const experienceRequired = extractJobFilterSignals({
+    title,
+    minimumQualification,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || listing.experienceRequired || null
 
   return {
-    title: normalizeWhitespace(detail.Title) || listing.title || null,
+    title,
     company: COMPANY_NAME,
     department: normalizeWhitespace(detail.JobFunction || detail.Department || detail.Category || detail.JobFamily)
       || listing.department
@@ -246,10 +265,8 @@ export const extractJobDetail = (payload, listing = {}) => {
     sourceUrl: listing.sourceUrl || buildJobDetailUrl(jobId),
     applyUrl: listing.applyUrl || buildJobDetailUrl(jobId),
     employmentType: getEmploymentType(detail) || listing.employmentType || null,
-    experienceRequired: null,
-    minimumQualification: normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
-      || listing.minimumQualification
-      || null,
+    experienceRequired,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: Array.isArray(detail.skills)
       ? detail.skills
@@ -258,13 +275,10 @@ export const extractJobDetail = (payload, listing = {}) => {
       : listing.requiredSkills || [],
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ShortDescriptionStr,
-      detail.ExternalDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-    ) || listing.jobDescription || null,
+    jobDescription,
     remoteStatus: null,
     siteNumber: SITE_NUMBER,
+    publicExperienceChecked: true,
   }
 }
 
@@ -341,7 +355,7 @@ export const createEmersonIndiaScraper = ({
 export const run = async (options = {}) => createEmersonIndiaScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

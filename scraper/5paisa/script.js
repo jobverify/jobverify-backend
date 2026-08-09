@@ -1,7 +1,7 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -16,7 +16,7 @@ export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../5paisa/script.js',
+  modulePath: '../../scraper/5paisa/script.js',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
@@ -431,7 +431,7 @@ export const createFivePaisaScraper = ({
 export const run = async (options = {}) => createFivePaisaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
@@ -441,3 +441,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

@@ -49,48 +49,66 @@ const buildPageResponse = async (url) => {
   }
 }
 
-export const extractHomepageJoinUsUrl = (html = '') =>
-  String(html ?? '').match(/href=["'](https:\/\/retail\.sahaj\.co\.in\/joinuspage)["']/i)?.[1] ?? null
+export const extractHomepageJoinUsUrl = (html = '', pageUrl = HOMEPAGE_URL) => {
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    const href = match[1]
+
+    try {
+      const url = new URL(href, pageUrl)
+      if (/(^|\/)joinuspage\/?$/i.test(url.pathname)) {
+        return url.toString()
+      }
+    } catch {
+      // Ignore malformed links and continue scanning the page.
+    }
+  }
+
+  return null
+}
 
 export const hasOfficialHomepageSignal = (html = '') => {
-  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
+  const joinUsUrl = extractHomepageJoinUsUrl(html)
 
-  return /Sahaj Retail Limited\s*\|\s*India(?:’|')?s Largest Rural Digital/i.test(page)
-    && extractHomepageJoinUsUrl(page) === JOIN_US_URL
-    && /Why partner with Sahaj/i.test(page)
-    && /Sahaj Mitr \(Retailer\)/i.test(page)
-    && /support@sahaj\.co\.in/i.test(page)
+  return normalized.includes('sahaj retail limited')
+    && normalized.includes('largest rural digital')
+    && normalized.includes('why partner with sahaj')
+    && normalized.includes('sahaj mitr (retailer)')
+    && normalized.includes('support@sahaj.co.in')
+    && typeof joinUsUrl === 'string'
+    && /(^|\/)joinuspage\/?$/i.test(new URL(joinUsUrl).pathname)
 }
 
 export const hasOfficialAboutPageSignal = (html = '') => {
-  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return /About Sahaj/i.test(page)
-    && /About Us/i.test(page)
-    && /Sahaj Retail Limited,\s*has delved into bridging the digital divide/i.test(page)
-    && /Core Values/i.test(page)
-    && /Meet Our\s+Leadership/i.test(page)
+  return normalized.includes('about sahaj')
+    && normalized.includes('about us')
+    && normalized.includes('sahaj retail limited, has delved into bridging the digital divide')
+    && normalized.includes('core values')
+    && normalized.includes('meet our leadership')
 }
 
 export const hasOfficialJoinUsSignal = (html = '') => {
-  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return /Become a Sahaj Mitr\s*\|\s*Join Sahaj Retail Limited/i.test(page)
-    && /Applicant Registration/i.test(page)
-    && /Mobile Number with OTP Verification/i.test(page)
-    && /Valid PAN Card \(Linked with Aadhaar\)/i.test(page)
-    && /Why partner with Sahaj/i.test(page)
-    && /Sahaj Mitr/i.test(page)
+  return normalized.includes('become a sahaj mitr')
+    && normalized.includes('join sahaj retail limited')
+    && normalized.includes('applicant registration')
+    && normalized.includes('mobile number with otp verification')
+    && normalized.includes('valid pan card (linked with aadhaar)')
+    && normalized.includes('why partner with sahaj')
+    && normalized.includes('sahaj mitr')
 }
 
 export const hasOfficialJobRoleSignal = (html = '') => {
-  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return /Job Role page/i.test(page)
-    && /Sahaj has tie ups with the organization/i.test(page)
-    && /30 job roles are on the portal/i.test(page)
-    && /Driver,\s*Electrician,\s*Plumber\s*&\s*Security Guard/i.test(page)
-    && /registered yourself on the job role/i.test(page)
+  return normalized.includes('job role page')
+    && normalized.includes('sahaj has tie ups with the organization')
+    && normalized.includes('30 job roles are on the portal')
+    && normalized.includes('driver, electrician, plumber & security guard')
+    && normalized.includes('registered yourself on the job role')
 }
 
 export const hasPublicCompanyJobsSignal = (html = '') => {
@@ -141,7 +159,7 @@ export const createSahajScraper = () => ({
 export const run = async (options = {}) => createSahajScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

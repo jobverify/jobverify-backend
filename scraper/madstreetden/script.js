@@ -19,13 +19,6 @@ export const DARWINBOX_PUBLIC_BOARD_URL = PROVIDER_METADATA.darwinboxPublicBoard
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-let browserUtilsPromise
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../utils/browser.js')
-  return browserUtilsPromise
-}
-
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -74,17 +67,8 @@ const defaultFetchPage = async (url) => {
 }
 
 const defaultFetchDarwinboxBoardText = async (url = DARWINBOX_PUBLIC_BOARD_URL) => {
-  const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  try {
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 90000 })
-    await page.waitForSelector('body', { timeout: 20000 }).catch(() => null)
-    return await page.evaluate(() => document.body?.innerText ?? '')
-  } finally {
-    await browser.close()
-  }
+  const response = await defaultFetchPage(url)
+  return normalizeWhitespace(response.html)
 }
 
 export const extractOfficialDarwinboxHandoffUrl = (html = '') => {
@@ -174,7 +158,7 @@ export const createMadStreetDenScraper = () => ({
 export const run = async (options = {}) => createMadStreetDenScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

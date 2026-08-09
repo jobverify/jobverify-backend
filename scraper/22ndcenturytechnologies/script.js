@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import TWENTY_SECOND_CENTURY_TECHNOLOGIES_CATALOG from './catalog.js'
 
@@ -12,7 +12,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -56,31 +56,64 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('Link to Apply')
   }
 
+const extractRegionRows = (sectionHtml = '', region = '') => {
+  const jobs = []
+
+  for (const row of String(sectionHtml ?? '').matchAll(
+    /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*(?:Apply Now|Apply)\s*<\/a>\s*<\/td>\s*<\/tr>/gi,
+  )) {
+    const title = normalizeWhitespace(row[1])
+    const applyUrl = toAbsoluteUrl(row[2])
+    const department = `State of Illinois - ${region}`
+
+    if (!title || !applyUrl) continue
+
+    jobs.push({
+      title,
+      department,
+      location: 'Illinois, United States',
+      city: 'Illinois',
+      applyUrl,
+      jobId: slugify(`${department} ${title}`),
+    })
+  }
+
+  return jobs
+}
+
 export const extractJobCards = (html = '') => {
   const rawHtml = String(html ?? '')
-  const sections = rawHtml.split(/<h2[^>]*>/i).slice(1)
   const jobs = []
+  const seen = new Set()
+
+  const pushUniqueJobs = (items = []) => {
+    for (const job of items) {
+      const key = `${job.department}__${job.title}__${job.applyUrl}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      jobs.push(job)
+    }
+  }
+
+  const fieldsetMatches = [...rawHtml.matchAll(/<fieldset\b[^>]*>([\s\S]*?)<\/fieldset>/gi)]
+  for (const match of fieldsetMatches) {
+    const section = match[1]
+    const region = normalizeWhitespace(section.match(/<legend[^>]*>([\s\S]*?)<\/legend>/i)?.[1])
+    if (!region) continue
+    pushUniqueJobs(extractRegionRows(section, region))
+  }
+
+  if (jobs.length > 0) {
+    return jobs
+  }
+
+  const sections = rawHtml.split(/<h2[^>]*>/i).slice(1)
 
   for (const section of sections) {
     const region = normalizeWhitespace(section.match(/^([\s\S]*?)<\/h2>/i)?.[1])
     if (!region) continue
 
-    for (const row of section.matchAll(/<tr>\s*<td>([^<]+)<\/td>\s*<td><a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a><\/td>\s*<\/tr>/gi)) {
-      const title = normalizeWhitespace(row[1])
-      const applyUrl = toAbsoluteUrl(row[2])
-      const department = `State of Illinois - ${region}`
-
-      if (!title || !applyUrl) continue
-
-      jobs.push({
-        title,
-        department,
-        location: 'Illinois, United States',
-        city: 'Illinois',
-        applyUrl,
-        jobId: slugify(`${department} ${title}`),
-      })
-    }
+    pushUniqueJobs(extractRegionRows(section, region))
   }
 
   return jobs
@@ -128,7 +161,7 @@ export const create22ndCenturyTechnologiesScraper = () => ({
 export const run = async (options = {}) => create22ndCenturyTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

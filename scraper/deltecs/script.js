@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { DELTECS_CATALOG } from './catalog.js'
 
@@ -186,11 +186,15 @@ const parseLocation = (value) => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*DronaHQ \| Enterprise platform to build apps and agents faster\s*<\/title>/i.test(page)
-    && /"name"\s*:\s*"DronaHQ"/i.test(page)
+  const hasLegacyOwnershipSignals = /"name"\s*:\s*"DronaHQ"/i.test(page)
     && /"foundingOrganization"\s*:\s*{[\s\S]*?"name"\s*:\s*"Deltecs Infotech Pvt Ltd"/i.test(page)
     && /https:\/\/www\.linkedin\.com\/company\/deltecs-infotech/i.test(page)
-    && /href=["']\/careers\/["']/i.test(page)
+
+  const hasCurrentOwnershipSignals = /Copyright[\sÂ]*©?\s*Deltecs Infotech Pvt Ltd\. All Rights Reserved/i.test(page)
+    && /href=["'][^"']*\/careers\/?["']/i.test(page)
+
+  return /<title>\s*DronaHQ \| Enterprise platform to build apps and agents faster\s*<\/title>/i.test(page)
+    && (hasLegacyOwnershipSignals || hasCurrentOwnershipSignals)
 }
 
 export const hasOfficialCareersPageSignal = (html = '') => {
@@ -366,7 +370,7 @@ export const createDeltecsScraper = ({
 export const run = async (options = {}) => createDeltecsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

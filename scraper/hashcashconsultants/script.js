@@ -1,14 +1,19 @@
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 export const SOURCE = 'hashcashconsultants'
 export const COMPANY = 'HashCash Consultants'
 export const HOMEPAGE_URL = 'https://www.hashcashconsultants.com/careers/'
 export const CAREERS_URL = 'https://www.hashcashconsultants.com/opportunities/'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   officialBrandName: 'HashCash Consultants',
   adapter: 'script',
-  modulePath: '../hashcashconsultants/script.js',
+  modulePath: '../../scraper/hashcashconsultants/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-opportunities-page',
@@ -28,6 +33,15 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -70,7 +84,7 @@ export const extractIndiaOpenings = (html = '') => {
   return jobs
 }
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const careersHtml = await fetchText(CAREERS_URL)
   if (!hasOfficialCareersSignal(careersHtml)) {
     throw new Error('HashCash Consultants verified first-party opportunities page changed materially')
@@ -90,3 +104,4 @@ export const run = async ({ fetchText, now = () => new Date().toISOString() } = 
     scrapedAt: now(),
   }))
 }
+

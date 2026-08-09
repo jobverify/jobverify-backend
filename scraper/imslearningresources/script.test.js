@@ -14,7 +14,7 @@ const loadImsLearningResourcesModule = async () => {
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const officialCareersHtml = fs.readFileSync(
-  path.join(currentDir, '../tests/fixtures/imslearningresources/join-our-team.html'),
+  path.join(currentDir, '../../scraper-support/tests/fixtures/imslearningresources/join-our-team.html'),
   'utf8',
 )
 

@@ -17,9 +17,9 @@ export const INDI_IT_SOLUTIONS_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+html-opportunity-cards',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://indiit.com/career/ is the live first-party Indi IT Solutions careers page and that it exposes a Top Opportunities Right Now section with visible opportunity cards plus hr@indiit.com resume instructions.',
+    'Verified on August 2, 2026 that https://indiit.com/career/ is the live first-party Indi IT Solutions careers page, that its Top Opportunities Right Now section exposes five visible roles including two separate Marketing Analyst cards, HR Specialist, Graphic Designer, and UI/UX Designer, and that the page still routes applicants through a shared Join Our Company / Apply Now CTA plus hr@indiit.com resume instructions.',
   dryRunFile: 'indiitsolutions/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

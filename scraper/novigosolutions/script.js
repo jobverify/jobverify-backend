@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { NOVIGO_SOLUTIONS_CATALOG } from './catalog.js'
 
@@ -48,6 +48,45 @@ const extractParagraphValues = (html = '') =>
     .map((match) => normalizeWhitespace(match[1]))
     .filter(Boolean)
 
+const extractRoleHeadings = (html = '') => {
+  const page = String(html)
+  const classedHeadings = [...page.matchAll(
+    /<h3[^>]*class=["'][^"']*ns-job-head[^"']*["'][^>]*>([\s\S]*?)<span>\((\d+(?:-\d+)?\s*Years)\)<\/span>[\s\S]*?<\/h3>/gi,
+  )]
+    .map((match) => ({
+      ...match,
+      title: normalizeWhitespace(match[1]),
+      experienceRequired: normalizeWhitespace(match[2]),
+    }))
+    .filter((match) => match.title && match.experienceRequired)
+
+  if (classedHeadings.length > 0) {
+    return classedHeadings
+  }
+
+  return [...page.matchAll(/<h[1-6][^>]*>\s*([\s\S]*?)\s*<\/h[1-6]>/gi)]
+    .map((match) => {
+      const headingText = normalizeWhitespace(match[1])
+      const roleMatch = headingText.match(/^(.*?)\s*\((\d+(?:-\d+)?\s*Years)\)$/i)
+
+      if (!roleMatch) {
+        return null
+      }
+
+      return {
+        ...match,
+        title: normalizeWhitespace(roleMatch[1]),
+        experienceRequired: normalizeWhitespace(roleMatch[2]),
+      }
+    })
+    .filter(Boolean)
+}
+
+const findApplySectionIndex = (html = '') => {
+  const match = String(html).match(/<h[1-6][^>]*>\s*Apply Online\s*<\/h[1-6]>/i)
+  return match?.index ?? String(html).length
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Life @ Novigo')
@@ -60,12 +99,16 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractVisibleRoles = (html = '') => {
   const page = String(html)
-  const headingPattern = /<h[1-6][^>]*>\s*([^<]+?)\s*\((\d+(?:-\d+)?\s*Years)\)\s*<\/h[1-6]>/gi
-  const headings = [...page.matchAll(headingPattern)]
+  const headings = extractRoleHeadings(page)
+  const applySectionIndex = findApplySectionIndex(page)
 
   return headings.map((match, index) => {
     const start = (match.index ?? 0) + match[0].length
-    const end = index + 1 < headings.length ? (headings[index + 1].index ?? page.length) : page.length
+    const nextHeadingIndex = index + 1 < headings.length ? (headings[index + 1].index ?? page.length) : page.length
+    const end = Math.min(
+      nextHeadingIndex,
+      applySectionIndex > start ? applySectionIndex : page.length,
+    )
     const block = page.slice(start, end)
     const paragraphs = extractParagraphValues(block)
     const location = paragraphs.find((value) => /Bangalore\s*\/\s*Mangalore/i.test(value)) ?? null
@@ -76,8 +119,8 @@ export const extractVisibleRoles = (html = '') => {
       && !/^Apply Now$/i.test(value))
 
     return {
-      title: normalizeWhitespace(match[1]),
-      experienceRequired: normalizeWhitespace(match[2]),
+      title: match.title,
+      experienceRequired: match.experienceRequired,
       location,
       requirements,
     }
@@ -132,7 +175,7 @@ export const createNovigoSolutionsScraper = ({
 export const run = async (options = {}) => createNovigoSolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

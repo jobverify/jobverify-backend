@@ -1,8 +1,8 @@
-{
+﻿{
   "source": "cutshort",
   "companyName": "CutShort",
   "adapter": "script",
-  "modulePath": "../cutshort/script.js",
+  "modulePath": "../../scraper/cutshort/script.js",
   "companyCareerPage": "https://cutshort.io/company/cutshort-zFdWQxlN",
   "atsPlatform": "cutshort-first-party-company-page",
   "countryFilter": "India",
@@ -12,3 +12,4 @@
   "normalizationProfile": "engineering-default",
   "companyDomain": "cutshort.io"
 }
+

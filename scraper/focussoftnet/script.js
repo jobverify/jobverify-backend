@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { FOCUS_SOFTNET_CATALOG } from './catalog.js'
 
@@ -68,7 +68,7 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
     && normalized.includes('Join Our Global Team')
     && normalized.includes('Find Your Next Role')
     && normalized.includes('Sales Consultant - CRM/ERP/HCM')
-    && normalized.includes('Content Writer - CRM/ERP/HCM')
+    && normalized.includes('Social Media Specialist')
     && normalized.includes('Apply for Career')
 }
 
@@ -79,10 +79,8 @@ export const extractJobListings = (html = '') => {
     const title = normalizeWhitespace(match[1])
     const block = match[2]
 
-    if (!/CRM\/ERP\/HCM/i.test(title)) continue
-
     const indiaLocations = extractIndianLocations(block)
-    if (indiaLocations.length === 0) continue
+    if (!title || indiaLocations.length === 0 || /^Apply for Career$/i.test(title)) continue
 
     const jobId = slugify(title)
     listings.push({
@@ -143,7 +141,7 @@ export const createFocusSoftnetScraper = ({
 export const run = async (options = {}) => createFocusSoftnetScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

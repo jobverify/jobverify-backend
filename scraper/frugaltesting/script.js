@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import FRUGAL_TESTING_CATALOG from './catalog.js'
 
@@ -24,6 +24,7 @@ const normalizeWhitespace = (value) => {
     .replace(/<\/(p|div|li|ul|ol|h[1-6]|a)>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/[’]/g, "'")
     .replace(/&#39;|&apos;|&#x27;|&#8217;|&rsquo;/gi, "'")
     .replace(/&amp;/gi, '&')
     .replace(/\u00a0/g, ' ')
@@ -59,8 +60,12 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('Careers at Frugal')
-    && normalized.includes("We're looking for talented people to join us")
+  return (
+    normalized.includes('Careers at Frugal')
+    || normalized.includes('Accelerate Your Career with Frugal Testing')
+    || normalized === 'Careers'
+  )
+    && /We.?re looking for talented people to join us/i.test(normalized || '')
     && /\/job-openings\//i.test(String(html ?? ''))
 }
 
@@ -72,12 +77,47 @@ export const extractJobDetailUrls = (html = '') => [...new Set(
 
 export const parseJobDetailPage = (detailUrl, html = '') => {
   const title = normalizeWhitespace(String(html ?? '').match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1])
-  const paragraphs = [...String(html ?? '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-    .map((match) => normalizeWhitespace(match[1]))
-    .filter(Boolean)
   const applyUrl = toAbsoluteUrl(
     String(html ?? '').match(/href=["']([^"']*apply-to-frugal-testing[^"']*)["']/i)?.[1],
   )
+  const liveDepartment = normalizeWhitespace(
+    String(html ?? '').match(/<div[^>]*class=["'][^"']*text-block-92[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
+  )
+  const liveDescription = normalizeWhitespace(
+    String(html ?? '').match(/<div[^>]*class=["'][^"']*uui-text-size-large-10[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
+  )
+  const liveDetailValues = [...String(html ?? '').matchAll(
+    /<div[^>]*class=["'][^"']*uui-career05_detail-wrapper[^"']*["'][^>]*>[\s\S]*?<div[^>]*class=["'][^"']*(?:text-block-90|text-block-91|text-block-91-copy)[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+  )]
+    .map((match) => normalizeWhitespace(match[1]))
+    .filter(Boolean)
+
+  if (title && liveDepartment && liveDescription && applyUrl && liveDetailValues.length >= 3) {
+    return {
+      title,
+      company: COMPANY,
+      department: liveDepartment,
+      location: liveDetailValues[0],
+      city: normalizeWhitespace(liveDetailValues[0]?.split(',')[0]) || liveDetailValues[0],
+      country: 'India',
+      jobId: detailUrl.split('/').pop(),
+      requisitionId: detailUrl.split('/').pop(),
+      sourceUrl: detailUrl,
+      applyUrl,
+      employmentType: normalizeEmploymentType(liveDetailValues[1]),
+      experienceRequired: liveDetailValues[2],
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: liveDescription,
+    }
+  }
+
+  const paragraphs = [...String(html ?? '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => normalizeWhitespace(match[1]))
+    .filter(Boolean)
 
   if (!title || paragraphs.length < 5 || !applyUrl) {
     throw new Error('The verified Frugal Testing detail page no longer matches the trusted first-party job-opening surface')
@@ -136,7 +176,7 @@ export const createFrugalTestingScraper = ({
 export const run = async (options = {}) => createFrugalTestingScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

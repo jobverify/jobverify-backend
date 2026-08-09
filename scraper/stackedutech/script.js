@@ -122,7 +122,6 @@ export const hasVerifiedRobotsTxt = (text = '') => {
     && normalized.includes('search:')
     && normalized.includes('ai-input:')
     && normalized.includes('ai-train:')
-    && normalized.includes('user-agent: *')
     && !hasPublicJobsSignal(normalized)
   }
 
@@ -160,7 +159,7 @@ export const createStackEdutechScraper = () => ({
 export const run = async (options = {}) => createStackEdutechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

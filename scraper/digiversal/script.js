@@ -71,6 +71,28 @@ const stripHtml = (value) => decodeHtmlEntities(String(value ?? ''))
   .trim()
 
 const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const extractHtmlTitle = (html = '') =>
+  decodeHtmlEntities(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+const normalizeComparableTitle = (value) => decodeHtmlEntities(String(value ?? ''))
+  .toLowerCase()
+  .replace(/\bdigiversal\b/g, ' ')
+  .replace(/[^a-z0-9]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+const hasComparableTitleCoverage = (actualTitle, expectedTitle) => {
+  const actualTokens = new Set(
+    normalizeComparableTitle(actualTitle)
+      .split(' ')
+      .filter(Boolean),
+  )
+  const expectedTokens = normalizeComparableTitle(expectedTitle)
+    .split(' ')
+    .filter((token) => token.length >= 3)
+
+  return expectedTokens.length > 0 && expectedTokens.every((token) => actualTokens.has(token))
+}
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -136,9 +158,9 @@ export const isMissingJobRoute = (page = {}, requestedUrl) =>
 
 export const hasJobDetailSignal = (html, expectedTitle) => {
   const rawHtml = String(html ?? '')
-  const escapedTitle = escapeRegExp(expectedTitle)
+  const searchableTitleText = `${extractHtmlTitle(rawHtml)} ${stripHtml(rawHtml)}`
 
-  return new RegExp(`<title>\\s*${escapedTitle}(?:\\s*-\\s*Digiversal|\\s+Digiversal)\\s*<\\/title>`, 'i').test(rawHtml)
+  return hasComparableTitleCoverage(searchableTitleText, expectedTitle)
     && /Apply Now/i.test(rawHtml)
     && /(Experience:|Project Location\(s\):|Responsibilities)/i.test(rawHtml)
 }
@@ -146,8 +168,15 @@ export const hasJobDetailSignal = (html, expectedTitle) => {
 export const extractJobDetail = (html, title) => {
   const text = stripHtml(html)
   const escapedTitle = escapeRegExp(title)
-  const descriptionMatch = text.match(new RegExp(`Careers\\s+${escapedTitle}\\s+([\\s\\S]*?)\\s+Apply Now`, 'i'))
-  const experienceMatch = text.match(/Experience:\s*([0-9]+\s*-\s*[0-9]+\s*years?)/i)
+  const descriptionMatch = text.match(
+    new RegExp(
+      `Careers\\s+${escapedTitle}\\s+([\\s\\S]*?)(?:\\s+Department:|\\s+Project Location\\(s\\):|\\s+Education:|\\s+Experience:|\\s+Apply Now|$)`,
+      'i',
+    ),
+  )
+  const experienceMatch = text.match(
+    /Experience:\s*(?:[•*-]\s*)?([0-9]+\s*(?:months?|years?)(?:\s*(?:to|-)\s*[0-9]+\s*years?)?|[0-9]+\s*-\s*[0-9]+\s*years?)/i,
+  )
     || text.match(/([0-9]+\s*-\s*[0-9]+\s*years?)\s+of experience/i)
   const educationMatch = text.match(/Education:\s*(.+?)(?:\s+Experience:|$)/i)
   const departmentMatch = text.match(/Department:\s*(.+?)(?:\s+Project Location\(s\):|$)/i)
@@ -251,7 +280,7 @@ export const createDigiVersalScraper = ({ now = () => new Date().toISOString() }
 export const run = async (options = {}) => createDigiVersalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

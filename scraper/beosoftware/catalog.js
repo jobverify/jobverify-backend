@@ -16,9 +16,9 @@ export const BEO_SOFTWARE_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+same-page-job-list+first-party-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://beo-software.in/careers remained the live first-party BEO Software jobs page and that it publicly listed openings such as Senior Web Developer (WordPress, PHP, HTML, CSS), Senior Frontend Developer, Senior Big Data Engineer (Python | AWS), Senior Frontend Engineer (TypeScript/React), and Technical Lead ( Fullstack). The verified first-party listings exposed Location : Kochi and posted dates such as 24-03-2026 and 15-01-2026, with first-party detail pages under /careers-jobs-detail/.',
+    'Verified on Saturday, August 1, 2026 that https://beo-software.in/careers remained the live first-party BEO Software jobs page and now rendered the opening list inside a search-results list with direct first-party detail links under /careers-jobs-detail/. The verified page publicly listed roles such as Senior Full-Stack Node.js Developer, Senior Full-Stack Developer, Senior Full Stack Developer (Python , React , Vite), and Senior Frontend Developer (Angular / TypeScript / SCSS), with Location : Kochi and posted dates such as 31-07-2026 and 29-04-2026.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

@@ -11,7 +11,7 @@ export const IRON_MOUNTAIN_INDIA_CATALOG = {
   jobsBoardUrl: 'https://ironmountain.jobs/',
   jobsSitemapUrl: 'https://ironmountain.jobs/sitemaps/jobs_1.xml',
   verifiedSampleJobUrl:
-    'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
+    'https://ironmountain.jobs/navi-mumbai-ind/project-accounting-professional/3E5B9F4951D04C2B88CB21B5658F3CC1/job/',
   atsPlatform: 'nlx',
   countryFilter: 'India',
   paginationStrategy: 'official-careers-handoff-plus-public-jobs-sitemap',
@@ -19,10 +19,10 @@ export const IRON_MOUNTAIN_INDIA_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'ironmountain.com',
-  verifiedOn: '2026-07-16',
-  verifiedPublicPostingCount: 25,
+  verifiedOn: '2026-08-03',
+  verifiedPublicPostingCount: 16,
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://www.ironmountain.com/about-us is the live official Iron Mountain about page and links Careers to the public board at https://ironmountain.jobs/, that the NLX-powered board is live, and that the public jobs sitemap at https://ironmountain.jobs/sitemaps/jobs_1.xml currently exposes 25 India detail URLs including https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/.',
+    'Verified on Monday, August 3, 2026 that https://www.ironmountain.com/about-us remained the first-party Iron Mountain about page, that it still handed applicants to the official NLX jobs board at https://ironmountain.jobs/, and that the public sitemap at https://ironmountain.jobs/sitemaps/jobs_1.xml exposed 16 India detail URLs including https://ironmountain.jobs/navi-mumbai-ind/project-accounting-professional/3E5B9F4951D04C2B88CB21B5658F3CC1/job/. This exact-name scraper validates the official handoff, filters the public sitemap to India job URLs, and decorates those trustworthy public detail routes.',
 }
 
 export default IRON_MOUNTAIN_INDIA_CATALOG

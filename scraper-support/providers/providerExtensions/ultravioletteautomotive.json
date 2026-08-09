@@ -1,0 +1,22 @@
+{
+  "source": "ultravioletteautomotive",
+  "companyName": "Ultraviolette Automotive",
+  "officialBrandName": "Ultraviolette Automotive",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../ultravioletteautomotive/script.js",
+  "dryRunFile": "ultravioletteautomotive/jobs.json",
+  "companyCareerPage": "https://www.ultraviolette.com/de/careers",
+  "officialSiteUrl": "https://www.ultraviolette.com/",
+  "companyDomain": "ultraviolette.com",
+  "atsPlatform": "official-first-party-careers-page-fail-closed",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-page-without-verified-enumerable-jobs-feed-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.ultraviolette.com/de/careers is Ultraviolette Automotive's first-party careers page: it identifies Ultraviolette Automotive in the page footer and presents Life at UV, Work With Us, and Current Openings. The public surface did not expose a verifiable enumerable job feed, role-detail links, or official ATS handoff suitable for trustworthy extraction. This exact-name provider therefore fails closed and returns no jobs until Ultraviolette publishes a verifiable public jobs feed."
+}

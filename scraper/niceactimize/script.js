@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { NICE_ACTIMIZE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -111,10 +111,15 @@ export const hasOfficialActimizeHandoffSignal = (html = '') => {
 
 export const hasFilteredNiceCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const hasCareersHeading = /<h1\b[^>]*>\s*Careers at NiCE\s*<\/h1>/i.test(page)
+  const hasSelectedPuneFilter = /<option\b[^>]*value=["']India - Pune["'][^>]*selected(?:=["'][^"']*["'])?[^>]*>/i.test(page)
+    || /<option\b[^>]*selected(?:=["'][^"']*["'])?[^>]*value=["']India - Pune["'][^>]*>/i.test(page)
+  const hasKnownActimizeResult = /boards\.eu\.greenhouse\.io\/nice\/jobs\/\d+\?gh_jid=\d+/i.test(page)
+    && /Data Scientist,\s*Actimize/i.test(page)
 
-  return /<h1>\s*India - Pune\s*<\/h1>/i.test(page)
-    && /boards\.eu\.greenhouse\.io\/nice\/jobs\/4913142101/i.test(page)
-    && /Data Scientist, Actimize/i.test(page)
+  return hasCareersHeading
+    && hasSelectedPuneFilter
+    && hasKnownActimizeResult
 }
 
 export const isActimizeIndiaJob = (job = {}) => {
@@ -207,7 +212,7 @@ export const createNiceActimizeScraper = ({ maxJobs = null } = {}) => ({
 export const run = async (options = {}) => createNiceActimizeScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

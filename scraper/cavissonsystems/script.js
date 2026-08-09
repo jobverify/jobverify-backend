@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CAVISSON_SYSTEMS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -43,6 +43,108 @@ const slugify = (value) => String(value ?? '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+const normalizeComparableTitle = (value) => normalizeWhitespace(value)
+  .replace(/\bfor cavisson systems,?\s*inc\.?\b/gi, '')
+  .replace(/[^a-z0-9]+/gi, ' ')
+  .trim()
+  .toLowerCase()
+
+const extractFirst = (pattern, value) => {
+  const match = String(value ?? '').match(pattern)
+  return normalizeWhitespace(match?.[1] || null)
+}
+
+const normalizeExperienceRequired = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  let match = normalized.match(/\b(\d+)\s*-\s*(\d+)\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]}-${match[2]} years`
+
+  match = normalized.match(/\b(\d+)\+\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]}+ years`
+
+  match = normalized.match(/\bat least\s+(\d+)\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]} years`
+
+  match = normalized.match(/\bminimum\s+(\d+)\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]} years`
+
+  return normalized
+}
+
+const extractDetailTitle = (html = '') => extractFirst(
+  /<h4>\s*Job Title:\s*<span>([\s\S]*?)<\/span>\s*<\/h4>/i,
+  html,
+)
+
+const extractDetailExperience = (html = '') => normalizeExperienceRequired(extractFirst(
+  /<h4>\s*Experience:\s*<span>([\s\S]*?)<\/span>\s*<\/h4>/i,
+  html,
+))
+
+const extractDetailLocationText = (html = '') => extractFirst(
+  /<h5>\s*Job location:[\s\S]*?<span[^>]*class=["'][^"']*\badd\b[^"']*["'][^>]*>([\s\S]*?)<\/span>\s*<\/h5>/i,
+  html,
+)
+
+const extractCityFromLocationText = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const indiaMatch = normalized.match(/,\s*([a-z .'-]+?)\.?\s*india\b/i)
+  if (indiaMatch) return normalizeWhitespace(indiaMatch[1])
+
+  return null
+}
+
+const buildNormalizedLocation = (value) => {
+  const city = extractCityFromLocationText(value)
+  if (!city) return { city: null, location: 'India' }
+
+  return {
+    city,
+    location: `${city}, India`,
+  }
+}
+
+const hasVerifiedDetailSignal = (html = '', _listing = {}) => {
+  const text = stripTags(html)
+  const detailTitle = extractDetailTitle(html)
+  if (!detailTitle) return false
+
+  return text.includes('Kindly send your resume to')
+    && text.includes('Cavisson Systems')
+    && text.includes('Job location')
+}
+
+const enrichArchiveJobWithDetail = (job, detailHtml) => {
+  if (!hasVerifiedDetailSignal(detailHtml, job)) {
+    return {
+      ...job,
+      location: 'India',
+      city: null,
+      country: 'India',
+      sourceUrl: OPENINGS_URL,
+      experienceRequired: null,
+      publicExperienceChecked: false,
+    }
+  }
+
+  const locationText = extractDetailLocationText(detailHtml)
+  const { city, location } = buildNormalizedLocation(locationText)
+
+  return {
+    ...job,
+    location,
+    city,
+    country: 'India',
+    sourceUrl: job.applyUrl,
+    experienceRequired: extractDetailExperience(detailHtml),
+    publicExperienceChecked: true,
+  }
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const text = stripTags(html)
   return text.includes('Further your career')
@@ -77,21 +179,26 @@ export const createCavissonSystemsScraper = ({
       throw new Error('The verified Cavisson India openings archive no longer matches the trusted first-party surface')
     }
 
-    return jobs.map((job) => {
+    const enrichedJobs = await Promise.all(jobs.map(async (job) => {
+      const detailHtml = await fetchText(job.applyUrl)
+      return enrichArchiveJobWithDetail(job, detailHtml)
+    }))
+
+    return enrichedJobs.map((job) => {
       const jobId = slugify(job.title)
       return {
         title: job.title,
         company: COMPANY,
         department: null,
-        location: 'India',
-        city: null,
-        country: 'India',
-        sourceUrl: OPENINGS_URL,
+        location: job.location,
+        city: job.city,
+        country: job.country,
+        sourceUrl: job.sourceUrl,
         applyUrl: job.applyUrl,
         jobId,
         requisitionId: jobId,
         employmentType: null,
-        experienceRequired: null,
+        experienceRequired: job.experienceRequired,
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
@@ -99,6 +206,7 @@ export const createCavissonSystemsScraper = ({
         closingDate: null,
         jobDescription: job.summary,
         remoteStatus: 'On-site',
+        publicExperienceChecked: job.publicExperienceChecked,
         source: SOURCE,
         link: job.applyUrl,
         scrapedAt: now(),
@@ -113,7 +221,7 @@ export const createCavissonSystemsScraper = ({
 export const run = async (options = {}) => createCavissonSystemsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

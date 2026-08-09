@@ -54,16 +54,27 @@ const normalizeWhitespace = (value) =>
 
 export const hasOfficialPageSignal = (html) => {
   const normalized = normalizeWhitespace(html)
+  const lower = normalized.toLowerCase()
   const rawHtml = String(html ?? '')
 
-  return normalized.includes('Eagle X | We Engineer Dominance')
+  const hasLegacySurface =
+    normalized.includes('Eagle X | We Engineer Dominance')
     && normalized.includes('Eagle X Systems')
     && normalized.includes('We Engineer Dominance')
     && normalized.includes('production-ready digital products in 7 days')
     && normalized.includes('Launch Initiative 2026')
     && normalized.includes('eaglexdevelopment@gmail.com')
     && normalized.includes('Indore, Madhya Pradesh, India')
-    && /https:\/\/eagle-x\.in/i.test(rawHtml)
+    && /https:\/\/(?:www\.)?(?:eagle-x\.in|eaglex\.co\.in)/i.test(rawHtml)
+  const hasCurrentSurface =
+    lower.includes('eagle x | we engineer dominance')
+    && lower.includes('we engineer dominance')
+    && lower.includes('forging high-performance digital infrastructure for the next generation of unicorn founders.')
+    && lower.includes('mvp in 7 days')
+    && lower.includes('rapid deployment')
+    && lower.includes('deploy unit')
+
+  return hasLegacySurface || hasCurrentSurface
 }
 
 export const hasFirstPartyCareerLikeLink = (html) =>

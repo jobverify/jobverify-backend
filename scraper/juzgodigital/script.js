@@ -6,6 +6,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'juzgodigital'
 export const COMPANY = 'Juzgodigital Private Limited'
 export const HOMEPAGE_URL = 'https://www.juzgodigital.com/'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://www.juzgodigital.com/ remained JuzGoDigital Private Limited\'s first-party homepage and that its common same-domain careers routes such as https://www.juzgodigital.com/careers still returned a 403 AccessDenied response without exposing a trustworthy public jobs surface.'
 export const CAREERS_ROUTE_URLS = [
   'https://www.juzgodigital.com/careers',
   'https://www.juzgodigital.com/careers/',
@@ -72,8 +74,9 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const homepageTitle = normalizeWhitespace(rawHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
 
-  return /<title[^>]*>\s*JuzGoDigital - Best IoT Application Development Services Company, Hedge Fund Tech Solutions In Coimbatore, Blockchain Development Company India\.\s*<\/title>/i.test(rawHtml)
+  return /JuzGoDigital - Best IoT Application Development Services Company, Hedge Fund Tech Solutions In Coimbatore, Blockchain Development Company India\./i.test(homepageTitle)
     && /JuzGoDigital Private Limited,/i.test(normalized)
     && /contact@juzgodigital\.com/i.test(rawHtml)
     && /href=["']\.\/team\.html["']/i.test(rawHtml)
@@ -134,7 +137,7 @@ export const createJuzGoDigitalScraper = () => ({
 export const run = async (options = {}) => createJuzGoDigitalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

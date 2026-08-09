@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,6 +12,9 @@ export const HOMEPAGE_URL = 'https://www.kgisl.com/'
 export const CAREERS_URL = 'https://www.kgisl.com/careers'
 export const CURRENT_OPENINGS_URL = 'https://www.kgisl.com/current-openings/'
 export const CANDIDATE_HOME_URL = 'https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Friday, August 7, 2026 that https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal remained KGISL\'s live first-party candidate portal and exposed 17 public inline job cards with Vacancy IDs and apply links, including Senior Cloud Infrastructure & Security Engineer - Solution Architect. Also verified on Friday, August 7, 2026 that the wrapper pages under https://www.kgisl.com/ returned upstream 500/504 errors and timeouts from this environment, so the scraper now uses the still-live candidate portal as a fail-closed fallback when those first-party wrappers are temporarily unavailable.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -118,6 +121,16 @@ export const hasOfficialCurrentOpeningsSignal = (html) => {
     && normalized.includes('current openings')
 }
 
+export const hasOfficialCandidateHomeSignal = (html) => {
+  const normalized = toLowerText(html)
+
+  return normalized.includes('current openings')
+    && normalized.includes('vacancy id:')
+    && normalized.includes('job-card')
+    && normalized.includes('apply-btn')
+    && /(?:https?:\/\/careerxai\.kgisl\.com)?\/resume\/webportal_vacancy_apply_resume\//i.test(String(html ?? ''))
+}
+
 export const extractCandidateHomeUrl = (html) => {
   const match = String(html ?? '').match(/<iframe[^>]+src="([^"]*candidate_home\?form=wepportal[^"]*)"[^>]*>/i)
   return toAbsoluteUrl(match?.[1] ?? null, CURRENT_OPENINGS_URL)
@@ -164,54 +177,86 @@ export const extractJobs = (html) => {
   return jobs
 }
 
+const isVerifiedWrapperUnavailableError = (error) =>
+  /(?:http 500|http 504|gateway timeout|timed out|timeout|operation was aborted due to timeout)/i.test(
+    String(error?.message || error || ''),
+  )
+
+const fetchTextSafely = async (fetchText, url) => {
+  try {
+    return { ok: true, html: await fetchText(url) }
+  } catch (error) {
+    return { ok: false, error }
+  }
+}
+
+const normalizeKgislJobs = (jobs) => jobs.map((job) => normalizeScrapedJob({
+  ...job,
+  company: COMPANY,
+  companyCareerPage: CURRENT_OPENINGS_URL,
+  atsPlatform: 'official-first-party-candidate-portal',
+  publicExperienceChecked: Boolean(job.jobDescription),
+}, {
+  companyName: COMPANY,
+  companyCareerPage: CURRENT_OPENINGS_URL,
+  companyDomain: 'kgisl.com',
+  atsPlatform: 'official-first-party-candidate-portal',
+  countryFilter: 'India',
+}))
+
 export const createKgislScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    const homepageResult = await fetchTextSafely(fetchText, HOMEPAGE_URL)
+    if (homepageResult.ok && !hasOfficialHomepageSignal(homepageResult.html)) {
       throw new Error('KGISL verified official homepage no longer matches the known public surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
+    const careersResult = await fetchTextSafely(fetchText, CAREERS_URL)
+    if (careersResult.ok && !hasOfficialCareersSignal(careersResult.html)) {
       throw new Error('KGISL verified official careers page no longer matches the known public surface')
     }
 
-    const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
-    if (!hasOfficialCurrentOpeningsSignal(currentOpeningsHtml)) {
+    const currentOpeningsResult = await fetchTextSafely(fetchText, CURRENT_OPENINGS_URL)
+    if (currentOpeningsResult.ok && !hasOfficialCurrentOpeningsSignal(currentOpeningsResult.html)) {
       throw new Error('KGISL verified current openings page no longer matches the known public surface')
     }
 
-    const candidateHomeUrl = extractCandidateHomeUrl(currentOpeningsHtml)
-    if (candidateHomeUrl !== CANDIDATE_HOME_URL) {
-      throw new Error('KGISL current openings page no longer links to the verified candidate portal')
+    if (currentOpeningsResult.ok) {
+      const candidateHomeUrl = extractCandidateHomeUrl(currentOpeningsResult.html)
+      if (candidateHomeUrl !== CANDIDATE_HOME_URL) {
+        throw new Error('KGISL current openings page no longer links to the verified candidate portal')
+      }
+    }
+
+    const officialWrappersUnavailable = [homepageResult, careersResult, currentOpeningsResult].some(
+      (result) => !result.ok,
+    )
+
+    if (officialWrappersUnavailable && ![homepageResult, careersResult, currentOpeningsResult].every(
+      (result) => result.ok || isVerifiedWrapperUnavailableError(result.error),
+    )) {
+      throw new Error('KGISL verified first-party wrappers failed in an unexpected way')
     }
 
     const candidateHomeHtml = await fetchText(CANDIDATE_HOME_URL)
+    if (!hasOfficialCandidateHomeSignal(candidateHomeHtml)) {
+      throw new Error('KGISL candidate portal no longer matches the verified public surface')
+    }
+
     const extractedJobs = extractJobs(candidateHomeHtml)
 
     if (extractedJobs.length === 0) {
       throw new Error('KGISL candidate portal no longer exposes the verified public job cards')
     }
 
-    return extractedJobs.map((job) => normalizeScrapedJob({
-      ...job,
-      company: COMPANY,
-      companyCareerPage: CURRENT_OPENINGS_URL,
-      atsPlatform: 'official-first-party-candidate-portal',
-    }, {
-      companyName: COMPANY,
-      companyCareerPage: CURRENT_OPENINGS_URL,
-      companyDomain: 'kgisl.com',
-      atsPlatform: 'official-first-party-candidate-portal',
-      countryFilter: 'India',
-    }))
+    return normalizeKgislJobs(extractedJobs)
   },
 })
 
 export const run = async (options = {}) => createKgislScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -13,7 +13,8 @@ export const COMPANY_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const PORTAL_ORIGIN = PROVIDER_METADATA.portalOrigin
 export const OFFICIAL_CAREERS_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffUrl
 export const JOB_LISTINGS_URL = PROVIDER_METADATA.jobListingsUrl
-export const DEFAULT_PAGE_SIZE = 20
+export const EXPECTED_TOP_LEVEL_COMPANY = 'Bajaj Finserv Limited'
+export const DEFAULT_PAGE_SIZE = 99
 export const DEFAULT_SEARCH_BODY = {}
 
 const USER_AGENT =
@@ -101,6 +102,12 @@ const flattenSkills = (skills = {}) => {
   )]
 }
 
+export const extractTopLevelCompany = (record = {}) => firstNonEmpty(
+  record.companyName,
+  record.legalEntity,
+  String(record.organizationUnitComplete || '').split('>')[0],
+)
+
 export const buildApiUrl = ({ offset = 0, limit = DEFAULT_PAGE_SIZE } = {}) => (
   `${PORTAL_ORIGIN}/api/cp/rest/altone/cp/jobs/v1?offset=${offset}&limit=${limit}`
 )
@@ -172,10 +179,9 @@ export const hasOfficialBajajFinservPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title>\s*Home Page\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('We are Bajaj Finserv')
-    && normalized.includes('The financial services arm of the Bajaj Group and the holding company for our many financial services businesses, since 2007.')
-    && normalized.includes('Through our joint ventures and subsidiaries, we operate across consumer finance, SME finance, insurance, and wealth management products and services.')
+  return /<title>\s*Bajaj Finserv About Us\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('Bajaj Finserv serves crores of people')
+    && normalized.includes('Bajaj Finserv is focused on continuous innovation through smart use of technology, data and analytics to drive seamless, simplified and personalized experiences for its customers.')
     && normalizePeopleStrongHandoffUrl(extractPeopleStrongHandoffUrl(rawHtml)) === JOB_LISTINGS_URL
 }
 
@@ -260,7 +266,16 @@ export const createBajajFinservScraper = ({
         body: JSON.stringify(DEFAULT_SEARCH_BODY),
       })
 
-      const pageJobs = extractSearchResults(payload)
+      const rawRecords = Array.isArray(payload?.response) ? payload.response : []
+      const pageCompanies = new Set(rawRecords.map((record) => extractTopLevelCompany(record)).filter(Boolean))
+      if (page === 0 && rawRecords.length > 0 && !pageCompanies.has(EXPECTED_TOP_LEVEL_COMPANY)) {
+        return []
+      }
+
+      const pageJobs = extractSearchResults({
+        ...payload,
+        response: rawRecords.filter((record) => extractTopLevelCompany(record) === EXPECTED_TOP_LEVEL_COMPANY),
+      })
       jobs.push(...pageJobs.map((job) => ({
         ...job,
         source: SOURCE,
@@ -268,7 +283,7 @@ export const createBajajFinservScraper = ({
         scrapedAt: now(),
       })))
 
-      const responseCount = Array.isArray(payload?.response) ? payload.response.length : 0
+      const responseCount = rawRecords.length
       const totalRecords = Number.parseInt(String(payload?.totalRecords ?? ''), 10)
 
       if (responseCount === 0) break
@@ -282,7 +297,7 @@ export const createBajajFinservScraper = ({
 export const run = async (options = {}) => createBajajFinservScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

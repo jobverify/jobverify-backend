@@ -87,8 +87,7 @@ export const handleBillingWebhook = async (req, res) => {
     const signature = req.headers["x-razorpay-signature"];
 
     if (
-      provider.name !== "mock"
-      && !provider.verifyWebhook({
+      !provider.verifyWebhook({
         rawBody: req.rawBody,
         signature,
       })

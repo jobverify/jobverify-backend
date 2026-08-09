@@ -224,6 +224,55 @@ test('Rinex Technologies extracts same-domain job details and preserves the exte
   assert.deepEqual(detail.requiredSkills, [])
 })
 
+test('Rinex Technologies API-only scraper falls back to listing metadata when a detail page is JavaScript-only', async () => {
+  const rinex = await loadModule()
+
+  const jobs = await rinex.createRinexTechnologiesScraper().run({
+    fetchText: async (url) => {
+      if (url === rinex.HOMEPAGE_URL) return homepageHtml
+      if (url === 'https://rinex.ai/static/js/main.01193449.js') return bundleText
+      if (url.startsWith('https://rinex.ai/job/')) {
+        return '<html><body>You need to enable JavaScript to run this app.</body></html>'
+      }
+
+      throw new Error(`Unexpected Rinex Technologies URL: ${url}`)
+    },
+    maxJobs: 1,
+    now: () => '2026-07-11T11:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Inside sales Strategist',
+      company: 'Rinex Technologies',
+      department: null,
+      location: 'Bengaluru / Mangaluru, Karnataka, India',
+      city: null,
+      state: 'Karnataka',
+      country: 'India',
+      jobId: 'inside-sales-strategist',
+      requisitionId: 'inside-sales-strategist',
+      sourceUrl: 'https://rinex.ai/job/Inside%20sales%20Strategist',
+      applyUrl: 'https://rinex.ai/job/Inside%20sales%20Strategist',
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: 'Apply via the Rinex Technologies job page.',
+      remoteStatus: 'On-site',
+      source: 'rinextechnologies',
+      link: 'https://rinex.ai/job/Inside%20sales%20Strategist',
+      companyCareerPage: 'https://rinex.ai/career',
+      companyDomain: 'rinex.ai',
+      atsPlatform: 'official-company-careers',
+      scrapedAt: '2026-07-11T11:00:00.000Z',
+    },
+  ])
+})
+
 test('Rinex Technologies run verifies the official shell and bundle, then decorates all current openings', async () => {
   const rinex = await loadModule()
   const requestedUrls = []

@@ -13,13 +13,14 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Strand</title>
+    <title>Strand Life Sciences</title>
   </head>
   <body>
     <main>
-      <h1>Strand</h1>
+      <h1>Strand Life Sciences</h1>
       <p>Bangalore, India</p>
       <p>Our CAP lab supports precision medicine workflows.</p>
+      <p>Genomics and diagnostics services.</p>
     </main>
   </body>
 </html>
@@ -33,8 +34,9 @@ const careersHtml = `
   </head>
   <body>
     <main>
-      <h1>Careers at Strand</h1>
-      <p>View Open Roles</p>
+      <h1>Careers - Strand Life Sciences</h1>
+      <p>Join us</p>
+      <p>Open Roles</p>
       <form>
         <input type="file" name="resume" />
       </form>

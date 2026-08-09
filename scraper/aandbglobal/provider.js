@@ -1,4 +1,4 @@
-import {
+﻿import {
   COMPANY,
   HOMEPAGE_URL,
   SOURCE,
@@ -8,7 +8,7 @@ export const provider = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../aandbglobal/script.js',
+  modulePath: '../../scraper/aandbglobal/script.js',
   companyCareerPage: HOMEPAGE_URL,
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
@@ -24,3 +24,4 @@ export const provider = {
 }
 
 export default provider
+

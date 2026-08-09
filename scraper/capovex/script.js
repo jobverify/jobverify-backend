@@ -129,9 +129,12 @@ export const extractBundleAssetPath = (html) => {
   return match?.[1] ?? null
 }
 
+export const isVerifiedBundleAssetPath = (value) =>
+  /^\/assets\/index-[A-Za-z0-9_-]+\.js$/i.test(String(value ?? ''))
+
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeHtml(html)
-  return extractBundleAssetPath(html) === BUNDLE_PATH
+  return isVerifiedBundleAssetPath(extractBundleAssetPath(html))
     && HOMEPAGE_REQUIRED_SIGNALS.every((signal) => normalized.includes(signal))
 }
 
@@ -182,11 +185,11 @@ export const createCapovexScraper = () => ({
     }
 
     const bundleAssetPath = extractBundleAssetPath(homepage.html)
-    if (bundleAssetPath !== BUNDLE_PATH) {
+    if (!isVerifiedBundleAssetPath(bundleAssetPath)) {
       throw new Error('Capovex homepage no longer exposes the verified client bundle')
     }
 
-    const bundleText = await fetchText(BUNDLE_URL)
+    const bundleText = await fetchText(new URL(bundleAssetPath, HOMEPAGE_URL).toString())
     if (!hasVerifiedBundleSignal(bundleText) || hasBundleJobsSignal(bundleText)) {
       throw new Error('Capovex client bundle changed materially or now exposes a public jobs surface')
     }
@@ -207,7 +210,7 @@ export const createCapovexScraper = () => ({
 export const run = async (options = {}) => createCapovexScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

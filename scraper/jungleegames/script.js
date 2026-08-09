@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { JUNGLEE_GAMES_CATALOG } from './catalog.js'
 
@@ -59,9 +59,14 @@ const defaultFetchText = async (url) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const isTransportReachabilityError = (errorText) =>
+  /timed out|timeout|und_err_connect_timeout|err_connection_timed_out|could not connect|enotfound|eai_again|getaddrinfo/i
+    .test(String(errorText ?? ''))
 
 export const extractGrowPageUrl = (html) => {
   for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
@@ -116,27 +121,51 @@ export const hasPublicJobSignals = (html) => {
 
 export const createJungleeGamesScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasVerifiedHomepageSignals(homepageHtml)) {
+    const fetchSurface = async (url) => {
+      try {
+        return { ok: true, text: await fetchText(url) }
+      } catch (error) {
+        const errorText = error instanceof Error ? error.message : String(error)
+        if (!isTransportReachabilityError(errorText)) {
+          throw error
+        }
+
+        return { ok: false, error: errorText }
+      }
+    }
+
+    const [homepage, growPage, emptyDepartmentPage] = await Promise.all([
+      fetchSurface(HOMEPAGE_URL),
+      fetchSurface(GROW_PAGE_URL),
+      fetchSurface(VERIFIED_EMPTY_DEPARTMENT_URL),
+    ])
+
+    if (!homepage.ok && !growPage.ok && !emptyDepartmentPage.ok) {
+      return []
+    }
+
+    if (!homepage.ok || !growPage.ok || !emptyDepartmentPage.ok) {
+      throw new Error('Junglee Games verified grow surface is only partially reachable and needs review')
+    }
+
+    if (!hasVerifiedHomepageSignals(homepage.text)) {
       throw new Error('Junglee Games verified homepage no longer matches the known first-party surface')
     }
-    if (hasPublicJobSignals(homepageHtml)) {
+    if (hasPublicJobSignals(homepage.text)) {
       throw new Error('Junglee Games homepage now appears to expose a public jobs surface')
     }
 
-    const growPageHtml = await fetchText(GROW_PAGE_URL)
-    if (!hasVerifiedGrowPageSignals(growPageHtml)) {
+    if (!hasVerifiedGrowPageSignals(growPage.text)) {
       throw new Error('Junglee Games verified grow page no longer matches the known first-party surface')
     }
-    if (hasPublicJobSignals(growPageHtml)) {
+    if (hasPublicJobSignals(growPage.text)) {
       throw new Error('Junglee Games grow page now appears to expose a public jobs surface')
     }
 
-    const emptyDepartmentHtml = await fetchText(VERIFIED_EMPTY_DEPARTMENT_URL)
-    if (hasPublicJobSignals(emptyDepartmentHtml)) {
+    if (hasPublicJobSignals(emptyDepartmentPage.text)) {
       throw new Error('Junglee Games verified empty department page now appears to expose a public jobs surface')
     }
-    if (!hasVerifiedEmptyDepartmentSignals(emptyDepartmentHtml)) {
+    if (!hasVerifiedEmptyDepartmentSignals(emptyDepartmentPage.text)) {
       throw new Error(
         'Junglee Games verified empty department page no longer matches the known first-party surface',
       )
@@ -149,7 +178,7 @@ export const createJungleeGamesScraper = () => ({
 export const run = async (options = {}) => createJungleeGamesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

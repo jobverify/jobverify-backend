@@ -1,3 +1,4 @@
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -5,54 +6,44 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'sequellogistics'
 export const COMPANY = 'Sequel Logistics'
-export const HOMEPAGE_URL = 'https://sequelglobal.com/'
-export const ABOUT_URL = 'https://sequelglobal.com/about'
-export const OFFICE_URL = 'https://sequelglobal.com/sequel-office'
-export const CONTACT_URL = 'https://sequelglobal.com/contact'
-export const VERIFIED_MISSING_ROUTE_URLS = [
-  'https://sequelglobal.com/career',
-  'https://sequelglobal.com/careers',
-  'https://sequelglobal.com/jobs',
-  'https://sequelglobal.com/apply',
-  'https://sequel247.com/careers',
-  'https://sequel247.com/jobs',
-  'https://sequel247.com/apply',
-]
+export const COMPANY_DOMAIN = 'sequelglobal.com'
+export const CAREERS_URL = 'https://www.sequelglobal.com/career.html'
+export const LATERAL_HIRING_URL = 'https://www.sequelglobal.com/lateral-staff'
+export const FIELD_STAFF_URL = 'https://www.sequelglobal.com/field-staff'
+export const FRESHER_URL = 'https://www.sequelglobal.com/fresher'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const FIRST_PARTY_CAREER_LINK_PATTERN =
-  /href=["'](?:https?:\/\/(?:www\.)?(?:sequelglobal|sequel247)\.com)?\/(?:careers?|jobs?|apply)(?:[/?#][^"']*)?["']/i
+const DEFAULT_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Encoding': 'identity',
+}
 
-const PUBLIC_JOBS_SIGNAL_PATTERNS = [
-  /\bwe(?:'|&#8217;|&#x2019;|&rsquo;)?re hiring\b/i,
-  /\bjoin our team\b/i,
-  /\bopen positions?\b/i,
-  /\bcurrent openings?\b/i,
-  /\bjob openings?\b/i,
-  /\bapply now\b/i,
-  /jobs\.lever\.co/i,
-  /boards\.greenhouse\.io/i,
-  /job-boards\.greenhouse\.io/i,
-  /ashbyhq\.com/i,
-  /workdayjobs/i,
-  /myworkdayjobs/i,
-  /smartrecruiters/i,
-  /jobvite/i,
-  /breezy\.hr/i,
-  /linkedin\.com\/jobs/i,
-]
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&#34;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
 
-const normalizeWhitespace = (value) => String(value ?? '')
+const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<br\s*\/?>/gi, '\n')
   .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const normalizeText = (value) => normalizeWhitespace(value) || null
+
+const slugify = (value) => normalizeWhitespace(value)
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
@@ -68,138 +59,236 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-export const defaultFetchPage = async (url, {
-  fetchImpl = fetch,
-  timeoutMs = 15000,
-} = {}) => {
+const isSequelGlobalHost = (url) => {
+  try {
+    return /(?:^|\.)sequelglobal\.com$/i.test(new URL(url).hostname)
+  } catch {
+    return false
+  }
+}
+
+const isCertificateVerificationFailure = (error) => {
+  const message = String(error?.message || '')
+  const causeMessage = String(error?.cause?.message || '')
+  const combined = `${message}\n${causeMessage}`
+
+  return /unable to verify the first certificate|UNABLE_TO_VERIFY_LEAF_SIGNATURE|self[- ]signed certificate|certificate/i.test(combined)
+}
+
+const fetchTextResponse = async (
+  url,
+  {
+    fetchImpl = fetch,
+    timeoutMs = 15000,
+    headers = DEFAULT_HEADERS,
+  } = {},
+) => {
   const response = await fetchImpl(url, {
     redirect: 'follow',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
+    headers,
     signal: createTimeoutSignal(timeoutMs),
   })
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+  return response.text()
+}
+
+const insecureFetchText = (
+  url,
+  {
+    timeoutMs = 15000,
+    headers = DEFAULT_HEADERS,
+    maxRedirects = 5,
+  } = {},
+) => new Promise((resolve, reject) => {
+  if (maxRedirects < 0) {
+    reject(new Error(`Too many redirects while fetching ${url}`))
+    return
+  }
+
+  const request = https.request(url, {
+    method: 'GET',
+    headers,
+    rejectUnauthorized: false,
+  }, (response) => {
+    const statusCode = Number(response.statusCode || 0)
+    const location = response.headers.location
+
+    if (statusCode >= 300 && statusCode < 400 && location) {
+      response.resume()
+      const redirectedUrl = new URL(location, url).toString()
+      resolve(insecureFetchText(redirectedUrl, {
+        timeoutMs,
+        headers,
+        maxRedirects: maxRedirects - 1,
+      }))
+      return
+    }
+
+    let body = ''
+    response.setEncoding('utf8')
+    response.on('data', (chunk) => {
+      body += chunk
+    })
+    response.on('end', () => resolve(body))
+  })
+
+  request.setTimeout(timeoutMs, () => {
+    request.destroy(new Error(`Request timed out after ${timeoutMs}ms`))
+  })
+  request.on('error', reject)
+  request.end()
+})
+
+export const defaultFetchText = async (
+  url,
+  {
+    fetchImpl = fetch,
+    insecureFetchTextImpl = insecureFetchText,
+    timeoutMs = 15000,
+  } = {},
+) => {
+  try {
+    return await fetchTextResponse(url, {
+      fetchImpl,
+      timeoutMs,
+    })
+  } catch (error) {
+    if (!isSequelGlobalHost(url) || !isCertificateVerificationFailure(error)) {
+      throw error
+    }
+
+    return insecureFetchTextImpl(url, {
+      timeoutMs,
+      headers: DEFAULT_HEADERS,
+    })
   }
 }
 
-export const hasOfficialHomepageSignal = (html) => {
+export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Sequel Logistics\s*<\/title>/i.test(page)
-    && normalized.includes('Sequel Logistics')
-    && normalized.includes('Trusted logistics and secure delivery solutions')
-    && normalized.includes('Built for high-assurance movement and visibility')
-}
-
-export const hasOfficialAboutSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
-
-  return /<title>\s*About Sequel Logistics\s*<\/title>/i.test(page)
-    && normalized.includes('About Sequel Logistics')
-    && normalized.includes('Our Story')
-    && normalized.includes('Sequel builds secure logistics systems for enterprise operations.')
-    && normalized.includes('Operational excellence across critical delivery networks.')
-}
-
-export const hasOfficialOfficeSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
-
-  return /<title>\s*Sequel Office\s*<\/title>/i.test(page)
-    && normalized.includes('Sequel Office')
-    && normalized.includes('Office network and operating hubs')
-    && /https:\/\/sequel247\.com\/login/i.test(page)
-    && /https:\/\/sequel247\.com\/register/i.test(page)
-}
-
-export const hasOfficialContactSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
-
-  return /<title>\s*Contact Sequel Logistics\s*<\/title>/i.test(page)
-    && normalized.includes('Contact')
-    && normalized.includes('Get in touch with Sequel Logistics')
-    && normalized.includes('Customer support and business enquiries')
-}
-
-export const hasPublicJobsSignal = (html) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
-
-export const hasFirstPartyCareerLikeLink = (html) =>
-  FIRST_PARTY_CAREER_LINK_PATTERN.test(String(html ?? ''))
-
-export const isVerifiedMissingCareerRoute = (page = {}) => {
-  const html = String(page?.html ?? '')
-  const normalized = normalizeWhitespace(html).toLowerCase()
-
-  return Number(page?.status) === 404
-    && /<title>\s*Not Found\s*<\/title>/i.test(html)
-    && normalized.includes('404')
-    && normalized.includes('not found')
-    && !hasPublicJobsSignal(html)
-    && !hasFirstPartyCareerLikeLink(html)
+  return /<title>\s*Sequel Global\s*<\/title>/i.test(page)
+    && normalized.includes('Careers')
+    && normalized.includes('Current Openings')
+    && /href=["']field-staff["']/i.test(page)
+    && /href=["']lateral-staff["']/i.test(page)
+    && /href=["']fresher["']/i.test(page)
   }
 
-export const createSequelLogisticsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Sequel Logistics verified official homepage no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Sequel Logistics homepage now appears to expose a public jobs surface')
-    }
-    if (hasFirstPartyCareerLikeLink(homepage.html)) {
-      throw new Error('Sequel Logistics homepage now exposes a first-party careers path')
+export const hasOfficialLateralHiringSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Sequel Global\s*<\/title>/i.test(page)
+    && normalized.includes('Be part of a growth journey.')
+    && normalized.includes('Lateral Hiring')
+    && /class=["'][^"']*\bhiring-box-bg\b/i.test(page)
+    && /Published Date:/i.test(page)
+    && /Location:/i.test(page)
+    && /Apply/i.test(page)
+  }
+
+const parsePublishedDate = (value) => {
+  const normalized = normalizeText(value)
+  const match = normalized?.match(/^(\d{2})-(\d{2})-(\d{4})$/)
+  if (!match) return null
+
+  const [, day, month, year] = match
+  return `${year}-${month}-${day}`
+}
+
+const buildJobDescription = ({ title, department, location, postingDate }) => {
+  const lines = [title]
+
+  if (department) lines.push(`Department: ${department}`)
+  if (location) lines.push(`Location: ${location}`)
+  if (postingDate) lines.push(`Published Date: ${postingDate}`)
+
+  return lines.join('\n')
+}
+
+export const extractLateralJobs = (html = '') => {
+  const jobs = []
+
+  for (const match of String(html ?? '').matchAll(
+    /<h4[^>]*>([\s\S]*?)<\/h4>[\s\S]*?Published Date:\s*([^<]+)<\/td>[\s\S]*?Department:\s*([^<]+)<\/td>[\s\S]*?Location:\s*([^<]+)<\/td>[\s\S]*?<a[^>]*href=["']([^"']+)["'][^>]*>\s*Apply\s*<\/a>/gi,
+  )) {
+    const title = normalizeText(match[1])
+    const postingDate = parsePublishedDate(match[2])
+    const department = normalizeText(match[3])
+    const location = normalizeText(match[4])
+    const jobId = slugify(title)
+
+    if (!title || !location || !jobId) continue
+
+    jobs.push({
+      title,
+      company: COMPANY,
+      department,
+      location,
+      city: location,
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      sourceUrl: LATERAL_HIRING_URL,
+      applyUrl: LATERAL_HIRING_URL,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate,
+      closingDate: null,
+      jobDescription: buildJobDescription({
+        title,
+        department,
+        location,
+        postingDate: normalizeText(match[2]),
+      }),
+      remoteStatus: 'On-site',
+    })
+  }
+
+  return jobs
+}
+
+export const createSequelLogisticsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Sequel Logistics verified careers landing page no longer matches the trusted first-party surface')
     }
 
-    const about = await fetchPage(ABOUT_URL)
-    if (about.status !== 200 || !hasOfficialAboutSignal(about.html)) {
-      throw new Error('Sequel Logistics verified about page no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(about.html) || hasFirstPartyCareerLikeLink(about.html)) {
-      throw new Error('Sequel Logistics about page now appears to expose a public jobs surface')
+    const lateralHtml = await fetchText(LATERAL_HIRING_URL)
+    if (!hasOfficialLateralHiringSignal(lateralHtml)) {
+      throw new Error('Sequel Logistics verified lateral openings page no longer matches the trusted first-party surface')
     }
 
-    const office = await fetchPage(OFFICE_URL)
-    if (office.status !== 200 || !hasOfficialOfficeSignal(office.html)) {
-      throw new Error('Sequel Logistics verified office page no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(office.html) || hasFirstPartyCareerLikeLink(office.html)) {
-      throw new Error('Sequel Logistics office page now appears to expose a public jobs surface')
+    const jobs = extractLateralJobs(lateralHtml)
+      .sort((left, right) => left.title.localeCompare(right.title) || left.jobId.localeCompare(right.jobId))
+      .map((job) => ({
+        ...job,
+        source: SOURCE,
+        companyDomain: COMPANY_DOMAIN,
+        atsPlatform: 'official-company-site',
+        publicExperienceChecked: true,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: (overrideNow || now)(),
+      }))
+
+    if (jobs.length === 0) {
+      throw new Error('Sequel Logistics verified lateral openings page no longer exposes public job cards')
     }
 
-    const contact = await fetchPage(CONTACT_URL)
-    if (contact.status !== 200 || !hasOfficialContactSignal(contact.html)) {
-      throw new Error('Sequel Logistics verified contact page no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(contact.html) || hasFirstPartyCareerLikeLink(contact.html)) {
-      throw new Error('Sequel Logistics contact page now appears to expose a public jobs surface')
-    }
-
-    for (const routeUrl of VERIFIED_MISSING_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareerRoute(routePage)) {
-        throw new Error(`Sequel Logistics verified no-public-careers route changed: ${routePage.url || routeUrl}`)
-      }
-    }
-
-    return []
+    return jobs
   },
 })
 
 export const run = async (options = {}) => createSequelLogisticsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

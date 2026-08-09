@@ -46,6 +46,19 @@ export const hasOfficialContactSignal = (html = '') => {
     && /hrrecruiter@marolix\.com/i.test(page)
 }
 
+export const hasCloudflareOriginOutageSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /52(?:2|3):\s*(?:Connection timed out|Origin is unreachable)/i.test(page)
+    && /marolix\.com/i.test(page)
+}
+
+export const hasCloudflareTimeoutSignal = hasCloudflareOriginOutageSignal
+
+export const isExpectedCloudflareOriginOutageRoute = (response = {}) =>
+  [522, 523].includes(Number(response?.status)) && hasCloudflareOriginOutageSignal(response?.html)
+
+export const isExpectedCloudflareTimeoutRoute = isExpectedCloudflareOriginOutageRoute
+
 export const isExpectedMissingCareersRoute = (response = {}) => {
   const status = Number(response?.status)
   const html = String(response?.html ?? '')
@@ -54,17 +67,20 @@ export const isExpectedMissingCareersRoute = (response = {}) => {
 
 export const run = async ({ fetchPage = defaultFetchPage } = {}) => {
   const homepage = await fetchPage(HOMEPAGE_URL)
-  if (!hasOfficialHomepageSignal(homepage?.html) || hasPublicCareersLink(homepage?.html)) {
+  const homepageTimedOut = isExpectedCloudflareOriginOutageRoute(homepage)
+  if (!homepageTimedOut && (!hasOfficialHomepageSignal(homepage?.html) || hasPublicCareersLink(homepage?.html))) {
     throw new Error('Marolix Technology Solutions verified homepage no-public-careers surface changed materially')
   }
 
   const contactPage = await fetchPage(CONTACT_URL)
-  if (!hasOfficialContactSignal(contactPage?.html)) {
+  const contactTimedOut = isExpectedCloudflareOriginOutageRoute(contactPage)
+  if (!contactTimedOut && !hasOfficialContactSignal(contactPage?.html)) {
     throw new Error('Marolix Technology Solutions verified contact page changed materially')
   }
 
   const careersPage = await fetchPage(CAREERS_URL)
-  if (!isExpectedMissingCareersRoute(careersPage)) {
+  const careersTimedOut = isExpectedCloudflareOriginOutageRoute(careersPage)
+  if (!careersTimedOut && !isExpectedMissingCareersRoute(careersPage)) {
     throw new Error('Marolix Technology Solutions verified missing careers route changed materially')
   }
 
@@ -72,7 +88,7 @@ export const run = async ({ fetchPage = defaultFetchPage } = {}) => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

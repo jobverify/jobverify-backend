@@ -1,0 +1,23 @@
+﻿{
+  "source": "talentsprint",
+  "companyName": "TalentSprint",
+  "adapter": "script",
+  "modulePath": "../../scraper/talentsprint/script.js",
+  "companyCareerPage": "https://talentsprint.com/careers/",
+  "officialSiteUrl": "https://talentsprint.com/",
+  "officialCareersHandoffUrl": "https://talentsprint.darwinbox.in/ms/candidate/careers",
+  "darwinboxOrigin": "https://talentsprint.darwinbox.in",
+  "darwinboxCompanyId": "main",
+  "publicAllJobsUrl": "https://talentsprint.darwinbox.in/ms/candidatev2/main/careers/allJobs",
+  "atsPlatform": "darwinbox-public-listing-api-http-500-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "fail-closed-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page+official-darwinbox-handoff+public-darwinbox-listing-api-http-500-sentinel",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "companyDomain": "talentsprint.com",
+  "verifiedOn": "2026-08-05",
+  "verifiedSurfaceSummary": "Verified on Wednesday, August 5, 2026 that https://talentsprint.com/careers/ remains the live first-party TalentSprint careers page and exposes View Job Openings to the public TalentSprint Darwinbox handoff at https://talentsprint.darwinbox.in/ms/candidate/careers. The public Darwinbox listing API POST at /ms/candidateapi/job/alljobs?companyId=main returned HTTP 500 in both the August 1 dry run and the August 5 browser-session probe, so this provider is a fail-closed sentinel that returns zero jobs while continuing to validate the first-party page and handoff.",
+  "dryRunFile": "talentsprint/jobs.json"
+}
+

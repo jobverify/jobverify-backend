@@ -87,9 +87,13 @@ export const hasRedirectedDemandbaseHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Demandbase\b/i.test(rawHtml)
-    && /Smarter GTM Starts Here/i.test(normalized)
-    && /About Us/i.test(normalized)
+  return /<title>\s*(?:ABM Platform for B2B Sales (?:&|&amp;) Marketing Success\s*\|\s*)?Demandbase\b/i.test(rawHtml)
+    && (
+      /Smarter GTM Starts Here/i.test(normalized)
+      || /The pipeline engine for AI GTM that aligns teams to turn goals into revenue/i.test(normalized)
+    )
+    && /Pricing/i.test(normalized)
+    && /Company/i.test(normalized)
     && /Careers/i.test(normalized)
   }
 
@@ -97,9 +101,12 @@ export const hasLegacyInsideViewLoginSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*InsideView\s*\|\s*Forgot Password\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*InsideView\s*(?:\||:)\s*(?:Forgot Password|Set Password)\s*<\/title>/i.test(rawHtml)
     && /Forgot your password\?/i.test(normalized)
-    && /Business Email/i.test(normalized)
+    && (
+      /Business Email/i.test(normalized)
+      || /Submit your Email ID below to set a new password\./i.test(normalized)
+    )
     && /\bSubmit\b/i.test(normalized)
     && /InsideView/i.test(normalized)
   }
@@ -142,7 +149,7 @@ export const createInsideViewScraper = () => ({
 export const run = async (options = {}) => createInsideViewScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

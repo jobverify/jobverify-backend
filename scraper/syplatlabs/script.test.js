@@ -50,25 +50,25 @@ path:"/legal/imprint"
 
 const homepagePage = {
   status: 200,
-  url: 'https://syplat-labs.com/',
+  url: 'https://www.syplat.com/',
   text: homepageShellHtml,
 }
 
 const careersShellPage = {
   status: 200,
-  url: 'https://syplat-labs.com/careers',
+  url: 'https://www.syplat.com/careers',
   text: homepageShellHtml,
 }
 
 const jobsShellPage = {
   status: 200,
-  url: 'https://syplat-labs.com/jobs',
+  url: 'https://www.syplat.com/jobs',
   text: homepageShellHtml,
 }
 
 const publicJobsPage = {
   status: 200,
-  url: 'https://syplat-labs.com/careers',
+  url: 'https://www.syplat.com/careers',
   text: `
     <html>
       <head>
@@ -93,10 +93,10 @@ test('SYplat Labs sentinel pins the verified first-party homepage shell, bundle 
   assert.equal(syplat.SOURCE, 'syplatlabs')
   assert.equal(syplat.COMPANY, 'SYplat Labs')
   assert.equal(syplat.HOMEPAGE_URL, 'https://www.syplat.com/')
-  assert.equal(syplat.REDIRECTED_HOMEPAGE_URL, 'https://syplat-labs.com/')
+  assert.equal(syplat.REDIRECTED_HOMEPAGE_URL, 'https://www.syplat.com/')
   assert.deepEqual(syplat.CAREERS_ROUTE_URLS, [
-    'https://syplat-labs.com/careers',
-    'https://syplat-labs.com/jobs',
+    'https://www.syplat.com/careers',
+    'https://www.syplat.com/jobs',
   ])
   assert.deepEqual(syplat.EXPECTED_BUNDLE_ROUTES, [
     '/',
@@ -118,7 +118,7 @@ test('SYplat Labs sentinel pins the verified first-party homepage shell, bundle 
   assert.equal(syplat.hasOfficialHomepageShellSignal(homepageShellHtml), true)
   assert.equal(
     syplat.extractBundleUrl(homepageShellHtml, syplat.REDIRECTED_HOMEPAGE_URL),
-    'https://syplat-labs.com/assets/index-aS5FxsGL.js',
+    'https://www.syplat.com/assets/index-aS5FxsGL.js',
   )
   assert.deepEqual(syplat.extractBundleRoutes(bundleText), syplat.EXPECTED_BUNDLE_ROUTES)
   assert.equal(syplat.hasVerifiedBundleRouteSignal(bundleText), true)
@@ -140,7 +140,7 @@ test('SYplat Labs sentinel returns an empty list only while the verified first-p
         return homepagePage
       }
 
-      if (url === 'https://syplat-labs.com/assets/index-aS5FxsGL.js') {
+      if (url === 'https://www.syplat.com/assets/index-aS5FxsGL.js') {
         return {
           status: 200,
           url,
@@ -162,7 +162,7 @@ test('SYplat Labs sentinel returns an empty list only while the verified first-p
 
   assert.deepEqual(requestedUrls, [
     syplat.HOMEPAGE_URL,
-    'https://syplat-labs.com/assets/index-aS5FxsGL.js',
+    'https://www.syplat.com/assets/index-aS5FxsGL.js',
     ...syplat.CAREERS_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])
@@ -177,7 +177,7 @@ test('SYplat Labs sentinel fails closed when the verified homepage, bundle route
         if (url === syplat.HOMEPAGE_URL) {
           return {
             status: 200,
-            url: 'https://www.syplat.com/',
+            url: 'https://syplat-labs.com/',
             text: homepageShellHtml,
           }
         }
@@ -195,7 +195,7 @@ test('SYplat Labs sentinel fails closed when the verified homepage, bundle route
           return homepagePage
         }
 
-        if (url === 'https://syplat-labs.com/assets/index-aS5FxsGL.js') {
+        if (url === 'https://www.syplat.com/assets/index-aS5FxsGL.js') {
           return {
             status: 200,
             url,
@@ -216,7 +216,7 @@ test('SYplat Labs sentinel fails closed when the verified homepage, bundle route
           return homepagePage
         }
 
-        if (url === 'https://syplat-labs.com/assets/index-aS5FxsGL.js') {
+        if (url === 'https://www.syplat.com/assets/index-aS5FxsGL.js') {
           return {
             status: 200,
             url,

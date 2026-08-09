@@ -1,10 +1,10 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { isIndiaJob as isIndiaJobInScope } from '../utils/indiaLocationFilter.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { isIndiaJob as isIndiaJobInScope } from '../../scraper-support/utils/indiaLocationFilter.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -85,12 +85,36 @@ const extractHref = (blockHtml) =>
 const extractTitle = (blockHtml) =>
   normalizeWhitespace(stripTags(blockHtml.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1]))
 
+const extractCurrentOpportunitiesSection = (html) =>
+  String(html ?? '').match(
+    /<h2\b[^>]*>\s*Current Opportunities\s*<\/h2>([\s\S]*?)(?:<\/section>|<section\b|$)/i,
+  )?.[1] || ''
+
+const parseCurrentOpportunityHeader = (value) => {
+  const normalized = normalizeWhitespace(stripTags(value))
+  if (!normalized) return { title: null, location: null }
+
+  const match = normalized.match(/^(.*?)\s+Location\s*-\s*(.+)$/i)
+  if (!match) {
+    return {
+      title: normalized,
+      location: null,
+    }
+  }
+
+  return {
+    title: normalizeWhitespace(match[1]),
+    location: normalizeWhitespace(match[2]),
+  }
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(stripTags(page))
 
-  return /ganit/i.test(page)
-    && /careers/i.test(page)
-    && /https:\/\/www\.ganitinc\.com\/careers\/?/i.test(page)
+  return /<title>\s*(?:Careers\s*\|\s*Ganit|Ganit\s*\|\s*Data Speaks)\s*<\/title>/i.test(page)
+    && (normalized.includes('Build your future with Ganit') || normalized.includes('Discover why Ganit'))
+    && (/Explore current openings/i.test(page) || /Current Opportunities/i.test(page))
     && /https:\/\/ganitinc\.zohorecruit\.in\/jobs\/Careers\//i.test(page)
 }
 
@@ -104,43 +128,91 @@ const defaultFetchText = (url) =>
     timeoutMs: 15000,
   })
 
-export const extractIndiaJobs = (html) => {
+const buildJob = ({
+  title,
+  sourceUrl,
+  location,
+  department = null,
+  employmentType = null,
+  jobDescription = null,
+}) => {
+  const jobId = normalizeWhitespace(sourceUrl?.match(DETAIL_URL_REGEX)?.[1])
+  if (!title || !sourceUrl || !jobId) return null
+
+  const city = inferCity(location)
+  const country = inferCountry(location, city)
+  const job = {
+    title,
+    company: COMPANY,
+    department,
+    location,
+    city,
+    country,
+    jobId,
+    requisitionId: jobId,
+    sourceUrl,
+    applyUrl: sourceUrl,
+    employmentType,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription,
+  }
+
+  return job.location && isIndiaJobInScope(job) ? job : null
+}
+
+const extractArticleJobs = (html) => {
   const jobs = []
-  const seenJobIds = new Set()
 
   for (const blockHtml of extractBlocks(html)) {
     const title = extractTitle(blockHtml)
     const sourceUrl = extractHref(blockHtml)
-    const jobId = normalizeWhitespace(sourceUrl?.match(DETAIL_URL_REGEX)?.[1])
-    if (!title || !sourceUrl || !jobId || seenJobIds.has(jobId)) continue
 
-    const location = extractField(blockHtml, 'Location')
-    const city = inferCity(location)
-    const country = inferCountry(location, city)
-    const job = {
+    const job = buildJob({
       title,
-      company: COMPANY,
-      department: extractField(blockHtml, 'Department'),
-      location,
-      city,
-      country,
-      jobId,
-      requisitionId: jobId,
       sourceUrl,
-      applyUrl: sourceUrl,
+      location: extractField(blockHtml, 'Location'),
+      department: extractField(blockHtml, 'Department'),
       employmentType: normalizeEmploymentType(extractField(blockHtml, 'Employment Type')),
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
       jobDescription: extractDescription(blockHtml),
-    }
+    })
 
-    if (!job.location || !isIndiaJobInScope(job)) continue
+    if (job) jobs.push(job)
+  }
 
-    seenJobIds.add(jobId)
+  return jobs
+}
+
+const extractCurrentOpportunityJobs = (html) => {
+  const sectionHtml = extractCurrentOpportunitiesSection(html)
+  if (!sectionHtml) return []
+
+  const jobs = []
+  const cardMatches = sectionHtml.matchAll(
+    /<h3\b[^>]*>([\s\S]*?)<\/h3>[\s\S]{0,1200}?<a\b[^>]*href=["'](https:\/\/ganitinc\.zohorecruit\.in\/jobs\/Careers\/[^"'\s<>]+)["'][^>]*>[\s\S]{0,400}?know more[\s\S]*?<\/a>/gi,
+  )
+
+  for (const match of cardMatches) {
+    const { title, location } = parseCurrentOpportunityHeader(match[1])
+    const sourceUrl = normalizeWhitespace(match[2])
+    const job = buildJob({ title, sourceUrl, location })
+    if (job) jobs.push(job)
+  }
+
+  return jobs
+}
+
+export const extractIndiaJobs = (html) => {
+  const jobs = []
+  const seenJobIds = new Set()
+
+  for (const job of [...extractArticleJobs(html), ...extractCurrentOpportunityJobs(html)]) {
+    if (seenJobIds.has(job.jobId)) continue
+    seenJobIds.add(job.jobId)
     jobs.push(job)
   }
 
@@ -174,7 +246,7 @@ export const createGanitScraper = ({
 export const run = async (options = {}) => createGanitScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Ganit scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

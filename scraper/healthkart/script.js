@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { HEALTHKART_CATALOG } from './catalog.js'
 
@@ -16,7 +16,7 @@ export const VERIFIED_ON = HEALTHKART_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = HEALTHKART_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = HEALTHKART_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOB_PATTERNS = [
   /\bapply now\b/i,
@@ -67,7 +67,8 @@ export const hasVerifiedHealthKartCareersSignal = (html = '') => {
   return /buy health/i.test(title)
     && /healthkart/i.test(title)
     && text.includes('about healthkart')
-    && text.includes("healthkart.com is india's largest online health & fitness store")
+    && text.includes('brand directory')
+    && text.includes('sell on healthkart')
     && text.includes('careers')
 }
 
@@ -108,7 +109,7 @@ export const createHealthKartScraper = () => ({
 export const run = async (options = {}) => createHealthKartScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

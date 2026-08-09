@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { AUTO_PI_CATALOG } from './catalog.js'
 
@@ -23,7 +23,7 @@ export const VERIFIED_ROLE_URLS = PROVIDER_METADATA.verifiedRoleUrls
 export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const ROLE_CARD_PATTERN =
   /<h4[^>]*>(.*?)<\/h4>[\s\S]*?<span[^>]*>\s*(?:<svg[\s\S]*?<\/svg>)?\s*([^<]+?)\s*<\/span>[\s\S]*?<span[^>]*>\s*(?:<svg[\s\S]*?<\/svg>)?\s*([^<]+?)\s*<\/span>[\s\S]*?<p[^>]*>(.*?)<\/p>[\s\S]*?<a class="stretched-link" href="([^"]+)"><\/a>/gi
 
@@ -262,7 +262,7 @@ export const createAutoPiScraper = ({
 export const run = async (options = {}) => createAutoPiScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

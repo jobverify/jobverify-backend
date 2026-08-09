@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import HITACHI_VANTARA_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -75,6 +75,11 @@ const stripTags = (value) =>
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
 
+const hasMeaningfulValue = (value) => {
+  const normalized = normalizeWhitespace(value)
+  return Boolean(normalized && normalized !== ':')
+}
+
 const toAbsoluteUrl = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -101,6 +106,17 @@ const extractLabelValue = (lines, label) => {
   const pattern = new RegExp(`^${escapeRegex(label)}\\s*:?\\s*(.+)$`, 'i')
   const line = lines.find((value) => pattern.test(value))
   return normalizeWhitespace(line?.replace(pattern, '$1'))
+}
+
+const extractContextField = (html, label) => {
+  const match = String(html ?? '').match(
+    new RegExp(
+      `<span[^>]*class=["'][^"']*hide[^"']*["'][^>]*>\\s*${escapeRegex(label)}\\s*:?\\s*<\\/span>([\\s\\S]*?)<\\/div>`,
+      'i',
+    ),
+  )
+  const value = stripTags(match?.[1])
+  return hasMeaningfulValue(value) ? value : null
 }
 
 const hasLabel = (value, label) =>
@@ -184,6 +200,9 @@ const normalizeRemoteStatus = (value, location) => {
   return null
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP 403|timed out|timeout|fetch failed|certificate|blocked/i.test(String(error?.message ?? error ?? ''))
+
 const defaultFetchText = (url) =>
   fetchTextWithRetry(url, {
     headers: DEFAULT_HEADERS,
@@ -223,11 +242,11 @@ export const extractListings = (html = '') => {
       const contextLines = htmlToLines(contextHtml)
       const sourceUrl = toAbsoluteUrl(match[1])
       const title = stripTags(match[2])
-      const location = extractLabelValue(contextLines, 'Location')
-      const company = extractLabelValue(contextLines, 'Company')
+      const location = extractContextField(contextHtml, 'Location') || extractLabelValue(contextLines, 'Location')
+      const company = extractContextField(contextHtml, 'Company') || extractLabelValue(contextLines, 'Company')
 
       if (!title || !sourceUrl || !location) return null
-      if (company !== OFFICIAL_COMPANY_LABEL) return null
+      if (hasMeaningfulValue(company) && company !== OFFICIAL_COMPANY_LABEL) return null
 
       const { city, state, country } = splitLocation(location)
 
@@ -311,20 +330,37 @@ export const normalizeApplyUrl = (value) => {
   }
 }
 
-export const resolveApplyUrl = async (applyUrl, { fetchImpl = defaultFetchImpl } = {}) => {
+export const resolveApplyUrl = async (
+  applyUrl,
+  {
+    fetchImpl = defaultFetchImpl,
+    fetchBrowserFinalUrl,
+  } = {},
+) => {
   const requestUrl = toAbsoluteUrl(applyUrl)
   if (!requestUrl) return null
 
-  const response = await fetchImpl(requestUrl, {
-    headers: DEFAULT_HEADERS,
-    redirect: 'follow',
-  })
+  let redirectedUrl
 
-  if (!response?.ok) {
-    throw new Error(`HTTP ${response?.status ?? 'unknown'} for ${requestUrl}`)
+  try {
+    const response = await fetchImpl(requestUrl, {
+      headers: DEFAULT_HEADERS,
+      redirect: 'follow',
+    })
+
+    if (!response?.ok) {
+      throw new Error(`HTTP ${response?.status ?? 'unknown'} for ${requestUrl}`)
+    }
+
+    redirectedUrl = response.url || response.headers?.get?.('location') || requestUrl
+  } catch (error) {
+    if (!fetchBrowserFinalUrl || !isBrowserFallbackError(error)) {
+      throw error
+    }
+
+    redirectedUrl = await fetchBrowserFinalUrl(requestUrl)
   }
 
-  const redirectedUrl = response.url || response.headers?.get?.('location') || requestUrl
   return normalizeApplyUrl(toAbsoluteUrl(redirectedUrl))
 }
 
@@ -332,16 +368,34 @@ export const createHitachiVantaraIndiaScraper = ({
   fetchText = defaultFetchText,
   fetchImpl = defaultFetchImpl,
   maxJobs = null,
-} = {}) => ({
+  } = {}) => ({
   async run({
     fetchText: overrideFetchText,
+    fetchBrowserText,
+    fetchBrowserFinalUrl,
     fetchImpl: overrideFetchImpl,
     maxJobs: overrideMaxJobs = maxJobs,
     now = () => new Date().toISOString(),
   } = {}) {
     const fetchTextImpl = overrideFetchText || fetchText
     const fetchApplyImpl = overrideFetchImpl || fetchImpl
-    const listingHtml = await fetchTextImpl(buildSearchPageUrl())
+    const browserTextFetcher = typeof fetchBrowserText === 'function' ? fetchBrowserText : null
+    const browserApplyUrlFetcher =
+      typeof fetchBrowserFinalUrl === 'function' ? fetchBrowserFinalUrl : null
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchTextImpl(url)
+      } catch (error) {
+        if (!browserTextFetcher || !isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    const listingHtml = await fetchPageText(buildSearchPageUrl())
 
     if (!hasOfficialSearchPageSignal(listingHtml)) {
       throw new Error(
@@ -359,10 +413,13 @@ export const createHitachiVantaraIndiaScraper = ({
     const jobs = []
 
     for (const listing of listings) {
-      const detailHtml = await fetchTextImpl(listing.sourceUrl)
+      const detailHtml = await fetchPageText(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
       const finalApplyUrl = detail.applyUrl
-        ? await resolveApplyUrl(detail.applyUrl, { fetchImpl: fetchApplyImpl })
+        ? await resolveApplyUrl(detail.applyUrl, {
+            fetchImpl: fetchApplyImpl,
+            fetchBrowserFinalUrl: browserApplyUrlFetcher || undefined,
+          })
         : null
 
       jobs.push({
@@ -384,7 +441,7 @@ export const createHitachiVantaraIndiaScraper = ({
 export const run = async (options = {}) => createHitachiVantaraIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
