@@ -1,6 +1,6 @@
 # Jobify Backend
 
-## Release: 26.07.02
+## Release: 26.07.03
 
 Express and MongoDB backend for Jobify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
