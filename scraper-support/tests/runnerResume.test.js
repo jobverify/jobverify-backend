@@ -118,8 +118,8 @@ test('selectScrapersForRun rejects ambiguous or missing resume sources', () => {
   )
 })
 
-test('shouldClearExistingJobsBeforeRun preserves the existing dataset for selective runs', () => {
-  assert.equal(shouldClearExistingJobsBeforeRun({}), true)
+test('shouldClearExistingJobsBeforeRun preserves the existing dataset for both full and selective runs', () => {
+  assert.equal(shouldClearExistingJobsBeforeRun({}), false)
   assert.equal(
     shouldClearExistingJobsBeforeRun({ onlySources: 'alpha, zeta' }),
     false,

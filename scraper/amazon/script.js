@@ -349,7 +349,7 @@ export const createAmazonScraper = ({
     const now = options.now ? new Date(options.now) : new Date()
     const detailFetchRetentionDays = Number.isInteger(options.detailFetchRetentionDays)
       ? options.detailFetchRetentionDays
-      : Number.parseInt(process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS || '', 10) || DEFAULT_DETAIL_FETCH_RETENTION_DAYS
+      : Number.parseInt(process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS || '', 30) || DEFAULT_DETAIL_FETCH_RETENTION_DAYS
     const jobs = []
     const seenJobIds = new Set()
 

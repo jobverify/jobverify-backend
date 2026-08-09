@@ -3,12 +3,20 @@ import test from 'node:test'
 
 import {
   classifyScraperError,
+  formatIstTimestamp,
   isFailureCountedForAbort,
   isLatePuppeteerTargetClose,
   isLatePuppeteerWaitTimeout,
   resolveFailureAbortThreshold,
   shouldAbortPipelineAfterFailures,
 } from '../runner.js'
+
+test('formatIstTimestamp renders UTC instants in Asia/Kolkata with milliseconds and the IST suffix', () => {
+  assert.equal(
+    formatIstTimestamp(new Date('2026-08-09T09:58:13.441Z')),
+    '2026-08-09 -- 15:28:13.441 IST',
+  )
+})
 
 test('isLatePuppeteerTargetClose recognizes a Puppeteer session-close rejection', () => {
   const error = new Error('Protocol error (Network.setUserAgentOverride): Session closed. Most likely the page has been closed.')
@@ -56,6 +64,23 @@ test('isLatePuppeteerWaitTimeout recognizes a nested Puppeteer timeout cause und
   error.cause = cause
 
   assert.equal(isLatePuppeteerWaitTimeout(error), true)
+})
+
+test('runner ignores late unhandled rejections when they classify as upstream soft failures', async () => {
+  const runner = await import('../runner.js')
+  const dnsError = new Error('queryAaaa ENOTFOUND arjunaresearchandfinancialservices.in')
+  dnsError.code = 'ENOTFOUND'
+
+  assert.equal(typeof runner.shouldIgnoreUnhandledRejection, 'function')
+  assert.equal(runner.shouldIgnoreUnhandledRejection(dnsError), true)
+  assert.equal(
+    runner.shouldIgnoreUnhandledRejection(new Error('Workday jobs API returned HTTP_500 at https://example.com/jobs')),
+    true,
+  )
+  assert.equal(
+    runner.shouldIgnoreUnhandledRejection(new TypeError('Cannot read properties of undefined')),
+    false,
+  )
 })
 
 test('isFailureCountedForAbort ignores upstream soft failures', () => {

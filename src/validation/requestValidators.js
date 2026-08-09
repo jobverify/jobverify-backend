@@ -298,6 +298,14 @@ export const loginValidation = [
     .withMessage("Password is required."),
 ];
 
+export const googleAuthValidation = [
+  body("credential")
+    .customSanitizer(trimIfString)
+    .isString()
+    .isLength({ min: 1, max: 5000 })
+    .withMessage("Google credential is required."),
+];
+
 export const resendValidation = [
   body("email")
     .customSanitizer(normalizeEmailAddress)

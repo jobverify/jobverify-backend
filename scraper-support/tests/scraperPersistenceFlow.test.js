@@ -31,7 +31,7 @@ const setReadyState = (value) => {
   }
 }
 
-test('runAll clears the jobs collection before processing scraper results', async () => {
+test('runAll preserves the existing jobs collection while processing scraper results', async () => {
   const restoreReadyState = setReadyState(1)
   const originalDeleteMany = Job.deleteMany
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
@@ -58,7 +58,7 @@ test('runAll clears the jobs collection before processing scraper results', asyn
   try {
     await runAll()
 
-    assert.deepEqual(deleteFilters, [{}])
+    assert.deepEqual(deleteFilters, [])
   } finally {
     Job.deleteMany = originalDeleteMany
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
@@ -225,6 +225,75 @@ test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async ()
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.find = originalFind
+    jobAlertService.enqueueJobAlertsForJobs = originalEnqueueJobAlertsForJobs
+    restoreReadyState()
+  }
+})
+
+test('saveToDB can target a provided job model without enqueuing alerts', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = Job.bulkWrite
+  const originalEnqueueJobAlertsForJobs = jobAlertService.enqueueJobAlertsForJobs
+
+  let liveBulkWriteAttempted = false
+  let stagedBulkWriteAttempted = false
+  let alertsQueued = false
+
+  const stagedJobModel = {
+    bulkWrite: async () => {
+      stagedBulkWriteAttempted = true
+      return {
+        upsertedCount: 1,
+        modifiedCount: 0,
+        upsertedIds: { 0: 'stage-job-1' },
+      }
+    },
+    updateMany: () => ({
+      exec: async () => ({ matchedCount: 0, modifiedCount: 0 }),
+    }),
+    find: () => ({
+      lean() {
+        return this
+      },
+      exec: async () => [
+        { _id: 'stage-job-1', title: 'Platform Engineer', status: 'active' },
+      ],
+    }),
+  }
+
+  Job.bulkWrite = async () => {
+    liveBulkWriteAttempted = true
+    return {
+      upsertedCount: 0,
+      modifiedCount: 0,
+      upsertedIds: {},
+    }
+  }
+  jobAlertService.enqueueJobAlertsForJobs = () => {
+    alertsQueued = true
+  }
+
+  try {
+    const result = await saveToDB([
+      {
+        title: 'Platform Engineer',
+        company: 'Example',
+        location: 'Bengaluru, India',
+        city: 'Bengaluru',
+        link: 'https://example.com/jobs/platform-engineer',
+      },
+    ], 'example-source', {
+      replaceExisting: false,
+      jobModel: stagedJobModel,
+      enqueueAlerts: false,
+    })
+
+    assert.equal(result.inserted, 1)
+    assert.equal(stagedBulkWriteAttempted, true)
+    assert.equal(liveBulkWriteAttempted, false)
+    assert.equal(alertsQueued, false)
+  } finally {
+    Job.bulkWrite = originalBulkWrite
     jobAlertService.enqueueJobAlertsForJobs = originalEnqueueJobAlertsForJobs
     restoreReadyState()
   }

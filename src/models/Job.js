@@ -57,7 +57,7 @@ const isHttpUrl = (value) => {
   }
 };
 
-const JobSchema = new Schema(
+export const JobSchema = new Schema(
   {
     title: {
       type: String,

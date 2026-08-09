@@ -5,6 +5,7 @@
 
 import express from "express";
 import {
+  authenticateWithGoogle,
   getCsrfToken,
   login,
   logout,
@@ -21,6 +22,7 @@ import { requireTurnstileCaptcha } from "../middleware/turnstileCaptcha.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
 import {
   forgotPasswordValidation,
+  googleAuthValidation,
   loginValidation,
   registerValidation,
   resetPasswordValidation,
@@ -42,12 +44,12 @@ const registerLimiter = createRateLimiter({
 });
 
 const loginLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 5 * 60 * 1000,
   max: 10,
   message: {
     code: 429,
     success: false,
-    message: "Too many sign-in attempts, please try again after 15 minutes",
+    message: "Too many sign-in attempts, please try again after 5 minutes",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -84,6 +86,13 @@ const router = express.Router();
 // Routes definitions
 router.get("/csrf-token", getCsrfToken);
 router.post("/register", registerLimiter, registerValidation, validateRequest, register);
+router.post(
+  "/google",
+  loginLimiter,
+  googleAuthValidation,
+  validateRequest,
+  authenticateWithGoogle,
+);
 router.post(
   "/login",
   loginLimiter,

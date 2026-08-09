@@ -111,6 +111,26 @@ const ContactSchema = new Schema(
   { _id: false },
 );
 
+const GoogleAuthSchema = new Schema(
+  {
+    sub: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    picture: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    linkedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  { _id: false },
+);
+
 const UserSchema = new Schema(
   {
     email: {
@@ -120,7 +140,7 @@ const UserSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-    password: { type: String, required: true },
+    password: { type: String, default: null },
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -137,6 +157,10 @@ const UserSchema = new Schema(
     },
     contact: {
       type: ContactSchema,
+      default: () => ({}),
+    },
+    google: {
+      type: GoogleAuthSchema,
       default: () => ({}),
     },
     profile: { type: ProfileSchema, default: () => ({}) },
@@ -168,6 +192,7 @@ UserSchema.index({ createdAt: -1 });
 UserSchema.index({ "profile.passingYear": 1 });
 UserSchema.index({ "premium.expiresAt": 1 });
 UserSchema.index({ "contact.phoneE164": 1 }, { sparse: true });
+UserSchema.index({ "google.sub": 1 }, { sparse: true });
 UserSchema.index({ resetPasswordTokenHash: 1 }, { sparse: true });
 UserSchema.index(
   { onboardingCompleted: 1 },

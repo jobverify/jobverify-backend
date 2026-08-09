@@ -114,7 +114,7 @@ const normalizeHttpUrl = (value) => {
 
 export const saveToDB = async (jobs, source, options = {}) => {
   await ensureConnected()
-  const JobModel = await getJobModel()
+  const JobModel = options.jobModel || await getJobModel()
 
   const now = normalizeLifecycleDate(options.now) || new Date()
   const retentionDays = resolveJobRetentionDays(
@@ -295,7 +295,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       .map((index) => operations[index]?.updateOne?.filter?.fingerprint)
       .filter(Boolean)
 
-    if (insertedFingerprints.length > 0) {
+    if (insertedFingerprints.length > 0 && options.enqueueAlerts !== false) {
       const insertedJobs = await JobModel.find({
         fingerprint: { $in: insertedFingerprints },
         status: 'active',

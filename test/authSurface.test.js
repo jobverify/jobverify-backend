@@ -127,6 +127,12 @@ test("auth routes keep logout protected and split verify-email GET and POST hand
     assert.ok(loginLayer);
     assert.equal(loginLayer.route.stack.length, 6);
     assert.equal(loginLayer.route.stack.at(-1).name, "login");
+
+    const googleLayer = router.stack.find(
+      (layer) => layer.route?.path === "/google" && layer.route.methods.post,
+    );
+    assert.ok(googleLayer);
+    assert.equal(googleLayer.route.stack.at(-1).name, "authenticateWithGoogle");
   } finally {
     process.env.JWT_SECRET = originalJwtSecret;
     process.env.FRONTEND_ORIGIN = originalFrontendOrigin;

@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolve4, resolve6 } from 'node:dns/promises'
+import { resolveHostAddressesWithTimeout } from '../../scraper-support/utils/dnsHostResolution.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -24,37 +24,18 @@ export const CAREER_HOSTS = [
 export const hasResolvableFirstPartyHost = (addresses) =>
   Array.isArray(addresses) && addresses.length > 0
 
-const raceWithTimeout = (promise, timeoutMs) => Promise.race([
-  promise,
-  new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(`DNS lookup timed out after ${timeoutMs}ms`)), timeoutMs)
-  }),
-])
-
 export const resolveCanonicalHosts = async (
   hosts = CAREER_HOSTS,
   {
-    resolveIpv4 = resolve4,
-    resolveIpv6 = resolve6,
+    resolveIpv4,
+    resolveIpv6,
     lookupTimeoutMs = DNS_LOOKUP_TIMEOUT_MS,
   } = {},
-) => {
-  const addresses = new Set()
-  const lookups = hosts.flatMap((host) => ([
-    raceWithTimeout(resolveIpv4(host), lookupTimeoutMs),
-    raceWithTimeout(resolveIpv6(host), lookupTimeoutMs),
-  ]))
-
-  for (const lookup of lookups) {
-    try {
-      for (const address of await lookup) {
-        addresses.add(address)
-      }
-    } catch {}
-  }
-
-  return [...addresses]
-}
+) => resolveHostAddressesWithTimeout(hosts, {
+  resolve4Impl: resolveIpv4,
+  resolve6Impl: resolveIpv6,
+  timeoutMs: lookupTimeoutMs,
+})
 
 export const createArjunaResearchAndFinancialServicesScraper = () => ({
   async run({

@@ -5,7 +5,10 @@ import bcrypt from "bcryptjs";
 import User from "../src/models/User.js";
 import PendingUser from "../src/models/PendingUser.js";
 import { hashVerificationToken } from "../src/utils/authSecurity.js";
+import { googleIdentity } from "../src/utils/googleAuth.js";
 import {
+  authenticateWithGoogle,
+  login,
   register,
   requestPasswordReset,
   redirectVerifyEmail,
@@ -440,5 +443,351 @@ test("verifyEmail reuses the pending password when the verification link opens i
     User.findOne = originalUserFindOne;
     User.prototype.save = originalUserSave;
     process.env.FRONTEND_ORIGIN = originalFrontendOrigin;
+  }
+});
+
+test("authenticateWithGoogle links an existing user by matching verified email", async () => {
+  const originalJwtSecret = process.env.JWT_SECRET;
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+  const originalUserFindOne = User.findOne;
+  const originalPendingFindOne = PendingUser.findOne;
+
+  process.env.JWT_SECRET = originalJwtSecret || "x".repeat(32);
+
+  const existingUser = {
+    _id: "user-1",
+    email: "student@example.com",
+    role: "user",
+    accessRole: "free",
+    google: { sub: null, picture: null, linkedAt: null },
+    profile: { name: "Student" },
+    premium: { planId: "free", status: "inactive", expiresAt: null, whatsappAlertsEnabled: false },
+    onboardingCompleted: false,
+    deactivated: false,
+    sessionVersion: 0,
+    save: async function save() {
+      return this;
+    },
+  };
+
+  googleIdentity.verifyCredential = async () => ({
+    email: " Student@Example.com ",
+    emailVerified: true,
+    name: "Student User",
+    picture: "https://example.com/avatar.png",
+    sub: "google-sub-123",
+  });
+  User.findOne = async () => existingUser;
+  PendingUser.findOne = async () => {
+    throw new Error("PendingUser lookup should not run when a user already exists");
+  };
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle(
+      {
+        body: {
+          credential: "google-id-token",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.user.email, "student@example.com");
+    assert.equal(existingUser.google.sub, "google-sub-123");
+    assert.equal(existingUser.google.picture, "https://example.com/avatar.png");
+    assert.equal(existingUser.google.linkedAt instanceof Date, true);
+    assert.equal(existingUser.lastLoginAt instanceof Date, true);
+    assert.equal(res.cookies.length, 1);
+  } finally {
+    process.env.JWT_SECRET = originalJwtSecret;
+    googleIdentity.verifyCredential = originalVerifyCredential;
+    User.findOne = originalUserFindOne;
+    PendingUser.findOne = originalPendingFindOne;
+  }
+});
+
+test("authenticateWithGoogle promotes a matching pending registration into a verified user", async () => {
+  const originalJwtSecret = process.env.JWT_SECRET;
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+  const originalUserFindOne = User.findOne;
+  const originalPendingFindOne = PendingUser.findOne;
+  const originalPendingDeleteOne = PendingUser.deleteOne;
+  const originalUserSave = User.prototype.save;
+
+  process.env.JWT_SECRET = originalJwtSecret || "x".repeat(32);
+
+  const pendingPassword = await bcrypt.hash("StrongerPass123", 10);
+  const pendingUser = {
+    email: "student@example.com",
+    password: pendingPassword,
+    profile: { name: "Student", phoneE164: "+919876543210" },
+  };
+
+  let deletedFilter = null;
+  let savedUser = null;
+
+  googleIdentity.verifyCredential = async () => ({
+    email: "student@example.com",
+    emailVerified: true,
+    name: "Google Student",
+    picture: "https://example.com/avatar.png",
+    sub: "google-sub-456",
+  });
+  User.findOne = async () => null;
+  PendingUser.findOne = async () => pendingUser;
+  PendingUser.deleteOne = async (filter) => {
+    deletedFilter = filter;
+    return { deletedCount: 1 };
+  };
+  User.prototype.save = async function saveUserDouble() {
+    savedUser = this;
+    return this;
+  };
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle(
+      {
+        body: {
+          credential: "google-id-token",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(savedUser.email, "student@example.com");
+    assert.equal(savedUser.password, pendingPassword);
+    assert.equal(savedUser.contact.phoneE164, "+919876543210");
+    assert.equal(savedUser.google.sub, "google-sub-456");
+    assert.equal(savedUser.isVerified, true);
+    assert.deepEqual(deletedFilter, { email: "student@example.com" });
+    assert.equal(res.clearedCookies.length, 1);
+  } finally {
+    process.env.JWT_SECRET = originalJwtSecret;
+    googleIdentity.verifyCredential = originalVerifyCredential;
+    User.findOne = originalUserFindOne;
+    PendingUser.findOne = originalPendingFindOne;
+    PendingUser.deleteOne = originalPendingDeleteOne;
+    User.prototype.save = originalUserSave;
+  }
+});
+
+test("authenticateWithGoogle creates a verified user when no account exists yet", async () => {
+  const originalJwtSecret = process.env.JWT_SECRET;
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+  const originalUserFindOne = User.findOne;
+  const originalPendingFindOne = PendingUser.findOne;
+  const originalUserSave = User.prototype.save;
+
+  process.env.JWT_SECRET = originalJwtSecret || "x".repeat(32);
+
+  let savedUser = null;
+
+  googleIdentity.verifyCredential = async () => ({
+    email: "student@example.com",
+    emailVerified: true,
+    name: "Google Student",
+    picture: null,
+    sub: "google-sub-789",
+  });
+  User.findOne = async () => null;
+  PendingUser.findOne = async () => null;
+  User.prototype.save = async function saveUserDouble() {
+    savedUser = this;
+    return this;
+  };
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle(
+      {
+        body: {
+          credential: "google-id-token",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(savedUser.email, "student@example.com");
+    assert.equal(savedUser.password, null);
+    assert.equal(savedUser.profile.name, "Google Student");
+    assert.equal(savedUser.google.sub, "google-sub-789");
+    assert.equal(savedUser.isVerified, true);
+  } finally {
+    process.env.JWT_SECRET = originalJwtSecret;
+    googleIdentity.verifyCredential = originalVerifyCredential;
+    User.findOne = originalUserFindOne;
+    PendingUser.findOne = originalPendingFindOne;
+    User.prototype.save = originalUserSave;
+  }
+});
+
+test("authenticateWithGoogle rejects deactivated users", async () => {
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+  const originalUserFindOne = User.findOne;
+
+  googleIdentity.verifyCredential = async () => ({
+    email: "student@example.com",
+    emailVerified: true,
+    name: "Google Student",
+    picture: null,
+    sub: "google-sub-789",
+  });
+  User.findOne = async () => ({
+    email: "student@example.com",
+    deactivated: true,
+    google: { sub: null, picture: null, linkedAt: null },
+  });
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle(
+      {
+        body: {
+          credential: "google-id-token",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.message, /deactivated/i);
+    assert.equal(res.cookies.length, 0);
+  } finally {
+    googleIdentity.verifyCredential = originalVerifyCredential;
+    User.findOne = originalUserFindOne;
+  }
+});
+
+test("authenticateWithGoogle rejects unverified Google email addresses", async () => {
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+  const originalUserFindOne = User.findOne;
+
+  let userLookups = 0;
+
+  googleIdentity.verifyCredential = async () => ({
+    email: "student@example.com",
+    emailVerified: false,
+    name: "Google Student",
+    picture: null,
+    sub: "google-sub-789",
+  });
+  User.findOne = async () => {
+    userLookups += 1;
+    return null;
+  };
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle(
+      {
+        body: {
+          credential: "google-id-token",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 401);
+    assert.match(res.body.message, /verified/i);
+    assert.equal(userLookups, 0);
+  } finally {
+    googleIdentity.verifyCredential = originalVerifyCredential;
+    User.findOne = originalUserFindOne;
+  }
+});
+
+test("authenticateWithGoogle rejects accounts already linked to a different Google identity", async () => {
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+  const originalUserFindOne = User.findOne;
+
+  googleIdentity.verifyCredential = async () => ({
+    email: "student@example.com",
+    emailVerified: true,
+    name: "Google Student",
+    picture: null,
+    sub: "new-google-sub",
+  });
+  User.findOne = async () => ({
+    email: "student@example.com",
+    deactivated: false,
+    google: { sub: "old-google-sub", picture: null, linkedAt: new Date() },
+  });
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle(
+      {
+        body: {
+          credential: "google-id-token",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 409);
+    assert.match(res.body.message, /already linked/i);
+  } finally {
+    googleIdentity.verifyCredential = originalVerifyCredential;
+    User.findOne = originalUserFindOne;
+  }
+});
+
+test("authenticateWithGoogle returns unauthorized when Google credential verification fails", async () => {
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+
+  googleIdentity.verifyCredential = async () => {
+    throw new Error("invalid Google credential");
+  };
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle(
+      {
+        body: {
+          credential: "bad-google-id-token",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 401);
+    assert.match(res.body.message, /google/i);
+  } finally {
+    googleIdentity.verifyCredential = originalVerifyCredential;
+  }
+});
+
+test("login tells passwordless Google users to continue with Google or reset their password", async () => {
+  const originalUserFindOne = User.findOne;
+
+  User.findOne = async () => ({
+    email: "student@example.com",
+    password: null,
+    google: { sub: "google-sub-123", picture: null, linkedAt: new Date() },
+  });
+
+  try {
+    const res = createResponseDouble();
+    await login(
+      {
+        body: {
+          email: "student@example.com",
+          password: "ignored",
+        },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 401);
+    assert.match(res.body.message, /Google sign-in/i);
+    assert.match(res.body.message, /reset your password/i);
+  } finally {
+    User.findOne = originalUserFindOne;
   }
 });

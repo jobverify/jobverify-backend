@@ -52,20 +52,6 @@ test('dry runs keep requested parallelism when it is already within the safe ran
   )
 })
 
-test('dry runs can explicitly opt back into unsafe requested parallelism', () => {
-  assert.deepEqual(
-    resolveParallelWorkerConcurrency({
-      requested: '10',
-      dryRun: true,
-      allowUnsafeDryRunConcurrency: 'true',
-    }),
-    {
-      requested: 10,
-      effective: 10,
-      clamped: false,
-    },
-  )
-})
 
 test('invalid requested values fall back to the configured concurrency', () => {
   assert.deepEqual(

@@ -11,7 +11,7 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
 
-import { deleteAllJobsFromDB, saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
+import { saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
 import { filterIndiaJobs } from './utils/indiaLocationFilter.js'
 import { withRetry } from './utils/retry.js'
 import {
@@ -32,6 +32,12 @@ import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryServi
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
 import { buildScrapers } from './providers/index.js'
+import {
+  clearStagedJobDatasetRun,
+  prepareStagedJobDatasetRun,
+  promoteStagedJobDataset,
+  shouldUseStagedJobDatasetRun,
+} from './utils/stagedJobDataset.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
@@ -91,11 +97,7 @@ export const finalizeDirectRunnerExit = ({
   exit(exitCode)
 }
 
-export const formatParallelProgressLog = (
-  completedCount,
-  totalScrapers,
-  timestamp = new Date(),
-) => {
+export const formatIstTimestamp = (timestamp = new Date()) => {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata',
@@ -111,10 +113,15 @@ export const formatParallelProgressLog = (
       .map(({ type, value }) => [type, value]),
   )
   const milliseconds = String(timestamp.getUTCMilliseconds()).padStart(3, '0')
-  const istTimestamp = `${parts.year}-${parts.month}-${parts.day} -- ${parts.hour}:${parts.minute}:${parts.second}.${milliseconds} IST`
 
-  return `[${istTimestamp}] [runner] Progress: ${completedCount}/${totalScrapers} scrapers finished.`
+  return `${parts.year}-${parts.month}-${parts.day} -- ${parts.hour}:${parts.minute}:${parts.second}.${milliseconds} IST`
 }
+
+export const formatParallelProgressLog = (
+  completedCount,
+  totalScrapers,
+  timestamp = new Date(),
+) => `[${formatIstTimestamp(timestamp)}] [runner] Progress: ${completedCount}/${totalScrapers} scrapers finished.`
 
 export class ScraperSourceTimeoutError extends Error {
   constructor(scraperName, timeoutMs) {
@@ -176,6 +183,12 @@ export const isLatePuppeteerWaitTimeout = (reason) => {
     && hasPuppeteerInternals(reasonText)
 }
 
+export const shouldIgnoreUnhandledRejection = (reason) => (
+  isLatePuppeteerTargetClose(reason)
+  || isLatePuppeteerWaitTimeout(reason)
+  || classifyScraperError(reason).softFailure === true
+)
+
 process.on('unhandledRejection', (reason) => {
   if (isLatePuppeteerTargetClose(reason)) {
     console.error('[runner] Ignored late Puppeteer browser-close rejection:', reason.message || reason)
@@ -184,6 +197,15 @@ process.on('unhandledRejection', (reason) => {
 
   if (isLatePuppeteerWaitTimeout(reason)) {
     console.error('[runner] Ignored late Puppeteer wait-timeout rejection:', reason.message || reason)
+    return
+  }
+
+  const classification = classifyScraperError(reason)
+  if (classification.softFailure === true) {
+    console.error(
+      `[runner] Ignored late scraper soft-failure rejection (${classification.failureKind}):`,
+      reason?.message || reason,
+    )
     return
   }
 
@@ -358,17 +380,7 @@ export const shouldClearExistingJobsBeforeRun = ({
   onlySources = process.env.SCRAPER_ONLY,
   startAt = process.env.SCRAPER_START_AT,
   startAfter = process.env.SCRAPER_START_AFTER,
-} = {}) => {
-  const hasOnlySources = String(onlySources || '')
-    .split(',')
-    .map((source) => source.trim())
-    .filter(Boolean)
-    .length > 0
-  const hasStartAt = String(startAt || '').trim() !== ''
-  const hasStartAfter = String(startAfter || '').trim() !== ''
-
-  return !(hasOnlySources || hasStartAt || hasStartAfter)
-}
+} = {}) => false
 
 const isWorkdayScraper = (scraper) => (
   scraper?.provider?.adapter === 'workday'
@@ -522,18 +534,31 @@ export const runAll = async () => {
   const startTime = Date.now()
   const startedAt = new Date(startTime)
   const failureAbortThreshold = resolveFailureAbortThreshold()
+  let stagedDatasetContext = null
 
   console.log(`\n${'='.repeat(60)}`)
   console.log(`  Jobverify Scraper Pipeline - ${isDryRun ? 'DRY RUN' : 'LIVE'} | ${isParallel ? 'PARALLEL' : 'SEQUENTIAL'}`)
-  console.log(`  Started: ${new Date().toISOString()}`)
+  console.log(`  Started: ${formatIstTimestamp(startedAt)}`)
   console.log(`${'='.repeat(60)}\n`)
   if (resumeMessage) console.log(`[runner] ${resumeMessage}\n`)
 
-  if (!isDryRun && shouldClearExistingJobsBeforeRun()) {
-    const deletedCount = await deleteAllJobsFromDB()
-    console.log(`[runner] Cleared ${deletedCount} existing job record(s) before scraping.\n`)
-  } else if (!isDryRun) {
-    console.log('[runner] Selective run detected. Preserving existing jobs and refreshing only the chosen sources.\n')
+  if (!isDryRun) {
+    if (shouldUseStagedJobDatasetRun({ dryRun: isDryRun })) {
+      try {
+        stagedDatasetContext = await prepareStagedJobDatasetRun()
+        console.log(
+          `[runner] Writing the full live run to staging collection ${stagedDatasetContext.collectionName}; live jobs stay visible until promotion.\n`,
+        )
+      } catch (stagedDatasetError) {
+        console.error(
+          `  [runner] Failed to initialize staged dataset mode; falling back to in-place source refresh: ${stagedDatasetError.message}`,
+        )
+      }
+    }
+
+    if (!stagedDatasetContext) {
+      console.log('[runner] Preserving existing jobs during the run; sources will refresh in place as they complete.\n')
+    }
   }
 
   // Ensure active scrapers are seeded in the database
@@ -553,7 +578,14 @@ export const runAll = async () => {
     }
   }
 
-  if (isParallel) return runAllParallel(startedAt)
+  if (isParallel) {
+    return runAllParallel({
+      startedAt,
+      scrapers,
+      resumeMessage,
+      stagedDatasetContext,
+    })
+  }
 
   let failedCount = 0
   let startedCount = 0
@@ -612,6 +644,10 @@ export const runAll = async () => {
         result = await saveToDB(jobs, scraper.name, {
           refreshDatasetSummary: false,
           authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
+          ...(stagedDatasetContext ? {
+            jobModel: stagedDatasetContext.jobModel,
+            enqueueAlerts: false,
+          } : {}),
         })
         result.jobs = indiaJobs.length
         result.cities = cities
@@ -663,9 +699,26 @@ export const runAll = async () => {
 
   if (!isDryRun) {
     try {
-      await refreshJobDatasetSummary()
+      const pipelineAborted = shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
+
+      if (stagedDatasetContext) {
+        if (pipelineAborted) {
+          await clearStagedJobDatasetRun()
+          console.error('  [pipeline] Skipped staged dataset promotion because the pipeline aborted early.')
+        } else {
+          const promotion = await promoteStagedJobDataset({
+            selectedSources: scrapers.map((scraper) => scraper.name),
+            summary,
+          })
+          console.log(
+            `  [pipeline] Promoted staged dataset with ${promotion.totalPromotedJobs} jobs; carried forward ${promotion.carriedForwardJobs} jobs from ${promotion.carriedForwardSources.length} source(s).`,
+          )
+        }
+      } else {
+        await refreshJobDatasetSummary()
+      }
     } catch (summaryErr) {
-      console.error(`  [pipeline] Failed to refresh dataset summary:`, summaryErr.message)
+      console.error(`  [pipeline] Failed to finalize the visible dataset:`, summaryErr.message)
     }
   }
 
@@ -696,7 +749,11 @@ export const runAll = async () => {
 }
 
 // Runs a single scraper with retry, saves results, and updates live status.
-export const runScraper = async (scraper, progressStr = '') => {
+export const runScraper = async (
+  scraper,
+  progressStr = '',
+  persistenceOptions = {},
+) => {
   const scraperStart = Date.now()
 
   // Skip execution if the scraper has been deactivated by an administrator
@@ -747,6 +804,7 @@ export const runScraper = async (scraper, progressStr = '') => {
       result = await saveToDB(jobs, scraper.name, {
         refreshDatasetSummary: false,
         authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
+        ...persistenceOptions,
       })
       result.jobs = indiaJobs.length
       result.cities = cities
@@ -793,8 +851,12 @@ export const runScraper = async (scraper, progressStr = '') => {
 }
 
 // Runs all scrapers in a concurrency-limited worker pool to balance speed and host stability.
-const runAllParallel = async (startedAt = new Date()) => {
-  const { scrapers, resumeMessage } = selectScrapersForRun(buildScrapers())
+const runAllParallel = async ({
+  startedAt = new Date(),
+  scrapers = selectScrapersForRun(buildScrapers()).scrapers,
+  resumeMessage = null,
+  stagedDatasetContext = null,
+} = {}) => {
   const startTime = Date.now()
   const recommendedDryRunConcurrency = resolveRecommendedLocalDryRunConcurrency()
   const {
@@ -814,11 +876,7 @@ const runAllParallel = async (startedAt = new Date()) => {
     const safetyMessage = `[runner] Local dry runs above concurrency ${recommendedDryRunConcurrency} can amplify Workday 429s and timeout noise.`
     if (dryRunConcurrencyClamped) {
       console.log(
-        `${safetyMessage} Requested ${requestedConcurrencyLimit}; clamping to ${concurrencyLimit}. Set SCRAPER_ALLOW_UNSAFE_DRY_RUN_CONCURRENCY=1 to bypass.`
-      )
-    } else {
-      console.log(
-        `${safetyMessage} Using requested concurrency ${concurrencyLimit} because SCRAPER_ALLOW_UNSAFE_DRY_RUN_CONCURRENCY is enabled.`
+        `${safetyMessage} Requested ${requestedConcurrencyLimit}; clamping to ${concurrencyLimit}.`
       )
     }
   }
@@ -839,7 +897,16 @@ const runAllParallel = async (startedAt = new Date()) => {
 
       startedCount++
       const progressStr = `[${startedCount}/${totalScrapers}] `
-      const result = await runScraper(scraper, progressStr)
+      const result = await runScraper(
+        scraper,
+        progressStr,
+        stagedDatasetContext
+          ? {
+            jobModel: stagedDatasetContext.jobModel,
+            enqueueAlerts: false,
+          }
+          : {},
+      )
       const { name, ...rest } = result
       summary[name] = rest
       
@@ -868,9 +935,27 @@ const runAllParallel = async (startedAt = new Date()) => {
 
   if (!isDryRun) {
     try {
-      await refreshJobDatasetSummary()
+      const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
+      const pipelineAborted = shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)
+
+      if (stagedDatasetContext) {
+        if (pipelineAborted) {
+          await clearStagedJobDatasetRun()
+          console.error('  [pipeline] Skipped staged dataset promotion because the pipeline aborted early.')
+        } else {
+          const promotion = await promoteStagedJobDataset({
+            selectedSources: scrapers.map((scraper) => scraper.name),
+            summary,
+          })
+          console.log(
+            `  [pipeline] Promoted staged dataset with ${promotion.totalPromotedJobs} jobs; carried forward ${promotion.carriedForwardJobs} jobs from ${promotion.carriedForwardSources.length} source(s).`,
+          )
+        }
+      } else {
+        await refreshJobDatasetSummary()
+      }
     } catch (summaryErr) {
-      console.error(`  [pipeline] Failed to refresh dataset summary:`, summaryErr.message)
+      console.error(`  [pipeline] Failed to finalize the visible dataset:`, summaryErr.message)
     }
   }
 

@@ -44,29 +44,11 @@ test('resolveParallelWorkerConcurrency clamps unsafe local dry-run concurrency b
       dryRun: true,
       defaultConcurrency: 5,
       recommendedDryRunConcurrency: 2,
-      allowUnsafeDryRunConcurrency: '',
     }),
     {
       requested: 5,
       effective: 2,
       clamped: true,
-    },
-  )
-})
-
-test('resolveParallelWorkerConcurrency allows explicit unsafe dry-run concurrency opt-in', () => {
-  assert.deepEqual(
-    resolveParallelWorkerConcurrency({
-      requested: '5',
-      dryRun: true,
-      defaultConcurrency: 5,
-      recommendedDryRunConcurrency: 2,
-      allowUnsafeDryRunConcurrency: '1',
-    }),
-    {
-      requested: 5,
-      effective: 5,
-      clamped: false,
     },
   )
 })
